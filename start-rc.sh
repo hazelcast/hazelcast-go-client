@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 #trap cleanup EXIT
-function cleanup {
-    echo "cleanup is being performed."
-    if [ "x${serverPid}" != "x" ]
-    then
-        echo "Killing remote-controller with pid ${serverPid}"
-        kill -9 ${serverPid}
-    fi
-    exit
-}
+#function cleanup {
+#    echo "cleanup is being performed."
+#    if [ "x${serverPid}" != "x" ]
+#    then
+#        echo "Killing remote-controller with pid ${serverPid}"
+#        kill -9 ${serverPid}
+#    fi
+#    exit
+#}
 
 HZ_VERSION="3.9-SNAPSHOT"
 
