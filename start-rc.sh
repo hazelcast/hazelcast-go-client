@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+#trap cleanup EXIT
+function cleanup {
+    echo "cleanup is being performed."
+    if [ "x${serverPid}" != "x" ]
+    then
+        echo "Killing remote-controller with pid ${serverPid}"
+        kill -9 ${serverPid}
+    fi
+    exit
+}
+
 HZ_VERSION="3.9-SNAPSHOT"
 
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
@@ -60,4 +71,5 @@ else
     echo "Starting Remote Controller ... oss ..."
 fi
 
-java -Dhazelcast.enterprise.license.key=${HAZELCAST_ENTERPRISE_KEY} -cp ${CLASSPATH} com.hazelcast.remotecontroller.Main
+java -Dhazelcast.enterprise.license.key=${HAZELCAST_ENTERPRISE_KEY} -cp ${CLASSPATH} com.hazelcast.remotecontroller.Main>rc_stdout.log 2>rc_stderr.log &
+serverPid=$!

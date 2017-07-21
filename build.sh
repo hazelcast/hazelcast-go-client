@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Outside tools include:
-# gocov: go get github.com/axw/gocov
+# gocov: go get github.com/axw/gocov/gocov
 # gocov-xml: go get github.com/t-yuki/gocov-xml
-# go2xunit: go get bitbucket.org/tebeka/go2xunit
+# go2xunit: go get github.com/tebeka/go2xunit
 
 set -x
 
@@ -11,6 +11,10 @@ set -x
 export PRJ=`git config --get remote.origin.url | sed 's/^https:\/\///' | sed 's/\.git$//'`
 
 go get git.apache.org/thrift.git/lib/go/thrift
+
+sh ./start-rc.sh
+
+sleep 10
 
 # Run tests (JUnit plugin)
 echo "mode: set" > coverage.out
