@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Outside tools include:
 # gocov: go get github.com/axw/gocov/gocov
@@ -12,7 +12,7 @@ export PRJ=`git config --get remote.origin.url | sed 's/^https:\/\///' | sed 's/
 
 go get git.apache.org/thrift.git/lib/go/thrift
 
-sh ./start-rc.sh
+bash ./start-rc.sh
 
 sleep 10
 

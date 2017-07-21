@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 #trap cleanup EXIT
 #function cleanup {
