@@ -83,13 +83,13 @@ func TestClientMessage_AppendInt(t *testing.T) {
 		t.Errorf("AppendInt returned %s expected ccddee1f", hexResult)
 	}
 }
-func TestClientMessage_AppendLong(t *testing.T) {
+func TestClientMessage_AppendInt64(t *testing.T) {
 	message := NewClientMessage(nil, 30)
-	message.AppendLong(0x1feeddccbbaa8765)
+	message.AppendInt64(0x1feeddccbbaa8765)
 	dataOffset := message.DataOffset()
 	result := message.Buffer[dataOffset: dataOffset+8]
 	if hexResult := hex.EncodeToString(result); hexResult != "6587aabbccddee1f" {
-		t.Errorf("AppendLong returned %s expected 6587aabbccddee1f", hexResult)
+		t.Errorf("AppendInt64 returned %s expected 6587aabbccddee1f", hexResult)
 	}
 }
 func TestClientMessage_AppendString(t *testing.T) {
@@ -126,7 +126,7 @@ func TestClientMessage_ReadInt(t *testing.T) {
 		t.Errorf("ReadInt returned %d expected 0x78563412", result)
 	}
 }
-func TestClientMessage_ReadLong(t *testing.T) {
+func TestClientMessage_ReadInt64(t *testing.T) {
 	buf := make([]byte, len(READ_HEADER)+8)
 	buf[len(READ_HEADER)] = 0x65
 	buf[len(READ_HEADER)+1] = 0x87
@@ -137,8 +137,8 @@ func TestClientMessage_ReadLong(t *testing.T) {
 	buf[len(READ_HEADER)+6] = 0xee
 	buf[len(READ_HEADER)+7] = 0x1f
 	message := NewClientMessage(buf, 8)
-	if result := message.ReadLong(); result != 0x1feeddccbbaa8765 {
-		t.Errorf("ReadLong returned %d expected 0x1feeddccbbaa8765", result)
+	if result := message.ReadInt64(); result != 0x1feeddccbbaa8765 {
+		t.Errorf("ReadInt64 returned %d expected 0x1feeddccbbaa8765", result)
 	}
 }
 func TestClientMessage_ReadString(t *testing.T) {
@@ -223,7 +223,7 @@ func TestClientMessage_UpdateFrameLength(t *testing.T) {
 	if result := message.FrameLength() ; result != 23 {
 		t.Errorf("UpdateFrameLength returned %d expected 23",result)
 	}
-	message.AppendLong(0x1feeddccbbaa8765)
+	message.AppendInt64(0x1feeddccbbaa8765)
 	message.UpdateFrameLength()
 	if result := message.FrameLength() ; result != 31 {
 		t.Errorf("UpdateFrameLength returned %d expected 31",result)
