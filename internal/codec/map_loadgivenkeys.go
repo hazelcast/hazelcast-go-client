@@ -20,7 +20,7 @@ import (
 type MapLoadGivenKeysResponseParameters struct {
 }
 
-func (codec *MapLoadGivenKeysResponseParameters) calculateSize(name string, keys []Data, replaceExistingValues bool) int {
+func MapLoadGivenKeysCalculateSize(name string, keys []Data, replaceExistingValues bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -32,9 +32,9 @@ func (codec *MapLoadGivenKeysResponseParameters) calculateSize(name string, keys
 	return dataSize
 }
 
-func (codec *MapLoadGivenKeysResponseParameters) encodeRequest(name string, keys []Data, replaceExistingValues bool) *ClientMessage {
+func MapLoadGivenKeysEncodeRequest(name string, keys []Data, replaceExistingValues bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, keys, replaceExistingValues))
+	clientMessage := NewClientMessage(nil, MapLoadGivenKeysCalculateSize(name, keys, replaceExistingValues))
 	clientMessage.SetMessageType(MAP_LOADGIVENKEYS)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

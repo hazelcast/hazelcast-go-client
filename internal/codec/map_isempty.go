@@ -21,16 +21,16 @@ type MapIsEmptyResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapIsEmptyResponseParameters) calculateSize(name string) int {
+func MapIsEmptyCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapIsEmptyResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapIsEmptyCalculateSize(name))
 	clientMessage.SetMessageType(MAP_ISEMPTY)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -38,7 +38,7 @@ func (codec *MapIsEmptyResponseParameters) encodeRequest(name string) *ClientMes
 	return clientMessage
 }
 
-func (codec *MapIsEmptyResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapIsEmptyResponseParameters {
+func MapIsEmptyDecodeResponse(clientMessage *ClientMessage) *MapIsEmptyResponseParameters {
 	// Decode response from client message
 	parameters := new(MapIsEmptyResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

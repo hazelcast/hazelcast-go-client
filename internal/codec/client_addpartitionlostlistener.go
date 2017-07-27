@@ -21,16 +21,16 @@ type ClientAddPartitionLostListenerResponseParameters struct {
 	Response string
 }
 
-func (codec *ClientAddPartitionLostListenerResponseParameters) calculateSize(localOnly bool) int {
+func ClientAddPartitionLostListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func (codec *ClientAddPartitionLostListenerResponseParameters) encodeRequest(localOnly bool) *ClientMessage {
+func ClientAddPartitionLostListenerEncodeRequest(localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(localOnly))
+	clientMessage := NewClientMessage(nil, ClientAddPartitionLostListenerCalculateSize(localOnly))
 	clientMessage.SetMessageType(CLIENT_ADDPARTITIONLOSTLISTENER)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendBool(localOnly)
@@ -38,16 +38,14 @@ func (codec *ClientAddPartitionLostListenerResponseParameters) encodeRequest(loc
 	return clientMessage
 }
 
-func (codec *ClientAddPartitionLostListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientAddPartitionLostListenerResponseParameters {
+func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddPartitionLostListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAddPartitionLostListenerResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-type HandlePartitionLost func(int32, int32, Address)
-
-func (codec *ClientAddPartitionLostListenerResponseParameters) handle(clientMessage *ClientMessage, handleEventPartitionLost HandlePartitionLost) {
+func ClientAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleEventPartitionLost func(int32, int32, Address)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_PARTITIONLOST && handleEventPartitionLost != nil {

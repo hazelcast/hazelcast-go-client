@@ -21,16 +21,16 @@ type ClientRemovePartitionLostListenerResponseParameters struct {
 	Response bool
 }
 
-func (codec *ClientRemovePartitionLostListenerResponseParameters) calculateSize(registrationId string) int {
+func ClientRemovePartitionLostListenerCalculateSize(registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&registrationId)
 	return dataSize
 }
 
-func (codec *ClientRemovePartitionLostListenerResponseParameters) encodeRequest(registrationId string) *ClientMessage {
+func ClientRemovePartitionLostListenerEncodeRequest(registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(registrationId))
+	clientMessage := NewClientMessage(nil, ClientRemovePartitionLostListenerCalculateSize(registrationId))
 	clientMessage.SetMessageType(CLIENT_REMOVEPARTITIONLOSTLISTENER)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(registrationId)
@@ -38,7 +38,7 @@ func (codec *ClientRemovePartitionLostListenerResponseParameters) encodeRequest(
 	return clientMessage
 }
 
-func (codec *ClientRemovePartitionLostListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientRemovePartitionLostListenerResponseParameters {
+func ClientRemovePartitionLostListenerDecodeResponse(clientMessage *ClientMessage) *ClientRemovePartitionLostListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientRemovePartitionLostListenerResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

@@ -21,7 +21,7 @@ type MapTryLockResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapTryLockResponseParameters) calculateSize(name string, key Data, threadId int64, lease int64, timeout int64, referenceId int64) int {
+func MapTryLockCalculateSize(name string, key Data, threadId int64, lease int64, timeout int64, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -33,9 +33,9 @@ func (codec *MapTryLockResponseParameters) calculateSize(name string, key Data, 
 	return dataSize
 }
 
-func (codec *MapTryLockResponseParameters) encodeRequest(name string, key Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
+func MapTryLockEncodeRequest(name string, key Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId, lease, timeout, referenceId))
+	clientMessage := NewClientMessage(nil, MapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
 	clientMessage.SetMessageType(MAP_TRYLOCK)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -48,7 +48,7 @@ func (codec *MapTryLockResponseParameters) encodeRequest(name string, key Data, 
 	return clientMessage
 }
 
-func (codec *MapTryLockResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapTryLockResponseParameters {
+func MapTryLockDecodeResponse(clientMessage *ClientMessage) *MapTryLockResponseParameters {
 	// Decode response from client message
 	parameters := new(MapTryLockResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

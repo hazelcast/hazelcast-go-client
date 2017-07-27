@@ -20,16 +20,16 @@ import (
 type MapFlushResponseParameters struct {
 }
 
-func (codec *MapFlushResponseParameters) calculateSize(name string) int {
+func MapFlushCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapFlushResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapFlushEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapFlushCalculateSize(name))
 	clientMessage.SetMessageType(MAP_FLUSH)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

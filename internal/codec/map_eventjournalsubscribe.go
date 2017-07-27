@@ -22,16 +22,16 @@ type MapEventJournalSubscribeResponseParameters struct {
 	NewestSequence int64
 }
 
-func (codec *MapEventJournalSubscribeResponseParameters) calculateSize(name string) int {
+func MapEventJournalSubscribeCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapEventJournalSubscribeResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapEventJournalSubscribeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapEventJournalSubscribeCalculateSize(name))
 	clientMessage.SetMessageType(MAP_EVENTJOURNALSUBSCRIBE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -39,7 +39,7 @@ func (codec *MapEventJournalSubscribeResponseParameters) encodeRequest(name stri
 	return clientMessage
 }
 
-func (codec *MapEventJournalSubscribeResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapEventJournalSubscribeResponseParameters {
+func MapEventJournalSubscribeDecodeResponse(clientMessage *ClientMessage) *MapEventJournalSubscribeResponseParameters {
 	// Decode response from client message
 	parameters := new(MapEventJournalSubscribeResponseParameters)
 	parameters.OldestSequence = clientMessage.ReadInt64()

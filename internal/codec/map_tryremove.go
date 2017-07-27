@@ -21,7 +21,7 @@ type MapTryRemoveResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapTryRemoveResponseParameters) calculateSize(name string, key Data, threadId int64, timeout int64) int {
+func MapTryRemoveCalculateSize(name string, key Data, threadId int64, timeout int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapTryRemoveResponseParameters) calculateSize(name string, key Data
 	return dataSize
 }
 
-func (codec *MapTryRemoveResponseParameters) encodeRequest(name string, key Data, threadId int64, timeout int64) *ClientMessage {
+func MapTryRemoveEncodeRequest(name string, key Data, threadId int64, timeout int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId, timeout))
+	clientMessage := NewClientMessage(nil, MapTryRemoveCalculateSize(name, key, threadId, timeout))
 	clientMessage.SetMessageType(MAP_TRYREMOVE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -44,7 +44,7 @@ func (codec *MapTryRemoveResponseParameters) encodeRequest(name string, key Data
 	return clientMessage
 }
 
-func (codec *MapTryRemoveResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapTryRemoveResponseParameters {
+func MapTryRemoveDecodeResponse(clientMessage *ClientMessage) *MapTryRemoveResponseParameters {
 	// Decode response from client message
 	parameters := new(MapTryRemoveResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

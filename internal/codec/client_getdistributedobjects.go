@@ -21,22 +21,22 @@ type ClientGetDistributedObjectsResponseParameters struct {
 	Response []DistributedObjectInfo
 }
 
-func (codec *ClientGetDistributedObjectsResponseParameters) calculateSize() int {
+func ClientGetDistributedObjectsCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
-func (codec *ClientGetDistributedObjectsResponseParameters) encodeRequest() *ClientMessage {
+func ClientGetDistributedObjectsEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize())
+	clientMessage := NewClientMessage(nil, ClientGetDistributedObjectsCalculateSize())
 	clientMessage.SetMessageType(CLIENT_GETDISTRIBUTEDOBJECTS)
 	clientMessage.IsRetryable = false
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
-func (codec *ClientGetDistributedObjectsResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientGetDistributedObjectsResponseParameters {
+func ClientGetDistributedObjectsDecodeResponse(clientMessage *ClientMessage) *ClientGetDistributedObjectsResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientGetDistributedObjectsResponseParameters)
 

@@ -21,7 +21,7 @@ type MapAddPartitionLostListenerResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddPartitionLostListenerResponseParameters) calculateSize(name string, localOnly bool) int {
+func MapAddPartitionLostListenerCalculateSize(name string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapAddPartitionLostListenerResponseParameters) calculateSize(name s
 	return dataSize
 }
 
-func (codec *MapAddPartitionLostListenerResponseParameters) encodeRequest(name string, localOnly bool) *ClientMessage {
+func MapAddPartitionLostListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, localOnly))
+	clientMessage := NewClientMessage(nil, MapAddPartitionLostListenerCalculateSize(name, localOnly))
 	clientMessage.SetMessageType(MAP_ADDPARTITIONLOSTLISTENER)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -40,16 +40,14 @@ func (codec *MapAddPartitionLostListenerResponseParameters) encodeRequest(name s
 	return clientMessage
 }
 
-func (codec *MapAddPartitionLostListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddPartitionLostListenerResponseParameters {
+func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) *MapAddPartitionLostListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddPartitionLostListenerResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-type HandleMapPartitionLost func(int32, string)
-
-func (codec *MapAddPartitionLostListenerResponseParameters) handle(clientMessage *ClientMessage, handleEventMapPartitionLost HandleMapPartitionLost) {
+func MapAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleEventMapPartitionLost func(int32, string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_MAPPARTITIONLOST && handleEventMapPartitionLost != nil {

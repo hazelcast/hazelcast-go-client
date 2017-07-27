@@ -21,7 +21,7 @@ type MapAggregateWithPredicateResponseParameters struct {
 	Response Data
 }
 
-func (codec *MapAggregateWithPredicateResponseParameters) calculateSize(name string, aggregator Data, predicate Data) int {
+func MapAggregateWithPredicateCalculateSize(name string, aggregator Data, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapAggregateWithPredicateResponseParameters) calculateSize(name str
 	return dataSize
 }
 
-func (codec *MapAggregateWithPredicateResponseParameters) encodeRequest(name string, aggregator Data, predicate Data) *ClientMessage {
+func MapAggregateWithPredicateEncodeRequest(name string, aggregator Data, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, aggregator, predicate))
+	clientMessage := NewClientMessage(nil, MapAggregateWithPredicateCalculateSize(name, aggregator, predicate))
 	clientMessage.SetMessageType(MAP_AGGREGATEWITHPREDICATE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -42,7 +42,7 @@ func (codec *MapAggregateWithPredicateResponseParameters) encodeRequest(name str
 	return clientMessage
 }
 
-func (codec *MapAggregateWithPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAggregateWithPredicateResponseParameters {
+func MapAggregateWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapAggregateWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAggregateWithPredicateResponseParameters)
 

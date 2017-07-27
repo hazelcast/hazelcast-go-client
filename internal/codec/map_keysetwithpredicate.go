@@ -21,7 +21,7 @@ type MapKeySetWithPredicateResponseParameters struct {
 	Response []Data
 }
 
-func (codec *MapKeySetWithPredicateResponseParameters) calculateSize(name string, predicate Data) int {
+func MapKeySetWithPredicateCalculateSize(name string, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapKeySetWithPredicateResponseParameters) calculateSize(name string
 	return dataSize
 }
 
-func (codec *MapKeySetWithPredicateResponseParameters) encodeRequest(name string, predicate Data) *ClientMessage {
+func MapKeySetWithPredicateEncodeRequest(name string, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, predicate))
+	clientMessage := NewClientMessage(nil, MapKeySetWithPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(MAP_KEYSETWITHPREDICATE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapKeySetWithPredicateResponseParameters) encodeRequest(name string
 	return clientMessage
 }
 
-func (codec *MapKeySetWithPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapKeySetWithPredicateResponseParameters {
+func MapKeySetWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapKeySetWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapKeySetWithPredicateResponseParameters)
 

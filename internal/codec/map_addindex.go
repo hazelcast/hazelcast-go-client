@@ -20,7 +20,7 @@ import (
 type MapAddIndexResponseParameters struct {
 }
 
-func (codec *MapAddIndexResponseParameters) calculateSize(name string, attribute string, ordered bool) int {
+func MapAddIndexCalculateSize(name string, attribute string, ordered bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapAddIndexResponseParameters) calculateSize(name string, attribute
 	return dataSize
 }
 
-func (codec *MapAddIndexResponseParameters) encodeRequest(name string, attribute string, ordered bool) *ClientMessage {
+func MapAddIndexEncodeRequest(name string, attribute string, ordered bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, attribute, ordered))
+	clientMessage := NewClientMessage(nil, MapAddIndexCalculateSize(name, attribute, ordered))
 	clientMessage.SetMessageType(MAP_ADDINDEX)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

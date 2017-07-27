@@ -21,7 +21,7 @@ type MapProjectWithPredicateResponseParameters struct {
 	Response []Data
 }
 
-func (codec *MapProjectWithPredicateResponseParameters) calculateSize(name string, projection Data, predicate Data) int {
+func MapProjectWithPredicateCalculateSize(name string, projection Data, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapProjectWithPredicateResponseParameters) calculateSize(name strin
 	return dataSize
 }
 
-func (codec *MapProjectWithPredicateResponseParameters) encodeRequest(name string, projection Data, predicate Data) *ClientMessage {
+func MapProjectWithPredicateEncodeRequest(name string, projection Data, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, projection, predicate))
+	clientMessage := NewClientMessage(nil, MapProjectWithPredicateCalculateSize(name, projection, predicate))
 	clientMessage.SetMessageType(MAP_PROJECTWITHPREDICATE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -42,7 +42,7 @@ func (codec *MapProjectWithPredicateResponseParameters) encodeRequest(name strin
 	return clientMessage
 }
 
-func (codec *MapProjectWithPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapProjectWithPredicateResponseParameters {
+func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapProjectWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapProjectWithPredicateResponseParameters)
 

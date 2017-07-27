@@ -21,7 +21,7 @@ type MapRemoveInterceptorResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapRemoveInterceptorResponseParameters) calculateSize(name string, id string) int {
+func MapRemoveInterceptorCalculateSize(name string, id string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapRemoveInterceptorResponseParameters) calculateSize(name string, 
 	return dataSize
 }
 
-func (codec *MapRemoveInterceptorResponseParameters) encodeRequest(name string, id string) *ClientMessage {
+func MapRemoveInterceptorEncodeRequest(name string, id string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, id))
+	clientMessage := NewClientMessage(nil, MapRemoveInterceptorCalculateSize(name, id))
 	clientMessage.SetMessageType(MAP_REMOVEINTERCEPTOR)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapRemoveInterceptorResponseParameters) encodeRequest(name string, 
 	return clientMessage
 }
 
-func (codec *MapRemoveInterceptorResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapRemoveInterceptorResponseParameters {
+func MapRemoveInterceptorDecodeResponse(clientMessage *ClientMessage) *MapRemoveInterceptorResponseParameters {
 	// Decode response from client message
 	parameters := new(MapRemoveInterceptorResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

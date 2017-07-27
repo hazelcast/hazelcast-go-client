@@ -20,7 +20,7 @@ import (
 type MapForceUnlockResponseParameters struct {
 }
 
-func (codec *MapForceUnlockResponseParameters) calculateSize(name string, key Data, referenceId int64) int {
+func MapForceUnlockCalculateSize(name string, key Data, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapForceUnlockResponseParameters) calculateSize(name string, key Da
 	return dataSize
 }
 
-func (codec *MapForceUnlockResponseParameters) encodeRequest(name string, key Data, referenceId int64) *ClientMessage {
+func MapForceUnlockEncodeRequest(name string, key Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, referenceId))
+	clientMessage := NewClientMessage(nil, MapForceUnlockCalculateSize(name, key, referenceId))
 	clientMessage.SetMessageType(MAP_FORCEUNLOCK)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)

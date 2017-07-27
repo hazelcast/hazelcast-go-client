@@ -20,7 +20,7 @@ import (
 type MapSetResponseParameters struct {
 }
 
-func (codec *MapSetResponseParameters) calculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
+func MapSetCalculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapSetResponseParameters) calculateSize(name string, key Data, valu
 	return dataSize
 }
 
-func (codec *MapSetResponseParameters) encodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
+func MapSetEncodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, value, threadId, ttl))
+	clientMessage := NewClientMessage(nil, MapSetCalculateSize(name, key, value, threadId, ttl))
 	clientMessage.SetMessageType(MAP_SET)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

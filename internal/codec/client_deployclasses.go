@@ -20,7 +20,7 @@ import (
 type ClientDeployClassesResponseParameters struct {
 }
 
-func (codec *ClientDeployClassesResponseParameters) calculateSize(classDefinitions []Pair) int {
+func ClientDeployClassesCalculateSize(classDefinitions []Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += INT_SIZE_IN_BYTES
@@ -36,9 +36,9 @@ func (codec *ClientDeployClassesResponseParameters) calculateSize(classDefinitio
 	return dataSize
 }
 
-func (codec *ClientDeployClassesResponseParameters) encodeRequest(classDefinitions []Pair) *ClientMessage {
+func ClientDeployClassesEncodeRequest(classDefinitions []Pair) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(classDefinitions))
+	clientMessage := NewClientMessage(nil, ClientDeployClassesCalculateSize(classDefinitions))
 	clientMessage.SetMessageType(CLIENT_DEPLOYCLASSES)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendInt(len(classDefinitions))

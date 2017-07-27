@@ -21,7 +21,7 @@ type MapProjectResponseParameters struct {
 	Response []Data
 }
 
-func (codec *MapProjectResponseParameters) calculateSize(name string, projection Data) int {
+func MapProjectCalculateSize(name string, projection Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapProjectResponseParameters) calculateSize(name string, projection
 	return dataSize
 }
 
-func (codec *MapProjectResponseParameters) encodeRequest(name string, projection Data) *ClientMessage {
+func MapProjectEncodeRequest(name string, projection Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, projection))
+	clientMessage := NewClientMessage(nil, MapProjectCalculateSize(name, projection))
 	clientMessage.SetMessageType(MAP_PROJECT)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapProjectResponseParameters) encodeRequest(name string, projection
 	return clientMessage
 }
 
-func (codec *MapProjectResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapProjectResponseParameters {
+func MapProjectDecodeResponse(clientMessage *ClientMessage) *MapProjectResponseParameters {
 	// Decode response from client message
 	parameters := new(MapProjectResponseParameters)
 

@@ -20,7 +20,7 @@ import (
 type MapClearNearCacheResponseParameters struct {
 }
 
-func (codec *MapClearNearCacheResponseParameters) calculateSize(name string, target Address) int {
+func MapClearNearCacheCalculateSize(name string, target Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -28,9 +28,9 @@ func (codec *MapClearNearCacheResponseParameters) calculateSize(name string, tar
 	return dataSize
 }
 
-func (codec *MapClearNearCacheResponseParameters) encodeRequest(name string, target Address) *ClientMessage {
+func MapClearNearCacheEncodeRequest(name string, target Address) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, target))
+	clientMessage := NewClientMessage(nil, MapClearNearCacheCalculateSize(name, target))
 	clientMessage.SetMessageType(MAP_CLEARNEARCACHE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

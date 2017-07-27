@@ -21,7 +21,7 @@ type MapRemovePartitionLostListenerResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapRemovePartitionLostListenerResponseParameters) calculateSize(name string, registrationId string) int {
+func MapRemovePartitionLostListenerCalculateSize(name string, registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapRemovePartitionLostListenerResponseParameters) calculateSize(nam
 	return dataSize
 }
 
-func (codec *MapRemovePartitionLostListenerResponseParameters) encodeRequest(name string, registrationId string) *ClientMessage {
+func MapRemovePartitionLostListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, registrationId))
+	clientMessage := NewClientMessage(nil, MapRemovePartitionLostListenerCalculateSize(name, registrationId))
 	clientMessage.SetMessageType(MAP_REMOVEPARTITIONLOSTLISTENER)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapRemovePartitionLostListenerResponseParameters) encodeRequest(nam
 	return clientMessage
 }
 
-func (codec *MapRemovePartitionLostListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapRemovePartitionLostListenerResponseParameters {
+func MapRemovePartitionLostListenerDecodeResponse(clientMessage *ClientMessage) *MapRemovePartitionLostListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapRemovePartitionLostListenerResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

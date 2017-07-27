@@ -20,16 +20,16 @@ import (
 type MapEvictAllResponseParameters struct {
 }
 
-func (codec *MapEvictAllResponseParameters) calculateSize(name string) int {
+func MapEvictAllCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapEvictAllResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapEvictAllEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapEvictAllCalculateSize(name))
 	clientMessage.SetMessageType(MAP_EVICTALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

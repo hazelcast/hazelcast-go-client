@@ -20,7 +20,7 @@ import (
 type MapPutTransientResponseParameters struct {
 }
 
-func (codec *MapPutTransientResponseParameters) calculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
+func MapPutTransientCalculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapPutTransientResponseParameters) calculateSize(name string, key D
 	return dataSize
 }
 
-func (codec *MapPutTransientResponseParameters) encodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutTransientEncodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, value, threadId, ttl))
+	clientMessage := NewClientMessage(nil, MapPutTransientCalculateSize(name, key, value, threadId, ttl))
 	clientMessage.SetMessageType(MAP_PUTTRANSIENT)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

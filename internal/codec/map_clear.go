@@ -20,16 +20,16 @@ import (
 type MapClearResponseParameters struct {
 }
 
-func (codec *MapClearResponseParameters) calculateSize(name string) int {
+func MapClearCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapClearResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapClearCalculateSize(name))
 	clientMessage.SetMessageType(MAP_CLEAR)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

@@ -21,7 +21,7 @@ type MapValuesWithPredicateResponseParameters struct {
 	Response []Data
 }
 
-func (codec *MapValuesWithPredicateResponseParameters) calculateSize(name string, predicate Data) int {
+func MapValuesWithPredicateCalculateSize(name string, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapValuesWithPredicateResponseParameters) calculateSize(name string
 	return dataSize
 }
 
-func (codec *MapValuesWithPredicateResponseParameters) encodeRequest(name string, predicate Data) *ClientMessage {
+func MapValuesWithPredicateEncodeRequest(name string, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, predicate))
+	clientMessage := NewClientMessage(nil, MapValuesWithPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(MAP_VALUESWITHPREDICATE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapValuesWithPredicateResponseParameters) encodeRequest(name string
 	return clientMessage
 }
 
-func (codec *MapValuesWithPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapValuesWithPredicateResponseParameters {
+func MapValuesWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapValuesWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapValuesWithPredicateResponseParameters)
 

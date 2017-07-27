@@ -21,7 +21,7 @@ type MapAddNearCacheEntryListenerResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddNearCacheEntryListenerResponseParameters) calculateSize(name string, listenerFlags int32, localOnly bool) int {
+func MapAddNearCacheEntryListenerCalculateSize(name string, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapAddNearCacheEntryListenerResponseParameters) calculateSize(name 
 	return dataSize
 }
 
-func (codec *MapAddNearCacheEntryListenerResponseParameters) encodeRequest(name string, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddNearCacheEntryListenerEncodeRequest(name string, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, listenerFlags, localOnly))
+	clientMessage := NewClientMessage(nil, MapAddNearCacheEntryListenerCalculateSize(name, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDNEARCACHEENTRYLISTENER)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -42,14 +42,14 @@ func (codec *MapAddNearCacheEntryListenerResponseParameters) encodeRequest(name 
 	return clientMessage
 }
 
-func (codec *MapAddNearCacheEntryListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddNearCacheEntryListenerResponseParameters {
+func MapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) *MapAddNearCacheEntryListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddNearCacheEntryListenerResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-func (codec *MapAddNearCacheEntryListenerResponseParameters) handle(clientMessage *ClientMessage, handleEventIMapInvalidation HandleIMapInvalidation, handleEventIMapBatchInvalidation HandleIMapBatchInvalidation) {
+func MapAddNearCacheEntryListenerHandle(clientMessage *ClientMessage, handleEventIMapInvalidation func(Data, string, UUID, int64), handleEventIMapBatchInvalidation func([]Data, []string, []UUID, []int64)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_IMAPINVALIDATION && handleEventIMapInvalidation != nil {

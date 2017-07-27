@@ -22,7 +22,7 @@ type MapFetchEntriesResponseParameters struct {
 	Entries    []Pair
 }
 
-func (codec *MapFetchEntriesResponseParameters) calculateSize(name string, partitionId int32, tableIndex int32, batch int32) int {
+func MapFetchEntriesCalculateSize(name string, partitionId int32, tableIndex int32, batch int32) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -32,9 +32,9 @@ func (codec *MapFetchEntriesResponseParameters) calculateSize(name string, parti
 	return dataSize
 }
 
-func (codec *MapFetchEntriesResponseParameters) encodeRequest(name string, partitionId int32, tableIndex int32, batch int32) *ClientMessage {
+func MapFetchEntriesEncodeRequest(name string, partitionId int32, tableIndex int32, batch int32) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, partitionId, tableIndex, batch))
+	clientMessage := NewClientMessage(nil, MapFetchEntriesCalculateSize(name, partitionId, tableIndex, batch))
 	clientMessage.SetMessageType(MAP_FETCHENTRIES)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -45,7 +45,7 @@ func (codec *MapFetchEntriesResponseParameters) encodeRequest(name string, parti
 	return clientMessage
 }
 
-func (codec *MapFetchEntriesResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapFetchEntriesResponseParameters {
+func MapFetchEntriesDecodeResponse(clientMessage *ClientMessage) *MapFetchEntriesResponseParameters {
 	// Decode response from client message
 	parameters := new(MapFetchEntriesResponseParameters)
 	parameters.TableIndex = clientMessage.ReadInt32()

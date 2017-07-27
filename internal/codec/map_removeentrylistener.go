@@ -21,7 +21,7 @@ type MapRemoveEntryListenerResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapRemoveEntryListenerResponseParameters) calculateSize(name string, registrationId string) int {
+func MapRemoveEntryListenerCalculateSize(name string, registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapRemoveEntryListenerResponseParameters) calculateSize(name string
 	return dataSize
 }
 
-func (codec *MapRemoveEntryListenerResponseParameters) encodeRequest(name string, registrationId string) *ClientMessage {
+func MapRemoveEntryListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, registrationId))
+	clientMessage := NewClientMessage(nil, MapRemoveEntryListenerCalculateSize(name, registrationId))
 	clientMessage.SetMessageType(MAP_REMOVEENTRYLISTENER)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapRemoveEntryListenerResponseParameters) encodeRequest(name string
 	return clientMessage
 }
 
-func (codec *MapRemoveEntryListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapRemoveEntryListenerResponseParameters {
+func MapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) *MapRemoveEntryListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapRemoveEntryListenerResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

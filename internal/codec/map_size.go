@@ -21,16 +21,16 @@ type MapSizeResponseParameters struct {
 	Response int32
 }
 
-func (codec *MapSizeResponseParameters) calculateSize(name string) int {
+func MapSizeCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapSizeResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapSizeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapSizeCalculateSize(name))
 	clientMessage.SetMessageType(MAP_SIZE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -38,7 +38,7 @@ func (codec *MapSizeResponseParameters) encodeRequest(name string) *ClientMessag
 	return clientMessage
 }
 
-func (codec *MapSizeResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapSizeResponseParameters {
+func MapSizeDecodeResponse(clientMessage *ClientMessage) *MapSizeResponseParameters {
 	// Decode response from client message
 	parameters := new(MapSizeResponseParameters)
 	parameters.Response = clientMessage.ReadInt32()

@@ -21,7 +21,7 @@ type MapAddEntryListenerToKeyResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddEntryListenerToKeyResponseParameters) calculateSize(name string, key Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerToKeyCalculateSize(name string, key Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -32,9 +32,9 @@ func (codec *MapAddEntryListenerToKeyResponseParameters) calculateSize(name stri
 	return dataSize
 }
 
-func (codec *MapAddEntryListenerToKeyResponseParameters) encodeRequest(name string, key Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerToKeyEncodeRequest(name string, key Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, includeValue, listenerFlags, localOnly))
+	clientMessage := NewClientMessage(nil, MapAddEntryListenerToKeyCalculateSize(name, key, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDENTRYLISTENERTOKEY)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -46,14 +46,14 @@ func (codec *MapAddEntryListenerToKeyResponseParameters) encodeRequest(name stri
 	return clientMessage
 }
 
-func (codec *MapAddEntryListenerToKeyResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerToKeyResponseParameters {
+func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerToKeyResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddEntryListenerToKeyResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-func (codec *MapAddEntryListenerToKeyResponseParameters) handle(clientMessage *ClientMessage, handleEventEntry HandleEntry) {
+func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage, handleEventEntry func(Data, Data, Data, Data, int32, string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

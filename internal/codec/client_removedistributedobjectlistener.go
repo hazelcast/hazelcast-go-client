@@ -21,16 +21,16 @@ type ClientRemoveDistributedObjectListenerResponseParameters struct {
 	Response bool
 }
 
-func (codec *ClientRemoveDistributedObjectListenerResponseParameters) calculateSize(registrationId string) int {
+func ClientRemoveDistributedObjectListenerCalculateSize(registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&registrationId)
 	return dataSize
 }
 
-func (codec *ClientRemoveDistributedObjectListenerResponseParameters) encodeRequest(registrationId string) *ClientMessage {
+func ClientRemoveDistributedObjectListenerEncodeRequest(registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(registrationId))
+	clientMessage := NewClientMessage(nil, ClientRemoveDistributedObjectListenerCalculateSize(registrationId))
 	clientMessage.SetMessageType(CLIENT_REMOVEDISTRIBUTEDOBJECTLISTENER)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(registrationId)
@@ -38,7 +38,7 @@ func (codec *ClientRemoveDistributedObjectListenerResponseParameters) encodeRequ
 	return clientMessage
 }
 
-func (codec *ClientRemoveDistributedObjectListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientRemoveDistributedObjectListenerResponseParameters {
+func ClientRemoveDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) *ClientRemoveDistributedObjectListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientRemoveDistributedObjectListenerResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

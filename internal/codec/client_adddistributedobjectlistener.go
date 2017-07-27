@@ -21,16 +21,16 @@ type ClientAddDistributedObjectListenerResponseParameters struct {
 	Response string
 }
 
-func (codec *ClientAddDistributedObjectListenerResponseParameters) calculateSize(localOnly bool) int {
+func ClientAddDistributedObjectListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func (codec *ClientAddDistributedObjectListenerResponseParameters) encodeRequest(localOnly bool) *ClientMessage {
+func ClientAddDistributedObjectListenerEncodeRequest(localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(localOnly))
+	clientMessage := NewClientMessage(nil, ClientAddDistributedObjectListenerCalculateSize(localOnly))
 	clientMessage.SetMessageType(CLIENT_ADDDISTRIBUTEDOBJECTLISTENER)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendBool(localOnly)
@@ -38,16 +38,14 @@ func (codec *ClientAddDistributedObjectListenerResponseParameters) encodeRequest
 	return clientMessage
 }
 
-func (codec *ClientAddDistributedObjectListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientAddDistributedObjectListenerResponseParameters {
+func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddDistributedObjectListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAddDistributedObjectListenerResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-type HandleDistributedObject func(string, string, string)
-
-func (codec *ClientAddDistributedObjectListenerResponseParameters) handle(clientMessage *ClientMessage, handleEventDistributedObject HandleDistributedObject) {
+func ClientAddDistributedObjectListenerHandle(clientMessage *ClientMessage, handleEventDistributedObject func(string, string, string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_DISTRIBUTEDOBJECT && handleEventDistributedObject != nil {

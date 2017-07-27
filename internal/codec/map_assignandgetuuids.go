@@ -21,22 +21,22 @@ type MapAssignAndGetUuidsResponseParameters struct {
 	PartitionUuidList []Pair
 }
 
-func (codec *MapAssignAndGetUuidsResponseParameters) calculateSize() int {
+func MapAssignAndGetUuidsCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
-func (codec *MapAssignAndGetUuidsResponseParameters) encodeRequest() *ClientMessage {
+func MapAssignAndGetUuidsEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize())
+	clientMessage := NewClientMessage(nil, MapAssignAndGetUuidsCalculateSize())
 	clientMessage.SetMessageType(MAP_ASSIGNANDGETUUIDS)
 	clientMessage.IsRetryable = true
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
-func (codec *MapAssignAndGetUuidsResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAssignAndGetUuidsResponseParameters {
+func MapAssignAndGetUuidsDecodeResponse(clientMessage *ClientMessage) *MapAssignAndGetUuidsResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAssignAndGetUuidsResponseParameters)
 

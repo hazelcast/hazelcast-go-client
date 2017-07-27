@@ -21,7 +21,7 @@ type MapAggregateResponseParameters struct {
 	Response Data
 }
 
-func (codec *MapAggregateResponseParameters) calculateSize(name string, aggregator Data) int {
+func MapAggregateCalculateSize(name string, aggregator Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapAggregateResponseParameters) calculateSize(name string, aggregat
 	return dataSize
 }
 
-func (codec *MapAggregateResponseParameters) encodeRequest(name string, aggregator Data) *ClientMessage {
+func MapAggregateEncodeRequest(name string, aggregator Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, aggregator))
+	clientMessage := NewClientMessage(nil, MapAggregateCalculateSize(name, aggregator))
 	clientMessage.SetMessageType(MAP_AGGREGATE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapAggregateResponseParameters) encodeRequest(name string, aggregat
 	return clientMessage
 }
 
-func (codec *MapAggregateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAggregateResponseParameters {
+func MapAggregateDecodeResponse(clientMessage *ClientMessage) *MapAggregateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAggregateResponseParameters)
 

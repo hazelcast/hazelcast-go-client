@@ -20,16 +20,16 @@ import (
 type ClientStatisticsResponseParameters struct {
 }
 
-func (codec *ClientStatisticsResponseParameters) calculateSize(stats string) int {
+func ClientStatisticsCalculateSize(stats string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&stats)
 	return dataSize
 }
 
-func (codec *ClientStatisticsResponseParameters) encodeRequest(stats string) *ClientMessage {
+func ClientStatisticsEncodeRequest(stats string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(stats))
+	clientMessage := NewClientMessage(nil, ClientStatisticsCalculateSize(stats))
 	clientMessage.SetMessageType(CLIENT_STATISTICS)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(stats)

@@ -21,7 +21,7 @@ type MapEvictResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapEvictResponseParameters) calculateSize(name string, key Data, threadId int64) int {
+func MapEvictCalculateSize(name string, key Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapEvictResponseParameters) calculateSize(name string, key Data, th
 	return dataSize
 }
 
-func (codec *MapEvictResponseParameters) encodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapEvictEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_EVICT)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -42,7 +42,7 @@ func (codec *MapEvictResponseParameters) encodeRequest(name string, key Data, th
 	return clientMessage
 }
 
-func (codec *MapEvictResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapEvictResponseParameters {
+func MapEvictDecodeResponse(clientMessage *ClientMessage) *MapEvictResponseParameters {
 	// Decode response from client message
 	parameters := new(MapEvictResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

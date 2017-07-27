@@ -20,15 +20,15 @@ import (
 type ClientPingResponseParameters struct {
 }
 
-func (codec *ClientPingResponseParameters) calculateSize() int {
+func ClientPingCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
-func (codec *ClientPingResponseParameters) encodeRequest() *ClientMessage {
+func ClientPingEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize())
+	clientMessage := NewClientMessage(nil, ClientPingCalculateSize())
 	clientMessage.SetMessageType(CLIENT_PING)
 	clientMessage.IsRetryable = true
 	clientMessage.UpdateFrameLength()

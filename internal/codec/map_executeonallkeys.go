@@ -21,7 +21,7 @@ type MapExecuteOnAllKeysResponseParameters struct {
 	Response []Pair
 }
 
-func (codec *MapExecuteOnAllKeysResponseParameters) calculateSize(name string, entryProcessor Data) int {
+func MapExecuteOnAllKeysCalculateSize(name string, entryProcessor Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapExecuteOnAllKeysResponseParameters) calculateSize(name string, e
 	return dataSize
 }
 
-func (codec *MapExecuteOnAllKeysResponseParameters) encodeRequest(name string, entryProcessor Data) *ClientMessage {
+func MapExecuteOnAllKeysEncodeRequest(name string, entryProcessor Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, entryProcessor))
+	clientMessage := NewClientMessage(nil, MapExecuteOnAllKeysCalculateSize(name, entryProcessor))
 	clientMessage.SetMessageType(MAP_EXECUTEONALLKEYS)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapExecuteOnAllKeysResponseParameters) encodeRequest(name string, e
 	return clientMessage
 }
 
-func (codec *MapExecuteOnAllKeysResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapExecuteOnAllKeysResponseParameters {
+func MapExecuteOnAllKeysDecodeResponse(clientMessage *ClientMessage) *MapExecuteOnAllKeysResponseParameters {
 	// Decode response from client message
 	parameters := new(MapExecuteOnAllKeysResponseParameters)
 

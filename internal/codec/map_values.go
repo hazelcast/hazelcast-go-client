@@ -21,16 +21,16 @@ type MapValuesResponseParameters struct {
 	Response []Data
 }
 
-func (codec *MapValuesResponseParameters) calculateSize(name string) int {
+func MapValuesCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapValuesResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapValuesEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapValuesCalculateSize(name))
 	clientMessage.SetMessageType(MAP_VALUES)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -38,7 +38,7 @@ func (codec *MapValuesResponseParameters) encodeRequest(name string) *ClientMess
 	return clientMessage
 }
 
-func (codec *MapValuesResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapValuesResponseParameters {
+func MapValuesDecodeResponse(clientMessage *ClientMessage) *MapValuesResponseParameters {
 	// Decode response from client message
 	parameters := new(MapValuesResponseParameters)
 

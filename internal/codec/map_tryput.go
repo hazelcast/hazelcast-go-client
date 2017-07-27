@@ -21,7 +21,7 @@ type MapTryPutResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapTryPutResponseParameters) calculateSize(name string, key Data, value Data, threadId int64, timeout int64) int {
+func MapTryPutCalculateSize(name string, key Data, value Data, threadId int64, timeout int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -32,9 +32,9 @@ func (codec *MapTryPutResponseParameters) calculateSize(name string, key Data, v
 	return dataSize
 }
 
-func (codec *MapTryPutResponseParameters) encodeRequest(name string, key Data, value Data, threadId int64, timeout int64) *ClientMessage {
+func MapTryPutEncodeRequest(name string, key Data, value Data, threadId int64, timeout int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, value, threadId, timeout))
+	clientMessage := NewClientMessage(nil, MapTryPutCalculateSize(name, key, value, threadId, timeout))
 	clientMessage.SetMessageType(MAP_TRYPUT)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -46,7 +46,7 @@ func (codec *MapTryPutResponseParameters) encodeRequest(name string, key Data, v
 	return clientMessage
 }
 
-func (codec *MapTryPutResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapTryPutResponseParameters {
+func MapTryPutDecodeResponse(clientMessage *ClientMessage) *MapTryPutResponseParameters {
 	// Decode response from client message
 	parameters := new(MapTryPutResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

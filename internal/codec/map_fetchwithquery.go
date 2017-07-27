@@ -22,7 +22,7 @@ type MapFetchWithQueryResponseParameters struct {
 	NextTableIndexToReadFrom int32
 }
 
-func (codec *MapFetchWithQueryResponseParameters) calculateSize(name string, tableIndex int32, batch int32, projection Data, predicate Data) int {
+func MapFetchWithQueryCalculateSize(name string, tableIndex int32, batch int32, projection Data, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -33,9 +33,9 @@ func (codec *MapFetchWithQueryResponseParameters) calculateSize(name string, tab
 	return dataSize
 }
 
-func (codec *MapFetchWithQueryResponseParameters) encodeRequest(name string, tableIndex int32, batch int32, projection Data, predicate Data) *ClientMessage {
+func MapFetchWithQueryEncodeRequest(name string, tableIndex int32, batch int32, projection Data, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, tableIndex, batch, projection, predicate))
+	clientMessage := NewClientMessage(nil, MapFetchWithQueryCalculateSize(name, tableIndex, batch, projection, predicate))
 	clientMessage.SetMessageType(MAP_FETCHWITHQUERY)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -47,7 +47,7 @@ func (codec *MapFetchWithQueryResponseParameters) encodeRequest(name string, tab
 	return clientMessage
 }
 
-func (codec *MapFetchWithQueryResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapFetchWithQueryResponseParameters {
+func MapFetchWithQueryDecodeResponse(clientMessage *ClientMessage) *MapFetchWithQueryResponseParameters {
 	// Decode response from client message
 	parameters := new(MapFetchWithQueryResponseParameters)
 

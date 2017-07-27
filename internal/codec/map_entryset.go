@@ -21,16 +21,16 @@ type MapEntrySetResponseParameters struct {
 	Response []Pair
 }
 
-func (codec *MapEntrySetResponseParameters) calculateSize(name string) int {
+func MapEntrySetCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
 	return dataSize
 }
 
-func (codec *MapEntrySetResponseParameters) encodeRequest(name string) *ClientMessage {
+func MapEntrySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name))
+	clientMessage := NewClientMessage(nil, MapEntrySetCalculateSize(name))
 	clientMessage.SetMessageType(MAP_ENTRYSET)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -38,7 +38,7 @@ func (codec *MapEntrySetResponseParameters) encodeRequest(name string) *ClientMe
 	return clientMessage
 }
 
-func (codec *MapEntrySetResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapEntrySetResponseParameters {
+func MapEntrySetDecodeResponse(clientMessage *ClientMessage) *MapEntrySetResponseParameters {
 	// Decode response from client message
 	parameters := new(MapEntrySetResponseParameters)
 

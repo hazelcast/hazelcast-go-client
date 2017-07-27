@@ -21,7 +21,7 @@ type MapSubmitToKeyResponseParameters struct {
 	Response Data
 }
 
-func (codec *MapSubmitToKeyResponseParameters) calculateSize(name string, entryProcessor Data, key Data, threadId int64) int {
+func MapSubmitToKeyCalculateSize(name string, entryProcessor Data, key Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapSubmitToKeyResponseParameters) calculateSize(name string, entryP
 	return dataSize
 }
 
-func (codec *MapSubmitToKeyResponseParameters) encodeRequest(name string, entryProcessor Data, key Data, threadId int64) *ClientMessage {
+func MapSubmitToKeyEncodeRequest(name string, entryProcessor Data, key Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, entryProcessor, key, threadId))
+	clientMessage := NewClientMessage(nil, MapSubmitToKeyCalculateSize(name, entryProcessor, key, threadId))
 	clientMessage.SetMessageType(MAP_SUBMITTOKEY)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -44,7 +44,7 @@ func (codec *MapSubmitToKeyResponseParameters) encodeRequest(name string, entryP
 	return clientMessage
 }
 
-func (codec *MapSubmitToKeyResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapSubmitToKeyResponseParameters {
+func MapSubmitToKeyDecodeResponse(clientMessage *ClientMessage) *MapSubmitToKeyResponseParameters {
 	// Decode response from client message
 	parameters := new(MapSubmitToKeyResponseParameters)
 

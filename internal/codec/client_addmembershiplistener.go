@@ -21,16 +21,16 @@ type ClientAddMembershipListenerResponseParameters struct {
 	Response string
 }
 
-func (codec *ClientAddMembershipListenerResponseParameters) calculateSize(localOnly bool) int {
+func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func (codec *ClientAddMembershipListenerResponseParameters) encodeRequest(localOnly bool) *ClientMessage {
+func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(localOnly))
+	clientMessage := NewClientMessage(nil, ClientAddMembershipListenerCalculateSize(localOnly))
 	clientMessage.SetMessageType(CLIENT_ADDMEMBERSHIPLISTENER)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendBool(localOnly)
@@ -38,18 +38,14 @@ func (codec *ClientAddMembershipListenerResponseParameters) encodeRequest(localO
 	return clientMessage
 }
 
-func (codec *ClientAddMembershipListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientAddMembershipListenerResponseParameters {
+func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddMembershipListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAddMembershipListenerResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-type HandleMember func(Member, int32)
-type HandleMemberList func([]Member)
-type HandleMemberAttributeChange func(string, string, int32, string)
-
-func (codec *ClientAddMembershipListenerResponseParameters) handle(clientMessage *ClientMessage, handleEventMember HandleMember, handleEventMemberList HandleMemberList, handleEventMemberAttributeChange HandleMemberAttributeChange) {
+func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEventMember func(Member, int32), handleEventMemberList func([]Member), handleEventMemberAttributeChange func(string, string, int32, string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_MEMBER && handleEventMember != nil {

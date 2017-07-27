@@ -27,7 +27,7 @@ type ClientAuthenticationCustomResponseParameters struct {
 	ClientUnregisteredMembers []Member
 }
 
-func (codec *ClientAuthenticationCustomResponseParameters) calculateSize(credentials Data, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
+func ClientAuthenticationCustomCalculateSize(credentials Data, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += DataCalculateSize(&credentials)
@@ -46,9 +46,9 @@ func (codec *ClientAuthenticationCustomResponseParameters) calculateSize(credent
 	return dataSize
 }
 
-func (codec *ClientAuthenticationCustomResponseParameters) encodeRequest(credentials Data, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
+func ClientAuthenticationCustomEncodeRequest(credentials Data, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(credentials, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
+	clientMessage := NewClientMessage(nil, ClientAuthenticationCustomCalculateSize(credentials, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
 	clientMessage.SetMessageType(CLIENT_AUTHENTICATIONCUSTOM)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendData(credentials)
@@ -68,7 +68,7 @@ func (codec *ClientAuthenticationCustomResponseParameters) encodeRequest(credent
 	return clientMessage
 }
 
-func (codec *ClientAuthenticationCustomResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientAuthenticationCustomResponseParameters {
+func ClientAuthenticationCustomDecodeResponse(clientMessage *ClientMessage) *ClientAuthenticationCustomResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAuthenticationCustomResponseParameters)
 	parameters.Status = clientMessage.ReadUint8()

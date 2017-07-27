@@ -20,7 +20,7 @@ import (
 type MapRemoveAllResponseParameters struct {
 }
 
-func (codec *MapRemoveAllResponseParameters) calculateSize(name string, predicate Data) int {
+func MapRemoveAllCalculateSize(name string, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -28,9 +28,9 @@ func (codec *MapRemoveAllResponseParameters) calculateSize(name string, predicat
 	return dataSize
 }
 
-func (codec *MapRemoveAllResponseParameters) encodeRequest(name string, predicate Data) *ClientMessage {
+func MapRemoveAllEncodeRequest(name string, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, predicate))
+	clientMessage := NewClientMessage(nil, MapRemoveAllCalculateSize(name, predicate))
 	clientMessage.SetMessageType(MAP_REMOVEALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

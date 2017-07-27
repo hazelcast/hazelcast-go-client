@@ -22,7 +22,7 @@ type MapFetchNearCacheInvalidationMetadataResponseParameters struct {
 	PartitionUuidList         []Pair
 }
 
-func (codec *MapFetchNearCacheInvalidationMetadataResponseParameters) calculateSize(names []string, address Address) int {
+func MapFetchNearCacheInvalidationMetadataCalculateSize(names []string, address Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += INT_SIZE_IN_BYTES
@@ -33,9 +33,9 @@ func (codec *MapFetchNearCacheInvalidationMetadataResponseParameters) calculateS
 	return dataSize
 }
 
-func (codec *MapFetchNearCacheInvalidationMetadataResponseParameters) encodeRequest(names []string, address Address) *ClientMessage {
+func MapFetchNearCacheInvalidationMetadataEncodeRequest(names []string, address Address) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(names, address))
+	clientMessage := NewClientMessage(nil, MapFetchNearCacheInvalidationMetadataCalculateSize(names, address))
 	clientMessage.SetMessageType(MAP_FETCHNEARCACHEINVALIDATIONMETADATA)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendInt(len(names))
@@ -47,7 +47,7 @@ func (codec *MapFetchNearCacheInvalidationMetadataResponseParameters) encodeRequ
 	return clientMessage
 }
 
-func (codec *MapFetchNearCacheInvalidationMetadataResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapFetchNearCacheInvalidationMetadataResponseParameters {
+func MapFetchNearCacheInvalidationMetadataDecodeResponse(clientMessage *ClientMessage) *MapFetchNearCacheInvalidationMetadataResponseParameters {
 	// Decode response from client message
 	parameters := new(MapFetchNearCacheInvalidationMetadataResponseParameters)
 

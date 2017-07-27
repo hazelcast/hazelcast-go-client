@@ -21,7 +21,7 @@ type MapGetResponseParameters struct {
 	Response Data
 }
 
-func (codec *MapGetResponseParameters) calculateSize(name string, key Data, threadId int64) int {
+func MapGetCalculateSize(name string, key Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapGetResponseParameters) calculateSize(name string, key Data, thre
 	return dataSize
 }
 
-func (codec *MapGetResponseParameters) encodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapGetEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MapGetCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_GET)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -42,7 +42,7 @@ func (codec *MapGetResponseParameters) encodeRequest(name string, key Data, thre
 	return clientMessage
 }
 
-func (codec *MapGetResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapGetResponseParameters {
+func MapGetDecodeResponse(clientMessage *ClientMessage) *MapGetResponseParameters {
 	// Decode response from client message
 	parameters := new(MapGetResponseParameters)
 

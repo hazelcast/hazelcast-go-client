@@ -20,7 +20,7 @@ import (
 type MapPutAllResponseParameters struct {
 }
 
-func (codec *MapPutAllResponseParameters) calculateSize(name string, entries []Pair) int {
+func MapPutAllCalculateSize(name string, entries []Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -34,9 +34,9 @@ func (codec *MapPutAllResponseParameters) calculateSize(name string, entries []P
 	return dataSize
 }
 
-func (codec *MapPutAllResponseParameters) encodeRequest(name string, entries []Pair) *ClientMessage {
+func MapPutAllEncodeRequest(name string, entries []Pair) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, entries))
+	clientMessage := NewClientMessage(nil, MapPutAllCalculateSize(name, entries))
 	clientMessage.SetMessageType(MAP_PUTALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

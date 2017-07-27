@@ -21,22 +21,22 @@ type ClientGetPartitionsResponseParameters struct {
 	Partitions []Pair
 }
 
-func (codec *ClientGetPartitionsResponseParameters) calculateSize() int {
+func ClientGetPartitionsCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
-func (codec *ClientGetPartitionsResponseParameters) encodeRequest() *ClientMessage {
+func ClientGetPartitionsEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize())
+	clientMessage := NewClientMessage(nil, ClientGetPartitionsCalculateSize())
 	clientMessage.SetMessageType(CLIENT_GETPARTITIONS)
 	clientMessage.IsRetryable = false
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
-func (codec *ClientGetPartitionsResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientGetPartitionsResponseParameters {
+func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) *ClientGetPartitionsResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientGetPartitionsResponseParameters)
 

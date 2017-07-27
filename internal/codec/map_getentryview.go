@@ -12,43 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 package codec
+
 import (
 	. "github.com/hazelcast/go-client"
 )
+
 type MapGetEntryViewResponseParameters struct {
 	Response EntryView
 }
 
-func (codec *MapGetEntryViewResponseParameters)calculateSize(name string  , key Data  , threadId int64  ) int {
-    // Calculates the request payload size
-    dataSize := 0
-    dataSize += StringCalculateSize(&name)
-    dataSize += DataCalculateSize(&key)
-    dataSize += INT64_SIZE_IN_BYTES
-    return dataSize
+func MapGetEntryViewCalculateSize(name string, key Data, threadId int64) int {
+	// Calculates the request payload size
+	dataSize := 0
+	dataSize += StringCalculateSize(&name)
+	dataSize += DataCalculateSize(&key)
+	dataSize += INT64_SIZE_IN_BYTES
+	return dataSize
 }
 
-func (codec *MapGetEntryViewResponseParameters)encodeRequest(name string , key Data , threadId int64 ) *ClientMessage {
-    // Encode request into clientMessage
-    clientMessage := NewClientMessage(nil,codec.calculateSize(name, key, threadId))
-    clientMessage.SetMessageType(MAP_GETENTRYVIEW)
-    clientMessage.IsRetryable =true
-    clientMessage.AppendString(name)
-    clientMessage.AppendData(key)
-    clientMessage.AppendInt64(threadId)
-    clientMessage.UpdateFrameLength()
-    return clientMessage
+func MapGetEntryViewEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
+	// Encode request into clientMessage
+	clientMessage := NewClientMessage(nil, MapGetEntryViewCalculateSize(name, key, threadId))
+	clientMessage.SetMessageType(MAP_GETENTRYVIEW)
+	clientMessage.IsRetryable = true
+	clientMessage.AppendString(name)
+	clientMessage.AppendData(key)
+	clientMessage.AppendInt64(threadId)
+	clientMessage.UpdateFrameLength()
+	return clientMessage
 }
 
-func (codec *MapGetEntryViewResponseParameters)decodeResponse(clientMessage *ClientMessage) *MapGetEntryViewResponseParameters {
-    // Decode response from client message
-    parameters := new(MapGetEntryViewResponseParameters)
+func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) *MapGetEntryViewResponseParameters {
+	// Decode response from client message
+	parameters := new(MapGetEntryViewResponseParameters)
 
-    if !clientMessage.ReadBool(){
-        parameters.Response= *EntryViewCodecDecode(clientMessage)
-    }
-    return parameters
+	if !clientMessage.ReadBool() {
+		parameters.Response = *EntryViewCodecDecode(clientMessage)
+	}
+	return parameters
 }
-
-
-

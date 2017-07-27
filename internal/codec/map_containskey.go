@@ -21,7 +21,7 @@ type MapContainsKeyResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapContainsKeyResponseParameters) calculateSize(name string, key Data, threadId int64) int {
+func MapContainsKeyCalculateSize(name string, key Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapContainsKeyResponseParameters) calculateSize(name string, key Da
 	return dataSize
 }
 
-func (codec *MapContainsKeyResponseParameters) encodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapContainsKeyEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MapContainsKeyCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_CONTAINSKEY)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -42,7 +42,7 @@ func (codec *MapContainsKeyResponseParameters) encodeRequest(name string, key Da
 	return clientMessage
 }
 
-func (codec *MapContainsKeyResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapContainsKeyResponseParameters {
+func MapContainsKeyDecodeResponse(clientMessage *ClientMessage) *MapContainsKeyResponseParameters {
 	// Decode response from client message
 	parameters := new(MapContainsKeyResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

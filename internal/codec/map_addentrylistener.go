@@ -21,7 +21,7 @@ type MapAddEntryListenerResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddEntryListenerResponseParameters) calculateSize(name string, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerCalculateSize(name string, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapAddEntryListenerResponseParameters) calculateSize(name string, i
 	return dataSize
 }
 
-func (codec *MapAddEntryListenerResponseParameters) encodeRequest(name string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, includeValue, listenerFlags, localOnly))
+	clientMessage := NewClientMessage(nil, MapAddEntryListenerCalculateSize(name, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDENTRYLISTENER)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -44,14 +44,14 @@ func (codec *MapAddEntryListenerResponseParameters) encodeRequest(name string, i
 	return clientMessage
 }
 
-func (codec *MapAddEntryListenerResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerResponseParameters {
+func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddEntryListenerResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-func (codec *MapAddEntryListenerResponseParameters) handle(clientMessage *ClientMessage, handleEventEntry HandleEntry) {
+func MapAddEntryListenerHandle(clientMessage *ClientMessage, handleEventEntry func(Data, Data, Data, Data, int32, string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

@@ -21,7 +21,7 @@ type MapAddInterceptorResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddInterceptorResponseParameters) calculateSize(name string, interceptor Data) int {
+func MapAddInterceptorCalculateSize(name string, interceptor Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapAddInterceptorResponseParameters) calculateSize(name string, int
 	return dataSize
 }
 
-func (codec *MapAddInterceptorResponseParameters) encodeRequest(name string, interceptor Data) *ClientMessage {
+func MapAddInterceptorEncodeRequest(name string, interceptor Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, interceptor))
+	clientMessage := NewClientMessage(nil, MapAddInterceptorCalculateSize(name, interceptor))
 	clientMessage.SetMessageType(MAP_ADDINTERCEPTOR)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapAddInterceptorResponseParameters) encodeRequest(name string, int
 	return clientMessage
 }
 
-func (codec *MapAddInterceptorResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddInterceptorResponseParameters {
+func MapAddInterceptorDecodeResponse(clientMessage *ClientMessage) *MapAddInterceptorResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddInterceptorResponseParameters)
 	parameters.Response = *clientMessage.ReadString()

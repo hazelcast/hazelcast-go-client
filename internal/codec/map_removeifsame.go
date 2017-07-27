@@ -21,7 +21,7 @@ type MapRemoveIfSameResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapRemoveIfSameResponseParameters) calculateSize(name string, key Data, value Data, threadId int64) int {
+func MapRemoveIfSameCalculateSize(name string, key Data, value Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapRemoveIfSameResponseParameters) calculateSize(name string, key D
 	return dataSize
 }
 
-func (codec *MapRemoveIfSameResponseParameters) encodeRequest(name string, key Data, value Data, threadId int64) *ClientMessage {
+func MapRemoveIfSameEncodeRequest(name string, key Data, value Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, value, threadId))
+	clientMessage := NewClientMessage(nil, MapRemoveIfSameCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(MAP_REMOVEIFSAME)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -44,7 +44,7 @@ func (codec *MapRemoveIfSameResponseParameters) encodeRequest(name string, key D
 	return clientMessage
 }
 
-func (codec *MapRemoveIfSameResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapRemoveIfSameResponseParameters {
+func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) *MapRemoveIfSameResponseParameters {
 	// Decode response from client message
 	parameters := new(MapRemoveIfSameResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

@@ -20,7 +20,7 @@ import (
 type MapLockResponseParameters struct {
 }
 
-func (codec *MapLockResponseParameters) calculateSize(name string, key Data, threadId int64, ttl int64, referenceId int64) int {
+func MapLockCalculateSize(name string, key Data, threadId int64, ttl int64, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapLockResponseParameters) calculateSize(name string, key Data, thr
 	return dataSize
 }
 
-func (codec *MapLockResponseParameters) encodeRequest(name string, key Data, threadId int64, ttl int64, referenceId int64) *ClientMessage {
+func MapLockEncodeRequest(name string, key Data, threadId int64, ttl int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId, ttl, referenceId))
+	clientMessage := NewClientMessage(nil, MapLockCalculateSize(name, key, threadId, ttl, referenceId))
 	clientMessage.SetMessageType(MAP_LOCK)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)

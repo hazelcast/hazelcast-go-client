@@ -20,7 +20,7 @@ import (
 type MapUnlockResponseParameters struct {
 }
 
-func (codec *MapUnlockResponseParameters) calculateSize(name string, key Data, threadId int64, referenceId int64) int {
+func MapUnlockCalculateSize(name string, key Data, threadId int64, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -30,9 +30,9 @@ func (codec *MapUnlockResponseParameters) calculateSize(name string, key Data, t
 	return dataSize
 }
 
-func (codec *MapUnlockResponseParameters) encodeRequest(name string, key Data, threadId int64, referenceId int64) *ClientMessage {
+func MapUnlockEncodeRequest(name string, key Data, threadId int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId, referenceId))
+	clientMessage := NewClientMessage(nil, MapUnlockCalculateSize(name, key, threadId, referenceId))
 	clientMessage.SetMessageType(MAP_UNLOCK)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)

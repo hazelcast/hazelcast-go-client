@@ -20,7 +20,7 @@ import (
 type MapDeleteResponseParameters struct {
 }
 
-func (codec *MapDeleteResponseParameters) calculateSize(name string, key Data, threadId int64) int {
+func MapDeleteCalculateSize(name string, key Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapDeleteResponseParameters) calculateSize(name string, key Data, t
 	return dataSize
 }
 
-func (codec *MapDeleteResponseParameters) encodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapDeleteEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MapDeleteCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_DELETE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

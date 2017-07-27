@@ -27,7 +27,7 @@ type ClientAuthenticationResponseParameters struct {
 	ClientUnregisteredMembers []Member
 }
 
-func (codec *ClientAuthenticationResponseParameters) calculateSize(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
+func ClientAuthenticationCalculateSize(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&username)
@@ -47,9 +47,9 @@ func (codec *ClientAuthenticationResponseParameters) calculateSize(username stri
 	return dataSize
 }
 
-func (codec *ClientAuthenticationResponseParameters) encodeRequest(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
+func ClientAuthenticationEncodeRequest(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
+	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
 	clientMessage.SetMessageType(CLIENT_AUTHENTICATION)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(username)
@@ -70,7 +70,7 @@ func (codec *ClientAuthenticationResponseParameters) encodeRequest(username stri
 	return clientMessage
 }
 
-func (codec *ClientAuthenticationResponseParameters) decodeResponse(clientMessage *ClientMessage) *ClientAuthenticationResponseParameters {
+func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) *ClientAuthenticationResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAuthenticationResponseParameters)
 	parameters.Status = clientMessage.ReadUint8()

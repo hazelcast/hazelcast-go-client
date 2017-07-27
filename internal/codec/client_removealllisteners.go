@@ -20,15 +20,15 @@ import (
 type ClientRemoveAllListenersResponseParameters struct {
 }
 
-func (codec *ClientRemoveAllListenersResponseParameters) calculateSize() int {
+func ClientRemoveAllListenersCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
-func (codec *ClientRemoveAllListenersResponseParameters) encodeRequest() *ClientMessage {
+func ClientRemoveAllListenersEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize())
+	clientMessage := NewClientMessage(nil, ClientRemoveAllListenersCalculateSize())
 	clientMessage.SetMessageType(CLIENT_REMOVEALLLISTENERS)
 	clientMessage.IsRetryable = false
 	clientMessage.UpdateFrameLength()

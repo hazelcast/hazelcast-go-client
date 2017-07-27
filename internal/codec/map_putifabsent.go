@@ -21,7 +21,7 @@ type MapPutIfAbsentResponseParameters struct {
 	Response Data
 }
 
-func (codec *MapPutIfAbsentResponseParameters) calculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
+func MapPutIfAbsentCalculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -32,9 +32,9 @@ func (codec *MapPutIfAbsentResponseParameters) calculateSize(name string, key Da
 	return dataSize
 }
 
-func (codec *MapPutIfAbsentResponseParameters) encodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutIfAbsentEncodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, value, threadId, ttl))
+	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadId, ttl))
 	clientMessage.SetMessageType(MAP_PUTIFABSENT)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -46,7 +46,7 @@ func (codec *MapPutIfAbsentResponseParameters) encodeRequest(name string, key Da
 	return clientMessage
 }
 
-func (codec *MapPutIfAbsentResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapPutIfAbsentResponseParameters {
+func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) *MapPutIfAbsentResponseParameters {
 	// Decode response from client message
 	parameters := new(MapPutIfAbsentResponseParameters)
 

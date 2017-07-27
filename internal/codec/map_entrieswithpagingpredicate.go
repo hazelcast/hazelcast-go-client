@@ -21,7 +21,7 @@ type MapEntriesWithPagingPredicateResponseParameters struct {
 	Response []Pair
 }
 
-func (codec *MapEntriesWithPagingPredicateResponseParameters) calculateSize(name string, predicate Data) int {
+func MapEntriesWithPagingPredicateCalculateSize(name string, predicate Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapEntriesWithPagingPredicateResponseParameters) calculateSize(name
 	return dataSize
 }
 
-func (codec *MapEntriesWithPagingPredicateResponseParameters) encodeRequest(name string, predicate Data) *ClientMessage {
+func MapEntriesWithPagingPredicateEncodeRequest(name string, predicate Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, predicate))
+	clientMessage := NewClientMessage(nil, MapEntriesWithPagingPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(MAP_ENTRIESWITHPAGINGPREDICATE)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapEntriesWithPagingPredicateResponseParameters) encodeRequest(name
 	return clientMessage
 }
 
-func (codec *MapEntriesWithPagingPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapEntriesWithPagingPredicateResponseParameters {
+func MapEntriesWithPagingPredicateDecodeResponse(clientMessage *ClientMessage) *MapEntriesWithPagingPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapEntriesWithPagingPredicateResponseParameters)
 

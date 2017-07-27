@@ -20,7 +20,7 @@ import (
 type ClientDestroyProxyResponseParameters struct {
 }
 
-func (codec *ClientDestroyProxyResponseParameters) calculateSize(name string, serviceName string) int {
+func ClientDestroyProxyCalculateSize(name string, serviceName string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -28,9 +28,9 @@ func (codec *ClientDestroyProxyResponseParameters) calculateSize(name string, se
 	return dataSize
 }
 
-func (codec *ClientDestroyProxyResponseParameters) encodeRequest(name string, serviceName string) *ClientMessage {
+func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, serviceName))
+	clientMessage := NewClientMessage(nil, ClientDestroyProxyCalculateSize(name, serviceName))
 	clientMessage.SetMessageType(CLIENT_DESTROYPROXY)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)

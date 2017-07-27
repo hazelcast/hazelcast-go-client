@@ -23,7 +23,7 @@ type MapEventJournalReadResponseParameters struct {
 	ItemSeqs  []int64
 }
 
-func (codec *MapEventJournalReadResponseParameters) calculateSize(name string, startSequence int64, minSize int32, maxSize int32, predicate *Data, projection *Data) int {
+func MapEventJournalReadCalculateSize(name string, startSequence int64, minSize int32, maxSize int32, predicate *Data, projection *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -41,9 +41,9 @@ func (codec *MapEventJournalReadResponseParameters) calculateSize(name string, s
 	return dataSize
 }
 
-func (codec *MapEventJournalReadResponseParameters) encodeRequest(name string, startSequence int64, minSize int32, maxSize int32, predicate *Data, projection *Data) *ClientMessage {
+func MapEventJournalReadEncodeRequest(name string, startSequence int64, minSize int32, maxSize int32, predicate *Data, projection *Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, startSequence, minSize, maxSize, predicate, projection))
+	clientMessage := NewClientMessage(nil, MapEventJournalReadCalculateSize(name, startSequence, minSize, maxSize, predicate, projection))
 	clientMessage.SetMessageType(MAP_EVENTJOURNALREAD)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -62,7 +62,7 @@ func (codec *MapEventJournalReadResponseParameters) encodeRequest(name string, s
 	return clientMessage
 }
 
-func (codec *MapEventJournalReadResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapEventJournalReadResponseParameters {
+func MapEventJournalReadDecodeResponse(clientMessage *ClientMessage) *MapEventJournalReadResponseParameters {
 	// Decode response from client message
 	parameters := new(MapEventJournalReadResponseParameters)
 	parameters.ReadCount = clientMessage.ReadInt32()

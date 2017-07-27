@@ -21,7 +21,7 @@ type MapReplaceResponseParameters struct {
 	Response Data
 }
 
-func (codec *MapReplaceResponseParameters) calculateSize(name string, key Data, value Data, threadId int64) int {
+func MapReplaceCalculateSize(name string, key Data, value Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -31,9 +31,9 @@ func (codec *MapReplaceResponseParameters) calculateSize(name string, key Data, 
 	return dataSize
 }
 
-func (codec *MapReplaceResponseParameters) encodeRequest(name string, key Data, value Data, threadId int64) *ClientMessage {
+func MapReplaceEncodeRequest(name string, key Data, value Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, value, threadId))
+	clientMessage := NewClientMessage(nil, MapReplaceCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(MAP_REPLACE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -44,7 +44,7 @@ func (codec *MapReplaceResponseParameters) encodeRequest(name string, key Data, 
 	return clientMessage
 }
 
-func (codec *MapReplaceResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapReplaceResponseParameters {
+func MapReplaceDecodeResponse(clientMessage *ClientMessage) *MapReplaceResponseParameters {
 	// Decode response from client message
 	parameters := new(MapReplaceResponseParameters)
 

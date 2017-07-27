@@ -21,7 +21,7 @@ type MapAddEntryListenerToKeyWithPredicateResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddEntryListenerToKeyWithPredicateResponseParameters) calculateSize(name string, key Data, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerToKeyWithPredicateCalculateSize(name string, key Data, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -33,9 +33,9 @@ func (codec *MapAddEntryListenerToKeyWithPredicateResponseParameters) calculateS
 	return dataSize
 }
 
-func (codec *MapAddEntryListenerToKeyWithPredicateResponseParameters) encodeRequest(name string, key Data, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerToKeyWithPredicateEncodeRequest(name string, key Data, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key, predicate, includeValue, listenerFlags, localOnly))
+	clientMessage := NewClientMessage(nil, MapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDENTRYLISTENERTOKEYWITHPREDICATE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -48,14 +48,14 @@ func (codec *MapAddEntryListenerToKeyWithPredicateResponseParameters) encodeRequ
 	return clientMessage
 }
 
-func (codec *MapAddEntryListenerToKeyWithPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerToKeyWithPredicateResponseParameters {
+func MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerToKeyWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddEntryListenerToKeyWithPredicateResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-func (codec *MapAddEntryListenerToKeyWithPredicateResponseParameters) handle(clientMessage *ClientMessage, handleEventEntry HandleEntry) {
+func MapAddEntryListenerToKeyWithPredicateHandle(clientMessage *ClientMessage, handleEventEntry func(Data, Data, Data, Data, int32, string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

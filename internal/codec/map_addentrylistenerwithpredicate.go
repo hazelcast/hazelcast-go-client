@@ -21,7 +21,7 @@ type MapAddEntryListenerWithPredicateResponseParameters struct {
 	Response string
 }
 
-func (codec *MapAddEntryListenerWithPredicateResponseParameters) calculateSize(name string, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerWithPredicateCalculateSize(name string, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -32,9 +32,9 @@ func (codec *MapAddEntryListenerWithPredicateResponseParameters) calculateSize(n
 	return dataSize
 }
 
-func (codec *MapAddEntryListenerWithPredicateResponseParameters) encodeRequest(name string, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerWithPredicateEncodeRequest(name string, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, predicate, includeValue, listenerFlags, localOnly))
+	clientMessage := NewClientMessage(nil, MapAddEntryListenerWithPredicateCalculateSize(name, predicate, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDENTRYLISTENERWITHPREDICATE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -46,16 +46,14 @@ func (codec *MapAddEntryListenerWithPredicateResponseParameters) encodeRequest(n
 	return clientMessage
 }
 
-func (codec *MapAddEntryListenerWithPredicateResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerWithPredicateResponseParameters {
+func MapAddEntryListenerWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddEntryListenerWithPredicateResponseParameters)
 	parameters.Response = *clientMessage.ReadString()
 	return parameters
 }
 
-type HandleEntry func(Data, Data, Data, Data, int32, string, int32)
-
-func (codec *MapAddEntryListenerWithPredicateResponseParameters) handle(clientMessage *ClientMessage, handleEventEntry HandleEntry) {
+func MapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessage, handleEventEntry func(Data, Data, Data, Data, int32, string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

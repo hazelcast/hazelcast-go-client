@@ -21,7 +21,7 @@ type MapIsLockedResponseParameters struct {
 	Response bool
 }
 
-func (codec *MapIsLockedResponseParameters) calculateSize(name string, key Data) int {
+func MapIsLockedCalculateSize(name string, key Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *MapIsLockedResponseParameters) calculateSize(name string, key Data)
 	return dataSize
 }
 
-func (codec *MapIsLockedResponseParameters) encodeRequest(name string, key Data) *ClientMessage {
+func MapIsLockedEncodeRequest(name string, key Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, key))
+	clientMessage := NewClientMessage(nil, MapIsLockedCalculateSize(name, key))
 	clientMessage.SetMessageType(MAP_ISLOCKED)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -40,7 +40,7 @@ func (codec *MapIsLockedResponseParameters) encodeRequest(name string, key Data)
 	return clientMessage
 }
 
-func (codec *MapIsLockedResponseParameters) decodeResponse(clientMessage *ClientMessage) *MapIsLockedResponseParameters {
+func MapIsLockedDecodeResponse(clientMessage *ClientMessage) *MapIsLockedResponseParameters {
 	// Decode response from client message
 	parameters := new(MapIsLockedResponseParameters)
 	parameters.Response = clientMessage.ReadBool()

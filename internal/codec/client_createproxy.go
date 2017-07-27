@@ -20,7 +20,7 @@ import (
 type ClientCreateProxyResponseParameters struct {
 }
 
-func (codec *ClientCreateProxyResponseParameters) calculateSize(name string, serviceName string, target Address) int {
+func ClientCreateProxyCalculateSize(name string, serviceName string, target Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&name)
@@ -29,9 +29,9 @@ func (codec *ClientCreateProxyResponseParameters) calculateSize(name string, ser
 	return dataSize
 }
 
-func (codec *ClientCreateProxyResponseParameters) encodeRequest(name string, serviceName string, target Address) *ClientMessage {
+func ClientCreateProxyEncodeRequest(name string, serviceName string, target Address) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, codec.calculateSize(name, serviceName, target))
+	clientMessage := NewClientMessage(nil, ClientCreateProxyCalculateSize(name, serviceName, target))
 	clientMessage.SetMessageType(CLIENT_CREATEPROXY)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
