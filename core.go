@@ -9,6 +9,10 @@ type Address struct {
 	Host string
 	Port int
 }
+type UUID struct {
+	Msb int64
+	Lsb int64
+}
 type Member struct {
 	Address      Address
 	Uuid         string

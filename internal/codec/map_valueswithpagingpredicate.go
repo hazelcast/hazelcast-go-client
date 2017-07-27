@@ -50,8 +50,8 @@ func (codec *MapValuesWithPagingPredicateResponseParameters) decodeResponse(clie
 		var responseItem Pair
 		responseItemKey := clientMessage.ReadData()
 		responseItemVal := clientMessage.ReadData()
-		responseItem.key = responseItemKey
-		responseItem.value = responseItemVal
+		responseItem.Key = responseItemKey
+		responseItem.Value = responseItemVal
 		response = append(response, responseItem)
 	}
 	parameters.Response = response

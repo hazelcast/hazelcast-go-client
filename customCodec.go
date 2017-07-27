@@ -13,7 +13,6 @@ func AddressCodecDecode(msg *ClientMessage) *Address {
 	return &Address{*host, int(port)}
 }
 
-
 /*
 DistributedObjectInfo Codec
 */
@@ -110,3 +109,11 @@ func (ev *EntryView) CalculateSize() int {
 	return dataSize
 }
 
+func UUIDCodecEncode(msg *ClientMessage, uuid UUID) {
+	msg.AppendInt64(uuid.Msb)
+	msg.AppendInt64(uuid.Lsb)
+}
+
+func UUIDCodecDecode(msg *ClientMessage) *UUID {
+	return &UUID{msg.ReadInt64(), msg.ReadInt64()}
+}

@@ -26,8 +26,8 @@ func (codec *MapPutAllResponseParameters) calculateSize(name string, entries []P
 	dataSize += StringCalculateSize(&name)
 	dataSize += INT_SIZE_IN_BYTES
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(Data)
-		val := entriesItem.value.(Data)
+		key := entriesItem.Key.(Data)
+		val := entriesItem.Value.(Data)
 		dataSize += DataCalculateSize(&key)
 		dataSize += DataCalculateSize(&val)
 	}
@@ -42,8 +42,8 @@ func (codec *MapPutAllResponseParameters) encodeRequest(name string, entries []P
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt(len(entries))
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(Data)
-		val := entriesItem.value.(Data)
+		key := entriesItem.Key.(Data)
+		val := entriesItem.Value.(Data)
 		clientMessage.AppendData(key)
 		clientMessage.AppendData(val)
 	}
