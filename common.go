@@ -1,14 +1,16 @@
 package hazelcast
 
 const (
-	BYTE_SIZE_IN_BYTES    = 1
-	BOOLEAN_SIZE_IN_BYTES = 1
-	SHORT_SIZE_IN_BYTES   = 2
-	CHAR_SIZE_IN_BYTES    = 2
-	INT_SIZE_IN_BYTES     = 4
-	FLOAT_SIZE_IN_BYTES   = 4
-	INT64_SIZE_IN_BYTES   = 8
-	DOUBLE_SIZE_IN_BYTES  = 8
+	BYTE_SIZE_IN_BYTES   = 1
+	BOOL_SIZE_IN_BYTES   = 1
+	UINT8_SIZE_IN_BYTES  = 1
+	SHORT_SIZE_IN_BYTES  = 2
+	CHAR_SIZE_IN_BYTES   = 2
+	INT_SIZE_IN_BYTES    = 4
+	INT32_SIZE_IN_BYTES  = 4
+	FLOAT_SIZE_IN_BYTES  = 4
+	INT64_SIZE_IN_BYTES  = 8
+	DOUBLE_SIZE_IN_BYTES = 8
 
 	VERSION        = 0
 	BEGIN_FLAG     = 0x80
@@ -27,6 +29,17 @@ const (
 	PARTITION_ID_FIELD_OFFSET   = CORRELATION_ID_FIELD_OFFSET + INT64_SIZE_IN_BYTES
 	DATA_OFFSET_FIELD_OFFSET    = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES
 	HEADER_SIZE                 = DATA_OFFSET_FIELD_OFFSET + SHORT_SIZE_IN_BYTES
-
-
 )
+
+func DataCalculateSize(d *Data) int {
+	return len(d.buffer) + INT_SIZE_IN_BYTES
+}
+func StringCalculateSize(str *string) int {
+	return len(*str) + INT_SIZE_IN_BYTES
+}
+func AddressCalculateSize(a *Address) int {
+	dataSize := 0
+	dataSize += StringCalculateSize(&a.Host)
+	dataSize += INT_SIZE_IN_BYTES
+	return dataSize
+}
