@@ -79,7 +79,7 @@ func MapFetchNearCacheInvalidationMetadataDecodeResponse(clientMessage *ClientMe
 	for partitionUuidListIndex := 0; partitionUuidListIndex < int(partitionUuidListSize); partitionUuidListIndex++ {
 		var partitionUuidListItem Pair
 		partitionUuidListItemKey := clientMessage.ReadInt32()
-		partitionUuidListItemVal := *UUIDCodecDecode(clientMessage)
+		partitionUuidListItemVal := *UuidCodecDecode(clientMessage)
 		partitionUuidListItem.Key = partitionUuidListItemKey
 		partitionUuidListItem.Value = partitionUuidListItemVal
 		partitionUuidList = append(partitionUuidList, partitionUuidListItem)

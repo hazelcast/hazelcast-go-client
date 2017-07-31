@@ -9,7 +9,7 @@ type Address struct {
 	Host string
 	Port int
 }
-type UUID struct {
+type Uuid struct {
 	Msb int64
 	Lsb int64
 }

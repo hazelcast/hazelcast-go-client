@@ -49,7 +49,7 @@ func MapAddNearCacheInvalidationListenerDecodeResponse(clientMessage *ClientMess
 	return parameters
 }
 
-func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, handleEventIMapInvalidation func(Data, string, UUID, int64), handleEventIMapBatchInvalidation func([]Data, []string, []UUID, []int64)) {
+func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, handleEventIMapInvalidation func(Data, string, Uuid, int64), handleEventIMapBatchInvalidation func([]Data, []string, []Uuid, []int64)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_IMAPINVALIDATION && handleEventIMapInvalidation != nil {
@@ -58,7 +58,7 @@ func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, han
 			key = clientMessage.ReadData()
 		}
 		sourceUuid := *clientMessage.ReadString()
-		partitionUuid := *UUIDCodecDecode(clientMessage)
+		partitionUuid := *UuidCodecDecode(clientMessage)
 		sequence := clientMessage.ReadInt64()
 		handleEventIMapInvalidation(key, sourceUuid, partitionUuid, sequence)
 	}
@@ -80,9 +80,9 @@ func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, han
 		}
 
 		partitionUuidsSize := clientMessage.ReadInt32()
-		partitionUuids := make([]UUID, partitionUuidsSize)
+		partitionUuids := make([]Uuid, partitionUuidsSize)
 		for partitionUuidsIndex := 0; partitionUuidsIndex < int(partitionUuidsSize); partitionUuidsIndex++ {
-			partitionUuidsItem := *UUIDCodecDecode(clientMessage)
+			partitionUuidsItem := *UuidCodecDecode(clientMessage)
 			partitionUuids = append(partitionUuids, partitionUuidsItem)
 		}
 

@@ -20,7 +20,7 @@ func TestDistributedObjectInfoCodecEncodeDecode(t *testing.T) {
 	name := "test-name"
 	serviceName := "test-serviceName"
 	distributedObjectInfo := DistributedObjectInfo{name, serviceName}
-	msg := NewClientMessage(nil, distributedObjectInfo.CalculateSize())
+	msg := NewClientMessage(nil, DistributedObjectInfoCalculateSize(&distributedObjectInfo))
 	DistributedObjectInfoCodecEncode(msg, &distributedObjectInfo)
 	//Skip the header.
 	for i := 0; i < len(READ_HEADER); i++ {
@@ -38,7 +38,7 @@ func TestMemberCodecEncodeDecode(t *testing.T) {
 	attributes["key1"] = "value1"
 	attributes["key2"] = "value2"
 	member := Member{address, uuid, isLiteMember, attributes}
-	msg := NewClientMessage(nil, member.CalculateSize())
+	msg := NewClientMessage(nil, MemberCalculateSize(&member))
 	MemberCodecEncode(msg, &member)
 	//Skip the header.
 	for i := 0; i < len(READ_HEADER); i++ {
@@ -64,7 +64,7 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 	entryView.Version = 1
 	entryView.EvictionCriteriaNumber = 122
 	entryView.Ttl = 14555
-	msg := NewClientMessage(nil, entryView.CalculateSize())
+	msg := NewClientMessage(nil, EntryViewCalculateSize(&entryView))
 	EntryViewCodecEncode(msg, &entryView)
 	//Skip the header.
 	for i := 0; i < len(READ_HEADER); i++ {

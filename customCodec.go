@@ -25,7 +25,7 @@ func DistributedObjectInfoCodecDecode(msg *ClientMessage) *DistributedObjectInfo
 	name := msg.ReadString()
 	return &DistributedObjectInfo{*name, *serviceName}
 }
-func (obj *DistributedObjectInfo) CalculateSize() int {
+func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
 	dataSize := 0
 	dataSize += StringCalculateSize(&obj.Name)
 	dataSize += StringCalculateSize(&obj.ServiceName)
@@ -58,7 +58,7 @@ func MemberCodecDecode(msg *ClientMessage) *Member {
 	}
 	return &Member{*address, *uuid, liteMember, attributes}
 }
-func (member *Member) CalculateSize() int {
+func MemberCalculateSize(member *Member) int {
 	dataSize := 0
 	dataSize += AddressCalculateSize(&member.Address)
 	dataSize += StringCalculateSize(&member.Uuid)
@@ -101,7 +101,7 @@ func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
 	entryView.Ttl = msg.ReadInt64()
 	return &entryView
 }
-func (ev *EntryView) CalculateSize() int {
+func EntryViewCalculateSize(ev *EntryView) int {
 	dataSize := 0
 	dataSize += ev.Key.CalculateSize()
 	dataSize += ev.Value.CalculateSize()
@@ -109,11 +109,11 @@ func (ev *EntryView) CalculateSize() int {
 	return dataSize
 }
 
-func UUIDCodecEncode(msg *ClientMessage, uuid UUID) {
+func UuidCodecEncode(msg *ClientMessage, uuid Uuid) {
 	msg.AppendInt64(uuid.Msb)
 	msg.AppendInt64(uuid.Lsb)
 }
 
-func UUIDCodecDecode(msg *ClientMessage) *UUID {
-	return &UUID{msg.ReadInt64(), msg.ReadInt64()}
+func UuidCodecDecode(msg *ClientMessage) *Uuid {
+	return &Uuid{msg.ReadInt64(), msg.ReadInt64()}
 }
