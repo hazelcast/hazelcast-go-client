@@ -75,3 +75,72 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 	}
 
 }
+
+/*
+	Helper functions
+*/
+/*
+	EntryView helper functions
+*/
+func EntryViewCodecEncode(msg *ClientMessage, entryView *EntryView) {
+	msg.AppendData(entryView.Key)
+	msg.AppendData(entryView.Value)
+	msg.AppendInt64(entryView.Cost)
+	//msg.AppendInt64(entryView.Cost)
+	msg.AppendInt64(entryView.CreationTime)
+	msg.AppendInt64(entryView.ExpirationTime)
+	msg.AppendInt64(entryView.Hits)
+	msg.AppendInt64(entryView.LastAccessTime)
+	msg.AppendInt64(entryView.LastStoredTime)
+	msg.AppendInt64(entryView.LastUpdateTime)
+	msg.AppendInt64(entryView.Version)
+	msg.AppendInt64(entryView.EvictionCriteriaNumber)
+	msg.AppendInt64(entryView.Ttl)
+}
+func EntryViewCalculateSize(ev *EntryView) int {
+	dataSize := 0
+	dataSize += ev.Key.CalculateSize()
+	dataSize += ev.Value.CalculateSize()
+	dataSize += 10 * INT64_SIZE_IN_BYTES
+	return dataSize
+}
+
+/*
+	Member helper functions
+*/
+func MemberCodecEncode(msg *ClientMessage, member *Member) {
+	AddressCodecEncode(msg, &member.Address)
+	msg.AppendString(member.Uuid)
+	msg.AppendBool(member.IsLiteMember)
+	msg.AppendInt(len(member.Attributes))
+	for key, value := range member.Attributes {
+		msg.AppendString(key)
+		msg.AppendString(value)
+	}
+}
+func MemberCalculateSize(member *Member) int {
+	dataSize := 0
+	dataSize += AddressCalculateSize(&member.Address)
+	dataSize += StringCalculateSize(&member.Uuid)
+	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += INT_SIZE_IN_BYTES //Size of the map(attributes)
+	for key, value := range member.Attributes {
+		dataSize += StringCalculateSize(&key)
+		dataSize += StringCalculateSize(&value)
+	}
+	return dataSize
+}
+
+/*
+	DistributedObjectInfo Helper functions
+*/
+func DistributedObjectInfoCodecEncode(msg *ClientMessage, obj *DistributedObjectInfo) {
+	msg.AppendString(obj.ServiceName)
+	msg.AppendString(obj.Name)
+}
+func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
+	dataSize := 0
+	dataSize += StringCalculateSize(&obj.Name)
+	dataSize += StringCalculateSize(&obj.ServiceName)
+	return dataSize
+}
