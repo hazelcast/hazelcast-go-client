@@ -49,7 +49,7 @@ func TestClientMessage_AppendByte(t *testing.T) {
 	message.AppendByte(0xF2)
 	message.AppendByte(0x34)
 	dataOffset := message.DataOffset()
-	result := message.Buffer[dataOffset: dataOffset+3]
+	result := message.Buffer[dataOffset : dataOffset+3]
 	if hexResult := hex.EncodeToString(result); hexResult != "21f234" {
 		t.Errorf("AppendByte returned %s expected 21f234", hexResult)
 	}
@@ -60,7 +60,7 @@ func TestClientMessage_AppendUint8(t *testing.T) {
 	message.AppendUint8(0xF2)
 	message.AppendUint8(0x34)
 	dataOffset := message.DataOffset()
-	result := message.Buffer[dataOffset: dataOffset+3]
+	result := message.Buffer[dataOffset : dataOffset+3]
 	if hexResult := hex.EncodeToString(result); hexResult != "21f234" {
 		t.Errorf("AppendUint8 returned %s expected 21f234", hexResult)
 	}
@@ -69,27 +69,27 @@ func TestClientMessage_AppendBool(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendBool(true)
 	dataOffset := message.DataOffset()
-	result := message.Buffer[dataOffset: dataOffset+1]
+	result := message.Buffer[dataOffset : dataOffset+1]
 	if hexResult := hex.EncodeToString(result); hexResult != "01" {
 		t.Errorf("AppendBool returned %s expected 01", hexResult)
 	}
 }
 func TestClientMessage_AppendInt(t *testing.T) {
 	message := NewClientMessage(nil, 30)
-	message.AppendInt(0x1feeddcc)
+	message.AppendInt32(0x1feeddcc)
 	dataOffset := message.DataOffset()
-	result := message.Buffer[dataOffset: dataOffset+4]
+	result := message.Buffer[dataOffset : dataOffset+4]
 	if hexResult := hex.EncodeToString(result); hexResult != "ccddee1f" {
-		t.Errorf("AppendInt returned %s expected ccddee1f", hexResult)
+		t.Errorf("AppendInt32 returned %s expected ccddee1f", hexResult)
 	}
 }
-func TestClientMessage_AppendLong(t *testing.T) {
+func TestClientMessage_AppendInt64(t *testing.T) {
 	message := NewClientMessage(nil, 30)
-	message.AppendLong(0x1feeddccbbaa8765)
+	message.AppendInt64(0x1feeddccbbaa8765)
 	dataOffset := message.DataOffset()
-	result := message.Buffer[dataOffset: dataOffset+8]
+	result := message.Buffer[dataOffset : dataOffset+8]
 	if hexResult := hex.EncodeToString(result); hexResult != "6587aabbccddee1f" {
-		t.Errorf("AppendLong returned %s expected 6587aabbccddee1f", hexResult)
+		t.Errorf("AppendInt64 returned %s expected 6587aabbccddee1f", hexResult)
 	}
 }
 func TestClientMessage_AppendString(t *testing.T) {
@@ -97,7 +97,7 @@ func TestClientMessage_AppendString(t *testing.T) {
 	testString := "abc"
 	message.AppendString(testString)
 	dataOffset := message.DataOffset()
-	result := message.Buffer[dataOffset: dataOffset+4]
+	result := message.Buffer[dataOffset : dataOffset+4]
 	if hexResult := hex.EncodeToString(result); hexResult != "03000000" {
 		t.Errorf("AppendString length returned %s expected 03000000", hexResult)
 	}
@@ -122,11 +122,11 @@ func TestClientMessage_ReadInt(t *testing.T) {
 	buf[len(READ_HEADER)+2] = 0x56
 	buf[len(READ_HEADER)+3] = 0x78
 	message := NewClientMessage(buf, 4)
-	if result := message.ReadInt(); result != 0x78563412 {
-		t.Errorf("ReadInt returned %d expected 0x78563412", result)
+	if result := message.ReadInt32(); result != 0x78563412 {
+		t.Errorf("ReadInt32 returned %d expected 0x78563412", result)
 	}
 }
-func TestClientMessage_ReadLong(t *testing.T) {
+func TestClientMessage_ReadInt64(t *testing.T) {
 	buf := make([]byte, len(READ_HEADER)+8)
 	buf[len(READ_HEADER)] = 0x65
 	buf[len(READ_HEADER)+1] = 0x87
@@ -137,8 +137,8 @@ func TestClientMessage_ReadLong(t *testing.T) {
 	buf[len(READ_HEADER)+6] = 0xee
 	buf[len(READ_HEADER)+7] = 0x1f
 	message := NewClientMessage(buf, 8)
-	if result := message.ReadLong(); result != 0x1feeddccbbaa8765 {
-		t.Errorf("ReadLong returned %d expected 0x1feeddccbbaa8765", result)
+	if result := message.ReadInt64(); result != 0x1feeddccbbaa8765 {
+		t.Errorf("ReadInt64 returned %d expected 0x1feeddccbbaa8765", result)
 	}
 }
 func TestClientMessage_ReadString(t *testing.T) {
@@ -212,20 +212,20 @@ func TestSetListenerFlag(t *testing.T) {
 }
 func TestCalculateSizeStr(t *testing.T) {
 	testString := "abc"
-	if result := CalculateSizeString(&testString); result != len(testString)+INT_SIZE_IN_BYTES {
-		t.Errorf("CalculateSizeString returned %d expected %d",result,len(testString)+INT_SIZE_IN_BYTES)
+	if result := StringCalculateSize(&testString); result != len(testString)+INT_SIZE_IN_BYTES {
+		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+INT_SIZE_IN_BYTES)
 	}
 }
 func TestClientMessage_UpdateFrameLength(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendBool(true)
 	message.UpdateFrameLength()
-	if result := message.FrameLength() ; result != 23 {
-		t.Errorf("UpdateFrameLength returned %d expected 23",result)
+	if result := message.FrameLength(); result != 23 {
+		t.Errorf("UpdateFrameLength returned %d expected 23", result)
 	}
-	message.AppendLong(0x1feeddccbbaa8765)
+	message.AppendInt64(0x1feeddccbbaa8765)
 	message.UpdateFrameLength()
-	if result := message.FrameLength() ; result != 31 {
-		t.Errorf("UpdateFrameLength returned %d expected 31",result)
+	if result := message.FrameLength(); result != 31 {
+		t.Errorf("UpdateFrameLength returned %d expected 31", result)
 	}
 }
