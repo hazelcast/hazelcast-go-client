@@ -65,3 +65,44 @@ func UuidCodecEncode(msg *ClientMessage, uuid Uuid) {
 func UuidCodecDecode(msg *ClientMessage) *Uuid {
 	return &Uuid{msg.ReadInt64(), msg.ReadInt64()}
 }
+
+/*
+	Error Codec
+*/
+type StackTraceElement struct {
+	declaringClass string
+	methodName     string
+	fileName       string
+	lineNumber     int32
+}
+
+func ErrorCodecDecode(msg *ClientMessage) *Error {
+	response := Error{}
+	response.ErrorCode = msg.ReadInt32()
+	response.ClassName = *msg.ReadString()
+	if !msg.ReadBool() {
+		response.Message = *msg.ReadString()
+	}
+	stackTrace := make([]StackTraceElement, 0)
+	stackTraceCount := msg.ReadInt32()
+	for i := 0; i < int(stackTraceCount); i++ {
+		stackTrace = append(stackTrace, *DecodeStackTrace(msg))
+	}
+	response.StackTrace = stackTrace
+	response.CauseErrorCode = msg.ReadInt32()
+	if !msg.ReadBool() {
+		response.CauseClassName = *msg.ReadString()
+	}
+	return &response
+
+}
+func DecodeStackTrace(msg *ClientMessage) *StackTraceElement {
+	declaringClass := msg.ReadString()
+	methodName := msg.ReadString()
+	fileName := ""
+	if !msg.ReadBool() {
+		fileName = *msg.ReadString()
+	}
+	lineNumber := msg.ReadInt32()
+	return &StackTraceElement{*declaringClass, *methodName, fileName, lineNumber}
+}
