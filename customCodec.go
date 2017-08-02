@@ -76,7 +76,7 @@ type StackTraceElement struct {
 	lineNumber     int32
 }
 
-func ErrorCodec(msg *ClientMessage) *Error {
+func ErrorCodecDecode(msg *ClientMessage) *Error {
 	response := Error{}
 	response.ErrorCode = msg.ReadInt32()
 	response.ClassName = *msg.ReadString()
