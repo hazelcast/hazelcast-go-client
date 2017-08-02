@@ -59,7 +59,7 @@ type EntryView struct {
 }
 
 func (ev1 EntryView) Equal(ev2 EntryView) bool {
-	if !bytes.Equal(ev1.Key.buffer, ev2.Key.buffer) || !bytes.Equal(ev1.Value.buffer, ev2.Value.buffer) {
+	if !bytes.Equal(ev1.Key.Buffer, ev2.Key.Buffer) || !bytes.Equal(ev1.Value.Buffer, ev2.Value.Buffer) {
 		return false
 	}
 	if ev1.Cost != ev2.Cost || ev1.CreationTime != ev2.CreationTime || ev1.ExpirationTime != ev2.ExpirationTime || ev1.Hits != ev2.Hits {
@@ -72,4 +72,17 @@ func (ev1 EntryView) Equal(ev2 EntryView) bool {
 		return false
 	}
 	return true
+}
+
+type Error struct {
+	ErrorCode      int32
+	ClassName      string
+	Message        string
+	StackTrace     []StackTraceElement
+	CauseErrorCode int32
+	CauseClassName string
+}
+
+func (err *Error) Error() string {
+	return err.Message
 }
