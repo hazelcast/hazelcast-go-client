@@ -30,8 +30,8 @@ type Member struct {
 	attributes   map[string]string
 }
 
-func (member1 *Member) Address() Address {
-	return member1.address
+func (member1 *Member) Address() *Address {
+	return &member1.address
 }
 
 func (member1 *Member) Uuid() string {

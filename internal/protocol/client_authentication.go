@@ -19,7 +19,7 @@ import (
 
 type ClientAuthenticationResponseParameters struct {
 	Status                    uint8
-	Address                   Address
+	Address                   *Address
 	Uuid                      string
 	OwnerUuid                 string
 	SerializationVersion      uint8
@@ -76,7 +76,7 @@ func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) *ClientAut
 	parameters.Status = clientMessage.ReadUint8()
 
 	if !clientMessage.ReadBool() {
-		parameters.Address = *AddressCodecDecode(clientMessage)
+		parameters.Address = AddressCodecDecode(clientMessage)
 	}
 
 	if !clientMessage.ReadBool() {

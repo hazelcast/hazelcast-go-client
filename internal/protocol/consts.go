@@ -4,7 +4,7 @@ import (
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
 )
-
+const CLIENT_TYPE = "GO"
 
 func DataCalculateSize(d *Data) int {
 	return len(d.Buffer) + INT_SIZE_IN_BYTES
