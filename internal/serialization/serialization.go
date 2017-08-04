@@ -5,7 +5,7 @@ import (
 	"encoding/gob"
 	"log"
 
-	. "github.com/hazelcast/go-client/internal"
+	. "github.com/hazelcast/go-client/internal/common"
 )
 
 const (

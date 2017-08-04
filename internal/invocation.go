@@ -3,12 +3,15 @@ package internal
 import (
 	"sync/atomic"
 
-	"github.com/hazelcast/go-client"
+	. "github.com/hazelcast/go-client/core"
+	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/protocol"
+	"github.com/hazelcast/go-client/internal/serialization"
 )
 
 type Invocation struct {
 	boundConnection *Connection
-	address         *hazelcast.Address
+	address         *Address
 	request         *ClientMessage
 	partitionId     int32
 	response        chan *ClientMessage
@@ -49,11 +52,11 @@ type InvocationService struct {
 
 func NewInvocationService(client *HazelcastClient) *InvocationService {
 	service := &InvocationService{client: client, sending: make(chan *Invocation, 1000)}
-	if client.config.IsSmartRouting() {
+	//if client.config.IsSmartRouting() {
 		service.invoke = service.invokeSmart
-	} else {
-		service.invoke = service.invokeNonSmart
-	}
+	//} else {
+	//	service.invoke = service.invokeNonSmart
+	//}
 	service.start()
 	return service
 }
@@ -78,13 +81,13 @@ func (invocationService *InvocationService) InvokeOnRandomTarget(request *Client
 	return invocation
 }
 
-func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessage, target *hazelcast.Address) InvocationResult {
+func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessage, target *Address) InvocationResult {
 	invocation := &Invocation{request: request, address: target}
 	invocationService.sending <- invocation
 	return invocation
 }
 
-func (invocationService *InvocationService) InvokeOnKeyOwner(request *ClientMessage, keyData *hazelcast.Data) InvocationResult {
+func (invocationService *InvocationService) InvokeOnKeyOwner(request *ClientMessage, keyData *serialization.Data) InvocationResult {
 	partitionId := invocationService.client.partitionService.GetPartitionId(keyData)
 	return invocationService.InvokeOnPartitionOwner(request, partitionId)
 }
@@ -118,7 +121,7 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 	} else if invocation.address != nil {
 		invocationService.sendToAddress(invocation, invocation.address)
 	} else {
-		var target *hazelcast.Address = invocationService.client.loadBalancer.NextAddress()
+		var target *Address //= invocationService.client.loadBalancer.NextAddress()
 		invocationService.sendToAddress(invocation, target)
 	}
 }
@@ -136,7 +139,7 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 
 }
 
-func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *hazelcast.Address) {
+func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
 
 }
 
@@ -154,7 +157,7 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 		invocation.response <- response
 	}
 }
-func convertToError(clientMessage *ClientMessage) *hazelcast.Error {
+func convertToError(clientMessage *ClientMessage) *Error {
 	return ErrorCodecDecode(clientMessage)
 }
 
@@ -162,6 +165,6 @@ func (invocationService *InvocationService) retry(correlationId int64) {
 
 }
 
-func (invocationService *InvocationService) shouldRetryInvocation(clientInvocation *Invocation, err error) bool {
-
-}
+//func (invocationService *InvocationService) shouldRetryInvocation(clientInvocation *Invocation, err error) bool {
+//
+//}
