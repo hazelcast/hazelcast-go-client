@@ -11,11 +11,8 @@ func NewHazelcastClientWithConfig(config ClientConfig) IHazelcastInstance {
 }
 
 type IMap interface {
-
 }
 
 type IHazelcastInstance interface {
-
 	GetMap(name string) IMap
-
 }

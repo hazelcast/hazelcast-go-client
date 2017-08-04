@@ -1,14 +1,14 @@
 package protocol
 
 import (
-	."github.com/hazelcast/go-client/core"
+	."github.com/hazelcast/go-client/internal"
 )
 /*
 Address Codec
 */
 func AddressCodecEncode(msg *ClientMessage, address *Address) {
-	msg.AppendString(address.Host)
-	msg.AppendInt(address.Port)
+	msg.AppendString(address.host)
+	msg.AppendInt(address.port)
 }
 func AddressCodecDecode(msg *ClientMessage) *Address {
 	host := msg.ReadString()
@@ -45,18 +45,18 @@ func MemberCodecDecode(msg *ClientMessage) *Member {
 }
 func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
 	entryView := EntryView{}
-	entryView.Key = msg.ReadData()
-	entryView.Value = msg.ReadData()
-	entryView.Cost = msg.ReadInt64()
-	entryView.CreationTime = msg.ReadInt64()
-	entryView.ExpirationTime = msg.ReadInt64()
-	entryView.Hits = msg.ReadInt64()
-	entryView.LastAccessTime = msg.ReadInt64()
-	entryView.LastStoredTime = msg.ReadInt64()
-	entryView.LastUpdateTime = msg.ReadInt64()
-	entryView.Version = msg.ReadInt64()
-	entryView.EvictionCriteriaNumber = msg.ReadInt64()
-	entryView.Ttl = msg.ReadInt64()
+	entryView.key = msg.ReadData()
+	entryView.value = msg.ReadData()
+	entryView.cost = msg.ReadInt64()
+	entryView.creationTime = msg.ReadInt64()
+	entryView.expirationTime = msg.ReadInt64()
+	entryView.hits = msg.ReadInt64()
+	entryView.lastAccessTime = msg.ReadInt64()
+	entryView.lastStoredTime = msg.ReadInt64()
+	entryView.lastUpdateTime = msg.ReadInt64()
+	entryView.version = msg.ReadInt64()
+	entryView.evictionCriteriaNumber = msg.ReadInt64()
+	entryView.ttl = msg.ReadInt64()
 	return &entryView
 }
 
@@ -75,20 +75,20 @@ func UuidCodecDecode(msg *ClientMessage) *Uuid {
 
 func ErrorCodecDecode(msg *ClientMessage) *Error {
 	response := Error{}
-	response.ErrorCode = msg.ReadInt32()
-	response.ClassName = *msg.ReadString()
+	response.errorCode = msg.ReadInt32()
+	response.className = *msg.ReadString()
 	if !msg.ReadBool() {
-		response.Message = *msg.ReadString()
+		response.message = *msg.ReadString()
 	}
 	stackTrace := make([]StackTraceElement, 0)
 	stackTraceCount := msg.ReadInt32()
 	for i := 0; i < int(stackTraceCount); i++ {
 		stackTrace = append(stackTrace, *DecodeStackTrace(msg))
 	}
-	response.StackTrace = stackTrace
-	response.CauseErrorCode = msg.ReadInt32()
+	response.stackTrace = stackTrace
+	response.causeErrorCode = msg.ReadInt32()
 	if !msg.ReadBool() {
-		response.CauseClassName = *msg.ReadString()
+		response.causeClassName = *msg.ReadString()
 	}
 	return &response
 

@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"testing"
-	."github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/serialization"
 	. "github.com/hazelcast/go-client/internal/common"
 )
@@ -57,18 +56,18 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 	key := "test-key"
 	value := "test-value"
 	entryView := EntryView{}
-	entryView.Key = Data{[]byte(key)}
-	entryView.Value = Data{[]byte(value)}
-	entryView.Cost = 123123
-	entryView.CreationTime = 1212
-	entryView.ExpirationTime = 12
-	entryView.Hits = 1235
-	entryView.LastAccessTime = 1232
-	entryView.LastStoredTime = 1236
-	entryView.LastUpdateTime = 1236
-	entryView.Version = 1
-	entryView.EvictionCriteriaNumber = 122
-	entryView.Ttl = 14555
+	entryView.key = Data{[]byte(key)}
+	entryView.value = Data{[]byte(value)}
+	entryView.cost = 123123
+	entryView.creationTime = 1212
+	entryView.expirationTime = 12
+	entryView.hits = 1235
+	entryView.lastAccessTime = 1232
+	entryView.lastStoredTime = 1236
+	entryView.lastUpdateTime = 1236
+	entryView.version = 1
+	entryView.evictionCriteriaNumber = 122
+	entryView.ttl = 14555
 	msg := NewClientMessage(nil, EntryViewCalculateSize(&entryView))
 	EntryViewCodecEncode(msg, &entryView)
 	//Skip the header.
@@ -88,24 +87,24 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 	EntryView helper functions
 */
 func EntryViewCodecEncode(msg *ClientMessage, entryView *EntryView) {
-	msg.AppendData(entryView.Key)
-	msg.AppendData(entryView.Value)
-	msg.AppendInt64(entryView.Cost)
+	msg.AppendData(entryView.key)
+	msg.AppendData(entryView.value)
+	msg.AppendInt64(entryView.cost)
 	//msg.AppendInt64(entryView.Cost)
-	msg.AppendInt64(entryView.CreationTime)
-	msg.AppendInt64(entryView.ExpirationTime)
-	msg.AppendInt64(entryView.Hits)
-	msg.AppendInt64(entryView.LastAccessTime)
-	msg.AppendInt64(entryView.LastStoredTime)
-	msg.AppendInt64(entryView.LastUpdateTime)
-	msg.AppendInt64(entryView.Version)
-	msg.AppendInt64(entryView.EvictionCriteriaNumber)
-	msg.AppendInt64(entryView.Ttl)
+	msg.AppendInt64(entryView.creationTime)
+	msg.AppendInt64(entryView.expirationTime)
+	msg.AppendInt64(entryView.hits)
+	msg.AppendInt64(entryView.lastAccessTime)
+	msg.AppendInt64(entryView.lastStoredTime)
+	msg.AppendInt64(entryView.lastUpdateTime)
+	msg.AppendInt64(entryView.version)
+	msg.AppendInt64(entryView.evictionCriteriaNumber)
+	msg.AppendInt64(entryView.ttl)
 }
 func EntryViewCalculateSize(ev *EntryView) int {
 	dataSize := 0
-	dataSize += DataCalculateSize(&ev.Key)
-	dataSize += DataCalculateSize(&ev.Value)
+	dataSize += DataCalculateSize(&ev.key)
+	dataSize += DataCalculateSize(&ev.value)
 	dataSize += 10 * INT64_SIZE_IN_BYTES
 	return dataSize
 }
@@ -114,22 +113,22 @@ func EntryViewCalculateSize(ev *EntryView) int {
 	Member helper functions
 */
 func MemberCodecEncode(msg *ClientMessage, member *Member) {
-	AddressCodecEncode(msg, &member.Address)
-	msg.AppendString(member.Uuid)
-	msg.AppendBool(member.IsLiteMember)
-	msg.AppendInt(len(member.Attributes))
-	for key, value := range member.Attributes {
+	AddressCodecEncode(msg, &member.address)
+	msg.AppendString(member.uuid)
+	msg.AppendBool(member.isLiteMember)
+	msg.AppendInt(len(member.attributes))
+	for key, value := range member.attributes {
 		msg.AppendString(key)
 		msg.AppendString(value)
 	}
 }
 func MemberCalculateSize(member *Member) int {
 	dataSize := 0
-	dataSize += AddressCalculateSize(&member.Address)
-	dataSize += StringCalculateSize(&member.Uuid)
+	dataSize += AddressCalculateSize(&member.address)
+	dataSize += StringCalculateSize(&member.uuid)
 	dataSize += BOOL_SIZE_IN_BYTES
 	dataSize += INT_SIZE_IN_BYTES //Size of the map(attributes)
-	for key, value := range member.Attributes {
+	for key, value := range member.attributes {
 		dataSize += StringCalculateSize(&key)
 		dataSize += StringCalculateSize(&value)
 	}
@@ -140,12 +139,12 @@ func MemberCalculateSize(member *Member) int {
 	DistributedObjectInfo Helper functions
 */
 func DistributedObjectInfoCodecEncode(msg *ClientMessage, obj *DistributedObjectInfo) {
-	msg.AppendString(obj.ServiceName)
-	msg.AppendString(obj.Name)
+	msg.AppendString(obj.serviceName)
+	msg.AppendString(obj.name)
 }
 func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
 	dataSize := 0
-	dataSize += StringCalculateSize(&obj.Name)
-	dataSize += StringCalculateSize(&obj.ServiceName)
+	dataSize += StringCalculateSize(&obj.name)
+	dataSize += StringCalculateSize(&obj.serviceName)
 	return dataSize
 }
