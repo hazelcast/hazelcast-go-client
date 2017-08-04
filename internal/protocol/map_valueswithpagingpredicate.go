@@ -14,7 +14,6 @@
 package protocol
 import (
 	."github.com/hazelcast/go-client/internal/serialization"
-	. "github.com/hazelcast/go-client/core"
 )
 type MapValuesWithPagingPredicateResponseParameters struct {
 	Response []Pair
@@ -49,8 +48,8 @@ func MapValuesWithPagingPredicateDecodeResponse(clientMessage *ClientMessage) *M
 		var responseItem Pair
 		responseItemKey := clientMessage.ReadData()
 		responseItemVal := clientMessage.ReadData()
-		responseItem.Key = responseItemKey
-		responseItem.Value = responseItemVal
+		responseItem.key = responseItemKey
+		responseItem.value = responseItemVal
 		response = append(response, responseItem)
 	}
 	parameters.Response = response

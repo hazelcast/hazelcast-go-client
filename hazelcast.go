@@ -1,9 +1,12 @@
 package hazelcast
 
-import "github.com/hazelcast/go-client/internal"
+import (
+	"github.com/hazelcast/go-client/internal"
+	. "github.com/hazelcast/go-client/config"
+)
 
 func NewHazelcastClient() IHazelcastInstance {
-	return internal.NewHazelcastClient(NewClientConfig())
+	return NewHazelcastClientWithConfig(NewClientConfig())
 }
 
 func NewHazelcastClientWithConfig(config ClientConfig) IHazelcastInstance {
@@ -11,8 +14,10 @@ func NewHazelcastClientWithConfig(config ClientConfig) IHazelcastInstance {
 }
 
 type IMap interface {
+	Put(key interface{}, value interface{}) (oldValue interface{}, err error)
+	Get(key interface{}) (value interface{}, err error)
 }
 
 type IHazelcastInstance interface {
-	GetMap(name string) IMap
+	GetMap(name string) *IMap
 }

@@ -13,11 +13,6 @@
 // limitations under the License.
 package protocol
 
-import (
-	. "github.com/hazelcast/go-client/internal/common"
-	."github.com/hazelcast/go-client/core"
-)
-
 type MapClearNearCacheResponseParameters struct {
 }
 

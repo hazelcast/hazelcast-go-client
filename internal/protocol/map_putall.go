@@ -15,7 +15,6 @@ package protocol
 import (
 	."github.com/hazelcast/go-client/internal/common"
 	."github.com/hazelcast/go-client/internal/serialization"
-	. "github.com/hazelcast/go-client/core"
 )
 type MapPutAllResponseParameters struct {
 }
@@ -26,8 +25,8 @@ func MapPutAllCalculateSize(name string, entries []Pair) int {
 	dataSize += StringCalculateSize(&name)
 	dataSize += INT_SIZE_IN_BYTES
 	for _, entriesItem := range entries {
-		key := entriesItem.Key.(Data)
-		val := entriesItem.Value.(Data)
+		key := entriesItem.key.(Data)
+		val := entriesItem.value.(Data)
 		dataSize += DataCalculateSize(&key)
 		dataSize += DataCalculateSize(&val)
 	}
@@ -42,8 +41,8 @@ func MapPutAllEncodeRequest(name string, entries []Pair) *ClientMessage {
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt(len(entries))
 	for _, entriesItem := range entries {
-		key := entriesItem.Key.(Data)
-		val := entriesItem.Value.(Data)
+		key := entriesItem.key.(Data)
+		val := entriesItem.value.(Data)
 		clientMessage.AppendData(key)
 		clientMessage.AppendData(val)
 	}

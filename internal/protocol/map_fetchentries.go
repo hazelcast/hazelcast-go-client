@@ -14,7 +14,6 @@
 package protocol
 import (
 	."github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/core"
 )
 type MapFetchEntriesResponseParameters struct {
 	TableIndex int32
@@ -55,8 +54,8 @@ func MapFetchEntriesDecodeResponse(clientMessage *ClientMessage) *MapFetchEntrie
 		var entriesItem Pair
 		entriesItemKey := clientMessage.ReadData()
 		entriesItemVal := clientMessage.ReadData()
-		entriesItem.Key = entriesItemKey
-		entriesItem.Value = entriesItemVal
+		entriesItem.key = entriesItemKey
+		entriesItem.value = entriesItemVal
 		entries = append(entries, entriesItem)
 	}
 	parameters.Entries = entries

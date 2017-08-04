@@ -15,7 +15,6 @@ package protocol
 
 import (
 	. "github.com/hazelcast/go-client/internal/common"
-	."github.com/hazelcast/go-client/core"
 )
 
 type ClientDeployClassesResponseParameters struct {
@@ -26,8 +25,8 @@ func ClientDeployClassesCalculateSize(classDefinitions []Pair) int {
 	dataSize := 0
 	dataSize += INT_SIZE_IN_BYTES
 	for _, classDefinitionsItem := range classDefinitions {
-		key := classDefinitionsItem.Key.(string)
-		val := classDefinitionsItem.Value.([]byte)
+		key := classDefinitionsItem.key.(string)
+		val := classDefinitionsItem.value.([]byte)
 		dataSize += StringCalculateSize(&key)
 		dataSize += INT_SIZE_IN_BYTES
 		for range val {
@@ -44,8 +43,8 @@ func ClientDeployClassesEncodeRequest(classDefinitions []Pair) *ClientMessage {
 	clientMessage.IsRetryable = false
 	clientMessage.AppendInt(len(classDefinitions))
 	for _, classDefinitionsItem := range classDefinitions {
-		key := classDefinitionsItem.Key.(string)
-		val := classDefinitionsItem.Value.([]byte)
+		key := classDefinitionsItem.key.(string)
+		val := classDefinitionsItem.value.([]byte)
 		clientMessage.AppendString(key)
 		clientMessage.AppendInt(len(val))
 		for _, valItem := range val {

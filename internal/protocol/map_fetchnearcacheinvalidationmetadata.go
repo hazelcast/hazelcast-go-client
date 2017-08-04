@@ -14,7 +14,6 @@
 package protocol
 import (
 	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/core"
 )
 type MapFetchNearCacheInvalidationMetadataResponseParameters struct {
 	NamePartitionSequenceList []Pair
@@ -62,13 +61,13 @@ func MapFetchNearCacheInvalidationMetadataDecodeResponse(clientMessage *ClientMe
 			var namePartitionSequenceListItemValItem Pair
 			namePartitionSequenceListItemValItemKey := clientMessage.ReadInt32()
 			namePartitionSequenceListItemValItemVal := clientMessage.ReadInt64()
-			namePartitionSequenceListItemValItem.Key = namePartitionSequenceListItemValItemKey
-			namePartitionSequenceListItemValItem.Value = namePartitionSequenceListItemValItemVal
+			namePartitionSequenceListItemValItem.key = namePartitionSequenceListItemValItemKey
+			namePartitionSequenceListItemValItem.value = namePartitionSequenceListItemValItemVal
 			namePartitionSequenceListItemVal = append(namePartitionSequenceListItemVal, namePartitionSequenceListItemValItem)
 		}
 
-		namePartitionSequenceListItem.Key = namePartitionSequenceListItemKey
-		namePartitionSequenceListItem.Value = namePartitionSequenceListItemVal
+		namePartitionSequenceListItem.key = namePartitionSequenceListItemKey
+		namePartitionSequenceListItem.value = namePartitionSequenceListItemVal
 		namePartitionSequenceList = append(namePartitionSequenceList, namePartitionSequenceListItem)
 	}
 	parameters.NamePartitionSequenceList = namePartitionSequenceList
@@ -79,8 +78,8 @@ func MapFetchNearCacheInvalidationMetadataDecodeResponse(clientMessage *ClientMe
 		var partitionUuidListItem Pair
 		partitionUuidListItemKey := clientMessage.ReadInt32()
 		partitionUuidListItemVal := *UuidCodecDecode(clientMessage)
-		partitionUuidListItem.Key = partitionUuidListItemKey
-		partitionUuidListItem.Value = partitionUuidListItemVal
+		partitionUuidListItem.key = partitionUuidListItemKey
+		partitionUuidListItem.value = partitionUuidListItemVal
 		partitionUuidList = append(partitionUuidList, partitionUuidListItem)
 	}
 	parameters.PartitionUuidList = partitionUuidList

@@ -3,7 +3,6 @@ package internal
 import (
 	"sync/atomic"
 
-	. "github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
@@ -88,7 +87,7 @@ func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessag
 }
 
 func (invocationService *InvocationService) InvokeOnKeyOwner(request *ClientMessage, keyData *serialization.Data) InvocationResult {
-	partitionId := invocationService.client.partitionService.GetPartitionId(keyData)
+	partitionId := invocationService.client.PartitionService.GetPartitionId(keyData)
 	return invocationService.InvokeOnPartitionOwner(request, partitionId)
 }
 
@@ -113,7 +112,7 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 		invocationService.send(invocation, invocation.boundConnection)
 	} else if invocation.partitionId != -1 {
 		//TODO PARTITION SERVICE
-		if target, ok := invocationService.client.partitionService.PartitionOwner(invocation.partitionId); ok {
+		if target, ok := invocationService.client.PartitionService.PartitionOwner(invocation.partitionId); ok {
 			invocationService.sendToAddress(invocation, target)
 		} else {
 			//TODO should I handle this case

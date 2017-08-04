@@ -14,7 +14,6 @@
 package protocol
 import (
 
-	. "github.com/hazelcast/go-client/core"
 )
 
 type ClientCreateProxyResponseParameters struct {

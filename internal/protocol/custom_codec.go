@@ -1,8 +1,5 @@
 package protocol
 
-import (
-	."github.com/hazelcast/go-client/internal"
-)
 /*
 Address Codec
 */

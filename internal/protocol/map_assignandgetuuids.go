@@ -14,7 +14,6 @@
 package protocol
 import (
 
-	. "github.com/hazelcast/go-client/core"
 )
 type MapAssignAndGetUuidsResponseParameters struct {
 	PartitionUuidList []Pair
@@ -45,8 +44,8 @@ func MapAssignAndGetUuidsDecodeResponse(clientMessage *ClientMessage) *MapAssign
 		var partitionUuidListItem Pair
 		partitionUuidListItemKey := clientMessage.ReadInt32()
 		partitionUuidListItemVal := *UuidCodecDecode(clientMessage)
-		partitionUuidListItem.Key = partitionUuidListItemKey
-		partitionUuidListItem.Value = partitionUuidListItemVal
+		partitionUuidListItem.key = partitionUuidListItemKey
+		partitionUuidListItem.value = partitionUuidListItemVal
 		partitionUuidList = append(partitionUuidList, partitionUuidListItem)
 	}
 	parameters.PartitionUuidList = partitionUuidList

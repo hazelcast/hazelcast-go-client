@@ -13,7 +13,6 @@
 // limitations under the License.
 package protocol
 import (
-	."github.com/hazelcast/go-client/core"
 )
 type ClientGetDistributedObjectsResponseParameters struct {
 	Response []DistributedObjectInfo

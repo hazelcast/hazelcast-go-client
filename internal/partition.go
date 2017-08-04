@@ -1,8 +1,8 @@
 package internal
 
 import (
-	. "github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/protocol"
 )
 
 
@@ -26,7 +26,7 @@ func (partitionService *PartitionService) PartitionOwner(partitionId int32) (*Ad
 }
 
 func (partitionService *PartitionService) GetPartitionId(key interface{}) int32 {
-	data, error := partitionService.client.serializationService.ToData(key)
+	data, error := partitionService.client.SerializationService.ToData(key)
 	if error != nil {
 		//TODO handle error
 	}

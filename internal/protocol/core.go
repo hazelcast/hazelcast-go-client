@@ -175,6 +175,10 @@ type Error struct {
 	causeClassName string
 }
 
+func (err *Error) Error() string {
+	return err.message
+}
+
 func (err *Error) ErrorCode() int32 {
 	return err.errorCode
 }

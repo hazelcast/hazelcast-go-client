@@ -3,7 +3,6 @@ package internal
 
 import (
 	"net"
-	. "github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/protocol"
 )
 

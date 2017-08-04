@@ -13,7 +13,6 @@
 // limitations under the License.
 package protocol
 import(
-	."github.com/hazelcast/go-client/core"
 )
 type ClientGetPartitionsResponseParameters struct {
 	Partitions []Pair
@@ -51,8 +50,8 @@ func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) *ClientGetP
 			partitionsItemVal = append(partitionsItemVal, partitionsItemValItem)
 		}
 
-		partitionsItem.Key = partitionsItemKey
-		partitionsItem.Value = partitionsItemVal
+		partitionsItem.key = partitionsItemKey
+		partitionsItem.value = partitionsItemVal
 		partitions = append(partitions, partitionsItem)
 	}
 	parameters.Partitions = partitions
