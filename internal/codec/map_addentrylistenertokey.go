@@ -14,7 +14,7 @@
 package codec
 
 import (
-	. "github.com/hazelcast/go-client"
+	. "github.com/hazelcast/go-client/internal"
 )
 
 type MapAddEntryListenerToKeyResponseParameters struct {

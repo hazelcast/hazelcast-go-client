@@ -1,8 +1,10 @@
-package hazelcast
+package internal
 
 import (
 	"encoding/binary"
 	"unicode/utf8"
+
+	. "github.com/hazelcast/go-client/internal/serialization"
 )
 
 /*
@@ -82,19 +84,19 @@ func (msg *ClientMessage) HasFlags(flags uint8) uint8 {
 	return msg.Flags() & flags
 }
 
-func (msg *ClientMessage) MessageType() uint16 {
-	return binary.LittleEndian.Uint16(msg.Buffer[TYPE_FIELD_OFFSET:CORRELATION_ID_FIELD_OFFSET])
+func (msg *ClientMessage) MessageType() MessageType {
+	return MessageType(binary.LittleEndian.Uint16(msg.Buffer[TYPE_FIELD_OFFSET:CORRELATION_ID_FIELD_OFFSET]))
 }
 
-func (msg *ClientMessage) SetMessageType(v uint16) {
-	binary.LittleEndian.PutUint16(msg.Buffer[TYPE_FIELD_OFFSET:CORRELATION_ID_FIELD_OFFSET], v)
+func (msg *ClientMessage) SetMessageType(v MessageType) {
+	binary.LittleEndian.PutUint16(msg.Buffer[TYPE_FIELD_OFFSET:CORRELATION_ID_FIELD_OFFSET], uint16(v))
 }
 
-func (msg *ClientMessage) CorrelationId() uint64 {
-	return uint64(binary.LittleEndian.Uint64(msg.Buffer[CORRELATION_ID_FIELD_OFFSET:PARTITION_ID_FIELD_OFFSET]))
+func (msg *ClientMessage) CorrelationId() int64 {
+	return int64(binary.LittleEndian.Uint64(msg.Buffer[CORRELATION_ID_FIELD_OFFSET:PARTITION_ID_FIELD_OFFSET]))
 }
 
-func (msg *ClientMessage) SetCorrelationId(val uint64) {
+func (msg *ClientMessage) SetCorrelationId(val int64) {
 	binary.LittleEndian.PutUint64(msg.Buffer[CORRELATION_ID_FIELD_OFFSET:PARTITION_ID_FIELD_OFFSET], uint64(val))
 }
 
@@ -143,7 +145,7 @@ func (msg *ClientMessage) AppendInt32(v int32) {
 	msg.writeIndex += INT32_SIZE_IN_BYTES
 }
 func (msg *ClientMessage) AppendData(v Data) {
-	msg.AppendByteArray(v.buffer)
+	msg.AppendByteArray(v.Buffer)
 }
 
 func (msg *ClientMessage) AppendByteArray(arr []byte) {
@@ -186,12 +188,12 @@ func (msg *ClientMessage) AppendBool(v bool) {
 */
 
 func (msg *ClientMessage) ReadInt32() int32 {
-	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset() : msg.readOffset()+INT_SIZE_IN_BYTES]))
+	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset(): msg.readOffset()+INT_SIZE_IN_BYTES]))
 	msg.readIndex += INT_SIZE_IN_BYTES
 	return int
 }
 func (msg *ClientMessage) ReadInt64() int64 {
-	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset() : msg.readOffset()+INT64_SIZE_IN_BYTES]))
+	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset(): msg.readOffset()+INT64_SIZE_IN_BYTES]))
 	msg.readIndex += INT64_SIZE_IN_BYTES
 	return int64
 }
@@ -217,7 +219,7 @@ func (msg *ClientMessage) ReadData() Data {
 }
 func (msg *ClientMessage) ReadByteArray() []byte {
 	length := msg.ReadInt32()
-	result := msg.Buffer[msg.readOffset() : msg.readOffset()+int(length)]
+	result := msg.Buffer[msg.readOffset(): msg.readOffset()+int(length)]
 	msg.readIndex += int(length)
 	return result
 }

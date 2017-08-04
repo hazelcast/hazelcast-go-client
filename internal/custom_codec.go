@@ -1,5 +1,6 @@
-package hazelcast
+package internal
 
+import . "github.com/hazelcast/go-client"
 /*
 Address Codec
 */

@@ -1,4 +1,4 @@
-package hazelcast
+package internal
 
 import (
 	"encoding/hex"
@@ -9,8 +9,8 @@ var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 func TestHeaderFields(t *testing.T) {
 	message := NewClientMessage(nil, 30)
-	var correlationId uint64 = 6474838
-	var messageType uint16 = 987
+	var correlationId int64 = 6474838
+	var messageType MessageType = 987
 	var flags uint8 = 5
 	var partitionId int32 = 27
 	var frameLength int32 = 100
