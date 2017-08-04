@@ -1,8 +1,10 @@
 package hazelcast
 
+//
+//
 type Address interface {
 	Host() string
-	Port() int
+	Port() int32
 }
 type Member interface {
 	Address() Address
@@ -29,12 +31,14 @@ type Error interface {
 	CauseErrorCode() int32
 	CauseClassName() string
 }
+
 type StackTraceElement interface {
 	DeclaringClass() string
 	MethodName() string
 	FileName() string
 	LineNumber() int32
 }
+
 type EntryView interface {
 	Key() Data
 	Value() Data

@@ -5,7 +5,7 @@ import (
 )
 type ClientMessageBuilder struct {
 	incompleteMessages map[int64]*ClientMessage
-	MessageCallback func(ClientMessage)
+	responseChannel chan *ClientMessage
 }
 
 func (cmb *ClientMessageBuilder) OnMessage(msg *ClientMessage) {

@@ -25,26 +25,28 @@ func NewSerializationService() SerializationService {
 	return v1
 }
 
-func (service SerializationService) ToData(object interface{}) Data {
+func (service SerializationService) ToData(object interface{}) (*Data, error) {
+	//TODO should return proper error values
 	dataOutput := NewObjectDataOutput(1, service, service.serializationConfig.IsBigEndian)
 	var serializer serializer
 	serializer = service.FindSerializerFor(object)
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.GetId())
 	serializer.Write(dataOutput, object)
-	return Data{dataOutput.buffer}
+	return &Data{dataOutput.buffer}, nil
 }
 
-func (service SerializationService) ToObject(data *Data) interface{} {
+func (service SerializationService) ToObject(data *Data) (interface{}, error) {
+	//TODO should return proper error values
 	if data == nil {
-		return data
+		return data,nil
 	}
 	if data.getType() == 0 {
-		return data
+		return data, nil
 	}
 	var serializer = service.registry[data.getType()]
 	dataInput := NewObjectDataInput(data.Payload, DATA_OFFSET, service, service.serializationConfig.IsBigEndian)
-	return serializer.Read(dataInput)
+	return serializer.Read(dataInput), nil
 }
 
 func (service SerializationService) WriteObject(output dataOutput, object interface{}) {

@@ -3,6 +3,8 @@ package internal
 import (
 	"sync/atomic"
 
+	"time"
+
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
@@ -10,23 +12,28 @@ import (
 
 type Invocation struct {
 	boundConnection *Connection
+	sentConnection  *Connection
 	address         *Address
 	request         *ClientMessage
 	partitionId     int32
 	response        chan *ClientMessage
 	err             chan error
+	timeout         <-chan time.Time //TODO invocation should be sent in this timeout
 }
 
 type InvocationResult interface {
 	Result() (*ClientMessage, error)
 }
 
-func NewInvocation(request *ClientMessage) *Invocation {
-	return NewInvocationWithPartitionId(request, -1)
-}
-
-func NewInvocationWithPartitionId(request *ClientMessage, partitionId int32) *Invocation {
-	return &Invocation{request: request, partitionId: partitionId, response: make(chan *ClientMessage)}
+func NewInvocation(request *ClientMessage, partitionId int32, address *Address, connection *Connection) *Invocation {
+	return &Invocation{
+		request:         request,
+		partitionId:     partitionId,
+		address:         address,
+		boundConnection: connection,
+		response:        make(chan *ClientMessage),
+		err:             make(chan error),
+		timeout:         time.After(DEFAULT_INVOCATION_TIMEOUT)}
 }
 
 func (invocation *Invocation) Result() (*ClientMessage, error) {
@@ -39,20 +46,20 @@ func (invocation *Invocation) Result() (*ClientMessage, error) {
 }
 
 type InvocationService struct {
-	client          *HazelcastClient
-	quit            chan bool
-	pending         map[int64]*Invocation
-	nextCorrelation int64
-	sending         chan *Invocation
-	response        chan *ClientMessage
-	sendingError    chan int64
-	invoke          func(*Invocation)
+	client           *HazelcastClient
+	quit             chan bool
+	nextCorrelation  int64
+	responseWaitings map[int64]*Invocation
+	sending          chan *Invocation
+	responseChannel  chan *ClientMessage
+	notSentMessages  chan int64
+	invoke           func(*Invocation)
 }
 
 func NewInvocationService(client *HazelcastClient) *InvocationService {
 	service := &InvocationService{client: client, sending: make(chan *Invocation, 1000)}
 	//if client.config.IsSmartRouting() {
-		service.invoke = service.invokeSmart
+	service.invoke = service.invokeSmart
 	//} else {
 	//	service.invoke = service.invokeNonSmart
 	//}
@@ -69,19 +76,19 @@ func (invocationService *InvocationService) nextCorrelationId() int64 {
 }
 
 func (invocationService *InvocationService) InvokeOnPartitionOwner(request *ClientMessage, partitionId int32) InvocationResult {
-	invocation := &Invocation{request: request, partitionId: partitionId}
+	invocation := NewInvocation(request, partitionId, nil, nil)
 	invocationService.sending <- invocation
 	return invocation
 }
 
 func (invocationService *InvocationService) InvokeOnRandomTarget(request *ClientMessage) InvocationResult {
-	invocation := &Invocation{request: request, partitionId: -1}
+	invocation := NewInvocation(request, -1, nil, nil)
 	invocationService.sending <- invocation
 	return invocation
 }
 
 func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessage, target *Address) InvocationResult {
-	invocation := &Invocation{request: request, address: target}
+	invocation := NewInvocation(request, -1, target, nil)
 	invocationService.sending <- invocation
 	return invocation
 }
@@ -97,9 +104,9 @@ func (invocationService *InvocationService) process() {
 		case invocation := <-invocationService.sending:
 			//TODO
 			invocationService.invoke(invocation)
-		case response := <-invocationService.response:
+		case response := <-invocationService.responseChannel:
 			invocationService.handleResponse(response)
-		case correlationId := <-invocationService.sendingError:
+		case correlationId := <-invocationService.notSentMessages:
 			invocationService.handleNotSentInvocation(correlationId)
 		case <-invocationService.quit:
 			return
@@ -109,9 +116,8 @@ func (invocationService *InvocationService) process() {
 
 func (invocationService *InvocationService) invokeSmart(invocation *Invocation) {
 	if invocation.boundConnection != nil {
-		invocationService.send(invocation, invocation.boundConnection)
+		invocationService.sendToConnection(invocation, invocation.boundConnection)
 	} else if invocation.partitionId != -1 {
-		//TODO PARTITION SERVICE
 		if target, ok := invocationService.client.PartitionService.PartitionOwner(invocation.partitionId); ok {
 			invocationService.sendToAddress(invocation, target)
 		} else {
@@ -120,7 +126,7 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 	} else if invocation.address != nil {
 		invocationService.sendToAddress(invocation, invocation.address)
 	} else {
-		var target *Address //= invocationService.client.loadBalancer.NextAddress()
+		var target *Address = invocationService.client.LoadBalancer.NextAddress()
 		invocationService.sendToAddress(invocation, target)
 	}
 }
@@ -129,40 +135,80 @@ func (invocationService *InvocationService) invokeNonSmart(invocation *Invocatio
 	//TODO implement
 }
 
-func (invocationService *InvocationService) send(invocation *Invocation, connection *Connection) {
+func (invocationService *InvocationService) send(invocation *Invocation, connectionChannel chan *Connection) {
+	invocationService.registerInvocation(invocation)
+
+	go func() {
+		select {
+		case <-invocationService.quit:
+			return
+		case connection := <-connectionChannel:
+			err := connection.Send(invocation.request)
+			if err != nil {
+				//not sent
+				invocationService.notSentMessages <- invocation.request.CorrelationId()
+			}
+			invocation.sentConnection = connection
+		}
+	}()
+}
+
+func (invocationService *InvocationService) sendToConnection(invocation *Invocation, connection *Connection) {
+	invocationService.registerInvocation(invocation)
+
+	err := connection.Send(invocation.request)
+	if err != nil {
+		//not sent
+		invocationService.notSentMessages <- invocation.request.CorrelationId()
+	}
+	invocation.sentConnection = connection
+}
+
+func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
+	connectionChannel := invocationService.client.ConnectionManager.GetConnection(address)
+	invocationService.send(invocation, connectionChannel)
+}
+
+func (invocationService *InvocationService) registerInvocation(invocation *Invocation) {
 	message := invocation.request
 	correlationId := invocationService.nextCorrelationId()
 	message.SetCorrelationId(correlationId)
 	message.SetPartitionId(invocation.partitionId)
-	invocationService.pending[correlationId] = invocation
-
+	invocationService.responseWaitings[correlationId] = invocation
 }
 
-func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
-
+func (invocationService *InvocationService) unRegisterInvocation(correlationId int64) (*Invocation, bool) {
+	if invocation, ok := invocationService.responseWaitings[correlationId]; ok {
+		defer delete(invocationService.responseWaitings, correlationId)
+		return invocation, ok
+	}
+	//HANDLE no invocation found with correleationID
+	return nil, false
 }
 
 func (invocationService *InvocationService) handleNotSentInvocation(correlationId int64) {
-
+	if invocation, ok := invocationService.unRegisterInvocation(correlationId); ok {
+		invocationService.sending <- invocation
+	}
 }
 
 func (invocationService *InvocationService) handleResponse(response *ClientMessage) {
-	invocation := invocationService.pending[response.CorrelationId()]
-	delete(invocationService.pending, response.CorrelationId())
-	//TODO if response is ERROR, ha
-	if response.MessageType() == MESSAGE_TYPE_EXCEPTION {
-		invocation.err <- convertToError(response)
-	} else {
-		invocation.response <- response
+	if invocation, ok := invocationService.unRegisterInvocation(response.CorrelationId()); ok {
+		if response.MessageType() == MESSAGE_TYPE_EXCEPTION {
+			invocation.err <- convertToError(response)
+		} else {
+			invocation.response <- response
+		}
 	}
 }
+
 func convertToError(clientMessage *ClientMessage) *Error {
 	return ErrorCodecDecode(clientMessage)
 }
 
-func (invocationService *InvocationService) retry(correlationId int64) {
-
-}
+//func (invocationService *InvocationService) retry(correlationId int64) {
+//
+//}
 
 //func (invocationService *InvocationService) shouldRetryInvocation(clientInvocation *Invocation, err error) bool {
 //

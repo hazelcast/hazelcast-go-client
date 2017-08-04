@@ -5,19 +5,6 @@ import (
 	. "github.com/hazelcast/go-client/internal/serialization"
 )
 
-//type ClientContext interface {
-//	ClientConfig() *ClientConfig
-//	InvocationService() *InvocationService
-//	PartitionService() *PartitionService
-//	SerializationService() *SerializationService
-//	LifecycleService() *LifecycleService
-//	ConnectionManager() *ConnectionManager
-//	ListenerService() *ListenerService
-//	ClusterService() *ClusterService
-//	ProxyManager() *ProxyManager
-//	LoadBalancer() *RandomLoadBalancer
-//}
-
 type HazelcastClient struct {
 	ClientConfig         ClientConfig
 	InvocationService    *InvocationService
@@ -44,4 +31,6 @@ func (client *HazelcastClient) GetMap(name string) *MapProxy {
 func (client *HazelcastClient) init() {
 	client.InvocationService = NewInvocationService(client)
 	client.PartitionService = NewPartitionService(client)
+	client.ClusterService = NewClusterService(client)
+	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
 }

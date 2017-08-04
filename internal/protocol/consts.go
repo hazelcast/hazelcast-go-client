@@ -7,7 +7,7 @@ import (
 const CLIENT_TYPE = "GO"
 
 func DataCalculateSize(d *Data) int {
-	return len(d.Buffer) + INT_SIZE_IN_BYTES
+	return len(d.Buffer()) + INT_SIZE_IN_BYTES
 }
 func StringCalculateSize(str *string) int {
 	return len(*str) + INT_SIZE_IN_BYTES

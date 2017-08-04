@@ -151,7 +151,7 @@ func (ev1 *EntryView) Ttl() int64 {
 }
 
 func (ev1 EntryView) Equal(ev2 EntryView) bool {
-	if !bytes.Equal(ev1.key.Buffer, ev2.key.Buffer) || !bytes.Equal(ev1.value.Buffer, ev2.value.Buffer) {
+	if !bytes.Equal(ev1.key.Buffer(), ev2.key.Buffer()) || !bytes.Equal(ev1.value.Buffer(), ev2.value.Buffer()) {
 		return false
 	}
 	if ev1.cost != ev2.cost || ev1.creationTime != ev2.creationTime || ev1.expirationTime != ev2.expirationTime || ev1.hits != ev2.hits {

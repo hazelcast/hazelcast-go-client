@@ -1,7 +1,5 @@
 package config
-import(
-	."github.com/hazelcast/go-client/internal/protocol"
-)
+
 const (
 	DEFAULT_GROUP_NAME = "dev"
 	DEFAULT_GROUP_PASSWORD = "dev-pass"
@@ -79,4 +77,9 @@ func newClientNetworkConfig() ClientNetworkConfig{
 		false,
 		true,
 	}
+}
+
+type Address struct {
+	Host string
+	Port int32
 }

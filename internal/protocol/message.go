@@ -146,7 +146,7 @@ func (msg *ClientMessage) AppendInt32(v int32) {
 	msg.writeIndex += INT32_SIZE_IN_BYTES
 }
 func (msg *ClientMessage) AppendData(v Data) {
-	msg.AppendByteArray(v.Buffer)
+	msg.AppendByteArray(v.Buffer())
 }
 
 func (msg *ClientMessage) AppendByteArray(arr []byte) {

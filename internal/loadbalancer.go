@@ -10,7 +10,18 @@ import (
 type RandomLoadBalancer struct {
 	clusterService *ClusterService
 }
-func (randomLoadBalancer *RandomLoadBalancer) NextAddress() *Address {
+
+func NewRandomLoadBalancer(clusterService *ClusterService) *RandomLoadBalancer {
 	rand.Seed(time.Now().Unix())
-	return randomLoadBalancer.clusterService.members[rand.Intn(len(randomLoadBalancer.clusterService.members))].Address()
+	return &RandomLoadBalancer{clusterService:clusterService}
+}
+
+func (randomLoadBalancer *RandomLoadBalancer) NextAddress() *Address {
+	size := len(randomLoadBalancer.clusterService.Members)
+	if size>0 {
+		randomIndex :=rand.Intn(size)
+		member := randomLoadBalancer.clusterService.Members[randomIndex]
+		return member.Address()
+	}
+	return nil
 }

@@ -5,15 +5,14 @@ import (
 	. "github.com/hazelcast/go-client/internal/protocol"
 )
 
-
 type PartitionService struct {
-	client *HazelcastClient
-	partitions map[int32]*Address
+	client         *HazelcastClient
+	partitions     map[int32]*Address
 	partitionCount int32
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	return &PartitionService{client:client, partitions:make(map[int32]*Address)}
+	return &PartitionService{client: client, partitions: make(map[int32]*Address)}
 }
 
 func (partitionService *PartitionService) PartitionCount() int32 {
