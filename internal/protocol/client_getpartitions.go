@@ -49,7 +49,6 @@ func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) *ClientGetP
 			partitionsItemValItem := clientMessage.ReadInt32()
 			partitionsItemVal = append(partitionsItemVal, partitionsItemValItem)
 		}
-
 		partitionsItem.key = partitionsItemKey
 		partitionsItem.value = partitionsItemVal
 		partitions = append(partitions, partitionsItem)

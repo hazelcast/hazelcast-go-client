@@ -231,3 +231,9 @@ func (msg *ClientMessage) ReadByteArray() []byte {
 func (msg *ClientMessage) UpdateFrameLength() {
 	msg.SetFrameLength(int32(msg.writeIndex))
 }
+func (msg *ClientMessage) Accumulate(newMsg *ClientMessage){
+	start := newMsg.DataOffset()
+	end := newMsg.FrameLength()
+	msg.Buffer = append(msg.Buffer,newMsg.Buffer[start:end]...)
+	msg.SetFrameLength(int32(len(msg.Buffer)))
+}

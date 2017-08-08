@@ -29,11 +29,34 @@ func (partitionService *PartitionService) GetPartitionId(key interface{}) int32 
 	if error != nil {
 		//TODO handle error
 	}
-
 	count := partitionService.PartitionCount()
 	if count <= 0 {
 		return 0
 	}
-
 	return common.HashToIndex(data.GetPartitionHash(), count)
+}
+func (partitionService *PartitionService) doRefresh(){
+	address := partitionService.client.ClusterService.ownerConnectionAddress
+	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
+	connection := <-connectionChan
+	if connection == nil {
+		//TODO:: Handle error
+	}
+	request := ClientGetPartitionsEncodeRequest()
+	result,err := partitionService.client.InvocationService.InvokeOnConnection(request,connection).Result()
+	if err != nil {
+		//TODO:: Handle error
+	}
+	partitionService.processPartitionResponse(result)
+
+}
+func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage){
+	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
+	partitionService.partitions = make(map[int32]*Address)
+	for _,partitionList := range partitions{
+		addr := partitionList.Key().(*Address)
+		for partition := range partitionList.Value().([]int32) {
+			partitionService.partitions[int32(partition)] =addr
+		}
+	}
 }

@@ -7,12 +7,12 @@ import (
 
 type ObjectDataOutput struct {
 	buffer    []byte
-	service  SerializationService
+	service  *SerializationService
 	bigIndian bool
 	position  int
 }
 
-func NewObjectDataOutput(length int, service SerializationService, bigIndian bool) *ObjectDataOutput {
+func NewObjectDataOutput(length int, service *SerializationService, bigIndian bool) *ObjectDataOutput {
 	return &ObjectDataOutput{make([]byte, length), service, bigIndian, 0}
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 type HazelcastClient struct {
-	ClientConfig         ClientConfig
+	ClientConfig         *ClientConfig
 	InvocationService    *InvocationService
 	PartitionService     *PartitionService
 	SerializationService *SerializationService
@@ -18,9 +18,10 @@ type HazelcastClient struct {
 	LoadBalancer         *RandomLoadBalancer
 }
 
-func NewHazelcastClient(config ClientConfig) *HazelcastClient {
+func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 	client := HazelcastClient{ClientConfig: config}
-	go client.init()
+	//go client.init()
+	client.init()
 	return &client
 }
 
@@ -31,6 +32,8 @@ func (client *HazelcastClient) GetMap(name string) *MapProxy {
 func (client *HazelcastClient) init() {
 	client.InvocationService = NewInvocationService(client)
 	client.PartitionService = NewPartitionService(client)
-	client.ClusterService = NewClusterService(client)
+	client.ClusterService = NewClusterService(client,client.ClientConfig)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
+	client.SerializationService =NewSerializationService()
+	client.ConnectionManager = NewConnectionManager(client)
 }

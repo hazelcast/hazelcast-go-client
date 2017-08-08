@@ -27,7 +27,7 @@ type ClientAuthenticationResponseParameters struct {
 	ClientUnregisteredMembers []Member
 }
 
-func ClientAuthenticationCalculateSize(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
+func ClientAuthenticationCalculateSize(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(&username)
@@ -43,13 +43,12 @@ func ClientAuthenticationCalculateSize(username string, password string, uuid *s
 	dataSize += BOOL_SIZE_IN_BYTES
 	dataSize += StringCalculateSize(&clientType)
 	dataSize += UINT8_SIZE_IN_BYTES
-	dataSize += StringCalculateSize(&clientHazelcastVersion)
 	return dataSize
 }
 
-func ClientAuthenticationEncodeRequest(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
+func ClientAuthenticationEncodeRequest(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
+	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion))
 	clientMessage.SetMessageType(CLIENT_AUTHENTICATION)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(username)
@@ -65,7 +64,6 @@ func ClientAuthenticationEncodeRequest(username string, password string, uuid *s
 	clientMessage.AppendBool(isOwnerConnection)
 	clientMessage.AppendString(clientType)
 	clientMessage.AppendUint8(serializationVersion)
-	clientMessage.AppendString(clientHazelcastVersion)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

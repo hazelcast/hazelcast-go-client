@@ -18,12 +18,12 @@ type SerializationConfig struct{
 	//globalSerializer
 }
 
-func NewSerializationConfig() SerializationConfig{
-	return SerializationConfig{IsBigEndian:true,portableVersion:0}
+func NewSerializationConfig() *SerializationConfig{
+	return &SerializationConfig{IsBigEndian:true,portableVersion:0}
 }
 
-func newClientConfig() ClientConfig{
-	return ClientConfig{GroupConfig:newGroupConfig(),
+func NewClientConfig() *ClientConfig{
+	return &ClientConfig{GroupConfig:newGroupConfig(),
 		ClientNetworkConfig:newClientNetworkConfig(),
 	}
 }
@@ -38,7 +38,7 @@ func newGroupConfig() GroupConfig{
 	return GroupConfig{Name:DEFAULT_GROUP_NAME,Password:DEFAULT_GROUP_PASSWORD}
 }
 type ClientNetworkConfig struct {
-	Addresses []Address
+	Addresses *[]Address
 	//The candidate address list that client will use to establish initial connection
 	ConnectionAttemptLimit int32
 	/*
@@ -70,7 +70,7 @@ type ClientNetworkConfig struct {
 }
 func newClientNetworkConfig() ClientNetworkConfig{
 	return ClientNetworkConfig{
-		make([]Address,0),
+		new([]Address),
 		2,
 		3,
 		5.0,
