@@ -1,4 +1,5 @@
 package hazelcast
+
 /*
 import (
 	."github.com/hazelcast/go-client/config"

@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/binary"
+
 )
 
 var defaultSeed uint32 =0x01000193
@@ -16,7 +17,7 @@ func Murmur3A(key []byte,offset int32,len int,seed uint32) int32 {
 	var roundedEnd int32 =offset+int32(uint32(len)&uint32(0xfffffffc))
 	// body
 	for i := offset; i < roundedEnd; i+=4 {
-		k1 := uint32(binary.LittleEndian.Uint32(key[i*4:])) // TODO Validate
+		k1 := uint32(binary.LittleEndian.Uint32(key[i:])) // TODO Validate
 
 		k1 *= uint32(c1)
 		k1 = rotl32(k1, 15)

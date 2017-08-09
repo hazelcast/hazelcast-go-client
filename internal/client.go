@@ -32,8 +32,10 @@ func (client *HazelcastClient) GetMap(name string) *MapProxy {
 func (client *HazelcastClient) init() {
 	client.InvocationService = NewInvocationService(client)
 	client.PartitionService = NewPartitionService(client)
-	client.ClusterService = NewClusterService(client,client.ClientConfig)
+	client.ClusterService = NewClusterService(client, client.ClientConfig)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
-	client.SerializationService =NewSerializationService()
+	client.SerializationService = NewSerializationService()
 	client.ConnectionManager = NewConnectionManager(client)
+	client.ClusterService.start()
+	client.PartitionService.start()
 }

@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"sync"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"strconv"
+	"sync"
 )
 
 type ConnectionManager struct {
@@ -12,9 +12,10 @@ type ConnectionManager struct {
 	ownerAddress *Address
 	lock         sync.RWMutex
 }
-func NewConnectionManager(client *HazelcastClient) *ConnectionManager{
-	cm := ConnectionManager{client:client,
-		connections:make(map[string]*Connection),
+
+func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
+	cm := ConnectionManager{client: client,
+		connections: make(map[string]*Connection),
 	}
 	return &cm
 }
@@ -47,13 +48,13 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	invocationService := connectionManager.client.InvocationService
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
 	connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = con
-	err :=connectionManager.clusterAuthenticator(con)
+	err := connectionManager.clusterAuthenticator(con)
 	if err != nil {
 		//TODO ::Handle error
 	}
 	resp <- con
 }
-func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection) (error){
+func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection) error {
 	uuid := connectionManager.client.ClusterService.uuid
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid
 	request := ClientAuthenticationEncodeRequest(
@@ -66,10 +67,10 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		1,
 		//"3.9", //TODO::What should this be ?
 	)
-	result,err:=connectionManager.client.InvocationService.InvokeOnConnection(request,connection).Result()
+	result, err := connectionManager.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		//TODO:: Handle error
-	}else {
+	} else {
 
 		parameters := ClientAuthenticationDecodeResponse(result)
 		if parameters.Status != 0 {
@@ -77,6 +78,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		}
 		//TODO:: Process the parameters
 		connection.endpoint = parameters.Address
+		connection.isOwnerConnection = true
 		return nil
 	}
 	return nil

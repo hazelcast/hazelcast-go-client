@@ -1,41 +1,42 @@
 package internal
 
 import (
-//	"errors"
+	//	"errors"
 	"net"
 	"strconv"
 
 	"sync/atomic"
 
-	. "github.com/hazelcast/go-client/internal/protocol"
 	"fmt"
+	. "github.com/hazelcast/go-client/internal/protocol"
 )
 
 type Connection struct {
 	pending              chan *ClientMessage
-	received			 chan *ClientMessage
+	received             chan *ClientMessage
 	socket               net.Conn
 	clientMessageBuilder ClientMessageBuilder
 	closed               chan bool
 	endpoint             *Address
 	sendingError         chan int64
 	status               int32
+	isOwnerConnection    bool
 }
 
 func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64) *Connection {
-	connection := Connection{pending:make(chan *ClientMessage,0),
-		received:make(chan *ClientMessage,0),
-		closed:make(chan bool,0),
+	connection := Connection{pending: make(chan *ClientMessage, 0),
+		received:             make(chan *ClientMessage, 0),
+		closed:               make(chan bool, 0),
 		clientMessageBuilder: ClientMessageBuilder{responseChannel: responseChannel}, sendingError: sendingError}
 	//go func() {
-		socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
-		if err != nil {
-			close(connection.closed)
-			fmt.Println("CONNECTION IS CLOSED")
-		} else {
-			connection.socket = socket
-		}
-		socket.Write([]byte("CB2"))
+	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
+	if err != nil {
+		close(connection.closed)
+		fmt.Println("CONNECTION IS CLOSED")
+	} else {
+		connection.socket = socket
+	}
+	socket.Write([]byte("CB2"))
 
 	//}()
 	go connection.process()
@@ -75,13 +76,13 @@ func (connection *Connection) process() {
 
 func (connection *Connection) Send(clientMessage *ClientMessage) error {
 	/*
-	//Client message is not sent through the channel since this is a select/case clouse.
-	select {
-	case connection.pending <- clientMessage:
-		return nil
-	case <-connection.closed:
-		return errors.New("Connection Closed.")
-	}
+		//Client message is not sent through the channel since this is a select/case clouse.
+		select {
+		case connection.pending <- clientMessage:
+			return nil
+		case <-connection.closed:
+			return errors.New("Connection Closed.")
+		}
 	*/
 	connection.pending <- clientMessage
 	return nil
@@ -101,25 +102,24 @@ func (connection *Connection) write(clientMessage *ClientMessage) error {
 	}
 	return nil
 }
-func (connection *Connection) read(){
+func (connection *Connection) read() {
 	//TODO :: What if the size is bigger than 8192
- 	buf := make([]byte,8192)
+	buf := make([]byte, 8192)
 	for {
-		n,err := connection.socket.Read(buf)
-		if n== 0 {
+		n, err := connection.socket.Read(buf)
+		if n == 0 {
 			continue
 		}
 		if err != nil {
 			//TODO:: Handle error
 			connection.closed <- true
 		}
-		if n>=8192{
+		if n >= 8192 {
 			fmt.Println("Buffer was too small for the read.")
 		}
-		resp := NewClientMessage(buf,0)
+		resp := NewClientMessage(buf, 0)
 		connection.received <- resp
 	}
-
 
 }
 
@@ -128,6 +128,5 @@ func (connection *Connection) Close() {
 		return
 	}
 	close(connection.closed)
-
 
 }

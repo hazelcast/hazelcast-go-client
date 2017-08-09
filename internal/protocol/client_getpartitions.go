@@ -41,17 +41,16 @@ func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) *ClientGetP
 	partitions := make([]Pair, partitionsSize)
 	for partitionsIndex := 0; partitionsIndex < int(partitionsSize); partitionsIndex++ {
 		var partitionsItem Pair
-		partitionsItemKey := *AddressCodecDecode(clientMessage)
-
+		partitionsItemKey := AddressCodecDecode(clientMessage)
 		partitionsItemValSize := clientMessage.ReadInt32()
 		partitionsItemVal := make([]int32, partitionsItemValSize)
 		for partitionsItemValIndex := 0; partitionsItemValIndex < int(partitionsItemValSize); partitionsItemValIndex++ {
 			partitionsItemValItem := clientMessage.ReadInt32()
-			partitionsItemVal = append(partitionsItemVal, partitionsItemValItem)
+			partitionsItemVal[partitionsItemValIndex] =  partitionsItemValItem
 		}
 		partitionsItem.key = partitionsItemKey
 		partitionsItem.value = partitionsItemVal
-		partitions = append(partitions, partitionsItem)
+		partitions[partitionsIndex] =  partitionsItem
 	}
 	parameters.Partitions = partitions
 

@@ -5,7 +5,6 @@ import (
 	. "github.com/hazelcast/go-client/internal/serialization"
 )
 
-
 type proxy struct {
 	client      HazelcastClient
 	serviceName string

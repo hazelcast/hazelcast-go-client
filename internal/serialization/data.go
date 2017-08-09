@@ -37,7 +37,10 @@ func (d *Data) DataSize() int {
 }
 
 func (d *Data) GetPartitionHash() int32 {
-	return Murmur3ADefault(d.Payload, DATA_OFFSET, d.DataSize())
+	//TODO :: Remove the second return
+	//return Murmur3ADefault(d.Payload, DATA_OFFSET, d.DataSize())
+	return Murmur3ADefault(d.Payload, 0, d.DataSize()-4)
+
 }
 
 type dataOutput interface {

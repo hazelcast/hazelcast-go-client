@@ -33,8 +33,8 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 		partitionId:     partitionId,
 		address:         address,
 		boundConnection: connection,
-		response:        make(chan *ClientMessage,0),
-		err:             make(chan error,0),
+		response:        make(chan *ClientMessage, 0),
+		err:             make(chan error, 0),
 		timeout:         time.After(DEFAULT_INVOCATION_TIMEOUT)}
 }
 
@@ -56,13 +56,13 @@ type InvocationService struct {
 	responseChannel  chan *ClientMessage
 	notSentMessages  chan int64
 	invoke           func(*Invocation)
-	lock         sync.RWMutex
+	lock             sync.RWMutex
 }
 
 func NewInvocationService(client *HazelcastClient) *InvocationService {
-	service := &InvocationService{client: client, sending: make(chan *Invocation, 0),responseWaitings:make(map[int64]*Invocation),
-		responseChannel:make(chan *ClientMessage,0),
-		quit : make(chan bool, 0),
+	service := &InvocationService{client: client, sending: make(chan *Invocation, 0), responseWaitings: make(map[int64]*Invocation),
+		responseChannel: make(chan *ClientMessage, 0),
+		quit:            make(chan bool, 0),
 	}
 	//if client.config.IsSmartRouting() {
 	service.invoke = service.invokeSmart
@@ -83,7 +83,7 @@ func (invocationService *InvocationService) nextCorrelationId() int64 {
 
 func (invocationService *InvocationService) InvokeOnPartitionOwner(request *ClientMessage, partitionId int32) InvocationResult {
 	invocation := NewInvocation(request, partitionId, nil, nil)
-	go func(){
+	go func() {
 		invocationService.sending <- invocation
 	}()
 	return invocation
@@ -102,8 +102,8 @@ func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessag
 }
 
 func (invocationService *InvocationService) InvokeOnKeyOwner(request *ClientMessage, keyData *serialization.Data) InvocationResult {
-	//partitionId := invocationService.client.PartitionService.GetPartitionId(keyData)
-	partitionId := int32(-1)
+	partitionId := invocationService.client.PartitionService.GetPartitionId(keyData)
+	//partitionId := int32(-1)
 	return invocationService.InvokeOnPartitionOwner(request, partitionId)
 }
 
@@ -163,8 +163,8 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 		}
 	}()
 }
-func (invocationService *InvocationService) InvokeOnConnection(request *ClientMessage, connection *Connection) InvocationResult{
-	invocation := NewInvocation(request,-1,nil,connection)
+func (invocationService *InvocationService) InvokeOnConnection(request *ClientMessage, connection *Connection) InvocationResult {
+	invocation := NewInvocation(request, -1, nil, connection)
 	invocationService.sending <- invocation
 	return invocation
 }
