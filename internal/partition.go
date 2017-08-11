@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
@@ -8,24 +9,34 @@ import (
 	"time"
 )
 
-const PARTITION_UPDATE_INTERVAL = 10
+const PARTITION_UPDATE_INTERVAL = 5
 
 type PartitionService struct {
 	client         *HazelcastClient
 	partitions     map[int32]*Address
 	partitionCount int32
 	mu             sync.Mutex
+	cancel         chan bool
+	alive          chan bool
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	return &PartitionService{client: client, partitions: make(map[int32]*Address)}
+	return &PartitionService{client: client, partitions: make(map[int32]*Address), cancel: make(chan bool, 0), alive: make(chan bool, 0)}
 }
 func (partitionService *PartitionService) start() {
-	partitionService.doRefresh()
 	go func() {
-		partitionService.doRefresh()
-		time.Sleep(time.Duration(PARTITION_UPDATE_INTERVAL * time.Second))
+		for {
+			select {
+			case <-partitionService.alive:
+				//TODO::
+				time.Sleep(time.Duration(PARTITION_UPDATE_INTERVAL) * time.Second)
+				go partitionService.doRefresh()
+			case <-partitionService.cancel:
+				return
+			}
+		}
 	}()
+	partitionService.doRefresh()
 
 }
 func (partitionService *PartitionService) PartitionCount() int32 {
@@ -46,8 +57,8 @@ func (partitionService *PartitionService) GetPartitionId(key interface{}) int32 
 			//TODO handle error
 		}
 	*/
-	data := serialization.Data{[]byte("askljjjlkklds")}
-
+	//TODO:: Remove this line when serialization service.toData works.
+	data := serialization.Data{[]byte("asdasassassaas")}
 	count := partitionService.PartitionCount()
 	if count <= 0 {
 		return 0
@@ -59,7 +70,12 @@ func (partitionService *PartitionService) doRefresh() {
 	defer partitionService.mu.Unlock()
 	address := partitionService.client.ClusterService.ownerConnectionAddress
 	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
-	connection := <-connectionChan
+	connection, alive := <-connectionChan
+	if !alive {
+		fmt.Print("connection is closed")
+		//TODO::Handle connection closed
+		return
+	}
 	if connection == nil {
 		//TODO:: Handle error
 	}
@@ -69,6 +85,7 @@ func (partitionService *PartitionService) doRefresh() {
 		//TODO:: Handle error
 	}
 	partitionService.processPartitionResponse(result)
+	partitionService.alive <- true
 
 }
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
@@ -80,4 +97,9 @@ func (partitionService *PartitionService) processPartitionResponse(result *Clien
 			partitionService.partitions[int32(partition)] = addr
 		}
 	}
+}
+func (partitionService *PartitionService) shutdown() {
+	go func() {
+		partitionService.cancel <- true
+	}()
 }

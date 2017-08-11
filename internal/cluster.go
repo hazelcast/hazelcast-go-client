@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"time"
@@ -55,10 +56,15 @@ func (clusterService *ClusterService) connectToCluster() {
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	connectionChannel := clusterService.client.ConnectionManager.GetConnection(address)
-	con := <-connectionChannel
+	con, alive := <-connectionChannel
+	if !alive {
+		fmt.Println("Connection is closed")
+		return nil
+	}
 	if !con.isOwnerConnection {
 		clusterService.client.ConnectionManager.clusterAuthenticator(con)
 	}
 	clusterService.ownerConnectionAddress = con.endpoint
+	clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_CONNECTED)
 	return nil
 }

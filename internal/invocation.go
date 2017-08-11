@@ -9,6 +9,7 @@ import (
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
 
+	"errors"
 	"sync"
 )
 
@@ -19,6 +20,7 @@ type Invocation struct {
 	request         *ClientMessage
 	partitionId     int32
 	response        chan *ClientMessage
+	closed          chan bool
 	err             chan error
 	timeout         <-chan time.Time //TODO invocation should be sent in this timeout
 }
@@ -35,6 +37,7 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 		boundConnection: connection,
 		response:        make(chan *ClientMessage, 0),
 		err:             make(chan error, 0),
+		closed:          make(chan bool, 0),
 		timeout:         time.After(DEFAULT_INVOCATION_TIMEOUT)}
 }
 
@@ -44,6 +47,8 @@ func (invocation *Invocation) Result() (*ClientMessage, error) {
 		return response, nil
 	case err := <-invocation.err:
 		return nil, err
+	case <-invocation.closed:
+		return nil, errors.New("Connection is closed")
 	}
 }
 
@@ -122,7 +127,6 @@ func (invocationService *InvocationService) process() {
 		}
 	}
 }
-
 func (invocationService *InvocationService) invokeSmart(invocation *Invocation) {
 	if invocation.boundConnection != nil {
 		invocationService.sendToConnection(invocation, invocation.boundConnection)
@@ -130,13 +134,13 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 		if target, ok := invocationService.client.PartitionService.PartitionOwner(invocation.partitionId); ok {
 			invocationService.sendToAddress(invocation, target)
 		} else {
+			invocation.err <- errors.New("Partition table doesnt contain the address for the given partition id")
 			//TODO should I handle this case
 		}
 	} else if invocation.address != nil {
 		//TODO :: Partition id is -1 but it cant be -1
 		invocationService.sendToAddress(invocation, invocation.address)
 	} else {
-		invocation.request.SetPartitionId(1)
 		var target *Address = invocationService.client.LoadBalancer.NextAddress()
 		invocationService.sendToAddress(invocation, target)
 	}
@@ -153,13 +157,20 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 		select {
 		case <-invocationService.quit:
 			return
-		case connection := <-connectionChannel:
-			err := connection.Send(invocation.request)
-			if err != nil {
-				//not sent
-				invocationService.notSentMessages <- invocation.request.CorrelationId()
+		case connection, alive := <-connectionChannel:
+			if !alive {
+				//TODO :: Handle the case if the connection is closed
+			} else {
+				err := connection.Send(invocation.request)
+				if err != nil {
+					//not sent
+					invocationService.notSentMessages <- invocation.request.CorrelationId()
+				} else {
+					invocation.sentConnection = connection
+					invocation.closed = connection.closed
+				}
+
 			}
-			invocation.sentConnection = connection
 		}
 	}()
 }
@@ -177,6 +188,7 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 		invocationService.notSentMessages <- invocation.request.CorrelationId()
 	}
 	invocation.sentConnection = connection
+	invocation.closed = connection.closed
 }
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {

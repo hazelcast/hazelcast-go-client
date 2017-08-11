@@ -6,9 +6,9 @@ import (
 )
 
 type proxy struct {
-	client      HazelcastClient
-	serviceName string
-	name        string
+	client      *HazelcastClient
+	serviceName *string
+	name        *string
 }
 
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {

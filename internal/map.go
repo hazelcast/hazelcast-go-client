@@ -14,6 +14,12 @@ type MapProxy struct {
 	proxy
 }
 
+func newMapProxy(client *HazelcastClient, name *string) *MapProxy {
+	mapProxy := MapProxy{}
+	mapProxy.client = client
+	mapProxy.name = name
+	return &mapProxy
+}
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	/*
 		keyData, err  := imap.ToData(key)
@@ -25,9 +31,9 @@ func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interfac
 			return nil, err
 		}
 	*/
-	keyData := &serialization.Data{[]byte("successful")}
-	valueData := &serialization.Data{[]byte("HEISENBERG")}
-	request := MapPutEncodeRequest(imap.name, *keyData, *valueData, THREAD_ID, TTL)
+	keyData := &serialization.Data{[]byte(key.(string))}
+	valueData := &serialization.Data{[]byte(value.(string))}
+	request := MapPutEncodeRequest(*imap.name, *keyData, *valueData, THREAD_ID, TTL)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -38,20 +44,18 @@ func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interfac
 }
 
 func (imap *MapProxy) Get(key interface{}) (value interface{}, err error) {
-	keyData := &serialization.Data{[]byte("successful")}
-	request := MapGetEncodeRequest(imap.name, *keyData, THREAD_ID)
+	keyData := &serialization.Data{[]byte(key.(string))}
+	request := MapGetEncodeRequest(*imap.name, *keyData, THREAD_ID)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
 	}
 	responseData := MapGetDecodeResponse(responseMessage).Response
 	return &responseData, nil
-
-	return nil, nil
 }
 func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
-	keyData := &serialization.Data{[]byte("successful")}
-	request := MapRemoveEncodeRequest(imap.name, *keyData, THREAD_ID)
+	keyData := &serialization.Data{[]byte(key.(string))}
+	request := MapRemoveEncodeRequest(*imap.name, *keyData, THREAD_ID)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err

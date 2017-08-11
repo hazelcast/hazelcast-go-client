@@ -9,6 +9,7 @@ import (
 
 	"fmt"
 	. "github.com/hazelcast/go-client/internal/protocol"
+	"time"
 )
 
 type Connection struct {
@@ -21,25 +22,31 @@ type Connection struct {
 	sendingError         chan int64
 	status               int32
 	isOwnerConnection    bool
+	lastRead             time.Time
+	heartBeating         bool
 }
 
 func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 0),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
-		clientMessageBuilder: ClientMessageBuilder{responseChannel: responseChannel}, sendingError: sendingError}
+		clientMessageBuilder: ClientMessageBuilder{responseChannel: responseChannel}, sendingError: sendingError,
+		heartBeating: true,
+	}
+	go connection.process()
 	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
-		close(connection.closed)
+		connection.Close()
 		fmt.Println("CONNECTION IS CLOSED")
+		return nil
 	} else {
 		connection.socket = socket
 	}
+	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
-
 	//}()
-	go connection.process()
+
 	go connection.read()
 	return &connection
 }
@@ -58,6 +65,7 @@ func (connection *Connection) process() {
 					connection.sendingError <- request.CorrelationId()
 				}
 			case <-connection.closed:
+				connection.Close()
 				return
 			}
 		}
@@ -103,30 +111,30 @@ func (connection *Connection) write(clientMessage *ClientMessage) error {
 	return nil
 }
 func (connection *Connection) read() {
-	//TODO :: What if the size is bigger than 8192
-	buf := make([]byte, 8192)
+	//TODO :: What if the size is bigger than 8192*2
+	buf := make([]byte, 8192*2)
 	for {
 		n, err := connection.socket.Read(buf)
+		if err != nil {
+			//TODO:: Handle error
+			connection.Close()
+		}
 		if n == 0 {
 			continue
 		}
-		if err != nil {
-			//TODO:: Handle error
-			connection.closed <- true
-		}
-		if n >= 8192 {
+
+		if n >= 8192*2 {
 			fmt.Println("Buffer was too small for the read.")
 		}
 		resp := NewClientMessage(buf, 0)
 		connection.received <- resp
 	}
-
 }
 
 func (connection *Connection) Close() {
+	//TODO :: Should the status be 1 for alive and 0 when closed ?
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
 		return
 	}
 	close(connection.closed)
-
 }

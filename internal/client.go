@@ -2,6 +2,7 @@ package internal
 
 import (
 	. "github.com/hazelcast/go-client/config"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/serialization"
 )
 
@@ -16,6 +17,7 @@ type HazelcastClient struct {
 	ClusterService       *ClusterService
 	ProxyManager         *ProxyManager
 	LoadBalancer         *RandomLoadBalancer
+	HeartBeatService     *HeartBeatService
 }
 
 func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
@@ -24,9 +26,8 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 	client.init()
 	return &client
 }
-
-func (client *HazelcastClient) GetMap(name string) *MapProxy {
-	return &MapProxy{}
+func (client *HazelcastClient) GetMap(name *string) core.IMap {
+	return newMapProxy(client, name)
 }
 
 func (client *HazelcastClient) init() {
@@ -36,6 +37,16 @@ func (client *HazelcastClient) init() {
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
 	client.SerializationService = NewSerializationService()
 	client.ConnectionManager = NewConnectionManager(client)
+	client.LifecycleService = newLifecycleService(client.ClientConfig)
+	client.HeartBeatService = newHeartBeatService(client)
 	client.ClusterService.start()
+	client.HeartBeatService.start()
 	client.PartitionService.start()
+}
+func (client *HazelcastClient) Shutdown() {
+	if client.LifecycleService.isLive {
+		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTTING_DOWN)
+		client.PartitionService.shutdown()
+		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTDOWN)
+	}
 }
