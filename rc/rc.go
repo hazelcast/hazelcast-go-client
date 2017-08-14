@@ -685,7 +685,7 @@ func NewRemoteControllerClient(hostPort string) (rc *RemoteControllerClient, err
 	}
 
 	transportFactory := thrift.NewTBufferedTransportFactory(8192)
-	transport, err := transportFactory.GetTransport(tSocket)
+	transport := transportFactory.GetTransport(tSocket)
 
 	err = transport.Open()
 	if err != nil {
