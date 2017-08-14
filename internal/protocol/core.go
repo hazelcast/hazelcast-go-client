@@ -68,7 +68,7 @@ func (member1 *Member) Equal(member2 Member) bool {
 	if member1.isLiteMember != member2.isLiteMember {
 		return false
 	}
-	if !reflect.DeepEqual(member1.Attributes, member2.Attributes) {
+	if !reflect.DeepEqual(member1.attributes, member2.attributes) {
 		return false
 	}
 	return true
