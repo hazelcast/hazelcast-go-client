@@ -3,13 +3,15 @@ package serialization
 import (
 	"reflect"
 	"errors"
-	. "github.com/hazelcast/go-client/config"
+	."github.com/hazelcast/go-client/config"
+	."github.com/hazelcast/go-client/internal/serialization/api"
 )
+
 
 type serializer interface {
 	GetId() int32
-	Read(input dataInput) interface{}
-	Write(output dataOutput, object interface{})
+	Read(input DataInput) interface{}
+	Write(output DataOutput, object interface{})
 }
 
 ////// SerializationService ///////////
@@ -36,10 +38,10 @@ func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 	return &Data{dataOutput.buffer}, nil
 }
 
-func (service SerializationService) ToObject(data *Data) (interface{}, error) {
+func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 	//TODO should return proper error values
 	if data == nil {
-		return data,nil
+		return data, nil
 	}
 	if data.getType() == 0 {
 		return data, nil
@@ -49,48 +51,93 @@ func (service SerializationService) ToObject(data *Data) (interface{}, error) {
 	return serializer.Read(dataInput), nil
 }
 
-func (service SerializationService) WriteObject(output dataOutput, object interface{}) {
+func (service *SerializationService) WriteObject(output *ObjectDataOutput, object interface{}) {
 	var serializer = service.FindSerializerFor(object)
 	output.WriteInt32(serializer.GetId())
 	serializer.Write(output, object)
 }
 
-func (service SerializationService) ReadObject(input dataInput) interface{} {
+func (service *SerializationService) ReadObject(input *ObjectDataInput) interface{} {
 	var serializerId, _ = input.ReadInt32()
 	var serializer = service.registry[serializerId]
 	return serializer.Read(input)
 }
 
-func (service SerializationService) FindSerializerFor(obj interface{}) serializer {
+func (service *SerializationService) FindSerializerFor(obj interface{}) serializer {
 	var serializer serializer
 	if obj == nil {
-		//serializer = findSerializerByName('null', false);
+		serializer = service.registry[service.nameToId["nil"]]
 	}
 
-	if (serializer == nil) {
+	if serializer == nil {
 		serializer = service.LookUpDefaultSerializer(obj)
 	}
 
-	if (serializer == nil) {
+	if serializer == nil {
 		//serializer=lookupCustomSerializer(obj)
 	}
 
-	if (serializer == nil) {
+	if serializer == nil {
 		//serializer=lookupGlobalSerializer
 	}
 
-	if (serializer == nil) {
-		//serializer=lookupDefaultSerializer
+	if serializer == nil {
+		//serializer=findSerializerByName('!json', false)
+	}
+
+	if serializer == nil {
+		// throw "There is no suitable serializer for " +obj + "."
 	}
 	return serializer
 }
 
-func (service SerializationService) RegisterDeafultSerializers() {
-	service.RegisterSerializer(IntegerSerializer{})
-	service.nameToId["int32"] = IntegerSerializer{}.GetId()
+func (service *SerializationService) RegisterDeafultSerializers() {
+	service.RegisterSerializer(&Integer16Serializer{})
+	service.nameToId["int16"] = (&Integer16Serializer{}).GetId()
+
+	service.RegisterSerializer(&Integer32Serializer{})
+	service.nameToId["int32"] = (&Integer32Serializer{}).GetId()
+
+	service.RegisterSerializer(&Integer64Serializer{})
+	service.nameToId["int64"] = (&Integer64Serializer{}).GetId()
+
+	service.RegisterSerializer(&Float32Serializer{})
+	service.nameToId["float32"] = (&Float32Serializer{}).GetId()
+
+	service.RegisterSerializer(&Float64Serializer{})
+	service.nameToId["float64"] = (&Float64Serializer{}).GetId()
+
+	service.RegisterSerializer(&ByteSerializer{})
+	service.nameToId["uint8"] = (&ByteSerializer{}).GetId()
+
+	service.RegisterSerializer(&BoolSerializer{})
+	service.nameToId["bool"] = (&BoolSerializer{}).GetId()
+
+	service.RegisterSerializer(&StringSerializer{})
+	service.nameToId["string"] = (&StringSerializer{}).GetId()
+
+	service.RegisterSerializer(&NilSerializer{})
+	service.nameToId["nil"] = (&NilSerializer{}).GetId()
+
+	service.RegisterSerializer(&Integer16ArraySerializer{})
+	service.nameToId["[]int16"] = (&Integer16ArraySerializer{}).GetId()
+
+	service.RegisterSerializer(&Integer32ArraySerializer{})
+	service.nameToId["[]int32"] = (&Integer32ArraySerializer{}).GetId()
+
+	service.RegisterSerializer(&Integer64ArraySerializer{})
+	service.nameToId["[]int64"] = (&Integer64ArraySerializer{}).GetId()
+
+	service.RegisterSerializer(&Float32ArraySerializer{})
+	service.nameToId["[]float32"] = (&Float32ArraySerializer{}).GetId()
+
+	service.RegisterSerializer(&Float64ArraySerializer{})
+	service.nameToId["[]float64"] = (&Float64ArraySerializer{}).GetId()
+
+	service.RegisterIdentifiedFactories()
 }
 
-func (service SerializationService) RegisterSerializer(serializer serializer) error {
+func (service *SerializationService) RegisterSerializer(serializer serializer) error {
 	if service.registry[serializer.GetId()] != nil {
 		return errors.New("This serializer is already in the registry!")
 	}
@@ -98,13 +145,16 @@ func (service SerializationService) RegisterSerializer(serializer serializer) er
 	return nil
 }
 
-func (service SerializationService) GetIdByObject(obj interface{}) int32 {
+func (service *SerializationService) GetIdByObject(obj interface{}) int32 {
 	return service.nameToId[reflect.TypeOf(obj).String()]
 }
 
-func (service SerializationService) LookUpDefaultSerializer(obj interface{}) serializer {
+func (service *SerializationService) LookUpDefaultSerializer(obj interface{}) serializer {
 	var serializer serializer
-	//  if isIdentifiedDataSerializable(obj)
+	if isIdentifiedDataSerializable(obj) {
+		return service.registry[service.nameToId["identified"]]
+	}
+
 	// if isPortableSerializer
 	///	objectType:=reflect.TypeOf(obj).String()
 	serializer = service.registry[service.GetIdByObject(obj)]
@@ -112,6 +162,29 @@ func (service SerializationService) LookUpDefaultSerializer(obj interface{}) ser
 	return serializer
 }
 
-/*func isIdentifiedDataSerializable(obj *interface{}) bool {
-	return nil//( obj.readData && obj.writeData && obj.getClassId && obj.getFactoryId);
-}*/
+func (service *SerializationService) RegisterIdentifiedFactories() {
+	factories := make(map[int32]IdentifiedDataSerializableFactory)
+	for id, _ := range factories {
+		factories[id] = service.serializationConfig.DataSerializableFactories[id]
+	}
+
+	idToPredicate := make(map[int32]IdentifiedDataSerializable)
+	FillPredicateIds(idToPredicate)
+	factories[PREDICATE_FACTORY_ID] = &PredicateFactory{idToPredicate}
+
+	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
+	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
+	service.RegisterSerializer(&IdentifiedDataSerializableSerializer{factories})
+	service.nameToId["identified"] = (&IdentifiedDataSerializableSerializer{}).GetId()
+}
+
+func FillPredicateIds(idToPredicate map[int32]IdentifiedDataSerializable) {
+	idToPredicate[0] = &SqlPredicate{}
+}
+
+func isIdentifiedDataSerializable(obj interface{}) bool {
+	if _, ok := obj.(IdentifiedDataSerializable); ok {
+		return true
+	}
+	return false
+}

@@ -1,5 +1,10 @@
 package config
 
+import (
+	."github.com/hazelcast/go-client/internal/serialization/api"
+)
+
+
 const (
 	DEFAULT_GROUP_NAME     = "dev"
 	DEFAULT_GROUP_PASSWORD = "dev-pass"
@@ -11,21 +16,21 @@ type ClientConfig struct {
 }
 
 type SerializationConfig struct {
-	IsBigEndian bool
-	// dataSerializableFactories map[int32]IdentifiedDataSerializableFactory
+	IsBigEndian               bool
+	DataSerializableFactories map[int32]IdentifiedDataSerializableFactory
 	// portableFactories map[int32]
-	portableVersion int32
+	PortableVersion int32
 	//customSerializers []
 	//globalSerializer
 }
 
 func NewSerializationConfig() *SerializationConfig {
-	return &SerializationConfig{IsBigEndian: true, portableVersion: 0}
+	return &SerializationConfig{IsBigEndian: true, DataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), PortableVersion: 0}
 }
 
-func NewClientConfig() *ClientConfig {
-	return &ClientConfig{GroupConfig: newGroupConfig(),
-		ClientNetworkConfig: newClientNetworkConfig(),
+func NewClientConfig() ClientConfig {
+	return ClientConfig{GroupConfig: NewGroupConfig(),
+		ClientNetworkConfig:         NewClientNetworkConfig(),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
@@ -37,7 +42,7 @@ type GroupConfig struct {
 	Password string
 }
 
-func newGroupConfig() GroupConfig {
+func NewGroupConfig() GroupConfig {
 	return GroupConfig{Name: DEFAULT_GROUP_NAME, Password: DEFAULT_GROUP_PASSWORD}
 }
 
@@ -73,7 +78,7 @@ type ClientNetworkConfig struct {
 	*/
 }
 
-func newClientNetworkConfig() ClientNetworkConfig {
+func NewClientNetworkConfig() ClientNetworkConfig {
 	return ClientNetworkConfig{
 		new([]Address),
 		2,

@@ -2,7 +2,7 @@ package serialization
 
 import (
 	"encoding/binary"
-	."github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/common"
 )
 
 const (
@@ -14,7 +14,7 @@ type Data struct {
 	Payload []byte
 }
 
-func (data Data) Buffer() []byte{
+func (data Data) Buffer() []byte {
 	return data.Payload
 }
 
@@ -43,14 +43,4 @@ func (d *Data) GetPartitionHash() int32 {
 
 }
 
-type dataOutput interface {
-	WriteInt32(v int32)
-	WriteFloat64(v float64)
-}
 
-type dataInput interface {
-	ReadInt32() (int32, error)
-	ReadInt32WithPosition(position int) (int32, error)
-	ReadFloat64() (float64, error)
-	ReadFloat64WithPosition(position int) (float64, error)
-}
