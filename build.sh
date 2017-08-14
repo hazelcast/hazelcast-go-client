@@ -11,6 +11,10 @@ set -x
 export PRJ=`git config --get remote.origin.url | sed 's/^https:\/\///' | sed 's/\.git$//'`
 
 go get git.apache.org/thrift.git/lib/go/thrift
+cd $GOPATH/src/git.apache.org/thrift.git/
+git fetch --tags -v
+git checkout 0.10.0
+cd $GOPATH/src/$PRJ
 
 bash ./start-rc.sh
 
