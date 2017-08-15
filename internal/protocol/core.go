@@ -10,7 +10,12 @@ type Address struct {
 	host string
 	port int
 }
-
+func NewAddress() *Address{
+	return &Address{"127.0.0.1",5701}
+}
+func NewAddressWithParameters(Host string,Port int) *Address{
+	return &Address{Host,Port}
+}
 func (address *Address) Host() string {
 	return address.host
 }

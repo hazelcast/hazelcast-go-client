@@ -7,7 +7,7 @@ import (
 
 /// Tests for ObjectDataOutput ///
 func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
-	o := NewObjectDataOutput(2, SerializationService{}, false)
+	o := NewObjectDataOutput(2, &SerializationService{}, false)
 	o.EnsureAvailable(5)
 	buf := o.buffer
 	expectedBuf := []byte{0, 0, 0, 0, 0}
@@ -18,7 +18,7 @@ func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
 }
 
 func TestObjectDataOutput_WriteInt32(t *testing.T) {
-	o := NewObjectDataOutput(4, SerializationService{}, false)
+	o := NewObjectDataOutput(4, &SerializationService{}, false)
 	o.WriteInt32(1)
 	o.WriteInt32(2)
 	o.WriteInt32(3)
@@ -58,7 +58,7 @@ func TestObjectDataInput_ReadInt32WithPosition(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadFloat64(t *testing.T) {
-	o := NewObjectDataOutput(24, SerializationService{}, false)
+	o := NewObjectDataOutput(24, &SerializationService{}, false)
 	o.WriteFloat64(1.234)
 	o.WriteFloat64(2.544)
 	o.WriteFloat64(3.432)
@@ -72,7 +72,7 @@ func TestObjectDataInput_ReadFloat64(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
-	o := NewObjectDataOutput(24, SerializationService{}, false)
+	o := NewObjectDataOutput(24, &SerializationService{}, false)
 	o.WriteFloat64(1.234)
 	o.WriteFloat64(2.544)
 	o.WriteFloat64(3.432)

@@ -17,8 +17,8 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
 	service := NewSerializationService();
-	data := service.ToData(expected)
-	var ret int32 = service.ToObject(&data).(int32)
+	data,_ := service.ToData(expected)
+	ret,_ := service.ToObject(data)
 
 	if expected != ret {
 		t.Errorf("ToData returns ", ret, " expected ", expected)

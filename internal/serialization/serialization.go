@@ -14,18 +14,18 @@ type serializer interface {
 
 ////// SerializationService ///////////
 type SerializationService struct {
-	serializationConfig SerializationConfig
+	serializationConfig *SerializationConfig
 	registry            map[int32]serializer // key=id of serializer, serializer will be a class=>> default serializer + custom +global
 	nameToId            map[string]int32
 }
 
-func NewSerializationService() SerializationService {
+func NewSerializationService() *SerializationService {
 	v1 := SerializationService{serializationConfig: NewSerializationConfig(), nameToId: make(map[string]int32), registry: make(map[int32]serializer)}
 	v1.RegisterDeafultSerializers()
-	return v1
+	return &v1
 }
 
-func (service SerializationService) ToData(object interface{}) (*Data, error) {
+func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 	//TODO should return proper error values
 	dataOutput := NewObjectDataOutput(1, service, service.serializationConfig.IsBigEndian)
 	var serializer serializer
