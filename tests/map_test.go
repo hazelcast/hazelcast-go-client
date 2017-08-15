@@ -5,16 +5,18 @@ import (
 	"testing"
 	"bytes"
 	"github.com/hazelcast/go-client/internal/serialization"
-	"strconv"
 	."github.com/hazelcast/go-client/rc"
 )
+
+const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
+
 //Rc is not in use currenly. In order to run these tests open a server manually.
 func TestMapProxy_SinglePutGet(t *testing.T) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		t.Fatal("create remote controller failed:", err)
 	}
-	cluster,err :=remoteController.CreateCluster("3.9","")
+	cluster,err :=remoteController.CreateCluster("3.9",DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
 	client :=hazelcast.NewHazelcastClient()
 	mapName := "myMap"
@@ -31,29 +33,3 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	}
 	remoteController.ShutdownCluster(cluster.ID)
 }
-func TestMapProxy_ManyPutGet(t *testing.T){
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
-	if remoteController == nil || err != nil {
-		t.Fatal("create remote controller failed:", err)
-	}
-	cluster,err :=remoteController.CreateCluster("3.9","")
-	remoteController.StartMember(cluster.ID)
-	client :=hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
-	for i := 0 ;i < 10000 ;i++ {
-		mp.Put("testingkey"+strconv.Itoa(i),"testingvalue"+strconv.Itoa(i))
-		x,err:=mp.Get("testingkey"+strconv.Itoa(i))
-		if err != nil{
-			t.Error(err)
-		}else {
-			//Since serialization is not completed for string, comparing interfaces looks ugly now.
-			if bytes.Compare(x.(*serialization.Data).Payload, []byte("testingvalue"+strconv.Itoa(i))) !=0 {
-				t.Errorf("get returned a wrong value")
-			}
-		}
-	}
-	remoteController.ShutdownCluster(cluster.ID)
-
-}
-
