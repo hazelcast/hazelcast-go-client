@@ -1,17 +1,21 @@
 package tests
 
 import (
-	//"fmt"
 	"github.com/hazelcast/go-client"
 	"testing"
-	//"time"
-	//"strconv"
 	"bytes"
 	"github.com/hazelcast/go-client/internal/serialization"
 	"strconv"
+	."github.com/hazelcast/go-client/rc"
 )
 //Rc is not in use currenly. In order to run these tests open a server manually.
 func TestMapProxy_SinglePutGet(t *testing.T) {
+	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	if remoteController == nil || err != nil {
+		t.Fatal("create remote controller failed:", err)
+	}
+	cluster,err :=remoteController.CreateCluster("3.9","")
+	remoteController.StartMember(cluster.ID)
 	client :=hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
@@ -25,8 +29,15 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 			t.Errorf("get returned a wrong value")
 		}
 	}
+	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestMapProxy_ManyPutGet(t *testing.T){
+	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	if remoteController == nil || err != nil {
+		t.Fatal("create remote controller failed:", err)
+	}
+	cluster,err :=remoteController.CreateCluster("3.9","")
+	remoteController.StartMember(cluster.ID)
 	client :=hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
@@ -42,5 +53,7 @@ func TestMapProxy_ManyPutGet(t *testing.T){
 			}
 		}
 	}
+	remoteController.ShutdownCluster(cluster.ID)
+
 }
 
