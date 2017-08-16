@@ -3,8 +3,8 @@ package serialization
 import (
 	"github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
-	"testing"
 	"log"
+	"testing"
 )
 
 func TestInteger32Serializer_Write(t *testing.T) {
