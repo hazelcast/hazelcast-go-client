@@ -32,8 +32,8 @@ func (c *SerializationConfig) AddDataSerializableFactory(f IdentifiedDataSeriali
 	c.DataSerializableFactories[factoryId]=f
 }
 
-func NewClientConfig() ClientConfig {
-	return ClientConfig{GroupConfig: NewGroupConfig(),
+func NewClientConfig() *ClientConfig {
+	return &ClientConfig{GroupConfig: NewGroupConfig(),
 		ClientNetworkConfig:         NewClientNetworkConfig(),
 	}
 }
