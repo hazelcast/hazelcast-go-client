@@ -10,9 +10,17 @@ set -x
 # Set up environment
 export PRJ=`git config --get remote.origin.url | sed 's/^https:\/\///' | sed 's/\.git$//'`
 
+gofmt -d . 2>&1 | read; [ $? == 1 ]
+
+if [ "$?" = "1" ]; then
+    echo "gofmt -d .  detected formatting problems"
+    gofmt -d .
+    exit 1
+fi
+
 go get git.apache.org/thrift.git/lib/go/thrift
 pushd $GOPATH/src/git.apache.org/thrift.git/
-git fetch --tags -v
+git fetch --tags --quiet
 git checkout 0.10.0
 popd
 

@@ -184,7 +184,7 @@ func (p *Cluster) String() string {
 type Member struct {
 	UUID string `thrift:"uuid,1" db:"uuid" json:"uuid"`
 	Host string `thrift:"host,2" db:"host" json:"host"`
-	Port int32 `thrift:"port,3" db:"port" json:"port"`
+	Port int32  `thrift:"port,3" db:"port" json:"port"`
 }
 
 func NewMember() *Member {
@@ -345,7 +345,7 @@ func (p *Member) String() string {
 //  - Message
 //  - Result_
 type Response struct {
-	Success bool `thrift:"success,1" db:"success" json:"success"`
+	Success bool   `thrift:"success,1" db:"success" json:"success"`
 	Message string `thrift:"message,2" db:"message" json:"message"`
 	Result_ []byte `thrift:"result,3" db:"result" json:"result"`
 }
@@ -657,19 +657,19 @@ type RemoteControllerClient struct {
 
 func NewRemoteControllerClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *RemoteControllerClient {
 	return &RemoteControllerClient{Transport: t,
-		ProtocolFactory:                      f,
-		InputProtocol:                        f.GetProtocol(t),
-		OutputProtocol:                       f.GetProtocol(t),
-		SeqId:                                0,
+		ProtocolFactory: f,
+		InputProtocol:   f.GetProtocol(t),
+		OutputProtocol:  f.GetProtocol(t),
+		SeqId:           0,
 	}
 }
 
 func NewRemoteControllerClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *RemoteControllerClient {
 	return &RemoteControllerClient{Transport: t,
-		ProtocolFactory:                      nil,
-		InputProtocol:                        iprot,
-		OutputProtocol:                       oprot,
-		SeqId:                                0,
+		ProtocolFactory: nil,
+		InputProtocol:   iprot,
+		OutputProtocol:  oprot,
+		SeqId:           0,
 	}
 }
 
@@ -715,8 +715,7 @@ func (p *RemoteControllerClient) sendPing() (err error) {
 	if err = oprot.WriteMessageBegin("ping", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := RemoteControllerPingArgs{
-	}
+	args := RemoteControllerPingArgs{}
 	if err = args.Write(oprot); err != nil {
 		return
 	}
@@ -789,8 +788,7 @@ func (p *RemoteControllerClient) sendClean() (err error) {
 	if err = oprot.WriteMessageBegin("clean", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := RemoteControllerCleanArgs{
-	}
+	args := RemoteControllerCleanArgs{}
 	if err = args.Write(oprot); err != nil {
 		return
 	}
@@ -863,8 +861,7 @@ func (p *RemoteControllerClient) sendExit() (err error) {
 	if err = oprot.WriteMessageBegin("exit", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := RemoteControllerExitArgs{
-	}
+	args := RemoteControllerExitArgs{}
 	if err = args.Write(oprot); err != nil {
 		return
 	}
@@ -3141,7 +3138,7 @@ func (p *RemoteControllerCreateClusterArgs) String() string {
 //  - Success
 //  - ServerException
 type RemoteControllerCreateClusterResult struct {
-	Success         *Cluster `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Success         *Cluster         `thrift:"success,0" db:"success" json:"success,omitempty"`
 	ServerException *ServerException `thrift:"serverException,1" db:"serverException" json:"serverException,omitempty"`
 }
 
@@ -3382,7 +3379,7 @@ func (p *RemoteControllerStartMemberArgs) String() string {
 //  - Success
 //  - ServerException
 type RemoteControllerStartMemberResult struct {
-	Success         *Member `thrift:"success,0" db:"success" json:"success,omitempty"`
+	Success         *Member          `thrift:"success,0" db:"success" json:"success,omitempty"`
 	ServerException *ServerException `thrift:"serverException,1" db:"serverException" json:"serverException,omitempty"`
 }
 
@@ -5282,7 +5279,7 @@ func (p *RemoteControllerMergeMemberToClusterResult) String() string {
 type RemoteControllerExecuteOnControllerArgs struct {
 	ClusterId string `thrift:"clusterId,1" db:"clusterId" json:"clusterId"`
 	Script    string `thrift:"script,2" db:"script" json:"script"`
-	Lang      Lang `thrift:"lang,3" db:"lang" json:"lang"`
+	Lang      Lang   `thrift:"lang,3" db:"lang" json:"lang"`
 }
 
 func NewRemoteControllerExecuteOnControllerArgs() *RemoteControllerExecuteOnControllerArgs {

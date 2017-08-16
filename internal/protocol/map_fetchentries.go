@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 package protocol
+
 import (
-	."github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/common"
 )
+
 type MapFetchEntriesResponseParameters struct {
 	TableIndex int32
 	Entries    []Pair

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 package protocol
+
 import (
-
-	."github.com/hazelcast/go-client/internal/serialization"
-
+	. "github.com/hazelcast/go-client/internal/serialization"
 )
+
 type MapProjectResponseParameters struct {
 	Response []Data
 }

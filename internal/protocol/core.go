@@ -2,19 +2,20 @@ package protocol
 
 import (
 	"bytes"
-	"reflect"
 	. "github.com/hazelcast/go-client/internal/serialization"
+	"reflect"
 )
 
 type Address struct {
 	host string
 	port int
 }
-func NewAddress() *Address{
-	return &Address{"127.0.0.1",5701}
+
+func NewAddress() *Address {
+	return &Address{"127.0.0.1", 5701}
 }
-func NewAddressWithParameters(Host string,Port int) *Address{
-	return &Address{Host,Port}
+func NewAddressWithParameters(Host string, Port int) *Address {
+	return &Address{Host, Port}
 }
 func (address *Address) Host() string {
 	return address.host
@@ -52,7 +53,7 @@ func (member1 *Member) Attributes() map[string]string {
 }
 
 type Pair struct {
-	key,value interface{}
+	key, value interface{}
 }
 
 func (pair *Pair) Key() interface{} {
@@ -200,7 +201,6 @@ func (err *Error) StackTrace() []StackTraceElement {
 	return err.stackTrace
 }
 
-
 func (err *Error) CauseErrorCode() int32 {
 	return err.causeErrorCode
 }
@@ -231,5 +231,3 @@ func (st *StackTraceElement) FileName() string {
 func (st *StackTraceElement) LineNumber() int32 {
 	return st.lineNumber
 }
-
-

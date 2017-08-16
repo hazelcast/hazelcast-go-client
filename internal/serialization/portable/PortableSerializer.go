@@ -12,24 +12,22 @@ func NewPortableSerializer(factories map[int32]IdentifieDataSerializableFactory)
 	return &IdentifiedDataSerializableSerializer{factories: factories}
 }
 
-func GetId()int32{
+func GetId() int32 {
 	return -1
 }
 
-func Read()  {
-	
-}
-
-func ReadObject(){
+func Read() {
 
 }
 
-func Write()  {
+func ReadObject() {
 
 }
 
-func WriteObject(){
+func Write() {
 
 }
 
+func WriteObject() {
 
+}

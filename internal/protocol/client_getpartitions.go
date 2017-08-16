@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 package protocol
-import(
-)
+
+import ()
+
 type ClientGetPartitionsResponseParameters struct {
 	Partitions []Pair
 }
@@ -46,11 +47,11 @@ func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) *ClientGetP
 		partitionsItemVal := make([]int32, partitionsItemValSize)
 		for partitionsItemValIndex := 0; partitionsItemValIndex < int(partitionsItemValSize); partitionsItemValIndex++ {
 			partitionsItemValItem := clientMessage.ReadInt32()
-			partitionsItemVal[partitionsItemValIndex] =  partitionsItemValItem
+			partitionsItemVal[partitionsItemValIndex] = partitionsItemValItem
 		}
 		partitionsItem.key = partitionsItemKey
 		partitionsItem.value = partitionsItemVal
-		partitions[partitionsIndex] =  partitionsItem
+		partitions[partitionsIndex] = partitionsItem
 	}
 	parameters.Partitions = partitions
 

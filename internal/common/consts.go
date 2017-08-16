@@ -121,7 +121,6 @@ const (
 	ERROR_CODE_STALE_TASK                     ErrorCode = 82
 )
 
-
 /*
 Event Response Constants
 */
@@ -160,11 +159,11 @@ const (
 	DOUBLE_SIZE_IN_BYTES = 8
 	LONG_SIZE_IN_BYTES   = 8
 
-	VERSION        = 0
-	BEGIN_FLAG     uint8= 0x80
-	END_FLAG       uint8= 0x40
-	BEGIN_END_FLAG uint8= BEGIN_FLAG | END_FLAG
-	LISTENER_FLAG  uint8= 0x01
+	VERSION              = 0
+	BEGIN_FLAG     uint8 = 0x80
+	END_FLAG       uint8 = 0x40
+	BEGIN_END_FLAG uint8 = BEGIN_FLAG | END_FLAG
+	LISTENER_FLAG  uint8 = 0x01
 
 	PAYLOAD_OFFSET = 18
 	SIZE_OFFSET    = 0
@@ -178,10 +177,9 @@ const (
 	DATA_OFFSET_FIELD_OFFSET    = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES
 	HEADER_SIZE                 = DATA_OFFSET_FIELD_OFFSET + SHORT_SIZE_IN_BYTES
 
-	NULL_ARRAY_LENGTH  = -1
+	NULL_ARRAY_LENGTH = -1
 )
 
-
-const(
-	DEFAULT_INVOCATION_TIMEOUT = 120 * time.Second//secs
+const (
+	DEFAULT_INVOCATION_TIMEOUT = 120 * time.Second //secs
 )

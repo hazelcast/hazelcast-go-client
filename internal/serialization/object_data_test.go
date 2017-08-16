@@ -1,10 +1,10 @@
 package serialization
 
 import (
-	"testing"
 	"bytes"
-	"reflect"
 	"github.com/hazelcast/go-client/config"
+	"reflect"
+	"testing"
 )
 
 func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
@@ -112,9 +112,9 @@ func TestObjectDataInput_ReadBoolWithPosition(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadObject(t *testing.T) {
-	conf:=config.NewSerializationConfig()
-	service:=NewSerializationService(conf)
-	o := NewObjectDataOutput(500,service , false)
+	conf := config.NewSerializationConfig()
+	service := NewSerializationService(conf)
+	o := NewObjectDataOutput(500, service, false)
 	var a float64 = 6.739
 	var b byte = 125
 	var c int32 = 13
@@ -164,7 +164,7 @@ func TestObjectDataInput_ReadByteArray(t *testing.T) {
 	var array []byte = []byte{3, 4, 5, 25, 123, 34, 52, 0}
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteByteArray(array)
-	i := NewObjectDataInput(o.buffer, 0,nil, false)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
 
 	if !reflect.DeepEqual(array, i.ReadByteArray()) {
 		t.Errorf("There is a problem in WriteByteArray() or ReadByteArray()!")
@@ -172,7 +172,7 @@ func TestObjectDataInput_ReadByteArray(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadBoolArray(t *testing.T) {
-	var array []bool = []bool{true, false,true, true, false, false, false, true}
+	var array []bool = []bool{true, false, true, true, false, false, false, true}
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteBoolArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
@@ -183,10 +183,10 @@ func TestObjectDataInput_ReadBoolArray(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadUTFArray(t *testing.T) {
-	var array []string = []string{"aAüÜiİıIöÖşŞçÇ","akdha","üğpoıuişlk","üğpreÜaişfçxaaöc"}
+	var array []string = []string{"aAüÜiİıIöÖşŞçÇ", "akdha", "üğpoıuişlk", "üğpreÜaişfçxaaöc"}
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteUTFArray(array)
-	i := NewObjectDataInput(o.buffer, 0,nil, false)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
 
 	if !reflect.DeepEqual(array, i.ReadUTFArray()) {
 		t.Errorf("There is a problem in WriteUTFArray() or ReadUTFArray()!")

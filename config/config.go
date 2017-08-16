@@ -1,9 +1,8 @@
 package config
 
 import (
-	."github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/internal/serialization/api"
 )
-
 
 const (
 	DEFAULT_GROUP_NAME     = "dev"
@@ -28,13 +27,13 @@ func NewSerializationConfig() *SerializationConfig {
 	return &SerializationConfig{IsBigEndian: true, DataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), PortableVersion: 0}
 }
 
-func (c *SerializationConfig) AddDataSerializableFactory(f IdentifiedDataSerializableFactory,factoryId int32){
-	c.DataSerializableFactories[factoryId]=f
+func (c *SerializationConfig) AddDataSerializableFactory(f IdentifiedDataSerializableFactory, factoryId int32) {
+	c.DataSerializableFactories[factoryId] = f
 }
 
 func NewClientConfig() *ClientConfig {
 	return &ClientConfig{GroupConfig: NewGroupConfig(),
-		ClientNetworkConfig:         NewClientNetworkConfig(),
+		ClientNetworkConfig: NewClientNetworkConfig(),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
@@ -63,9 +62,9 @@ type ClientNetworkConfig struct {
 	//Period for the next attempt to find a member to connect
 	ConnectionTimeout int32
 	/*
-		Socket connection timeout is a float, giving in seconds, or None.
-	    Setting a timeout of None disables the timeout feature and is equivalent to block the socket until it connects.
-	    Setting a timeout of zero is the same as disables blocking on connect.
+			Socket connection timeout is a float, giving in seconds, or None.
+		    Setting a timeout of None disables the timeout feature and is equivalent to block the socket until it connects.
+		    Setting a timeout of zero is the same as disables blocking on connect.
 	*/
 	RedoOperations bool
 	/*

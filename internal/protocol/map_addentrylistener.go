@@ -15,8 +15,9 @@ package protocol
 
 import (
 	. "github.com/hazelcast/go-client/internal/common"
-	."github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/go-client/internal/serialization"
 )
+
 type MapAddEntryListenerResponseParameters struct {
 	Response string
 }

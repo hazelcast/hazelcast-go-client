@@ -1,9 +1,9 @@
 package protocol
 
 import (
-	"testing"
-	. "github.com/hazelcast/go-client/internal/serialization"
 	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/serialization"
+	"testing"
 )
 
 func TestAddressCodecEncodeDecode(t *testing.T) {

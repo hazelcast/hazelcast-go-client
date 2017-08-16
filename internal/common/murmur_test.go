@@ -5,10 +5,11 @@ import (
 )
 
 type Murmur3ATestHelper struct {
-	key string
+	key      string
 	expected int64
-	index int32
+	index    int32
 }
+
 func TestMurmur3A(t *testing.T) {
 	var list = []Murmur3ATestHelper{
 		{"key-1", 1228513025, 107},
@@ -21,13 +22,13 @@ func TestMurmur3A(t *testing.T) {
 		{"key-8", -1444149994, 208},
 		{"key-9", 1182720020, 140},
 	}
-	for _,ele := range list {
-		hash := Murmur3ADefault([]byte(ele.key),0,len(ele.key))
-		if hash != int32(ele.expected){
+	for _, ele := range list {
+		hash := Murmur3ADefault([]byte(ele.key), 0, len(ele.key))
+		if hash != int32(ele.expected) {
 			t.Errorf("Expected %d but was %d for Murmur3A\n", int32(ele.expected), hash)
 		}
-		index := HashToIndex(hash,271)
-		if index != ele.index{
+		index := HashToIndex(hash, 271)
+		if index != ele.index {
 			t.Errorf("Expected %d but was %d for Murmur3A\n", ele.index, index)
 		}
 	}

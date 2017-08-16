@@ -1,10 +1,10 @@
 package serialization
 
 import (
-	"reflect"
 	"errors"
 	. "github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
+	"reflect"
 )
 
 type Serializer interface {

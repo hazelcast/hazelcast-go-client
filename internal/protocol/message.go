@@ -189,12 +189,12 @@ func (msg *ClientMessage) AppendBool(v bool) {
 */
 
 func (msg *ClientMessage) ReadInt32() int32 {
-	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset(): msg.readOffset()+INT_SIZE_IN_BYTES]))
+	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset() : msg.readOffset()+INT_SIZE_IN_BYTES]))
 	msg.readIndex += INT_SIZE_IN_BYTES
 	return int
 }
 func (msg *ClientMessage) ReadInt64() int64 {
-	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset(): msg.readOffset()+INT64_SIZE_IN_BYTES]))
+	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset() : msg.readOffset()+INT64_SIZE_IN_BYTES]))
 	msg.readIndex += INT64_SIZE_IN_BYTES
 	return int64
 }
@@ -220,7 +220,7 @@ func (msg *ClientMessage) ReadData() Data {
 }
 func (msg *ClientMessage) ReadByteArray() []byte {
 	length := msg.ReadInt32()
-	result := msg.Buffer[msg.readOffset(): msg.readOffset()+int(length)]
+	result := msg.Buffer[msg.readOffset() : msg.readOffset()+int(length)]
 	msg.readIndex += int(length)
 	return result
 }
@@ -231,9 +231,9 @@ func (msg *ClientMessage) ReadByteArray() []byte {
 func (msg *ClientMessage) UpdateFrameLength() {
 	msg.SetFrameLength(int32(msg.writeIndex))
 }
-func (msg *ClientMessage) Accumulate(newMsg *ClientMessage){
+func (msg *ClientMessage) Accumulate(newMsg *ClientMessage) {
 	start := newMsg.DataOffset()
 	end := newMsg.FrameLength()
-	msg.Buffer = append(msg.Buffer,newMsg.Buffer[start:end]...)
+	msg.Buffer = append(msg.Buffer, newMsg.Buffer[start:end]...)
 	msg.SetFrameLength(int32(len(msg.Buffer)))
 }

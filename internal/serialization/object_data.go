@@ -68,7 +68,7 @@ func (o *ObjectDataOutput) WriteUTF(v string) {
 	runes := []rune(v)
 	length = int32(len(runes))
 	o.WriteInt32(length)
-	if (length > 0) {
+	if length > 0 {
 		o.EnsureAvailable(len(v))
 		for _, s := range runes {
 			o.position += utf8.EncodeRune(o.buffer[o.position:], s)
@@ -386,7 +386,7 @@ func (i *ObjectDataInput) ReadUTFArray() []string {
 	length, _ := i.ReadInt32()
 	var arr []string = make([]string, length)
 	for j := int32(0); j < length; j++ {
-		arr[j]= i.ReadUTF()
+		arr[j] = i.ReadUTF()
 	}
 	return arr
 }
@@ -396,5 +396,5 @@ type PositionalObjectDataOutput struct {
 }
 
 func (p *PositionalObjectDataOutput) PwriteInt32(pos int, v int32) {
-	WriteInt32(p.buffer, pos, v, p.bigIndian);
+	WriteInt32(p.buffer, pos, v, p.bigIndian)
 }
