@@ -1,10 +1,9 @@
 package internal
 
 import (
-	"fmt"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
-	"github.com/hazelcast/go-client/internal/serialization"
+	"log"
 	"sync"
 	"time"
 )
@@ -51,14 +50,10 @@ func (partitionService *PartitionService) PartitionOwner(partitionId int32) (*Ad
 }
 
 func (partitionService *PartitionService) GetPartitionId(key interface{}) int32 {
-	/*
-		data, error := partitionService.client.SerializationService.ToData(key)
-		if error != nil {
-			//TODO handle error
-		}
-	*/
-	//TODO:: Remove this line when serialization service.toData works.
-	data := serialization.Data{[]byte("asdasassassaas")}
+	data, error := partitionService.client.SerializationService.ToData(key)
+	if error != nil {
+		//TODO handle error
+	}
 	count := partitionService.PartitionCount()
 	if count <= 0 {
 		return 0
@@ -72,7 +67,7 @@ func (partitionService *PartitionService) doRefresh() {
 	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
 	connection, alive := <-connectionChan
 	if !alive {
-		fmt.Print("connection is closed")
+		log.Print("connection is closed")
 		//TODO::Handle connection closed
 		return
 	}

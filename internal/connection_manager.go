@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"fmt"
 	. "github.com/hazelcast/go-client/internal/protocol"
+	"log"
 	"strconv"
 	"sync"
 )
@@ -48,7 +48,7 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	invocationService := connectionManager.client.InvocationService
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
 	if con == nil {
-		fmt.Println("Closed a connection")
+		log.Println("Closed a connection")
 		close(resp)
 		return
 	}

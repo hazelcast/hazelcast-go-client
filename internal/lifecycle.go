@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"fmt"
 	"github.com/hazelcast/go-client/config"
+	"log"
 )
 
 const (
@@ -28,5 +28,5 @@ func (lifecycleService *LifecycleService) fireLifecycleEvent(newState string) {
 		lifecycleService.isLive = false
 	}
 	lifecycleService.state = newState
-	fmt.Println("New State : ", lifecycleService.state)
+	log.Println("New State : ", lifecycleService.state)
 }

@@ -1,10 +1,10 @@
 package serialization
 
 import (
-	"fmt"
 	"github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"testing"
+	"log"
 )
 
 func TestInteger32Serializer_Write(t *testing.T) {
@@ -61,7 +61,7 @@ func x(i interface{}) {
 
 func y(i interface{}) {
 	_, ok := i.(IdentifiedDataSerializable)
-	fmt.Println(ok)
+	log.Println(ok)
 }
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {

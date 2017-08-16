@@ -1,11 +1,10 @@
 package tests
 
 import (
-	"bytes"
 	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/internal/serialization"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
+	"strconv"
 	"testing"
 )
 
@@ -25,14 +24,14 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
-	mp.Put("testingkey", "testingvalue")
-	x, err := mp.Get("testingkey")
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	res, err := mp.Get(testKey)
 	if err != nil {
 		t.Error(err)
 	} else {
-		//Since serialization is not completed for string, comparing interfaces looks ugly now.
-
-		if bytes.Compare(x.(*serialization.Data).Payload, []byte("testingvalue")) != 0 {
+		if res != testValue {
 			t.Errorf("get returned a wrong value")
 		}
 	}
@@ -41,12 +40,14 @@ func TestMapProxy_Remove(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
-	mp.Put("testingkey", "testingvalue")
-	removed, err := mp.Remove("testingkey")
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	removed, err := mp.Remove(testKey)
 	if err != nil {
 		t.Error(err)
 	} else {
-		if bytes.Compare(removed.(*serialization.Data).Payload, []byte("testingvalue")) != 0 {
+		if removed != testValue {
 			t.Errorf("remove returned a wrong value")
 		}
 	}
@@ -54,9 +55,120 @@ func TestMapProxy_Remove(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if size.(int32) != 0 {
+		if size != 0 {
 			t.Errorf("Map size should be 0.")
 		}
 	}
+	found, err := mp.ContainsKey(testKey)
+	if err != nil {
+		t.Error(err)
+	} else {
+		if found {
+			t.Errorf("containsKey returned a wrong result")
+		}
+	}
+
 	//TODO::Check if map contains "testingkey"
+}
+func TestMapProxy_ContainsKey(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	testKey := "testingKey1"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	found, err := mp.ContainsKey(testKey)
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !found {
+			t.Errorf("containsKey returned a wrong result")
+		}
+	}
+	found, err = mp.ContainsKey("testingKey2")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if found {
+			t.Errorf("containsKey returned a wrong result")
+		}
+	}
+}
+func TestMapProxy_ContainsValue(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	testKey := "testingKey1"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	found, err := mp.ContainsValue(testValue)
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !found {
+			t.Errorf("containsValue returned a wrong result")
+		}
+	}
+	found, err = mp.ContainsValue("testingValue2")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if found {
+			t.Errorf("containsValue returned a wrong result")
+		}
+	}
+}
+func TestMapProxy_Clear(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	testKey := "testingKey1"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	err := mp.Clear()
+	if err != nil {
+		t.Error(err)
+	} else {
+		size, err := mp.Size()
+		if err != nil {
+			t.Error(err)
+		} else {
+			if size != 0 {
+				t.Errorf("Map clear failed.")
+			}
+		}
+	}
+}
+func TestMapProxy_Delete(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 10; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
+	}
+	mp.Delete("testingKey1")
+	size, err := mp.Size()
+	if err != nil {
+		t.Error(err)
+	} else {
+		if size != 9 {
+			t.Errorf("Map Delete failed")
+		}
+	}
+}
+func TestMapProxy_IsEmpty(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 10; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
+	}
+	empty, err := mp.IsEmpty()
+	if err != nil {
+		t.Error(err)
+	} else {
+		if empty {
+			t.Errorf("Map IsEmpty returned a wrong value")
+		}
+	}
 }

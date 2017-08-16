@@ -65,7 +65,7 @@ type InvocationService struct {
 }
 
 func NewInvocationService(client *HazelcastClient) *InvocationService {
-	service := &InvocationService{client: client, sending: make(chan *Invocation, 0), responseWaitings: make(map[int64]*Invocation),
+	service := &InvocationService{client: client, sending: make(chan *Invocation, 1000), responseWaitings: make(map[int64]*Invocation),
 		responseChannel: make(chan *ClientMessage, 0),
 		quit:            make(chan bool, 0),
 	}
