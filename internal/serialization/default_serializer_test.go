@@ -5,8 +5,6 @@ import (
 	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"testing"
 	"log"
-	. "github.com/hazelcast/go-client/internal/serialization/api"
-	"testing"
 )
 
 func TestInteger32Serializer_Write(t *testing.T) {
