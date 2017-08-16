@@ -35,7 +35,7 @@ func (client *HazelcastClient) init() {
 	client.PartitionService = NewPartitionService(client)
 	client.ClusterService = NewClusterService(client, client.ClientConfig)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
-	client.SerializationService = NewSerializationService()
+	client.SerializationService = NewSerializationService(NewSerializationConfig())
 	client.ConnectionManager = NewConnectionManager(client)
 	client.LifecycleService = newLifecycleService(client.ClientConfig)
 	client.HeartBeatService = newHeartBeatService(client)

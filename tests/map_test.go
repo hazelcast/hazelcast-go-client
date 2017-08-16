@@ -27,6 +27,7 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 		t.Error(err)
 	}else {
 		//Since serialization is not completed for string, comparing interfaces looks ugly now.
+		// TODO serialization is completed for string now
 		if bytes.Compare(x.(*serialization.Data).Payload, []byte("testingvalue")) !=0 {
 			t.Errorf("get returned a wrong value")
 		}
