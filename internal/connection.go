@@ -1,16 +1,15 @@
 package internal
 
 import (
-	//	"errors"
+	. "github.com/hazelcast/go-client/internal/protocol"
+	"log"
 	"net"
 	"strconv"
-
 	"sync/atomic"
-
-	"fmt"
-	. "github.com/hazelcast/go-client/internal/protocol"
 	"time"
 )
+
+const BUFFER_SIZE = 8192 * 2
 
 type Connection struct {
 	pending              chan *ClientMessage
@@ -38,7 +37,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
 		connection.Close()
-		fmt.Println("CONNECTION IS CLOSED")
+		log.Println("CONNECTION IS CLOSED")
 		return nil
 	} else {
 		connection.socket = socket
@@ -112,7 +111,7 @@ func (connection *Connection) write(clientMessage *ClientMessage) error {
 }
 func (connection *Connection) read() {
 	//TODO :: What if the size is bigger than 8192*2
-	buf := make([]byte, 8192*2)
+	buf := make([]byte, BUFFER_SIZE)
 	for {
 		n, err := connection.socket.Read(buf)
 		if err != nil {
@@ -123,8 +122,8 @@ func (connection *Connection) read() {
 			continue
 		}
 
-		if n >= 8192*2 {
-			fmt.Println("Buffer was too small for the read.")
+		if n >= BUFFER_SIZE {
+			log.Println("Buffer was too small for the read.")
 		}
 		resp := NewClientMessage(buf, 0)
 		connection.received <- resp
