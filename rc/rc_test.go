@@ -26,5 +26,4 @@ func TestRemoteControllerClient_Ping(t *testing.T) {
 		t.Fatal("Cannot reach server")
 	}
 
-
 }

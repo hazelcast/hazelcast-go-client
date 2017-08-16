@@ -1,8 +1,8 @@
 package common
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestWriteInt32(t *testing.T) {

@@ -2,6 +2,14 @@
 
 set -x
 
+gofmt -d . 2>&1 | read; [ $? == 1 ]
+
+if [ "$?" = "1" ]; then
+    echo "gofmt -d .  detected formatting problems"
+    gofmt -d .
+    exit 1
+fi
+
 HZ_VERSION="3.9-SNAPSHOT"
 
 HAZELCAST_TEST_VERSION=${HZ_VERSION}

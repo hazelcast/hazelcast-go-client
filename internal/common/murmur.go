@@ -2,21 +2,22 @@ package common
 
 import (
 	"encoding/binary"
-
 )
 
-var defaultSeed uint32 =0x01000193
-func Murmur3ADefault(key []byte,offset int32,len int) int32{
-	return Murmur3A(key,offset,len,defaultSeed)
+var defaultSeed uint32 = 0x01000193
+
+func Murmur3ADefault(key []byte, offset int32, len int) int32 {
+	return Murmur3A(key, offset, len, defaultSeed)
 }
+
 // MurmurHash3 for x86, 32-bit (MurmurHash3_x86_32)
-func Murmur3A(key []byte,offset int32,len int,seed uint32) int32 {
+func Murmur3A(key []byte, offset int32, len int, seed uint32) int32 {
 	var h1 = seed
 	var c1 uint32 = 0xcc9e2d51
-	var c2 uint32= 0x1b873593
-	var roundedEnd int32 =offset+int32(uint32(len)&uint32(0xfffffffc))
+	var c2 uint32 = 0x1b873593
+	var roundedEnd int32 = offset + int32(uint32(len)&uint32(0xfffffffc))
 	// body
-	for i := offset; i < roundedEnd; i+=4 {
+	for i := offset; i < roundedEnd; i += 4 {
 		k1 := uint32(binary.LittleEndian.Uint32(key[i:])) // TODO Validate
 
 		k1 *= uint32(c1)
@@ -33,10 +34,10 @@ func Murmur3A(key []byte,offset int32,len int,seed uint32) int32 {
 	var k1 uint32
 	switch len & 3 {
 	case 3:
-		k1 ^= uint32(tail[2] ) << 16
+		k1 ^= uint32(tail[2]) << 16
 		fallthrough
 	case 2:
-		k1 ^= uint32(tail[1] ) << 8
+		k1 ^= uint32(tail[1]) << 8
 		fallthrough
 	case 1:
 		k1 ^= uint32(tail[0])
@@ -65,12 +66,12 @@ func fmix32(h uint32) uint32 {
 
 	return h
 }
-func HashToIndex(hash int32,length int32) int32{
+func HashToIndex(hash int32, length int32) int32 {
 	if uint32(hash) == 0x80000000 {
 		return 0
 	}
 	if hash < 0 {
-		hash = -1*hash
+		hash = -1 * hash
 	}
-	return int32(hash%length)
+	return int32(hash % length)
 }

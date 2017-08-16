@@ -2,8 +2,8 @@ package serialization
 
 import (
 	"encoding/binary"
-	"math"
 	. "github.com/hazelcast/go-client/internal/common"
+	"math"
 )
 
 const (
