@@ -202,8 +202,6 @@ func (invocationService *InvocationService) registerInvocation(invocation *Invoc
 	message.SetCorrelationId(correlationId)
 	message.SetPartitionId(invocation.partitionId)
 	message.SetFlags(BEGIN_END_FLAG)
-	//TODO:: REMOVE THIS LINE
-	message.SetPartitionId(1)
 	invocationService.lock.Lock()
 	invocationService.responseWaitings[correlationId] = invocation
 	invocationService.lock.Unlock()
@@ -216,7 +214,7 @@ func (invocationService *InvocationService) unRegisterInvocation(correlationId i
 		defer delete(invocationService.responseWaitings, correlationId)
 		return invocation, ok
 	}
-	//HANDLE no invocation found with correleationID
+	//TODO::HANDLE no invocation found with correleationID
 	return nil, false
 }
 

@@ -83,15 +83,14 @@ type ClientNetworkConfig struct {
 
 func NewClientNetworkConfig() ClientNetworkConfig {
 	return ClientNetworkConfig{
-		new([]Address),
-		2,
-		3,
-		5.0,
-		false,
-		true,
+		Addresses:new([]Address),
+		ConnectionAttemptLimit:2,
+		ConnectionAttemptPeriod:3,
+		ConnectionTimeout:5.0,
+		RedoOperations:false,
+		SmartRouting:true,
 	}
 }
-
 type Address struct {
 	Host string
 	Port int32

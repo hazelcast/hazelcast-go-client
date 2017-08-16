@@ -20,6 +20,8 @@ func newMapProxy(client *HazelcastClient, name *string) *MapProxy {
 	mapProxy.name = name
 	return &mapProxy
 }
+
+//TODO :: Check if key is nil.
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	/*
 		keyData, err  := imap.ToData(key)
@@ -62,5 +64,17 @@ func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
 	}
 	responseData := MapRemoveDecodeResponse(responseMessage).Response
 	return &responseData, nil
+}
+func (imap *MapProxy) Size() (size interface{}, err error) {
+	request := MapSizeEncodeRequest(*imap.name)
+	responseMessage, err := imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return nil, err
+	}
+	responseData := MapSizeDecodeResponse(responseMessage).Response
+	return responseData, nil
+}
+func (imap *MapProxy) ContainsKey(key interface{}) (found interface{}, err error) {
+	//TODO Implement this
 	return nil, nil
 }
