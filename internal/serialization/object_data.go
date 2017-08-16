@@ -27,32 +27,33 @@ func (o *ObjectDataOutput) Available() int {
 
 func (o *ObjectDataOutput) EnsureAvailable(size int) {
 	if o.Available() < size {
-		add := make([]byte, size-o.Available())
-		o.buffer = append(o.buffer, add...)
+		temp := make([]byte, o.position+size)
+		copy(temp, o.buffer)
+		o.buffer = temp
 	}
 }
 
 func (o *ObjectDataOutput) WriteInt32(v int32) {
 	o.EnsureAvailable(INT_SIZE_IN_BYTES)
-	WriteInt32(o.buffer, v, o.position, o.bigIndian)
+	WriteInt32(o.buffer, o.position, v, o.bigIndian)
 	o.position += INT_SIZE_IN_BYTES
 }
 
 func (o *ObjectDataOutput) WriteFloat32(v float32) {
 	o.EnsureAvailable(FLOAT_SIZE_IN_BYTES)
-	WriteFloat32(o.buffer, v, o.position, o.bigIndian)
+	WriteFloat32(o.buffer, o.position, v, o.bigIndian)
 	o.position += FLOAT_SIZE_IN_BYTES
 }
 
 func (o *ObjectDataOutput) WriteFloat64(v float64) {
 	o.EnsureAvailable(DOUBLE_SIZE_IN_BYTES)
-	WriteFloat64(o.buffer, v, o.position, o.bigIndian)
+	WriteFloat64(o.buffer, o.position, v, o.bigIndian)
 	o.position += DOUBLE_SIZE_IN_BYTES
 }
 
 func (o *ObjectDataOutput) WriteBool(v bool) {
 	o.EnsureAvailable(BOOL_SIZE_IN_BYTES)
-	WriteBool(o.buffer, v, o.position)
+	WriteBool(o.buffer, o.position, v)
 	o.position += BOOL_SIZE_IN_BYTES
 }
 
@@ -77,13 +78,13 @@ func (o *ObjectDataOutput) WriteUTF(v string) {
 
 func (o *ObjectDataOutput) WriteInt16(v int16) {
 	o.EnsureAvailable(SHORT_SIZE_IN_BYTES)
-	WriteInt16(o.buffer, v, o.position, o.bigIndian)
+	WriteInt16(o.buffer, o.position, v, o.bigIndian)
 	o.position += SHORT_SIZE_IN_BYTES
 }
 
 func (o *ObjectDataOutput) WriteInt64(v int64) {
 	o.EnsureAvailable(LONG_SIZE_IN_BYTES)
-	WriteInt64(o.buffer, v, o.position, o.bigIndian)
+	WriteInt64(o.buffer, o.position, v, o.bigIndian)
 	o.position += LONG_SIZE_IN_BYTES
 }
 
@@ -133,6 +134,33 @@ func (o *ObjectDataOutput) WriteFloat64Array(v []float64) {
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
 		o.WriteFloat64(v[j])
+	}
+}
+
+func (o *ObjectDataOutput) WriteByteArray(v []byte) {
+	var length int32
+	length = int32(len(v))
+	o.WriteInt32(length)
+	for j := int32(0); j < length; j++ {
+		o.WriteByte(v[j])
+	}
+}
+
+func (o *ObjectDataOutput) WriteBoolArray(v []bool) {
+	var length int32
+	length = int32(len(v))
+	o.WriteInt32(length)
+	for j := int32(0); j < length; j++ {
+		o.WriteBool(v[j])
+	}
+}
+
+func (o *ObjectDataOutput) WriteUTFArray(v []string) {
+	var length int32
+	length = int32(len(v))
+	o.WriteInt32(length)
+	for j := int32(0); j < length; j++ {
+		o.WriteUTF(v[j])
 	}
 }
 
@@ -334,4 +362,39 @@ func (i *ObjectDataInput) ReadFloat64Array() []float64 {
 		arr[j], _ = i.ReadFloat64()
 	}
 	return arr
+}
+
+func (i *ObjectDataInput) ReadBoolArray() []bool {
+	length, _ := i.ReadInt32()
+	var arr []bool = make([]bool, length)
+	for j := int32(0); j < length; j++ {
+		arr[j], _ = i.ReadBool()
+	}
+	return arr
+}
+
+func (i *ObjectDataInput) ReadByteArray() []byte {
+	length, _ := i.ReadInt32()
+	var arr []byte = make([]byte, length)
+	for j := int32(0); j < length; j++ {
+		arr[j], _ = i.ReadByte()
+	}
+	return arr
+}
+
+func (i *ObjectDataInput) ReadUTFArray() []string {
+	length, _ := i.ReadInt32()
+	var arr []string = make([]string, length)
+	for j := int32(0); j < length; j++ {
+		arr[j]= i.ReadUTF()
+	}
+	return arr
+}
+
+type PositionalObjectDataOutput struct {
+	ObjectDataOutput
+}
+
+func (p *PositionalObjectDataOutput) PwriteInt32(pos int, v int32) {
+	WriteInt32(p.buffer, pos, v, p.bigIndian);
 }

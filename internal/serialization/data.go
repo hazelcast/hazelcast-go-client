@@ -2,12 +2,14 @@ package serialization
 
 import (
 	"encoding/binary"
+	"math"
 	. "github.com/hazelcast/go-client/internal/common"
 )
 
 const (
-	TYPE_OFFSET = 4
-	DATA_OFFSET = 8
+	TYPE_OFFSET        = 4
+	DATA_OFFSET        = 8
+	HEAP_DATA_OVERHEAD = 8
 )
 
 type Data struct {
@@ -33,14 +35,9 @@ func (data Data) TotalSize() int {
 }
 
 func (d *Data) DataSize() int {
-	return len(d.Payload) + INT_SIZE_IN_BYTES
+	return int(math.Max(float64(d.TotalSize()-HEAP_DATA_OVERHEAD), 0))
 }
 
 func (d *Data) GetPartitionHash() int32 {
-	//TODO :: Remove the second return
-	//return Murmur3ADefault(d.Payload, DATA_OFFSET, d.DataSize())
-	return Murmur3ADefault(d.Payload, 0, d.DataSize()-4)
-
+	return Murmur3ADefault(d.Payload, DATA_OFFSET, d.DataSize())
 }
-
-

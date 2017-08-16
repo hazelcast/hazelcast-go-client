@@ -5,10 +5,106 @@ import (
 	."github.com/hazelcast/go-client/internal/serialization/api"
 )
 
+type NilSerializer struct{}
+
+func (*NilSerializer) GetId() int32 {
+	return CONSTANT_TYPE_NULL
+}
+
+func (*NilSerializer) Read(input DataInput) interface{} {
+	return nil
+}
+
+func (*NilSerializer) Write(output DataOutput, i interface{}) {
+	// Empty method
+}
+
+
+
+
+type IdentifiedDataSerializableSerializer struct {
+	factories map[int32]IdentifiedDataSerializableFactory
+}
+
+func NewIdentifiedDataSerializableSerializer(factories map[int32]IdentifiedDataSerializableFactory) *IdentifiedDataSerializableSerializer {
+	return &IdentifiedDataSerializableSerializer{factories: factories}
+}
+
+func (*IdentifiedDataSerializableSerializer) GetId() int32 {
+	return CONSTANT_TYPE_DATA_SERIALIZABLE
+}
+
+func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) interface{} {
+	isIdentified, _ := input.ReadBool()
+	if !isIdentified {
+		log.Fatal("Native clients does not support Data Serializable. Please use Identified Data Serializable")
+	}
+	factoryId, _ := input.ReadInt32()
+	classId, _ := input.ReadInt32();
+	var factory IdentifiedDataSerializableFactory
+	factory = idss.factories[factoryId];
+	if (factory == nil) {
+		err := "There is no IdentifiedDataSerializer factory with id " + string(factoryId) + "."
+		log.Fatal(err)
+	}
+	var object = factory.Create(classId)
+	object.ReadData(input);
+	return object;
+}
+
+func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interface{}) {
+	r:=i.(IdentifiedDataSerializable)
+	output.WriteBool(true)
+	output.WriteInt32(r.GetFactoryId());
+	output.WriteInt32(r.GetClassId());
+	r.WriteData(output)
+}
+
+
+
+
+type ByteSerializer struct {}
+
+func (*ByteSerializer) GetId() int32 {
+	return CONSTANT_TYPE_BYTE
+}
+
+func (*ByteSerializer) Read(input DataInput) interface{} {
+	var i interface{}
+	i, _ = input.ReadByte()
+	return i
+}
+
+func (*ByteSerializer) Write(output DataOutput, i interface{}) {
+	output.WriteByte(i.(byte))
+}
+
+
+
+
+type BoolSerializer struct {}
+
+func (*BoolSerializer) GetId() int32 {
+	return CONSTANT_TYPE_BOOLEAN
+}
+
+func (*BoolSerializer) Read(input DataInput) interface{} {
+	var i interface{}
+	i, _ = input.ReadBool()
+	return i
+}
+
+func (*BoolSerializer) Write(output DataOutput, i interface{}) {
+	output.WriteBool(i.(bool))
+}
+
+
+
+
 type Integer16Serializer struct {}
 
 func (*Integer16Serializer) GetId() int32 {
-	return -6
+	return CONSTANT_TYPE_SHORT
 }
 
 func (*Integer16Serializer) Read(input DataInput) interface{} {
@@ -27,7 +123,7 @@ func (*Integer16Serializer) Write(output DataOutput, i interface{}) {
 type Integer32Serializer struct{}
 
 func (*Integer32Serializer) GetId() int32 {
-	return -7
+	return CONSTANT_TYPE_INTEGER
 }
 
 func (*Integer32Serializer) Read(input DataInput) interface{} {
@@ -46,7 +142,7 @@ func (*Integer32Serializer) Write(output DataOutput, i interface{}) {
 type Integer64Serializer struct {}
 
 func (*Integer64Serializer) GetId() int32 {
-	return -8
+	return CONSTANT_TYPE_LONG
 }
 
 func (*Integer64Serializer) Read(input DataInput) interface{} {
@@ -65,7 +161,7 @@ func (*Integer64Serializer) Write(output DataOutput, i interface{}) {
 type Float32Serializer struct {}
 
 func (*Float32Serializer) GetId() int32 {
-	return -9
+	return CONSTANT_TYPE_FLOAT
 }
 
 func (*Float32Serializer) Read(input DataInput) interface{} {
@@ -84,7 +180,7 @@ func (*Float32Serializer) Write(output DataOutput, i interface{}) {
 type Float64Serializer struct{}
 
 func (*Float64Serializer) GetId() int32 {
-	return -10
+	return CONSTANT_TYPE_DOUBLE
 }
 
 func (*Float64Serializer) Read(input DataInput) interface{} {
@@ -103,7 +199,7 @@ func (*Float64Serializer) Write(output DataOutput, i interface{}) {
 type StringSerializer struct{}
 
 func (*StringSerializer) GetId() int32 {
-	return -11
+	return CONSTANT_TYPE_STRING
 }
 
 func (*StringSerializer) Read(input DataInput) interface{} {
@@ -117,83 +213,44 @@ func (*StringSerializer) Write(output DataOutput, i interface{}) {
 
 
 
-type NilSerializer struct{}
+type ByteArraySerializer struct{}
 
-func (*NilSerializer) GetId() int32 {
-	return 0
+func (*ByteArraySerializer) GetId() int32 {
+	return CONSTANT_TYPE_BYTE_ARRAY
 }
 
-func (*NilSerializer) Read(input DataInput) interface{} {
-	return nil
+func (*ByteArraySerializer) Read(input DataInput) interface{} {
+	return input.ReadByteArray()
 }
 
-func (*NilSerializer) Write(output DataOutput, i interface{}) {
-	// Empty method
-}
-
-
-
-
-type BoolSerializer struct {}
-
-func (*BoolSerializer) GetId() int32 {
-	return -4
-}
-
-func (*BoolSerializer) Read(input DataInput) interface{} {
-	var i interface{}
-	i, _ = input.ReadBool()
-	return i
-}
-
-func (*BoolSerializer) Write(output DataOutput, i interface{}) {
-	output.WriteBool(i.(bool))
+func (*ByteArraySerializer) Write(output DataOutput, i interface{}) {
+	output.WriteByteArray(i.([]byte))
 }
 
 
 
 
-type ByteSerializer struct {}
+type BoolArraySerializer struct{}
 
-func (*ByteSerializer) GetId() int32 {
-	return -3
+func (*BoolArraySerializer) GetId() int32 {
+	return CONSTANT_TYPE_BOOLEAN_ARRAY
 }
 
-func (*ByteSerializer) Read(input DataInput) interface{} {
-	var i interface{}
-	i, _ = input.ReadByte()
-	return i
+func (*BoolArraySerializer) Read(input DataInput) interface{} {
+	return input.ReadBoolArray()
 }
 
-func (*ByteSerializer) Write(output DataOutput, i interface{}) {
-	output.WriteByte(i.(byte))
+func (*BoolArraySerializer) Write(output DataOutput, i interface{}) {
+	output.WriteBoolArray(i.([]bool))
 }
 
-
-
-
-/*type DateSerializer struct {}
-
-func (*DateSerializer) GetId() int32 {
-	return -22
-}
-
-func (*DateSerializer) Read(input DataInput) interface{} {
-	var i interface{}
-	i, _ = input.ReadDate()
-	return i
-}
-
-func (*DateSerializer) Write(output DataOutput, i interface{}) {
-	output.WriteDate(i.(date))
-}*/
 
 
 
 type Integer16ArraySerializer struct{}
 
 func (*Integer16ArraySerializer) GetId() int32 {
-	return -15
+	return CONSTANT_TYPE_SHORT_ARRAY
 }
 
 func (*Integer16ArraySerializer) Read(input DataInput) interface{} {
@@ -210,7 +267,7 @@ func (*Integer16ArraySerializer) Write(output DataOutput, i interface{}) {
 type Integer32ArraySerializer struct{}
 
 func (*Integer32ArraySerializer) GetId() int32 {
-	return -16
+	return CONSTANT_TYPE_INTEGER_ARRAY
 }
 
 func (*Integer32ArraySerializer) Read(input DataInput) interface{} {
@@ -227,7 +284,7 @@ func (*Integer32ArraySerializer) Write(output DataOutput, i interface{}) {
 type Integer64ArraySerializer struct{}
 
 func (*Integer64ArraySerializer) GetId() int32 {
-	return -17
+	return CONSTANT_TYPE_LONG_ARRAY
 }
 
 func (*Integer64ArraySerializer) Read(input DataInput) interface{} {
@@ -244,7 +301,7 @@ func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) {
 type Float32ArraySerializer struct{}
 
 func (*Float32ArraySerializer) GetId() int32 {
-	return -18
+	return CONSTANT_TYPE_FLOAT_ARRAY
 }
 
 func (*Float32ArraySerializer) Read(input DataInput) interface{} {
@@ -261,7 +318,7 @@ func (*Float32ArraySerializer) Write(output DataOutput, i interface{}) {
 type Float64ArraySerializer struct{}
 
 func (*Float64ArraySerializer) GetId() int32 {
-	return -19
+	return CONSTANT_TYPE_DOUBLE_ARRAY
 }
 
 func (*Float64ArraySerializer) Read(input DataInput) interface{} {
@@ -275,40 +332,16 @@ func (*Float64ArraySerializer) Write(output DataOutput, i interface{}) {
 
 
 
-type IdentifiedDataSerializableSerializer struct {
-	factories map[int32]IdentifiedDataSerializableFactory
+type StringArraySerializer struct{}
+
+func (*StringArraySerializer) GetId() int32 {
+	return CONSTANT_TYPE_STRING_ARRAY
 }
 
-func NewIdentifiedDataSerializableSerializer(factories map[int32]IdentifiedDataSerializableFactory) *IdentifiedDataSerializableSerializer {
-	return &IdentifiedDataSerializableSerializer{factories: factories}
+func (*StringArraySerializer) Read(input DataInput) interface{} {
+	return input.ReadUTFArray()
 }
 
-func (*IdentifiedDataSerializableSerializer) GetId() int32 {
-	return -2
-}
-
-func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) interface{} {
-	isIdentified, _ := input.ReadBool()
-	if !isIdentified {
-		log.Fatal("Native clients does not support Data Serializable. Please use Identified Data Serializable")
-	}
-	factoryId, _ := input.ReadInt32()
-	classId, _ := input.ReadInt32();
-	var factory IdentifiedDataSerializableFactory
-	factory = idss.factories[factoryId];
-	if (factory != nil) {
-		err := "There is no IdentifiedDataSerializer factory with id " + string(factoryId) + "."
-		log.Fatal(err)
-	}
-	var object = factory.Create(classId)
-	object.ReadData(input);
-	return object;
-}
-
-func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interface{}) {
-	r:=i.(IdentifiedDataSerializable)
-	output.WriteBool(true)
-	output.WriteInt32(r.GetFactoryId());
-	output.WriteInt32(r.GetClassId());
-	r.WriteData(output)
+func (*StringArraySerializer) Write(output DataOutput, i interface{}) {
+	output.WriteUTFArray(i.([]string))
 }

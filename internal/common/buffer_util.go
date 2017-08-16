@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-func WriteInt32(buf []byte, v int32, pos int, isBigIndian bool) {
+func WriteInt32(buf []byte, pos int, v int32, isBigIndian bool) {
 	s := buf[pos:]
 	if isBigIndian {
 		binary.BigEndian.PutUint32(s, uint32(v))
@@ -22,7 +22,7 @@ func ReadInt32(buf []byte, pos int, isBigIndian bool) int32 {
 	}
 }
 
-func WriteFloat32(buf []byte, v float32, pos int, isBigIndian bool) {
+func WriteFloat32(buf []byte, pos int, v float32, isBigIndian bool) {
 	s := buf[pos:]
 	if isBigIndian {
 		binary.BigEndian.PutUint32(s, math.Float32bits(v))
@@ -39,7 +39,7 @@ func ReadFloat32(buf []byte, pos int, isBigIndian bool) float32 {
 	}
 }
 
-func WriteFloat64(buf []byte, v float64, pos int, isBigIndian bool) {
+func WriteFloat64(buf []byte, pos int, v float64, isBigIndian bool) {
 	s := buf[pos:]
 	if isBigIndian {
 		binary.BigEndian.PutUint64(s, math.Float64bits(v))
@@ -56,7 +56,7 @@ func ReadFloat64(buf []byte, pos int, isBigIndian bool) float64 {
 	}
 }
 
-func WriteBool(buf []byte, v bool, pos int) {
+func WriteBool(buf []byte, pos int, v bool) {
 	var b byte = 1
 	if v {
 		buf[pos] = b
@@ -82,7 +82,7 @@ func ReadUInt8(buf []byte, pos int) byte {
 	return buf[pos]
 }
 
-func WriteInt16(buf []byte, v int16, pos int, isBigIndian bool) {
+func WriteInt16(buf []byte, pos int, v int16, isBigIndian bool) {
 	s := buf[pos:]
 	if isBigIndian {
 		binary.BigEndian.PutUint16(s, uint16(v))
@@ -99,7 +99,7 @@ func ReadInt16(buf []byte, pos int, isBigIndian bool) int16 {
 	}
 }
 
-func WriteInt64(buf []byte, v int64, pos int, isBigIndian bool) {
+func WriteInt64(buf []byte, pos int, v int64, isBigIndian bool) {
 	s := buf[pos:]
 	if isBigIndian {
 		binary.BigEndian.PutUint64(s, uint64(v))

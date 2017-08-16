@@ -28,6 +28,10 @@ func NewSerializationConfig() *SerializationConfig {
 	return &SerializationConfig{IsBigEndian: true, DataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), PortableVersion: 0}
 }
 
+func (c *SerializationConfig) AddDataSerializableFactory(f IdentifiedDataSerializableFactory,factoryId int32){
+	c.DataSerializableFactories[factoryId]=f
+}
+
 func NewClientConfig() ClientConfig {
 	return ClientConfig{GroupConfig: NewGroupConfig(),
 		ClientNetworkConfig:         NewClientNetworkConfig(),

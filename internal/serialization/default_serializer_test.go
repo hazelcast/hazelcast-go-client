@@ -2,8 +2,9 @@ package serialization
 
 import (
 	"testing"
-	"fmt"
 	."github.com/hazelcast/go-client/internal/serialization/api"
+	"fmt"
+	"github.com/hazelcast/go-client/config"
 )
 
 func TestInteger32Serializer_Write(t *testing.T) {
@@ -25,7 +26,7 @@ type factory struct{}
 
 func (factory) Create(classId int32) IdentifiedDataSerializable {
 	if classId == 1 {
-		return employee{}
+		return &employee{}
 	} else {
 		return nil
 	}
@@ -36,39 +37,45 @@ type employee struct {
 	name string
 }
 
-func (e employee) ReadData(input DataInput) interface{} {
+func (e *employee) ReadData(input DataInput){
 	e.age, _ = input.ReadInt32()
 	e.name= input.ReadUTF()
-	input.ReadInt32()
-	return nil
 }
 
-func (e employee) WriteData(output DataOutput) {
+func (e *employee) WriteData(output DataOutput) {
 	output.WriteInt32(e.age)
 	output.WriteUTF(e.name)
 }
 
-func (employee) GetFactoryId() int32 {
+func (*employee) GetFactoryId() int32 {
 	return 4
 }
 
-func (employee) GetClassId() int32 {
+func (*employee) GetClassId() int32 {
 	return 1
 }
 
+func x(i interface{}){
+	y(i)
+}
+
+func y(i interface{}){
+	_, ok := i.(IdentifiedDataSerializable)
+	fmt.Println(ok)
+}
+
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
-
-	factories := make(map[int32]IdentifiedDataSerializableFactory)
-	factories[4] = factory{}
-	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	o := NewObjectDataOutput(9, NewSerializationService(), false)
-	in := NewObjectDataInput(buf, 0, NewSerializationService(), false)
-
 	var employee1 employee = employee{22, "Furkan"}
-	serializer := NewIdentifiedDataSerializableSerializer(factories)
+	c:=config.NewSerializationConfig()
+	c.AddDataSerializableFactory(factory{},employee1.GetFactoryId())
 
-	serializer.Write(o, employee1)
-	serializer.Read(in)
-	fmt.Println(in.buffer)
+	service:=NewSerializationService(c)
+
+	data,_:=service.ToData(&employee1)
+	ret_employee,_:=service.ToObject(data)
+
+	if employee1!=*ret_employee.(*employee){
+		t.Errorf("IdentifiedDataSerializable() works wrong!")
+	}
 
 }

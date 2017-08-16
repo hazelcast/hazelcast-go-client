@@ -7,7 +7,7 @@ import (
 
 func TestWriteInt32(t *testing.T) {
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0}
-	WriteInt32(buf, 5, 1, false)
+	WriteInt32(buf, 1, 5, false)
 
 	expectedBuf := []byte{0, 5, 0, 0, 0, 0, 0, 0}
 
@@ -19,7 +19,7 @@ func TestWriteInt32(t *testing.T) {
 func TestReadInt32(t *testing.T) {
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0}
 	var expectedRet int32 = 5
-	WriteInt32(buf, expectedRet, 1, false)
+	WriteInt32(buf, 1, expectedRet, false)
 	var ret int32 = ReadInt32(buf, 1, false)
 
 	if ret != expectedRet {
@@ -30,8 +30,8 @@ func TestReadInt32(t *testing.T) {
 func TestReadFloat64(t *testing.T) {
 	var expectedRet float64 = 6.723
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	WriteFloat64(buf, 5.234, 0, false)
-	WriteFloat64(buf, expectedRet, 1, false)
+	WriteFloat64(buf, 0, 5.234, false)
+	WriteFloat64(buf, 1, expectedRet, false)
 
 	var ret float64 = ReadFloat64(buf, 1, false)
 
@@ -42,8 +42,8 @@ func TestReadFloat64(t *testing.T) {
 
 func TestReadBool(t *testing.T) {
 	buf := []byte{0, 0, 0}
-	WriteBool(buf, true, 0)
-	WriteBool(buf, true, 2)
+	WriteBool(buf, 0, true)
+	WriteBool(buf, 2, true)
 	if ReadBool(buf, 0) != true && ReadBool(buf, 2) != true {
 		t.Errorf("There is a problem in ReadBool() or WriteBool()")
 	}
