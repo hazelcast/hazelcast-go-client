@@ -129,3 +129,97 @@ func (imap *MapProxy) IsEmpty() (empty bool, err error) {
 	response := MapIsEmptyDecodeResponse(responseMessage).Response
 	return response, nil
 }
+func (imap *MapProxy) AddIndex(attributes *string, ordered bool) (err error) {
+	request := MapAddIndexEncodeRequest(*imap.name, *attributes, ordered)
+	_, err = imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (imap *MapProxy) Evict(key interface{}) (bool, error) {
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return false, err
+	}
+	request := MapEvictEncodeRequest(*imap.name, *keyData, THREAD_ID)
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	response := MapEvictDecodeResponse(responseMessage).Response
+	return response, nil
+}
+func (imap *MapProxy) EvictAll() error {
+	request := MapEvictAllEncodeRequest(*imap.name)
+	_, err := imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (imap *MapProxy) Flush() error {
+	request := MapFlushEncodeRequest(*imap.name)
+	_, err := imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (imap *MapProxy) Lock(key interface{}) error {
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return err
+	}
+	//TODO :: What should be the reference id ?
+	request := MapLockEncodeRequest(*imap.name, *keyData, THREAD_ID, -1, imap.client.ProxyManager.nextReferenceId())
+	_, err = imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (imap *MapProxy) UnLock(key interface{}) error {
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return err
+	}
+	//TODO :: What should be the reference id ?
+	request := MapUnlockEncodeRequest(*imap.name, *keyData, THREAD_ID, imap.client.ProxyManager.nextReferenceId())
+	_, err = imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (imap *MapProxy) IsLocked(key interface{}) (bool, error) {
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return false, err
+	}
+	//TODO :: What should be the reference id ?
+	request := MapIsLockedEncodeRequest(*imap.name, *keyData)
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	response := MapIsLockedDecodeResponse(responseMessage).Response
+	return response, nil
+}
+func (imap *MapProxy) Replace(key interface{}, value interface{}) (interface{}, error) {
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return nil, err
+	}
+	valueData, err := imap.ToData(value)
+	if err != nil {
+		return nil, err
+	}
+	request := MapReplaceEncodeRequest(*imap.name, *keyData, *valueData, THREAD_ID)
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	responseData := MapReplaceDecodeResponse(responseMessage).Response
+	return imap.ToObject(&responseData)
+}

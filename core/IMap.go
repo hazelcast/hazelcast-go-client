@@ -10,4 +10,12 @@ type IMap interface {
 	Clear() (err error)
 	Delete(key interface{}) (err error)
 	IsEmpty() (empty bool, err error)
+	AddIndex(attributes *string, ordered bool) (err error)
+	Evict(key interface{}) (bool, error)
+	EvictAll() error
+	Flush() error
+	Lock(key interface{}) error
+	UnLock(key interface{}) error
+	IsLocked(key interface{}) (bool, error)
+	Replace(key interface{}, value interface{}) (interface{}, error)
 }

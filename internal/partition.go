@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
+	"github.com/hazelcast/go-client/internal/serialization"
 	"log"
 	"sync"
 	"time"
@@ -49,16 +50,12 @@ func (partitionService *PartitionService) PartitionOwner(partitionId int32) (*Ad
 	return address, ok
 }
 
-func (partitionService *PartitionService) GetPartitionId(key interface{}) int32 {
-	data, error := partitionService.client.SerializationService.ToData(key)
-	if error != nil {
-		//TODO handle error
-	}
+func (partitionService *PartitionService) GetPartitionId(keyData *serialization.Data) int32 {
 	count := partitionService.PartitionCount()
 	if count <= 0 {
 		return 0
 	}
-	return common.HashToIndex(data.GetPartitionHash(), count)
+	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
 func (partitionService *PartitionService) doRefresh() {
 	partitionService.mu.Lock()

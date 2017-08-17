@@ -35,7 +35,9 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 			t.Errorf("get returned a wrong value")
 		}
 	}
+	mp.Clear()
 }
+
 func TestMapProxy_Remove(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
@@ -67,8 +69,8 @@ func TestMapProxy_Remove(t *testing.T) {
 			t.Errorf("containsKey returned a wrong result")
 		}
 	}
+	mp.Clear()
 
-	//TODO::Check if map contains "testingkey"
 }
 func TestMapProxy_ContainsKey(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
@@ -93,6 +95,7 @@ func TestMapProxy_ContainsKey(t *testing.T) {
 			t.Errorf("containsKey returned a wrong result")
 		}
 	}
+	mp.Clear()
 }
 func TestMapProxy_ContainsValue(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
@@ -117,6 +120,7 @@ func TestMapProxy_ContainsValue(t *testing.T) {
 			t.Errorf("containsValue returned a wrong result")
 		}
 	}
+	mp.Clear()
 }
 func TestMapProxy_Clear(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
@@ -139,6 +143,7 @@ func TestMapProxy_Clear(t *testing.T) {
 		}
 	}
 }
+
 func TestMapProxy_Delete(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
@@ -156,6 +161,7 @@ func TestMapProxy_Delete(t *testing.T) {
 		}
 	}
 }
+
 func TestMapProxy_IsEmpty(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
@@ -171,4 +177,140 @@ func TestMapProxy_IsEmpty(t *testing.T) {
 			t.Errorf("Map IsEmpty returned a wrong value")
 		}
 	}
+	mp.Clear()
+}
+
+func TestMapProxy_Evict(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 10; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
+	}
+	mp.Evict("testingKey1")
+	size, err := mp.Size()
+	if err != nil {
+		t.Error(err)
+	} else {
+		if size != 9 {
+			t.Errorf("Map evict failed.")
+		}
+	}
+	found, err := mp.ContainsKey("testingKey1")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if found {
+			t.Errorf("Map evict failed.")
+		}
+	}
+}
+func TestMapProxy_EvictAll(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 10; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
+	}
+	mp.EvictAll()
+	size, err := mp.Size()
+	if err != nil {
+		t.Error(err)
+	} else {
+		if size != 0 {
+			t.Errorf("Map evict failed.")
+		}
+	}
+}
+func TestMapProxy_Flush(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 10; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
+	}
+	err := mp.Flush()
+	if err != nil {
+		t.Error(err)
+	}
+	mp.Clear()
+}
+func TestMapProxy_IsLocked(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	mp.Put("testingKey", "testingValue")
+	locked, err := mp.IsLocked("testingKey")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if locked {
+			t.Errorf("Key should not be locked.")
+		}
+	}
+	err = mp.Lock("testingKey")
+	if err != nil {
+		t.Error(err)
+	}
+	locked, err = mp.IsLocked("testingKey")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !locked {
+			t.Errorf("Key should be locked.")
+		}
+	}
+	err = mp.UnLock("testingKey")
+	if err != nil {
+		t.Error(err)
+	}
+	locked, err = mp.IsLocked("testingKey")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if locked {
+			t.Errorf("Key should not be locked.")
+		}
+	}
+}
+func TestMapProxy_Replace(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	mp.Put("testingKey1", "testingValue1")
+	replaced, err := mp.Replace("testingKey1", "testingValue2")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if replaced != "testingValue1" {
+			t.Errorf("Map Replace returned wrong old value.")
+		}
+	}
+	newValue, err := mp.Get("testingKey1")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if newValue != "testingValue2" {
+			t.Errorf("Map Replace faield.")
+		}
+	}
+	mp.Clear()
+}
+func TestMapProxt_Size(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 10; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
+	}
+	size, err := mp.Size()
+	if err != nil {
+		t.Error(err)
+	} else {
+		if size != 10 {
+			t.Errorf("Map size returned a wrong value")
+		}
+	}
+	mp.Clear()
+
 }
