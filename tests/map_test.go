@@ -291,12 +291,12 @@ func TestMapProxy_Replace(t *testing.T) {
 		t.Error(err)
 	} else {
 		if newValue != "testingValue2" {
-			t.Errorf("Map Replace faield.")
+			t.Errorf("Map Replace failed.")
 		}
 	}
 	mp.Clear()
 }
-func TestMapProxt_Size(t *testing.T) {
+func TestMapProxy_Size(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
@@ -312,5 +312,148 @@ func TestMapProxt_Size(t *testing.T) {
 		}
 	}
 	mp.Clear()
+}
+func TestMapProxy_ReplaceIfSame(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	mp.Put("testingKey1", "testingValue1")
+	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue1", "testingValue2")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !replaced {
+			t.Errorf("Map Replace returned wrong old value.")
+		}
+	}
+	newValue, err := mp.Get("testingKey1")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if newValue != "testingValue2" {
+			t.Errorf("Map ReplaceIfSame failed.")
+		}
+	}
+	mp.Clear()
+}
+func TestMapProxy_ReplaceIfSameWhenDifferent(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	mp.Put("testingKey1", "testingValue1")
+	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue3", "testingValue2")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if replaced {
+			t.Errorf("Map Replace returned wrong old value.")
+		}
+	}
+	newValue, err := mp.Get("testingKey1")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if newValue != "testingValue1" {
+			t.Errorf("Map ReplaceIfSame failed.")
+		}
+	}
+	mp.Clear()
+}
+func TestMapProxy_Set(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	err := mp.Set("testingKey1", "testingValue1")
+	if err != nil {
+		t.Error(err)
+	}
+	newValue, err := mp.Get("testingKey1")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if newValue != "testingValue1" {
+			t.Errorf("Map Set failed.")
+		}
+	}
+	mp.Clear()
+}
+func TestMapProxy_PutIfAbsent(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	_, err := mp.PutIfAbsent("testingKey1", "testingValue1")
+	if err != nil {
+		t.Error(err)
+	}
+	newValue, err := mp.Get("testingKey1")
+	if err != nil {
+		t.Error(err)
+	} else {
+		if newValue != "testingValue1" {
+			t.Errorf("Map Set failed.")
+		}
+	}
+	mp.Clear()
+}
 
+func TestMapProxy_PutAll(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	testMap := make(map[interface{}]interface{})
+	for i := 0; i < 10; i++ {
+		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
+	}
+	err := mp.PutAll(&testMap)
+	if err != nil {
+		t.Error(err)
+	} else {
+		entryList, err := mp.EntrySet()
+		if err != nil {
+			t.Error(err)
+		}
+		for _, pair := range entryList {
+			key := pair.Key()
+			value := pair.Value()
+			expectedValue, found := testMap[key]
+			if !found || expectedValue != value {
+				t.Errorf("Map PutAll failed")
+			}
+		}
+
+	}
+	mp.Clear()
+}
+func TestMapProxy_GetAll(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	testMap := make(map[interface{}]interface{})
+	for i := 0; i < 10; i++ {
+		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
+	}
+	err := mp.PutAll(&testMap)
+	if err != nil {
+		t.Error(err)
+	} else {
+		keys := make([]interface{}, 0)
+		for k, _ := range testMap {
+			keys = append(keys, k)
+		}
+		valueList, err := mp.GetAll(keys)
+		if err != nil {
+			t.Error(err)
+		}
+		for _, pair := range *valueList {
+			key := pair.Key()
+			value := pair.Value()
+			expectedValue, found := testMap[key]
+
+			if !found || expectedValue != value {
+				t.Errorf("Map GetAll failed")
+			}
+		}
+
+	}
+	mp.Clear()
 }

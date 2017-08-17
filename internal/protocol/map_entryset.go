@@ -46,9 +46,9 @@ func MapEntrySetDecodeResponse(clientMessage *ClientMessage) *MapEntrySetRespons
 		var responseItem Pair
 		responseItemKey := clientMessage.ReadData()
 		responseItemVal := clientMessage.ReadData()
-		responseItem.key = responseItemKey
-		responseItem.value = responseItemVal
-		response = append(response, responseItem)
+		responseItem.key = &responseItemKey
+		responseItem.value = &responseItemVal
+		response[responseIndex] = responseItem
 	}
 	parameters.Response = response
 

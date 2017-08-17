@@ -27,10 +27,10 @@ func MapPutAllCalculateSize(name string, entries []Pair) int {
 	dataSize += StringCalculateSize(&name)
 	dataSize += INT_SIZE_IN_BYTES
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(Data)
-		val := entriesItem.value.(Data)
-		dataSize += DataCalculateSize(&key)
-		dataSize += DataCalculateSize(&val)
+		key := entriesItem.key.(*Data)
+		val := entriesItem.value.(*Data)
+		dataSize += DataCalculateSize(key)
+		dataSize += DataCalculateSize(val)
 	}
 	return dataSize
 }
@@ -43,10 +43,10 @@ func MapPutAllEncodeRequest(name string, entries []Pair) *ClientMessage {
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt(len(entries))
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(Data)
-		val := entriesItem.value.(Data)
-		clientMessage.AppendData(key)
-		clientMessage.AppendData(val)
+		key := entriesItem.key.(*Data)
+		val := entriesItem.value.(*Data)
+		clientMessage.AppendData(*key)
+		clientMessage.AppendData(*val)
 	}
 	clientMessage.UpdateFrameLength()
 	return clientMessage
