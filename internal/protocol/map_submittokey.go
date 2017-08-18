@@ -19,20 +19,20 @@ import (
 )
 
 type MapSubmitToKeyResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapSubmitToKeyCalculateSize(name string, entryProcessor Data, key Data, threadId int64) int {
+func MapSubmitToKeyCalculateSize(name *string, entryProcessor *Data, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&entryProcessor)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(entryProcessor)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapSubmitToKeyEncodeRequest(name string, entryProcessor Data, key Data, threadId int64) *ClientMessage {
+func MapSubmitToKeyEncodeRequest(name *string, entryProcessor *Data, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapSubmitToKeyCalculateSize(name, entryProcessor, key, threadId))
 	clientMessage.SetMessageType(MAP_SUBMITTOKEY)

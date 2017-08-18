@@ -21,15 +21,15 @@ type MapContainsValueResponseParameters struct {
 	Response bool
 }
 
-func MapContainsValueCalculateSize(name string, value Data) int {
+func MapContainsValueCalculateSize(name *string, value *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(value)
 	return dataSize
 }
 
-func MapContainsValueEncodeRequest(name string, value Data) *ClientMessage {
+func MapContainsValueEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapContainsValueCalculateSize(name, value))
 	clientMessage.SetMessageType(MAP_CONTAINSVALUE)

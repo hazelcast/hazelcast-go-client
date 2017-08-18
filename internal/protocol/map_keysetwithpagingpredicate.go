@@ -18,18 +18,18 @@ import (
 )
 
 type MapKeySetWithPagingPredicateResponseParameters struct {
-	Response []Data
+	Response *[]Data
 }
 
-func MapKeySetWithPagingPredicateCalculateSize(name string, predicate Data) int {
+func MapKeySetWithPagingPredicateCalculateSize(name *string, predicate *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(predicate)
 	return dataSize
 }
 
-func MapKeySetWithPagingPredicateEncodeRequest(name string, predicate Data) *ClientMessage {
+func MapKeySetWithPagingPredicateEncodeRequest(name *string, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapKeySetWithPagingPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(MAP_KEYSETWITHPAGINGPREDICATE)
@@ -48,9 +48,9 @@ func MapKeySetWithPagingPredicateDecodeResponse(clientMessage *ClientMessage) *M
 	response := make([]Data, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 		responseItem := clientMessage.ReadData()
-		response = append(response, responseItem)
+		response[responseIndex] = *responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

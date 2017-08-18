@@ -17,15 +17,15 @@ type MapRemovePartitionLostListenerResponseParameters struct {
 	Response bool
 }
 
-func MapRemovePartitionLostListenerCalculateSize(name string, registrationId string) int {
+func MapRemovePartitionLostListenerCalculateSize(name *string, registrationId *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += StringCalculateSize(&registrationId)
+	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(registrationId)
 	return dataSize
 }
 
-func MapRemovePartitionLostListenerEncodeRequest(name string, registrationId string) *ClientMessage {
+func MapRemovePartitionLostListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemovePartitionLostListenerCalculateSize(name, registrationId))
 	clientMessage.SetMessageType(MAP_REMOVEPARTITIONLOSTLISTENER)

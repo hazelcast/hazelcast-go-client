@@ -4,7 +4,7 @@ package protocol
 Address Codec
 */
 func AddressCodecEncode(msg *ClientMessage, address *Address) {
-	msg.AppendString(address.host)
+	msg.AppendString(&address.host)
 	msg.AppendInt(address.port)
 }
 func AddressCodecDecode(msg *ClientMessage) *Address {
@@ -42,8 +42,8 @@ func MemberCodecDecode(msg *ClientMessage) *Member {
 }
 func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
 	entryView := EntryView{}
-	entryView.key = msg.ReadData()
-	entryView.value = msg.ReadData()
+	entryView.key = *msg.ReadData()
+	entryView.value = *msg.ReadData()
 	entryView.cost = msg.ReadInt64()
 	entryView.creationTime = msg.ReadInt64()
 	entryView.expirationTime = msg.ReadInt64()

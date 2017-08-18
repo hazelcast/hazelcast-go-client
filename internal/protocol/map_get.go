@@ -19,19 +19,19 @@ import (
 )
 
 type MapGetResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapGetCalculateSize(name string, key Data, threadId int64) int {
+func MapGetCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapGetEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapGetEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapGetCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_GET)

@@ -13,10 +13,8 @@
 // limitations under the License.
 package protocol
 
-import ()
-
 type ClientGetDistributedObjectsResponseParameters struct {
-	Response []DistributedObjectInfo
+	Response *[]DistributedObjectInfo
 }
 
 func ClientGetDistributedObjectsCalculateSize() int {
@@ -41,10 +39,10 @@ func ClientGetDistributedObjectsDecodeResponse(clientMessage *ClientMessage) *Cl
 	responseSize := clientMessage.ReadInt32()
 	response := make([]DistributedObjectInfo, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := *DistributedObjectInfoCodecDecode(clientMessage)
-		response = append(response, responseItem)
+		responseItem := DistributedObjectInfoCodecDecode(clientMessage)
+		response[responseIndex] = *responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"fmt"
 	. "github.com/hazelcast/go-client/internal/protocol"
+	"log"
 	"strconv"
 	"sync"
 )
@@ -48,7 +48,7 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	invocationService := connectionManager.client.InvocationService
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
 	if con == nil {
-		fmt.Println("Closed a connection")
+		log.Println("Closed a connection")
 		close(resp)
 		return
 	}
@@ -62,13 +62,14 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection) error {
 	uuid := connectionManager.client.ClusterService.uuid
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid
+	clientType := CLIENT_TYPE
 	request := ClientAuthenticationEncodeRequest(
-		connectionManager.client.ClientConfig.GroupConfig.Name,
-		connectionManager.client.ClientConfig.GroupConfig.Password,
+		&connectionManager.client.ClientConfig.GroupConfig.Name,
+		&connectionManager.client.ClientConfig.GroupConfig.Password,
 		&uuid,
 		&ownerUuid,
 		true,
-		CLIENT_TYPE,
+		&clientType,
 		1,
 		//"3.9", //TODO::What should this be ?
 	)

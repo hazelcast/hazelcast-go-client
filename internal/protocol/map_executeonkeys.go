@@ -19,31 +19,31 @@ import (
 )
 
 type MapExecuteOnKeysResponseParameters struct {
-	Response []Pair
+	Response *[]Pair
 }
 
-func MapExecuteOnKeysCalculateSize(name string, entryProcessor Data, keys []Data) int {
+func MapExecuteOnKeysCalculateSize(name *string, entryProcessor *Data, keys *[]Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&entryProcessor)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(entryProcessor)
 	dataSize += INT_SIZE_IN_BYTES
-	for _, keysItem := range keys {
+	for _, keysItem := range *keys {
 		dataSize += DataCalculateSize(&keysItem)
 	}
 	return dataSize
 }
 
-func MapExecuteOnKeysEncodeRequest(name string, entryProcessor Data, keys []Data) *ClientMessage {
+func MapExecuteOnKeysEncodeRequest(name *string, entryProcessor *Data, keys *[]Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
 	clientMessage.SetMessageType(MAP_EXECUTEONKEYS)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(entryProcessor)
-	clientMessage.AppendInt(len(keys))
-	for _, keysItem := range keys {
-		clientMessage.AppendData(keysItem)
+	clientMessage.AppendInt(len(*keys))
+	for _, keysItem := range *keys {
+		clientMessage.AppendData(&keysItem)
 	}
 	clientMessage.UpdateFrameLength()
 	return clientMessage
@@ -61,9 +61,9 @@ func MapExecuteOnKeysDecodeResponse(clientMessage *ClientMessage) *MapExecuteOnK
 		responseItemVal := clientMessage.ReadData()
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
-		response = append(response, responseItem)
+		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

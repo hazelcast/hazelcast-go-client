@@ -18,18 +18,18 @@ import (
 )
 
 type MapAddInterceptorResponseParameters struct {
-	Response string
+	Response *string
 }
 
-func MapAddInterceptorCalculateSize(name string, interceptor Data) int {
+func MapAddInterceptorCalculateSize(name *string, interceptor *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&interceptor)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(interceptor)
 	return dataSize
 }
 
-func MapAddInterceptorEncodeRequest(name string, interceptor Data) *ClientMessage {
+func MapAddInterceptorEncodeRequest(name *string, interceptor *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddInterceptorCalculateSize(name, interceptor))
 	clientMessage.SetMessageType(MAP_ADDINTERCEPTOR)
@@ -43,6 +43,6 @@ func MapAddInterceptorEncodeRequest(name string, interceptor Data) *ClientMessag
 func MapAddInterceptorDecodeResponse(clientMessage *ClientMessage) *MapAddInterceptorResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddInterceptorResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }

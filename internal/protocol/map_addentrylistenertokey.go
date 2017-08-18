@@ -19,21 +19,21 @@ import (
 )
 
 type MapAddEntryListenerToKeyResponseParameters struct {
-	Response string
+	Response *string
 }
 
-func MapAddEntryListenerToKeyCalculateSize(name string, key Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerToKeyCalculateSize(name *string, key *Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += BOOL_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapAddEntryListenerToKeyEncodeRequest(name string, key Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerToKeyEncodeRequest(name *string, key *Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerToKeyCalculateSize(name, key, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDENTRYLISTENERTOKEY)
@@ -50,32 +50,32 @@ func MapAddEntryListenerToKeyEncodeRequest(name string, key Data, includeValue b
 func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerToKeyResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddEntryListenerToKeyResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage, handleEventEntry func(Data, Data, Data, Data, int32, string, int32)) {
+func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {
-		var key Data
+		var key *Data
 		if !clientMessage.ReadBool() {
 			key = clientMessage.ReadData()
 		}
-		var value Data
+		var value *Data
 		if !clientMessage.ReadBool() {
 			value = clientMessage.ReadData()
 		}
-		var oldValue Data
+		var oldValue *Data
 		if !clientMessage.ReadBool() {
 			oldValue = clientMessage.ReadData()
 		}
-		var mergingValue Data
+		var mergingValue *Data
 		if !clientMessage.ReadBool() {
 			mergingValue = clientMessage.ReadData()
 		}
 		eventType := clientMessage.ReadInt32()
-		uuid := *clientMessage.ReadString()
+		uuid := clientMessage.ReadString()
 		numberOfAffectedEntries := clientMessage.ReadInt32()
 		handleEventEntry(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 	}

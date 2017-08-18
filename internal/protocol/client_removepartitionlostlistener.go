@@ -17,14 +17,14 @@ type ClientRemovePartitionLostListenerResponseParameters struct {
 	Response bool
 }
 
-func ClientRemovePartitionLostListenerCalculateSize(registrationId string) int {
+func ClientRemovePartitionLostListenerCalculateSize(registrationId *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&registrationId)
+	dataSize += StringCalculateSize(registrationId)
 	return dataSize
 }
 
-func ClientRemovePartitionLostListenerEncodeRequest(registrationId string) *ClientMessage {
+func ClientRemovePartitionLostListenerEncodeRequest(registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientRemovePartitionLostListenerCalculateSize(registrationId))
 	clientMessage.SetMessageType(CLIENT_REMOVEPARTITIONLOSTLISTENER)

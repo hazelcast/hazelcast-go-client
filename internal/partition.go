@@ -1,10 +1,10 @@
 package internal
 
 import (
-	"fmt"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
+	"log"
 	"sync"
 	"time"
 )
@@ -50,20 +50,12 @@ func (partitionService *PartitionService) PartitionOwner(partitionId int32) (*Ad
 	return address, ok
 }
 
-func (partitionService *PartitionService) GetPartitionId(key interface{}) int32 {
-	/*
-		data, error := partitionService.client.SerializationService.ToData(key)
-		if error != nil {
-			//TODO handle error
-		}
-	*/
-	//TODO:: Remove this line when serialization service.toData works.
-	data := serialization.Data{[]byte("asdasassassaas")}
+func (partitionService *PartitionService) GetPartitionId(keyData *serialization.Data) int32 {
 	count := partitionService.PartitionCount()
 	if count <= 0 {
 		return 0
 	}
-	return common.HashToIndex(data.GetPartitionHash(), count)
+	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
 func (partitionService *PartitionService) doRefresh() {
 	partitionService.mu.Lock()
@@ -72,7 +64,7 @@ func (partitionService *PartitionService) doRefresh() {
 	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
 	connection, alive := <-connectionChan
 	if !alive {
-		fmt.Print("connection is closed")
+		log.Print("connection is closed")
 		//TODO::Handle connection closed
 		return
 	}
@@ -91,7 +83,7 @@ func (partitionService *PartitionService) doRefresh() {
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
 	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
 	partitionService.partitions = make(map[int32]*Address)
-	for _, partitionList := range partitions {
+	for _, partitionList := range *partitions {
 		addr := partitionList.Key().(*Address)
 		for _, partition := range partitionList.Value().([]int32) {
 			partitionService.partitions[int32(partition)] = addr

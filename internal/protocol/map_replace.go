@@ -19,20 +19,20 @@ import (
 )
 
 type MapReplaceResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapReplaceCalculateSize(name string, key Data, value Data, threadId int64) int {
+func MapReplaceCalculateSize(name *string, key *Data, value *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapReplaceEncodeRequest(name string, key Data, value Data, threadId int64) *ClientMessage {
+func MapReplaceEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapReplaceCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(MAP_REPLACE)

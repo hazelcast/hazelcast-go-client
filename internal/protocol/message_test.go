@@ -97,7 +97,7 @@ func TestClientMessage_AppendInt64(t *testing.T) {
 func TestClientMessage_AppendString(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	testString := "abc"
-	message.AppendString(testString)
+	message.AppendString(&testString)
 	dataOffset := message.DataOffset()
 	result := message.Buffer[dataOffset : dataOffset+4]
 	if hexResult := hex.EncodeToString(result); hexResult != "03000000" {

@@ -19,19 +19,19 @@ import (
 )
 
 type MapGetEntryViewResponseParameters struct {
-	Response EntryView
+	Response *EntryView
 }
 
-func MapGetEntryViewCalculateSize(name string, key Data, threadId int64) int {
+func MapGetEntryViewCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapGetEntryViewEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapGetEntryViewEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapGetEntryViewCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_GETENTRYVIEW)
@@ -48,7 +48,7 @@ func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) *MapGetEntryVie
 	parameters := new(MapGetEntryViewResponseParameters)
 
 	if !clientMessage.ReadBool() {
-		parameters.Response = *EntryViewCodecDecode(clientMessage)
+		parameters.Response = EntryViewCodecDecode(clientMessage)
 	}
 	return parameters
 }

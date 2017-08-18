@@ -18,18 +18,18 @@ import (
 )
 
 type MapProjectResponseParameters struct {
-	Response []Data
+	Response *[]Data
 }
 
-func MapProjectCalculateSize(name string, projection Data) int {
+func MapProjectCalculateSize(name *string, projection *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&projection)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(projection)
 	return dataSize
 }
 
-func MapProjectEncodeRequest(name string, projection Data) *ClientMessage {
+func MapProjectEncodeRequest(name *string, projection *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapProjectCalculateSize(name, projection))
 	clientMessage.SetMessageType(MAP_PROJECT)
@@ -48,9 +48,9 @@ func MapProjectDecodeResponse(clientMessage *ClientMessage) *MapProjectResponseP
 	response := make([]Data, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 		responseItem := clientMessage.ReadData()
-		response = append(response, responseItem)
+		response[responseIndex] = *responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

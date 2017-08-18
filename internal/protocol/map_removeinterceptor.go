@@ -17,15 +17,15 @@ type MapRemoveInterceptorResponseParameters struct {
 	Response bool
 }
 
-func MapRemoveInterceptorCalculateSize(name string, id string) int {
+func MapRemoveInterceptorCalculateSize(name *string, id *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += StringCalculateSize(&id)
+	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(id)
 	return dataSize
 }
 
-func MapRemoveInterceptorEncodeRequest(name string, id string) *ClientMessage {
+func MapRemoveInterceptorEncodeRequest(name *string, id *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveInterceptorCalculateSize(name, id))
 	clientMessage.SetMessageType(MAP_REMOVEINTERCEPTOR)

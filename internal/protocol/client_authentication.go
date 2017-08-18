@@ -20,18 +20,18 @@ import (
 type ClientAuthenticationResponseParameters struct {
 	Status                    uint8
 	Address                   *Address
-	Uuid                      string
-	OwnerUuid                 string
+	Uuid                      *string
+	OwnerUuid                 *string
 	SerializationVersion      uint8
-	ServerHazelcastVersion    string
-	ClientUnregisteredMembers []Member
+	ServerHazelcastVersion    *string
+	ClientUnregisteredMembers *[]Member
 }
 
-func ClientAuthenticationCalculateSize(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8) int {
+func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&username)
-	dataSize += StringCalculateSize(&password)
+	dataSize += StringCalculateSize(username)
+	dataSize += StringCalculateSize(password)
 	dataSize += BOOL_SIZE_IN_BYTES
 	if uuid != nil {
 		dataSize += StringCalculateSize(uuid)
@@ -41,12 +41,12 @@ func ClientAuthenticationCalculateSize(username string, password string, uuid *s
 		dataSize += StringCalculateSize(ownerUuid)
 	}
 	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += StringCalculateSize(&clientType)
+	dataSize += StringCalculateSize(clientType)
 	dataSize += UINT8_SIZE_IN_BYTES
 	return dataSize
 }
 
-func ClientAuthenticationEncodeRequest(username string, password string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType string, serializationVersion uint8) *ClientMessage {
+func ClientAuthenticationEncodeRequest(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion))
 	clientMessage.SetMessageType(CLIENT_AUTHENTICATION)
@@ -55,11 +55,11 @@ func ClientAuthenticationEncodeRequest(username string, password string, uuid *s
 	clientMessage.AppendString(password)
 	clientMessage.AppendBool(uuid == nil)
 	if uuid != nil {
-		clientMessage.AppendString(*uuid)
+		clientMessage.AppendString(uuid)
 	}
 	clientMessage.AppendBool(ownerUuid == nil)
 	if ownerUuid != nil {
-		clientMessage.AppendString(*ownerUuid)
+		clientMessage.AppendString(ownerUuid)
 	}
 	clientMessage.AppendBool(isOwnerConnection)
 	clientMessage.AppendString(clientType)
@@ -78,24 +78,24 @@ func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) *ClientAut
 	}
 
 	if !clientMessage.ReadBool() {
-		parameters.Uuid = *clientMessage.ReadString()
+		parameters.Uuid = clientMessage.ReadString()
 	}
 
 	if !clientMessage.ReadBool() {
-		parameters.OwnerUuid = *clientMessage.ReadString()
+		parameters.OwnerUuid = clientMessage.ReadString()
 	}
 	parameters.SerializationVersion = clientMessage.ReadUint8()
-	parameters.ServerHazelcastVersion = *clientMessage.ReadString()
+	parameters.ServerHazelcastVersion = clientMessage.ReadString()
 
 	if !clientMessage.ReadBool() {
 
 		clientUnregisteredMembersSize := clientMessage.ReadInt32()
 		clientUnregisteredMembers := make([]Member, clientUnregisteredMembersSize)
 		for clientUnregisteredMembersIndex := 0; clientUnregisteredMembersIndex < int(clientUnregisteredMembersSize); clientUnregisteredMembersIndex++ {
-			clientUnregisteredMembersItem := *MemberCodecDecode(clientMessage)
-			clientUnregisteredMembers = append(clientUnregisteredMembers, clientUnregisteredMembersItem)
+			clientUnregisteredMembersItem := MemberCodecDecode(clientMessage)
+			clientUnregisteredMembers[clientUnregisteredMembersIndex] = *clientUnregisteredMembersItem
 		}
-		parameters.ClientUnregisteredMembers = clientUnregisteredMembers
+		parameters.ClientUnregisteredMembers = &clientUnregisteredMembers
 
 	}
 	return parameters

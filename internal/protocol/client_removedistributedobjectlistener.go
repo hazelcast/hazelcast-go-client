@@ -17,14 +17,14 @@ type ClientRemoveDistributedObjectListenerResponseParameters struct {
 	Response bool
 }
 
-func ClientRemoveDistributedObjectListenerCalculateSize(registrationId string) int {
+func ClientRemoveDistributedObjectListenerCalculateSize(registrationId *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&registrationId)
+	dataSize += StringCalculateSize(registrationId)
 	return dataSize
 }
 
-func ClientRemoveDistributedObjectListenerEncodeRequest(registrationId string) *ClientMessage {
+func ClientRemoveDistributedObjectListenerEncodeRequest(registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientRemoveDistributedObjectListenerCalculateSize(registrationId))
 	clientMessage.SetMessageType(CLIENT_REMOVEDISTRIBUTEDOBJECTLISTENER)

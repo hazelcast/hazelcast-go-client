@@ -87,8 +87,8 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 	EntryView helper functions
 */
 func EntryViewCodecEncode(msg *ClientMessage, entryView *EntryView) {
-	msg.AppendData(entryView.key)
-	msg.AppendData(entryView.value)
+	msg.AppendData(&entryView.key)
+	msg.AppendData(&entryView.value)
 	msg.AppendInt64(entryView.cost)
 	//msg.AppendInt64(entryView.Cost)
 	msg.AppendInt64(entryView.creationTime)
@@ -114,12 +114,12 @@ func EntryViewCalculateSize(ev *EntryView) int {
 */
 func MemberCodecEncode(msg *ClientMessage, member *Member) {
 	AddressCodecEncode(msg, &member.address)
-	msg.AppendString(member.uuid)
+	msg.AppendString(&member.uuid)
 	msg.AppendBool(member.isLiteMember)
 	msg.AppendInt(len(member.attributes))
 	for key, value := range member.attributes {
-		msg.AppendString(key)
-		msg.AppendString(value)
+		msg.AppendString(&key)
+		msg.AppendString(&value)
 	}
 }
 func MemberCalculateSize(member *Member) int {
@@ -139,8 +139,8 @@ func MemberCalculateSize(member *Member) int {
 	DistributedObjectInfo Helper functions
 */
 func DistributedObjectInfoCodecEncode(msg *ClientMessage, obj *DistributedObjectInfo) {
-	msg.AppendString(obj.serviceName)
-	msg.AppendString(obj.name)
+	msg.AppendString(&obj.serviceName)
+	msg.AppendString(&obj.name)
 }
 func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
 	dataSize := 0

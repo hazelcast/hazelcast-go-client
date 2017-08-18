@@ -19,21 +19,21 @@ import (
 )
 
 type MapPutResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapPutCalculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
+func MapPutCalculateSize(name *string, key *Data, value *Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapPutEncodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutEncodeRequest(name *string, key *Data, value *Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutCalculateSize(name, key, value, threadId, ttl))
 	clientMessage.SetMessageType(MAP_PUT)

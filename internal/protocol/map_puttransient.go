@@ -21,18 +21,18 @@ import (
 type MapPutTransientResponseParameters struct {
 }
 
-func MapPutTransientCalculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
+func MapPutTransientCalculateSize(name *string, key *Data, value *Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapPutTransientEncodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutTransientEncodeRequest(name *string, key *Data, value *Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutTransientCalculateSize(name, key, value, threadId, ttl))
 	clientMessage.SetMessageType(MAP_PUTTRANSIENT)

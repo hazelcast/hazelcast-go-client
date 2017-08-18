@@ -18,7 +18,7 @@ import (
 )
 
 type ClientAddPartitionLostListenerResponseParameters struct {
-	Response string
+	Response *string
 }
 
 func ClientAddPartitionLostListenerCalculateSize(localOnly bool) int {
@@ -41,19 +41,19 @@ func ClientAddPartitionLostListenerEncodeRequest(localOnly bool) *ClientMessage 
 func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddPartitionLostListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAddPartitionLostListenerResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func ClientAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleEventPartitionLost func(int32, int32, Address)) {
+func ClientAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleEventPartitionLost func(int32, int32, *Address)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_PARTITIONLOST && handleEventPartitionLost != nil {
 		partitionId := clientMessage.ReadInt32()
 		lostBackupCount := clientMessage.ReadInt32()
-		var source Address
+		var source *Address
 		if !clientMessage.ReadBool() {
-			source = *AddressCodecDecode(clientMessage)
+			source = AddressCodecDecode(clientMessage)
 		}
 		handleEventPartitionLost(partitionId, lostBackupCount, source)
 	}

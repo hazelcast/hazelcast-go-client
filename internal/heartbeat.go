@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"fmt"
 	"github.com/hazelcast/go-client/internal/protocol"
+	"log"
 	"time"
 )
 
@@ -35,7 +35,6 @@ func (heartBeat *HeartBeatService) start() {
 			select {
 			case <-heartBeat.alive:
 				go heartBeat.heartBeat()
-				fmt.Println(time.Second.Seconds() * heartBeat.heartBeatInterval)
 				time.Sleep(time.Duration(time.Second.Seconds()*heartBeat.heartBeatInterval) * time.Second)
 			case <-heartBeat.cancel:
 				return
@@ -50,7 +49,7 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		if timeSinceLastRead.Seconds() > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
 
-				fmt.Println("Didnt hear back from a connection")
+				log.Println("Didnt hear back from a connection")
 				heartBeat.onHeartBeatStop(connection)
 			}
 		}
@@ -66,7 +65,7 @@ func (heartBeat *HeartBeatService) heartBeat() {
 	heartBeat.alive <- true
 }
 func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
-	fmt.Println("Heartbeat restored for a connection")
+	log.Println("Heartbeat restored for a connection")
 	connection.heartBeating = true
 }
 func (heartBeat *HeartBeatService) onHeartBeatStop(connection *Connection) {

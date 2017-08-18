@@ -13,20 +13,18 @@
 // limitations under the License.
 package protocol
 
-import ()
-
 type MapEntrySetResponseParameters struct {
-	Response []Pair
+	Response *[]Pair
 }
 
-func MapEntrySetCalculateSize(name string) int {
+func MapEntrySetCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	return dataSize
 }
 
-func MapEntrySetEncodeRequest(name string) *ClientMessage {
+func MapEntrySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEntrySetCalculateSize(name))
 	clientMessage.SetMessageType(MAP_ENTRYSET)
@@ -48,9 +46,9 @@ func MapEntrySetDecodeResponse(clientMessage *ClientMessage) *MapEntrySetRespons
 		responseItemVal := clientMessage.ReadData()
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
-		response = append(response, responseItem)
+		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

@@ -18,7 +18,7 @@ import (
 )
 
 type ClientAddMembershipListenerResponseParameters struct {
-	Response string
+	Response *string
 }
 
 func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
@@ -41,15 +41,15 @@ func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddMembershipListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAddMembershipListenerResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEventMember func(Member, int32), handleEventMemberList func([]Member), handleEventMemberAttributeChange func(string, string, int32, string)) {
+func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEventMember func(*Member, int32), handleEventMemberList func(*[]Member), handleEventMemberAttributeChange func(*string, *string, int32, *string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_MEMBER && handleEventMember != nil {
-		member := *MemberCodecDecode(clientMessage)
+		member := MemberCodecDecode(clientMessage)
 		eventType := clientMessage.ReadInt32()
 		handleEventMember(member, eventType)
 	}
@@ -59,20 +59,20 @@ func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEvent
 		membersSize := clientMessage.ReadInt32()
 		members := make([]Member, membersSize)
 		for membersIndex := 0; membersIndex < int(membersSize); membersIndex++ {
-			membersItem := *MemberCodecDecode(clientMessage)
-			members = append(members, membersItem)
+			membersItem := MemberCodecDecode(clientMessage)
+			members[membersIndex] = *membersItem
 		}
 
-		handleEventMemberList(members)
+		handleEventMemberList(&members)
 	}
 
 	if messageType == EVENT_MEMBERATTRIBUTECHANGE && handleEventMemberAttributeChange != nil {
-		uuid := *clientMessage.ReadString()
-		key := *clientMessage.ReadString()
+		uuid := clientMessage.ReadString()
+		key := clientMessage.ReadString()
 		operationType := clientMessage.ReadInt32()
-		var value string
+		var value *string
 		if !clientMessage.ReadBool() {
-			value = *clientMessage.ReadString()
+			value = clientMessage.ReadString()
 		}
 		handleEventMemberAttributeChange(uuid, key, operationType, value)
 	}

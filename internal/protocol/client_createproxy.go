@@ -13,28 +13,26 @@
 // limitations under the License.
 package protocol
 
-import ()
-
 type ClientCreateProxyResponseParameters struct {
 }
 
-func ClientCreateProxyCalculateSize(name string, serviceName string, target Address) int {
+func ClientCreateProxyCalculateSize(name *string, serviceName *string, target *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += StringCalculateSize(&serviceName)
-	dataSize += AddressCalculateSize(&target)
+	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(serviceName)
+	dataSize += AddressCalculateSize(target)
 	return dataSize
 }
 
-func ClientCreateProxyEncodeRequest(name string, serviceName string, target Address) *ClientMessage {
+func ClientCreateProxyEncodeRequest(name *string, serviceName *string, target *Address) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientCreateProxyCalculateSize(name, serviceName, target))
 	clientMessage.SetMessageType(CLIENT_CREATEPROXY)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(serviceName)
-	AddressCodecEncode(clientMessage, &target)
+	AddressCodecEncode(clientMessage, target)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

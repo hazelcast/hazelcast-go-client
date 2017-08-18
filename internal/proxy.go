@@ -14,7 +14,12 @@ type proxy struct {
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {
 	return proxy.client.InvocationService.InvokeOnKeyOwner(request, keyData).Result()
 }
-
+func (proxy *proxy) InvokeOnRandomTarget(request *ClientMessage) (*ClientMessage, error) {
+	return proxy.client.InvocationService.InvokeOnRandomTarget(request).Result()
+}
+func (proxy *proxy) InvokeOnPartition(request *ClientMessage, partitionId int32) (*ClientMessage, error) {
+	return proxy.client.InvocationService.InvokeOnPartitionOwner(request, partitionId).Result()
+}
 func (proxy *proxy) ToObject(data *Data) (interface{}, error) {
 	return proxy.client.SerializationService.ToObject(data)
 }

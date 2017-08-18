@@ -56,10 +56,13 @@ type Pair struct {
 	key, value interface{}
 }
 
+func NewPair(key interface{}, value interface{}) *Pair {
+	return &Pair{key, value}
+}
+
 func (pair *Pair) Key() interface{} {
 	return pair.key
 }
-
 func (pair *Pair) Value() interface{} {
 	return pair.value
 }

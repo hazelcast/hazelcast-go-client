@@ -18,18 +18,18 @@ import (
 )
 
 type MapEntriesWithPredicateResponseParameters struct {
-	Response []Pair
+	Response *[]Pair
 }
 
-func MapEntriesWithPredicateCalculateSize(name string, predicate Data) int {
+func MapEntriesWithPredicateCalculateSize(name *string, predicate *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(predicate)
 	return dataSize
 }
 
-func MapEntriesWithPredicateEncodeRequest(name string, predicate Data) *ClientMessage {
+func MapEntriesWithPredicateEncodeRequest(name *string, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEntriesWithPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(MAP_ENTRIESWITHPREDICATE)
@@ -52,9 +52,9 @@ func MapEntriesWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapEnt
 		responseItemVal := clientMessage.ReadData()
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
-		response = append(response, responseItem)
+		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

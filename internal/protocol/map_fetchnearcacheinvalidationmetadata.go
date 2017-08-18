@@ -18,31 +18,31 @@ import (
 )
 
 type MapFetchNearCacheInvalidationMetadataResponseParameters struct {
-	NamePartitionSequenceList []Pair
-	PartitionUuidList         []Pair
+	NamePartitionSequenceList *[]Pair
+	PartitionUuidList         *[]Pair
 }
 
-func MapFetchNearCacheInvalidationMetadataCalculateSize(names []string, address Address) int {
+func MapFetchNearCacheInvalidationMetadataCalculateSize(names *[]string, address *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += INT_SIZE_IN_BYTES
-	for _, namesItem := range names {
+	for _, namesItem := range *names {
 		dataSize += StringCalculateSize(&namesItem)
 	}
-	dataSize += AddressCalculateSize(&address)
+	dataSize += AddressCalculateSize(address)
 	return dataSize
 }
 
-func MapFetchNearCacheInvalidationMetadataEncodeRequest(names []string, address Address) *ClientMessage {
+func MapFetchNearCacheInvalidationMetadataEncodeRequest(names *[]string, address *Address) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapFetchNearCacheInvalidationMetadataCalculateSize(names, address))
 	clientMessage.SetMessageType(MAP_FETCHNEARCACHEINVALIDATIONMETADATA)
 	clientMessage.IsRetryable = false
-	clientMessage.AppendInt(len(names))
-	for _, namesItem := range names {
-		clientMessage.AppendString(namesItem)
+	clientMessage.AppendInt(len(*names))
+	for _, namesItem := range *names {
+		clientMessage.AppendString(&namesItem)
 	}
-	AddressCodecEncode(clientMessage, &address)
+	AddressCodecEncode(clientMessage, address)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
@@ -55,7 +55,7 @@ func MapFetchNearCacheInvalidationMetadataDecodeResponse(clientMessage *ClientMe
 	namePartitionSequenceList := make([]Pair, namePartitionSequenceListSize)
 	for namePartitionSequenceListIndex := 0; namePartitionSequenceListIndex < int(namePartitionSequenceListSize); namePartitionSequenceListIndex++ {
 		var namePartitionSequenceListItem Pair
-		namePartitionSequenceListItemKey := *clientMessage.ReadString()
+		namePartitionSequenceListItemKey := clientMessage.ReadString()
 
 		namePartitionSequenceListItemValSize := clientMessage.ReadInt32()
 		namePartitionSequenceListItemVal := make([]Pair, namePartitionSequenceListItemValSize)
@@ -65,26 +65,26 @@ func MapFetchNearCacheInvalidationMetadataDecodeResponse(clientMessage *ClientMe
 			namePartitionSequenceListItemValItemVal := clientMessage.ReadInt64()
 			namePartitionSequenceListItemValItem.key = namePartitionSequenceListItemValItemKey
 			namePartitionSequenceListItemValItem.value = namePartitionSequenceListItemValItemVal
-			namePartitionSequenceListItemVal = append(namePartitionSequenceListItemVal, namePartitionSequenceListItemValItem)
+			namePartitionSequenceListItemVal[namePartitionSequenceListItemValIndex] = namePartitionSequenceListItemValItem
 		}
 
 		namePartitionSequenceListItem.key = namePartitionSequenceListItemKey
 		namePartitionSequenceListItem.value = namePartitionSequenceListItemVal
-		namePartitionSequenceList = append(namePartitionSequenceList, namePartitionSequenceListItem)
+		namePartitionSequenceList[namePartitionSequenceListIndex] = namePartitionSequenceListItem
 	}
-	parameters.NamePartitionSequenceList = namePartitionSequenceList
+	parameters.NamePartitionSequenceList = &namePartitionSequenceList
 
 	partitionUuidListSize := clientMessage.ReadInt32()
 	partitionUuidList := make([]Pair, partitionUuidListSize)
 	for partitionUuidListIndex := 0; partitionUuidListIndex < int(partitionUuidListSize); partitionUuidListIndex++ {
 		var partitionUuidListItem Pair
 		partitionUuidListItemKey := clientMessage.ReadInt32()
-		partitionUuidListItemVal := *UuidCodecDecode(clientMessage)
+		partitionUuidListItemVal := UuidCodecDecode(clientMessage)
 		partitionUuidListItem.key = partitionUuidListItemKey
 		partitionUuidListItem.value = partitionUuidListItemVal
-		partitionUuidList = append(partitionUuidList, partitionUuidListItem)
+		partitionUuidList[partitionUuidListIndex] = partitionUuidListItem
 	}
-	parameters.PartitionUuidList = partitionUuidList
+	parameters.PartitionUuidList = &partitionUuidList
 
 	return parameters
 }

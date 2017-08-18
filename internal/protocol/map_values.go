@@ -18,17 +18,17 @@ import (
 )
 
 type MapValuesResponseParameters struct {
-	Response []Data
+	Response *[]Data
 }
 
-func MapValuesCalculateSize(name string) int {
+func MapValuesCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	return dataSize
 }
 
-func MapValuesEncodeRequest(name string) *ClientMessage {
+func MapValuesEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapValuesCalculateSize(name))
 	clientMessage.SetMessageType(MAP_VALUES)
@@ -46,9 +46,9 @@ func MapValuesDecodeResponse(clientMessage *ClientMessage) *MapValuesResponsePar
 	response := make([]Data, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 		responseItem := clientMessage.ReadData()
-		response = append(response, responseItem)
+		response[responseIndex] = *responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

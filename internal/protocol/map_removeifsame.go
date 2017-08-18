@@ -22,17 +22,17 @@ type MapRemoveIfSameResponseParameters struct {
 	Response bool
 }
 
-func MapRemoveIfSameCalculateSize(name string, key Data, value Data, threadId int64) int {
+func MapRemoveIfSameCalculateSize(name *string, key *Data, value *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapRemoveIfSameEncodeRequest(name string, key Data, value Data, threadId int64) *ClientMessage {
+func MapRemoveIfSameEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveIfSameCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(MAP_REMOVEIFSAME)

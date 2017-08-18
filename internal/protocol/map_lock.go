@@ -21,18 +21,18 @@ import (
 type MapLockResponseParameters struct {
 }
 
-func MapLockCalculateSize(name string, key Data, threadId int64, ttl int64, referenceId int64) int {
+func MapLockCalculateSize(name *string, key *Data, threadId int64, ttl int64, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapLockEncodeRequest(name string, key Data, threadId int64, ttl int64, referenceId int64) *ClientMessage {
+func MapLockEncodeRequest(name *string, key *Data, threadId int64, ttl int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapLockCalculateSize(name, key, threadId, ttl, referenceId))
 	clientMessage.SetMessageType(MAP_LOCK)

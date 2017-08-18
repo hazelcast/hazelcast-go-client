@@ -39,6 +39,7 @@ func (client *HazelcastClient) init() {
 	client.ConnectionManager = NewConnectionManager(client)
 	client.LifecycleService = newLifecycleService(client.ClientConfig)
 	client.HeartBeatService = newHeartBeatService(client)
+	client.ProxyManager = newProxyManager(client)
 	client.ClusterService.start()
 	client.HeartBeatService.start()
 	client.PartitionService.start()
