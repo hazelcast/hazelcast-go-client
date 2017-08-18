@@ -22,16 +22,16 @@ type MapContainsKeyResponseParameters struct {
 	Response bool
 }
 
-func MapContainsKeyCalculateSize(name string, key Data, threadId int64) int {
+func MapContainsKeyCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapContainsKeyEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapContainsKeyEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapContainsKeyCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_CONTAINSKEY)

@@ -19,20 +19,20 @@ import (
 )
 
 type MapExecuteOnKeyResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapExecuteOnKeyCalculateSize(name string, entryProcessor Data, key Data, threadId int64) int {
+func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *Data, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&entryProcessor)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(entryProcessor)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapExecuteOnKeyEncodeRequest(name string, entryProcessor Data, key Data, threadId int64) *ClientMessage {
+func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *Data, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnKeyCalculateSize(name, entryProcessor, key, threadId))
 	clientMessage.SetMessageType(MAP_EXECUTEONKEY)

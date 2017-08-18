@@ -19,19 +19,19 @@ import (
 )
 
 type MapAddNearCacheInvalidationListenerResponseParameters struct {
-	Response string
+	Response *string
 }
 
-func MapAddNearCacheInvalidationListenerCalculateSize(name string, listenerFlags int32, localOnly bool) int {
+func MapAddNearCacheInvalidationListenerCalculateSize(name *string, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapAddNearCacheInvalidationListenerEncodeRequest(name string, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddNearCacheInvalidationListenerEncodeRequest(name *string, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddNearCacheInvalidationListenerCalculateSize(name, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDNEARCACHEINVALIDATIONLISTENER)
@@ -46,20 +46,20 @@ func MapAddNearCacheInvalidationListenerEncodeRequest(name string, listenerFlags
 func MapAddNearCacheInvalidationListenerDecodeResponse(clientMessage *ClientMessage) *MapAddNearCacheInvalidationListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddNearCacheInvalidationListenerResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, handleEventIMapInvalidation func(Data, string, Uuid, int64), handleEventIMapBatchInvalidation func([]Data, []string, []Uuid, []int64)) {
+func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, handleEventIMapInvalidation func(*Data, *string, *Uuid, int64), handleEventIMapBatchInvalidation func(*[]Data, *[]string, *[]Uuid, *[]int64)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_IMAPINVALIDATION && handleEventIMapInvalidation != nil {
-		var key Data
+		var key *Data
 		if !clientMessage.ReadBool() {
 			key = clientMessage.ReadData()
 		}
-		sourceUuid := *clientMessage.ReadString()
-		partitionUuid := *UuidCodecDecode(clientMessage)
+		sourceUuid := clientMessage.ReadString()
+		partitionUuid := UuidCodecDecode(clientMessage)
 		sequence := clientMessage.ReadInt64()
 		handleEventIMapInvalidation(key, sourceUuid, partitionUuid, sequence)
 	}
@@ -70,30 +70,30 @@ func MapAddNearCacheInvalidationListenerHandle(clientMessage *ClientMessage, han
 		keys := make([]Data, keysSize)
 		for keysIndex := 0; keysIndex < int(keysSize); keysIndex++ {
 			keysItem := clientMessage.ReadData()
-			keys = append(keys, keysItem)
+			keys[keysIndex] = *keysItem
 		}
 
 		sourceUuidsSize := clientMessage.ReadInt32()
 		sourceUuids := make([]string, sourceUuidsSize)
 		for sourceUuidsIndex := 0; sourceUuidsIndex < int(sourceUuidsSize); sourceUuidsIndex++ {
-			sourceUuidsItem := *clientMessage.ReadString()
-			sourceUuids = append(sourceUuids, sourceUuidsItem)
+			sourceUuidsItem := clientMessage.ReadString()
+			sourceUuids[sourceUuidsIndex] = *sourceUuidsItem
 		}
 
 		partitionUuidsSize := clientMessage.ReadInt32()
 		partitionUuids := make([]Uuid, partitionUuidsSize)
 		for partitionUuidsIndex := 0; partitionUuidsIndex < int(partitionUuidsSize); partitionUuidsIndex++ {
-			partitionUuidsItem := *UuidCodecDecode(clientMessage)
-			partitionUuids = append(partitionUuids, partitionUuidsItem)
+			partitionUuidsItem := UuidCodecDecode(clientMessage)
+			partitionUuids[partitionUuidsIndex] = *partitionUuidsItem
 		}
 
 		sequencesSize := clientMessage.ReadInt32()
 		sequences := make([]int64, sequencesSize)
 		for sequencesIndex := 0; sequencesIndex < int(sequencesSize); sequencesIndex++ {
 			sequencesItem := clientMessage.ReadInt64()
-			sequences = append(sequences, sequencesItem)
+			sequences[sequencesIndex] = sequencesItem
 		}
 
-		handleEventIMapBatchInvalidation(keys, sourceUuids, partitionUuids, sequences)
+		handleEventIMapBatchInvalidation(&keys, &sourceUuids, &partitionUuids, &sequences)
 	}
 }

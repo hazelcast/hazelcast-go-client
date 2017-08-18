@@ -19,21 +19,21 @@ import (
 )
 
 type MapPutIfAbsentResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapPutIfAbsentCalculateSize(name string, key Data, value Data, threadId int64, ttl int64) int {
+func MapPutIfAbsentCalculateSize(name *string, key *Data, value *Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapPutIfAbsentEncodeRequest(name string, key Data, value Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutIfAbsentEncodeRequest(name *string, key *Data, value *Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadId, ttl))
 	clientMessage.SetMessageType(MAP_PUTIFABSENT)

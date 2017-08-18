@@ -22,16 +22,16 @@ type MapEvictResponseParameters struct {
 	Response bool
 }
 
-func MapEvictCalculateSize(name string, key Data, threadId int64) int {
+func MapEvictCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapEvictEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapEvictEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_EVICT)

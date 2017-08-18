@@ -20,20 +20,20 @@ import (
 
 type MapFetchKeysResponseParameters struct {
 	TableIndex int32
-	Keys       []Data
+	Keys       *[]Data
 }
 
-func MapFetchKeysCalculateSize(name string, partitionId int32, tableIndex int32, batch int32) int {
+func MapFetchKeysCalculateSize(name *string, partitionId int32, tableIndex int32, batch int32) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapFetchKeysEncodeRequest(name string, partitionId int32, tableIndex int32, batch int32) *ClientMessage {
+func MapFetchKeysEncodeRequest(name *string, partitionId int32, tableIndex int32, batch int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapFetchKeysCalculateSize(name, partitionId, tableIndex, batch))
 	clientMessage.SetMessageType(MAP_FETCHKEYS)
@@ -55,9 +55,9 @@ func MapFetchKeysDecodeResponse(clientMessage *ClientMessage) *MapFetchKeysRespo
 	keys := make([]Data, keysSize)
 	for keysIndex := 0; keysIndex < int(keysSize); keysIndex++ {
 		keysItem := clientMessage.ReadData()
-		keys = append(keys, keysItem)
+		keys[keysIndex] = *keysItem
 	}
-	parameters.Keys = keys
+	parameters.Keys = &keys
 
 	return parameters
 }

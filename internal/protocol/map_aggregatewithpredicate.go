@@ -18,19 +18,19 @@ import (
 )
 
 type MapAggregateWithPredicateResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapAggregateWithPredicateCalculateSize(name string, aggregator Data, predicate Data) int {
+func MapAggregateWithPredicateCalculateSize(name *string, aggregator *Data, predicate *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&aggregator)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(aggregator)
+	dataSize += DataCalculateSize(predicate)
 	return dataSize
 }
 
-func MapAggregateWithPredicateEncodeRequest(name string, aggregator Data, predicate Data) *ClientMessage {
+func MapAggregateWithPredicateEncodeRequest(name *string, aggregator *Data, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAggregateWithPredicateCalculateSize(name, aggregator, predicate))
 	clientMessage.SetMessageType(MAP_AGGREGATEWITHPREDICATE)

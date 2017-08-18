@@ -13,10 +13,8 @@
 // limitations under the License.
 package protocol
 
-import ()
-
 type MapAssignAndGetUuidsResponseParameters struct {
-	PartitionUuidList []Pair
+	PartitionUuidList *[]Pair
 }
 
 func MapAssignAndGetUuidsCalculateSize() int {
@@ -43,12 +41,12 @@ func MapAssignAndGetUuidsDecodeResponse(clientMessage *ClientMessage) *MapAssign
 	for partitionUuidListIndex := 0; partitionUuidListIndex < int(partitionUuidListSize); partitionUuidListIndex++ {
 		var partitionUuidListItem Pair
 		partitionUuidListItemKey := clientMessage.ReadInt32()
-		partitionUuidListItemVal := *UuidCodecDecode(clientMessage)
+		partitionUuidListItemVal := UuidCodecDecode(clientMessage)
 		partitionUuidListItem.key = partitionUuidListItemKey
 		partitionUuidListItem.value = partitionUuidListItemVal
-		partitionUuidList = append(partitionUuidList, partitionUuidListItem)
+		partitionUuidList[partitionUuidListIndex] = partitionUuidListItem
 	}
-	parameters.PartitionUuidList = partitionUuidList
+	parameters.PartitionUuidList = &partitionUuidList
 
 	return parameters
 }

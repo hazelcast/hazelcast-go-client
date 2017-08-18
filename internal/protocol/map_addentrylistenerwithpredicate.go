@@ -19,21 +19,21 @@ import (
 )
 
 type MapAddEntryListenerWithPredicateResponseParameters struct {
-	Response string
+	Response *string
 }
 
-func MapAddEntryListenerWithPredicateCalculateSize(name string, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerWithPredicateCalculateSize(name *string, predicate *Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(predicate)
 	dataSize += BOOL_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapAddEntryListenerWithPredicateEncodeRequest(name string, predicate Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerWithPredicateEncodeRequest(name *string, predicate *Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerWithPredicateCalculateSize(name, predicate, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(MAP_ADDENTRYLISTENERWITHPREDICATE)
@@ -50,32 +50,32 @@ func MapAddEntryListenerWithPredicateEncodeRequest(name string, predicate Data, 
 func MapAddEntryListenerWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerWithPredicateResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddEntryListenerWithPredicateResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func MapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessage, handleEventEntry func(Data, Data, Data, Data, int32, string, int32)) {
+func MapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {
-		var key Data
+		var key *Data
 		if !clientMessage.ReadBool() {
 			key = clientMessage.ReadData()
 		}
-		var value Data
+		var value *Data
 		if !clientMessage.ReadBool() {
 			value = clientMessage.ReadData()
 		}
-		var oldValue Data
+		var oldValue *Data
 		if !clientMessage.ReadBool() {
 			oldValue = clientMessage.ReadData()
 		}
-		var mergingValue Data
+		var mergingValue *Data
 		if !clientMessage.ReadBool() {
 			mergingValue = clientMessage.ReadData()
 		}
 		eventType := clientMessage.ReadInt32()
-		uuid := *clientMessage.ReadString()
+		uuid := clientMessage.ReadString()
 		numberOfAffectedEntries := clientMessage.ReadInt32()
 		handleEventEntry(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 	}

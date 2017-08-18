@@ -18,7 +18,7 @@ import (
 )
 
 type ClientAddDistributedObjectListenerResponseParameters struct {
-	Response string
+	Response *string
 }
 
 func ClientAddDistributedObjectListenerCalculateSize(localOnly bool) int {
@@ -41,17 +41,17 @@ func ClientAddDistributedObjectListenerEncodeRequest(localOnly bool) *ClientMess
 func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddDistributedObjectListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(ClientAddDistributedObjectListenerResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func ClientAddDistributedObjectListenerHandle(clientMessage *ClientMessage, handleEventDistributedObject func(string, string, string)) {
+func ClientAddDistributedObjectListenerHandle(clientMessage *ClientMessage, handleEventDistributedObject func(*string, *string, *string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_DISTRIBUTEDOBJECT && handleEventDistributedObject != nil {
-		name := *clientMessage.ReadString()
-		serviceName := *clientMessage.ReadString()
-		eventType := *clientMessage.ReadString()
+		name := clientMessage.ReadString()
+		serviceName := clientMessage.ReadString()
+		eventType := clientMessage.ReadString()
 		handleEventDistributedObject(name, serviceName, eventType)
 	}
 }

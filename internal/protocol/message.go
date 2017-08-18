@@ -145,7 +145,7 @@ func (msg *ClientMessage) AppendInt32(v int32) {
 	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+INT_SIZE_IN_BYTES], uint32(v))
 	msg.writeIndex += INT32_SIZE_IN_BYTES
 }
-func (msg *ClientMessage) AppendData(v Data) {
+func (msg *ClientMessage) AppendData(v *Data) {
 	msg.AppendByteArray(v.Buffer())
 }
 
@@ -162,13 +162,13 @@ func (msg *ClientMessage) AppendInt64(v int64) {
 	msg.writeIndex += INT64_SIZE_IN_BYTES
 }
 
-func (msg *ClientMessage) AppendString(str string) {
-	if utf8.ValidString(str) {
-		msg.AppendByteArray([]byte(str))
+func (msg *ClientMessage) AppendString(str *string) {
+	if utf8.ValidString(*str) {
+		msg.AppendByteArray([]byte(*str))
 	} else {
-		buff := make([]byte, 0, len(str)*3)
+		buff := make([]byte, 0, len(*str)*3)
 		n := 0
-		for _, b := range str {
+		for _, b := range *str {
 			n += utf8.EncodeRune(buff[n:], rune(b))
 		}
 		//append fixed size slice
@@ -215,8 +215,8 @@ func (msg *ClientMessage) ReadString() *string {
 	str := string(msg.ReadByteArray())
 	return &str
 }
-func (msg *ClientMessage) ReadData() Data {
-	return Data{msg.ReadByteArray()}
+func (msg *ClientMessage) ReadData() *Data {
+	return &Data{msg.ReadByteArray()}
 }
 func (msg *ClientMessage) ReadByteArray() []byte {
 	length := msg.ReadInt32()

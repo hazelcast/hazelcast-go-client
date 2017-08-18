@@ -22,18 +22,18 @@ type MapReplaceIfSameResponseParameters struct {
 	Response bool
 }
 
-func MapReplaceIfSameCalculateSize(name string, key Data, testValue Data, value Data, threadId int64) int {
+func MapReplaceIfSameCalculateSize(name *string, key *Data, testValue *Data, value *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&testValue)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(testValue)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapReplaceIfSameEncodeRequest(name string, key Data, testValue Data, value Data, threadId int64) *ClientMessage {
+func MapReplaceIfSameEncodeRequest(name *string, key *Data, testValue *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapReplaceIfSameCalculateSize(name, key, testValue, value, threadId))
 	clientMessage.SetMessageType(MAP_REPLACEIFSAME)

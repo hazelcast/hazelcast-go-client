@@ -18,14 +18,14 @@ type MapEventJournalSubscribeResponseParameters struct {
 	NewestSequence int64
 }
 
-func MapEventJournalSubscribeCalculateSize(name string) int {
+func MapEventJournalSubscribeCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	return dataSize
 }
 
-func MapEventJournalSubscribeEncodeRequest(name string) *ClientMessage {
+func MapEventJournalSubscribeEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEventJournalSubscribeCalculateSize(name))
 	clientMessage.SetMessageType(MAP_EVENTJOURNALSUBSCRIBE)

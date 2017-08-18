@@ -20,34 +20,34 @@ import (
 type ClientDeployClassesResponseParameters struct {
 }
 
-func ClientDeployClassesCalculateSize(classDefinitions []Pair) int {
+func ClientDeployClassesCalculateSize(classDefinitions *[]Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += INT_SIZE_IN_BYTES
-	for _, classDefinitionsItem := range classDefinitions {
-		key := classDefinitionsItem.key.(string)
-		val := classDefinitionsItem.value.([]byte)
-		dataSize += StringCalculateSize(&key)
+	for _, classDefinitionsItem := range *classDefinitions {
+		key := classDefinitionsItem.key.(*string)
+		val := classDefinitionsItem.value.(*[]byte)
+		dataSize += StringCalculateSize(key)
 		dataSize += INT_SIZE_IN_BYTES
-		for range val {
+		for range *val {
 			dataSize += UINT8_SIZE_IN_BYTES
 		}
 	}
 	return dataSize
 }
 
-func ClientDeployClassesEncodeRequest(classDefinitions []Pair) *ClientMessage {
+func ClientDeployClassesEncodeRequest(classDefinitions *[]Pair) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientDeployClassesCalculateSize(classDefinitions))
 	clientMessage.SetMessageType(CLIENT_DEPLOYCLASSES)
 	clientMessage.IsRetryable = false
-	clientMessage.AppendInt(len(classDefinitions))
-	for _, classDefinitionsItem := range classDefinitions {
-		key := classDefinitionsItem.key.(string)
-		val := classDefinitionsItem.value.([]byte)
+	clientMessage.AppendInt(len(*classDefinitions))
+	for _, classDefinitionsItem := range *classDefinitions {
+		key := classDefinitionsItem.key.(*string)
+		val := classDefinitionsItem.value.(*[]byte)
 		clientMessage.AppendString(key)
-		clientMessage.AppendInt(len(val))
-		for _, valItem := range val {
+		clientMessage.AppendInt(len(*val))
+		for _, valItem := range *val {
 			clientMessage.AppendUint8(valItem)
 		}
 	}

@@ -18,18 +18,18 @@ import (
 )
 
 type MapAggregateResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapAggregateCalculateSize(name string, aggregator Data) int {
+func MapAggregateCalculateSize(name *string, aggregator *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&aggregator)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(aggregator)
 	return dataSize
 }
 
-func MapAggregateEncodeRequest(name string, aggregator Data) *ClientMessage {
+func MapAggregateEncodeRequest(name *string, aggregator *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAggregateCalculateSize(name, aggregator))
 	clientMessage.SetMessageType(MAP_AGGREGATE)

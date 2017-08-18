@@ -18,19 +18,19 @@ import (
 )
 
 type MapExecuteWithPredicateResponseParameters struct {
-	Response []Pair
+	Response *[]Pair
 }
 
-func MapExecuteWithPredicateCalculateSize(name string, entryProcessor Data, predicate Data) int {
+func MapExecuteWithPredicateCalculateSize(name *string, entryProcessor *Data, predicate *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&entryProcessor)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(entryProcessor)
+	dataSize += DataCalculateSize(predicate)
 	return dataSize
 }
 
-func MapExecuteWithPredicateEncodeRequest(name string, entryProcessor Data, predicate Data) *ClientMessage {
+func MapExecuteWithPredicateEncodeRequest(name *string, entryProcessor *Data, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteWithPredicateCalculateSize(name, entryProcessor, predicate))
 	clientMessage.SetMessageType(MAP_EXECUTEWITHPREDICATE)
@@ -54,9 +54,9 @@ func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapExe
 		responseItemVal := clientMessage.ReadData()
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
-		response = append(response, responseItem)
+		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

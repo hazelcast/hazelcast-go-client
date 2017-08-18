@@ -19,22 +19,22 @@ import (
 )
 
 type MapFetchWithQueryResponseParameters struct {
-	Results                  []Data
+	Results                  *[]Data
 	NextTableIndexToReadFrom int32
 }
 
-func MapFetchWithQueryCalculateSize(name string, tableIndex int32, batch int32, projection Data, predicate Data) int {
+func MapFetchWithQueryCalculateSize(name *string, tableIndex int32, batch int32, projection *Data, predicate *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += DataCalculateSize(&projection)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += DataCalculateSize(projection)
+	dataSize += DataCalculateSize(predicate)
 	return dataSize
 }
 
-func MapFetchWithQueryEncodeRequest(name string, tableIndex int32, batch int32, projection Data, predicate Data) *ClientMessage {
+func MapFetchWithQueryEncodeRequest(name *string, tableIndex int32, batch int32, projection *Data, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapFetchWithQueryCalculateSize(name, tableIndex, batch, projection, predicate))
 	clientMessage.SetMessageType(MAP_FETCHWITHQUERY)
@@ -56,9 +56,9 @@ func MapFetchWithQueryDecodeResponse(clientMessage *ClientMessage) *MapFetchWith
 	results := make([]Data, resultsSize)
 	for resultsIndex := 0; resultsIndex < int(resultsSize); resultsIndex++ {
 		resultsItem := clientMessage.ReadData()
-		results = append(results, resultsItem)
+		results[resultsIndex] = *resultsItem
 	}
-	parameters.Results = results
+	parameters.Results = &results
 
 	parameters.NextTableIndexToReadFrom = clientMessage.ReadInt32()
 	return parameters

@@ -16,21 +16,21 @@ package protocol
 type MapClearNearCacheResponseParameters struct {
 }
 
-func MapClearNearCacheCalculateSize(name string, target Address) int {
+func MapClearNearCacheCalculateSize(name *string, target *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += AddressCalculateSize(&target)
+	dataSize += StringCalculateSize(name)
+	dataSize += AddressCalculateSize(target)
 	return dataSize
 }
 
-func MapClearNearCacheEncodeRequest(name string, target Address) *ClientMessage {
+func MapClearNearCacheEncodeRequest(name *string, target *Address) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapClearNearCacheCalculateSize(name, target))
 	clientMessage.SetMessageType(MAP_CLEARNEARCACHE)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	AddressCodecEncode(clientMessage, &target)
+	AddressCodecEncode(clientMessage, target)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

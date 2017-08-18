@@ -21,27 +21,27 @@ import (
 type MapLoadGivenKeysResponseParameters struct {
 }
 
-func MapLoadGivenKeysCalculateSize(name string, keys []Data, replaceExistingValues bool) int {
+func MapLoadGivenKeysCalculateSize(name *string, keys *[]Data, replaceExistingValues bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += INT_SIZE_IN_BYTES
-	for _, keysItem := range keys {
+	for _, keysItem := range *keys {
 		dataSize += DataCalculateSize(&keysItem)
 	}
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapLoadGivenKeysEncodeRequest(name string, keys []Data, replaceExistingValues bool) *ClientMessage {
+func MapLoadGivenKeysEncodeRequest(name *string, keys *[]Data, replaceExistingValues bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapLoadGivenKeysCalculateSize(name, keys, replaceExistingValues))
 	clientMessage.SetMessageType(MAP_LOADGIVENKEYS)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(keys))
-	for _, keysItem := range keys {
-		clientMessage.AppendData(keysItem)
+	clientMessage.AppendInt(len(*keys))
+	for _, keysItem := range *keys {
+		clientMessage.AppendData(&keysItem)
 	}
 	clientMessage.AppendBool(replaceExistingValues)
 	clientMessage.UpdateFrameLength()

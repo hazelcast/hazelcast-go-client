@@ -20,15 +20,15 @@ import (
 type MapLoadAllResponseParameters struct {
 }
 
-func MapLoadAllCalculateSize(name string, replaceExistingValues bool) int {
+func MapLoadAllCalculateSize(name *string, replaceExistingValues bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapLoadAllEncodeRequest(name string, replaceExistingValues bool) *ClientMessage {
+func MapLoadAllEncodeRequest(name *string, replaceExistingValues bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapLoadAllCalculateSize(name, replaceExistingValues))
 	clientMessage.SetMessageType(MAP_LOADALL)

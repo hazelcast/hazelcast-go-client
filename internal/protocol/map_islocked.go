@@ -21,15 +21,15 @@ type MapIsLockedResponseParameters struct {
 	Response bool
 }
 
-func MapIsLockedCalculateSize(name string, key Data) int {
+func MapIsLockedCalculateSize(name *string, key *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	return dataSize
 }
 
-func MapIsLockedEncodeRequest(name string, key Data) *ClientMessage {
+func MapIsLockedEncodeRequest(name *string, key *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapIsLockedCalculateSize(name, key))
 	clientMessage.SetMessageType(MAP_ISLOCKED)

@@ -16,14 +16,14 @@ package protocol
 type ClientStatisticsResponseParameters struct {
 }
 
-func ClientStatisticsCalculateSize(stats string) int {
+func ClientStatisticsCalculateSize(stats *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&stats)
+	dataSize += StringCalculateSize(stats)
 	return dataSize
 }
 
-func ClientStatisticsEncodeRequest(stats string) *ClientMessage {
+func ClientStatisticsEncodeRequest(stats *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientStatisticsCalculateSize(stats))
 	clientMessage.SetMessageType(CLIENT_STATISTICS)

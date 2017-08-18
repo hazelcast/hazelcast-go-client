@@ -22,18 +22,18 @@ type MapTryPutResponseParameters struct {
 	Response bool
 }
 
-func MapTryPutCalculateSize(name string, key Data, value Data, threadId int64, timeout int64) int {
+func MapTryPutCalculateSize(name *string, key *Data, value *Data, threadId int64, timeout int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
-	dataSize += DataCalculateSize(&value)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
+	dataSize += DataCalculateSize(value)
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapTryPutEncodeRequest(name string, key Data, value Data, threadId int64, timeout int64) *ClientMessage {
+func MapTryPutEncodeRequest(name *string, key *Data, value *Data, threadId int64, timeout int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapTryPutCalculateSize(name, key, value, threadId, timeout))
 	clientMessage.SetMessageType(MAP_TRYPUT)

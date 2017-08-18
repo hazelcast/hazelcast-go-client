@@ -16,15 +16,15 @@ package protocol
 type ClientDestroyProxyResponseParameters struct {
 }
 
-func ClientDestroyProxyCalculateSize(name string, serviceName string) int {
+func ClientDestroyProxyCalculateSize(name *string, serviceName *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += StringCalculateSize(&serviceName)
+	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(serviceName)
 	return dataSize
 }
 
-func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMessage {
+func ClientDestroyProxyEncodeRequest(name *string, serviceName *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientDestroyProxyCalculateSize(name, serviceName))
 	clientMessage.SetMessageType(CLIENT_DESTROYPROXY)

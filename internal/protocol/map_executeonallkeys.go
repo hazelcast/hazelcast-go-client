@@ -18,18 +18,18 @@ import (
 )
 
 type MapExecuteOnAllKeysResponseParameters struct {
-	Response []Pair
+	Response *[]Pair
 }
 
-func MapExecuteOnAllKeysCalculateSize(name string, entryProcessor Data) int {
+func MapExecuteOnAllKeysCalculateSize(name *string, entryProcessor *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&entryProcessor)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(entryProcessor)
 	return dataSize
 }
 
-func MapExecuteOnAllKeysEncodeRequest(name string, entryProcessor Data) *ClientMessage {
+func MapExecuteOnAllKeysEncodeRequest(name *string, entryProcessor *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnAllKeysCalculateSize(name, entryProcessor))
 	clientMessage.SetMessageType(MAP_EXECUTEONALLKEYS)
@@ -52,9 +52,9 @@ func MapExecuteOnAllKeysDecodeResponse(clientMessage *ClientMessage) *MapExecute
 		responseItemVal := clientMessage.ReadData()
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
-		response = append(response, responseItem)
+		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

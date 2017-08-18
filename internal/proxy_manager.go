@@ -14,6 +14,5 @@ func newProxyManager(client *HazelcastClient) *ProxyManager {
 	}
 }
 func (proxyManager *ProxyManager) nextReferenceId() int64 {
-	proxyManager.ReferenceId = atomic.AddInt64(&proxyManager.ReferenceId, 1)
-	return proxyManager.ReferenceId
+	return atomic.AddInt64(&proxyManager.ReferenceId, 1)
 }

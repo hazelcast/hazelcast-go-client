@@ -16,14 +16,14 @@ package protocol
 type MapClearResponseParameters struct {
 }
 
-func MapClearCalculateSize(name string) int {
+func MapClearCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	return dataSize
 }
 
-func MapClearEncodeRequest(name string) *ClientMessage {
+func MapClearEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapClearCalculateSize(name))
 	clientMessage.SetMessageType(MAP_CLEAR)

@@ -83,7 +83,7 @@ func (partitionService *PartitionService) doRefresh() {
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
 	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
 	partitionService.partitions = make(map[int32]*Address)
-	for _, partitionList := range partitions {
+	for _, partitionList := range *partitions {
 		addr := partitionList.Key().(*Address)
 		for _, partition := range partitionList.Value().([]int32) {
 			partitionService.partitions[int32(partition)] = addr

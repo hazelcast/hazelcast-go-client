@@ -62,13 +62,14 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection) error {
 	uuid := connectionManager.client.ClusterService.uuid
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid
+	clientType := CLIENT_TYPE
 	request := ClientAuthenticationEncodeRequest(
-		connectionManager.client.ClientConfig.GroupConfig.Name,
-		connectionManager.client.ClientConfig.GroupConfig.Password,
+		&connectionManager.client.ClientConfig.GroupConfig.Name,
+		&connectionManager.client.ClientConfig.GroupConfig.Password,
 		&uuid,
 		&ownerUuid,
 		true,
-		CLIENT_TYPE,
+		&clientType,
 		1,
 		//"3.9", //TODO::What should this be ?
 	)

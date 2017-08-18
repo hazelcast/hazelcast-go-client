@@ -18,19 +18,19 @@ import (
 )
 
 type MapProjectWithPredicateResponseParameters struct {
-	Response []Data
+	Response *[]Data
 }
 
-func MapProjectWithPredicateCalculateSize(name string, projection Data, predicate Data) int {
+func MapProjectWithPredicateCalculateSize(name *string, projection *Data, predicate *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&projection)
-	dataSize += DataCalculateSize(&predicate)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(projection)
+	dataSize += DataCalculateSize(predicate)
 	return dataSize
 }
 
-func MapProjectWithPredicateEncodeRequest(name string, projection Data, predicate Data) *ClientMessage {
+func MapProjectWithPredicateEncodeRequest(name *string, projection *Data, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapProjectWithPredicateCalculateSize(name, projection, predicate))
 	clientMessage.SetMessageType(MAP_PROJECTWITHPREDICATE)
@@ -50,9 +50,9 @@ func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapPro
 	response := make([]Data, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 		responseItem := clientMessage.ReadData()
-		response = append(response, responseItem)
+		response[responseIndex] = *responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

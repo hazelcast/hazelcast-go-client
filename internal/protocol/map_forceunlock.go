@@ -21,16 +21,16 @@ import (
 type MapForceUnlockResponseParameters struct {
 }
 
-func MapForceUnlockCalculateSize(name string, key Data, referenceId int64) int {
+func MapForceUnlockCalculateSize(name *string, key *Data, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapForceUnlockEncodeRequest(name string, key Data, referenceId int64) *ClientMessage {
+func MapForceUnlockEncodeRequest(name *string, key *Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapForceUnlockCalculateSize(name, key, referenceId))
 	clientMessage.SetMessageType(MAP_FORCEUNLOCK)

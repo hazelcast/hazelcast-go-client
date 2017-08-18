@@ -19,19 +19,19 @@ import (
 )
 
 type MapRemoveResponseParameters struct {
-	Response Data
+	Response *Data
 }
 
-func MapRemoveCalculateSize(name string, key Data, threadId int64) int {
+func MapRemoveCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
-	dataSize += DataCalculateSize(&key)
+	dataSize += StringCalculateSize(name)
+	dataSize += DataCalculateSize(key)
 	dataSize += INT64_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapRemoveEncodeRequest(name string, key Data, threadId int64) *ClientMessage {
+func MapRemoveEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(MAP_REMOVE)

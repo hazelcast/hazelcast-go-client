@@ -19,29 +19,29 @@ import (
 )
 
 type MapGetAllResponseParameters struct {
-	Response []Pair
+	Response *[]Pair
 }
 
-func MapGetAllCalculateSize(name string, keys []Data) int {
+func MapGetAllCalculateSize(name *string, keys *[]Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += INT_SIZE_IN_BYTES
-	for _, keysItem := range keys {
+	for _, keysItem := range *keys {
 		dataSize += DataCalculateSize(&keysItem)
 	}
 	return dataSize
 }
 
-func MapGetAllEncodeRequest(name string, keys []Data) *ClientMessage {
+func MapGetAllEncodeRequest(name *string, keys *[]Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapGetAllCalculateSize(name, keys))
 	clientMessage.SetMessageType(MAP_GETALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(keys))
-	for _, keysItem := range keys {
-		clientMessage.AppendData(keysItem)
+	clientMessage.AppendInt(len(*keys))
+	for _, keysItem := range *keys {
+		clientMessage.AppendData(&keysItem)
 	}
 	clientMessage.UpdateFrameLength()
 	return clientMessage
@@ -57,11 +57,11 @@ func MapGetAllDecodeResponse(clientMessage *ClientMessage) *MapGetAllResponsePar
 		var responseItem Pair
 		responseItemKey := clientMessage.ReadData()
 		responseItemVal := clientMessage.ReadData()
-		responseItem.key = &responseItemKey
-		responseItem.value = &responseItemVal
+		responseItem.key = responseItemKey
+		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

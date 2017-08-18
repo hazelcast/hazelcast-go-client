@@ -18,17 +18,17 @@ import (
 )
 
 type MapKeySetResponseParameters struct {
-	Response []Data
+	Response *[]Data
 }
 
-func MapKeySetCalculateSize(name string) int {
+func MapKeySetCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	return dataSize
 }
 
-func MapKeySetEncodeRequest(name string) *ClientMessage {
+func MapKeySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapKeySetCalculateSize(name))
 	clientMessage.SetMessageType(MAP_KEYSET)
@@ -46,9 +46,9 @@ func MapKeySetDecodeResponse(clientMessage *ClientMessage) *MapKeySetResponsePar
 	response := make([]Data, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 		responseItem := clientMessage.ReadData()
-		response = append(response, responseItem)
+		response[responseIndex] = *responseItem
 	}
-	parameters.Response = response
+	parameters.Response = &response
 
 	return parameters
 }

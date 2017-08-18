@@ -26,4 +26,5 @@ type IMap interface {
 	PutAll(mp *map[interface{}]interface{}) error
 	EntrySet() ([]Pair, error)
 	GetAll(keys []interface{}) (*[]Pair, error)
+	GetEntryView(key interface{}) (*EntryView, error)
 }

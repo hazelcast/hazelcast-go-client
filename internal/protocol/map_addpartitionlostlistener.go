@@ -18,18 +18,18 @@ import (
 )
 
 type MapAddPartitionLostListenerResponseParameters struct {
-	Response string
+	Response *string
 }
 
-func MapAddPartitionLostListenerCalculateSize(name string, localOnly bool) int {
+func MapAddPartitionLostListenerCalculateSize(name *string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(&name)
+	dataSize += StringCalculateSize(name)
 	dataSize += BOOL_SIZE_IN_BYTES
 	return dataSize
 }
 
-func MapAddPartitionLostListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
+func MapAddPartitionLostListenerEncodeRequest(name *string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddPartitionLostListenerCalculateSize(name, localOnly))
 	clientMessage.SetMessageType(MAP_ADDPARTITIONLOSTLISTENER)
@@ -43,16 +43,16 @@ func MapAddPartitionLostListenerEncodeRequest(name string, localOnly bool) *Clie
 func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) *MapAddPartitionLostListenerResponseParameters {
 	// Decode response from client message
 	parameters := new(MapAddPartitionLostListenerResponseParameters)
-	parameters.Response = *clientMessage.ReadString()
+	parameters.Response = clientMessage.ReadString()
 	return parameters
 }
 
-func MapAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleEventMapPartitionLost func(int32, string)) {
+func MapAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleEventMapPartitionLost func(int32, *string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_MAPPARTITIONLOST && handleEventMapPartitionLost != nil {
 		partitionId := clientMessage.ReadInt32()
-		uuid := *clientMessage.ReadString()
+		uuid := clientMessage.ReadString()
 		handleEventMapPartitionLost(partitionId, uuid)
 	}
 }
