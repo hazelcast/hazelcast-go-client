@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
 	"reflect"
 )
@@ -233,4 +234,101 @@ func (st *StackTraceElement) FileName() string {
 
 func (st *StackTraceElement) LineNumber() int32 {
 	return st.lineNumber
+}
+
+type EntryEvent struct {
+	keyData                 *Data
+	valueData               *Data
+	oldValueData            *Data
+	mergingValueData        *Data
+	eventType               int32
+	uuid                    *string
+	numberOfAffectedEntries int32
+}
+
+func (entryEvent *EntryEvent) KeyData() *Data {
+	return entryEvent.keyData
+}
+
+func (entryEvent *EntryEvent) ValueData() *Data {
+	return entryEvent.valueData
+}
+
+func (entryEvent *EntryEvent) OldValueData() *Data {
+	return entryEvent.oldValueData
+}
+
+func (entryEvent *EntryEvent) MergingValueData() *Data {
+	return entryEvent.mergingValueData
+}
+
+func (entryEvent *EntryEvent) Uuid() *string {
+	return entryEvent.uuid
+}
+
+func (entryEvent *EntryEvent) NumberOfAffectedEntries() int32 {
+	return entryEvent.numberOfAffectedEntries
+}
+
+func NewEntryEvent(keyData *Data, valueData *Data, oldValueData *Data, mergingValueData *Data, eventType int32, Uuid *string, numberOfAffectedEntries int32) *EntryEvent {
+	return &EntryEvent{keyData: keyData, valueData: valueData, oldValueData: oldValueData, eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
+}
+func (entryEvent *EntryEvent) EventType() int32 {
+	return entryEvent.eventType
+}
+
+type EntryAddedListener interface {
+	EntryAdded(*EntryEvent)
+}
+type EntryRemovedListener interface {
+	EntryRemoved(*EntryEvent)
+}
+type EntryUpdatedListener interface {
+	EntryUpdated(*EntryEvent)
+}
+type EntryEvictedListener interface {
+	EntryEvicted(*EntryEvent)
+}
+type EntryEvictAllListener interface {
+	EntryEvictAll(*EntryEvent)
+}
+type EntryClearAllListener interface {
+	EntryClearAll(*EntryEvent)
+}
+type EntryMergedListener interface {
+	EntryMerged(*EntryEvent)
+}
+type EntryExpiredListener interface {
+	EntryExpired(*EntryEvent)
+}
+type DecodeListenerResponse func(message *ClientMessage) *string
+
+// Helper function to get flags for listeners
+func GetEntryListenerFlags(listener interface{}) int32 {
+	flags := int32(0)
+	if _, ok := listener.(EntryAddedListener); ok {
+		flags |= ENTRYEVENT_ADDED
+	}
+	if _, ok := listener.(EntryRemovedListener); ok {
+		flags |= ENTRYEVENT_REMOVED
+	}
+	if _, ok := listener.(EntryUpdatedListener); ok {
+		flags |= ENTRYEVENT_UPDATED
+	}
+	if _, ok := listener.(EntryEvictedListener); ok {
+		flags |= ENTRYEVENT_EVICTED
+	}
+	if _, ok := listener.(EntryEvictAllListener); ok {
+		flags |= ENTRYEVENT_EVICT_ALL
+	}
+	if _, ok := listener.(EntryClearAllListener); ok {
+		flags |= ENTRYEVENT_CLEAR_ALL
+	}
+	if _, ok := listener.(EntryExpiredListener); ok {
+		flags |= ENTRYEVENT_EXPIRED
+	}
+	if _, ok := listener.(EntryMergedListener); ok {
+		flags |= ENTRYEVENT_MERGED
+	}
+	return flags
 }

@@ -53,3 +53,36 @@ type EntryView interface {
 	EvictionCriteriaNumber() int64
 	Ttl() int64
 }
+type EntryEvent interface {
+	KeyData() *Data
+	ValueData() *Data
+	OldValueData() *Data
+	MergingValueData() *Data
+	EventType() int32
+	Uuid() *string
+	NumberOfAffectedEntries() int32
+}
+type EntryAddedListener interface {
+	EntryAdded(*EntryEvent)
+}
+type EntryRemovedListener interface {
+	EntryRemoved(*EntryEvent)
+}
+type EntryUpdatedListener interface {
+	EntryUpdated(*EntryEvent)
+}
+type EntryEvictedListener interface {
+	EntryEvicted(*EntryEvent)
+}
+type EntryEvictAllListener interface {
+	EntryEvictAll(*EntryEvent)
+}
+type EntryClearAllListener interface {
+	EntryClearAll(*EntryEvent)
+}
+type EntryMergedListener interface {
+	EntryMerged(*EntryEvent)
+}
+type EntryExpiredListener interface {
+	EntryExpired(*EntryEvent)
+}

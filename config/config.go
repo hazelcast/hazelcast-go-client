@@ -12,6 +12,7 @@ const (
 type ClientConfig struct {
 	GroupConfig         GroupConfig
 	ClientNetworkConfig ClientNetworkConfig
+	SerializationConfig *SerializationConfig
 }
 
 type SerializationConfig struct {

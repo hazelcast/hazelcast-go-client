@@ -27,4 +27,5 @@ type IMap interface {
 	EntrySet() ([]Pair, error)
 	GetAll(keys []interface{}) (*[]Pair, error)
 	GetEntryView(key interface{}) (*EntryView, error)
+	AddEntryListener(listener interface{}, includeValue bool) (*string, error)
 }

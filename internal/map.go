@@ -1,6 +1,7 @@
 package internal
 
 import (
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
 )
@@ -366,4 +367,38 @@ func (imap *MapProxy) GetEntryView(key interface{}) (*EntryView, error) {
 	}
 	response := MapGetEntryViewDecodeResponse(responseMessage).Response
 	return response, nil
+}
+func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) (*string, error) {
+	var request *ClientMessage
+	listenerFlags := GetEntryListenerFlags(listener)
+	request = MapAddEntryListenerEncodeRequest(imap.name, includeValue, listenerFlags, false)
+	eventHandler := func(clientMessage *ClientMessage) {
+		MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32) {
+			onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
+		})
+	}
+	return imap.client.ListenerService.startListening(request, eventHandler, func(clientMessage *ClientMessage) *string {
+		return MapAddEntryListenerDecodeResponse(clientMessage).Response
+	}, nil)
+}
+func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
+	event := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries)
+	switch event.EventType() {
+	case ENTRYEVENT_ADDED:
+		listener.(EntryAddedListener).EntryAdded(event)
+	case ENTRYEVENT_REMOVED:
+		listener.(EntryRemovedListener).EntryRemoved(event)
+	case ENTRYEVENT_UPDATED:
+		listener.(EntryUpdatedListener).EntryUpdated(event)
+	case ENTRYEVENT_EVICTED:
+		listener.(EntryEvictedListener).EntryEvicted(event)
+	case ENTRYEVENT_EVICT_ALL:
+		listener.(EntryEvictAllListener).EntryEvictAll(event)
+	case ENTRYEVENT_CLEAR_ALL:
+		listener.(EntryClearAllListener).EntryClearAll(event)
+	case ENTRYEVENT_MERGED:
+		listener.(EntryMergedListener).EntryMerged(event)
+	case ENTRYEVENT_EXPIRED:
+		listener.(EntryExpiredListener).EntryExpired(event)
+	}
 }

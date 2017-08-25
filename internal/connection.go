@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"log"
 	"net"
@@ -71,7 +72,6 @@ func (connection *Connection) process() {
 	}()
 	go func() {
 		//reader process
-		//TODO:: implement this.
 		for {
 			select {
 			case resp := <-connection.received:
@@ -82,17 +82,17 @@ func (connection *Connection) process() {
 }
 
 func (connection *Connection) Send(clientMessage *ClientMessage) error {
-	/*
-		//Client message is not sent through the channel since this is a select/case clouse.
-		select {
-		case connection.pending <- clientMessage:
-			return nil
-		case <-connection.closed:
-			return errors.New("Connection Closed.")
-		}
-	*/
-	connection.pending <- clientMessage
-	return nil
+
+	//Client message is not sent through the channel since this is a select/case clouse.
+	select {
+	case connection.pending <- clientMessage:
+		return nil
+	case <-connection.closed:
+		return errors.New("Connection Closed.")
+	}
+
+	//connection.pending <- clientMessage
+	//return nil
 }
 
 func (connection *Connection) write(clientMessage *ClientMessage) error {

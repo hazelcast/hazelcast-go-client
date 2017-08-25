@@ -2,13 +2,18 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/internal/protocol"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"strconv"
+	"sync"
 	"testing"
+	"time"
 )
 
 const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
+
+var wg sync.WaitGroup
 
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
@@ -29,6 +34,19 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
 	assertEqualf(t, err, res, testValue, "get returned a wrong value")
+	mp.Clear()
+}
+func TestMapProxy_ManyPutGet(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	for i := 0; i < 100; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp.Put(testKey, testValue)
+		res, err := mp.Get(testKey)
+		assertEqualf(t, err, res, testValue, "get returned a wrong value")
+	}
 	mp.Clear()
 }
 
@@ -315,5 +333,54 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	assertEqualf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
 	assertEqualf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
 
+	mp.Clear()
+}
+
+type AddEntry struct {
+}
+
+func (addEntry *AddEntry) EntryAdded(event *protocol.EntryEvent) {
+	wg.Done()
+}
+func (addEntry *AddEntry) EntryUpdated(event *protocol.EntryEvent) {
+	wg.Done()
+}
+func (addEntry *AddEntry) EntryRemoved(event *protocol.EntryEvent) {
+	wg.Done()
+}
+func (addEntry *AddEntry) EntryEvictAll(event *protocol.EntryEvent) {
+	wg.Done()
+}
+
+func TestMapProxy_AddEntryListener(t *testing.T) {
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	entryAdded := &AddEntry{}
+	_, err := mp.AddEntryListener(entryAdded, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wg.Add(1)
+	mp.Put("key", "value")
+	timeout := waitTimeout(&wg, 5*time.Second)
+	if timeout {
+		t.Fatal("AddEntryListener entryAdded failed")
+	}
+	opAmount := 100
+	wg.Add(opAmount)
+	for i := 0; i < opAmount; i++ {
+		mp.Put("key", "value")
+	}
+	timeout = waitTimeout(&wg, 5*time.Second)
+	if timeout {
+		t.Fatal("AddEntryListener entryUpdated failed.")
+	}
+	wg.Add(1)
+	mp.Remove("key")
+	timeout = waitTimeout(&wg, 5*time.Second)
+	if timeout {
+		t.Fatal("AddEntryListener entryRemoved failed.")
+	}
 	mp.Clear()
 }

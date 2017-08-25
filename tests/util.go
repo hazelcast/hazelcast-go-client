@@ -1,6 +1,10 @@
 package tests
 
-import "testing"
+import (
+	"sync"
+	"testing"
+	"time"
+)
 
 func assertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
 	if err != nil {
@@ -20,4 +24,17 @@ func assertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 		t.Fatalf("%v != %v", l, r)
 	}
 
+}
+func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false // completed normally
+	case <-time.After(timeout):
+		return true // timed out
+	}
 }
