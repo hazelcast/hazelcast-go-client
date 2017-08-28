@@ -2,6 +2,7 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/protocol"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
@@ -350,36 +351,34 @@ func (addEntry *AddEntry) EntryEvictAll(event *protocol.EntryEvent) {
 	addEntry.wg.Done()
 }
 
-func TestMapProxy_AddEntryListener(t *testing.T) {
+func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
 	entryAdded := &AddEntry{wg: wg}
-	_, err := mp.AddEntryListener(entryAdded, true)
-	if err != nil {
-		log.Fatal(err)
-	}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
 	wg.Add(1)
-	mp.Put("key", "value")
+	mp.Put("key123", "value")
 	timeout := waitTimeout(wg, Timeout)
-	if timeout {
-		t.Fatal("AddEntryListener entryAdded failed")
-	}
-	opAmount := 100
-	wg.Add(opAmount)
-	for i := 0; i < opAmount; i++ {
-		mp.Put("key", "value")
-	}
-	timeout = waitTimeout(wg, Timeout)
-	if timeout {
-		t.Fatal("AddEntryListener entryUpdated failed.")
-	}
-	wg.Add(1)
-	mp.Remove("key")
-	timeout = waitTimeout(wg, Timeout)
-	if timeout {
-		t.Fatal("AddEntryListener entryRemoved failed.")
-	}
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp := client.GetMap(&mapName)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("key1", "value")
+	mp.Put("key1", "value")
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryUpdated failed")
+	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }

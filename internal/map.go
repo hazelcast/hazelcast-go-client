@@ -402,3 +402,8 @@ func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *
 		listener.(EntryExpiredListener).EntryExpired(event)
 	}
 }
+func (imap *MapProxy) RemoveEntryListener(registrationId *string) error {
+	return imap.client.ListenerService.stopListening(registrationId, func(registrationId *string) *ClientMessage {
+		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
+	})
+}

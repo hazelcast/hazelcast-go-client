@@ -28,4 +28,5 @@ type IMap interface {
 	GetAll(keys []interface{}) (*[]Pair, error)
 	GetEntryView(key interface{}) (*EntryView, error)
 	AddEntryListener(listener interface{}, includeValue bool) (*string, error)
+	RemoveEntryListener(registrationId *string) error
 }

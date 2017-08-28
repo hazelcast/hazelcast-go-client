@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
 )
@@ -32,4 +33,17 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 	invocation.registrationId = registrationId
 	listenerService.registrations[*registrationId] = request.CorrelationId()
 	return registrationId, nil
+}
+func (listenerService *ListenerService) stopListening(registrationId *string, requestEncoder EncodeListenerRemoveRequest) error {
+	correlationId, found := listenerService.registrations[*registrationId]
+	if !found {
+		return errors.New("Couldn't find the listener for the given registrationId")
+	}
+	err := listenerService.client.InvocationService.removeEventHandler(correlationId)
+	if err != nil {
+		return err
+	}
+
+	_, err = listenerService.client.InvocationService.InvokeOnRandomTarget(requestEncoder(registrationId)).Result()
+	return err
 }

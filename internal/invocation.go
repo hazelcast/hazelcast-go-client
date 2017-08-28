@@ -229,7 +229,13 @@ func (invocationService *InvocationService) handleNotSentInvocation(correlationI
 		invocationService.SendInvocation(invocation)
 	}
 }
-
+func (invocationService *InvocationService) removeEventHandler(correlationId int64) error {
+	if _, ok := invocationService.eventHandlers[correlationId]; ok {
+		delete(invocationService.eventHandlers, correlationId)
+		return nil
+	}
+	return errors.New("No event handler for the given correlationId")
+}
 func (invocationService *InvocationService) handleResponse(response *ClientMessage) {
 	correlationId := response.CorrelationId()
 	if invocation, ok := invocationService.unRegisterInvocation(correlationId); ok {
