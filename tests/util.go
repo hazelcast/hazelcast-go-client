@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var Timeout time.Duration = 2 * time.Minute
+
 func assertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
 	if err != nil {
 		t.Fatal(err)

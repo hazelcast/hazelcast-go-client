@@ -38,7 +38,7 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 		partitionId:     partitionId,
 		address:         address,
 		boundConnection: connection,
-		response:        make(chan *ClientMessage, 10000),
+		response:        make(chan *ClientMessage, 1),
 		err:             make(chan error, 0),
 		closed:          make(chan bool, 0),
 		timeout:         time.After(DEFAULT_INVOCATION_TIMEOUT)}
@@ -50,8 +50,6 @@ func (invocation *Invocation) Result() (*ClientMessage, error) {
 		return response, nil
 	case err := <-invocation.err:
 		return nil, err
-	case <-invocation.closed:
-		return nil, errors.New("Connection is closed")
 	}
 }
 
@@ -241,6 +239,7 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 				log.Println("Got an event message with unknown correlation id")
 			}
 			invocation.eventHandler(response)
+			return
 		}
 		if response.MessageType() == MESSAGE_TYPE_EXCEPTION {
 			invocation.err <- convertToError(response)

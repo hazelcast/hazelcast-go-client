@@ -8,12 +8,9 @@ import (
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 )
 
 const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
-
-var wg sync.WaitGroup
 
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
@@ -337,33 +334,35 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 }
 
 type AddEntry struct {
+	wg *sync.WaitGroup
 }
 
 func (addEntry *AddEntry) EntryAdded(event *protocol.EntryEvent) {
-	wg.Done()
+	addEntry.wg.Done()
 }
 func (addEntry *AddEntry) EntryUpdated(event *protocol.EntryEvent) {
-	wg.Done()
+	addEntry.wg.Done()
 }
 func (addEntry *AddEntry) EntryRemoved(event *protocol.EntryEvent) {
-	wg.Done()
+	addEntry.wg.Done()
 }
 func (addEntry *AddEntry) EntryEvictAll(event *protocol.EntryEvent) {
-	wg.Done()
+	addEntry.wg.Done()
 }
 
 func TestMapProxy_AddEntryListener(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	client := hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp := client.GetMap(&mapName)
-	entryAdded := &AddEntry{}
+	entryAdded := &AddEntry{wg: wg}
 	_, err := mp.AddEntryListener(entryAdded, true)
 	if err != nil {
 		log.Fatal(err)
 	}
 	wg.Add(1)
 	mp.Put("key", "value")
-	timeout := waitTimeout(&wg, 5*time.Second)
+	timeout := waitTimeout(wg, Timeout)
 	if timeout {
 		t.Fatal("AddEntryListener entryAdded failed")
 	}
@@ -372,13 +371,13 @@ func TestMapProxy_AddEntryListener(t *testing.T) {
 	for i := 0; i < opAmount; i++ {
 		mp.Put("key", "value")
 	}
-	timeout = waitTimeout(&wg, 5*time.Second)
+	timeout = waitTimeout(wg, Timeout)
 	if timeout {
 		t.Fatal("AddEntryListener entryUpdated failed.")
 	}
 	wg.Add(1)
 	mp.Remove("key")
-	timeout = waitTimeout(&wg, 5*time.Second)
+	timeout = waitTimeout(wg, Timeout)
 	if timeout {
 		t.Fatal("AddEntryListener entryRemoved failed.")
 	}
