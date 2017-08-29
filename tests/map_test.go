@@ -2,7 +2,6 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/protocol"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
