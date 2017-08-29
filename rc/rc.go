@@ -607,7 +607,7 @@ type RemoteController interface {
 	// Parameters:
 	//  - HzVersion
 	//  - Xmlconfig
-	CreateCluster(hzVersion string, xmlconfig string) (r *Cluster, err error)
+	CreateCluster(hzVersion string, xmlconfig *string) (r *Cluster, err error)
 	// Parameters:
 	//  - ClusterId
 	StartMember(clusterId string) (r *Member, err error)
@@ -920,14 +920,14 @@ func (p *RemoteControllerClient) recvExit() (value bool, err error) {
 // Parameters:
 //  - HzVersion
 //  - Xmlconfig
-func (p *RemoteControllerClient) CreateCluster(hzVersion string, xmlconfig string) (r *Cluster, err error) {
+func (p *RemoteControllerClient) CreateCluster(hzVersion string, xmlconfig *string) (r *Cluster, err error) {
 	if err = p.sendCreateCluster(hzVersion, xmlconfig); err != nil {
 		return
 	}
 	return p.recvCreateCluster()
 }
 
-func (p *RemoteControllerClient) sendCreateCluster(hzVersion string, xmlconfig string) (err error) {
+func (p *RemoteControllerClient) sendCreateCluster(hzVersion string, xmlconfig *string) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -3010,8 +3010,8 @@ func (p *RemoteControllerExitResult) String() string {
 //  - HzVersion
 //  - Xmlconfig
 type RemoteControllerCreateClusterArgs struct {
-	HzVersion string `thrift:"hzVersion,1" db:"hzVersion" json:"hzVersion"`
-	Xmlconfig string `thrift:"xmlconfig,2" db:"xmlconfig" json:"xmlconfig"`
+	HzVersion string  `thrift:"hzVersion,1" db:"hzVersion" json:"hzVersion"`
+	Xmlconfig *string `thrift:"xmlconfig,2" db:"xmlconfig" json:"xmlconfig"`
 }
 
 func NewRemoteControllerCreateClusterArgs() *RemoteControllerCreateClusterArgs {
@@ -3022,7 +3022,7 @@ func (p *RemoteControllerCreateClusterArgs) GetHzVersion() string {
 	return p.HzVersion
 }
 
-func (p *RemoteControllerCreateClusterArgs) GetXmlconfig() string {
+func (p *RemoteControllerCreateClusterArgs) GetXmlconfig() *string {
 	return p.Xmlconfig
 }
 func (p *RemoteControllerCreateClusterArgs) Read(iprot thrift.TProtocol) error {
@@ -3075,7 +3075,7 @@ func (p *RemoteControllerCreateClusterArgs) ReadField2(iprot thrift.TProtocol) e
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
-		p.Xmlconfig = v
+		p.Xmlconfig = &v
 	}
 	return nil
 }
@@ -3088,8 +3088,10 @@ func (p *RemoteControllerCreateClusterArgs) Write(oprot thrift.TProtocol) error 
 		if err := p.writeField1(oprot); err != nil {
 			return err
 		}
-		if err := p.writeField2(oprot); err != nil {
-			return err
+		if p.Xmlconfig != nil {
+			if err := p.writeField2(oprot); err != nil {
+				return err
+			}
 		}
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -3118,7 +3120,7 @@ func (p *RemoteControllerCreateClusterArgs) writeField2(oprot thrift.TProtocol) 
 	if err := oprot.WriteFieldBegin("xmlconfig", thrift.STRING, 2); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:xmlconfig: ", p), err)
 	}
-	if err := oprot.WriteString(string(p.Xmlconfig)); err != nil {
+	if err := oprot.WriteString(string(*(p.Xmlconfig))); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T.xmlconfig (2) field write error: ", p), err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
