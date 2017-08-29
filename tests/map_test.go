@@ -8,14 +8,12 @@ import (
 	"testing"
 )
 
-const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
-
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, err := remoteController.CreateCluster("3.9", nil)
 	remoteController.StartMember(cluster.ID)
 	m.Run()
 	remoteController.ShutdownCluster(cluster.ID)
