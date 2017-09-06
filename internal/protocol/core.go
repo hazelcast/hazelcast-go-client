@@ -303,6 +303,8 @@ type EntryExpiredListener interface {
 }
 type DecodeListenerResponse func(message *ClientMessage) *string
 type EncodeListenerRemoveRequest func(registrationId *string) *ClientMessage
+type MemberAdded func(member *Member)
+type MemberRemoved func(member *Member)
 
 // Helper function to get flags for listeners
 func GetEntryListenerFlags(listener interface{}) int32 {

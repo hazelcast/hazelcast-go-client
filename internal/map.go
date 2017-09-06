@@ -381,6 +381,24 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 		return MapAddEntryListenerDecodeResponse(clientMessage).Response
 	}, nil)
 }
+func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error) {
+	var request *ClientMessage
+	listenerFlags := GetEntryListenerFlags(listener)
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return nil, err
+	}
+	request = MapAddEntryListenerToKeyEncodeRequest(imap.name, keyData, includeValue, listenerFlags, false)
+	eventHandler := func(clientMessage *ClientMessage) {
+		MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32) {
+			onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
+		})
+	}
+	//TODO :: when keyData is not nil it gets stuck for some reason.
+	return imap.client.ListenerService.startListening(request, eventHandler, func(clientMessage *ClientMessage) *string {
+		return MapAddEntryListenerToKeyDecodeResponse(clientMessage).Response
+	}, nil)
+}
 func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
 	event := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries)
 	switch event.EventType() {

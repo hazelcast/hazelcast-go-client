@@ -170,9 +170,7 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 	}()
 }
 func (invocationService *InvocationService) SendInvocation(invocation *Invocation) InvocationResult {
-	go func() {
-		invocationService.sending <- invocation
-	}()
+	invocationService.sending <- invocation
 	return invocation
 }
 func (invocationService *InvocationService) InvokeOnConnection(request *ClientMessage, connection *Connection) InvocationResult {
@@ -243,8 +241,9 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 			invocation, found := invocationService.eventHandlers[correlationId]
 			if !found {
 				log.Println("Got an event message with unknown correlation id")
+			} else {
+				invocation.eventHandler(response)
 			}
-			invocation.eventHandler(response)
 			return
 		}
 		if response.MessageType() == MESSAGE_TYPE_EXCEPTION {
