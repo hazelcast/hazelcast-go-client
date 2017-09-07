@@ -26,6 +26,7 @@ func TestMain(m *testing.M) {
 	mapName := "myMap"
 	mp = client.GetMap(&mapName)
 	m.Run()
+	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestMapProxy_SinglePutGet(t *testing.T) {
@@ -292,6 +293,12 @@ func (addEntry *AddEntry) EntryRemoved(event *protocol.EntryEvent) {
 func (addEntry *AddEntry) EntryEvicted(event *protocol.EntryEvent) {
 	addEntry.wg.Done()
 }
+func (addEntry *AddEntry) EntryEvictAll(event *protocol.MapEvent) {
+	addEntry.wg.Done()
+}
+func (addEntry *AddEntry) EntryClearAll(event *protocol.MapEvent) {
+	addEntry.wg.Done()
+}
 
 func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
@@ -341,6 +348,34 @@ func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
 	mp.Remove("test")
 	timeout := waitTimeout(wg, Timeout)
 	assertEqualf(t, nil, false, timeout, "AddEntryListener entryRemoved failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
+
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("test", "key")
+	mp.EvictAll()
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerClear(t *testing.T) {
+
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("test", "key")
+	mp.Clear()
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryClear failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }

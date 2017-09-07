@@ -60,6 +60,10 @@ type EntryEvent interface {
 	MergingValueData() *Data
 	EventType() int32
 	Uuid() *string
+}
+type MapEvent interface {
+	EventType() int32
+	Uuid() *string
 	NumberOfAffectedEntries() int32
 }
 type EntryAddedListener interface {
@@ -75,10 +79,10 @@ type EntryEvictedListener interface {
 	EntryEvicted(*EntryEvent)
 }
 type EntryEvictAllListener interface {
-	EntryEvictAll(*EntryEvent)
+	EntryEvictAll(*MapEvent)
 }
 type EntryClearAllListener interface {
-	EntryClearAll(*EntryEvent)
+	EntryClearAll(*MapEvent)
 }
 type EntryMergedListener interface {
 	EntryMerged(*EntryEvent)

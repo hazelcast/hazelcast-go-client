@@ -20,11 +20,10 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 	if keyData != nil {
 		partitionId := listenerService.client.PartitionService.GetPartitionId(keyData)
 		invocation = NewInvocation(request, partitionId, nil, nil)
-		invocation.eventHandler = eventHandler
 	} else {
 		invocation = NewInvocation(request, -1, nil, nil)
-		invocation.eventHandler = eventHandler
 	}
+	invocation.eventHandler = eventHandler
 	responseMessage, err := listenerService.client.InvocationService.SendInvocation(invocation).Result()
 	if err != nil {
 		return nil, err

@@ -394,30 +394,30 @@ func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{
 			onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	//TODO :: when keyData is not nil it gets stuck for some reason.
 	return imap.client.ListenerService.startListening(request, eventHandler, func(clientMessage *ClientMessage) *string {
 		return MapAddEntryListenerToKeyDecodeResponse(clientMessage).Response
-	}, nil)
+	}, keyData)
 }
 func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
-	event := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries)
-	switch event.EventType() {
+	entryEvent := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid)
+	mapEvent := NewMapEvent(eventType, Uuid, numberOfAffectedEntries)
+	switch eventType {
 	case ENTRYEVENT_ADDED:
-		listener.(EntryAddedListener).EntryAdded(event)
+		listener.(EntryAddedListener).EntryAdded(entryEvent)
 	case ENTRYEVENT_REMOVED:
-		listener.(EntryRemovedListener).EntryRemoved(event)
+		listener.(EntryRemovedListener).EntryRemoved(entryEvent)
 	case ENTRYEVENT_UPDATED:
-		listener.(EntryUpdatedListener).EntryUpdated(event)
+		listener.(EntryUpdatedListener).EntryUpdated(entryEvent)
 	case ENTRYEVENT_EVICTED:
-		listener.(EntryEvictedListener).EntryEvicted(event)
+		listener.(EntryEvictedListener).EntryEvicted(entryEvent)
 	case ENTRYEVENT_EVICT_ALL:
-		listener.(EntryEvictAllListener).EntryEvictAll(event)
+		listener.(EntryEvictAllListener).EntryEvictAll(mapEvent)
 	case ENTRYEVENT_CLEAR_ALL:
-		listener.(EntryClearAllListener).EntryClearAll(event)
+		listener.(EntryClearAllListener).EntryClearAll(mapEvent)
 	case ENTRYEVENT_MERGED:
-		listener.(EntryMergedListener).EntryMerged(event)
+		listener.(EntryMergedListener).EntryMerged(entryEvent)
 	case ENTRYEVENT_EXPIRED:
-		listener.(EntryExpiredListener).EntryExpired(event)
+		listener.(EntryExpiredListener).EntryExpired(entryEvent)
 	}
 }
 func (imap *MapProxy) RemoveEntryListener(registrationId *string) error {

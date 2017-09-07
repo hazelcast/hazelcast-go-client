@@ -13,7 +13,7 @@ type Address struct {
 }
 
 func NewAddress() *Address {
-	return &Address{"127.0.0.1", 5701}
+	return &Address{"localhost", 5701}
 }
 func NewAddressWithParameters(Host string, Port int) *Address {
 	return &Address{Host, Port}
@@ -237,13 +237,12 @@ func (st *StackTraceElement) LineNumber() int32 {
 }
 
 type EntryEvent struct {
-	keyData                 *Data
-	valueData               *Data
-	oldValueData            *Data
-	mergingValueData        *Data
-	eventType               int32
-	uuid                    *string
-	numberOfAffectedEntries int32
+	keyData          *Data
+	valueData        *Data
+	oldValueData     *Data
+	mergingValueData *Data
+	eventType        int32
+	uuid             *string
 }
 
 func (entryEvent *EntryEvent) KeyData() *Data {
@@ -265,16 +264,28 @@ func (entryEvent *EntryEvent) MergingValueData() *Data {
 func (entryEvent *EntryEvent) Uuid() *string {
 	return entryEvent.uuid
 }
-
-func (entryEvent *EntryEvent) NumberOfAffectedEntries() int32 {
-	return entryEvent.numberOfAffectedEntries
-}
-
-func NewEntryEvent(keyData *Data, valueData *Data, oldValueData *Data, mergingValueData *Data, eventType int32, Uuid *string, numberOfAffectedEntries int32) *EntryEvent {
-	return &EntryEvent{keyData: keyData, valueData: valueData, oldValueData: oldValueData, eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
-}
 func (entryEvent *EntryEvent) EventType() int32 {
 	return entryEvent.eventType
+}
+
+func NewEntryEvent(keyData *Data, valueData *Data, oldValueData *Data, mergingValueData *Data, eventType int32, Uuid *string) *EntryEvent {
+	return &EntryEvent{keyData: keyData, valueData: valueData, oldValueData: oldValueData, eventType: eventType, uuid: Uuid}
+}
+
+type MapEvent struct {
+	eventType               int32
+	uuid                    *string
+	numberOfAffectedEntries int32
+}
+
+func (mapEvent *MapEvent) NumberOfAffectedEntries() int32 {
+	return mapEvent.numberOfAffectedEntries
+}
+func (mapEvent *MapEvent) EventType() int32 {
+	return mapEvent.eventType
+}
+func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *MapEvent {
+	return &MapEvent{eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
 }
 
 type EntryAddedListener interface {
@@ -290,10 +301,10 @@ type EntryEvictedListener interface {
 	EntryEvicted(*EntryEvent)
 }
 type EntryEvictAllListener interface {
-	EntryEvictAll(*EntryEvent)
+	EntryEvictAll(*MapEvent)
 }
 type EntryClearAllListener interface {
-	EntryClearAll(*EntryEvent)
+	EntryClearAll(*MapEvent)
 }
 type EntryMergedListener interface {
 	EntryMerged(*EntryEvent)

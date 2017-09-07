@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"encoding/binary"
 	"errors"
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"log"
 	"net"
@@ -16,7 +18,7 @@ type Connection struct {
 	pending              chan *ClientMessage
 	received             chan *ClientMessage
 	socket               net.Conn
-	clientMessageBuilder ClientMessageBuilder
+	clientMessageBuilder *ClientMessageBuilder
 	closed               chan bool
 	endpoint             *Address
 	sendingError         chan int64
@@ -24,16 +26,17 @@ type Connection struct {
 	isOwnerConnection    bool
 	lastRead             time.Time
 	heartBeating         bool
+	readBuffer           []byte
 }
 
 func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64) *Connection {
-	connection := Connection{pending: make(chan *ClientMessage, 0),
+	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
-		clientMessageBuilder: ClientMessageBuilder{responseChannel: responseChannel}, sendingError: sendingError,
+		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
 		heartBeating: true,
+		readBuffer:   make([]byte, 0),
 	}
-	go connection.process()
 	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
@@ -46,7 +49,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
 	//}()
-
+	go connection.process()
 	go connection.read()
 	return &connection
 }
@@ -74,25 +77,25 @@ func (connection *Connection) process() {
 		//reader process
 		for {
 			select {
-			case resp := <-connection.received:
+			case resp, alive := <-connection.received:
+				if !alive {
+					//TODO:: Handle error
+					log.Println("Connection error")
+				}
 				connection.clientMessageBuilder.OnMessage(resp)
+
 			}
 		}
 	}()
 }
 
 func (connection *Connection) Send(clientMessage *ClientMessage) error {
-
-	//Client message is not sent through the channel since this is a select/case clouse.
 	select {
 	case connection.pending <- clientMessage:
 		return nil
 	case <-connection.closed:
 		return errors.New("Connection Closed.")
 	}
-
-	//connection.pending <- clientMessage
-	//return nil
 }
 
 func (connection *Connection) write(clientMessage *ClientMessage) error {
@@ -107,6 +110,7 @@ func (connection *Connection) write(clientMessage *ClientMessage) error {
 			writeIndex += writtenLen
 		}
 	}
+
 	return nil
 }
 func (connection *Connection) read() {
@@ -114,22 +118,30 @@ func (connection *Connection) read() {
 	buf := make([]byte, BUFFER_SIZE)
 	for {
 		n, err := connection.socket.Read(buf)
+		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
 		if err != nil {
 			//TODO:: Handle error
 			connection.Close()
+			return
 		}
 		if n == 0 {
 			continue
 		}
-
-		if n >= BUFFER_SIZE {
-			log.Println("Buffer was too small for the read.")
+		connection.receiveMessage()
+	}
+}
+func (connection *Connection) receiveMessage() {
+	connection.lastRead = time.Now()
+	for len(connection.readBuffer) > common.INT_SIZE_IN_BYTES {
+		frameLength := binary.LittleEndian.Uint32(connection.readBuffer[0:4])
+		if frameLength > uint32(len(connection.readBuffer)) {
+			return
 		}
-		resp := NewClientMessage(buf, 0)
+		resp := NewClientMessage(connection.readBuffer[:frameLength], 0)
+		connection.readBuffer = connection.readBuffer[frameLength:]
 		connection.received <- resp
 	}
 }
-
 func (connection *Connection) Close() {
 	//TODO :: Should the status be 1 for alive and 0 when closed ?
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
