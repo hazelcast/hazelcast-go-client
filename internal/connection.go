@@ -49,7 +49,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
 	//}()
-	go connection.process()
+	connection.process()
 	go connection.read()
 	return &connection
 }
@@ -70,20 +70,6 @@ func (connection *Connection) process() {
 			case <-connection.closed:
 				connection.Close()
 				return
-			}
-		}
-	}()
-	go func() {
-		//reader process
-		for {
-			select {
-			case resp, alive := <-connection.received:
-				if !alive {
-					//TODO:: Handle error
-					log.Println("Connection error")
-				}
-				connection.clientMessageBuilder.OnMessage(resp)
-
 			}
 		}
 	}()
@@ -114,7 +100,6 @@ func (connection *Connection) write(clientMessage *ClientMessage) error {
 	return nil
 }
 func (connection *Connection) read() {
-	//TODO :: What if the size is bigger than 8192*2
 	buf := make([]byte, BUFFER_SIZE)
 	for {
 		n, err := connection.socket.Read(buf)
@@ -139,7 +124,7 @@ func (connection *Connection) receiveMessage() {
 		}
 		resp := NewClientMessage(connection.readBuffer[:frameLength], 0)
 		connection.readBuffer = connection.readBuffer[frameLength:]
-		connection.received <- resp
+		connection.clientMessageBuilder.OnMessage(resp)
 	}
 }
 func (connection *Connection) Close() {

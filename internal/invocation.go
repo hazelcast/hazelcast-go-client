@@ -38,9 +38,9 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 		partitionId:     partitionId,
 		address:         address,
 		boundConnection: connection,
-		response:        make(chan *ClientMessage, 1),
-		err:             make(chan error, 0),
-		closed:          make(chan bool, 0),
+		response:        make(chan *ClientMessage, 10),
+		err:             make(chan error, 1),
+		closed:          make(chan bool, 1),
 		timeout:         time.After(DEFAULT_INVOCATION_TIMEOUT)}
 }
 
@@ -69,7 +69,7 @@ type InvocationService struct {
 func NewInvocationService(client *HazelcastClient) *InvocationService {
 	service := &InvocationService{client: client, sending: make(chan *Invocation, 10000), responseWaitings: make(map[int64]*Invocation),
 		eventHandlers:   make(map[int64]*Invocation),
-		responseChannel: make(chan *ClientMessage, 0),
+		responseChannel: make(chan *ClientMessage, 1),
 		quit:            make(chan bool, 0),
 	}
 	//if client.config.IsSmartRouting() {
@@ -184,9 +184,11 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 	if err != nil {
 		//not sent
 		invocationService.notSentMessages <- invocation.request.CorrelationId()
+	} else {
+		invocation.sentConnection = connection
+		invocation.closed = connection.closed
 	}
-	invocation.sentConnection = connection
-	invocation.closed = connection.closed
+
 }
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
@@ -203,14 +205,10 @@ func (invocationService *InvocationService) registerInvocation(invocation *Invoc
 	if invocation.eventHandler != nil {
 		invocationService.eventHandlers[correlationId] = invocation
 	}
-	invocationService.lock.Lock()
 	invocationService.responseWaitings[correlationId] = invocation
-	invocationService.lock.Unlock()
 }
 
 func (invocationService *InvocationService) unRegisterInvocation(correlationId int64) (*Invocation, bool) {
-	invocationService.lock.Lock()
-	defer invocationService.lock.Unlock()
 	if invocation, ok := invocationService.responseWaitings[correlationId]; ok {
 		defer delete(invocationService.responseWaitings, correlationId)
 		return invocation, ok
