@@ -49,7 +49,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
 	//}()
-	connection.process()
+	go connection.writePool()
 	go connection.read()
 	return &connection
 }
@@ -57,22 +57,20 @@ func (connection *Connection) IsConnected() bool {
 	return connection.socket != nil && connection.socket.RemoteAddr() != nil
 }
 
-func (connection *Connection) process() {
-	go func() {
-		//Writer process
-		for {
-			select {
-			case request := <-connection.pending:
-				err := connection.write(request)
-				if err != nil {
-					connection.sendingError <- request.CorrelationId()
-				}
-			case <-connection.closed:
-				connection.Close()
-				return
+func (connection *Connection) writePool() {
+	//Writer process
+	for {
+		select {
+		case request := <-connection.pending:
+			err := connection.write(request)
+			if err != nil {
+				connection.sendingError <- request.CorrelationId()
 			}
+		case <-connection.closed:
+			connection.Close()
+			return
 		}
-	}()
+	}
 }
 
 func (connection *Connection) Send(clientMessage *ClientMessage) error {
