@@ -13,16 +13,15 @@ const (
 
 type HeartBeatService struct {
 	client            *HazelcastClient
-	heartBeatTimeout  float64
-	heartBeatInterval float64
-	alive             chan bool
+	heartBeatTimeout  time.Duration
+	heartBeatInterval time.Duration
 	cancel            chan bool
 }
 
 func newHeartBeatService(client *HazelcastClient) *HeartBeatService {
 	//TODO:: Add listeners
 	heartBeat := HeartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL, heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
-		alive: make(chan bool, 0), cancel: make(chan bool, 0),
+		cancel: make(chan bool, 0),
 	}
 	return &heartBeat
 }
@@ -33,27 +32,25 @@ func (heartBeat *HeartBeatService) start() {
 				return
 			}
 			select {
-			case <-heartBeat.alive:
+			case <-time.After(heartBeat.heartBeatInterval * time.Second):
 				go heartBeat.heartBeat()
-				time.Sleep(time.Duration(time.Second.Seconds()*heartBeat.heartBeatInterval) * time.Second)
 			case <-heartBeat.cancel:
 				return
 			}
 		}
 	}()
-	heartBeat.alive <- true //To start the heartbeat.
 }
 func (heartBeat *HeartBeatService) heartBeat() {
 	for _, connection := range heartBeat.client.ConnectionManager.connections {
 		timeSinceLastRead := time.Since(connection.lastRead)
-		if timeSinceLastRead.Seconds() > heartBeat.heartBeatTimeout {
+		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
 
 				log.Println("Didnt hear back from a connection")
 				heartBeat.onHeartBeatStop(connection)
 			}
 		}
-		if timeSinceLastRead.Seconds() > heartBeat.heartBeatInterval {
+		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
 			request := protocol.ClientPingEncodeRequest()
 			heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
 		} else {
@@ -62,7 +59,6 @@ func (heartBeat *HeartBeatService) heartBeat() {
 			}
 		}
 	}
-	heartBeat.alive <- true
 }
 func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
 	log.Println("Heartbeat restored for a connection")

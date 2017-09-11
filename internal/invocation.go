@@ -146,8 +146,6 @@ func (invocationService *InvocationService) invokeNonSmart(invocation *Invocatio
 }
 
 func (invocationService *InvocationService) send(invocation *Invocation, connectionChannel chan *Connection) {
-	invocationService.registerInvocation(invocation)
-
 	go func() {
 		select {
 		case <-invocationService.quit:
@@ -156,15 +154,7 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 			if !alive {
 				//TODO :: Handle the case if the connection is closed
 			} else {
-				err := connection.Send(invocation.request)
-				if err != nil {
-					//not sent
-					invocationService.notSentMessages <- invocation.request.CorrelationId()
-				} else {
-					invocation.sentConnection = connection
-					invocation.closed = connection.closed
-				}
-
+				invocationService.sendToConnection(invocation, connection)
 			}
 		}
 	}()

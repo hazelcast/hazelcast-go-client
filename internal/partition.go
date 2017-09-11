@@ -17,19 +17,16 @@ type PartitionService struct {
 	partitionCount int32
 	mu             sync.Mutex
 	cancel         chan bool
-	alive          chan bool
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	return &PartitionService{client: client, partitions: make(map[int32]*Address), cancel: make(chan bool, 0), alive: make(chan bool, 0)}
+	return &PartitionService{client: client, partitions: make(map[int32]*Address), cancel: make(chan bool, 0)}
 }
 func (partitionService *PartitionService) start() {
 	go func() {
 		for {
 			select {
-			case <-partitionService.alive:
-				//TODO::
-				time.Sleep(time.Duration(PARTITION_UPDATE_INTERVAL) * time.Second)
+			case <-time.After(PARTITION_UPDATE_INTERVAL * time.Second):
 				go partitionService.doRefresh()
 			case <-partitionService.cancel:
 				return
@@ -77,8 +74,6 @@ func (partitionService *PartitionService) doRefresh() {
 		//TODO:: Handle error
 	}
 	partitionService.processPartitionResponse(result)
-	partitionService.alive <- true
-
 }
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
 	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
