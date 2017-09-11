@@ -2,13 +2,18 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal/protocol"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"strconv"
+	"sync"
 	"testing"
 )
 
 const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
+
+var mp core.IMap
 
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
@@ -17,13 +22,14 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
+	client := hazelcast.NewHazelcastClient()
+	mapName := "myMap"
+	mp = client.GetMap(&mapName)
 	m.Run()
+	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestMapProxy_SinglePutGet(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -31,11 +37,18 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	assertEqualf(t, err, res, testValue, "get returned a wrong value")
 	mp.Clear()
 }
+func TestMapProxy_ManyPutGet(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp.Put(testKey, testValue)
+		res, err := mp.Get(testKey)
+		assertEqualf(t, err, res, testValue, "get returned a wrong value")
+	}
+	mp.Clear()
+}
 
 func TestMapProxy_Remove(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -49,9 +62,6 @@ func TestMapProxy_Remove(t *testing.T) {
 
 }
 func TestMapProxy_ContainsKey(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -62,9 +72,6 @@ func TestMapProxy_ContainsKey(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_ContainsValue(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -75,9 +82,6 @@ func TestMapProxy_ContainsValue(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_Clear(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -91,9 +95,6 @@ func TestMapProxy_Clear(t *testing.T) {
 }
 
 func TestMapProxy_Delete(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	for i := 0; i < 10; i++ {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
@@ -104,9 +105,6 @@ func TestMapProxy_Delete(t *testing.T) {
 }
 
 func TestMapProxy_IsEmpty(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	for i := 0; i < 10; i++ {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
@@ -116,9 +114,6 @@ func TestMapProxy_IsEmpty(t *testing.T) {
 }
 
 func TestMapProxy_Evict(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	for i := 0; i < 10; i++ {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
@@ -129,9 +124,6 @@ func TestMapProxy_Evict(t *testing.T) {
 	assertEqualf(t, err, found, false, "Map evict failed.")
 }
 func TestMapProxy_EvictAll(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	for i := 0; i < 10; i++ {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
@@ -140,9 +132,6 @@ func TestMapProxy_EvictAll(t *testing.T) {
 	assertEqualf(t, err, size, int32(0), "Map evict failed.")
 }
 func TestMapProxy_Flush(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	for i := 0; i < 10; i++ {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
@@ -153,9 +142,6 @@ func TestMapProxy_Flush(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_IsLocked(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	mp.Put("testingKey", "testingValue")
 	locked, err := mp.IsLocked("testingKey")
 	assertEqualf(t, err, locked, false, "Key should not be locked.")
@@ -173,9 +159,6 @@ func TestMapProxy_IsLocked(t *testing.T) {
 	assertEqualf(t, err, locked, false, "Key should not be locked.")
 }
 func TestMapProxy_Replace(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.Replace("testingKey1", "testingValue2")
 	assertEqualf(t, err, replaced, "testingValue1", "Map Replace returned wrong old value.")
@@ -184,9 +167,6 @@ func TestMapProxy_Replace(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_Size(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	for i := 0; i < 10; i++ {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
@@ -195,9 +175,6 @@ func TestMapProxy_Size(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_ReplaceIfSame(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue1", "testingValue2")
 	assertEqualf(t, err, replaced, true, "Map Replace returned wrong old value.")
@@ -206,9 +183,6 @@ func TestMapProxy_ReplaceIfSame(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_ReplaceIfSameWhenDifferent(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue3", "testingValue2")
 	assertEqualf(t, err, replaced, false, "Map Replace returned wrong old value.")
@@ -217,9 +191,6 @@ func TestMapProxy_ReplaceIfSameWhenDifferent(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_Set(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	err := mp.Set("testingKey1", "testingValue1")
 	if err != nil {
 		t.Error(err)
@@ -229,9 +200,6 @@ func TestMapProxy_Set(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_PutIfAbsent(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	_, err := mp.PutIfAbsent("testingKey1", "testingValue1")
 	if err != nil {
 		t.Error(err)
@@ -242,9 +210,6 @@ func TestMapProxy_PutIfAbsent(t *testing.T) {
 }
 
 func TestMapProxy_PutAll(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testMap := make(map[interface{}]interface{})
 	for i := 0; i < 10; i++ {
 		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
@@ -270,9 +235,6 @@ func TestMapProxy_PutAll(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_GetAll(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	testMap := make(map[interface{}]interface{})
 	for i := 0; i < 10; i++ {
 		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
@@ -303,9 +265,6 @@ func TestMapProxy_GetAll(t *testing.T) {
 	mp.Clear()
 }
 func TestMapProxy_GetEntryView(t *testing.T) {
-	client := hazelcast.NewHazelcastClient()
-	mapName := "myMap"
-	mp := client.GetMap(&mapName)
 	mp.Put("key", "value")
 	mp.Get("key")
 	mp.Put("key", "newValue")
@@ -315,5 +274,124 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	assertEqualf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
 	assertEqualf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
 
+	mp.Clear()
+}
+
+type AddEntry struct {
+	wg *sync.WaitGroup
+}
+
+func (addEntry *AddEntry) EntryAdded(event *protocol.EntryEvent) {
+	addEntry.wg.Done()
+}
+func (addEntry *AddEntry) EntryUpdated(event *protocol.EntryEvent) {
+	addEntry.wg.Done()
+}
+func (addEntry *AddEntry) EntryRemoved(event *protocol.EntryEvent) {
+	addEntry.wg.Done()
+}
+func (addEntry *AddEntry) EntryEvicted(event *protocol.EntryEvent) {
+	addEntry.wg.Done()
+}
+func (addEntry *AddEntry) EntryEvictAll(event *protocol.MapEvent) {
+	addEntry.wg.Done()
+}
+func (addEntry *AddEntry) EntryClearAll(event *protocol.MapEvent) {
+	addEntry.wg.Done()
+}
+
+func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(1)
+	mp.Put("key123", "value")
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("key1", "value")
+	mp.Put("key1", "value")
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryUpdated failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerEvicted(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("test", "key")
+	mp.Evict("test")
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryEvicted failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("test", "key")
+	mp.Remove("test")
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryRemoved failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
+
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("test", "key")
+	mp.EvictAll()
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerClear(t *testing.T) {
+
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(2)
+	mp.Put("test", "key")
+	mp.Clear()
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListener entryClear failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListenerToKey(entryAdded, "key1", true)
+	assertEqual(t, err, nil, nil)
+	wg.Add(1)
+	mp.Put("key1", "value1")
+	timeout := waitTimeout(wg, Timeout)
+	assertEqualf(t, nil, false, timeout, "AddEntryListenerToKey failed")
+	wg.Add(1)
+	mp.Put("key2", "value1")
+	timeout = waitTimeout(wg, Timeout/20)
+	assertEqualf(t, nil, true, timeout, "AddEntryListenerToKey failed")
+	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
 	"reflect"
 )
@@ -12,7 +13,7 @@ type Address struct {
 }
 
 func NewAddress() *Address {
-	return &Address{"127.0.0.1", 5701}
+	return &Address{"localhost", 5701}
 }
 func NewAddressWithParameters(Host string, Port int) *Address {
 	return &Address{Host, Port}
@@ -233,4 +234,115 @@ func (st *StackTraceElement) FileName() string {
 
 func (st *StackTraceElement) LineNumber() int32 {
 	return st.lineNumber
+}
+
+type EntryEvent struct {
+	keyData          *Data
+	valueData        *Data
+	oldValueData     *Data
+	mergingValueData *Data
+	eventType        int32
+	uuid             *string
+}
+
+func (entryEvent *EntryEvent) KeyData() *Data {
+	return entryEvent.keyData
+}
+
+func (entryEvent *EntryEvent) ValueData() *Data {
+	return entryEvent.valueData
+}
+
+func (entryEvent *EntryEvent) OldValueData() *Data {
+	return entryEvent.oldValueData
+}
+
+func (entryEvent *EntryEvent) MergingValueData() *Data {
+	return entryEvent.mergingValueData
+}
+
+func (entryEvent *EntryEvent) Uuid() *string {
+	return entryEvent.uuid
+}
+func (entryEvent *EntryEvent) EventType() int32 {
+	return entryEvent.eventType
+}
+
+func NewEntryEvent(keyData *Data, valueData *Data, oldValueData *Data, mergingValueData *Data, eventType int32, Uuid *string) *EntryEvent {
+	return &EntryEvent{keyData: keyData, valueData: valueData, oldValueData: oldValueData, eventType: eventType, uuid: Uuid}
+}
+
+type MapEvent struct {
+	eventType               int32
+	uuid                    *string
+	numberOfAffectedEntries int32
+}
+
+func (mapEvent *MapEvent) NumberOfAffectedEntries() int32 {
+	return mapEvent.numberOfAffectedEntries
+}
+func (mapEvent *MapEvent) EventType() int32 {
+	return mapEvent.eventType
+}
+func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *MapEvent {
+	return &MapEvent{eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
+}
+
+type EntryAddedListener interface {
+	EntryAdded(*EntryEvent)
+}
+type EntryRemovedListener interface {
+	EntryRemoved(*EntryEvent)
+}
+type EntryUpdatedListener interface {
+	EntryUpdated(*EntryEvent)
+}
+type EntryEvictedListener interface {
+	EntryEvicted(*EntryEvent)
+}
+type EntryEvictAllListener interface {
+	EntryEvictAll(*MapEvent)
+}
+type EntryClearAllListener interface {
+	EntryClearAll(*MapEvent)
+}
+type EntryMergedListener interface {
+	EntryMerged(*EntryEvent)
+}
+type EntryExpiredListener interface {
+	EntryExpired(*EntryEvent)
+}
+type DecodeListenerResponse func(message *ClientMessage) *string
+type EncodeListenerRemoveRequest func(registrationId *string) *ClientMessage
+type MemberAdded func(member *Member)
+type MemberRemoved func(member *Member)
+
+// Helper function to get flags for listeners
+func GetEntryListenerFlags(listener interface{}) int32 {
+	flags := int32(0)
+	if _, ok := listener.(EntryAddedListener); ok {
+		flags |= ENTRYEVENT_ADDED
+	}
+	if _, ok := listener.(EntryRemovedListener); ok {
+		flags |= ENTRYEVENT_REMOVED
+	}
+	if _, ok := listener.(EntryUpdatedListener); ok {
+		flags |= ENTRYEVENT_UPDATED
+	}
+	if _, ok := listener.(EntryEvictedListener); ok {
+		flags |= ENTRYEVENT_EVICTED
+	}
+	if _, ok := listener.(EntryEvictAllListener); ok {
+		flags |= ENTRYEVENT_EVICT_ALL
+	}
+	if _, ok := listener.(EntryClearAllListener); ok {
+		flags |= ENTRYEVENT_CLEAR_ALL
+	}
+	if _, ok := listener.(EntryExpiredListener); ok {
+		flags |= ENTRYEVENT_EXPIRED
+	}
+	if _, ok := listener.(EntryMergedListener); ok {
+		flags |= ENTRYEVENT_MERGED
+	}
+	return flags
 }
