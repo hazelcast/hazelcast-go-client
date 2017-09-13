@@ -6,44 +6,61 @@ import (
 	"github.com/hazelcast/go-client/internal/serialization"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
-const PARTITION_UPDATE_INTERVAL = 5
+const PARTITION_UPDATE_INTERVAL time.Duration = 5
 
 type PartitionService struct {
 	client         *HazelcastClient
 	partitions     map[int32]*Address
+	mapPointer     unsafe.Pointer
 	partitionCount int32
 	mu             sync.Mutex
 	cancel         chan bool
+	refresh        chan bool
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	return &PartitionService{client: client, partitions: make(map[int32]*Address), cancel: make(chan bool, 0)}
+	partitions := make(map[int32]*Address)
+	return &PartitionService{client: client, partitions: partitions, cancel: make(chan bool, 0), refresh: make(chan bool, 1),
+		mapPointer: unsafe.Pointer(&partitions),
+	}
+}
+func (partitionService *PartitionService) periodicalRefresh() {
+	for {
+		select {
+		case <-time.After(PARTITION_UPDATE_INTERVAL * time.Second):
+			partitionService.refresh <- true
+		case <-partitionService.cancel:
+			return
+		}
+	}
 }
 func (partitionService *PartitionService) start() {
+	go partitionService.periodicalRefresh()
 	go func() {
 		for {
 			select {
-			case <-time.After(PARTITION_UPDATE_INTERVAL * time.Second):
-				go partitionService.doRefresh()
+			case <-partitionService.refresh:
+				partitionService.doRefresh()
 			case <-partitionService.cancel:
 				return
 			}
 		}
 	}()
-	partitionService.doRefresh()
+	partitionService.refresh <- true
 
 }
 func (partitionService *PartitionService) PartitionCount() int32 {
-	partitionService.mu.Lock()
-	defer partitionService.mu.Unlock()
-	return int32(len(partitionService.partitions))
+	partitions := (*map[int32]*Address)(atomic.LoadPointer(&partitionService.mapPointer))
+	return int32(len(*partitions))
 }
-
 func (partitionService *PartitionService) PartitionOwner(partitionId int32) (*Address, bool) {
-	address, ok := partitionService.partitions[partitionId]
+	partitions := *(*map[int32]*Address)(atomic.LoadPointer(&partitionService.mapPointer))
+	address, ok := partitions[partitionId]
 	return address, ok
 }
 
@@ -55,8 +72,6 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
 func (partitionService *PartitionService) doRefresh() {
-	partitionService.mu.Lock()
-	defer partitionService.mu.Unlock()
 	address := partitionService.client.ClusterService.ownerConnectionAddress
 	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
 	connection, alive := <-connectionChan
@@ -77,16 +92,15 @@ func (partitionService *PartitionService) doRefresh() {
 }
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
 	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
-	partitionService.partitions = make(map[int32]*Address)
+	newPartitions := make(map[int32]*Address)
 	for _, partitionList := range *partitions {
 		addr := partitionList.Key().(*Address)
 		for _, partition := range partitionList.Value().([]int32) {
-			partitionService.partitions[int32(partition)] = addr
+			newPartitions[int32(partition)] = addr
 		}
 	}
+	atomic.StorePointer(&partitionService.mapPointer, unsafe.Pointer(&newPartitions))
 }
 func (partitionService *PartitionService) shutdown() {
-	go func() {
-		partitionService.cancel <- true
-	}()
+	close(partitionService.cancel)
 }

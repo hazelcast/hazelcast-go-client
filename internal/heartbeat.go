@@ -33,7 +33,7 @@ func (heartBeat *HeartBeatService) start() {
 			}
 			select {
 			case <-time.After(heartBeat.heartBeatInterval * time.Second):
-				go heartBeat.heartBeat()
+				heartBeat.heartBeat()
 			case <-heartBeat.cancel:
 				return
 			}
@@ -68,7 +68,5 @@ func (heartBeat *HeartBeatService) onHeartBeatStop(connection *Connection) {
 	connection.heartBeating = false
 }
 func (heartBeat *HeartBeatService) shutdown() {
-	go func() {
-		heartBeat.cancel <- true
-	}()
+	heartBeat.cancel <- true
 }

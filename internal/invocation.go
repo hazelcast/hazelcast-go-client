@@ -123,6 +123,10 @@ func (invocationService *InvocationService) process() {
 		}
 	}
 }
+func (invocationService *InvocationService) sendToRandomAddress(invocation *Invocation) {
+	var target *Address = invocationService.client.LoadBalancer.NextAddress()
+	invocationService.sendToAddress(invocation, target)
+}
 func (invocationService *InvocationService) invokeSmart(invocation *Invocation) {
 	if invocation.boundConnection != nil {
 		invocationService.sendToConnection(invocation, invocation.boundConnection)
@@ -130,14 +134,12 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 		if target, ok := invocationService.client.PartitionService.PartitionOwner(invocation.partitionId); ok {
 			invocationService.sendToAddress(invocation, target)
 		} else {
-			invocation.err <- errors.New("Partition table doesnt contain the address for the given partition id")
-			//TODO should I handle this case
+			invocationService.sendToRandomAddress(invocation)
 		}
 	} else if invocation.address != nil {
 		invocationService.sendToAddress(invocation, invocation.address)
 	} else {
-		var target *Address = invocationService.client.LoadBalancer.NextAddress()
-		invocationService.sendToAddress(invocation, target)
+		invocationService.sendToRandomAddress(invocation)
 	}
 }
 
