@@ -21,12 +21,14 @@ type PartitionService struct {
 	mu             sync.Mutex
 	cancel         chan bool
 	refresh        chan bool
+	initialFetch   chan bool
+	initialized    bool
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
 	partitions := make(map[int32]*Address)
 	return &PartitionService{client: client, partitions: partitions, cancel: make(chan bool, 0), refresh: make(chan bool, 1),
-		mapPointer: unsafe.Pointer(&partitions),
+		mapPointer: unsafe.Pointer(&partitions), initialFetch: make(chan bool, 1), initialized: false,
 	}
 }
 func (partitionService *PartitionService) periodicalRefresh() {
@@ -52,6 +54,7 @@ func (partitionService *PartitionService) start() {
 		}
 	}()
 	partitionService.refresh <- true
+	<-partitionService.initialFetch //Wait for the initial fetch of partition table.
 
 }
 func (partitionService *PartitionService) PartitionCount() int32 {
@@ -100,6 +103,10 @@ func (partitionService *PartitionService) processPartitionResponse(result *Clien
 		}
 	}
 	atomic.StorePointer(&partitionService.mapPointer, unsafe.Pointer(&newPartitions))
+	if !partitionService.initialized {
+		partitionService.initialized = true
+		partitionService.initialFetch <- true
+	}
 }
 func (partitionService *PartitionService) shutdown() {
 	close(partitionService.cancel)
