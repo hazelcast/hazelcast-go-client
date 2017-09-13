@@ -21,31 +21,22 @@ type PartitionService struct {
 	mu             sync.Mutex
 	cancel         chan bool
 	refresh        chan bool
-	initialFetch   chan bool
-	initialized    bool
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
 	partitions := make(map[int32]*Address)
 	return &PartitionService{client: client, partitions: partitions, cancel: make(chan bool, 0), refresh: make(chan bool, 1),
-		mapPointer: unsafe.Pointer(&partitions), initialFetch: make(chan bool, 1), initialized: false,
+		mapPointer: unsafe.Pointer(&partitions),
 	}
 }
-func (partitionService *PartitionService) periodicalRefresh() {
-	for {
-		select {
-		case <-time.After(PARTITION_UPDATE_INTERVAL * time.Second):
-			partitionService.refresh <- true
-		case <-partitionService.cancel:
-			return
-		}
-	}
-}
+
 func (partitionService *PartitionService) start() {
-	go partitionService.periodicalRefresh()
+	partitionService.doRefresh()
 	go func() {
 		for {
 			select {
+			case <-time.After(PARTITION_UPDATE_INTERVAL * time.Second):
+				partitionService.doRefresh()
 			case <-partitionService.refresh:
 				partitionService.doRefresh()
 			case <-partitionService.cancel:
@@ -53,8 +44,6 @@ func (partitionService *PartitionService) start() {
 			}
 		}
 	}()
-	partitionService.refresh <- true
-	<-partitionService.initialFetch //Wait for the initial fetch of partition table.
 
 }
 func (partitionService *PartitionService) PartitionCount() int32 {
@@ -74,6 +63,7 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 	}
 	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
+
 func (partitionService *PartitionService) doRefresh() {
 	address := partitionService.client.ClusterService.ownerConnectionAddress
 	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
@@ -103,10 +93,6 @@ func (partitionService *PartitionService) processPartitionResponse(result *Clien
 		}
 	}
 	atomic.StorePointer(&partitionService.mapPointer, unsafe.Pointer(&newPartitions))
-	if !partitionService.initialized {
-		partitionService.initialized = true
-		partitionService.initialFetch <- true
-	}
 }
 func (partitionService *PartitionService) shutdown() {
 	close(partitionService.cancel)
