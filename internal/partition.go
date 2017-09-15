@@ -5,7 +5,6 @@ import (
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
 	"log"
-	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -18,14 +17,13 @@ type PartitionService struct {
 	partitions     map[int32]*Address
 	mapPointer     unsafe.Pointer
 	partitionCount int32
-	mu             sync.Mutex
-	cancel         chan bool
+	cancel         chan struct{}
 	refresh        chan bool
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
 	partitions := make(map[int32]*Address)
-	return &PartitionService{client: client, partitions: partitions, cancel: make(chan bool, 0), refresh: make(chan bool, 1),
+	return &PartitionService{client: client, partitions: partitions, cancel: make(chan struct{}), refresh: make(chan bool, 1),
 		mapPointer: unsafe.Pointer(&partitions),
 	}
 }
@@ -33,13 +31,15 @@ func NewPartitionService(client *HazelcastClient) *PartitionService {
 func (partitionService *PartitionService) start() {
 	partitionService.doRefresh()
 	go func() {
+		ticker := time.NewTicker(PARTITION_UPDATE_INTERVAL * time.Second)
 		for {
 			select {
-			case <-time.After(PARTITION_UPDATE_INTERVAL * time.Second):
+			case <-ticker.C:
 				partitionService.doRefresh()
 			case <-partitionService.refresh:
 				partitionService.doRefresh()
 			case <-partitionService.cancel:
+				ticker.Stop()
 				return
 			}
 		}
@@ -85,7 +85,7 @@ func (partitionService *PartitionService) doRefresh() {
 }
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
 	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
-	newPartitions := make(map[int32]*Address)
+	newPartitions := make(map[int32]*Address, len(*partitions))
 	for _, partitionList := range *partitions {
 		addr := partitionList.Key().(*Address)
 		for _, partition := range partitionList.Value().([]int32) {

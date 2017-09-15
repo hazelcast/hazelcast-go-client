@@ -15,26 +15,28 @@ type HeartBeatService struct {
 	client            *HazelcastClient
 	heartBeatTimeout  time.Duration
 	heartBeatInterval time.Duration
-	cancel            chan bool
+	cancel            chan struct{}
 }
 
 func newHeartBeatService(client *HazelcastClient) *HeartBeatService {
 	//TODO:: Add listeners
 	heartBeat := HeartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL, heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
-		cancel: make(chan bool, 0),
+		cancel: make(chan struct{}),
 	}
 	return &heartBeat
 }
 func (heartBeat *HeartBeatService) start() {
 	go func() {
+		ticker := time.NewTicker(PARTITION_UPDATE_INTERVAL * time.Second)
 		for {
 			if !heartBeat.client.LifecycleService.isLive {
 				return
 			}
 			select {
-			case <-time.After(heartBeat.heartBeatInterval * time.Second):
+			case <-ticker.C:
 				heartBeat.heartBeat()
 			case <-heartBeat.cancel:
+				ticker.Stop()
 				return
 			}
 		}
@@ -68,5 +70,5 @@ func (heartBeat *HeartBeatService) onHeartBeatStop(connection *Connection) {
 	connection.heartBeating = false
 }
 func (heartBeat *HeartBeatService) shutdown() {
-	heartBeat.cancel <- true
+	close(heartBeat.cancel)
 }
