@@ -14,7 +14,6 @@ const PARTITION_UPDATE_INTERVAL time.Duration = 5
 
 type PartitionService struct {
 	client         *HazelcastClient
-	partitions     map[int32]*Address
 	mapPointer     unsafe.Pointer
 	partitionCount int32
 	cancel         chan struct{}
@@ -22,10 +21,7 @@ type PartitionService struct {
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	partitions := make(map[int32]*Address)
-	return &PartitionService{client: client, partitions: partitions, cancel: make(chan struct{}), refresh: make(chan bool, 1),
-		mapPointer: unsafe.Pointer(&partitions),
-	}
+	return &PartitionService{client: client, cancel: make(chan struct{}), refresh: make(chan bool, 1)}
 }
 
 func (partitionService *PartitionService) start() {
