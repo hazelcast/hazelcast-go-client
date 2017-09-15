@@ -123,6 +123,10 @@ func (invocationService *InvocationService) process() {
 		}
 	}
 }
+func (invocationService *InvocationService) sendToRandomAddress(invocation *Invocation) {
+	var target *Address = invocationService.client.LoadBalancer.NextAddress()
+	invocationService.sendToAddress(invocation, target)
+}
 func (invocationService *InvocationService) invokeSmart(invocation *Invocation) {
 	if invocation.boundConnection != nil {
 		invocationService.sendToConnection(invocation, invocation.boundConnection)
@@ -130,14 +134,12 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 		if target, ok := invocationService.client.PartitionService.PartitionOwner(invocation.partitionId); ok {
 			invocationService.sendToAddress(invocation, target)
 		} else {
-			invocation.err <- errors.New("Partition table doesnt contain the address for the given partition id")
-			//TODO should I handle this case
+			invocationService.sendToRandomAddress(invocation)
 		}
 	} else if invocation.address != nil {
 		invocationService.sendToAddress(invocation, invocation.address)
 	} else {
-		var target *Address = invocationService.client.LoadBalancer.NextAddress()
-		invocationService.sendToAddress(invocation, target)
+		invocationService.sendToRandomAddress(invocation)
 	}
 }
 
@@ -146,8 +148,6 @@ func (invocationService *InvocationService) invokeNonSmart(invocation *Invocatio
 }
 
 func (invocationService *InvocationService) send(invocation *Invocation, connectionChannel chan *Connection) {
-	invocationService.registerInvocation(invocation)
-
 	go func() {
 		select {
 		case <-invocationService.quit:
@@ -156,15 +156,7 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 			if !alive {
 				//TODO :: Handle the case if the connection is closed
 			} else {
-				err := connection.Send(invocation.request)
-				if err != nil {
-					//not sent
-					invocationService.notSentMessages <- invocation.request.CorrelationId()
-				} else {
-					invocation.sentConnection = connection
-					invocation.closed = connection.closed
-				}
-
+				invocationService.sendToConnection(invocation, connection)
 			}
 		}
 	}()

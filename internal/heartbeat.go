@@ -13,47 +13,46 @@ const (
 
 type HeartBeatService struct {
 	client            *HazelcastClient
-	heartBeatTimeout  float64
-	heartBeatInterval float64
-	alive             chan bool
-	cancel            chan bool
+	heartBeatTimeout  time.Duration
+	heartBeatInterval time.Duration
+	cancel            chan struct{}
 }
 
 func newHeartBeatService(client *HazelcastClient) *HeartBeatService {
 	//TODO:: Add listeners
 	heartBeat := HeartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL, heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
-		alive: make(chan bool, 0), cancel: make(chan bool, 0),
+		cancel: make(chan struct{}),
 	}
 	return &heartBeat
 }
 func (heartBeat *HeartBeatService) start() {
 	go func() {
+		ticker := time.NewTicker(PARTITION_UPDATE_INTERVAL * time.Second)
 		for {
 			if !heartBeat.client.LifecycleService.isLive {
 				return
 			}
 			select {
-			case <-heartBeat.alive:
-				go heartBeat.heartBeat()
-				time.Sleep(time.Duration(time.Second.Seconds()*heartBeat.heartBeatInterval) * time.Second)
+			case <-ticker.C:
+				heartBeat.heartBeat()
 			case <-heartBeat.cancel:
+				ticker.Stop()
 				return
 			}
 		}
 	}()
-	heartBeat.alive <- true //To start the heartbeat.
 }
 func (heartBeat *HeartBeatService) heartBeat() {
 	for _, connection := range heartBeat.client.ConnectionManager.connections {
 		timeSinceLastRead := time.Since(connection.lastRead)
-		if timeSinceLastRead.Seconds() > heartBeat.heartBeatTimeout {
+		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
 
 				log.Println("Didnt hear back from a connection")
 				heartBeat.onHeartBeatStop(connection)
 			}
 		}
-		if timeSinceLastRead.Seconds() > heartBeat.heartBeatInterval {
+		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
 			request := protocol.ClientPingEncodeRequest()
 			heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
 		} else {
@@ -62,7 +61,6 @@ func (heartBeat *HeartBeatService) heartBeat() {
 			}
 		}
 	}
-	heartBeat.alive <- true
 }
 func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
 	log.Println("Heartbeat restored for a connection")
@@ -72,7 +70,5 @@ func (heartBeat *HeartBeatService) onHeartBeatStop(connection *Connection) {
 	connection.heartBeating = false
 }
 func (heartBeat *HeartBeatService) shutdown() {
-	go func() {
-		heartBeat.cancel <- true
-	}()
+	close(heartBeat.cancel)
 }
