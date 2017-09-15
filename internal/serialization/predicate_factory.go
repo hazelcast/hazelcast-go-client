@@ -14,7 +14,7 @@ func (pf *PredicateFactory) Create(id int32) IdentifiedDataSerializable {
 	if pf.idToDataSerializable[id] != nil {
 		return pf.idToDataSerializable[id]
 	} else {
-		//log.Fatal(There is no default predicate with id ${type}.)
+		//log.Printf(There is no default predicate with id ${type}.)
 		return nil
 	}
 }

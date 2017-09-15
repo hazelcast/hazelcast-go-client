@@ -1,9 +1,9 @@
 package serialization
 
 import (
-	"github.com/hazelcast/go-client/config"
+	. "github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
-	"log"
+	"reflect"
 	"testing"
 )
 
@@ -15,7 +15,7 @@ func TestInteger32Serializer_Write(t *testing.T) {
 	i.Write(o, a)
 	i.Write(o, expectedRet)
 	in := NewObjectDataInput(o.buffer, 4, &SerializationService{}, false)
-	ret := i.Read(in)
+	ret, _ := i.Read(in)
 
 	if ret != expectedRet {
 		t.Errorf("ToData() returns ", ret, " expected ", expectedRet)
@@ -34,12 +34,13 @@ func (factory) Create(classId int32) IdentifiedDataSerializable {
 
 type employee struct {
 	age  int32
-	name string
+	name *string
 }
 
-func (e *employee) ReadData(input DataInput) {
+func (e *employee) ReadData(input DataInput) error {
 	e.age, _ = input.ReadInt32()
-	e.name = input.ReadUTF()
+	e.name, _ = input.ReadUTF()
+	return nil
 }
 
 func (e *employee) WriteData(output DataOutput) {
@@ -55,27 +56,18 @@ func (*employee) GetClassId() int32 {
 	return 1
 }
 
-func x(i interface{}) {
-	y(i)
-}
-
-func y(i interface{}) {
-	_, ok := i.(IdentifiedDataSerializable)
-	log.Println(ok)
-}
-
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
-	var employee1 employee = employee{22, "Furkan"}
-	c := config.NewSerializationConfig()
-	c.AddDataSerializableFactory(factory{}, employee1.GetFactoryId())
+	name := "Furkan Şenharputlu"
+	var employee1 employee = employee{22, &name}
+	c := NewSerializationConfig()
+	c.AddDataSerializableFactory(employee1.GetFactoryId(), factory{})
 
 	service := NewSerializationService(c)
 
 	data, _ := service.ToData(&employee1)
 	ret_employee, _ := service.ToObject(data)
 
-	if employee1 != *ret_employee.(*employee) {
+	if !reflect.DeepEqual(employee1, *ret_employee.(*employee)) {
 		t.Errorf("IdentifiedDataSerializable() works wrong!")
 	}
-
 }

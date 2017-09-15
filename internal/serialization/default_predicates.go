@@ -3,17 +3,19 @@ package serialization
 import . "github.com/hazelcast/go-client/internal/serialization/api"
 
 type SqlPredicate struct {
-	sql string
+	sql *string
 }
 
 const PREDICATE_FACTORY_ID = -32
 
-func NewSqlPredicate(sql string) SqlPredicate {
+func NewSqlPredicate(sql *string) SqlPredicate {
 	return SqlPredicate{sql}
 }
 
-func (sp *SqlPredicate) ReadData(input DataInput) {
-	sp.sql = input.ReadUTF()
+func (sp *SqlPredicate) ReadData(input DataInput) error {
+	var err error
+	sp.sql, err = input.ReadUTF()
+	return err
 }
 
 func (sp *SqlPredicate) WriteData(output DataOutput) {
@@ -36,13 +38,22 @@ func NewAndPredicate(predicates []IdentifiedDataSerializable) AndPredicate {
 	return AndPredicate{predicates}
 }
 
-func (ap *AndPredicate) ReadData(input DataInput) {
+func (ap *AndPredicate) ReadData(input DataInput) error {
+	var err error
 	var length int32
-	length, _ = input.ReadInt32()
+	length, err = input.ReadInt32()
+	if err != nil {
+		return err
+	}
 	ap.predicates = make([]IdentifiedDataSerializable, 0)
 	for i := 0; i < int(length); i++ {
-		ap.predicates[i] = input.ReadObject().(IdentifiedDataSerializable)
+		pred, err := input.ReadObject()
+		if err != nil {
+			return err
+		}
+		ap.predicates[i] = pred.(IdentifiedDataSerializable)
 	}
+	return nil
 }
 
 func (ap *AndPredicate) WriteData(output DataOutput) {
