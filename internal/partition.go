@@ -7,14 +7,13 @@ import (
 	"log"
 	"sync/atomic"
 	"time"
-	"unsafe"
 )
 
 const PARTITION_UPDATE_INTERVAL time.Duration = 5
 
 type PartitionService struct {
 	client         *HazelcastClient
-	mapPointer     unsafe.Pointer
+	mp             atomic.Value
 	partitionCount int32
 	cancel         chan struct{}
 	refresh        chan bool
@@ -43,11 +42,11 @@ func (partitionService *PartitionService) start() {
 
 }
 func (partitionService *PartitionService) PartitionCount() int32 {
-	partitions := (*map[int32]*Address)(atomic.LoadPointer(&partitionService.mapPointer))
-	return int32(len(*partitions))
+	partitions := partitionService.mp.Load().(map[int32]*Address)
+	return int32(len(partitions))
 }
 func (partitionService *PartitionService) PartitionOwner(partitionId int32) (*Address, bool) {
-	partitions := *(*map[int32]*Address)(atomic.LoadPointer(&partitionService.mapPointer))
+	partitions := partitionService.mp.Load().(map[int32]*Address)
 	address, ok := partitions[partitionId]
 	return address, ok
 }
@@ -88,7 +87,7 @@ func (partitionService *PartitionService) processPartitionResponse(result *Clien
 			newPartitions[int32(partition)] = addr
 		}
 	}
-	atomic.StorePointer(&partitionService.mapPointer, unsafe.Pointer(&newPartitions))
+	partitionService.mp.Store(newPartitions)
 }
 func (partitionService *PartitionService) shutdown() {
 	close(partitionService.cancel)
