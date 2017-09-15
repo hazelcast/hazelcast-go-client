@@ -2,7 +2,6 @@ package internal
 
 import (
 	. "github.com/hazelcast/go-client/internal/protocol"
-	"log"
 	"strconv"
 	"sync"
 )
@@ -44,11 +43,9 @@ func (connectionManager *ConnectionManager) GetConnection(address *Address) chan
 func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection) {
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
-
 	invocationService := connectionManager.client.InvocationService
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
 	if con == nil {
-		log.Println("Closed a connection")
 		close(resp)
 		return
 	}
@@ -88,4 +85,12 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		return nil
 	}
 	return nil
+}
+func (connectionManager *ConnectionManager) closeConnection(address *Address) {
+	connectionManager.lock.RLock()
+	defer connectionManager.lock.RUnlock()
+	connection, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]
+	if found {
+		connection.Close()
+	}
 }

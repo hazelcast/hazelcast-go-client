@@ -10,6 +10,7 @@ const (
 )
 
 type ClientConfig struct {
+	MembershipListeners []interface{}
 	GroupConfig         GroupConfig
 	ClientNetworkConfig ClientNetworkConfig
 	SerializationConfig *SerializationConfig
@@ -35,10 +36,14 @@ func (c *SerializationConfig) AddDataSerializableFactory(f IdentifiedDataSeriali
 func NewClientConfig() *ClientConfig {
 	return &ClientConfig{GroupConfig: NewGroupConfig(),
 		ClientNetworkConfig: NewClientNetworkConfig(),
+		MembershipListeners: make([]interface{}, 0),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
 	return clientConfig.ClientNetworkConfig.SmartRouting
+}
+func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
+	clientConfig.MembershipListeners = append(clientConfig.MembershipListeners, listener)
 }
 
 type GroupConfig struct {
