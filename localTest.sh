@@ -30,7 +30,7 @@ sleep 10
 
 # Run tests (JUnit plugin)
 echo "mode: set" > coverage.out
-for pkg in $(go list $PRJ/...);
+for pkg in $(go list ./...);
 do
     if [[ $pkg != *"vendor"* ]]; then
       echo "testing... $pkg"
