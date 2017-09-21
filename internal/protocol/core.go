@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
 	"reflect"
@@ -37,7 +38,7 @@ type Member struct {
 	attributes   map[string]string
 }
 
-func (member1 *Member) Address() *Address {
+func (member1 *Member) Address() core.IAddress {
 	return &member1.address
 }
 
@@ -112,11 +113,11 @@ type EntryView struct {
 	ttl                    int64
 }
 
-func (ev1 *EntryView) Key() Data {
+func (ev1 *EntryView) Key() core.IData {
 	return ev1.key
 }
 
-func (ev1 *EntryView) Value() Data {
+func (ev1 *EntryView) Value() core.IData {
 	return ev1.value
 }
 
@@ -180,7 +181,7 @@ type Error struct {
 	errorCode      int32
 	className      string
 	message        string
-	stackTrace     []StackTraceElement
+	stackTrace     []*StackTraceElement
 	causeErrorCode int32
 	causeClassName string
 }
@@ -201,8 +202,12 @@ func (err *Error) Message() string {
 	return err.message
 }
 
-func (err *Error) StackTrace() []StackTraceElement {
-	return err.stackTrace
+func (err *Error) StackTrace() []core.IStackTraceElement {
+	iStackTrace := make([]core.IStackTraceElement, len(err.stackTrace))
+	for i, v := range err.stackTrace {
+		iStackTrace[i] = core.IStackTraceElement(v)
+	}
+	return iStackTrace
 }
 
 func (err *Error) CauseErrorCode() int32 {
@@ -245,19 +250,19 @@ type EntryEvent struct {
 	uuid             *string
 }
 
-func (entryEvent *EntryEvent) KeyData() *Data {
+func (entryEvent *EntryEvent) KeyData() core.IData {
 	return entryEvent.keyData
 }
 
-func (entryEvent *EntryEvent) ValueData() *Data {
+func (entryEvent *EntryEvent) ValueData() core.IData {
 	return entryEvent.valueData
 }
 
-func (entryEvent *EntryEvent) OldValueData() *Data {
+func (entryEvent *EntryEvent) OldValueData() core.IData {
 	return entryEvent.oldValueData
 }
 
-func (entryEvent *EntryEvent) MergingValueData() *Data {
+func (entryEvent *EntryEvent) MergingValueData() core.IData {
 	return entryEvent.mergingValueData
 }
 
@@ -278,6 +283,10 @@ type MapEvent struct {
 	numberOfAffectedEntries int32
 }
 
+func (mapEvent *MapEvent) Uuid() *string {
+	return mapEvent.uuid
+}
+
 func (mapEvent *MapEvent) NumberOfAffectedEntries() int32 {
 	return mapEvent.numberOfAffectedEntries
 }
@@ -289,28 +298,28 @@ func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *
 }
 
 type EntryAddedListener interface {
-	EntryAdded(*EntryEvent)
+	EntryAdded(core.IEntryEvent)
 }
 type EntryRemovedListener interface {
-	EntryRemoved(*EntryEvent)
+	EntryRemoved(core.IEntryEvent)
 }
 type EntryUpdatedListener interface {
-	EntryUpdated(*EntryEvent)
+	EntryUpdated(core.IEntryEvent)
 }
 type EntryEvictedListener interface {
-	EntryEvicted(*EntryEvent)
+	EntryEvicted(core.IEntryEvent)
 }
 type EntryEvictAllListener interface {
-	EntryEvictAll(*MapEvent)
+	EntryEvictAll(core.IMapEvent)
 }
 type EntryClearAllListener interface {
-	EntryClearAll(*MapEvent)
+	EntryClearAll(core.IMapEvent)
 }
 type EntryMergedListener interface {
-	EntryMerged(*EntryEvent)
+	EntryMerged(core.IEntryEvent)
 }
 type EntryExpiredListener interface {
-	EntryExpired(*EntryEvent)
+	EntryExpired(core.IEntryEvent)
 }
 type DecodeListenerResponse func(message *ClientMessage) *string
 type EncodeListenerRemoveRequest func(registrationId *string) *ClientMessage
