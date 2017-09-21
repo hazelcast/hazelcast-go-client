@@ -20,7 +20,7 @@ func (randomLoadBalancer *RandomLoadBalancer) NextAddress() *Address {
 	if size > 0 {
 		randomIndex := rand.Intn(size)
 		member := randomLoadBalancer.clusterService.Members[randomIndex]
-		return member.Address()
+		return member.Address().(*Address)
 	}
 	return nil
 }

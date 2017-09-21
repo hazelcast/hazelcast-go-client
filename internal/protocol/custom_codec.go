@@ -77,10 +77,10 @@ func ErrorCodecDecode(msg *ClientMessage) *Error {
 	if !msg.ReadBool() {
 		response.message = *msg.ReadString()
 	}
-	stackTrace := make([]StackTraceElement, 0)
+	stackTrace := make([]*StackTraceElement, 0)
 	stackTraceCount := msg.ReadInt32()
 	for i := 0; i < int(stackTraceCount); i++ {
-		stackTrace = append(stackTrace, *DecodeStackTrace(msg))
+		stackTrace = append(stackTrace, DecodeStackTrace(msg))
 	}
 	response.stackTrace = stackTrace
 	response.causeErrorCode = msg.ReadInt32()

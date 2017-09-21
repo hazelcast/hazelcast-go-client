@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
@@ -300,7 +301,7 @@ func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) error {
 	}
 	return nil
 }
-func (imap *MapProxy) EntrySet() ([]Pair, error) {
+func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
 
 	request := MapEntrySetEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
@@ -309,7 +310,7 @@ func (imap *MapProxy) EntrySet() ([]Pair, error) {
 	}
 
 	response := MapEntrySetDecodeResponse(responseMessage).Response
-	pairList := make([]Pair, len(*response))
+	pairList := make([]core.IPair, len(*response))
 	for index, pairData := range *response {
 		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -319,13 +320,13 @@ func (imap *MapProxy) EntrySet() ([]Pair, error) {
 		if err != nil {
 			return nil, err
 		}
-		pairList[index] = *NewPair(key, value)
+		pairList[index] = core.IPair(NewPair(key, value))
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) GetAll(keys []interface{}) (*[]Pair, error) {
+func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
 	partitions := make(map[int32][]serialization.Data)
-	pairList := make([]Pair, 0)
+	pairList := make([]core.IPair, 0)
 	for _, key := range keys {
 		keyData, err := imap.ToData(key)
 		if err != nil {
@@ -350,12 +351,12 @@ func (imap *MapProxy) GetAll(keys []interface{}) (*[]Pair, error) {
 			if err != nil {
 				return nil, err
 			}
-			pairList = append(pairList, *NewPair(key, value))
+			pairList = append(pairList, core.IPair(NewPair(key, value)))
 		}
 	}
-	return &pairList, nil
+	return pairList, nil
 }
-func (imap *MapProxy) GetEntryView(key interface{}) (*EntryView, error) {
+func (imap *MapProxy) GetEntryView(key interface{}) (core.IEntryView, error) {
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err

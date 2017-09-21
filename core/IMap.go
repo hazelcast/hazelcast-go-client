@@ -1,7 +1,5 @@
 package core
 
-import . "github.com/hazelcast/go-client/internal/protocol"
-
 type IMap interface {
 	Put(key interface{}, value interface{}) (oldValue interface{}, err error)
 	Get(key interface{}) (value interface{}, err error)
@@ -24,9 +22,9 @@ type IMap interface {
 	Set(key interface{}, value interface{}) error
 	PutIfAbsent(key interface{}, value interface{}) (oldValue interface{}, err error)
 	PutAll(mp *map[interface{}]interface{}) error
-	EntrySet() ([]Pair, error)
-	GetAll(keys []interface{}) (*[]Pair, error)
-	GetEntryView(key interface{}) (*EntryView, error)
+	EntrySet() ([]IPair, error)
+	GetAll(keys []interface{}) ([]IPair, error)
+	GetEntryView(key interface{}) (IEntryView, error)
 	AddEntryListener(listener interface{}, includeValue bool) (*string, error)
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error)
 	RemoveEntryListener(registrationId *string) error

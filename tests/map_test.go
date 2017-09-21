@@ -3,7 +3,6 @@ package tests
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal/protocol"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"strconv"
@@ -251,7 +250,7 @@ func TestMapProxy_GetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, pair := range *valueList {
+		for _, pair := range valueList {
 			key := pair.Key()
 			value := pair.Value()
 			expectedValue, found := testMap[key]
@@ -281,22 +280,22 @@ type AddEntry struct {
 	wg *sync.WaitGroup
 }
 
-func (addEntry *AddEntry) EntryAdded(event *protocol.EntryEvent) {
+func (addEntry *AddEntry) EntryAdded(event core.IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryUpdated(event *protocol.EntryEvent) {
+func (addEntry *AddEntry) EntryUpdated(event core.IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryRemoved(event *protocol.EntryEvent) {
+func (addEntry *AddEntry) EntryRemoved(event core.IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryEvicted(event *protocol.EntryEvent) {
+func (addEntry *AddEntry) EntryEvicted(event core.IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryEvictAll(event *protocol.MapEvent) {
+func (addEntry *AddEntry) EntryEvictAll(event core.IMapEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryClearAll(event *protocol.MapEvent) {
+func (addEntry *AddEntry) EntryClearAll(event core.IMapEvent) {
 	addEntry.wg.Done()
 }
 
