@@ -2,7 +2,7 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/internal/protocol"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"sync"
@@ -13,10 +13,10 @@ type membershipListener struct {
 	wg *sync.WaitGroup
 }
 
-func (membershipListener *membershipListener) MemberAdded(member *protocol.Member) {
+func (membershipListener *membershipListener) MemberAdded(member core.IMember) {
 	membershipListener.wg.Done()
 }
-func (membershipListener *membershipListener) MemberRemoved(member *protocol.Member) {
+func (membershipListener *membershipListener) MemberRemoved(member core.IMember) {
 	membershipListener.wg.Done()
 }
 

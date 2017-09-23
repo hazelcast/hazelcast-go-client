@@ -90,3 +90,9 @@ type IEntryMergedListener interface {
 type IEntryExpiredListener interface {
 	EntryExpired(IEntryEvent)
 }
+type IMemberAddedListener interface {
+	MemberAdded(member IMember)
+}
+type IMemberRemovedListener interface {
+	MemberRemoved(member IMember)
+}

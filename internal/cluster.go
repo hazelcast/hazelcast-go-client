@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"github.com/hazelcast/go-client/core"
 )
 
 const (
@@ -26,12 +27,12 @@ type ClusterService struct {
 	ownerUuid              string
 	uuid                   string
 	ownerConnectionAddress *Address
-	mp                     atomic.Value
+	listeners              atomic.Value
 }
 
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
 	service := &ClusterService{client: client, config: config}
-	service.mp.Store(make(map[string]interface{})) //initialize
+	service.listeners.Store(make(map[string]interface{})) //initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
 		service.addListener(membershipListener)
 	}
@@ -101,12 +102,12 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 }
 func (clusterService *ClusterService) addListener(listener interface{}) *string {
 	registrationId, _ := common.NewUUID()
-	listeners := clusterService.mp.Load().(map[string]interface{})
+	listeners := clusterService.listeners.Load().(map[string]interface{})
 	listeners[registrationId] = listener
 	return &registrationId
 }
 func (clusterService *ClusterService) removeListener(registrationId *string) bool {
-	listeners := clusterService.mp.Load().(map[string]interface{})
+	listeners := clusterService.listeners.Load().(map[string]interface{})
 	_, found := listeners[*registrationId]
 	if found {
 		delete(listeners, *registrationId)
@@ -136,7 +137,7 @@ func (clusterService *ClusterService) handleMemberAttributeChange(uuid *string, 
 func (clusterService *ClusterService) memberAdded(member *Member) {
 	//TODO:: race condition for members ?
 	clusterService.Members = append(clusterService.Members, *member)
-	listeners := clusterService.mp.Load().(map[string]interface{})
+	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberAddedListener); ok {
 			listener.(MemberAddedListener).MemberAdded(member)
@@ -151,11 +152,18 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 			break
 		}
 	}
-	clusterService.client.ConnectionManager.closeConnection(member.Address())
-	listeners := clusterService.mp.Load().(map[string]interface{})
+	clusterService.client.ConnectionManager.closeConnection(member.Address().(*Address))
+	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberRemovedListener); ok {
 			listener.(MemberRemovedListener).MemberRemoved(member)
 		}
 	}
+}
+func (clusterService *ClusterService) GetMemberList() []core.IMember{
+	members := make([]core.IMember,len(clusterService.Members))
+	for i,m := range clusterService.Members {
+		members[i] = core.IMember(&m)
+	}
+	return members
 }
