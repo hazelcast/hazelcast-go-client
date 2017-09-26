@@ -2,13 +2,13 @@ package internal
 
 import (
 	"github.com/hazelcast/go-client/config"
+	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
-	"github.com/hazelcast/go-client/core"
 )
 
 const (
@@ -23,18 +23,19 @@ var wg sync.WaitGroup
 type ClusterService struct {
 	client                 *HazelcastClient
 	config                 *config.ClientConfig
-	Members                []Member
 	ownerUuid              string
 	uuid                   string
 	ownerConnectionAddress *Address
 	listeners              atomic.Value
+	members                atomic.Value
 }
 
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
 	service := &ClusterService{client: client, config: config}
 	service.listeners.Store(make(map[string]interface{})) //initialize
+	service.members.Store(make([]Member, 0))              //initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
-		service.addListener(membershipListener)
+		service.AddListener(membershipListener)
 	}
 	return service
 }
@@ -48,7 +49,8 @@ func getPossibleAddresses(addressList *[]config.Address, memberList []Member) *[
 	return &addresses
 }
 func (clusterService *ClusterService) connectToCluster() {
-	addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig.Addresses, clusterService.Members)
+	membersList := clusterService.members.Load().([]Member)
+	addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig.Addresses, membersList)
 	currentAttempt := int32(1)
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
@@ -100,13 +102,13 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	wg.Wait() //Wait until the inital member list is fetched.
 	log.Println("Registered membership listener with Id ", *registrationId)
 }
-func (clusterService *ClusterService) addListener(listener interface{}) *string {
+func (clusterService *ClusterService) AddListener(listener interface{}) *string {
 	registrationId, _ := common.NewUUID()
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	listeners[registrationId] = listener
 	return &registrationId
 }
-func (clusterService *ClusterService) removeListener(registrationId *string) bool {
+func (clusterService *ClusterService) RemoveListener(registrationId *string) bool {
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	_, found := listeners[*registrationId]
 	if found {
@@ -135,8 +137,9 @@ func (clusterService *ClusterService) handleMemberAttributeChange(uuid *string, 
 	//TODO :: implement this.
 }
 func (clusterService *ClusterService) memberAdded(member *Member) {
-	//TODO:: race condition for members ?
-	clusterService.Members = append(clusterService.Members, *member)
+	membersList := clusterService.members.Load().([]Member)
+	membersList = append(membersList, *member)
+	clusterService.members.Store(membersList)
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberAddedListener); ok {
@@ -146,12 +149,14 @@ func (clusterService *ClusterService) memberAdded(member *Member) {
 
 }
 func (clusterService *ClusterService) memberRemoved(member *Member) {
-	for index, cur := range clusterService.Members {
+	membersList := clusterService.members.Load().([]Member)
+	for index, cur := range membersList {
 		if member.Equal(cur) {
-			clusterService.Members = append(clusterService.Members[:index], clusterService.Members[index+1:]...)
+			membersList = append(membersList[:index], membersList[index+1:]...)
 			break
 		}
 	}
+	clusterService.members.Store(membersList)
 	clusterService.client.ConnectionManager.closeConnection(member.Address().(*Address))
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
@@ -160,9 +165,10 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 		}
 	}
 }
-func (clusterService *ClusterService) GetMemberList() []core.IMember{
-	members := make([]core.IMember,len(clusterService.Members))
-	for i,m := range clusterService.Members {
+func (clusterService *ClusterService) GetMemberList() []core.IMember {
+	membersList := clusterService.members.Load().([]Member)
+	members := make([]core.IMember, len(membersList))
+	for i, m := range membersList {
 		members[i] = core.IMember(&m)
 	}
 	return members

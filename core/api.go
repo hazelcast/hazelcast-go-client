@@ -1,7 +1,5 @@
 package core
 
-//
-//
 type IAddress interface {
 	Host() string
 	Port() int
