@@ -15,14 +15,7 @@ const (
 )
 
 type MapProxy struct {
-	proxy
-}
-
-func newMapProxy(client *HazelcastClient, name *string) *MapProxy {
-	mapProxy := MapProxy{}
-	mapProxy.client = client
-	mapProxy.name = name
-	return &mapProxy
+	*proxy
 }
 
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
@@ -620,3 +613,10 @@ func (imap *MapProxy) RemoveEntryListener(registrationId *string) error {
 		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
 	})
 }
+
+func (imap *MapProxy) Destroy(){}
+func (imap *MapProxy) GetName() string{return ""}
+func (imap *MapProxy) GetPartitionKey() string{return ""}
+func (imap *MapProxy) GetServiceName() string{return ""}
+
+

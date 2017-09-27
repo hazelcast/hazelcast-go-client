@@ -27,3 +27,12 @@ func (proxy *proxy) ToObject(data *Data) (interface{}, error) {
 func (proxy *proxy) ToData(object interface{}) (*Data, error) {
 	return proxy.client.SerializationService.ToData(object)
 }
+
+type partitionSpecificProxy struct {
+	partitionId int32
+	proxy
+}
+
+func (psproxy *partitionSpecificProxy) EncodeInvoke(){
+
+}

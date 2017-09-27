@@ -109,6 +109,7 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_CONNECTED)
 	return nil
 }
+
 func (clusterService *ClusterService) initMembershipListener(connection *Connection) {
 	wg.Add(1)
 	request := ClientAddMembershipListenerEncodeRequest(false)

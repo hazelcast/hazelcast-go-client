@@ -5,6 +5,7 @@ import (
 )
 
 type IMap interface {
+	IDistributedObject
 	Put(key interface{}, value interface{}) (oldValue interface{}, err error)
 	Get(key interface{}) (value interface{}, err error)
 	Remove(key interface{}) (value interface{}, err error)
