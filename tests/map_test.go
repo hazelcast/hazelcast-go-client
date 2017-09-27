@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
@@ -57,6 +58,37 @@ func TestMapProxy_Remove(t *testing.T) {
 	assertEqualf(t, err, size, int32(0), "Map size should be 0.")
 	found, err := mp.ContainsKey(testKey)
 	assertEqualf(t, err, found, false, "containsKey returned a wrong result")
+	mp.Clear()
+
+}
+func TestMapProxy_RemoveIfSame(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	removed, err := mp.RemoveIfSame(testKey, "testinValue1")
+	assertEqualf(t, err, removed, false, "removeIfSame returned a wrong value")
+	found, err := mp.ContainsKey(testKey)
+	assertEqualf(t, err, found, true, "containsKey returned a wrong result")
+	mp.Clear()
+}
+func TestMapProxy_PutTransient(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mp.PutTransient(testKey, "nextValue", 100, time.Second)
+	res, err := mp.Get(testKey)
+	assertEqualf(t, err, res, "nextValue", "putTransient failed")
+	mp.Clear()
+
+}
+func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mp.PutTransient(testKey, "nextValue", 1, time.Millisecond)
+	time.Sleep(5 * time.Second)
+	res, err := mp.Get(testKey)
+	AssertNilf(t, err, res, "putTransient failed")
 	mp.Clear()
 
 }
@@ -156,6 +188,31 @@ func TestMapProxy_IsLocked(t *testing.T) {
 	}
 	locked, err = mp.IsLocked("testingKey")
 	assertEqualf(t, err, locked, false, "Key should not be locked.")
+	mp.LockWithLeaseTime("testingKey", 10, time.Millisecond)
+	time.Sleep(5 * time.Second)
+	locked, err = mp.IsLocked("testingKey")
+	assertEqualf(t, err, locked, false, "Key should not be locked.")
+
+}
+func TestMapProxy_TryLock(t *testing.T) {
+	mp.Put("testingKey", "testingValue")
+	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1, time.Second, 2, time.Second)
+	assertEqualf(t, err, ok, true, "Try Lock failed")
+	time.Sleep(5 * time.Second)
+	locked, err := mp.IsLocked("testingKey")
+	assertEqualf(t, err, locked, false, "Key should not be locked.")
+	mp.ForceUnlock("testingKey")
+
+}
+func TestMapProxy_ForceUnlock(t *testing.T) {
+	mp.Put("testingKey", "testingValue")
+	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1, time.Second, 20, time.Second)
+	assertEqualf(t, err, ok, true, "Try Lock failed")
+	mp.ForceUnlock("testingKey")
+	locked, err := mp.IsLocked("testingKey")
+	assertEqualf(t, err, locked, false, "Key should not be locked.")
+	mp.UnLock("testingKey")
+
 }
 func TestMapProxy_Replace(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
@@ -196,6 +253,19 @@ func TestMapProxy_Set(t *testing.T) {
 	}
 	newValue, err := mp.Get("testingKey1")
 	assertEqualf(t, err, newValue, "testingValue1", "Map Set failed.")
+	mp.Clear()
+}
+func TestMapProxy_SetWithTtl(t *testing.T) {
+	err := mp.SetWithTtl("testingKey1", "testingValue1", 0, time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	newValue, err := mp.Get("testingKey1")
+	assertEqualf(t, err, newValue, "testingValue1", "Map SetWithTtl failed.")
+	mp.SetWithTtl("testingKey1", "testingValue2", 1, time.Millisecond)
+	time.Sleep(5 * time.Second)
+	newValue, err = mp.Get("testingKey1")
+	AssertNilf(t, err, newValue, "Map SetWithTtl failed.")
 	mp.Clear()
 }
 func TestMapProxy_PutIfAbsent(t *testing.T) {
