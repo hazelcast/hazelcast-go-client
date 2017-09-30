@@ -33,7 +33,6 @@ func (proxyManager *ProxyManager) GetOrCreateProxy(name *string, serviceName *st
 	if proxyManager.proxies[name]!=nil {
 		return proxyManager.proxies[name]
 	} else {
-		//var newProxy proxy = proxyManager.service[serviceName].Constructor(proxyManager.client, name).(IDistributedObject)
 		var newProxy *proxy= &proxy{proxyManager.client, serviceName, name}
 
 
