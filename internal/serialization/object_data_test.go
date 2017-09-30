@@ -183,19 +183,16 @@ func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
 
 func TestObjectDataInput_ReadUTF(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
-	var w1 string = "Furkan Şenharputlu"
-	var w2 string = "Jack"
-	var w3 string = "Dani"
-	o.WriteUTF(&w1)
-	o.WriteUTF(&w2)
-	o.WriteUTF(&w3)
+	o.WriteUTF("Furkan Şenharputlu")
+	o.WriteUTF("Jack")
+	o.WriteUTF("Dani")
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	expectedRet := &w3
+	expectedRet := "Dani"
 	i.ReadUTF()
 	i.ReadUTF()
 	ret, _ := i.ReadUTF()
-	if *ret != *expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", *ret, *expectedRet)
+	if ret != expectedRet {
+		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -217,7 +214,7 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 	o.WriteObject(b)
 	o.WriteObject(c)
 	o.WriteObject(d)
-	o.WriteObject(&e)
+	o.WriteObject(e)
 	o.WriteObject(f)
 	o.WriteObject(g)
 	o.WriteObject(h)
@@ -237,7 +234,7 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 	ret_k, _ := i.ReadObject()
 
 	if a != ret_a || b != ret_b || c != ret_c || d != ret_d ||
-		e != *ret_e.(*string) || !reflect.DeepEqual(f, ret_f) || !reflect.DeepEqual(g, ret_g) ||
+		e != ret_e || !reflect.DeepEqual(f, ret_f) || !reflect.DeepEqual(g, ret_g) ||
 		!reflect.DeepEqual(h, ret_h) || !reflect.DeepEqual(j, ret_j) || !reflect.DeepEqual(k, ret_k) {
 		t.Errorf("There is a problem in WriteObject() or ReadObject()!")
 	}
@@ -335,11 +332,7 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadUTFArray(t *testing.T) {
-	w1 := "aAüÜiİıIöÖşŞçÇ"
-	w2 := "akdha"
-	w3 := "üğpoıuişlk"
-	w4 := "üğpreÜaişfçxaaöc"
-	var array []*string = []*string{&w1, &w2, &w3, &w4}
+	var array []string = []string{"aAüÜiİıIöÖşŞçÇ", "akdha", "üğpoıuişlk", "üğpreÜaişfçxaaöc"}
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteUTFArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)

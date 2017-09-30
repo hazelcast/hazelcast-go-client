@@ -22,7 +22,7 @@ func (*PortableFactory1) Create(classId int32) Portable {
 type student struct {
 	id   int16
 	age  int32
-	name *string
+	name string
 }
 
 func (*student) GetFactoryId() int32 {
@@ -50,8 +50,7 @@ func TestPortableSerializer(t *testing.T) {
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
 	service := NewSerializationService(config)
-	name := "Furkan Şenharputlu"
-	expectedRet := &student{10, 22, &name}
+	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
 
@@ -70,7 +69,7 @@ type fake struct {
 	i64          int64
 	f32          float32
 	f64          float64
-	utf          *string
+	utf          string
 	portable     Portable
 	byt_arr      []byte
 	boo_arr      []bool
@@ -80,7 +79,7 @@ type fake struct {
 	i64_arr      []int64
 	f32_arr      []float32
 	f64_arr      []float64
-	utf_arr      []*string
+	utf_arr      []string
 	portable_arr []Portable
 }
 
@@ -145,12 +144,6 @@ func TestPortableSerializer2(t *testing.T) {
 	config.AddPortableFactory(2, &PortableFactory1{})
 	service := NewSerializationService(config)
 
-	name := "Furkan Şenharputlu"
-	name2 := "Micheal Micheal"
-	w1 := "こんにちは"
-	w2 := "ilköğretim"
-	w3 := "FISTIKÇIŞAHAP"
-
 	var byt byte = 255
 	var boo bool = true
 	var ui16 uint16 = 65535
@@ -160,7 +153,7 @@ func TestPortableSerializer2(t *testing.T) {
 	var f32 float32 = -3.4E+38
 	var f64 float64 = -1.7E+308
 	var utf string = "Günaydın, こんにちは"
-	var portable Portable = &student{10, 22, &name}
+	var portable Portable = &student{10, 22, "Furkan Şenharputlu"}
 	var byt_arr []byte = []byte{127, 128, 255, 0, 4, 6, 8, 121}
 	var boo_arr []bool = []bool{true, true, false, true, false, false, false, true, false, true}
 	var ui16_arr []uint16 = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
@@ -169,10 +162,10 @@ func TestPortableSerializer2(t *testing.T) {
 	var i64_arr []int64 = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
 	var f32_arr []float32 = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
 	var f64_arr []float64 = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
-	var utf_arr []*string = []*string{&w1, &w2, &w3}
-	var portable_arr []Portable = []Portable{&student{10, 22, &name}, &student{2, 20, &name2}}
+	var utf_arr []string = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
+	var portable_arr []Portable = []Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
 
-	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, &utf, portable,
+	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, portable,
 		byt_arr, boo_arr, ui16_arr, i16_arr, i32_arr, i64_arr, f32_arr, f64_arr, utf_arr, portable_arr}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)

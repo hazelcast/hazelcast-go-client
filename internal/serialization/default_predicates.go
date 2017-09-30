@@ -3,12 +3,12 @@ package serialization
 import . "github.com/hazelcast/go-client/internal/serialization/api"
 
 type SqlPredicate struct {
-	sql *string
+	sql string
 }
 
 const PREDICATE_FACTORY_ID = -32
 
-func NewSqlPredicate(sql *string) SqlPredicate {
+func NewSqlPredicate(sql string) SqlPredicate {
 	return SqlPredicate{sql}
 }
 

@@ -36,7 +36,7 @@ type DataOutput interface {
 	WriteInt64(v int64)
 	WriteFloat32(v float32)
 	WriteFloat64(v float64)
-	WriteUTF(v *string)
+	WriteUTF(v string)
 	WriteObject(i interface{})
 	WriteByteArray(v []byte)
 	WriteBoolArray(v []bool)
@@ -46,7 +46,7 @@ type DataOutput interface {
 	WriteInt64Array(v []int64)
 	WriteFloat32Array(v []float32)
 	WriteFloat64Array(v []float64)
-	WriteUTFArray(v []*string)
+	WriteUTFArray(v []string)
 	WriteBytes(bytes string)
 	WriteZeroBytes(count int)
 }
@@ -73,7 +73,7 @@ type DataInput interface {
 	ReadInt64() (int64, error)
 	ReadFloat32() (float32, error)
 	ReadFloat64() (float64, error)
-	ReadUTF() (*string, error)
+	ReadUTF() (string, error)
 	ReadObject() (interface{}, error)
 	ReadByteArray() ([]byte, error)
 	ReadBoolArray() ([]bool, error)
@@ -83,7 +83,7 @@ type DataInput interface {
 	ReadInt64Array() ([]int64, error)
 	ReadFloat32Array() ([]float32, error)
 	ReadFloat64Array() ([]float64, error)
-	ReadUTFArray() ([]*string, error)
+	ReadUTFArray() ([]string, error)
 }
 
 type PortableWriter interface {
@@ -95,7 +95,7 @@ type PortableWriter interface {
 	WriteInt64(fieldName string, value int64)
 	WriteFloat32(fieldName string, value float32)
 	WriteFloat64(fieldName string, value float64)
-	WriteUTF(fieldName string, value *string)
+	WriteUTF(fieldName string, value string)
 	WritePortable(fieldName string, value Portable) error
 	WriteNilPortable(fieldName string, factoryId int32, classId int32) error
 	WriteByteArray(fieldName string, value []byte)
@@ -106,7 +106,7 @@ type PortableWriter interface {
 	WriteInt64Array(fieldName string, value []int64)
 	WriteFloat32Array(fieldName string, value []float32)
 	WriteFloat64Array(fieldName string, value []float64)
-	WriteUTFArray(fieldName string, value []*string)
+	WriteUTFArray(fieldName string, value []string)
 	WritePortableArray(fieldName string, value []Portable) error
 	End()
 }
@@ -120,7 +120,7 @@ type PortableReader interface {
 	ReadInt64(fieldName string) (int64, error)
 	ReadFloat32(fieldName string) (float32, error)
 	ReadFloat64(fieldName string) (float64, error)
-	ReadUTF(fieldName string) (*string, error)
+	ReadUTF(fieldName string) (string, error)
 	ReadPortable(fieldName string) (Portable, error)
 	ReadByteArray(fieldName string) ([]byte, error)
 	ReadBoolArray(fieldName string) ([]bool, error)
@@ -130,7 +130,7 @@ type PortableReader interface {
 	ReadInt64Array(fieldName string) ([]int64, error)
 	ReadFloat32Array(fieldName string) ([]float32, error)
 	ReadFloat64Array(fieldName string) ([]float64, error)
-	ReadUTFArray(fieldName string) ([]*string, error)
+	ReadUTFArray(fieldName string) ([]string, error)
 	ReadPortableArray(fieldName string) ([]Portable, error)
 	End()
 }

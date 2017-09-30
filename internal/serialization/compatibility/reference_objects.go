@@ -57,8 +57,7 @@ func (allTestObjects) getAllTestObjects() []interface{} {
 	var aFloat float32 = 900.5678
 	var anInt int32 = 56789
 	var aLong int64 = -50992225
-	s := "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラムThe quick brown fox jumps over the lazy dog"
-	var aString *string = &s
+	var aString string = "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラムThe quick brown fox jumps over the lazy dog"
 
 	var booleans []bool = []bool{true, false, true}
 
@@ -73,7 +72,7 @@ func (allTestObjects) getAllTestObjects() []interface{} {
 	w1 := "Pijamalı hasta, yağız şoföre çabucak güvendi."
 	w2 := "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム"
 	w3 := "The quick brown fox jumps over the lazy dog"
-	var strings []*string = []*string{&w1, &w2, &w3}
+	var strings []string = []string{w1, w2, w3}
 
 	anInnerPortable := &AnInnerPortable{anInt, aFloat}
 	var portables []api.Portable = []api.Portable{anInnerPortable, anInnerPortable, anInnerPortable}

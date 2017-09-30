@@ -34,7 +34,7 @@ func (factory) Create(classId int32) IdentifiedDataSerializable {
 
 type employee struct {
 	age  int32
-	name *string
+	name string
 }
 
 func (e *employee) ReadData(input DataInput) error {
@@ -57,8 +57,7 @@ func (*employee) GetClassId() int32 {
 }
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
-	name := "Furkan Şenharputlu"
-	var employee1 employee = employee{22, &name}
+	var employee1 employee = employee{22, "Furkan Şenharputlu"}
 	c := NewSerializationConfig()
 	c.AddDataSerializableFactory(employee1.GetFactoryId(), factory{})
 

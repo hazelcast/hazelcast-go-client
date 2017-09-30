@@ -118,7 +118,7 @@ func (service *SerializationService) RegisterDefaultSerializers() {
 	service.nameToId["float64"] = CONSTANT_TYPE_DOUBLE
 
 	service.RegisterSerializer(&StringSerializer{})
-	service.nameToId["*string"] = CONSTANT_TYPE_STRING
+	service.nameToId["string"] = CONSTANT_TYPE_STRING
 
 	service.RegisterSerializer(&NilSerializer{})
 	service.nameToId["nil"] = CONSTANT_TYPE_NULL

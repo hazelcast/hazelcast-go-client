@@ -50,7 +50,7 @@ func (cdw *ClassDefinitionWriter) WriteFloat64(fieldName string, value float64) 
 	cdw.addFieldByType(fieldName, DOUBLE, 0, 0)
 }
 
-func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value *string) {
+func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
 	cdw.addFieldByType(fieldName, UTF, 0, 0)
 }
 
@@ -107,7 +107,7 @@ func (cdw *ClassDefinitionWriter) WriteFloat64Array(fieldName string, value []fl
 	cdw.addFieldByType(fieldName, DOUBLE_ARRAY, 0, 0)
 }
 
-func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []*string) {
+func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string) {
 	cdw.addFieldByType(fieldName, UTF_ARRAY, 0, 0)
 }
 

@@ -193,7 +193,7 @@ func (*StringSerializer) Read(input DataInput) (interface{}, error) {
 }
 
 func (*StringSerializer) Write(output DataOutput, i interface{}) {
-	output.WriteUTF(i.(*string))
+	output.WriteUTF(i.(string))
 }
 
 type ByteArraySerializer struct{}
@@ -319,5 +319,5 @@ func (*StringArraySerializer) Read(input DataInput) (interface{}, error) {
 }
 
 func (*StringArraySerializer) Write(output DataOutput, i interface{}) {
-	output.WriteUTFArray(i.([]*string))
+	output.WriteUTFArray(i.([]string))
 }

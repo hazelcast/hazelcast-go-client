@@ -154,10 +154,10 @@ func (pr *DefaultPortableReader) ReadFloat64(fieldName string) (float64, error) 
 	return pr.input.(*ObjectDataInput).ReadFloat64WithPosition(pos)
 }
 
-func (pr *DefaultPortableReader) ReadUTF(fieldName string) (*string, error) {
+func (pr *DefaultPortableReader) ReadUTF(fieldName string) (string, error) {
 	pos, err := pr.positionByField(fieldName, UTF)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	return pr.input.(*ObjectDataInput).ReadUTFWithPosition(pos)
 }
@@ -258,7 +258,7 @@ func (pr *DefaultPortableReader) ReadFloat64Array(fieldName string) ([]float64, 
 	return pr.input.(*ObjectDataInput).ReadFloat64ArrayWithPosition(pos)
 }
 
-func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) ([]*string, error) {
+func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) ([]string, error) {
 	pos, err := pr.positionByField(fieldName, UTF_ARRAY)
 	if err != nil {
 		return nil, err

@@ -85,8 +85,8 @@ func TestBinaryCompatibility(t *testing.T) {
 		if length != NULL_ARRAY_LENGTH {
 			payload := dat[i.GetPosition() : i.GetPosition()+length]
 			i.SetPosition(i.GetPosition() + length)
-			if supporteds[index] == *objectKey {
-				dataMap[*objectKey] = &serialization.Data{payload}
+			if supporteds[index] == objectKey {
+				dataMap[objectKey] = &serialization.Data{payload}
 			}
 		}
 		index++

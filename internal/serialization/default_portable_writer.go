@@ -63,7 +63,7 @@ func (pw *DefaultPortableWriter) WriteFloat64(fieldName string, value float64) {
 	pw.output.WriteFloat64(value)
 }
 
-func (pw *DefaultPortableWriter) WriteUTF(fieldName string, value *string) {
+func (pw *DefaultPortableWriter) WriteUTF(fieldName string, value string) {
 	pw.setPosition(fieldName, UTF)
 	pw.output.WriteUTF(value)
 }
@@ -128,7 +128,7 @@ func (pw *DefaultPortableWriter) WriteFloat64Array(fieldName string, array []flo
 	pw.output.WriteFloat64Array(array)
 }
 
-func (pw *DefaultPortableWriter) WriteUTFArray(fieldName string, array []*string) {
+func (pw *DefaultPortableWriter) WriteUTFArray(fieldName string, array []string) {
 	pw.setPosition(fieldName, UTF_ARRAY)
 	pw.output.WriteUTFArray(array)
 }

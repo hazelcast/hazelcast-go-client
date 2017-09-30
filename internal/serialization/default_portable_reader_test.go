@@ -137,7 +137,7 @@ func TestDefaultPortableReader_ReadFloat64(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadUTF(t *testing.T) {
-	var expectedRet *string = nil
+	var expectedRet string = ""
 	classDef := NewClassDefinition(1, 2, 3)
 	classDef.addFieldDefinition(NewFieldDefinition(0, "engineer", UTF, classDef.factoryId, classDef.classId))
 	o := NewPositionalObjectDataOutput(0, nil, false)
@@ -148,13 +148,12 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
 	ret, _ := pr.ReadUTF("engineer")
 	if ret != expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", *ret, expectedRet)
+		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestDefaultPortableReader_ReadPortable(t *testing.T) {
-	name := "Furkan Şenharputlu"
-	var expectedRet Portable = &student{10, 22, &name}
+	var expectedRet Portable = &student{10, 22, "Furkan Şenharputlu"}
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
 	classDef := NewClassDefinition(2, 1, 3)
@@ -332,11 +331,7 @@ func TestDefaultPortableReader_ReadFloat64Array(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
-	w1 := "Furkan Şenharputlu"
-	w2 := "こんにちは"
-	w3 := "おはようございます"
-	w4 := "今晩は"
-	var expectedRet []*string = []*string{&w1, &w2, &w3, &w4}
+	var expectedRet []string = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	classDef := NewClassDefinition(1, 2, 3)
 	classDef.addFieldDefinition(NewFieldDefinition(0, "words", UTF_ARRAY, classDef.factoryId, classDef.classId))
 	o := NewPositionalObjectDataOutput(0, nil, false)
@@ -353,9 +348,7 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
-	n1 := "Furkan Şenharputlu"
-	n2 := "Jack Purcell"
-	var expectedRet []Portable = []Portable{&student{10, 22, &n1}, &student{11, 20, &n2}}
+	var expectedRet []Portable = []Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{11, 20, "Jack Purcell"}}
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
 	classDef := NewClassDefinition(2, 1, 3)
@@ -396,7 +389,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteNilPortable("engineer", 2, 1)
-	pw.WriteUTF("name", nil)
+	pw.WriteUTF("name", "")
 	pw.WriteByteArray("a1", nil)
 	pw.WriteBoolArray("a2", nil)
 	pw.WriteUInt16Array("a3", nil)
@@ -421,7 +414,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	ret9, _ := pr.ReadFloat64Array("a8")
 	ret10, _ := pr.ReadUTFArray("a9")
 
-	if ret != nil || ret1 != nil || ret2 != nil || ret3 != nil || ret4 != nil || ret5 != nil || ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
+	if ret != nil || ret1 != "" || ret2 != nil || ret3 != nil || ret4 != nil || ret5 != nil || ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
 	}
 }

@@ -101,19 +101,13 @@ func (o *ObjectDataOutput) WriteFloat64(v float64) {
 	o.position += DOUBLE_SIZE_IN_BYTES
 }
 
-func (o *ObjectDataOutput) WriteUTF(v *string) {
-	var length int32
-
-	if v != nil {
-		length = int32(utf8.RuneCountInString(*v))
-	} else {
-		length = NULL_ARRAY_LENGTH
-	}
+func (o *ObjectDataOutput) WriteUTF(v string) {
+	length := int32(utf8.RuneCountInString(v))
 	o.WriteInt32(length)
 
 	if length > 0 {
-		runes := []rune(*v)
-		o.EnsureAvailable(len(*v))
+		runes := []rune(v)
+		o.EnsureAvailable(len(v))
 		for _, s := range runes {
 			o.position += int32(utf8.EncodeRune(o.buffer[o.position:], s))
 		}
@@ -228,7 +222,7 @@ func (o *ObjectDataOutput) WriteFloat64Array(v []float64) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteUTFArray(v []*string) {
+func (o *ObjectDataOutput) WriteUTFArray(v []string) {
 	var length int32
 	if v != nil {
 		length = int32(len(v))
@@ -464,10 +458,10 @@ func (i *ObjectDataInput) ReadFloat64WithPosition(pos int32) (float64, error) {
 	return ret, err
 }
 
-func (i *ObjectDataInput) ReadUTF() (*string, error) {
+func (i *ObjectDataInput) ReadUTF() (string, error) {
 	length, err := i.ReadInt32()
 	if err != nil || length == NULL_ARRAY_LENGTH {
-		return nil, err
+		return "", err
 	}
 	var ret []rune = make([]rune, length)
 	for j := 0; j < int(length); j++ {
@@ -475,14 +469,13 @@ func (i *ObjectDataInput) ReadUTF() (*string, error) {
 		i.position += int32(n)
 		ret[j] = r
 	}
-	newRet := string(ret)
-	return &newRet, nil
+	return string(ret), nil
 }
 
-func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) (*string, error) {
+func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) (string, error) {
 	length, err := i.ReadInt32WithPosition(pos)
 	if err != nil || length == NULL_ARRAY_LENGTH {
-		return nil, err
+		return "", err
 	}
 	pos += INT_SIZE_IN_BYTES
 	var ret []rune = make([]rune, length)
@@ -491,8 +484,7 @@ func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) (*string, error) {
 		pos += int32(n)
 		ret[j] = r
 	}
-	newRet := string(ret)
-	return &newRet, nil
+	return string(ret), nil
 }
 
 func (i *ObjectDataInput) ReadObject() (interface{}, error) {
@@ -763,12 +755,12 @@ func (i *ObjectDataInput) ReadFloat64ArrayWithPosition(pos int32) ([]float64, er
 	return arr, nil
 }
 
-func (i *ObjectDataInput) ReadUTFArray() ([]*string, error) {
+func (i *ObjectDataInput) ReadUTFArray() ([]string, error) {
 	length, err := i.ReadInt32()
 	if err != nil || length == NULL_ARRAY_LENGTH {
 		return nil, err
 	}
-	var arr []*string = make([]*string, length)
+	var arr []string = make([]string, length)
 	for j := int32(0); j < length; j++ {
 		arr[j], err = i.ReadUTF()
 		if err != nil {
@@ -778,14 +770,14 @@ func (i *ObjectDataInput) ReadUTFArray() ([]*string, error) {
 	return arr, nil
 }
 
-func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]*string, error) {
+func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]string, error) {
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
 	if err != nil || length == NULL_ARRAY_LENGTH {
 		return nil, err
 	}
-	var arr []*string = make([]*string, length)
+	var arr []string = make([]string, length)
 	for j := int32(0); j < length; j++ {
 		arr[j], err = i.ReadUTF()
 		if err != nil {

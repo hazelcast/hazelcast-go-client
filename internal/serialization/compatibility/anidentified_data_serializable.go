@@ -13,7 +13,7 @@ type anIdentifiedDataSerializable struct {
 	f    float32
 	i    int32
 	l    int64
-	str  *string
+	str  string
 
 	booleans []bool
 	bytes    []byte
@@ -23,7 +23,7 @@ type anIdentifiedDataSerializable struct {
 	floats   []float32
 	ints     []int32
 	longs    []int64
-	strings  []*string
+	strings  []string
 
 	booleansNull []bool
 	bytesNull    []byte
@@ -33,7 +33,7 @@ type anIdentifiedDataSerializable struct {
 	floatsNull   []float32
 	intsNull     []int32
 	longsNull    []int64
-	stringsNull  []*string
+	stringsNull  []string
 
 	portableObject                   api.Portable
 	identifiedDataSerializableObject api.IdentifiedDataSerializable

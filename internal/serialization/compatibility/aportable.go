@@ -13,7 +13,7 @@ type aPortable struct {
 	f    float32
 	i    int32
 	l    int64
-	str  *string
+	str  string
 	p    Portable
 
 	booleans  []bool
@@ -24,7 +24,7 @@ type aPortable struct {
 	floats    []float32
 	ints      []int32
 	longs     []int64
-	strings   []*string
+	strings   []string
 	portables []Portable
 
 	booleansNull []bool
@@ -35,7 +35,7 @@ type aPortable struct {
 	floatsNull   []float32
 	intsNull     []int32
 	longsNull    []int64
-	stringsNull  []*string
+	stringsNull  []string
 }
 
 func (*aPortable) GetClassId() int32 {
