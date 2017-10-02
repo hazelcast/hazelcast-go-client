@@ -85,7 +85,7 @@ func TestAddListener(t *testing.T) {
 	AssertEqualf(t, nil, false, timeout, "Cluster memberRemoved failed")
 	remoteController.ShutdownCluster(cluster.ID)
 }
-func TestGetMemberList(t *testing.T) {
+func TestGetMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)

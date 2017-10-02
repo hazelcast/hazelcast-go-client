@@ -1,6 +1,6 @@
 package core
 
-type Cluster interface {
+type ICluster interface {
 	AddListener(listener interface{}) *string
 	RemoveListener(registrationId *string) bool
 	GetMemberList() []IMember

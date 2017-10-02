@@ -29,7 +29,7 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 func (client *HazelcastClient) GetMap(name *string) core.IMap {
 	return newMapProxy(client, name)
 }
-func (client *HazelcastClient) GetCluster() core.Cluster{
+func (client *HazelcastClient) GetCluster() core.ICluster {
 	return client.ClusterService
 }
 

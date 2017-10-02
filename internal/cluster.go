@@ -23,17 +23,18 @@ var wg sync.WaitGroup
 type ClusterService struct {
 	client                 *HazelcastClient
 	config                 *config.ClientConfig
+	members                atomic.Value
 	ownerUuid              string
 	uuid                   string
 	ownerConnectionAddress *Address
 	listeners              atomic.Value
-	members                atomic.Value
+	mu                     sync.Mutex
 }
 
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
 	service := &ClusterService{client: client, config: config}
-	service.listeners.Store(make(map[string]interface{})) //initialize
-	service.members.Store(make([]Member, 0))              //initialize
+	service.members.Store(make([]Member, 0))              //Initialize
+	service.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
 		service.AddListener(membershipListener)
 	}
@@ -49,8 +50,8 @@ func getPossibleAddresses(addressList *[]config.Address, memberList []Member) *[
 	return &addresses
 }
 func (clusterService *ClusterService) connectToCluster() {
-	membersList := clusterService.members.Load().([]Member)
-	addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig.Addresses, membersList)
+	members := clusterService.members.Load().([]Member)
+	addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig.Addresses, members)
 	currentAttempt := int32(1)
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
@@ -104,16 +105,25 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 }
 func (clusterService *ClusterService) AddListener(listener interface{}) *string {
 	registrationId, _ := common.NewUUID()
+	clusterService.mu.Lock()
+	defer clusterService.mu.Unlock()
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	listeners[registrationId] = listener
 	return &registrationId
 }
 func (clusterService *ClusterService) RemoveListener(registrationId *string) bool {
+	clusterService.mu.Lock()
+	defer clusterService.mu.Unlock()
 	listeners := clusterService.listeners.Load().(map[string]interface{})
-	_, found := listeners[*registrationId]
-	if found {
-		delete(listeners, *registrationId)
+	copyListeners := make(map[string]interface{}, len(listeners)-1)
+	for k, v := range copyListeners {
+		copyListeners[k] = v
 	}
+	_, found := copyListeners[*registrationId]
+	if found {
+		delete(copyListeners, *registrationId)
+	}
+	clusterService.listeners.Store(copyListeners)
 	return found
 }
 
@@ -137,9 +147,13 @@ func (clusterService *ClusterService) handleMemberAttributeChange(uuid *string, 
 	//TODO :: implement this.
 }
 func (clusterService *ClusterService) memberAdded(member *Member) {
-	membersList := clusterService.members.Load().([]Member)
-	membersList = append(membersList, *member)
-	clusterService.members.Store(membersList)
+	members := clusterService.members.Load().([]Member)
+	copyMembers := make([]Member, len(members))
+	for index, member := range members {
+		copyMembers[index] = member
+	}
+	copyMembers = append(copyMembers, *member)
+	clusterService.members.Store(copyMembers)
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberAddedListener); ok {
@@ -149,15 +163,17 @@ func (clusterService *ClusterService) memberAdded(member *Member) {
 
 }
 func (clusterService *ClusterService) memberRemoved(member *Member) {
-	membersList := clusterService.members.Load().([]Member)
-	for index, cur := range membersList {
-		if member.Equal(cur) {
-			membersList = append(membersList[:index], membersList[index+1:]...)
-			break
+	members := clusterService.members.Load().([]Member)
+	copyMembers := make([]Member, len(members)-1)
+	index := 0
+	for _, member := range members {
+		if !member.Equal(member) {
+			copyMembers[index] = member
+			index++
 		}
 	}
-	clusterService.members.Store(membersList)
-	clusterService.client.ConnectionManager.closeConnection(member.Address().(*Address))
+	clusterService.members.Store(copyMembers)
+	clusterService.client.ConnectionManager.closeConnection(member.Address())
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberRemovedListener); ok {
