@@ -38,6 +38,10 @@ type Member struct {
 	attributes   map[string]string
 }
 
+func NewMember(address Address, uuid string, isLiteMember bool, attributes map[string]string) *Member {
+	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
+}
+
 func (member1 *Member) Address() core.IAddress {
 	return &member1.address
 }
