@@ -316,7 +316,7 @@ func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64,
 	response := MapTryLockDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) UnLock(key interface{}) error {
+func (imap *MapProxy) Unlock(key interface{}) error {
 	if !CheckNotNil(key) {
 		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}

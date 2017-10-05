@@ -182,17 +182,20 @@ func TestMapProxy_IsLocked(t *testing.T) {
 	}
 	locked, err = mp.IsLocked("testingKey")
 	assertEqualf(t, err, locked, true, "Key should be locked.")
-	err = mp.UnLock("testingKey")
+	err = mp.Unlock("testingKey")
 	if err != nil {
 		t.Error(err)
 	}
 	locked, err = mp.IsLocked("testingKey")
 	assertEqualf(t, err, locked, false, "Key should not be locked.")
+
+}
+func TestMapProxy_LockWithLeaseTime(t *testing.T) {
+	mp.Put("testingKey", "testingValue")
 	mp.LockWithLeaseTime("testingKey", 10, time.Millisecond)
 	time.Sleep(5 * time.Second)
-	locked, err = mp.IsLocked("testingKey")
+	locked, err := mp.IsLocked("testingKey")
 	assertEqualf(t, err, locked, false, "Key should not be locked.")
-
 }
 func TestMapProxy_TryLock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
@@ -211,7 +214,7 @@ func TestMapProxy_ForceUnlock(t *testing.T) {
 	mp.ForceUnlock("testingKey")
 	locked, err := mp.IsLocked("testingKey")
 	assertEqualf(t, err, locked, false, "Key should not be locked.")
-	mp.UnLock("testingKey")
+	mp.Unlock("testingKey")
 
 }
 func TestMapProxy_Replace(t *testing.T) {

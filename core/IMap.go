@@ -22,7 +22,7 @@ type IMap interface {
 	ForceUnlock(key interface{}) error
 	Lock(key interface{}) error
 	LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) error
-	UnLock(key interface{}) error
+	Unlock(key interface{}) error
 	IsLocked(key interface{}) (bool, error)
 	Replace(key interface{}, value interface{}) (interface{}, error)
 	ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error)
