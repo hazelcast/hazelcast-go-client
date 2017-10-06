@@ -33,6 +33,10 @@ func (client *HazelcastClient) GetCluster() core.ICluster {
 	return client.ClusterService
 }
 
+func (client *HazelcastClient) GetLifecycle() core.ILifecycle {
+	return client.LifecycleService
+}
+
 func (client *HazelcastClient) init() {
 	client.InvocationService = NewInvocationService(client)
 	client.PartitionService = NewPartitionService(client)

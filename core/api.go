@@ -94,3 +94,6 @@ type IMemberAddedListener interface {
 type IMemberRemovedListener interface {
 	MemberRemoved(member IMember)
 }
+type ILifecycleListener interface {
+	LifecycleStateChanged(string)
+}

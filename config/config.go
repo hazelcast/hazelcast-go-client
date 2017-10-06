@@ -11,6 +11,7 @@ const (
 
 type ClientConfig struct {
 	MembershipListeners []interface{}
+	LifecycleListeners  []interface{}
 	GroupConfig         GroupConfig
 	ClientNetworkConfig ClientNetworkConfig
 	SerializationConfig *SerializationConfig
@@ -37,6 +38,7 @@ func NewClientConfig() *ClientConfig {
 	return &ClientConfig{GroupConfig: NewGroupConfig(),
 		ClientNetworkConfig: NewClientNetworkConfig(),
 		MembershipListeners: make([]interface{}, 0),
+		LifecycleListeners:  make([]interface{}, 0),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
@@ -44,6 +46,9 @@ func (clientConfig *ClientConfig) IsSmartRouting() bool {
 }
 func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
 	clientConfig.MembershipListeners = append(clientConfig.MembershipListeners, listener)
+}
+func (clientConfig *ClientConfig) AddLifecycleListener(listener interface{}) {
+	clientConfig.LifecycleListeners = append(clientConfig.LifecycleListeners, listener)
 }
 
 type GroupConfig struct {
