@@ -29,6 +29,9 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 func (client *HazelcastClient) GetMap(name *string) core.IMap {
 	return newMapProxy(client, name)
 }
+func (client *HazelcastClient) GetCluster() core.ICluster {
+	return client.ClusterService
+}
 
 func (client *HazelcastClient) init() {
 	client.InvocationService = NewInvocationService(client)
