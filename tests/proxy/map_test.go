@@ -3,6 +3,7 @@ package proxy
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal/serialization/api"
 	. "github.com/hazelcast/go-client/rc"
 	. "github.com/hazelcast/go-client/tests"
 	"log"
@@ -392,4 +393,71 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKey failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
+}
+
+func TestMapProxy_ExecuteOnKey(t *testing.T) {
+	config := hazelcast.NewHazelcastConfig()
+	processor := &simpleEntryProcessor{classId: 1, value: "newValue"}
+	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
+	processor.identifiedFactory = identifiedFactory
+	config.SerializationConfig.AddDataSerializableFactory(identifiedFactory, identifiedFactory.factoryId)
+	client := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2 := client.GetMap(&mpName)
+	testKey := "testingKey1"
+	testValue := "testingValue"
+	mp2.Put(testKey, testValue)
+	value, err := mp2.ExecuteOnKey(testKey, processor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Fatal(value)
+	mp.Clear()
+}
+
+type simpleEntryProcessor struct {
+	classId           int32
+	value             string
+	identifiedFactory *identifiedFactory
+}
+type identifiedFactory struct {
+	simpleEntryProcessor *simpleEntryProcessor
+	factoryId            int32
+}
+
+func (identifiedFactory *identifiedFactory) Create(id int32) api.IdentifiedDataSerializable {
+	if id == identifiedFactory.simpleEntryProcessor.classId {
+		return &simpleEntryProcessor{classId: 1}
+	} else {
+		return nil
+	}
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) Process(entry core.IPair) {
+}
+
+type simpleEntryBackupProcessor struct {
+}
+
+func (*simpleEntryBackupProcessor) ProcessBackup(entry core.IPair) {
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) getBackupProcessor() core.IEntryBackupProcessor {
+	return &simpleEntryBackupProcessor{}
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input api.DataInput) {
+	simpleEntryProcessor.value = input.ReadUTF()
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output api.DataOutput) {
+	output.WriteUTF(simpleEntryProcessor.value)
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) GetFactoryId() int32 {
+	return simpleEntryProcessor.identifiedFactory.factoryId
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) GetClassId() int32 {
+	return simpleEntryProcessor.classId
 }

@@ -5,6 +5,7 @@ import (
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
+	"log"
 )
 
 const (
@@ -425,4 +426,24 @@ func (imap *MapProxy) RemoveEntryListener(registrationId *string) error {
 	return imap.client.ListenerService.stopListening(registrationId, func(registrationId *string) *ClientMessage {
 		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
 	})
+}
+
+func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor core.IEntryProcessor) (interface{}, error) {
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return nil, err
+	}
+	entryProcessorData, err := imap.ToData(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	request := MapExecuteOnKeyEncodeRequest(imap.name, entryProcessorData, keyData, THREAD_ID)
+	log.Println("step 1")
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("step 2")
+	responseData := MapExecuteOnKeyDecodeResponse(responseMessage).Response
+	return imap.ToObject(responseData)
 }

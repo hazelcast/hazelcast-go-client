@@ -37,6 +37,7 @@ func NewClientConfig() *ClientConfig {
 	return &ClientConfig{GroupConfig: NewGroupConfig(),
 		ClientNetworkConfig: NewClientNetworkConfig(),
 		MembershipListeners: make([]interface{}, 0),
+		SerializationConfig: NewSerializationConfig(),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
