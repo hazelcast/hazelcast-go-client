@@ -38,11 +38,11 @@ type aPortable struct {
 	stringsNull  []string
 }
 
-func (*aPortable) GetClassId() int32 {
+func (*aPortable) ClassId() int32 {
 	return PORTABLE_CLASS_ID
 }
 
-func (*aPortable) GetFactoryId() int32 {
+func (*aPortable) FactoryId() int32 {
 	return PORTABLE_FACTORY_ID
 }
 

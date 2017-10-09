@@ -22,11 +22,11 @@ func (sp *SqlPredicate) WriteData(output DataOutput) {
 	output.WriteUTF(sp.sql)
 }
 
-func (sp *SqlPredicate) GetFactoryId() int32 {
+func (sp *SqlPredicate) FactoryId() int32 {
 	return PREDICATE_FACTORY_ID
 }
 
-func (*SqlPredicate) GetClassId() int32 {
+func (*SqlPredicate) ClassId() int32 {
 	return SQL_PREDICATE
 }
 
@@ -63,10 +63,10 @@ func (ap *AndPredicate) WriteData(output DataOutput) {
 	}
 }
 
-func (ap *AndPredicate) GetFactoryId() int32 {
+func (ap *AndPredicate) FactoryId() int32 {
 	return PREDICATE_FACTORY_ID
 }
 
-func (*AndPredicate) GetClassId() int32 {
+func (*AndPredicate) ClassId() int32 {
 	return AND_PREDICATE
 }

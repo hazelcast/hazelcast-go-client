@@ -8,7 +8,7 @@ import (
 )
 
 type Serializer interface {
-	GetId() int32
+	Id() int32
 	Read(input DataInput) (interface{}, error)
 	Write(output DataOutput, object interface{})
 }
@@ -31,7 +31,7 @@ func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 	dataOutput := NewPositionalObjectDataOutput(1, service, service.serializationConfig.IsBigEndian())
 	serializer := service.FindSerializerFor(object)
 	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(serializer.GetId())
+	dataOutput.WriteInt32(serializer.Id())
 	serializer.Write(dataOutput, object)
 	return &Data{dataOutput.buffer}, nil
 }
@@ -51,7 +51,7 @@ func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 
 func (service *SerializationService) WriteObject(output DataOutput, object interface{}) {
 	var serializer = service.FindSerializerFor(object)
-	output.WriteInt32(serializer.GetId())
+	output.WriteInt32(serializer.Id())
 	serializer.Write(output, object)
 }
 
@@ -152,15 +152,15 @@ func (service *SerializationService) RegisterDefaultSerializers() {
 
 	service.RegisterIdentifiedFactories()
 
-	service.RegisterSerializer(NewPortableSerializer(service, service.serializationConfig.GetPortableFactories(), service.serializationConfig.GetPortableVersion()))
+	service.RegisterSerializer(NewPortableSerializer(service, service.serializationConfig.PortableFactories(), service.serializationConfig.PortableVersion()))
 	service.nameToId["!portable"] = CONSTANT_TYPE_PORTABLE
 }
 
 func (service *SerializationService) RegisterSerializer(serializer Serializer) error {
-	if service.registry[serializer.GetId()] != nil {
+	if service.registry[serializer.Id()] != nil {
 		return errors.New("This serializer is already in the registry!")
 	}
-	service.registry[serializer.GetId()] = serializer
+	service.registry[serializer.Id()] = serializer
 	return nil
 }
 
@@ -183,8 +183,8 @@ func (service *SerializationService) LookUpDefaultSerializer(obj interface{}) Se
 
 func (service *SerializationService) RegisterIdentifiedFactories() {
 	factories := make(map[int32]IdentifiedDataSerializableFactory)
-	for id, _ := range service.serializationConfig.GetDataSerializableFactories() {
-		factories[id] = service.serializationConfig.GetDataSerializableFactories()[id]
+	for id, _ := range service.serializationConfig.DataSerializableFactories() {
+		factories[id] = service.serializationConfig.DataSerializableFactories()[id]
 	}
 
 	idToPredicate := make(map[int32]IdentifiedDataSerializable)

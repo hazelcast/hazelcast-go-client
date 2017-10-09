@@ -355,7 +355,7 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	service := NewSerializationService(config)
 	classDef.addFieldDefinition(NewFieldDefinition(0, "engineers", PORTABLE_ARRAY, classDef.factoryId, classDef.classId))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer := NewPortableSerializer(service, config.GetPortableFactories(), 0)
+	serializer := NewPortableSerializer(service, config.PortableFactories(), 0)
 	pw := NewDefaultPortableWriter(serializer, o, classDef)
 	pw.WritePortableArray("engineers", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)

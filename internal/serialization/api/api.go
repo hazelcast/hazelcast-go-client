@@ -6,20 +6,20 @@ type IdentifiedDataSerializableFactory interface {
 type IdentifiedDataSerializable interface {
 	ReadData(input DataInput) error
 	WriteData(output DataOutput)
-	GetFactoryId() int32
-	GetClassId() int32
+	FactoryId() int32
+	ClassId() int32
 }
 
 type Portable interface {
-	GetFactoryId() int32
-	GetClassId() int32
+	FactoryId() int32
+	ClassId() int32
 	WritePortable(writer PortableWriter)
 	ReadPortable(reader PortableReader)
 }
 
 type VersionedPortable interface {
 	Portable
-	GetVersion() int32
+	Version() int32
 }
 
 type PortableFactory interface {
@@ -27,7 +27,8 @@ type PortableFactory interface {
 }
 
 type DataOutput interface {
-	GetPosition() int32
+	Position() int32
+	SetPosition(pos int32)
 	WriteByte(v byte)
 	WriteBool(v bool)
 	WriteUInt16(v uint16)
@@ -63,7 +64,7 @@ type PositionalDataOutput interface {
 }
 
 type DataInput interface {
-	GetPosition() int32
+	Position() int32
 	SetPosition(pos int32)
 	ReadByte() (byte, error)
 	ReadBool() (bool, error)

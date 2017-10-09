@@ -41,15 +41,15 @@ func (sc *SerializationConfig) IsBigEndian() bool {
 	return sc.isBigEndian
 }
 
-func (sc *SerializationConfig) GetDataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
+func (sc *SerializationConfig) DataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
 	return sc.dataSerializableFactories
 }
 
-func (sc *SerializationConfig) GetPortableFactories() map[int32]PortableFactory {
+func (sc *SerializationConfig) PortableFactories() map[int32]PortableFactory {
 	return sc.portableFactories
 }
 
-func (sc *SerializationConfig) GetPortableVersion() int32 {
+func (sc *SerializationConfig) PortableVersion() int32 {
 	return sc.portableVersion
 }
 

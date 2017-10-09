@@ -25,11 +25,11 @@ type student struct {
 	name string
 }
 
-func (*student) GetFactoryId() int32 {
+func (*student) FactoryId() int32 {
 	return 2
 }
 
-func (*student) GetClassId() int32 {
+func (*student) ClassId() int32 {
 	return 1
 }
 
@@ -83,11 +83,11 @@ type fake struct {
 	portable_arr []Portable
 }
 
-func (*fake) GetFactoryId() int32 {
+func (*fake) FactoryId() int32 {
 	return 2
 }
 
-func (*fake) GetClassId() int32 {
+func (*fake) ClassId() int32 {
 	return 2
 }
 

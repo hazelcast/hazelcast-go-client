@@ -15,7 +15,7 @@ func NewPortableSerializer(service *SerializationService, portableFactories map[
 	return &PortableSerializer{service, NewPortableContext(service, portableVersion), portableFactories}
 }
 
-func (ps *PortableSerializer) GetId() int32 {
+func (ps *PortableSerializer) Id() int32 {
 	return CONSTANT_TYPE_PORTABLE
 }
 
@@ -46,7 +46,7 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 	portable := factory.Create(classId)
 	classDefinition := ps.portableContext.LookUpClassDefinition(factoryId, classId, version)
 	if classDefinition == nil {
-		var backupPos = input.GetPosition()
+		var backupPos = input.Position()
 		//TODO throwing error
 		///try{
 		classDefinition = ps.portableContext.ReadClassDefinitionFromInput(input, factoryId, classId, version)
@@ -55,7 +55,7 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 		//}
 	}
 	var reader PortableReader
-	if classDefinition.version == ps.portableContext.GetClassVersion(portable) {
+	if classDefinition.version == ps.portableContext.ClassVersion(portable) {
 		reader = NewDefaultPortableReader(ps, input, classDefinition)
 	} else {
 		reader = NewMorphingPortableReader(ps, input, classDefinition)
@@ -66,8 +66,8 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 }
 
 func (ps *PortableSerializer) Write(output DataOutput, i interface{}) {
-	output.WriteInt32(i.(Portable).GetFactoryId())
-	output.WriteInt32(i.(Portable).GetClassId())
+	output.WriteInt32(i.(Portable).FactoryId())
+	output.WriteInt32(i.(Portable).ClassId())
 	ps.WriteObject(output, i)
 }
 

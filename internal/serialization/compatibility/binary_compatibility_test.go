@@ -11,20 +11,6 @@ import (
 	"testing"
 )
 
-type BinaryCompatibilityTest struct {
-	version   byte
-	object    interface{}
-	byteOrder bool
-}
-
-type i interface {
-	Available() int32
-	ReadInt32() (int32, error)
-	ReadUTF() (string, error)
-	GetPosition() int32
-	SetPosition(pos int32)
-}
-
 func TestBinaryCompatibility(t *testing.T) {
 	var supporteds []string = []string{
 		"1-NULL-BIG_ENDIAN",
@@ -83,8 +69,8 @@ func TestBinaryCompatibility(t *testing.T) {
 		objectKey, _ := i.ReadUTF()
 		length, _ := i.ReadInt32()
 		if length != NULL_ARRAY_LENGTH {
-			payload := dat[i.GetPosition() : i.GetPosition()+length]
-			i.SetPosition(i.GetPosition() + length)
+			payload := dat[i.Position() : i.Position()+length]
+			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {
 				dataMap[objectKey] = &serialization.Data{payload}
 			}

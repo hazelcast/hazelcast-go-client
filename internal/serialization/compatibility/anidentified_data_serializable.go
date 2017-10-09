@@ -39,11 +39,11 @@ type anIdentifiedDataSerializable struct {
 	identifiedDataSerializableObject api.IdentifiedDataSerializable
 }
 
-func (*anIdentifiedDataSerializable) GetClassId() int32 {
+func (*anIdentifiedDataSerializable) ClassId() int32 {
 	return DATA_SERIALIZABLE_CLASS_ID
 }
 
-func (*anIdentifiedDataSerializable) GetFactoryId() int32 {
+func (*anIdentifiedDataSerializable) FactoryId() int32 {
 	return IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID
 }
 

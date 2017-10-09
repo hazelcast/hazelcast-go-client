@@ -7,7 +7,7 @@ import (
 
 type NilSerializer struct{}
 
-func (*NilSerializer) GetId() int32 {
+func (*NilSerializer) Id() int32 {
 	return CONSTANT_TYPE_NULL
 }
 
@@ -27,7 +27,7 @@ func NewIdentifiedDataSerializableSerializer(factories map[int32]IdentifiedDataS
 	return &IdentifiedDataSerializableSerializer{factories: factories}
 }
 
-func (*IdentifiedDataSerializableSerializer) GetId() int32 {
+func (*IdentifiedDataSerializableSerializer) Id() int32 {
 	return CONSTANT_TYPE_DATA_SERIALIZABLE
 }
 
@@ -65,14 +65,14 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interface{}) {
 	r := i.(IdentifiedDataSerializable)
 	output.WriteBool(true)
-	output.WriteInt32(r.GetFactoryId())
-	output.WriteInt32(r.GetClassId())
+	output.WriteInt32(r.FactoryId())
+	output.WriteInt32(r.ClassId())
 	r.WriteData(output)
 }
 
 type ByteSerializer struct{}
 
-func (*ByteSerializer) GetId() int32 {
+func (*ByteSerializer) Id() int32 {
 	return CONSTANT_TYPE_BYTE
 }
 
@@ -86,7 +86,7 @@ func (*ByteSerializer) Write(output DataOutput, i interface{}) {
 
 type BoolSerializer struct{}
 
-func (*BoolSerializer) GetId() int32 {
+func (*BoolSerializer) Id() int32 {
 	return CONSTANT_TYPE_BOOLEAN
 }
 
@@ -100,7 +100,7 @@ func (*BoolSerializer) Write(output DataOutput, i interface{}) {
 
 type UInteger16Serializer struct{}
 
-func (*UInteger16Serializer) GetId() int32 {
+func (*UInteger16Serializer) Id() int32 {
 	return CONSTANT_TYPE_CHAR
 }
 
@@ -114,7 +114,7 @@ func (*UInteger16Serializer) Write(output DataOutput, i interface{}) {
 
 type Integer16Serializer struct{}
 
-func (*Integer16Serializer) GetId() int32 {
+func (*Integer16Serializer) Id() int32 {
 	return CONSTANT_TYPE_SHORT
 }
 
@@ -128,7 +128,7 @@ func (*Integer16Serializer) Write(output DataOutput, i interface{}) {
 
 type Integer32Serializer struct{}
 
-func (*Integer32Serializer) GetId() int32 {
+func (*Integer32Serializer) Id() int32 {
 	return CONSTANT_TYPE_INTEGER
 }
 
@@ -142,7 +142,7 @@ func (*Integer32Serializer) Write(output DataOutput, i interface{}) {
 
 type Integer64Serializer struct{}
 
-func (*Integer64Serializer) GetId() int32 {
+func (*Integer64Serializer) Id() int32 {
 	return CONSTANT_TYPE_LONG
 }
 
@@ -156,7 +156,7 @@ func (*Integer64Serializer) Write(output DataOutput, i interface{}) {
 
 type Float32Serializer struct{}
 
-func (*Float32Serializer) GetId() int32 {
+func (*Float32Serializer) Id() int32 {
 	return CONSTANT_TYPE_FLOAT
 }
 
@@ -170,7 +170,7 @@ func (*Float32Serializer) Write(output DataOutput, i interface{}) {
 
 type Float64Serializer struct{}
 
-func (*Float64Serializer) GetId() int32 {
+func (*Float64Serializer) Id() int32 {
 	return CONSTANT_TYPE_DOUBLE
 }
 
@@ -184,7 +184,7 @@ func (*Float64Serializer) Write(output DataOutput, i interface{}) {
 
 type StringSerializer struct{}
 
-func (*StringSerializer) GetId() int32 {
+func (*StringSerializer) Id() int32 {
 	return CONSTANT_TYPE_STRING
 }
 
@@ -198,7 +198,7 @@ func (*StringSerializer) Write(output DataOutput, i interface{}) {
 
 type ByteArraySerializer struct{}
 
-func (*ByteArraySerializer) GetId() int32 {
+func (*ByteArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_BYTE_ARRAY
 }
 
@@ -212,7 +212,7 @@ func (*ByteArraySerializer) Write(output DataOutput, i interface{}) {
 
 type BoolArraySerializer struct{}
 
-func (*BoolArraySerializer) GetId() int32 {
+func (*BoolArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_BOOLEAN_ARRAY
 }
 
@@ -226,7 +226,7 @@ func (*BoolArraySerializer) Write(output DataOutput, i interface{}) {
 
 type UInteger16ArraySerializer struct{}
 
-func (*UInteger16ArraySerializer) GetId() int32 {
+func (*UInteger16ArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_CHAR_ARRAY
 }
 
@@ -240,7 +240,7 @@ func (*UInteger16ArraySerializer) Write(output DataOutput, i interface{}) {
 
 type Integer16ArraySerializer struct{}
 
-func (*Integer16ArraySerializer) GetId() int32 {
+func (*Integer16ArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_SHORT_ARRAY
 }
 
@@ -254,7 +254,7 @@ func (*Integer16ArraySerializer) Write(output DataOutput, i interface{}) {
 
 type Integer32ArraySerializer struct{}
 
-func (*Integer32ArraySerializer) GetId() int32 {
+func (*Integer32ArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_INTEGER_ARRAY
 }
 
@@ -268,7 +268,7 @@ func (*Integer32ArraySerializer) Write(output DataOutput, i interface{}) {
 
 type Integer64ArraySerializer struct{}
 
-func (*Integer64ArraySerializer) GetId() int32 {
+func (*Integer64ArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_LONG_ARRAY
 }
 
@@ -282,7 +282,7 @@ func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) {
 
 type Float32ArraySerializer struct{}
 
-func (*Float32ArraySerializer) GetId() int32 {
+func (*Float32ArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_FLOAT_ARRAY
 }
 
@@ -296,7 +296,7 @@ func (*Float32ArraySerializer) Write(output DataOutput, i interface{}) {
 
 type Float64ArraySerializer struct{}
 
-func (*Float64ArraySerializer) GetId() int32 {
+func (*Float64ArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_DOUBLE_ARRAY
 }
 
@@ -310,7 +310,7 @@ func (*Float64ArraySerializer) Write(output DataOutput, i interface{}) {
 
 type StringArraySerializer struct{}
 
-func (*StringArraySerializer) GetId() int32 {
+func (*StringArraySerializer) Id() int32 {
 	return CONSTANT_TYPE_STRING_ARRAY
 }
 

@@ -7,11 +7,11 @@ type AnInnerPortable struct {
 	aFloat float32
 }
 
-func (*AnInnerPortable) GetFactoryId() int32 {
+func (*AnInnerPortable) FactoryId() int32 {
 	return PORTABLE_FACTORY_ID
 }
 
-func (*AnInnerPortable) GetClassId() int32 {
+func (*AnInnerPortable) ClassId() int32 {
 	return INNER_PORTABLE_CLASS_ID
 }
 

@@ -48,18 +48,18 @@ func (e *employee) WriteData(output DataOutput) {
 	output.WriteUTF(e.name)
 }
 
-func (*employee) GetFactoryId() int32 {
+func (*employee) FactoryId() int32 {
 	return 4
 }
 
-func (*employee) GetClassId() int32 {
+func (*employee) ClassId() int32 {
 	return 1
 }
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 employee = employee{22, "Furkan Şenharputlu"}
 	c := NewSerializationConfig()
-	c.AddDataSerializableFactory(employee1.GetFactoryId(), factory{})
+	c.AddDataSerializableFactory(employee1.FactoryId(), factory{})
 
 	service := NewSerializationService(c)
 

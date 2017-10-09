@@ -15,7 +15,6 @@ func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
 	if bytes.Compare(buf, expectedBuf) != 0 {
 		t.Errorf("EnsureAvailable() makes ", buf, " expected ", expectedBuf)
 	}
-
 }
 
 func TestObjectDataOutput_ToBuffer(t *testing.T) {

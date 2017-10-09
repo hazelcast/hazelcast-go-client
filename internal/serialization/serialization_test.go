@@ -7,7 +7,7 @@ import (
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	var id int32 = NewSerializationService(NewSerializationConfig()).LookUpDefaultSerializer(a).GetId()
+	var id int32 = NewSerializationService(NewSerializationConfig()).LookUpDefaultSerializer(a).Id()
 	var expectedId int32 = -7
 	if id != expectedId {
 		t.Errorf("LookUpDefaultSerializer() returns ", id, " expected ", expectedId)

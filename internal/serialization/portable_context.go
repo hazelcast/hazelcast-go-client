@@ -15,7 +15,7 @@ func NewPortableContext(service *SerializationService, portableVersion int32) *P
 	return &PortableContext{service, portableVersion, make(map[int32]*ClassDefinitionContext)}
 }
 
-func (c *PortableContext) GetVersion() int32 {
+func (c *PortableContext) Version() int32 {
 	return c.portableVersion
 }
 
@@ -24,7 +24,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 	classDefWriter := NewClassDefinitionWriter(c, factoryId, classId, version)
 	input.ReadInt32()
 	fieldCount, _ := input.ReadInt32()
-	offset := input.GetPosition()
+	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
 		pos, _ := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*INT_SIZE_IN_BYTES)
 		input.SetPosition(pos)
@@ -76,8 +76,8 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 }
 
 func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable Portable) *ClassDefinition {
-	version := c.GetClassVersion(portable)
-	classDef := c.LookUpClassDefinition(portable.GetFactoryId(), portable.GetClassId(), version)
+	version := c.ClassVersion(portable)
+	classDef := c.LookUpClassDefinition(portable.FactoryId(), portable.ClassId(), version)
 	if classDef == nil {
 		classDef = c.GenerateClassDefinitionForPortable(portable)
 		c.RegisterClassDefinition(classDef)
@@ -96,8 +96,8 @@ func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, 
 }
 
 func (c *PortableContext) GenerateClassDefinitionForPortable(portable Portable) *ClassDefinition {
-	version := c.GetClassVersion(portable)
-	classDefinitionWriter := NewClassDefinitionWriter(c, portable.GetFactoryId(), portable.GetClassId(), version)
+	version := c.ClassVersion(portable)
+	classDefinitionWriter := NewClassDefinitionWriter(c, portable.FactoryId(), portable.ClassId(), version)
 	portable.WritePortable(classDefinitionWriter)
 	classDefinitionWriter.End()
 	return classDefinitionWriter.RegisterAndGet()
@@ -111,7 +111,7 @@ func (c *PortableContext) RegisterClassDefinition(classDefinition *ClassDefiniti
 	return c.classDefContext[factoryId].Register(classDefinition)
 }
 
-func (c *PortableContext) GetClassVersion(portable Portable) int32 {
+func (c *PortableContext) ClassVersion(portable Portable) int32 {
 	//TODO should be controlled
 	return c.portableVersion
 }

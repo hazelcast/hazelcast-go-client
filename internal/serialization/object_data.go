@@ -25,8 +25,12 @@ func (o *ObjectDataOutput) Available() int {
 	}
 }
 
-func (o *ObjectDataOutput) GetPosition() int32 {
+func (o *ObjectDataOutput) Position() int32 {
 	return o.position
+}
+
+func (o *ObjectDataOutput) SetPosition(pos int32) {
+	o.position = pos
 }
 
 func (o *ObjectDataOutput) ToBuffer() []byte {
@@ -282,7 +286,7 @@ func (i *ObjectDataInput) AssertAvailable(numOfBytes int) error {
 	}
 }
 
-func (i *ObjectDataInput) GetPosition() int32 {
+func (i *ObjectDataInput) Position() int32 {
 	return i.position
 }
 

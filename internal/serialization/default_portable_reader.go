@@ -18,7 +18,7 @@ type DefaultPortableReader struct {
 func NewDefaultPortableReader(serializer *PortableSerializer, input DataInput, classdefinition *ClassDefinition) *DefaultPortableReader {
 	finalPos, _ := input.ReadInt32()
 	input.ReadInt32()
-	offset := input.GetPosition()
+	offset := input.Position()
 	return &DefaultPortableReader{serializer, input, classdefinition, offset, finalPos, false}
 }
 
@@ -163,7 +163,7 @@ func (pr *DefaultPortableReader) ReadUTF(fieldName string) (string, error) {
 }
 
 func (pr *DefaultPortableReader) ReadPortable(fieldName string) (Portable, error) {
-	backupPos := pr.input.GetPosition()
+	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 	//try {
 	// TODO error returning
@@ -267,7 +267,7 @@ func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) ([]string, error
 }
 
 func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]Portable, error) {
-	backupPos := pr.input.GetPosition()
+	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 
 	pos, err := pr.positionByField(fieldName, PORTABLE_ARRAY)
@@ -289,7 +289,7 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]Portable
 	}
 	var portables []Portable = make([]Portable, length)
 	if length > 0 {
-		offset := pr.input.GetPosition()
+		offset := pr.input.Position()
 		for i := int32(0); i < length; i++ {
 			start, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*INT_SIZE_IN_BYTES)
 			if err != nil {

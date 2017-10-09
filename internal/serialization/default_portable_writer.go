@@ -14,10 +14,10 @@ type DefaultPortableWriter struct {
 }
 
 func NewDefaultPortableWriter(serializer *PortableSerializer, output PositionalDataOutput, classDefinition *ClassDefinition) *DefaultPortableWriter {
-	begin := output.GetPosition()
+	begin := output.Position()
 	output.WriteZeroBytes(4)
 	output.WriteInt32(int32(len(classDefinition.fields)))
-	offset := output.GetPosition()
+	offset := output.Position()
 	fieldIndexesLength := (len(classDefinition.fields) + 1) * INT_SIZE_IN_BYTES
 	output.WriteZeroBytes(fieldIndexesLength)
 	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset}
@@ -148,11 +148,11 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	pw.output.WriteInt32(fieldDefinition.classId)
 
 	if length > 0 {
-		innerOffset = pw.output.GetPosition()
+		innerOffset = pw.output.Position()
 		pw.output.WriteZeroBytes(int(length) * 4)
 		for i := int32(0); i < length; i++ {
 			sample = portableArray[i]
-			posVal := pw.output.GetPosition()
+			posVal := pw.output.Position()
 			pw.output.PWriteInt32(innerOffset+i*INT_SIZE_IN_BYTES, posVal)
 			pw.serializer.WriteObject(pw.output, sample)
 		}
@@ -162,7 +162,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) *FieldDefinition {
 	field := pw.classDefinition.fields[fieldName]
-	pos := pw.output.GetPosition()
+	pos := pw.output.Position()
 	index := field.index
 	pw.output.PWriteInt32(pw.offset+index*INT_SIZE_IN_BYTES, pos)
 	pw.output.WriteInt16(int16(len(fieldName)))
@@ -172,6 +172,6 @@ func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) 
 }
 
 func (pw *DefaultPortableWriter) End() {
-	position := pw.output.GetPosition()
+	position := pw.output.Position()
 	pw.output.PWriteInt32(pw.begin, position)
 }
