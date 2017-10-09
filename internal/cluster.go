@@ -108,7 +108,12 @@ func (clusterService *ClusterService) AddListener(listener interface{}) *string 
 	clusterService.mu.Lock()
 	defer clusterService.mu.Unlock()
 	listeners := clusterService.listeners.Load().(map[string]interface{})
-	listeners[registrationId] = listener
+	copyListeners := make(map[string]interface{}, len(listeners)+1)
+	for k, v := range listeners {
+		copyListeners[k] = v
+	}
+	copyListeners[registrationId] = listener
+	clusterService.listeners.Store(copyListeners)
 	return &registrationId
 }
 func (clusterService *ClusterService) RemoveListener(registrationId *string) bool {
