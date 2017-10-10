@@ -276,7 +276,7 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]Portable
 	}
 	pr.input.SetPosition(pos)
 	length, err := pr.input.ReadInt32()
-	if err != nil || length == NULL_ARRAY_LENGTH {
+	if err != nil || length == NIL_ARRAY_LENGTH {
 		return nil, err
 	}
 	factoryId, err := pr.input.ReadInt32()

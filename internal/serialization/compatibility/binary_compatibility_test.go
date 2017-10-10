@@ -68,7 +68,7 @@ func TestBinaryCompatibility(t *testing.T) {
 	for i.Available() != 0 {
 		objectKey, _ := i.ReadUTF()
 		length, _ := i.ReadInt32()
-		if length != NULL_ARRAY_LENGTH {
+		if length != NIL_ARRAY_LENGTH {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {

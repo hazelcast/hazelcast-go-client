@@ -195,6 +195,21 @@ func TestObjectDataInput_ReadUTF(t *testing.T) {
 	}
 }
 
+func TestObjectDataInput_ReadUTF2(t *testing.T) {
+	o := NewObjectDataOutput(0, nil, false)
+	o.WriteUTF("Furkan Şenharputlu")
+	o.WriteUTF("Jack")
+	o.WriteUTF("⚐中💦2😭‍🙆😔")
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	expectedRet := "⚐中💦2😭‍🙆😔"
+	i.ReadUTF()
+	i.ReadUTF()
+	ret, _ := i.ReadUTF()
+	if ret != expectedRet {
+		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
+	}
+}
+
 func TestObjectDataInput_ReadObject(t *testing.T) {
 	conf := config.NewSerializationConfig()
 	service := NewSerializationService(conf)

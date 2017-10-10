@@ -78,7 +78,7 @@ func WriteUInt8(buf []byte, pos int32, v uint8) {
 	buf[pos] = v
 }
 
-func ReadUInt8(buf []byte, pos int32) byte {
+func ReadUInt8(buf []byte, pos int32) uint8 {
 	return buf[pos]
 }
 

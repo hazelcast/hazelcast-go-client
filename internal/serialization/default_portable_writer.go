@@ -141,7 +141,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	if portableArray != nil {
 		length = int32(len(portableArray))
 	} else {
-		length = NULL_ARRAY_LENGTH
+		length = NIL_ARRAY_LENGTH
 	}
 	pw.output.WriteInt32(length)
 	pw.output.WriteInt32(fieldDefinition.factoryId)
