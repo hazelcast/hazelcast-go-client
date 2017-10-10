@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 	}
 }
 func AssertNilf(t *testing.T, err error, l interface{}, message string) {
-	if !reflect.ValueOf(l).IsNil() {
+	if l != nil {
 		t.Fatalf("%v != nil", l)
 	}
 }

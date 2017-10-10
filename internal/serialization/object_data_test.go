@@ -290,9 +290,9 @@ func TestObjectDataInput_ReadUInt16Array(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadInt16Array(t *testing.T) {
-	var array []int16 = nil //[]int16{3, 4, 5, -50, -123, -34, 22, 0}
+	var array []int16 = []int16{3, 4, 5, -50, -123, -34, 22, 0}
 	o := NewObjectDataOutput(0, nil, false)
-	o.WriteInt16Array(nil)
+	o.WriteInt16Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadInt16Array()
 
