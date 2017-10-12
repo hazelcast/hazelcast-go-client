@@ -19,6 +19,7 @@ func NewHazelcastConfig() *config.ClientConfig {
 
 type IHazelcastInstance interface {
 	GetMap(name *string) core.IMap
+	GetConnectionManager() core.IConnectionManager
 	Shutdown()
 	GetCluster() core.ICluster
 }

@@ -26,6 +26,9 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 	client.init()
 	return &client
 }
+func (client *HazelcastClient) GetConnectionManager() core.IConnectionManager {
+	return client.ConnectionManager
+}
 func (client *HazelcastClient) GetMap(name *string) core.IMap {
 	return newMapProxy(client, name)
 }
