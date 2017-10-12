@@ -359,3 +359,13 @@ func GetEntryListenerFlags(listener interface{}) int32 {
 	}
 	return flags
 }
+
+type IConnection interface {
+}
+
+type IOnHeartbeatStopped interface {
+	OnHeartbeatStopped(connection IConnection)
+}
+type IOnHeartbeatRestored interface {
+	OnHeartbeatRestored(connection IConnection)
+}
