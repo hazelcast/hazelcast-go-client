@@ -51,6 +51,7 @@ func (client *HazelcastClient) init() {
 	client.ClusterService.start()
 	client.HeartBeatService.start()
 	client.PartitionService.start()
+	client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_STARTED)
 }
 func (client *HazelcastClient) Shutdown() {
 	if client.LifecycleService.isLive {
