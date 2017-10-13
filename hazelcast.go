@@ -21,4 +21,5 @@ type IHazelcastInstance interface {
 	GetMap(name *string) core.IMap
 	Shutdown()
 	GetCluster() core.ICluster
+	GetLifecycle() core.ILifecycle
 }
