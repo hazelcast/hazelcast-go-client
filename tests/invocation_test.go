@@ -2,6 +2,7 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/internal"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig.SmartRouting = false
 	client := hazelcast.NewHazelcastClientWithConfig(config)
-	connectionCount := client.GetConnectionManager().ConnectionCount()
+	connectionCount := client.(*internal.HazelcastClient).ConnectionManager.ConnectionCount()
 	AssertEqualf(t, nil, int32(1), connectionCount, "Client should open only one connection")
 	remoteController.ShutdownCluster(cluster.ID)
 }
