@@ -3,10 +3,13 @@ package tests
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
+	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 type membershipListener struct {
@@ -97,4 +100,52 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestRestartMember(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	client := hazelcast.NewHazelcastClient()
+	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
+	wg.Add(3)
+	client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	remoteController.StartMember(cluster.ID)
+	time.Sleep(5 * time.Second) //Wait for the client to reconnect
+	remoteController.ShutdownCluster(cluster.ID)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "clusterService reconnect has failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[1], internal.LIFECYCLE_STATE_CONNECTED, "clusterService reconnect has failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[2], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
+}
+func TestListenerReregister(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	client := hazelcast.NewHazelcastClient()
+	entryAdded := &mapListener{wg: wg}
+	mapName := "testMap"
+	mp := client.GetMap(&mapName)
+	_, err := mp.AddEntryListener(entryAdded, true)
+	AssertEqual(t, err, nil, nil)
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	remoteController.StartMember(cluster.ID)
+	wg.Add(100)
+	for i := 0; i < 100; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp.Put(testKey, testValue)
+	}
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "listener reregister failed")
+	remoteController.ShutdownCluster(cluster.ID)
+}
+
+type mapListener struct {
+	wg *sync.WaitGroup
+}
+
+func (ml *mapListener) EntryAdded(event core.IEntryEvent) {
+	ml.wg.Done()
 }

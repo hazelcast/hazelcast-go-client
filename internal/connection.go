@@ -27,15 +27,17 @@ type Connection struct {
 	lastRead             time.Time
 	heartBeating         bool
 	readBuffer           []byte
+	connectionManager    *ConnectionManager
 }
 
-func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64) *Connection {
+func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionManager *ConnectionManager) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
 		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
-		heartBeating: true,
-		readBuffer:   make([]byte, 0),
+		heartBeating:      true,
+		readBuffer:        make([]byte, 0),
+		connectionManager: connectionManager,
 	}
 	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
@@ -130,5 +132,6 @@ func (connection *Connection) Close() {
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
 		return
 	}
+	connection.connectionManager.connectionClosed(connection, "")
 	close(connection.closed)
 }

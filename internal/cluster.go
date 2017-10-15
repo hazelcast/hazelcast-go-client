@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"github.com/hazelcast/go-client/config"
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
@@ -38,6 +39,7 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
 		service.AddListener(membershipListener)
 	}
+	service.client.ConnectionManager.AddListener(service.connectionClosed)
 	return service
 }
 func (clusterService *ClusterService) start() {
@@ -49,7 +51,13 @@ func getPossibleAddresses(addressList *[]config.Address, memberList []Member) *[
 	addresses = append(addresses, *NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT))
 	return &addresses
 }
-func (clusterService *ClusterService) connectToCluster() {
+func (clusterService *ClusterService) reconnect() {
+	err := clusterService.connectToCluster()
+	if err != nil {
+		clusterService.client.Shutdown()
+	}
+}
+func (clusterService *ClusterService) connectToCluster() error {
 	members := clusterService.members.Load().([]Member)
 	addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig.Addresses, members)
 	currentAttempt := int32(1)
@@ -67,9 +75,10 @@ func (clusterService *ClusterService) connectToCluster() {
 				time.Sleep(time.Duration(retryDelay))
 				continue
 			}
-			return
+			return nil
 		}
 	}
+	return errors.New("Couldn't connect to the cluster")
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	connectionChannel := clusterService.client.ConnectionManager.GetConnection(address)
@@ -193,4 +202,12 @@ func (clusterService *ClusterService) GetMemberList() []core.IMember {
 		members[i] = core.IMember(&m)
 	}
 	return members
+}
+func (clusterService *ClusterService) connectionClosed(connection *Connection) {
+	if connection.endpoint != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
+		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
+		clusterService.ownerConnectionAddress = nil
+		clusterService.members.Store(make([]Member, 0)) //Clear members as the owner connection is closed.
+		go clusterService.reconnect()
+	}
 }

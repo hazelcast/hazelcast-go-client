@@ -5,20 +5,60 @@ import (
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"strconv"
 	"sync"
+	"sync/atomic"
 )
 
+type onConnectionClosed func(connection *Connection)
+type onConnectionOpened func(connection *Connection)
+
 type ConnectionManager struct {
-	client       *HazelcastClient
-	connections  map[string]*Connection
-	ownerAddress *Address
-	lock         sync.RWMutex
+	client                    *HazelcastClient
+	connections               map[string]*Connection
+	ownerAddress              *Address
+	lock                      sync.RWMutex
+	connectionClosedListeners atomic.Value
+	connectionOpenListeners   atomic.Value
+	mu                        sync.Mutex
 }
 
 func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 	cm := ConnectionManager{client: client,
 		connections: make(map[string]*Connection),
 	}
+	cm.connectionOpenListeners.Store(make([]onConnectionOpened, 0))   //Initialize
+	cm.connectionClosedListeners.Store(make([]onConnectionClosed, 0)) //Initialize
 	return &cm
+}
+func (connectionManager *ConnectionManager) AddListener(closedListener onConnectionClosed) {
+	connectionManager.mu.Lock()
+	defer connectionManager.mu.Unlock()
+	if &closedListener != nil {
+		listeners := connectionManager.connectionClosedListeners.Load().([]onConnectionClosed)
+		size := len(listeners) + 1
+		copyListeners := make([]onConnectionClosed, size)
+		for index, listener := range listeners {
+			copyListeners[index] = listener
+		}
+		copyListeners[size-1] = closedListener
+		connectionManager.connectionClosedListeners.Store(copyListeners)
+	}
+}
+
+func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause string) {
+	//If connection was authenticated fire event
+	if connection.endpoint != nil {
+		connectionManager.lock.Lock()
+		defer connectionManager.lock.Unlock()
+		delete(connectionManager.connections, connection.endpoint.Host()+":"+strconv.Itoa(connection.endpoint.Port()))
+		listeners := connectionManager.connectionClosedListeners.Load().([]onConnectionClosed)
+		for _, listener := range listeners {
+			listener(connection)
+		}
+	} else {
+		//Clean up unauthenticated connection
+		//TODO::Send the cause as well
+		connectionManager.client.InvocationService.cleanupConnection(connection)
+	}
 }
 func (connectionManager *ConnectionManager) GetConnection(address *Address) chan *Connection {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
@@ -45,7 +85,7 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
-	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
+	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionManager)
 	if con == nil {
 		close(resp)
 		return
