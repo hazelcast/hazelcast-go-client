@@ -84,8 +84,8 @@ func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
 	connection.heartBeating = true
 	listeners := heartBeat.listeners.Load().([]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(protocol.IOnHeartbeatRestored); ok {
-			listener.(protocol.IOnHeartbeatRestored).OnHeartbeatRestored(connection)
+		if _, ok := listener.(IOnHeartbeatRestored); ok {
+			listener.(IOnHeartbeatRestored).OnHeartbeatRestored(connection)
 		}
 	}
 }
@@ -93,11 +93,18 @@ func (heartBeat *HeartBeatService) onHeartBeatStopped(connection *Connection) {
 	connection.heartBeating = false
 	listeners := heartBeat.listeners.Load().([]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(protocol.IOnHeartbeatStopped); ok {
-			listener.(protocol.IOnHeartbeatStopped).OnHeartbeatStopped(connection)
+		if _, ok := listener.(IOnHeartbeatStopped); ok {
+			listener.(IOnHeartbeatStopped).OnHeartbeatStopped(connection)
 		}
 	}
 }
 func (heartBeat *HeartBeatService) shutdown() {
 	close(heartBeat.cancel)
+}
+
+type IOnHeartbeatStopped interface {
+	OnHeartbeatStopped(connection *Connection)
+}
+type IOnHeartbeatRestored interface {
+	OnHeartbeatRestored(connection *Connection)
 }
