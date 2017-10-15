@@ -11,6 +11,20 @@ type proxy struct {
 	name        *string
 }
 
+func (proxy *proxy) Destroy() bool {
+	return proxy.client.ProxyManager.destroyProxy(proxy.serviceName, proxy.name)
+}
+
+func (proxy *proxy) Name() string {
+	return *proxy.name
+}
+func (proxy *proxy) PartitionKey() string {
+	return *proxy.name
+}
+func (proxy *proxy) ServiceName() string {
+	return *proxy.serviceName
+}
+
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {
 	return proxy.client.InvocationService.InvokeOnKeyOwner(request, keyData).Result()
 }
@@ -26,13 +40,4 @@ func (proxy *proxy) ToObject(data *Data) (interface{}, error) {
 
 func (proxy *proxy) ToData(object interface{}) (*Data, error) {
 	return proxy.client.SerializationService.ToData(object)
-}
-
-type partitionSpecificProxy struct {
-	partitionId int32
-	proxy
-}
-
-func (psproxy *partitionSpecificProxy) EncodeInvoke(){
-
 }

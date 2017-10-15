@@ -613,10 +613,3 @@ func (imap *MapProxy) RemoveEntryListener(registrationId *string) error {
 		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
 	})
 }
-
-func (imap *MapProxy) Destroy(){}
-func (imap *MapProxy) GetName() string{return ""}
-func (imap *MapProxy) GetPartitionKey() string{return ""}
-func (imap *MapProxy) GetServiceName() string{return ""}
-
-

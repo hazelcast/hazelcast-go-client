@@ -3,6 +3,7 @@ package internal
 import (
 	. "github.com/hazelcast/go-client/config"
 	"github.com/hazelcast/go-client/core"
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
 )
 
@@ -28,13 +29,15 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 }
 
 func (client *HazelcastClient) GetMap(name *string) core.IMap {
-	mapProxy := &MapProxy{client.ProxyManager.GetOrCreateProxy(name, &MAP_SERVICE)}
-	return mapProxy
+	mapService := SERVICE_NAME_MAP
+	return client.GetDistributedObject(&mapService, name).(core.IMap)
 }
 
-func (client *HazelcastClient) GetList(name *string) core.IList {
-	return newMapProxy(client, name)
+func (client *HazelcastClient) GetDistributedObject(serviceName *string, name *string) core.IDistributedObject {
+	var clientProxy = client.ProxyManager.GetOrCreateProxy(serviceName, name)
+	return clientProxy
 }
+
 func (client *HazelcastClient) GetCluster() core.ICluster {
 	return client.ClusterService
 }
