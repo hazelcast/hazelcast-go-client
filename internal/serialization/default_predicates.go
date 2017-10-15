@@ -12,19 +12,21 @@ func NewSqlPredicate(sql string) SqlPredicate {
 	return SqlPredicate{sql}
 }
 
-func (sp *SqlPredicate) ReadData(input DataInput) {
-	sp.sql = input.ReadUTF()
+func (sp *SqlPredicate) ReadData(input DataInput) error {
+	var err error
+	sp.sql, err = input.ReadUTF()
+	return err
 }
 
 func (sp *SqlPredicate) WriteData(output DataOutput) {
 	output.WriteUTF(sp.sql)
 }
 
-func (sp *SqlPredicate) GetFactoryId() int32 {
+func (sp *SqlPredicate) FactoryId() int32 {
 	return PREDICATE_FACTORY_ID
 }
 
-func (*SqlPredicate) GetClassId() int32 {
+func (*SqlPredicate) ClassId() int32 {
 	return SQL_PREDICATE
 }
 
@@ -36,13 +38,22 @@ func NewAndPredicate(predicates []IdentifiedDataSerializable) AndPredicate {
 	return AndPredicate{predicates}
 }
 
-func (ap *AndPredicate) ReadData(input DataInput) {
+func (ap *AndPredicate) ReadData(input DataInput) error {
+	var err error
 	var length int32
-	length, _ = input.ReadInt32()
+	length, err = input.ReadInt32()
+	if err != nil {
+		return err
+	}
 	ap.predicates = make([]IdentifiedDataSerializable, 0)
 	for i := 0; i < int(length); i++ {
-		ap.predicates[i] = input.ReadObject().(IdentifiedDataSerializable)
+		pred, err := input.ReadObject()
+		if err != nil {
+			return err
+		}
+		ap.predicates[i] = pred.(IdentifiedDataSerializable)
 	}
+	return nil
 }
 
 func (ap *AndPredicate) WriteData(output DataOutput) {
@@ -52,10 +63,10 @@ func (ap *AndPredicate) WriteData(output DataOutput) {
 	}
 }
 
-func (ap *AndPredicate) GetFactoryId() int32 {
+func (ap *AndPredicate) FactoryId() int32 {
 	return PREDICATE_FACTORY_ID
 }
 
-func (*AndPredicate) GetClassId() int32 {
+func (*AndPredicate) ClassId() int32 {
 	return AND_PREDICATE
 }

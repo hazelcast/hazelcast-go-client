@@ -1,7 +1,5 @@
 package core
 
-//
-//
 type IAddress interface {
 	Host() string
 	Port() int
@@ -89,4 +87,13 @@ type IEntryMergedListener interface {
 }
 type IEntryExpiredListener interface {
 	EntryExpired(IEntryEvent)
+}
+type IMemberAddedListener interface {
+	MemberAdded(member IMember)
+}
+type IMemberRemovedListener interface {
+	MemberRemoved(member IMember)
+}
+type ILifecycleListener interface {
+	LifecycleStateChanged(string)
 }

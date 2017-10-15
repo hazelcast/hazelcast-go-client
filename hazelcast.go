@@ -13,8 +13,13 @@ func NewHazelcastClient() IHazelcastInstance {
 func NewHazelcastClientWithConfig(config *config.ClientConfig) IHazelcastInstance {
 	return internal.NewHazelcastClient(config)
 }
+func NewHazelcastConfig() *config.ClientConfig {
+	return config.NewClientConfig()
+}
 
 type IHazelcastInstance interface {
 	GetMap(name *string) core.IMap
 	Shutdown()
+	GetCluster() core.ICluster
+	GetLifecycle() core.ILifecycle
 }

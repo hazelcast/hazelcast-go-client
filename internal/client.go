@@ -29,6 +29,13 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 func (client *HazelcastClient) GetMap(name *string) core.IMap {
 	return newMapProxy(client, name)
 }
+func (client *HazelcastClient) GetCluster() core.ICluster {
+	return client.ClusterService
+}
+
+func (client *HazelcastClient) GetLifecycle() core.ILifecycle {
+	return client.LifecycleService
+}
 
 func (client *HazelcastClient) init() {
 	client.InvocationService = NewInvocationService(client)
@@ -44,6 +51,7 @@ func (client *HazelcastClient) init() {
 	client.ClusterService.start()
 	client.HeartBeatService.start()
 	client.PartitionService.start()
+	client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_STARTED)
 }
 func (client *HazelcastClient) Shutdown() {
 	if client.LifecycleService.isLive {

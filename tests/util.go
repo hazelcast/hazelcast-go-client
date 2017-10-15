@@ -6,19 +6,25 @@ import (
 	"time"
 )
 
-var Timeout time.Duration = 2 * time.Minute
+var Timeout time.Duration = 1 * time.Minute
 
-func assertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
+const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
+
+func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
 	if err != nil {
 		t.Fatal(err)
 	}
 	if l != r {
 		t.Fatalf("%v != %v : %v", l, r, message)
 	}
-
+}
+func AssertNilf(t *testing.T, err error, l interface{}, message string) {
+	if l != nil {
+		t.Fatalf("%v != nil", l)
+	}
 }
 
-func assertEqual(t *testing.T, err error, l interface{}, r interface{}) {
+func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +33,7 @@ func assertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 	}
 
 }
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {
 		defer close(c)

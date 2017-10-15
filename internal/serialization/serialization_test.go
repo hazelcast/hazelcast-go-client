@@ -1,13 +1,13 @@
 package serialization
 
 import (
-	"github.com/hazelcast/go-client/config"
+	. "github.com/hazelcast/go-client/config"
 	"testing"
 )
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	var id int32 = NewSerializationService(config.NewSerializationConfig()).LookUpDefaultSerializer(a).GetId()
+	var id int32 = NewSerializationService(NewSerializationConfig()).LookUpDefaultSerializer(a).Id()
 	var expectedId int32 = -7
 	if id != expectedId {
 		t.Errorf("LookUpDefaultSerializer() returns ", id, " expected ", expectedId)
@@ -16,7 +16,7 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
-	c := config.NewSerializationConfig()
+	c := NewSerializationConfig()
 	service := NewSerializationService(c)
 	data, _ := service.ToData(expected)
 	var ret int32

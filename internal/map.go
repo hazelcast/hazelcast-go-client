@@ -1,10 +1,12 @@
 package internal
 
 import (
+	"errors"
 	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
+	"time"
 )
 
 const (
@@ -23,8 +25,13 @@ func newMapProxy(client *HazelcastClient, name *string) *MapProxy {
 	return &mapProxy
 }
 
-//TODO :: Check if key is nil.
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
+	if !CheckNotNil(key) {
+		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -41,8 +48,54 @@ func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interfac
 	responseData := MapPutDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
+func (imap *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return false, err
+	}
+	valueData, err := imap.ToData(value)
+	if err != nil {
+		return false, err
+	}
+	request := MapTryPutEncodeRequest(imap.name, keyData, valueData, THREAD_ID, TTL)
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	ok = MapTryPutDecodeResponse(responseMessage).Response
+	return ok, nil
+}
+func (imap *MapProxy) PutTransient(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
+	if !CheckNotNil(key) {
+		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return err
+	}
+	valueData, err := imap.ToData(value)
+	if err != nil {
+		return err
+	}
+	ttl = GetTimeInMilliSeconds(ttl, ttlTimeUnit)
+	request := MapPutTransientEncodeRequest(imap.name, keyData, valueData, THREAD_ID, ttl)
+	_, err = imap.InvokeOnKey(request, keyData)
+	return err
+}
 func (imap *MapProxy) Get(key interface{}) (value interface{}, err error) {
+	if !CheckNotNil(key) {
+		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -56,6 +109,9 @@ func (imap *MapProxy) Get(key interface{}) (value interface{}, err error) {
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
+	if !CheckNotNil(key) {
+		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -68,6 +124,47 @@ func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
 	responseData := MapRemoveDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
+func (imap *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool, err error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return false, err
+	}
+	valueData, err := imap.ToData(value)
+	if err != nil {
+		return false, err
+	}
+	request := MapRemoveIfSameEncodeRequest(imap.name, keyData, valueData, THREAD_ID)
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	response := MapRemoveIfSameDecodeResponse(responseMessage).Response
+	return response, nil
+}
+func (imap *MapProxy) TryRemove(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (ok bool, err error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return false, err
+	}
+	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
+	request := MapTryRemoveEncodeRequest(imap.name, keyData, THREAD_ID, timeout)
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	response := MapTryRemoveDecodeResponse(responseMessage).Response
+	return response, nil
+
+}
 func (imap *MapProxy) Size() (size int32, err error) {
 	request := MapSizeEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
@@ -78,6 +175,9 @@ func (imap *MapProxy) Size() (size int32, err error) {
 	return response, nil
 }
 func (imap *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return false, err
@@ -91,6 +191,9 @@ func (imap *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	return response, nil
 }
 func (imap *MapProxy) ContainsValue(value interface{}) (found bool, err error) {
+	if !CheckNotNil(value) {
+		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 	valueData, err := imap.ToData(value)
 	if err != nil {
 		return false, err
@@ -112,6 +215,9 @@ func (imap *MapProxy) Clear() (err error) {
 	return nil
 }
 func (imap *MapProxy) Delete(key interface{}) (err error) {
+	if !CheckNotNil(key) {
+		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return err
@@ -138,6 +244,9 @@ func (imap *MapProxy) AddIndex(attributes *string, ordered bool) (err error) {
 	return err
 }
 func (imap *MapProxy) Evict(key interface{}) (bool, error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return false, err
@@ -167,19 +276,50 @@ func (imap *MapProxy) Flush() error {
 	return nil
 }
 func (imap *MapProxy) Lock(key interface{}) error {
+	return imap.LockWithLeaseTime(key, -1, time.Second)
+}
+func (imap *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) error {
+	if !CheckNotNil(key) {
+		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return err
 	}
 	//TODO :: What should be the reference id ?
-	request := MapLockEncodeRequest(imap.name, keyData, THREAD_ID, -1, imap.client.ProxyManager.nextReferenceId())
+	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
+	request := MapLockEncodeRequest(imap.name, keyData, THREAD_ID, lease, imap.client.ProxyManager.nextReferenceId())
 	_, err = imap.InvokeOnKey(request, keyData)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
-func (imap *MapProxy) UnLock(key interface{}) error {
+func (imap *MapProxy) TryLock(key interface{}) (bool, error) {
+	return imap.TryLockWithTimeout(key, 0, time.Second)
+}
+func (imap *MapProxy) TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (bool, error) {
+	return imap.TryLockWithTimeoutAndLease(key, timeout, timeoutTimeUnit, -1, time.Second)
+}
+func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (bool, error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	keyData, err := imap.ToData(key)
+	if err != nil {
+		return false, err
+	}
+	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
+	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
+	request := MapTryLockEncodeRequest(imap.name, keyData, THREAD_ID, lease, timeout, imap.client.ProxyManager.nextReferenceId())
+	responseMessage, err := imap.InvokeOnKey(request, keyData)
+	if err != nil {
+		return false, err
+	}
+	response := MapTryLockDecodeResponse(responseMessage).Response
+	return response, nil
+}
+func (imap *MapProxy) Unlock(key interface{}) error {
+	if !CheckNotNil(key) {
+		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return err
@@ -187,12 +327,24 @@ func (imap *MapProxy) UnLock(key interface{}) error {
 	//TODO :: What should be the reference id ?
 	request := MapUnlockEncodeRequest(imap.name, keyData, THREAD_ID, imap.client.ProxyManager.nextReferenceId())
 	_, err = imap.InvokeOnKey(request, keyData)
+	return err
+}
+func (imap *MapProxy) ForceUnlock(key interface{}) error {
+	if !CheckNotNil(key) {
+		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	keyData, err := imap.ToData(key)
 	if err != nil {
 		return err
 	}
-	return nil
+	request := MapForceUnlockEncodeRequest(imap.name, keyData, imap.client.ProxyManager.nextReferenceId())
+	_, err = imap.InvokeOnKey(request, keyData)
+	return err
 }
 func (imap *MapProxy) IsLocked(key interface{}) (bool, error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return false, err
@@ -207,6 +359,12 @@ func (imap *MapProxy) IsLocked(key interface{}) (bool, error) {
 	return response, nil
 }
 func (imap *MapProxy) Replace(key interface{}, value interface{}) (interface{}, error) {
+	if !CheckNotNil(key) {
+		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -224,6 +382,15 @@ func (imap *MapProxy) Replace(key interface{}, value interface{}) (interface{}, 
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+	if !CheckNotNil(key) {
+		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(newValue) {
+		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(oldValue) {
+		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return false, err
@@ -245,6 +412,15 @@ func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newVa
 	return response, nil
 }
 func (imap *MapProxy) Set(key interface{}, value interface{}) error {
+	return imap.SetWithTtl(key, value, TTL, time.Second)
+}
+func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) error {
+	if !CheckNotNil(key) {
+		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return err
@@ -253,14 +429,22 @@ func (imap *MapProxy) Set(key interface{}, value interface{}) error {
 	if err != nil {
 		return err
 	}
-	request := MapSetEncodeRequest(imap.name, keyData, valueData, THREAD_ID, TTL)
+	ttl = GetTimeInMilliSeconds(ttl, ttlTimeUnit)
+	request := MapSetEncodeRequest(imap.name, keyData, valueData, THREAD_ID, ttl)
 	_, err = imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
 func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue interface{}, err error) {
+	if !CheckNotNil(key) {
+		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
+	if !CheckNotNil(value) {
+		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -278,6 +462,9 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) error {
+	if !CheckNotNil(mp) {
+		return errors.New("Null argument map is not allowed")
+	}
 	partitions := make(map[int32][]Pair)
 	for key, value := range *mp {
 		keyData, err := imap.ToData(key)
@@ -325,6 +512,9 @@ func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
 	return pairList, nil
 }
 func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
+	if !CheckNotEmpty(keys) {
+		return nil, errors.New(NIL_KEYS_ARE_NOT_ALLOWED)
+	}
 	partitions := make(map[int32][]serialization.Data)
 	pairList := make([]core.IPair, 0)
 	for _, key := range keys {
@@ -357,6 +547,9 @@ func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
 	return pairList, nil
 }
 func (imap *MapProxy) GetEntryView(key interface{}) (core.IEntryView, error) {
+	if !CheckNotNil(key) {
+		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
+	}
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -382,6 +575,7 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 		return MapAddEntryListenerDecodeResponse(clientMessage).Response
 	}, nil)
 }
+
 func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)

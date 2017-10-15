@@ -16,10 +16,11 @@ func NewRandomLoadBalancer(clusterService *ClusterService) *RandomLoadBalancer {
 }
 
 func (randomLoadBalancer *RandomLoadBalancer) NextAddress() *Address {
-	size := len(randomLoadBalancer.clusterService.Members)
+	membersList := randomLoadBalancer.clusterService.GetMemberList()
+	size := len(membersList)
 	if size > 0 {
 		randomIndex := rand.Intn(size)
-		member := randomLoadBalancer.clusterService.Members[randomIndex]
+		member := membersList[randomIndex]
 		return member.Address().(*Address)
 	}
 	return nil

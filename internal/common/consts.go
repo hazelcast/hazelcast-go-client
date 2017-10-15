@@ -75,7 +75,7 @@ const (
 	ERROR_CODE_NEGATIVE_ARRAY_SIZE            ErrorCode = 36
 	ERROR_CODE_NO_SUCH_ELEMENT                ErrorCode = 37
 	ERROR_CODE_NOT_SERIALIZABLE               ErrorCode = 38
-	ERROR_CODE_NULL_POINTER                   ErrorCode = 39
+	ERROR_CODE_NIL_POINTER                    ErrorCode = 39
 	ERROR_CODE_OPERATION_TIMEOUT              ErrorCode = 40
 	ERROR_CODE_PARTITION_MIGRATING            ErrorCode = 41
 	ERROR_CODE_QUERY                          ErrorCode = 42
@@ -177,7 +177,7 @@ const (
 	DATA_OFFSET_FIELD_OFFSET    = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES
 	HEADER_SIZE                 = DATA_OFFSET_FIELD_OFFSET + SHORT_SIZE_IN_BYTES
 
-	NULL_ARRAY_LENGTH = -1
+	NIL_ARRAY_LENGTH = -1
 )
 
 const (
@@ -193,4 +193,13 @@ const (
 	ENTRYEVENT_MERGED       int32 = 64
 	ENTRYEVENT_EXPIRED      int32 = 128
 	ENTRYEVENT_INVALIDATION int32 = 256
+)
+const (
+	NIL_KEY_IS_NOT_ALLOWED        string = "Nil key is not allowed!"
+	NIL_KEYS_ARE_NOT_ALLOWED      string = "Nil keys collection is not allowed!"
+	NIL_VALUE_IS_NOT_ALLOWED      string = "Nil value is not allowed!"
+	NIL_PREDICATE_IS_NOT_ALLOWED  string = "Predicate should not be null!"
+	NIL_LISTENER_IS_NOT_ALLOWED   string = "Nil listener is not allowed!"
+	NIL_AGGREGATOR_IS_NOT_ALLOWED string = "Aggregator should not be null!"
+	NIL_PROJECTION_IS_NOT_ALLOWED string = "Projection should not be null!"
 )
