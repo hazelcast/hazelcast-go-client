@@ -89,7 +89,7 @@ func NewGroupConfig() GroupConfig {
 }
 
 type ClientNetworkConfig struct {
-	Addresses *[]Address
+	Addresses []string
 	//The candidate address list that client will use to establish initial connection
 	ConnectionAttemptLimit int32
 	/*
@@ -122,16 +122,11 @@ type ClientNetworkConfig struct {
 
 func NewClientNetworkConfig() ClientNetworkConfig {
 	return ClientNetworkConfig{
-		Addresses:               new([]Address),
+		Addresses:               make([]string, 0),
 		ConnectionAttemptLimit:  2,
 		ConnectionAttemptPeriod: 3,
 		ConnectionTimeout:       5.0,
 		RedoOperations:          false,
 		SmartRouting:            true,
 	}
-}
-
-type Address struct {
-	Host string
-	Port int32
 }
