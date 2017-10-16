@@ -72,11 +72,11 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 		responseChannel: make(chan *ClientMessage, 1),
 		quit:            make(chan bool, 0),
 	}
-	//if client.config.IsSmartRouting() {
-	service.invoke = service.invokeSmart
-	//} else {
-	//	service.invoke = service.invokeNonSmart
-	//}
+	if client.ClientConfig.IsSmartRouting() {
+		service.invoke = service.invokeSmart
+	} else {
+		service.invoke = service.invokeNonSmart
+	}
 	service.start()
 	return service
 }
@@ -144,7 +144,12 @@ func (invocationService *InvocationService) invokeSmart(invocation *Invocation) 
 }
 
 func (invocationService *InvocationService) invokeNonSmart(invocation *Invocation) {
-	//TODO implement
+	if invocation.boundConnection != nil {
+		invocationService.sendToConnection(invocation, invocation.boundConnection)
+	} else {
+		addr := invocationService.client.ClusterService.ownerConnectionAddress
+		invocationService.sendToAddress(invocation, addr)
+	}
 }
 
 func (invocationService *InvocationService) send(invocation *Invocation, connectionChannel chan *Connection) {

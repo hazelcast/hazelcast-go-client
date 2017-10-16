@@ -40,7 +40,11 @@ func (connectionManager *ConnectionManager) GetConnection(address *Address) chan
 	}()
 	return ch
 }
-
+func (connectionManager *ConnectionManager) ConnectionCount() int32 {
+	connectionManager.lock.RLock()
+	defer connectionManager.lock.RUnlock()
+	return int32(len(connectionManager.connections))
+}
 func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection) {
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
