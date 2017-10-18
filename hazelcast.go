@@ -18,7 +18,7 @@ func NewHazelcastConfig() *config.ClientConfig {
 }
 
 type IHazelcastInstance interface {
-	GetMap(name *string) (core.IMap,error)
+	GetMap(name *string) (core.IMap, error)
 	Shutdown()
 	GetCluster() core.ICluster
 	GetLifecycle() core.ILifecycle

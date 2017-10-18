@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	remoteController.StartMember(cluster.ID)
 	client = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
-	mp,_ = client.GetMap(&mapName)
+	mp, _ = client.GetMap(&mapName)
 	m.Run()
 	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -473,7 +473,7 @@ func TestMapProxy_Destroy(t *testing.T) {
 	mp.Put(testKey, testValue)
 	mapName := "myMap"
 	mp.Destroy()
-	mp,_ := client.GetMap(&mapName)
+	mp, _ := client.GetMap(&mapName)
 	res, err := mp.Get(testKey)
 	AssertNilf(t, err, res, "get returned a wrong value")
 }
