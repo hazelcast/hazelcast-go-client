@@ -28,14 +28,18 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 	return &client
 }
 
-func (client *HazelcastClient) GetMap(name *string) core.IMap {
+func (client *HazelcastClient) GetMap(name *string) (core.IMap,error) {
 	mapService := SERVICE_NAME_MAP
-	return client.GetDistributedObject(&mapService, name).(core.IMap)
+	mp,err:=client.GetDistributedObject(&mapService, name)
+	return mp.(core.IMap),err
 }
 
-func (client *HazelcastClient) GetDistributedObject(serviceName *string, name *string) core.IDistributedObject {
-	var clientProxy = client.ProxyManager.GetOrCreateProxy(serviceName, name)
-	return clientProxy
+func (client *HazelcastClient) GetDistributedObject(serviceName *string, name *string) (core.IDistributedObject,error) {
+	var clientProxy,err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
+	if err!=nil{
+		return nil,err
+	}
+	return clientProxy,nil
 }
 
 func (client *HazelcastClient) GetCluster() core.ICluster {

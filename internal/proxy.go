@@ -11,7 +11,7 @@ type proxy struct {
 	name        *string
 }
 
-func (proxy *proxy) Destroy() bool {
+func (proxy *proxy) Destroy() (bool,error) {
 	return proxy.client.ProxyManager.destroyProxy(proxy.serviceName, proxy.name)
 }
 
