@@ -11,7 +11,7 @@ import (
 type ProxyManager struct {
 	ReferenceId int64
 	client      *HazelcastClient
-	mu          sync.Mutex // guards proxies
+	mu          sync.RWMutex // guards proxies
 	proxies     map[string]core.IDistributedObject
 }
 
@@ -29,16 +29,19 @@ func (proxyManager *ProxyManager) nextReferenceId() int64 {
 
 func (proxyManager *ProxyManager) GetOrCreateProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
 	var ns string = *serviceName + *name
-	proxyManager.mu.Lock()
-	defer proxyManager.mu.Unlock()
+	proxyManager.mu.RLock()
 	if _, ok := proxyManager.proxies[ns]; ok {
+		defer proxyManager.mu.RUnlock()
 		return proxyManager.proxies[ns], nil
 	}
+	proxyManager.mu.RUnlock()
 	proxy, err := proxyManager.createProxy(serviceName, name)
 	if err != nil {
 		return nil, err
 	}
+	proxyManager.mu.Lock()
 	proxyManager.proxies[ns] = proxy
+	proxyManager.mu.Unlock()
 	return proxy, nil
 }
 
@@ -53,10 +56,12 @@ func (proxyManager *ProxyManager) createProxy(serviceName *string, name *string)
 
 func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
 	var ns string = *serviceName + *name
-	proxyManager.mu.Lock()
-	defer proxyManager.mu.Unlock()
+	proxyManager.mu.RLock()
 	if _, ok := proxyManager.proxies[ns]; ok {
+		proxyManager.mu.RUnlock()
+		proxyManager.mu.Lock()
 		delete(proxyManager.proxies, ns)
+		proxyManager.mu.Unlock()
 		message := ClientDestroyProxyEncodeRequest(name, serviceName)
 		_, err := proxyManager.client.InvocationService.InvokeOnRandomTarget(message).Result()
 		if err != nil {
