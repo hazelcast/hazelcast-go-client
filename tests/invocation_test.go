@@ -14,7 +14,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	config.ClientNetworkConfig.SmartRouting = false
 	client := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "myMap"
-	mp := client.GetMap(&mapName)
+	mp, _ := client.GetMap(&mapName)
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -32,7 +32,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	config.ClientNetworkConfig.SmartRouting = false
 	client := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
-	mp := client.GetMap(&mapName)
+	mp, _ := client.GetMap(&mapName)
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)
 		testValue := "testingValue" + strconv.Itoa(i)

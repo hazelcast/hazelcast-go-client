@@ -15,14 +15,7 @@ const (
 )
 
 type MapProxy struct {
-	proxy
-}
-
-func newMapProxy(client *HazelcastClient, name *string) *MapProxy {
-	mapProxy := MapProxy{}
-	mapProxy.client = client
-	mapProxy.name = name
-	return &mapProxy
+	*proxy
 }
 
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {

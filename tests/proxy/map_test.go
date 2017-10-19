@@ -13,6 +13,7 @@ import (
 )
 
 var mp core.IMap
+var client hazelcast.IHazelcastInstance
 
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
@@ -21,9 +22,9 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
-	mp = client.GetMap(&mapName)
+	mp, _ = client.GetMap(&mapName)
 	m.Run()
 	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -464,4 +465,15 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKey failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
+}
+
+func TestMapProxy_Destroy(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mapName := "myMap"
+	mp.Destroy()
+	mp, _ := client.GetMap(&mapName)
+	res, err := mp.Get(testKey)
+	AssertNilf(t, err, res, "get returned a wrong value")
 }
