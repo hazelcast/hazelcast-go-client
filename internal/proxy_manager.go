@@ -69,6 +69,7 @@ func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string
 		}
 		return true, nil
 	}
+	proxyManager.mu.RUnlock()
 	return false, nil
 }
 
