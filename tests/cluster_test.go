@@ -133,7 +133,7 @@ func TestListenerReregister(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	entryAdded := &mapListener{wg: wg}
 	mapName := "testMap"
-	mp := client.GetMap(&mapName)
+	mp, _ := client.GetMap(&mapName)
 	_, err := mp.AddEntryListener(entryAdded, true)
 	AssertEqual(t, err, nil, nil)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
