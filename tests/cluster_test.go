@@ -3,13 +3,11 @@ package tests
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 )
 
 type membershipListener struct {
@@ -17,7 +15,6 @@ type membershipListener struct {
 }
 
 func (membershipListener *membershipListener) MemberAdded(member core.IMember) {
-	log.Println(member.Address().Host(), member.Address().Port())
 	membershipListener.wg.Done()
 }
 func (membershipListener *membershipListener) MemberRemoved(member core.IMember) {
@@ -85,10 +82,11 @@ func TestAddListener(t *testing.T) {
 	timeout = WaitTimeout(wg, Timeout/20)
 	AssertEqualf(t, nil, true, timeout, "Cluster RemoveListener failed")
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
-	client.GetCluster().AddListener(&membershipListener{wg: wg})
+	registrationId = client.GetCluster().AddListener(&membershipListener{wg: wg})
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	timeout = WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster memberRemoved failed")
+	client.GetCluster().RemoveListener(registrationId)
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
@@ -106,26 +104,7 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
-func TestRestartMember(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
-	member1, _ := remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
-	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
-	wg.Add(3)
-	registratonId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
-	remoteController.ShutdownMember(cluster.ID, member1.UUID)
-	remoteController.StartMember(cluster.ID)
-	time.Sleep(5 * time.Second) //Wait for the client to reconnect
-	remoteController.ShutdownCluster(cluster.ID)
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "clusterService reconnect has failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[1], internal.LIFECYCLE_STATE_CONNECTED, "clusterService reconnect has failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[2], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
-	client.GetLifecycle().RemoveListener(&registratonId)
-	client.Shutdown()
-}
+
 func TestListenerReregister(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)

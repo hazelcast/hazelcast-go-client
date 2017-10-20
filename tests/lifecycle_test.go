@@ -42,11 +42,13 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	wg.Add(1)
 	client := hazelcast.NewHazelcastClient()
-	client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
+	registrationId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownCluster(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Lifecycle listener failed")
 	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_DISCONNECTED, "Lifecycle listener failed")
+	client.GetLifecycle().RemoveListener(&registrationId)
+	client.Shutdown()
 }
 
 func TestRemoveListener(t *testing.T) {
