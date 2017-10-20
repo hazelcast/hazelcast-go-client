@@ -17,6 +17,7 @@ type membershipListener struct {
 }
 
 func (membershipListener *membershipListener) MemberAdded(member core.IMember) {
+	log.Println(member.Address().Host(), member.Address().Port())
 	membershipListener.wg.Done()
 }
 func (membershipListener *membershipListener) MemberRemoved(member core.IMember) {
@@ -41,9 +42,10 @@ func TestInitialMembershipListener(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
-	hazelcast.NewHazelcastClientWithConfig(config)
+	client := hazelcast.NewHazelcastClientWithConfig(config)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster initialMembershipListener failed")
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestMemberAddedandRemoved(t *testing.T) {
@@ -53,7 +55,7 @@ func TestMemberAddedandRemoved(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
-	hazelcast.NewHazelcastClientWithConfig(config)
+	client := hazelcast.NewHazelcastClientWithConfig(config)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster initialMembershipListener failed")
 	wg.Add(1)
@@ -64,6 +66,7 @@ func TestMemberAddedandRemoved(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
 	timeout = WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster memberRemoved failed")
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestAddListener(t *testing.T) {
@@ -86,6 +89,7 @@ func TestAddListener(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	timeout = WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster memberRemoved failed")
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestGetMembers(t *testing.T) {
@@ -96,6 +100,7 @@ func TestGetMembers(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	members := client.GetCluster().GetMemberList()
 	AssertEqualf(t, nil, len(members), 3, "GetMemberList returned wrong number of members")
+	client.Shutdown()
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
@@ -108,7 +113,7 @@ func TestRestartMember(t *testing.T) {
 	client := hazelcast.NewHazelcastClient()
 	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
 	wg.Add(3)
-	client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
+	registratonId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.StartMember(cluster.ID)
 	time.Sleep(5 * time.Second) //Wait for the client to reconnect
@@ -118,6 +123,8 @@ func TestRestartMember(t *testing.T) {
 	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
 	AssertEqualf(t, nil, lifecycleListener.collector[1], internal.LIFECYCLE_STATE_CONNECTED, "clusterService reconnect has failed")
 	AssertEqualf(t, nil, lifecycleListener.collector[2], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
+	client.GetLifecycle().RemoveListener(&registratonId)
+	client.Shutdown()
 }
 func TestListenerReregister(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
@@ -139,6 +146,7 @@ func TestListenerReregister(t *testing.T) {
 	}
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "listener reregister failed")
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 

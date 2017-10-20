@@ -204,7 +204,7 @@ func (clusterService *ClusterService) GetMemberList() []core.IMember {
 	return members
 }
 func (clusterService *ClusterService) connectionClosed(connection *Connection) {
-	if connection.endpoint != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
+	if connection.endpoint != nil && clusterService.ownerConnectionAddress != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
 		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
 		clusterService.ownerConnectionAddress = nil
 		clusterService.members.Store(make([]Member, 0)) //Clear members as the owner connection is closed.

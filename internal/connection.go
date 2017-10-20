@@ -38,6 +38,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
 		connectionManager: connectionManager,
+		endpoint:          address,
 	}
 	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))

@@ -22,7 +22,6 @@ type HazelcastClient struct {
 
 func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 	client := HazelcastClient{ClientConfig: config}
-	//go client.init()
 	client.init()
 	return &client
 }
@@ -58,6 +57,8 @@ func (client *HazelcastClient) Shutdown() {
 	if client.LifecycleService.isLive {
 		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTTING_DOWN)
 		client.PartitionService.shutdown()
+		client.InvocationService.shutdown()
+		client.HeartBeatService.shutdown()
 		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTDOWN)
 	}
 }

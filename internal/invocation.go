@@ -56,7 +56,7 @@ func (invocation *Invocation) Result() (*ClientMessage, error) {
 
 type InvocationService struct {
 	client                   *HazelcastClient
-	quit                     chan bool
+	quit                     chan struct{}
 	nextCorrelation          int64
 	responseWaitings         map[int64]*Invocation
 	eventHandlers            map[int64]*Invocation
@@ -72,7 +72,7 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 	service := &InvocationService{client: client, sending: make(chan *Invocation, 10000), responseWaitings: make(map[int64]*Invocation),
 		eventHandlers:   make(map[int64]*Invocation),
 		responseChannel: make(chan *ClientMessage, 1),
-		quit:            make(chan bool, 0),
+		quit:            make(chan struct{}, 0),
 		cleanupConnectionChannel: make(chan *Connection, 1),
 	}
 	//if client.config.IsSmartRouting() {
@@ -302,4 +302,7 @@ func (invocationService *InvocationService) tryRetry(invocation *Invocation) boo
 func (invocationService *InvocationService) shouldRetryInvocation(clientInvocation *Invocation, err error) bool {
 	//TODO:: implement
 	return true
+}
+func (invocationService *InvocationService) shutdown() {
+	close(invocationService.quit)
 }
