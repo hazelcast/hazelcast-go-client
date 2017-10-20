@@ -3,6 +3,7 @@ package internal
 import (
 	. "github.com/hazelcast/go-client/config"
 	"github.com/hazelcast/go-client/core"
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
 )
 
@@ -25,9 +26,21 @@ func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
 	client.init()
 	return &client
 }
-func (client *HazelcastClient) GetMap(name *string) core.IMap {
-	return newMapProxy(client, name)
+
+func (client *HazelcastClient) GetMap(name *string) (core.IMap, error) {
+	mapService := SERVICE_NAME_MAP
+	mp, err := client.GetDistributedObject(&mapService, name)
+	return mp.(core.IMap), err
 }
+
+func (client *HazelcastClient) GetDistributedObject(serviceName *string, name *string) (core.IDistributedObject, error) {
+	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
+	if err != nil {
+		return nil, err
+	}
+	return clientProxy, nil
+}
+
 func (client *HazelcastClient) GetCluster() core.ICluster {
 	return client.ClusterService
 }
@@ -53,6 +66,7 @@ func (client *HazelcastClient) init() {
 	client.PartitionService.start()
 	client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_STARTED)
 }
+
 func (client *HazelcastClient) Shutdown() {
 	if client.LifecycleService.isLive {
 		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTTING_DOWN)

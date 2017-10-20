@@ -11,6 +11,20 @@ type proxy struct {
 	name        *string
 }
 
+func (proxy *proxy) Destroy() (bool, error) {
+	return proxy.client.ProxyManager.destroyProxy(proxy.serviceName, proxy.name)
+}
+
+func (proxy *proxy) Name() string {
+	return *proxy.name
+}
+func (proxy *proxy) PartitionKey() string {
+	return *proxy.name
+}
+func (proxy *proxy) ServiceName() string {
+	return *proxy.serviceName
+}
+
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {
 	return proxy.client.InvocationService.InvokeOnKeyOwner(request, keyData).Result()
 }
