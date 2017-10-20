@@ -160,12 +160,12 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	service := NewSerializationService(config)
 	classDef.addFieldDefinition(NewFieldDefinition(0, "engineer", PORTABLE, classDef.factoryId, classDef.classId))
 	o := NewPositionalObjectDataOutput(0, service, false)
-	serializer := service.FindSerializerFor(expectedRet).(*PortableSerializer)
-	pw := NewDefaultPortableWriter(serializer, o, classDef)
+	serializer, _ := service.FindSerializerFor(expectedRet)
+	pw := NewDefaultPortableWriter(serializer.(*PortableSerializer), o, classDef)
 	pw.WritePortable("engineer", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
 
-	pr := NewDefaultPortableReader(serializer, i, pw.classDefinition)
+	pr := NewDefaultPortableReader(serializer.(*PortableSerializer), i, pw.classDefinition)
 	ret, _ := pr.ReadPortable("engineer")
 
 	if !reflect.DeepEqual(expectedRet, ret) {

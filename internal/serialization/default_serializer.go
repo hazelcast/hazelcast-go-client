@@ -1,8 +1,9 @@
 package serialization
 
 import (
+	"fmt"
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
-	"log"
 )
 
 type NilSerializer struct{}
@@ -37,7 +38,7 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 		return nil, err
 	}
 	if !isIdentified {
-		log.Printf("Native clients does not support Data Serializable. Please use Identified Data Serializable")
+		return nil, NewHazelcastSerializationError("native clients only support IdentifiedDataSerializable", nil)
 	}
 	factoryId, err := input.ReadInt32()
 	if err != nil {
@@ -51,8 +52,7 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 	var factory IdentifiedDataSerializableFactory
 	factory = idss.factories[factoryId]
 	if factory == nil {
-		err := "There is no IdentifiedDataSerializer factory with id " + string(factoryId) + "."
-		log.Printf(err)
+		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no IdentifiedDataSerializer factory with id: %d", factoryId), nil)
 	}
 	var object = factory.Create(classId)
 	err = object.ReadData(input)

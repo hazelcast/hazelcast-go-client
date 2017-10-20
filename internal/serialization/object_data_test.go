@@ -3,6 +3,7 @@ package serialization
 import (
 	"bytes"
 	"github.com/hazelcast/go-client/config"
+	"github.com/hazelcast/go-client/internal/common"
 	"reflect"
 	"testing"
 )
@@ -50,7 +51,7 @@ func TestObjectDataOutput_WriteInt32(t *testing.T) {
 	o.WriteInt32(3)
 
 	if o.buffer[0] != 1 || o.buffer[4] != 2 || o.buffer[8] != 3 {
-		t.Errorf("WriteInt32() writes to wrong position!")
+		t.Errorf("WriteInt32() writes to wrong position")
 	}
 }
 
@@ -59,6 +60,15 @@ func TestObjectDataInput_AssertAvailable(t *testing.T) {
 	ret := o.AssertAvailable(2)
 	if ret == nil {
 		t.Errorf("AssertAvailable() should return error %v but it returns nil!", ret)
+	}
+
+}
+
+func TestObjectDataInput_AssertAvailable2(t *testing.T) {
+	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &SerializationService{}, true)
+	ret := o.AssertAvailable(2)
+	if _, ok := ret.(*common.HazelcastEOFError); !ok {
+		t.Errorf("AssertAvailable() should return error type *common.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
 	}
 }
 
@@ -342,6 +352,7 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 	ret_array, _ := i.ReadFloat64Array()
 	if !reflect.DeepEqual(array, ret_array) {
 		t.Errorf("There is a problem in WriteFloat64Array() or ReadFloat64Array()!")
+
 	}
 }
 

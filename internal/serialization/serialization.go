@@ -2,7 +2,9 @@ package serialization
 
 import (
 	"errors"
+	"fmt"
 	. "github.com/hazelcast/go-client/config"
+	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"reflect"
 )
@@ -27,9 +29,11 @@ func NewSerializationService(serializationConfig *SerializationConfig) *Serializ
 }
 
 func (service *SerializationService) ToData(object interface{}) (*Data, error) {
-	//TODO should return proper error values
 	dataOutput := NewPositionalObjectDataOutput(1, service, service.serializationConfig.IsBigEndian())
-	serializer := service.FindSerializerFor(object)
+	serializer, err := service.FindSerializerFor(object)
+	if err != nil {
+		return nil, err
+	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.Id())
 	serializer.Write(dataOutput, object)
@@ -37,7 +41,6 @@ func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 }
 
 func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
-	//TODO should return proper error values
 	if data == nil {
 		return nil, nil
 	}
@@ -49,10 +52,14 @@ func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 	return serializer.Read(dataInput)
 }
 
-func (service *SerializationService) WriteObject(output DataOutput, object interface{}) {
-	var serializer = service.FindSerializerFor(object)
+func (service *SerializationService) WriteObject(output DataOutput, object interface{}) error {
+	var serializer, err = service.FindSerializerFor(object)
+	if err != nil {
+		return nil
+	}
 	output.WriteInt32(serializer.Id())
 	serializer.Write(output, object)
+	return nil
 }
 
 func (service *SerializationService) ReadObject(input DataInput) (interface{}, error) {
@@ -64,7 +71,7 @@ func (service *SerializationService) ReadObject(input DataInput) (interface{}, e
 	return serializer.Read(input)
 }
 
-func (service *SerializationService) FindSerializerFor(obj interface{}) Serializer {
+func (service *SerializationService) FindSerializerFor(obj interface{}) (Serializer, error) {
 	var serializer Serializer
 	if obj == nil {
 		serializer = service.registry[service.nameToId["nil"]]
@@ -87,9 +94,9 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) Serializ
 	}
 
 	if serializer == nil {
-		// throw "There is no suitable serializer for " +obj + "."
+		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no suitable serializer for %v", obj), nil)
 	}
-	return serializer
+	return serializer, nil
 }
 
 func (service *SerializationService) RegisterDefaultSerializers() {
