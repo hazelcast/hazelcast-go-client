@@ -4,7 +4,39 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	"net"
+	"strconv"
+	"strings"
+	"time"
 )
+
+func IsValidIpAddress(addr string) bool {
+	return net.ParseIP(addr) != nil
+}
+func GetIpAndPort(addr string) (string, int) {
+	var port int
+	parts := strings.Split(addr, ":")
+	port, err := strconv.Atoi(parts[1])
+	if err != nil {
+		port = 5701 // Default port
+	}
+	addr = parts[0]
+	return addr, port
+}
+
+func CheckNotNil(v interface{}) bool {
+	return v != nil
+}
+func CheckNotEmpty(v []interface{}) bool {
+	return len(v) > 0
+}
+func GetTimeInMilliSeconds(time int64, duration time.Duration) int64 {
+	var timeInMillis int64 = time * duration.Nanoseconds() / (1000000)
+	if time > 0 && timeInMillis == 0 {
+		timeInMillis = 1
+	}
+	return timeInMillis
+}
 
 // NewUUID generates a random UUID according to RFC 4122
 func NewUUID() (string, error) {

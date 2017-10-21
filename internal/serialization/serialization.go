@@ -8,15 +8,15 @@ import (
 )
 
 type Serializer interface {
-	GetId() int32
-	Read(input DataInput) interface{}
+	Id() int32
+	Read(input DataInput) (interface{}, error)
 	Write(output DataOutput, object interface{})
 }
 
 ////// SerializationService ///////////
 type SerializationService struct {
 	serializationConfig *SerializationConfig
-	registry            map[int32]Serializer // key=id of serializer, serializer will be a class=>> default serializer + custom +global
+	registry            map[int32]Serializer
 	nameToId            map[string]int32
 }
 
@@ -28,11 +28,10 @@ func NewSerializationService(serializationConfig *SerializationConfig) *Serializ
 
 func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 	//TODO should return proper error values
-	dataOutput := NewObjectDataOutput(1, service, service.serializationConfig.IsBigEndian)
-	var serializer Serializer
-	serializer = service.FindSerializerFor(object)
+	dataOutput := NewPositionalObjectDataOutput(1, service, service.serializationConfig.IsBigEndian())
+	serializer := service.FindSerializerFor(object)
 	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(serializer.GetId())
+	dataOutput.WriteInt32(serializer.Id())
 	serializer.Write(dataOutput, object)
 	return &Data{dataOutput.buffer}, nil
 }
@@ -40,25 +39,28 @@ func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 	//TODO should return proper error values
 	if data == nil {
-		return data, nil
+		return nil, nil
 	}
 	if data.getType() == 0 {
 		return data, nil
 	}
 	var serializer = service.registry[data.getType()]
-	dataInput := NewObjectDataInput(data.Payload, DATA_OFFSET, service, service.serializationConfig.IsBigEndian)
-	return serializer.Read(dataInput), nil
+	dataInput := NewObjectDataInput(data.Payload, DATA_OFFSET, service, service.serializationConfig.IsBigEndian())
+	return serializer.Read(dataInput)
 }
 
-func (service *SerializationService) WriteObject(output *ObjectDataOutput, object interface{}) {
+func (service *SerializationService) WriteObject(output DataOutput, object interface{}) {
 	var serializer = service.FindSerializerFor(object)
-	output.WriteInt32(serializer.GetId())
+	output.WriteInt32(serializer.Id())
 	serializer.Write(output, object)
 }
 
-func (service *SerializationService) ReadObject(input *ObjectDataInput) interface{} {
-	var serializerId, _ = input.ReadInt32()
-	var serializer = service.registry[serializerId]
+func (service *SerializationService) ReadObject(input DataInput) (interface{}, error) {
+	serializerId, err := input.ReadInt32()
+	if err != nil {
+		return nil, err
+	}
+	serializer := service.registry[serializerId]
 	return serializer.Read(input)
 }
 
@@ -92,55 +94,73 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) Serializ
 
 func (service *SerializationService) RegisterDefaultSerializers() {
 	service.RegisterSerializer(&ByteSerializer{})
-	service.nameToId["uint8"] = (&ByteSerializer{}).GetId()
+	service.nameToId["uint8"] = CONSTANT_TYPE_BYTE
 
 	service.RegisterSerializer(&BoolSerializer{})
-	service.nameToId["bool"] = (&BoolSerializer{}).GetId()
+	service.nameToId["bool"] = CONSTANT_TYPE_BOOLEAN
+
+	service.RegisterSerializer(&UInteger16Serializer{})
+	service.nameToId["uint16"] = CONSTANT_TYPE_CHAR
 
 	service.RegisterSerializer(&Integer16Serializer{})
-	service.nameToId["int16"] = (&Integer16Serializer{}).GetId()
+	service.nameToId["int16"] = CONSTANT_TYPE_SHORT
 
 	service.RegisterSerializer(&Integer32Serializer{})
-	service.nameToId["int32"] = (&Integer32Serializer{}).GetId()
+	service.nameToId["int32"] = CONSTANT_TYPE_INTEGER
 
 	service.RegisterSerializer(&Integer64Serializer{})
-	service.nameToId["int64"] = (&Integer64Serializer{}).GetId()
+	service.nameToId["int64"] = CONSTANT_TYPE_LONG
 
 	service.RegisterSerializer(&Float32Serializer{})
-	service.nameToId["float32"] = (&Float32Serializer{}).GetId()
+	service.nameToId["float32"] = CONSTANT_TYPE_FLOAT
 
 	service.RegisterSerializer(&Float64Serializer{})
-	service.nameToId["float64"] = (&Float64Serializer{}).GetId()
+	service.nameToId["float64"] = CONSTANT_TYPE_DOUBLE
 
 	service.RegisterSerializer(&StringSerializer{})
-	service.nameToId["string"] = (&StringSerializer{}).GetId()
+	service.nameToId["string"] = CONSTANT_TYPE_STRING
 
 	service.RegisterSerializer(&NilSerializer{})
-	service.nameToId["nil"] = (&NilSerializer{}).GetId()
+	service.nameToId["nil"] = CONSTANT_TYPE_NULL
+
+	service.RegisterSerializer(&ByteArraySerializer{})
+	service.nameToId["[]uint8"] = CONSTANT_TYPE_BYTE_ARRAY
+
+	service.RegisterSerializer(&BoolArraySerializer{})
+	service.nameToId["[]bool"] = CONSTANT_TYPE_BOOLEAN_ARRAY
+
+	service.RegisterSerializer(&UInteger16ArraySerializer{})
+	service.nameToId["[]uint16"] = CONSTANT_TYPE_CHAR_ARRAY
 
 	service.RegisterSerializer(&Integer16ArraySerializer{})
-	service.nameToId["[]int16"] = (&Integer16ArraySerializer{}).GetId()
+	service.nameToId["[]int16"] = CONSTANT_TYPE_SHORT_ARRAY
 
 	service.RegisterSerializer(&Integer32ArraySerializer{})
-	service.nameToId["[]int32"] = (&Integer32ArraySerializer{}).GetId()
+	service.nameToId["[]int32"] = CONSTANT_TYPE_INTEGER_ARRAY
 
 	service.RegisterSerializer(&Integer64ArraySerializer{})
-	service.nameToId["[]int64"] = (&Integer64ArraySerializer{}).GetId()
+	service.nameToId["[]int64"] = CONSTANT_TYPE_LONG_ARRAY
 
 	service.RegisterSerializer(&Float32ArraySerializer{})
-	service.nameToId["[]float32"] = (&Float32ArraySerializer{}).GetId()
+	service.nameToId["[]float32"] = CONSTANT_TYPE_FLOAT_ARRAY
 
 	service.RegisterSerializer(&Float64ArraySerializer{})
-	service.nameToId["[]float64"] = (&Float64ArraySerializer{}).GetId()
+	service.nameToId["[]float64"] = CONSTANT_TYPE_DOUBLE_ARRAY
+
+	service.RegisterSerializer(&StringArraySerializer{})
+	service.nameToId["[]string"] = CONSTANT_TYPE_STRING_ARRAY
 
 	service.RegisterIdentifiedFactories()
+
+	service.RegisterSerializer(NewPortableSerializer(service, service.serializationConfig.PortableFactories(), service.serializationConfig.PortableVersion()))
+	service.nameToId["!portable"] = CONSTANT_TYPE_PORTABLE
 }
 
 func (service *SerializationService) RegisterSerializer(serializer Serializer) error {
-	if service.registry[serializer.GetId()] != nil {
+	if service.registry[serializer.Id()] != nil {
 		return errors.New("This serializer is already in the registry!")
 	}
-	service.registry[serializer.GetId()] = serializer
+	service.registry[serializer.Id()] = serializer
 	return nil
 }
 
@@ -153,9 +173,9 @@ func (service *SerializationService) LookUpDefaultSerializer(obj interface{}) Se
 	if isIdentifiedDataSerializable(obj) {
 		return service.registry[service.nameToId["identified"]]
 	}
-
-	// if isPortableSerializer
-	///	objectType:=reflect.TypeOf(obj).String()
+	if isPortableSerializable(obj) {
+		return service.registry[service.nameToId["!portable"]]
+	}
 	serializer = service.registry[service.GetIdByObject(obj)]
 
 	return serializer
@@ -163,8 +183,8 @@ func (service *SerializationService) LookUpDefaultSerializer(obj interface{}) Se
 
 func (service *SerializationService) RegisterIdentifiedFactories() {
 	factories := make(map[int32]IdentifiedDataSerializableFactory)
-	for id, _ := range service.serializationConfig.DataSerializableFactories {
-		factories[id] = service.serializationConfig.DataSerializableFactories[id]
+	for id, _ := range service.serializationConfig.DataSerializableFactories() {
+		factories[id] = service.serializationConfig.DataSerializableFactories()[id]
 	}
 
 	idToPredicate := make(map[int32]IdentifiedDataSerializable)
@@ -173,8 +193,8 @@ func (service *SerializationService) RegisterIdentifiedFactories() {
 
 	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
 	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
-	service.RegisterSerializer(&IdentifiedDataSerializableSerializer{factories})
-	service.nameToId["identified"] = (&IdentifiedDataSerializableSerializer{}).GetId()
+	service.RegisterSerializer(NewIdentifiedDataSerializableSerializer(factories))
+	service.nameToId["identified"] = CONSTANT_TYPE_DATA_SERIALIZABLE
 }
 
 func FillPredicateIds(idToPredicate map[int32]IdentifiedDataSerializable) {
@@ -183,8 +203,10 @@ func FillPredicateIds(idToPredicate map[int32]IdentifiedDataSerializable) {
 
 func isIdentifiedDataSerializable(obj interface{}) bool {
 	_, ok := obj.(IdentifiedDataSerializable)
-	if ok {
-		return true
-	}
-	return false
+	return ok
+}
+
+func isPortableSerializable(obj interface{}) bool {
+	_, ok := obj.(Portable)
+	return ok
 }

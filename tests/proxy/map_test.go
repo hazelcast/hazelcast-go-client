@@ -10,9 +10,11 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 var mp core.IMap
+var client hazelcast.IHazelcastInstance
 
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
@@ -21,9 +23,9 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
-	mp = client.GetMap(&mapName)
+	mp, _ = client.GetMap(&mapName)
 	m.Run()
 	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -57,6 +59,37 @@ func TestMapProxy_Remove(t *testing.T) {
 	AssertEqualf(t, err, size, int32(0), "Map size should be 0.")
 	found, err := mp.ContainsKey(testKey)
 	AssertEqualf(t, err, found, false, "containsKey returned a wrong result")
+	mp.Clear()
+
+}
+func TestMapProxy_RemoveIfSame(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	removed, err := mp.RemoveIfSame(testKey, "testinValue1")
+	AssertEqualf(t, err, removed, false, "removeIfSame returned a wrong value")
+	found, err := mp.ContainsKey(testKey)
+	AssertEqualf(t, err, found, true, "containsKey returned a wrong result")
+	mp.Clear()
+}
+func TestMapProxy_PutTransient(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mp.PutTransient(testKey, "nextValue", 100, time.Second)
+	res, err := mp.Get(testKey)
+	AssertEqualf(t, err, res, "nextValue", "putTransient failed")
+	mp.Clear()
+
+}
+func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mp.PutTransient(testKey, "nextValue", 1, time.Millisecond)
+	time.Sleep(5 * time.Second)
+	res, err := mp.Get(testKey)
+	AssertNilf(t, err, res, "putTransient failed")
 	mp.Clear()
 
 }
@@ -150,12 +183,39 @@ func TestMapProxy_IsLocked(t *testing.T) {
 	}
 	locked, err = mp.IsLocked("testingKey")
 	AssertEqualf(t, err, locked, true, "Key should be locked.")
-	err = mp.UnLock("testingKey")
+	err = mp.Unlock("testingKey")
 	if err != nil {
 		t.Error(err)
 	}
 	locked, err = mp.IsLocked("testingKey")
 	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+
+}
+func TestMapProxy_LockWithLeaseTime(t *testing.T) {
+	mp.Put("testingKey", "testingValue")
+	mp.LockWithLeaseTime("testingKey", 10, time.Millisecond)
+	time.Sleep(5 * time.Second)
+	locked, err := mp.IsLocked("testingKey")
+	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+}
+func TestMapProxy_TryLock(t *testing.T) {
+	mp.Put("testingKey", "testingValue")
+	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1, time.Second, 2, time.Second)
+	AssertEqualf(t, err, ok, true, "Try Lock failed")
+	time.Sleep(5 * time.Second)
+	locked, err := mp.IsLocked("testingKey")
+	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	mp.ForceUnlock("testingKey")
+
+}
+func TestMapProxy_ForceUnlock(t *testing.T) {
+	mp.Put("testingKey", "testingValue")
+	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1, time.Second, 20, time.Second)
+	AssertEqualf(t, err, ok, true, "Try Lock failed")
+	mp.ForceUnlock("testingKey")
+	locked, err := mp.IsLocked("testingKey")
+	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	mp.Unlock("testingKey")
 }
 func TestMapProxy_Replace(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
@@ -196,6 +256,19 @@ func TestMapProxy_Set(t *testing.T) {
 	}
 	newValue, err := mp.Get("testingKey1")
 	AssertEqualf(t, err, newValue, "testingValue1", "Map Set failed.")
+	mp.Clear()
+}
+func TestMapProxy_SetWithTtl(t *testing.T) {
+	err := mp.SetWithTtl("testingKey1", "testingValue1", 0, time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	newValue, err := mp.Get("testingKey1")
+	AssertEqualf(t, err, newValue, "testingValue1", "Map SetWithTtl failed.")
+	mp.SetWithTtl("testingKey1", "testingValue2", 1, time.Millisecond)
+	time.Sleep(5 * time.Second)
+	newValue, err = mp.Get("testingKey1")
+	AssertNilf(t, err, newValue, "Map SetWithTtl failed.")
 	mp.Clear()
 }
 func TestMapProxy_PutIfAbsent(t *testing.T) {
@@ -400,10 +473,10 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	processor := &simpleEntryProcessor{classId: 1, value: "newValue"}
 	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
 	processor.identifiedFactory = identifiedFactory
-	config.SerializationConfig.AddDataSerializableFactory(identifiedFactory, identifiedFactory.factoryId)
+	config.SerializationConfig.AddDataSerializableFactory(identifiedFactory.factoryId,identifiedFactory )
 	client := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
-	mp2 := client.GetMap(&mpName)
+	mp2,_ := client.GetMap(&mpName)
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
@@ -446,18 +519,30 @@ func (simpleEntryProcessor *simpleEntryProcessor) getBackupProcessor() core.IEnt
 	return &simpleEntryBackupProcessor{}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input api.DataInput) {
-	simpleEntryProcessor.value = input.ReadUTF()
+func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input api.DataInput) error {
+	var err error
+	simpleEntryProcessor.value,err = input.ReadUTF()
+	return err
 }
 
 func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output api.DataOutput) {
 	output.WriteUTF(simpleEntryProcessor.value)
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) GetFactoryId() int32 {
+func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
 	return simpleEntryProcessor.identifiedFactory.factoryId
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) GetClassId() int32 {
+func (simpleEntryProcessor *simpleEntryProcessor) ClassId() int32 {
 	return simpleEntryProcessor.classId
+}
+func TestMapProxy_Destroy(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mapName := "myMap"
+	mp.Destroy()
+	mp, _ := client.GetMap(&mapName)
+	res, err := mp.Get(testKey)
+	AssertNilf(t, err, res, "get returned a wrong value")
 }

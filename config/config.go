@@ -11,26 +11,55 @@ const (
 
 type ClientConfig struct {
 	MembershipListeners []interface{}
+	LifecycleListeners  []interface{}
 	GroupConfig         GroupConfig
 	ClientNetworkConfig ClientNetworkConfig
 	SerializationConfig *SerializationConfig
 }
 
 type SerializationConfig struct {
-	IsBigEndian               bool
-	DataSerializableFactories map[int32]IdentifiedDataSerializableFactory
-	// portableFactories map[int32]
-	PortableVersion int32
+	isBigEndian               bool
+	dataSerializableFactories map[int32]IdentifiedDataSerializableFactory
+	portableFactories         map[int32]PortableFactory
+	portableVersion           int32
 	//customSerializers []
 	//globalSerializer
 }
 
 func NewSerializationConfig() *SerializationConfig {
-	return &SerializationConfig{IsBigEndian: true, DataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), PortableVersion: 0}
+	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), portableFactories: make(map[int32]PortableFactory), portableVersion: 0}
 }
 
-func (c *SerializationConfig) AddDataSerializableFactory(f IdentifiedDataSerializableFactory, factoryId int32) {
-	c.DataSerializableFactories[factoryId] = f
+func (c *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
+	c.dataSerializableFactories[factoryId] = f
+}
+
+func (c *SerializationConfig) AddPortableFactory(factoryId int32, pf PortableFactory) {
+	c.portableFactories[factoryId] = pf
+}
+
+func (sc *SerializationConfig) IsBigEndian() bool {
+	return sc.isBigEndian
+}
+
+func (sc *SerializationConfig) DataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
+	return sc.dataSerializableFactories
+}
+
+func (sc *SerializationConfig) PortableFactories() map[int32]PortableFactory {
+	return sc.portableFactories
+}
+
+func (sc *SerializationConfig) PortableVersion() int32 {
+	return sc.portableVersion
+}
+
+func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
+	sc.isBigEndian = isBigEndian
+}
+
+func (sc *SerializationConfig) SetPortableVersion(version int32) {
+	sc.portableVersion = version
 }
 
 func NewClientConfig() *ClientConfig {
@@ -38,6 +67,7 @@ func NewClientConfig() *ClientConfig {
 		ClientNetworkConfig: NewClientNetworkConfig(),
 		MembershipListeners: make([]interface{}, 0),
 		SerializationConfig: NewSerializationConfig(),
+		LifecycleListeners:  make([]interface{}, 0),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
@@ -45,6 +75,9 @@ func (clientConfig *ClientConfig) IsSmartRouting() bool {
 }
 func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
 	clientConfig.MembershipListeners = append(clientConfig.MembershipListeners, listener)
+}
+func (clientConfig *ClientConfig) AddLifecycleListener(listener interface{}) {
+	clientConfig.LifecycleListeners = append(clientConfig.LifecycleListeners, listener)
 }
 
 type GroupConfig struct {
@@ -57,7 +90,7 @@ func NewGroupConfig() GroupConfig {
 }
 
 type ClientNetworkConfig struct {
-	Addresses *[]Address
+	Addresses []string
 	//The candidate address list that client will use to establish initial connection
 	ConnectionAttemptLimit int32
 	/*
@@ -90,16 +123,11 @@ type ClientNetworkConfig struct {
 
 func NewClientNetworkConfig() ClientNetworkConfig {
 	return ClientNetworkConfig{
-		Addresses:               new([]Address),
+		Addresses:               make([]string, 0),
 		ConnectionAttemptLimit:  2,
 		ConnectionAttemptPeriod: 3,
 		ConnectionTimeout:       5.0,
 		RedoOperations:          false,
 		SmartRouting:            true,
 	}
-}
-
-type Address struct {
-	Host string
-	Port int32
 }

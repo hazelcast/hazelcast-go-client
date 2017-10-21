@@ -100,3 +100,6 @@ type IEntryBackupProcessor interface {
 type IEntryProcessor interface {
 	Process(entry IPair)
 }
+type ILifecycleListener interface {
+	LifecycleStateChanged(string)
+}

@@ -43,15 +43,37 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 func (clusterService *ClusterService) start() {
 	clusterService.connectToCluster()
 }
-func getPossibleAddresses(addressList *[]config.Address, memberList []Member) *[]Address {
-	//TODO Get all possible addresses.
-	addresses := make([]Address, 0)
-	addresses = append(addresses, *NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT))
+func getPossibleAddresses(addressList *[]string, memberList *[]Member) *[]Address {
+	if addressList == nil {
+		addressList = new([]string)
+	}
+	if memberList == nil {
+		memberList = new([]Member)
+	}
+	allAddresses := make(map[Address]struct{}, len(*addressList)+len(*memberList))
+	for _, address := range *addressList {
+		ip, port := common.GetIpAndPort(address)
+		if common.IsValidIpAddress(ip) {
+			allAddresses[*NewAddressWithParameters(ip, port)] = struct{}{}
+		}
+	}
+	for _, member := range *memberList {
+		allAddresses[*member.Address().(*Address)] = struct{}{}
+	}
+	addresses := make([]Address, len(allAddresses))
+	index := 0
+	for k, _ := range allAddresses {
+		addresses[index] = k
+		index++
+	}
+	if len(addresses) == 0 {
+		addresses = append(addresses, *NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT))
+	}
 	return &addresses
 }
 func (clusterService *ClusterService) connectToCluster() {
 	members := clusterService.members.Load().([]Member)
-	addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig.Addresses, members)
+	addresses := getPossibleAddresses(&clusterService.config.ClientNetworkConfig.Addresses, &members)
 	currentAttempt := int32(1)
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
@@ -87,6 +109,7 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_CONNECTED)
 	return nil
 }
+
 func (clusterService *ClusterService) initMembershipListener(connection *Connection) {
 	wg.Add(1)
 	request := ClientAddMembershipListenerEncodeRequest(false)
@@ -108,7 +131,12 @@ func (clusterService *ClusterService) AddListener(listener interface{}) *string 
 	clusterService.mu.Lock()
 	defer clusterService.mu.Unlock()
 	listeners := clusterService.listeners.Load().(map[string]interface{})
-	listeners[registrationId] = listener
+	copyListeners := make(map[string]interface{}, len(listeners)+1)
+	for k, v := range listeners {
+		copyListeners[k] = v
+	}
+	copyListeners[registrationId] = listener
+	clusterService.listeners.Store(copyListeners)
 	return &registrationId
 }
 func (clusterService *ClusterService) RemoveListener(registrationId *string) bool {

@@ -18,6 +18,11 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 		t.Fatalf("%v != %v : %v", l, r, message)
 	}
 }
+func AssertNilf(t *testing.T, err error, l interface{}, message string) {
+	if l != nil {
+		t.Fatalf("%v != nil", l)
+	}
+}
 
 func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 	if err != nil {
