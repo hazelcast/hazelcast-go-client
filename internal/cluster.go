@@ -94,7 +94,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 			if err != nil {
 				//TODO :: Handle error
 				currentAttempt += 1
-				time.Sleep(time.Duration(retryDelay))
+				time.Sleep(time.Duration(retryDelay) * time.Second)
 				continue
 			}
 			return nil
@@ -106,8 +106,7 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	connectionChannel := clusterService.client.ConnectionManager.GetConnection(address)
 	con, alive := <-connectionChannel
 	if !alive {
-		log.Println("Connection is closed")
-		return nil
+		return errors.New("connection is closed")
 	}
 	if !con.isOwnerConnection {
 		clusterService.client.ConnectionManager.clusterAuthenticator(con)

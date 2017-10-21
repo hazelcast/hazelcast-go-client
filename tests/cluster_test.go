@@ -3,9 +3,9 @@ package tests
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
-	"strconv"
 	"sync"
 	"testing"
 )
@@ -104,27 +104,26 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
-
-func TestListenerReregister(t *testing.T) {
+func TestRestartMember(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
-	entryAdded := &mapListener{wg: wg}
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
-	_, err := mp.AddEntryListener(entryAdded, true)
-	AssertEqual(t, err, nil, nil)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
+	client := hazelcast.NewHazelcastClientWithConfig(config)
+	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
+	wg.Add(1)
+	registratonId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
-	remoteController.StartMember(cluster.ID)
-	wg.Add(100)
-	for i := 0; i < 100; i++ {
-		testKey := "testingKey" + strconv.Itoa(i)
-		testValue := "testingValue" + strconv.Itoa(i)
-		mp.Put(testKey, testValue)
-	}
 	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "listener reregister failed")
+	AssertEqualf(t, nil, false, timeout, "clusterService reconnect has failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_DISCONNECTED, "clusterService reconnect has failed")
+	wg.Add(1)
+	remoteController.StartMember(cluster.ID)
+	timeout = WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "clusterService reconnect has failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[1], internal.LIFECYCLE_STATE_CONNECTED, "clusterService reconnect has failed")
+	client.GetLifecycle().RemoveListener(&registratonId)
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }

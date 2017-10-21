@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
-	"log"
 	"net"
 	"strconv"
 	"sync/atomic"
@@ -40,18 +39,14 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 		connectionManager: connectionManager,
 		endpoint:          address,
 	}
-	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
-		connection.Close()
-		log.Println("CONNECTION IS CLOSED")
 		return nil
 	} else {
 		connection.socket = socket
 	}
 	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
-	//}()
 	go connection.writePool()
 	go connection.read()
 	return &connection
@@ -134,5 +129,6 @@ func (connection *Connection) Close() {
 		return
 	}
 	connection.connectionManager.connectionClosed(connection, "")
+
 	close(connection.closed)
 }
