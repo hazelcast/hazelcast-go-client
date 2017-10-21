@@ -1,6 +1,7 @@
 package core
 
 import (
+	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"time"
 )
 
@@ -32,6 +33,7 @@ type IMap interface {
 	PutIfAbsent(key interface{}, value interface{}) (oldValue interface{}, err error)
 	PutAll(mp *map[interface{}]interface{}) error
 	EntrySet() ([]IPair, error)
+	EntrySetWithPredicate(predicate IPredicate) ([]IPair, error)
 	TryLock(key interface{}) (bool, error)
 	TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (bool, error)
 	TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (bool, error)
