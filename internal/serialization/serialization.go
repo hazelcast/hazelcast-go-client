@@ -55,7 +55,7 @@ func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 func (service *SerializationService) WriteObject(output DataOutput, object interface{}) error {
 	var serializer, err = service.FindSerializerFor(object)
 	if err != nil {
-		return nil
+		return err
 	}
 	output.WriteInt32(serializer.Id())
 	serializer.Write(output, object)

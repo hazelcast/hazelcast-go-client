@@ -38,7 +38,7 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 		return nil, err
 	}
 	if !isIdentified {
-		return nil, NewHazelcastSerializationError("native clients only support IdentifiedDataSerializable", nil)
+		return nil, NewHazelcastSerializationError("native clients does not support DataSerializable, please use IdentifiedDataSerializable", nil)
 	}
 	factoryId, err := input.ReadInt32()
 	if err != nil {
