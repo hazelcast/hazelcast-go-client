@@ -479,7 +479,7 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
-	value, err := mp2.ExecuteOnKey(testKey, testKey)
+	value, err := mp2.ExecuteOnKey(testKey, processor)
 	AssertEqualf(t, err, value, expectedValue, "ExecuteOnKey failed.")
 	newValue, err := mp2.Get("testingKey1")
 	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
