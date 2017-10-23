@@ -470,22 +470,31 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 
 func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
-	processor := &simpleEntryProcessor{classId: 1, value: "newValue"}
+	expectedValue := "newValue"
+	processor := &simpleEntryProcessor{classId: 1, value: expectedValue}
 	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
 	processor.identifiedFactory = identifiedFactory
-	config.SerializationConfig.AddDataSerializableFactory(identifiedFactory.factoryId,identifiedFactory )
+	config.SerializationConfig.AddDataSerializableFactory(identifiedFactory.factoryId, identifiedFactory)
 	client := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
-	mp2,_ := client.GetMap(&mpName)
+	mp2, _ := client.GetMap(&mpName)
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
 	value, err := mp2.ExecuteOnKey(testKey, processor)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Fatal(value)
+	AssertEqualf(t, err, value, expectedValue, "ExecuteOnKey failed.")
 	mp.Clear()
+}
+
+func TestMapProxy_Destroy(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mapName := "myMap"
+	mp.Destroy()
+	mp, _ := client.GetMap(&mapName)
+	res, err := mp.Get(testKey)
+	AssertNilf(t, err, res, "get returned a wrong value")
 }
 
 type simpleEntryProcessor struct {
@@ -506,22 +515,9 @@ func (identifiedFactory *identifiedFactory) Create(id int32) api.IdentifiedDataS
 	}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) Process(entry core.IPair) {
-}
-
-type simpleEntryBackupProcessor struct {
-}
-
-func (*simpleEntryBackupProcessor) ProcessBackup(entry core.IPair) {
-}
-
-func (simpleEntryProcessor *simpleEntryProcessor) getBackupProcessor() core.IEntryBackupProcessor {
-	return &simpleEntryBackupProcessor{}
-}
-
 func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input api.DataInput) error {
 	var err error
-	simpleEntryProcessor.value,err = input.ReadUTF()
+	simpleEntryProcessor.value, err = input.ReadUTF()
 	return err
 }
 
@@ -535,14 +531,4 @@ func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
 
 func (simpleEntryProcessor *simpleEntryProcessor) ClassId() int32 {
 	return simpleEntryProcessor.classId
-}
-func TestMapProxy_Destroy(t *testing.T) {
-	testKey := "testingKey"
-	testValue := "testingValue"
-	mp.Put(testKey, testValue)
-	mapName := "myMap"
-	mp.Destroy()
-	mp, _ := client.GetMap(&mapName)
-	res, err := mp.Get(testKey)
-	AssertNilf(t, err, res, "get returned a wrong value")
 }

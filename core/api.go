@@ -1,5 +1,7 @@
 package core
 
+//import "github.com/hazelcast/go-client/internal/serialization"
+
 type IAddress interface {
 	Host() string
 	Port() int
@@ -98,7 +100,6 @@ type IEntryBackupProcessor interface {
 	ProcessBackup(entry IPair)
 }
 type IEntryProcessor interface {
-	Process(entry IPair)
 }
 type ILifecycleListener interface {
 	LifecycleStateChanged(string)

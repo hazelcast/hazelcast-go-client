@@ -6,7 +6,6 @@ import (
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
-	"log"
 	"time"
 )
 
@@ -625,12 +624,10 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor core.IEntryPr
 		return nil, err
 	}
 	request := MapExecuteOnKeyEncodeRequest(imap.name, entryProcessorData, keyData, THREAD_ID)
-	log.Println("step 1")
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("step 2")
 	responseData := MapExecuteOnKeyDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
