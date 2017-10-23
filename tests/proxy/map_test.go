@@ -471,21 +471,67 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
-	processor := &simpleEntryProcessor{classId: 1, value: expectedValue}
-	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
-	processor.identifiedFactory = identifiedFactory
-	config.SerializationConfig.AddDataSerializableFactory(identifiedFactory.factoryId, identifiedFactory)
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
 	testKey := "testingKey1"
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
-	value, err := mp2.ExecuteOnKey(testKey, processor)
+	value, err := mp2.ExecuteOnKey(testKey, testKey)
 	AssertEqualf(t, err, value, expectedValue, "ExecuteOnKey failed.")
+	newValue, err := mp2.Get("testingKey1")
+	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
 	mp.Clear()
 }
+func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2, _ := client.GetMap(&mpName)
+	for i := 0; i < 10; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp2.Put(testKey, testValue)
+	}
+	keys := make([]interface{}, 2)
+	keys[0] = "testingKey1"
+	keys[1] = "testingKey2"
+	result, err := mp2.ExecuteOnKeys(keys, processor)
+	AssertEqualf(t, err, len(result), 2, "ExecuteOnKeys failed.")
+	newValue, err := mp2.Get("testingKey1")
+	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	newValue, err = mp2.Get("testingKey2")
+	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	mp2.Clear()
+}
+func TestMapProxy_ExecuteOnEntries(t *testing.T) {
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2, _ := client.GetMap(&mpName)
+	for i := 0; i < 10; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp2.Put(testKey, testValue)
+	}
+	result, err := mp2.ExecuteOnEntries(processor)
+	for _, pair := range result {
+		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed.")
+		newValue, err := mp2.Get(pair.Key())
+		AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnEntries failed")
+	}
+
+	mp.Clear()
+}
 func TestMapProxy_Destroy(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
@@ -502,6 +548,14 @@ type simpleEntryProcessor struct {
 	value             string
 	identifiedFactory *identifiedFactory
 }
+
+func newSimpleEntryProcessor(value string) *simpleEntryProcessor {
+	processor := &simpleEntryProcessor{classId: 1, value: value}
+	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
+	processor.identifiedFactory = identifiedFactory
+	return processor
+}
+
 type identifiedFactory struct {
 	simpleEntryProcessor *simpleEntryProcessor
 	factoryId            int32

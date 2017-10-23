@@ -631,3 +631,61 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor core.IEntryPr
 	responseData := MapExecuteOnKeyDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
+func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor core.IEntryProcessor) ([]core.IPair, error) {
+	keysData := make([]serialization.Data, len(keys))
+	for index, key := range keys {
+		keyData, err := imap.ToData(key)
+		if err != nil {
+			return nil, err
+		}
+		keysData[index] = *keyData
+	}
+	entryProcessorData, err := imap.ToData(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	request := MapExecuteOnKeysEncodeRequest(imap.name, entryProcessorData, &keysData)
+	responseMessage, err := imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return nil, err
+	}
+	responseData := MapExecuteOnKeysDecodeResponse(responseMessage).Response
+	pairList := make([]core.IPair, len(*responseData))
+	for index, pairData := range *responseData {
+		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		value, err := imap.ToObject(pairData.Value().(*serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		pairList[index] = core.IPair(NewPair(key, value))
+	}
+	return pairList, nil
+}
+func (imap *MapProxy) ExecuteOnEntries(entryProcessor core.IEntryProcessor) ([]core.IPair, error) {
+	entryProcessorData, err := imap.ToData(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	request := MapExecuteOnAllKeysEncodeRequest(imap.name, entryProcessorData)
+	responseMessage, err := imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return nil, err
+	}
+	responseData := MapExecuteOnAllKeysDecodeResponse(responseMessage).Response
+	pairList := make([]core.IPair, len(*responseData))
+	for index, pairData := range *responseData {
+		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		value, err := imap.ToObject(pairData.Value().(*serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		pairList[index] = core.IPair(NewPair(key, value))
+	}
+	return pairList, nil
+}
