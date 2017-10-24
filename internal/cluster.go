@@ -99,18 +99,19 @@ func (clusterService *ClusterService) connectToCluster() error {
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
 	for currentAttempt < attempLimit {
+		currentAttempt++
 		for _, address := range *addresses {
 			if currentAttempt > attempLimit {
 				break
 			}
 			err := clusterService.connectToAddress(&address)
 			if err != nil {
-				//TODO :: Handle error
-				currentAttempt += 1
-				time.Sleep(time.Duration(retryDelay) * time.Second)
 				continue
 			}
 			return nil
+		}
+		if currentAttempt < attempLimit {
+			time.Sleep(time.Duration(retryDelay) * time.Second)
 		}
 	}
 	return errors.New("Couldn't connect to the cluster")
