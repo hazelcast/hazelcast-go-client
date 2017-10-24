@@ -129,5 +129,5 @@ func (connection *Connection) Close() {
 		return
 	}
 	close(connection.closed)
-	connection.connectionManager.connectionClosed(connection, "")
+	connection.connectionManager.connectionClosed(connection, "socket explicitly closed")
 }

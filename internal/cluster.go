@@ -98,7 +98,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 	currentAttempt := int32(1)
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
-	for currentAttempt < attempLimit {
+	for currentAttempt <= attempLimit {
 		currentAttempt++
 		for _, address := range *addresses {
 			if currentAttempt > attempLimit {

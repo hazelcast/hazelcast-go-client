@@ -41,7 +41,9 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	wg.Add(1)
-	client := hazelcast.NewHazelcastClient()
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
+	client := hazelcast.NewHazelcastClientWithConfig(config)
 	registrationId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownCluster(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)

@@ -21,16 +21,16 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 	cm := ConnectionManager{client: client,
 		connections: make(map[string]*Connection),
 	}
-	cm.connectionListeners.Store(make([]interface{}, 0)) //Initialize
+	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
 	return &cm
 }
-func (connectionManager *ConnectionManager) AddListener(listener interface{}) {
+func (connectionManager *ConnectionManager) AddListener(listener connectionListener) {
 	connectionManager.mu.Lock()
 	defer connectionManager.mu.Unlock()
 	if listener != nil {
-		listeners := connectionManager.connectionListeners.Load().([]interface{})
+		listeners := connectionManager.connectionListeners.Load().([]connectionListener)
 		size := len(listeners) + 1
-		copyListeners := make([]interface{}, size)
+		copyListeners := make([]connectionListener, size)
 		for index, listener := range listeners {
 			copyListeners[index] = listener
 		}
@@ -44,11 +44,11 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 	if connection.endpoint != nil {
 		connectionManager.lock.Lock()
 		delete(connectionManager.connections, connection.endpoint.Host()+":"+strconv.Itoa(connection.endpoint.Port()))
-		listeners := connectionManager.connectionListeners.Load().([]interface{})
+		listeners := connectionManager.connectionListeners.Load().([]connectionListener)
 		connectionManager.lock.Unlock()
 		for _, listener := range listeners {
-			if _, ok := listener.(connnectionListener); ok {
-				listener.(connnectionListener).onConnectionClosed(connection)
+			if _, ok := listener.(connectionListener); ok {
+				listener.(connectionListener).onConnectionClosed(connection)
 			}
 		}
 	} else {
@@ -137,7 +137,7 @@ func (connectionManager *ConnectionManager) closeConnection(address core.IAddres
 	}
 }
 
-type connnectionListener interface {
+type connectionListener interface {
 	onConnectionClosed(connection *Connection)
 	onConnectionOpened(connection *Connection)
 }
