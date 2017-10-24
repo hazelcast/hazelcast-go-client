@@ -8,39 +8,34 @@ import (
 	"sync/atomic"
 )
 
-type onConnectionClosed func(connection *Connection)
-type onConnectionOpened func(connection *Connection)
-
 type ConnectionManager struct {
-	client                    *HazelcastClient
-	connections               map[string]*Connection
-	ownerAddress              *Address
-	lock                      sync.RWMutex
-	connectionClosedListeners atomic.Value
-	connectionOpenListeners   atomic.Value
-	mu                        sync.Mutex
+	client              *HazelcastClient
+	connections         map[string]*Connection
+	ownerAddress        *Address
+	lock                sync.RWMutex
+	connectionListeners atomic.Value
+	mu                  sync.Mutex
 }
 
 func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 	cm := ConnectionManager{client: client,
 		connections: make(map[string]*Connection),
 	}
-	cm.connectionOpenListeners.Store(make([]onConnectionOpened, 0))   //Initialize
-	cm.connectionClosedListeners.Store(make([]onConnectionClosed, 0)) //Initialize
+	cm.connectionListeners.Store(make([]interface{}, 0)) //Initialize
 	return &cm
 }
-func (connectionManager *ConnectionManager) AddListener(closedListener onConnectionClosed) {
+func (connectionManager *ConnectionManager) AddListener(listener interface{}) {
 	connectionManager.mu.Lock()
 	defer connectionManager.mu.Unlock()
-	if &closedListener != nil {
-		listeners := connectionManager.connectionClosedListeners.Load().([]onConnectionClosed)
+	if listener != nil {
+		listeners := connectionManager.connectionListeners.Load().([]interface{})
 		size := len(listeners) + 1
-		copyListeners := make([]onConnectionClosed, size)
+		copyListeners := make([]interface{}, size)
 		for index, listener := range listeners {
 			copyListeners[index] = listener
 		}
-		copyListeners[size-1] = closedListener
-		connectionManager.connectionClosedListeners.Store(copyListeners)
+		copyListeners[size-1] = listener
+		connectionManager.connectionListeners.Store(copyListeners)
 	}
 }
 
@@ -48,11 +43,13 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 	//If connection was authenticated fire event
 	if connection.endpoint != nil {
 		connectionManager.lock.Lock()
-		defer connectionManager.lock.Unlock()
 		delete(connectionManager.connections, connection.endpoint.Host()+":"+strconv.Itoa(connection.endpoint.Port()))
-		listeners := connectionManager.connectionClosedListeners.Load().([]onConnectionClosed)
+		listeners := connectionManager.connectionListeners.Load().([]interface{})
+		connectionManager.lock.Unlock()
 		for _, listener := range listeners {
-			listener(connection)
+			if _, ok := listener.(connnectionListener); ok {
+				listener.(connnectionListener).onConnectionClosed(connection)
+			}
 		}
 	} else {
 		//Clean up unauthenticated connection
@@ -138,4 +135,9 @@ func (connectionManager *ConnectionManager) closeConnection(address core.IAddres
 	if found {
 		connection.Close()
 	}
+}
+
+type connnectionListener interface {
+	onConnectionClosed(connection *Connection)
+	onConnectionOpened(connection *Connection)
 }

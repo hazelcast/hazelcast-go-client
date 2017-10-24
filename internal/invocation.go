@@ -81,7 +81,7 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 		service.invoke = service.invokeNonSmart
 	}
 	service.start()
-	service.client.ConnectionManager.AddListener(service.cleanupConnection)
+	service.client.ConnectionManager.AddListener(service)
 	return service
 }
 func (invocationService *InvocationService) start() {
@@ -257,6 +257,11 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 
 func convertToError(clientMessage *ClientMessage) *Error {
 	return ErrorCodecDecode(clientMessage)
+}
+func (invocationService *InvocationService) onConnectionClosed(connection *Connection) {
+	invocationService.cleanupConnection(connection)
+}
+func (invocationService *InvocationService) onConnectionOpened(connection *Connection) {
 }
 func (invocationService *InvocationService) cleanupConnection(connection *Connection) {
 	invocationService.cleanupConnectionChannel <- connection

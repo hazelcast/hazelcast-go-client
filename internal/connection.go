@@ -128,7 +128,6 @@ func (connection *Connection) Close() {
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
 		return
 	}
-	connection.connectionManager.connectionClosed(connection, "")
-
 	close(connection.closed)
+	connection.connectionManager.connectionClosed(connection, "")
 }

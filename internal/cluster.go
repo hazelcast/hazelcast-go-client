@@ -30,16 +30,18 @@ type ClusterService struct {
 	ownerConnectionAddress *Address
 	listeners              atomic.Value
 	mu                     sync.Mutex
+	reconnectChan          chan struct{}
 }
 
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
-	service := &ClusterService{client: client, config: config}
+	service := &ClusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
 	service.members.Store(make([]Member, 0))              //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
 		service.AddListener(membershipListener)
 	}
-	service.client.ConnectionManager.AddListener(service.connectionClosed)
+	service.client.ConnectionManager.AddListener(service)
+	go service.process()
 	return service
 }
 func (clusterService *ClusterService) start() {
@@ -73,11 +75,22 @@ func getPossibleAddresses(addressList *[]string, memberList *[]Member) *[]Addres
 	}
 	return &addresses
 }
+func (clusterService *ClusterService) process() {
+	for {
+		_, alive := <-clusterService.reconnectChan
+		if !alive {
+			return
+		}
+		clusterService.reconnect()
+	}
+}
 func (clusterService *ClusterService) reconnect() {
 	err := clusterService.connectToCluster()
 	if err != nil {
+		log.Println("client will shutdown since it could not reconnect.")
 		clusterService.client.Shutdown()
 	}
+
 }
 func (clusterService *ClusterService) connectToCluster() error {
 	members := clusterService.members.Load().([]Member)
@@ -225,11 +238,14 @@ func (clusterService *ClusterService) GetMemberList() []core.IMember {
 	}
 	return members
 }
-func (clusterService *ClusterService) connectionClosed(connection *Connection) {
+func (clusterService *ClusterService) onConnectionClosed(connection *Connection) {
 	if connection.endpoint != nil && clusterService.ownerConnectionAddress != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
 		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
 		clusterService.ownerConnectionAddress = nil
 		clusterService.members.Store(make([]Member, 0)) //Clear members as the owner connection is closed.
-		go clusterService.reconnect()
+		clusterService.reconnectChan <- struct{}{}
 	}
+}
+func (clusterSerice *ClusterService) onConnectionOpened(connection *Connection) {
+
 }
