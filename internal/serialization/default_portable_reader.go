@@ -1,9 +1,9 @@
 package serialization
 
 import (
+	"fmt"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization/api"
-	"log"
 )
 
 type DefaultPortableReader struct {
@@ -73,11 +73,12 @@ func (pr *DefaultPortableReader) getTypeByConst(fieldType int32) string {
 func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int32) (int32, error) {
 	field := pr.classDefinition.fields[fieldName]
 	if pr.raw {
-		log.Printf("Cannot read portable fields after getRawDataInput called!")
+		return 0, NewHazelcastSerializationError("cannot read portable fields after getRawDataInput called", nil)
+
 	}
 
 	if field.fieldType != fieldType {
-		log.Printf("Not a %s field: %s", pr.getTypeByConst(fieldType), fieldName) /// fieldtype is int
+		return 0, NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", pr.getTypeByConst(fieldType), fieldName), nil)
 	}
 	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.index*INT_SIZE_IN_BYTES)
 	if err != nil {
@@ -165,14 +166,12 @@ func (pr *DefaultPortableReader) ReadUTF(fieldName string) (string, error) {
 func (pr *DefaultPortableReader) ReadPortable(fieldName string) (Portable, error) {
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
-	//try {
-	// TODO error returning
 	pos, err := pr.positionByField(fieldName, PORTABLE)
 	if err != nil {
 		return nil, err
 	}
 	pr.input.SetPosition(pos)
-	isNull, err := pr.input.ReadBool()
+	isNil, err := pr.input.ReadBool()
 	if err != nil {
 		return nil, err
 	}
@@ -184,14 +183,10 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) (Portable, error
 	if err != nil {
 		return nil, err
 	}
-	if isNull {
+	if isNil {
 		return nil, nil
 	}
 	return pr.serializer.ReadObject(pr.input, factoryId, classId)
-
-	//} finally {
-
-	//	}
 }
 
 func (pr *DefaultPortableReader) ReadByteArray(fieldName string) ([]byte, error) {
