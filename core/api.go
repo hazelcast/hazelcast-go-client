@@ -16,6 +16,10 @@ type IPair interface {
 }
 type IData interface {
 	Buffer() []byte
+	GetType() int32
+	TotalSize() int
+	DataSize() int
+	GetPartitionHash() int32
 }
 type IDistributedObjectInfo interface {
 	Name() string

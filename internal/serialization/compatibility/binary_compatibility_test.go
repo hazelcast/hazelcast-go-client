@@ -71,7 +71,7 @@ func TestBinaryCompatibility(t *testing.T) {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {
-				dataMap[objectKey] = &serialization.Data{payload}
+				dataMap[objectKey] = serialization.NewData(payload)
 			}
 		}
 		index++

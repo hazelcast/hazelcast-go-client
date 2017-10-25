@@ -2,6 +2,7 @@ package config
 
 import (
 	. "github.com/hazelcast/go-client/internal/serialization/api"
+	"reflect"
 )
 
 const (
@@ -22,12 +23,13 @@ type SerializationConfig struct {
 	dataSerializableFactories map[int32]IdentifiedDataSerializableFactory
 	portableFactories         map[int32]PortableFactory
 	portableVersion           int32
-	//customSerializers []
+	customSerializers         map[reflect.Type]Serializer
 	//globalSerializer
 }
 
 func NewSerializationConfig() *SerializationConfig {
-	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), portableFactories: make(map[int32]PortableFactory), portableVersion: 0}
+	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory),
+		portableFactories: make(map[int32]PortableFactory), portableVersion: 0, customSerializers: make(map[reflect.Type]Serializer)}
 }
 
 func (c *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
@@ -60,6 +62,14 @@ func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
 
 func (sc *SerializationConfig) SetPortableVersion(version int32) {
 	sc.portableVersion = version
+}
+
+func (c *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer Serializer) {
+	c.customSerializers[typ] = serializer
+}
+
+func (sc *SerializationConfig) CustomSerializers() map[reflect.Type]Serializer {
+	return sc.customSerializers
 }
 
 func NewClientConfig() *ClientConfig {
