@@ -16,11 +16,15 @@ type Data struct {
 	Payload []byte
 }
 
+func NewData(payload []byte) *Data {
+	return &Data{payload}
+}
+
 func (data Data) Buffer() []byte {
 	return data.Payload
 }
 
-func (data Data) getType() int32 {
+func (data Data) GetType() int32 {
 	if data.TotalSize() == 0 {
 		return 0
 	}
@@ -34,10 +38,10 @@ func (data Data) TotalSize() int {
 	return len(data.Payload)
 }
 
-func (d *Data) DataSize() int {
+func (d Data) DataSize() int {
 	return int(math.Max(float64(d.TotalSize()-HEAP_DATA_OVERHEAD), 0))
 }
 
-func (d *Data) GetPartitionHash() int32 {
+func (d Data) GetPartitionHash() int32 {
 	return Murmur3ADefault(d.Payload, DATA_OFFSET, d.DataSize())
 }

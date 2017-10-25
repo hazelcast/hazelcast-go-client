@@ -36,9 +36,9 @@ func TestObjectDataOutput_WriteData(t *testing.T) {
 	data := &Data{[]byte{123, 122, 33, 12}}
 	o.WriteData(data)
 	var expectedRet []byte = []byte{4, 0, 0, 0, 123, 122, 33, 12}
-	data.Payload[1] = 0
-	data.Payload[2] = 0
-	data.Payload[3] = 0
+	data.Buffer()[1] = 0
+	data.Buffer()[2] = 0
+	data.Buffer()[3] = 0
 	if !reflect.DeepEqual(o.buffer, expectedRet) {
 		t.Errorf("WriteData() works wrong!")
 	}
@@ -365,4 +365,21 @@ func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 	if !reflect.DeepEqual(array, ret_array) {
 		t.Errorf("There is a problem in WriteUTFArray() or ReadUTFArray()!")
 	}
+}
+
+func TestObjectDataInput_ReadData(t *testing.T) {
+	o := NewObjectDataOutput(0, nil, false)
+	expectedRet := &Data{[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}}
+	o.WriteUTF("Dummy")
+	o.WriteUTF("Dummy2")
+	o.WriteData(expectedRet)
+
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	i.ReadUTF()
+	i.ReadUTF()
+	ret, _ := i.ReadData()
+	if !reflect.DeepEqual(expectedRet, ret) {
+		t.Errorf("There is a problem in WriteData() or ReadData()!")
+	}
+
 }
