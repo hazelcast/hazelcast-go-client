@@ -78,7 +78,7 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	}
 
 	if field.fieldType != fieldType {
-		return 0, NewHazelcastSerializationError(fmt.Sprintf("Not a %s field: %s", pr.getTypeByConst(fieldType), fieldName), nil)
+		return 0, NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", pr.getTypeByConst(fieldType), fieldName), nil)
 	}
 	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.index*INT_SIZE_IN_BYTES)
 	if err != nil {

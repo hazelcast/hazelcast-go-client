@@ -49,7 +49,7 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 		var backupPos = input.Position()
 		classDefinition, err = ps.portableContext.ReadClassDefinitionFromInput(input, factoryId, classId, version)
 		if err != nil {
-			defer input.SetPosition(backupPos)
+			input.SetPosition(backupPos)
 			return nil, err
 		}
 		input.SetPosition(backupPos)
