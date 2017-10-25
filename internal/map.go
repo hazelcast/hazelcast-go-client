@@ -614,7 +614,7 @@ func (imap *MapProxy) RemoveEntryListener(registrationId *string) error {
 	})
 }
 
-func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor core.IEntryProcessor) (interface{}, error) {
+func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (interface{}, error) {
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -631,7 +631,7 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor core.IEntryPr
 	responseData := MapExecuteOnKeyDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor core.IEntryProcessor) ([]core.IPair, error) {
+func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) ([]core.IPair, error) {
 	keysData := make([]serialization.Data, len(keys))
 	for index, key := range keys {
 		keyData, err := imap.ToData(key)
@@ -664,7 +664,7 @@ func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor core.IEnt
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) ExecuteOnEntries(entryProcessor core.IEntryProcessor) ([]core.IPair, error) {
+func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) ([]core.IPair, error) {
 	entryProcessorData, err := imap.ToData(entryProcessor)
 	if err != nil {
 		return nil, err

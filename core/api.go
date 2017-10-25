@@ -94,11 +94,6 @@ type IMemberAddedListener interface {
 type IMemberRemovedListener interface {
 	MemberRemoved(member IMember)
 }
-type IEntryBackupProcessor interface {
-	ProcessBackup(entry IPair)
-}
-type IEntryProcessor interface {
-}
 type ILifecycleListener interface {
 	LifecycleStateChanged(string)
 }
