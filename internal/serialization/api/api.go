@@ -1,5 +1,7 @@
 package api
 
+import . "github.com/hazelcast/go-client/core"
+
 type IdentifiedDataSerializableFactory interface {
 	Create(id int32) IdentifiedDataSerializable
 }
@@ -26,6 +28,12 @@ type PortableFactory interface {
 	Create(classId int32) Portable
 }
 
+type Serializer interface {
+	Id() int32
+	Read(input DataInput) (interface{}, error)
+	Write(output DataOutput, object interface{})
+}
+
 type DataOutput interface {
 	Position() int32
 	SetPosition(pos int32)
@@ -39,6 +47,7 @@ type DataOutput interface {
 	WriteFloat64(v float64)
 	WriteUTF(v string)
 	WriteObject(i interface{})
+	WriteData(data IData)
 	WriteByteArray(v []byte)
 	WriteBoolArray(v []bool)
 	WriteUInt16Array(v []uint16)
@@ -76,6 +85,7 @@ type DataInput interface {
 	ReadFloat64() (float64, error)
 	ReadUTF() (string, error)
 	ReadObject() (interface{}, error)
+	ReadData() (IData, error)
 	ReadByteArray() ([]byte, error)
 	ReadBoolArray() ([]bool, error)
 	ReadUInt16Array() ([]uint16, error)
