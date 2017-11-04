@@ -130,8 +130,8 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 }
 func (connectionManager *ConnectionManager) closeConnection(address core.IAddress) {
 	connectionManager.lock.RLock()
-	defer connectionManager.lock.RUnlock()
 	connection, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]
+	connectionManager.lock.RUnlock()
 	if found {
 		connection.Close()
 	}

@@ -41,6 +41,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	}
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
+		connection.status = 1 // Connection is not opened.
 		return nil
 	} else {
 		connection.socket = socket

@@ -8,6 +8,7 @@ import (
 	"log"
 	"sync"
 	"testing"
+	"time"
 )
 
 type membershipListener struct {
@@ -126,6 +127,22 @@ func TestRestartMember(t *testing.T) {
 	client.GetLifecycle().RemoveListener(&registratonId)
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	oldMember, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.ConnectionAttemptLimit = 100
+	config.ClientNetworkConfig.SmartRouting = false
+	client := hazelcast.NewHazelcastClientWithConfig(config)
+	newMember, _ := remoteController.StartMember(cluster.ID)
+	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
+	time.Sleep(10 * time.Second)
+	memberList := client.GetCluster().GetMemberList()
+	AssertEqualf(t, nil, len(memberList), 1, "client did not use the last member list to reconnect")
+	AssertEqualf(t, nil, memberList[0].Uuid(), newMember.UUID, "client did not use the last member list to reconnect uuid")
+	remoteController.ShutdownCluster(cluster.ID)
+	client.Shutdown()
 }
 
 type mapListener struct {
