@@ -24,7 +24,7 @@ func TestLifecycleListener(t *testing.T) {
 	config.AddLifecycleListener(&lifecycleListener)
 	remoteController.StartMember(cluster.ID)
 	wg.Add(5)
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Lifecycle listener failed")
@@ -40,7 +40,7 @@ func TestRemoveListener(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewHazelcastClient()
 	registrationId := client.GetLifecycle().AddListener(&lifecycleListener)
 	wg.Add(2)
 	client.GetLifecycle().RemoveListener(&registrationId)

@@ -103,7 +103,6 @@ func (connection *Connection) read() {
 		n, err := connection.socket.Read(buf)
 		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
 		if err != nil {
-			//TODO:: Handle error
 			connection.Close()
 			return
 		}

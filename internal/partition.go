@@ -61,20 +61,25 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 
 func (partitionService *PartitionService) doRefresh() {
 	address := partitionService.client.ClusterService.ownerConnectionAddress
-	connectionChan := partitionService.client.ConnectionManager.GetConnection(address)
-	connection, alive := <-connectionChan
-	if !alive {
-		log.Print("connection is closed")
-		//TODO::Handle connection closed
+	connectionChan, errChannel := partitionService.client.ConnectionManager.GetConnection(address)
+	var connection *Connection
+	var alive bool
+	select {
+	case connection, alive = <-connectionChan:
+		if !alive {
+			log.Println("Connection is closed")
+			return
+		}
+	case <-errChannel:
 		return
 	}
 	if connection == nil {
-		//TODO:: Handle error
+		return
 	}
 	request := ClientGetPartitionsEncodeRequest()
 	result, err := partitionService.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
-		//TODO:: Handle error
+		return
 	}
 	partitionService.processPartitionResponse(result)
 }

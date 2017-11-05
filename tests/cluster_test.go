@@ -3,6 +3,7 @@ package tests
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"sync"
@@ -67,7 +68,7 @@ func TestAddListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewHazelcastClient()
 	wg.Add(1)
 	registrationId := client.GetCluster().AddListener(&membershipListener{wg: wg})
 	member, _ := remoteController.StartMember(cluster.ID)
@@ -90,11 +91,33 @@ func TestGetMembers(t *testing.T) {
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	member3, _ := remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewHazelcastClient()
 	members := client.GetCluster().GetMemberList()
 	AssertEqualf(t, nil, len(members), 3, "GetMemberList returned wrong number of members")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
+	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestAuthenticationWithWrongCredentials(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.GroupConfig.SetName("wrongName")
+	config.GroupConfig.SetPassword("wrongPassword")
+	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	if _, ok := err.(*common.HazelcastAuthenticationError); !ok {
+		t.Fatal("client should have returned an authentication error")
+	}
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestClientWithMember(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	client, err := hazelcast.NewHazelcastClient()
+	if _, ok := err.(*common.HazelcastErrorType); !ok {
+		t.Fatal("client should have returned a hazelcastError")
+	}
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }

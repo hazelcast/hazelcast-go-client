@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp, _ = client.GetMap(&mapName)
 	m.Run()
