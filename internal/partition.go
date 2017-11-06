@@ -70,11 +70,13 @@ func (partitionService *PartitionService) doRefresh() {
 	}
 	if connection == nil {
 		//TODO:: Handle error
+		return
 	}
 	request := ClientGetPartitionsEncodeRequest()
 	result, err := partitionService.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		//TODO:: Handle error
+		return
 	}
 	partitionService.processPartitionResponse(result)
 }

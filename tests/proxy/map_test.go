@@ -27,6 +27,7 @@ func TestMain(m *testing.M) {
 	mp, _ = client.GetMap(&mapName)
 	m.Run()
 	mp.Clear()
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestMapProxy_SinglePutGet(t *testing.T) {
