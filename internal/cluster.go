@@ -95,10 +95,10 @@ func (clusterService *ClusterService) connectToCluster() error {
 			return nil
 		}
 	}
-	return common.NewHazelcastErrorType("could not connect to any addresses", nil)
+	return common.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
-	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetConnection(address)
+	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address)
 	var con *Connection
 	var alive bool
 	select {

@@ -112,10 +112,10 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
-func TestClientWithMember(t *testing.T) {
+func TestClientWithoutMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	client, err := hazelcast.NewHazelcastClient()
-	if _, ok := err.(*common.HazelcastErrorType); !ok {
+	if _, ok := err.(*common.HazelcastIllegalStateError); !ok {
 		t.Fatal("client should have returned a hazelcastError")
 	}
 	client.Shutdown()

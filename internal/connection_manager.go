@@ -21,7 +21,7 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 	}
 	return &cm
 }
-func (connectionManager *ConnectionManager) GetConnection(address *Address) (chan *Connection, chan error) {
+func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
 	if address == nil {
 		address = NewAddress()

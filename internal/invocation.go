@@ -189,7 +189,7 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 }
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
-	connectionChannel, _ := invocationService.client.ConnectionManager.GetConnection(address)
+	connectionChannel, _ := invocationService.client.ConnectionManager.GetOrConnect(address)
 	invocationService.send(invocation, connectionChannel)
 }
 
