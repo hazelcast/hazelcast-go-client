@@ -198,8 +198,11 @@ func (service *SerializationService) lookUpDefaultSerializer(obj interface{}) Se
 }
 
 func (service *SerializationService) lookUpCustomSerializer(obj interface{}) Serializer {
-	if val, ok := service.serializationConfig.CustomSerializers()[reflect.TypeOf(obj)]; ok {
-		return val
+
+	for key, val := range service.serializationConfig.CustomSerializers() {
+		if reflect.TypeOf(obj).Implements(key) {
+			return val
+		}
 	}
 	return nil
 }
