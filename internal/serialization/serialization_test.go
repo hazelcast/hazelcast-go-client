@@ -10,6 +10,11 @@ import (
 	"testing"
 )
 
+const (
+	MUSICIAN_TYPE = 1
+	PAINTER_TYPE  = 2
+)
+
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
 	var id int32 = NewSerializationService(NewSerializationConfig()).lookUpDefaultSerializer(a).Id()
@@ -32,24 +37,31 @@ func TestSerializationService_ToData(t *testing.T) {
 	}
 }
 
-type CustomMusicianSerializer struct {
+type CustomArtistSerializer struct {
 }
 
-func (s *CustomMusicianSerializer) Id() int32 {
+func (s *CustomArtistSerializer) Id() int32 {
 	return 10
 }
 
-func (s *CustomMusicianSerializer) Read(input api.DataInput) (interface{}, error) {
+func (s *CustomArtistSerializer) Read(input api.DataInput) (interface{}, error) {
 	var network bytes.Buffer
+	typ, _ := input.ReadInt32()
 	data, _ := input.ReadData()
 	network.Write(data.Buffer())
 	dec := gob.NewDecoder(&network)
-	var v musician
-	dec.Decode(&v)
-	return &v, nil
+	var v artist
+	if typ == MUSICIAN_TYPE {
+		v = &musician{}
+	} else if typ == PAINTER_TYPE {
+		v = &painter{}
+	}
+
+	dec.Decode(v)
+	return v, nil
 }
 
-func (s *CustomMusicianSerializer) Write(output api.DataOutput, obj interface{}) {
+func (s *CustomArtistSerializer) Write(output api.DataOutput, obj interface{}) {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
@@ -57,8 +69,13 @@ func (s *CustomMusicianSerializer) Write(output api.DataOutput, obj interface{})
 		log.Fatal("encode:", err)
 	}
 	payload := (&network).Bytes()
+	output.WriteInt32(obj.(artist).Type())
 	output.WriteData(NewData(payload))
 
+}
+
+type artist interface {
+	Type() int32
 }
 
 type musician struct {
@@ -66,16 +83,33 @@ type musician struct {
 	Surname string
 }
 
+func (*musician) Type() int32 {
+	return MUSICIAN_TYPE
+}
+
+type painter struct {
+	Name    string
+	Surname string
+}
+
+func (*painter) Type() int32 {
+	return PAINTER_TYPE
+}
+
 func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
-	customSerializer := &CustomMusicianSerializer{}
+	p := &painter{"Leonardo", "da Vinci"}
+	customSerializer := &CustomArtistSerializer{}
 	config := NewSerializationConfig()
-	config.AddCustomSerializer(reflect.TypeOf(m), customSerializer)
+
+	config.AddCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
 	service := NewSerializationService(config)
 	data, _ := service.ToData(m)
 	ret, _ := service.ToObject(data)
+	data2, _ := service.ToData(p)
+	ret2, _ := service.ToObject(data2)
 
-	if !reflect.DeepEqual(m, ret) {
+	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
 		t.Errorf("custom serialization failed")
 	}
 }
