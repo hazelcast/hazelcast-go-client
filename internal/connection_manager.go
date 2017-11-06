@@ -53,7 +53,6 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	invocationService := connectionManager.client.InvocationService
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
 	if con == nil {
-		close(resp)
 		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
 	connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = con
