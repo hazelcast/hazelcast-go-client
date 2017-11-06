@@ -135,3 +135,7 @@ type PortableReader interface {
 	ReadPortableArray(fieldName string) ([]Portable, error)
 	End()
 }
+
+type IPredicate interface {
+	IdentifiedDataSerializable
+}

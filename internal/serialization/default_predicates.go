@@ -1,15 +1,41 @@
 package serialization
 
-import . "github.com/hazelcast/go-client/internal/serialization/api"
-
-type SqlPredicate struct {
-	sql string
-}
+import (
+	. "github.com/hazelcast/go-client/internal/serialization/api"
+)
 
 const PREDICATE_FACTORY_ID = -32
 
-func NewSqlPredicate(sql string) SqlPredicate {
-	return SqlPredicate{sql}
+type predicate struct {
+	id int32
+}
+
+func newPredicate(id int32) *predicate {
+	return &predicate{id}
+}
+
+func (sp *predicate) ReadData(input DataInput) error {
+	return nil
+}
+
+func (sp *predicate) WriteData(output DataOutput) {
+}
+
+func (*predicate) FactoryId() int32 {
+	return PREDICATE_FACTORY_ID
+}
+
+func (p *predicate) ClassId() int32 {
+	return p.id
+}
+
+type SqlPredicate struct {
+	*predicate
+	sql string
+}
+
+func NewSqlPredicate(sql string) *SqlPredicate {
+	return &SqlPredicate{newPredicate(SQL_PREDICATE), sql}
 }
 
 func (sp *SqlPredicate) ReadData(input DataInput) error {
@@ -22,36 +48,27 @@ func (sp *SqlPredicate) WriteData(output DataOutput) {
 	output.WriteUTF(sp.sql)
 }
 
-func (sp *SqlPredicate) FactoryId() int32 {
-	return PREDICATE_FACTORY_ID
-}
-
-func (*SqlPredicate) ClassId() int32 {
-	return SQL_PREDICATE
-}
-
 type AndPredicate struct {
-	predicates []IdentifiedDataSerializable
+	*predicate
+	predicates []IPredicate
 }
 
-func NewAndPredicate(predicates []IdentifiedDataSerializable) AndPredicate {
-	return AndPredicate{predicates}
+func NewAndPredicate(predicates []IPredicate) *AndPredicate {
+	return &AndPredicate{newPredicate(AND_PREDICATE), predicates}
 }
 
 func (ap *AndPredicate) ReadData(input DataInput) error {
-	var err error
-	var length int32
-	length, err = input.ReadInt32()
+	length, err := input.ReadInt32()
 	if err != nil {
 		return err
 	}
-	ap.predicates = make([]IdentifiedDataSerializable, 0)
+	ap.predicates = make([]IPredicate, 0)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
 		if err != nil {
 			return err
 		}
-		ap.predicates[i] = pred.(IdentifiedDataSerializable)
+		ap.predicates[i] = pred.(IPredicate)
 	}
 	return nil
 }
@@ -61,12 +78,4 @@ func (ap *AndPredicate) WriteData(output DataOutput) {
 	for _, pred := range ap.predicates {
 		output.WriteObject(pred)
 	}
-}
-
-func (ap *AndPredicate) FactoryId() int32 {
-	return PREDICATE_FACTORY_ID
-}
-
-func (*AndPredicate) ClassId() int32 {
-	return AND_PREDICATE
 }

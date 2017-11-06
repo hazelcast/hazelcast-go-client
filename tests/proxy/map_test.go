@@ -303,7 +303,40 @@ func TestMapProxy_PutAll(t *testing.T) {
 				t.Fatalf("Map PutAll failed")
 			}
 		}
-
+	}
+	mp.Clear()
+}
+func TestMapProxy_EntrySetWithPredicate(t *testing.T) {
+	testMap := make(map[interface{}]interface{})
+	searchedMap := make(map[interface{}]interface{})
+	values := []string{"value1", "wantedValue", "wantedValue", "value2", "value3", "wantedValue", "wantedValue", "value4", "value5", "wantedValue"}
+	searchedMap["testingKey1"] = "wantedValue"
+	searchedMap["testingKey2"] = "wantedValue"
+	searchedMap["testingKey5"] = "wantedValue"
+	searchedMap["testingKey6"] = "wantedValue"
+	searchedMap["testingKey9"] = "wantedValue"
+	for i := 0; i < 10; i++ {
+		testMap["testingKey"+strconv.Itoa(i)] = values[i]
+	}
+	err := mp.PutAll(&testMap)
+	if err != nil {
+		t.Fatal(err)
+	} else {
+		entryList, err := mp.EntrySetWithPredicate(core.Sql("this == wantedValue"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(searchedMap) != len(entryList) {
+			t.Fatalf("map EntrySetWithPredicate() failed")
+		}
+		for _, pair := range entryList {
+			key := pair.Key()
+			value := pair.Value()
+			expectedValue, found := searchedMap[key]
+			if !found || expectedValue != value {
+				t.Fatalf("map EntrySetWithPredicate() failed")
+			}
+		}
 	}
 	mp.Clear()
 }
