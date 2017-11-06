@@ -22,6 +22,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	AssertEqualf(t, err, res, testValue, "get returned a wrong value")
 	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
+	client.Shutdown()
 }
 func TestSingleConnectionWithManyMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
@@ -44,4 +45,5 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	connectionCount := client.(*internal.HazelcastClient).ConnectionManager.ConnectionCount()
 	AssertEqualf(t, nil, int32(1), connectionCount, "Client should open only one connection")
 	remoteController.ShutdownCluster(cluster.ID)
+	client.Shutdown()
 }

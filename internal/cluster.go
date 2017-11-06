@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"github.com/hazelcast/go-client/config"
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
@@ -29,15 +30,18 @@ type ClusterService struct {
 	ownerConnectionAddress *Address
 	listeners              atomic.Value
 	mu                     sync.Mutex
+	reconnectChan          chan struct{}
 }
 
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
-	service := &ClusterService{client: client, config: config}
+	service := &ClusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
 	service.members.Store(make([]Member, 0))              //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
 		service.AddListener(membershipListener)
 	}
+	service.client.ConnectionManager.AddListener(service)
+	go service.process()
 	return service
 }
 func (clusterService *ClusterService) start() {
@@ -71,34 +75,49 @@ func getPossibleAddresses(addressList *[]string, memberList *[]Member) *[]Addres
 	}
 	return &addresses
 }
-func (clusterService *ClusterService) connectToCluster() {
+func (clusterService *ClusterService) process() {
+	for {
+		_, alive := <-clusterService.reconnectChan
+		if !alive {
+			return
+		}
+		clusterService.reconnect()
+	}
+}
+func (clusterService *ClusterService) reconnect() {
+	err := clusterService.connectToCluster()
+	if err != nil {
+		log.Println("client will shutdown since it could not reconnect.")
+		clusterService.client.Shutdown()
+	}
+
+}
+func (clusterService *ClusterService) connectToCluster() error {
 	members := clusterService.members.Load().([]Member)
 	addresses := getPossibleAddresses(&clusterService.config.ClientNetworkConfig.Addresses, &members)
 	currentAttempt := int32(1)
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
-	for currentAttempt < attempLimit {
+	for currentAttempt <= attempLimit {
+		currentAttempt++
 		for _, address := range *addresses {
-			if currentAttempt > attempLimit {
-				break
-			}
 			err := clusterService.connectToAddress(&address)
 			if err != nil {
-				//TODO :: Handle error
-				currentAttempt += 1
-				time.Sleep(time.Duration(retryDelay))
 				continue
 			}
-			return
+			return nil
+		}
+		if currentAttempt < attempLimit {
+			time.Sleep(time.Duration(retryDelay) * time.Second)
 		}
 	}
+	return errors.New("Couldn't connect to the cluster")
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	connectionChannel := clusterService.client.ConnectionManager.GetConnection(address)
 	con, alive := <-connectionChannel
 	if !alive {
-		log.Println("Connection is closed")
-		return nil
+		return errors.New("connection is closed")
 	}
 	if !con.isOwnerConnection {
 		clusterService.client.ConnectionManager.clusterAuthenticator(con)
@@ -165,8 +184,31 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 }
 
 func (clusterService *ClusterService) handleMemberList(members *[]Member) {
+	previousMembers := clusterService.members.Load().([]Member)
+	//TODO:: This loop is O(n^2), it is better to store members in a map to speed it up.
+	for _, member := range previousMembers {
+		found := false
+		for _, newMember := range *members {
+			if member.Equal(newMember) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			clusterService.memberRemoved(&member)
+		}
+	}
 	for _, member := range *members {
-		clusterService.memberAdded(&member)
+		found := false
+		for _, previousMember := range previousMembers {
+			if member.Equal(previousMember) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			clusterService.memberAdded(&member)
+		}
 	}
 	clusterService.client.PartitionService.refresh <- true
 	wg.Done() //initial member list is fetched
@@ -194,14 +236,13 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 	members := clusterService.members.Load().([]Member)
 	copyMembers := make([]Member, len(members)-1)
 	index := 0
-	for _, member := range members {
-		if !member.Equal(member) {
-			copyMembers[index] = member
+	for _, curMember := range members {
+		if !curMember.Equal(*member) {
+			copyMembers[index] = curMember
 			index++
 		}
 	}
 	clusterService.members.Store(copyMembers)
-	clusterService.client.ConnectionManager.closeConnection(member.Address())
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberRemovedListener); ok {
@@ -212,8 +253,18 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 func (clusterService *ClusterService) GetMemberList() []core.IMember {
 	membersList := clusterService.members.Load().([]Member)
 	members := make([]core.IMember, len(membersList))
-	for i, m := range membersList {
-		members[i] = core.IMember(&m)
+	for index := 0; index < len(membersList); index++ {
+		members[index] = core.IMember(&membersList[index])
 	}
 	return members
+}
+func (clusterService *ClusterService) onConnectionClosed(connection *Connection) {
+	if connection.endpoint != nil && clusterService.ownerConnectionAddress != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
+		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
+		clusterService.ownerConnectionAddress = nil
+		clusterService.reconnectChan <- struct{}{}
+	}
+}
+func (clusterSerice *ClusterService) onConnectionOpened(connection *Connection) {
+
 }

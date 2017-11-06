@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
-	"log"
 	"net"
 	"strconv"
 	"sync/atomic"
@@ -27,28 +26,28 @@ type Connection struct {
 	lastRead             time.Time
 	heartBeating         bool
 	readBuffer           []byte
+	connectionManager    *ConnectionManager
 }
 
-func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64) *Connection {
+func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionManager *ConnectionManager) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
 		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
-		heartBeating: true,
-		readBuffer:   make([]byte, 0),
+		heartBeating:      true,
+		readBuffer:        make([]byte, 0),
+		connectionManager: connectionManager,
+		endpoint:          address,
 	}
-	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
-		connection.Close()
-		log.Println("CONNECTION IS CLOSED")
+		connection.status = 1 // Connection is not opened.
 		return nil
 	} else {
 		connection.socket = socket
 	}
 	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
-	//}()
 	go connection.writePool()
 	go connection.read()
 	return &connection
@@ -131,4 +130,5 @@ func (connection *Connection) Close() {
 		return
 	}
 	close(connection.closed)
+	connection.connectionManager.connectionClosed(connection, "socket explicitly closed")
 }
