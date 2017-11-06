@@ -63,13 +63,8 @@ func (partitionService *PartitionService) doRefresh() {
 	address := partitionService.client.ClusterService.ownerConnectionAddress
 	connectionChan, errChannel := partitionService.client.ConnectionManager.GetOrConnect(address)
 	var connection *Connection
-	var alive bool
 	select {
-	case connection, alive = <-connectionChan:
-		if !alive {
-			log.Println("Connection is closed")
-			return
-		}
+	case connection = <-connectionChan:
 	case err := <-errChannel:
 		log.Println("error while fetching cluster partition table! ", err)
 		return

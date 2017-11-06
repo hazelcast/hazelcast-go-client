@@ -100,13 +100,8 @@ func (clusterService *ClusterService) connectToCluster() error {
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address)
 	var con *Connection
-	var alive bool
 	select {
-	case con, alive = <-connectionChannel:
-		if !alive {
-			log.Println("Connection is closed")
-			return common.NewHazelcastTargetDisconnectedError("target disconnected", nil)
-		}
+	case con = <-connectionChannel:
 	case err := <-errChannel:
 		return err
 	}
