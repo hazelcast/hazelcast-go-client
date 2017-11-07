@@ -184,12 +184,15 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 }
 
 func (clusterService *ClusterService) handleMemberList(members *[]Member) {
+	if len(*members) == 0 {
+		return
+	}
 	previousMembers := clusterService.members.Load().([]Member)
 	//TODO:: This loop is O(n^2), it is better to store members in a map to speed it up.
 	for _, member := range previousMembers {
 		found := false
 		for _, newMember := range *members {
-			if member.Equal(newMember) {
+			if *member.Address().(*Address) == *newMember.Address().(*Address) {
 				found = true
 				break
 			}
@@ -201,7 +204,7 @@ func (clusterService *ClusterService) handleMemberList(members *[]Member) {
 	for _, member := range *members {
 		found := false
 		for _, previousMember := range previousMembers {
-			if member.Equal(previousMember) {
+			if *member.Address().(*Address) == *previousMember.Address().(*Address) {
 				found = true
 				break
 			}
@@ -243,6 +246,11 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 		}
 	}
 	clusterService.members.Store(copyMembers)
+	connection := clusterService.client.ConnectionManager.getActiveConnection(member.Address().(*Address))
+	if connection != nil {
+		connection.Close(common.NewHazelcastTargetDisconnectedError("the client"+
+			"has closed the connection to this member after receiving a member left event from the cluster", nil))
+	}
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(MemberRemovedListener); ok {
@@ -258,7 +266,16 @@ func (clusterService *ClusterService) GetMemberList() []core.IMember {
 	}
 	return members
 }
-func (clusterService *ClusterService) onConnectionClosed(connection *Connection) {
+func (clusterService *ClusterService) GetMember(address *Address) *Member {
+	membersList := clusterService.members.Load().([]Member)
+	for _, member := range membersList {
+		if member.Address() == address {
+			return &member
+		}
+	}
+	return nil
+}
+func (clusterService *ClusterService) onConnectionClosed(connection *Connection, cause error) {
 	if connection.endpoint != nil && clusterService.ownerConnectionAddress != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
 		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
 		clusterService.ownerConnectionAddress = nil

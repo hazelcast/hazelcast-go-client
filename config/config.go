@@ -106,7 +106,7 @@ type ClientNetworkConfig struct {
 		    Setting a timeout of None disables the timeout feature and is equivalent to block the socket until it connects.
 		    Setting a timeout of zero is the same as disables blocking on connect.
 	*/
-	RedoOperations bool
+	RedoOperation bool
 	/*
 		If true, client will redo the operations that were executing on the server and client lost the connection.
 		This can be because of network, or simply because the member died. However it is not clear whether the
@@ -127,7 +127,14 @@ func NewClientNetworkConfig() ClientNetworkConfig {
 		ConnectionAttemptLimit:  2,
 		ConnectionAttemptPeriod: 3,
 		ConnectionTimeout:       5.0,
-		RedoOperations:          false,
+		RedoOperation:           false,
 		SmartRouting:            true,
 	}
+}
+func (clientNetworkConfig *ClientNetworkConfig) SetRedoOperation(RedoOperation bool) *ClientNetworkConfig {
+	clientNetworkConfig.RedoOperation = RedoOperation
+	return clientNetworkConfig
+}
+func (clientNetworkConfig *ClientNetworkConfig) IsRedoOperation() bool {
+	return clientNetworkConfig.RedoOperation
 }

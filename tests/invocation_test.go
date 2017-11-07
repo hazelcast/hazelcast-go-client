@@ -5,6 +5,7 @@ import (
 	"github.com/hazelcast/go-client/internal"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestNonSmartInvoke(t *testing.T) {
@@ -46,4 +47,19 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	AssertEqualf(t, nil, int32(1), connectionCount, "Client should open only one connection")
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
+}
+func TestInvocationRetry(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 10
+	client := hazelcast.NewHazelcastClientWithConfig(config)
+	mapName := "testMap"
+	mp, _ := client.GetMap(&mapName)
+	remoteController.ShutdownMember(member1.UUID, cluster.ID)
+	_, err := mp.Put("testKey", "testValue")
+	time.Sleep(5 * time.Second)
+	remoteController.StartMember(cluster.ID)
+	AssertNilf(t, err, nil, "InvocationRetry failed")
+
 }

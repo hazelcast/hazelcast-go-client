@@ -33,7 +33,22 @@ type HazelcastAuthenticationError struct {
 type HazelcastIllegalArgumentError struct {
 	*HazelcastErrorType
 }
+type HazelcastClientNotActiveError struct {
+	*HazelcastErrorType
+}
+type HazelcastTargetNotMemberError struct {
+	*HazelcastErrorType
+}
+type HazelcastTargetDisconnectedError struct {
+	*HazelcastErrorType
+}
+type HazelcastInstanceNotActiveError struct {
+	*HazelcastErrorType
+}
 
+func NewHazelcastClientNotActiveError(message string, cause error) *HazelcastClientNotActiveError {
+	return &HazelcastClientNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
+}
 func NewHazelcastEOFError(message string, cause error) *HazelcastEOFError {
 	return &HazelcastEOFError{&HazelcastErrorType{message, cause}}
 }
@@ -48,4 +63,7 @@ func NewHazelcastIllegalArgumentError(message string, cause error) *HazelcastIll
 
 func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuthenticationError {
 	return &HazelcastAuthenticationError{&HazelcastErrorType{message, cause}}
+}
+func NewHazelcastTargetDisconnectedError(message string, cause error) *HazelcastTargetDisconnectedError {
+	return &HazelcastTargetDisconnectedError{&HazelcastErrorType{message: message, cause: cause}}
 }
