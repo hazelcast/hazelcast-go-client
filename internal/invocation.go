@@ -15,17 +15,18 @@ import (
 )
 
 type Invocation struct {
-	boundConnection *Connection
-	sentConnection  *Connection
-	address         *Address
-	request         *ClientMessage
-	partitionId     int32
-	response        chan *ClientMessage
-	closed          chan bool
-	err             chan error
-	eventHandler    func(clientMessage *ClientMessage)
-	registrationId  *string
-	timeout         <-chan time.Time //TODO invocation should be sent in this timeout
+	boundConnection         *Connection
+	sentConnection          *Connection
+	address                 *Address
+	request                 *ClientMessage
+	partitionId             int32
+	response                chan *ClientMessage
+	closed                  chan bool
+	err                     chan error
+	eventHandler            func(clientMessage *ClientMessage)
+	registrationId          *string
+	timeout                 <-chan time.Time //TODO invocation should be sent in this timeout
+	listenerResponseDecoder DecodeListenerResponse
 }
 
 type InvocationResult interface {
@@ -54,23 +55,25 @@ func (invocation *Invocation) Result() (*ClientMessage, error) {
 }
 
 type InvocationService struct {
-	client           *HazelcastClient
-	quit             chan bool
-	nextCorrelation  int64
-	responseWaitings map[int64]*Invocation
-	eventHandlers    map[int64]*Invocation
-	sending          chan *Invocation
-	responseChannel  chan *ClientMessage
-	notSentMessages  chan int64
-	invoke           func(*Invocation)
-	lock             sync.RWMutex
+	client                   *HazelcastClient
+	quit                     chan struct{}
+	nextCorrelation          int64
+	responseWaitings         map[int64]*Invocation
+	eventHandlers            map[int64]*Invocation
+	sending                  chan *Invocation
+	responseChannel          chan *ClientMessage
+	cleanupConnectionChannel chan *Connection
+	notSentMessages          chan int64
+	invoke                   func(*Invocation)
+	lock                     sync.RWMutex
 }
 
 func NewInvocationService(client *HazelcastClient) *InvocationService {
 	service := &InvocationService{client: client, sending: make(chan *Invocation, 10000), responseWaitings: make(map[int64]*Invocation),
 		eventHandlers:   make(map[int64]*Invocation),
 		responseChannel: make(chan *ClientMessage, 1),
-		quit:            make(chan bool, 0),
+		quit:            make(chan struct{}, 0),
+		cleanupConnectionChannel: make(chan *Connection, 1),
 	}
 	if client.ClientConfig.IsSmartRouting() {
 		service.invoke = service.invokeSmart
@@ -78,6 +81,7 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 		service.invoke = service.invokeNonSmart
 	}
 	service.start()
+	service.client.ConnectionManager.AddListener(service)
 	return service
 }
 func (invocationService *InvocationService) start() {
@@ -118,6 +122,8 @@ func (invocationService *InvocationService) process() {
 			invocationService.handleResponse(response)
 		case correlationId := <-invocationService.notSentMessages:
 			invocationService.handleNotSentInvocation(correlationId)
+		case connection := <-invocationService.cleanupConnectionChannel:
+			invocationService.cleanupConnectionInternal(connection)
 		case <-invocationService.quit:
 			return
 		}
@@ -251,11 +257,61 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 func convertToError(clientMessage *ClientMessage) *Error {
 	return ErrorCodecDecode(clientMessage)
 }
+func (invocationService *InvocationService) onConnectionClosed(connection *Connection) {
+	invocationService.cleanupConnection(connection)
+}
+func (invocationService *InvocationService) onConnectionOpened(connection *Connection) {
+}
+func (invocationService *InvocationService) cleanupConnection(connection *Connection) {
+	invocationService.cleanupConnectionChannel <- connection
+}
 
-//func (invocationService *InvocationService) retry(correlationId int64) {
-//
-//}
+//TODO::Add error(cause) parameter to this function
+func (invocationService *InvocationService) cleanupConnectionInternal(connection *Connection) {
+	for _, invocation := range invocationService.responseWaitings {
+		if invocation.sentConnection == connection {
+			//TODO:: send a proper error message
+			invocationService.handleException(invocation, errors.New("connection Closed"))
+		}
+	}
 
-//func (invocationService *InvocationService) shouldRetryInvocation(clientInvocation *Invocation, err error) bool {
-//
-//}
+	if invocationService.client.LifecycleService.isLive {
+		for _, invocation := range invocationService.eventHandlers {
+			if invocation.sentConnection == connection && invocation.boundConnection == nil {
+				// Since reregistration is done independently,it uses different resources than invocation service
+				// we dont need to wait for it.
+				go invocationService.client.ListenerService.reregisterListener(invocation)
+			}
+		}
+	}
+
+}
+func (invocationService *InvocationService) handleException(invocation *Invocation, err error) {
+	if !invocationService.client.LifecycleService.isLive {
+		invocation.err <- errors.New("lifecycle is not alive")
+		return
+	}
+	if invocationService.shouldRetryInvocation(invocation, err) {
+		if invocationService.tryRetry(invocation) {
+			return
+		}
+	}
+	invocation.err <- errors.New("Invocation is not retryable")
+}
+func (invocationService *InvocationService) tryRetry(invocation *Invocation) bool {
+	if invocation.boundConnection != nil {
+		return false
+	}
+	//TODO:: Check invocation timeout
+	invocationService.sending <- invocation
+
+	return true
+}
+
+func (invocationService *InvocationService) shouldRetryInvocation(clientInvocation *Invocation, err error) bool {
+	//TODO:: implement
+	return true
+}
+func (invocationService *InvocationService) shutdown() {
+	close(invocationService.quit)
+}

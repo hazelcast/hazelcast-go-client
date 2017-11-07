@@ -50,16 +50,16 @@ func (client *HazelcastClient) GetLifecycle() core.ILifecycle {
 }
 
 func (client *HazelcastClient) init() error {
+	client.LifecycleService = newLifecycleService(client.ClientConfig)
+	client.ConnectionManager = NewConnectionManager(client)
+	client.HeartBeatService = newHeartBeatService(client)
 	client.InvocationService = NewInvocationService(client)
-	client.PartitionService = NewPartitionService(client)
+	client.ListenerService = newListenerService(client)
 	client.ClusterService = NewClusterService(client, client.ClientConfig)
+	client.PartitionService = NewPartitionService(client)
+	client.ProxyManager = newProxyManager(client)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
 	client.SerializationService = NewSerializationService(NewSerializationConfig())
-	client.ConnectionManager = NewConnectionManager(client)
-	client.LifecycleService = newLifecycleService(client.ClientConfig)
-	client.ListenerService = newListenerService(client)
-	client.HeartBeatService = newHeartBeatService(client)
-	client.ProxyManager = newProxyManager(client)
 	err := client.ClusterService.start()
 	if err != nil {
 		return err
@@ -74,6 +74,8 @@ func (client *HazelcastClient) Shutdown() {
 	if client.LifecycleService.isLive {
 		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTTING_DOWN)
 		client.PartitionService.shutdown()
+		client.InvocationService.shutdown()
+		client.HeartBeatService.shutdown()
 		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTDOWN)
 	}
 }
