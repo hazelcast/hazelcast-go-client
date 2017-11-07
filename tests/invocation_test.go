@@ -12,7 +12,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig.SmartRouting = false
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "myMap"
 	mp, _ := client.GetMap(&mapName)
 	testKey := "testingKey"
@@ -31,7 +31,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig.SmartRouting = false
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)
 	for i := 0; i < 100; i++ {

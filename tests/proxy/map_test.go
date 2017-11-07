@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp, _ = client.GetMap(&mapName)
 	m.Run()
@@ -507,7 +507,7 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
 	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
 	testKey := "testingKey1"
@@ -525,7 +525,7 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
 	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
 	for i := 0; i < 10; i++ {
@@ -549,7 +549,7 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
 	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
 	for i := 0; i < 10; i++ {

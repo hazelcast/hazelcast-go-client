@@ -13,7 +13,7 @@ const (
 type ClientConfig struct {
 	MembershipListeners []interface{}
 	LifecycleListeners  []interface{}
-	GroupConfig         GroupConfig
+	GroupConfig         *GroupConfig
 	ClientNetworkConfig ClientNetworkConfig
 	SerializationConfig *SerializationConfig
 }
@@ -95,8 +95,14 @@ type GroupConfig struct {
 	Password string
 }
 
-func NewGroupConfig() GroupConfig {
-	return GroupConfig{Name: DEFAULT_GROUP_NAME, Password: DEFAULT_GROUP_PASSWORD}
+func NewGroupConfig() *GroupConfig {
+	return &GroupConfig{Name: DEFAULT_GROUP_NAME, Password: DEFAULT_GROUP_PASSWORD}
+}
+func (groupConfig *GroupConfig) SetName(name string) {
+	groupConfig.Name = name
+}
+func (groupConfig *GroupConfig) SetPassword(password string) {
+	groupConfig.Password = password
 }
 
 type ClientNetworkConfig struct {

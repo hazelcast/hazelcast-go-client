@@ -158,17 +158,16 @@ func (invocationService *InvocationService) invokeNonSmart(invocation *Invocatio
 	}
 }
 
-func (invocationService *InvocationService) send(invocation *Invocation, connectionChannel chan *Connection) {
+func (invocationService *InvocationService) send(invocation *Invocation, connectionChannel chan *Connection, errorChannel chan error) {
 	go func() {
 		select {
 		case <-invocationService.quit:
 			return
-		case connection, alive := <-connectionChannel:
-			if !alive {
-				//TODO :: Handle the case if the connection is closed
-			} else {
-				invocationService.sendToConnection(invocation, connection)
-			}
+		case connection := <-connectionChannel:
+			invocationService.sendToConnection(invocation, connection)
+		case err := <-errorChannel:
+			log.Println("the following error occured while trying to send the invocation ", err)
+			//TODO::Handle error
 		}
 	}()
 }
@@ -195,8 +194,8 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 }
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
-	connectionChannel := invocationService.client.ConnectionManager.GetConnection(address)
-	invocationService.send(invocation, connectionChannel)
+	connectionChannel, errorChannel := invocationService.client.ConnectionManager.GetOrConnect(address)
+	invocationService.send(invocation, connectionChannel, errorChannel)
 }
 
 func (invocationService *InvocationService) registerInvocation(invocation *Invocation) {
