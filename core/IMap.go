@@ -43,4 +43,7 @@ type IMap interface {
 	AddEntryListener(listener interface{}, includeValue bool) (*string, error)
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error)
 	RemoveEntryListener(registrationId *string) error
+	ExecuteOnKey(key interface{}, entryProcessor interface{}) (interface{}, error)
+	ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) ([]IPair, error)
+	ExecuteOnEntries(entryProcessor interface{}) ([]IPair, error)
 }

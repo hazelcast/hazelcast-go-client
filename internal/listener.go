@@ -46,6 +46,7 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 		invocation = NewInvocation(request, -1, nil, nil)
 	}
 	invocation.eventHandler = eventHandler
+	invocation.listenerResponseDecoder = responseDecoder
 	responseMessage, err := listenerService.client.InvocationService.SendInvocation(invocation).Result()
 	if err != nil {
 		return nil, err
@@ -68,4 +69,18 @@ func (listenerService *ListenerService) stopListening(registrationId *string, re
 
 	_, err = listenerService.client.InvocationService.InvokeOnRandomTarget(requestEncoder(registrationId)).Result()
 	return err
+}
+
+func (listenerService *ListenerService) reregisterListener(invocation *Invocation) {
+	newInvocation := NewInvocation(invocation.request, invocation.partitionId, nil, nil)
+	newInvocation.eventHandler = invocation.eventHandler
+	newInvocation.listenerResponseDecoder = invocation.listenerResponseDecoder
+	responseMessage, err := listenerService.client.InvocationService.SendInvocation(invocation).Result()
+	if err != nil {
+		return
+	}
+	//TODO:: Should we remove the listener with the previous registration id
+	registrationId := newInvocation.listenerResponseDecoder(responseMessage)
+	newInvocation.registrationId = registrationId
+	listenerService.register <- newInvocation
 }

@@ -71,12 +71,14 @@ func (partitionService *PartitionService) doRefresh() {
 	}
 	if connection == nil {
 		log.Println("error while fetching cluster partition table!")
+		//TODO:: Handle error
 		return
 	}
 	request := ClientGetPartitionsEncodeRequest()
 	result, err := partitionService.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		log.Println("error while fetching cluster partition table! ", err)
+		//TODO:: Handle error
 		return
 	}
 	partitionService.processPartitionResponse(result)

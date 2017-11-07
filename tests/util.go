@@ -8,7 +8,14 @@ import (
 
 var Timeout time.Duration = 1 * time.Minute
 
-const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"></hazelcast>"
+const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
+	"<serialization>" +
+	"<data-serializable-factories>" +
+	"<data-serializable-factory factory-id=\"66\">com.hazelcast.client.test.IdentifiedFactory" +
+	"</data-serializable-factory>" +
+	"</data-serializable-factories>" +
+	"</serialization>" +
+	"</hazelcast>"
 
 func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
 	if err != nil {
