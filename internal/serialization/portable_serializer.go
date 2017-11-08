@@ -2,7 +2,8 @@ package serialization
 
 import (
 	"fmt"
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/serialization"
 )
 
 type PortableSerializer struct {
@@ -39,20 +40,19 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 
 	factory := ps.factories[factoryId]
 	if factory == nil {
-		//TODO
-		fmt.Printf("There is no suitable portable factory for {factoryId}.")
+		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryId), nil)
 	}
 
 	portable := factory.Create(classId)
 	classDefinition := ps.portableContext.LookUpClassDefinition(factoryId, classId, version)
 	if classDefinition == nil {
 		var backupPos = input.Position()
-		//TODO throwing error
-		///try{
-		classDefinition = ps.portableContext.ReadClassDefinitionFromInput(input, factoryId, classId, version)
-		//} finally {
+		classDefinition, err = ps.portableContext.ReadClassDefinitionFromInput(input, factoryId, classId, version)
+		if err != nil {
+			input.SetPosition(backupPos)
+			return nil, err
+		}
 		input.SetPosition(backupPos)
-		//}
 	}
 	var reader PortableReader
 	if classDefinition.version == ps.portableContext.ClassVersion(portable) {
@@ -72,7 +72,7 @@ func (ps *PortableSerializer) Write(output DataOutput, i interface{}) {
 }
 
 func (ps *PortableSerializer) WriteObject(output DataOutput, i interface{}) {
-	classDefinition := ps.portableContext.LookUpOrRegisterClassDefiniton(i.(Portable))
+	classDefinition, _ := ps.portableContext.LookUpOrRegisterClassDefiniton(i.(Portable))
 	output.WriteInt32(classDefinition.version)
 	writer := NewDefaultPortableWriter(ps, output.(PositionalDataOutput), classDefinition)
 	i.(Portable).WritePortable(writer)

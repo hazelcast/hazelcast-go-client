@@ -1,8 +1,6 @@
 package compatibility
 
-import (
-	"github.com/hazelcast/go-client/internal/serialization/api"
-)
+import . "github.com/hazelcast/go-client/serialization"
 
 type anIdentifiedDataSerializable struct {
 	bool bool
@@ -35,8 +33,8 @@ type anIdentifiedDataSerializable struct {
 	longsNull    []int64
 	stringsNull  []string
 
-	portableObject                   api.Portable
-	identifiedDataSerializableObject api.IdentifiedDataSerializable
+	portableObject                   Portable
+	identifiedDataSerializableObject IdentifiedDataSerializable
 }
 
 func (*anIdentifiedDataSerializable) ClassId() int32 {
@@ -47,7 +45,7 @@ func (*anIdentifiedDataSerializable) FactoryId() int32 {
 	return IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID
 }
 
-func (i *anIdentifiedDataSerializable) WriteData(output api.DataOutput) {
+func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) {
 	output.WriteBool(i.bool)
 	output.WriteByte(i.b)
 	output.WriteUInt16(i.c)
@@ -85,7 +83,7 @@ func (i *anIdentifiedDataSerializable) WriteData(output api.DataOutput) {
 
 }
 
-func (i *anIdentifiedDataSerializable) ReadData(input api.DataInput) error {
+func (i *anIdentifiedDataSerializable) ReadData(input DataInput) error {
 	i.bool, _ = input.ReadBool()
 	i.b, _ = input.ReadByte()
 	i.c, _ = input.ReadUInt16()
@@ -119,14 +117,14 @@ func (i *anIdentifiedDataSerializable) ReadData(input api.DataInput) error {
 	temp, _ := input.ReadObject()
 
 	if temp != nil {
-		i.portableObject = temp.(api.Portable)
+		i.portableObject = temp.(Portable)
 	} else {
 		i.portableObject = nil
 	}
 
 	temp, _ = input.ReadObject()
 	if temp != nil {
-		i.identifiedDataSerializableObject = temp.(api.IdentifiedDataSerializable)
+		i.identifiedDataSerializableObject = temp.(IdentifiedDataSerializable)
 	} else {
 		i.identifiedDataSerializableObject = nil
 	}

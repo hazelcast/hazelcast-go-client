@@ -6,11 +6,11 @@ import (
 	"github.com/hazelcast/go-client/internal"
 )
 
-func NewHazelcastClient() IHazelcastInstance {
+func NewHazelcastClient() (IHazelcastInstance, error) {
 	return NewHazelcastClientWithConfig(config.NewClientConfig())
 }
 
-func NewHazelcastClientWithConfig(config *config.ClientConfig) IHazelcastInstance {
+func NewHazelcastClientWithConfig(config *config.ClientConfig) (IHazelcastInstance, error) {
 	return internal.NewHazelcastClient(config)
 }
 func NewHazelcastConfig() *config.ClientConfig {
@@ -18,7 +18,8 @@ func NewHazelcastConfig() *config.ClientConfig {
 }
 
 type IHazelcastInstance interface {
-	GetMap(name *string) core.IMap
+	GetMap(name *string) (core.IMap, error)
 	Shutdown()
 	GetCluster() core.ICluster
+	GetLifecycle() core.ILifecycle
 }

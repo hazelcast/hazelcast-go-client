@@ -5,6 +5,7 @@ import (
 	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 )
 
@@ -36,6 +37,10 @@ type Member struct {
 	uuid         string
 	isLiteMember bool
 	attributes   map[string]string
+}
+
+func NewMember(address Address, uuid string, isLiteMember bool, attributes map[string]string) *Member {
+	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
 }
 
 func (member1 *Member) Address() core.IAddress {
@@ -113,11 +118,11 @@ type EntryView struct {
 	ttl                    int64
 }
 
-func (ev1 *EntryView) Key() core.IData {
+func (ev1 *EntryView) Key() IData {
 	return ev1.key
 }
 
-func (ev1 *EntryView) Value() core.IData {
+func (ev1 *EntryView) Value() IData {
 	return ev1.value
 }
 
@@ -250,19 +255,19 @@ type EntryEvent struct {
 	uuid             *string
 }
 
-func (entryEvent *EntryEvent) KeyData() core.IData {
+func (entryEvent *EntryEvent) KeyData() IData {
 	return entryEvent.keyData
 }
 
-func (entryEvent *EntryEvent) ValueData() core.IData {
+func (entryEvent *EntryEvent) ValueData() IData {
 	return entryEvent.valueData
 }
 
-func (entryEvent *EntryEvent) OldValueData() core.IData {
+func (entryEvent *EntryEvent) OldValueData() IData {
 	return entryEvent.oldValueData
 }
 
-func (entryEvent *EntryEvent) MergingValueData() core.IData {
+func (entryEvent *EntryEvent) MergingValueData() IData {
 	return entryEvent.mergingValueData
 }
 

@@ -25,3 +25,6 @@ vet.txt
 .DS_Store
 .directory
 
+#Log
+*.log
+

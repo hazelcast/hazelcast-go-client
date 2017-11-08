@@ -1,7 +1,8 @@
 package config
 
 import (
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/serialization"
+	"reflect"
 )
 
 const (
@@ -11,7 +12,8 @@ const (
 
 type ClientConfig struct {
 	MembershipListeners []interface{}
-	GroupConfig         GroupConfig
+	LifecycleListeners  []interface{}
+	GroupConfig         *GroupConfig
 	ClientNetworkConfig ClientNetworkConfig
 	SerializationConfig *SerializationConfig
 }
@@ -21,12 +23,13 @@ type SerializationConfig struct {
 	dataSerializableFactories map[int32]IdentifiedDataSerializableFactory
 	portableFactories         map[int32]PortableFactory
 	portableVersion           int32
-	//customSerializers []
+	customSerializers         map[reflect.Type]Serializer
 	//globalSerializer
 }
 
 func NewSerializationConfig() *SerializationConfig {
-	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory), portableFactories: make(map[int32]PortableFactory), portableVersion: 0}
+	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory),
+		portableFactories: make(map[int32]PortableFactory), portableVersion: 0, customSerializers: make(map[reflect.Type]Serializer)}
 }
 
 func (c *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
@@ -61,10 +64,20 @@ func (sc *SerializationConfig) SetPortableVersion(version int32) {
 	sc.portableVersion = version
 }
 
+func (c *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer Serializer) {
+	c.customSerializers[typ] = serializer
+}
+
+func (sc *SerializationConfig) CustomSerializers() map[reflect.Type]Serializer {
+	return sc.customSerializers
+}
+
 func NewClientConfig() *ClientConfig {
 	return &ClientConfig{GroupConfig: NewGroupConfig(),
 		ClientNetworkConfig: NewClientNetworkConfig(),
 		MembershipListeners: make([]interface{}, 0),
+		SerializationConfig: NewSerializationConfig(),
+		LifecycleListeners:  make([]interface{}, 0),
 	}
 }
 func (clientConfig *ClientConfig) IsSmartRouting() bool {
@@ -73,18 +86,27 @@ func (clientConfig *ClientConfig) IsSmartRouting() bool {
 func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
 	clientConfig.MembershipListeners = append(clientConfig.MembershipListeners, listener)
 }
+func (clientConfig *ClientConfig) AddLifecycleListener(listener interface{}) {
+	clientConfig.LifecycleListeners = append(clientConfig.LifecycleListeners, listener)
+}
 
 type GroupConfig struct {
 	Name     string
 	Password string
 }
 
-func NewGroupConfig() GroupConfig {
-	return GroupConfig{Name: DEFAULT_GROUP_NAME, Password: DEFAULT_GROUP_PASSWORD}
+func NewGroupConfig() *GroupConfig {
+	return &GroupConfig{Name: DEFAULT_GROUP_NAME, Password: DEFAULT_GROUP_PASSWORD}
+}
+func (groupConfig *GroupConfig) SetName(name string) {
+	groupConfig.Name = name
+}
+func (groupConfig *GroupConfig) SetPassword(password string) {
+	groupConfig.Password = password
 }
 
 type ClientNetworkConfig struct {
-	Addresses *[]Address
+	Addresses []string
 	//The candidate address list that client will use to establish initial connection
 	ConnectionAttemptLimit int32
 	/*
@@ -117,16 +139,11 @@ type ClientNetworkConfig struct {
 
 func NewClientNetworkConfig() ClientNetworkConfig {
 	return ClientNetworkConfig{
-		Addresses:               new([]Address),
+		Addresses:               make([]string, 0),
 		ConnectionAttemptLimit:  2,
 		ConnectionAttemptPeriod: 3,
 		ConnectionTimeout:       5.0,
 		RedoOperations:          false,
 		SmartRouting:            true,
 	}
-}
-
-type Address struct {
-	Host string
-	Port int32
 }
