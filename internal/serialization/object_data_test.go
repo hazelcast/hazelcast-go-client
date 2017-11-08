@@ -3,6 +3,7 @@ package serialization
 import (
 	"bytes"
 	"github.com/hazelcast/go-client/config"
+	"github.com/hazelcast/go-client/internal/common"
 	"reflect"
 	"testing"
 )
@@ -35,9 +36,9 @@ func TestObjectDataOutput_WriteData(t *testing.T) {
 	data := &Data{[]byte{123, 122, 33, 12}}
 	o.WriteData(data)
 	var expectedRet []byte = []byte{4, 0, 0, 0, 123, 122, 33, 12}
-	data.Payload[1] = 0
-	data.Payload[2] = 0
-	data.Payload[3] = 0
+	data.Buffer()[1] = 0
+	data.Buffer()[2] = 0
+	data.Buffer()[3] = 0
 	if !reflect.DeepEqual(o.buffer, expectedRet) {
 		t.Errorf("WriteData() works wrong!")
 	}
@@ -50,7 +51,7 @@ func TestObjectDataOutput_WriteInt32(t *testing.T) {
 	o.WriteInt32(3)
 
 	if o.buffer[0] != 1 || o.buffer[4] != 2 || o.buffer[8] != 3 {
-		t.Errorf("WriteInt32() writes to wrong position!")
+		t.Errorf("WriteInt32() writes to wrong position")
 	}
 }
 
@@ -59,6 +60,15 @@ func TestObjectDataInput_AssertAvailable(t *testing.T) {
 	ret := o.AssertAvailable(2)
 	if ret == nil {
 		t.Errorf("AssertAvailable() should return error %v but it returns nil!", ret)
+	}
+
+}
+
+func TestObjectDataInput_AssertAvailable2(t *testing.T) {
+	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &SerializationService{}, true)
+	ret := o.AssertAvailable(2)
+	if _, ok := ret.(*common.HazelcastEOFError); !ok {
+		t.Errorf("AssertAvailable() should return error type *common.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
 	}
 }
 
@@ -342,6 +352,7 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 	ret_array, _ := i.ReadFloat64Array()
 	if !reflect.DeepEqual(array, ret_array) {
 		t.Errorf("There is a problem in WriteFloat64Array() or ReadFloat64Array()!")
+
 	}
 }
 
@@ -354,4 +365,21 @@ func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 	if !reflect.DeepEqual(array, ret_array) {
 		t.Errorf("There is a problem in WriteUTFArray() or ReadUTFArray()!")
 	}
+}
+
+func TestObjectDataInput_ReadData(t *testing.T) {
+	o := NewObjectDataOutput(0, nil, false)
+	expectedRet := &Data{[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}}
+	o.WriteUTF("Dummy")
+	o.WriteUTF("Dummy2")
+	o.WriteData(expectedRet)
+
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	i.ReadUTF()
+	i.ReadUTF()
+	ret, _ := i.ReadData()
+	if !reflect.DeepEqual(expectedRet, ret) {
+		t.Errorf("There is a problem in WriteData() or ReadData()!")
+	}
+
 }

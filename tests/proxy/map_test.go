@@ -2,8 +2,9 @@ package proxy
 
 import (
 	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/core"
+	. "github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/rc"
+	. "github.com/hazelcast/go-client/serialization"
 	. "github.com/hazelcast/go-client/tests"
 	"log"
 	"strconv"
@@ -12,7 +13,8 @@ import (
 	"time"
 )
 
-var mp core.IMap
+var mp IMap
+var client hazelcast.IHazelcastInstance
 
 func TestMain(m *testing.M) {
 	remoteController, err := NewRemoteControllerClient("localhost:9701")
@@ -21,11 +23,12 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
-	mp = client.GetMap(&mapName)
+	mp, _ = client.GetMap(&mapName)
 	m.Run()
 	mp.Clear()
+	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestMapProxy_SinglePutGet(t *testing.T) {
@@ -300,7 +303,40 @@ func TestMapProxy_PutAll(t *testing.T) {
 				t.Fatalf("Map PutAll failed")
 			}
 		}
-
+	}
+	mp.Clear()
+}
+func TestMapProxy_EntrySetWithPredicate(t *testing.T) {
+	testMap := make(map[interface{}]interface{})
+	searchedMap := make(map[interface{}]interface{})
+	values := []string{"value1", "wantedValue", "wantedValue", "value2", "value3", "wantedValue", "wantedValue", "value4", "value5", "wantedValue"}
+	searchedMap["testingKey1"] = "wantedValue"
+	searchedMap["testingKey2"] = "wantedValue"
+	searchedMap["testingKey5"] = "wantedValue"
+	searchedMap["testingKey6"] = "wantedValue"
+	searchedMap["testingKey9"] = "wantedValue"
+	for i := 0; i < 10; i++ {
+		testMap["testingKey"+strconv.Itoa(i)] = values[i]
+	}
+	err := mp.PutAll(&testMap)
+	if err != nil {
+		t.Fatal(err)
+	} else {
+		entryList, err := mp.EntrySetWithPredicate(Sql("this == wantedValue"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(searchedMap) != len(entryList) {
+			t.Fatalf("map EntrySetWithPredicate() failed")
+		}
+		for _, pair := range entryList {
+			key := pair.Key()
+			value := pair.Value()
+			expectedValue, found := searchedMap[key]
+			if !found || expectedValue != value {
+				t.Fatalf("map EntrySetWithPredicate() failed")
+			}
+		}
 	}
 	mp.Clear()
 }
@@ -351,22 +387,22 @@ type AddEntry struct {
 	wg *sync.WaitGroup
 }
 
-func (addEntry *AddEntry) EntryAdded(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryAdded(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryUpdated(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryUpdated(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryRemoved(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryRemoved(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryEvicted(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryEvicted(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryEvictAll(event core.IMapEvent) {
+func (addEntry *AddEntry) EntryEvictAll(event IMapEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryClearAll(event core.IMapEvent) {
+func (addEntry *AddEntry) EntryClearAll(event IMapEvent) {
 	addEntry.wg.Done()
 }
 
@@ -464,4 +500,123 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKey failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
+}
+
+func TestMapProxy_ExecuteOnKey(t *testing.T) {
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2, _ := client.GetMap(&mpName)
+	testKey := "testingKey1"
+	testValue := "testingValue"
+	mp2.Put(testKey, testValue)
+	value, err := mp2.ExecuteOnKey(testKey, processor)
+	AssertEqualf(t, err, value, expectedValue, "ExecuteOnKey failed.")
+	newValue, err := mp2.Get("testingKey1")
+	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
+	mp.Clear()
+}
+func TestMapProxy_ExecuteOnKeys(t *testing.T) {
+
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2, _ := client.GetMap(&mpName)
+	for i := 0; i < 10; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp2.Put(testKey, testValue)
+	}
+	keys := make([]interface{}, 2)
+	keys[0] = "testingKey1"
+	keys[1] = "testingKey2"
+	result, err := mp2.ExecuteOnKeys(keys, processor)
+	AssertEqualf(t, err, len(result), 2, "ExecuteOnKeys failed.")
+	newValue, err := mp2.Get("testingKey1")
+	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	newValue, err = mp2.Get("testingKey2")
+	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	mp2.Clear()
+}
+func TestMapProxy_ExecuteOnEntries(t *testing.T) {
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2, _ := client.GetMap(&mpName)
+	for i := 0; i < 10; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp2.Put(testKey, testValue)
+	}
+	result, err := mp2.ExecuteOnEntries(processor)
+	for _, pair := range result {
+		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed.")
+		newValue, err := mp2.Get(pair.Key())
+		AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnEntries failed")
+	}
+
+	mp.Clear()
+}
+func TestMapProxy_Destroy(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	mp.Put(testKey, testValue)
+	mapName := "myMap"
+	mp.Destroy()
+	mp, _ := client.GetMap(&mapName)
+	res, err := mp.Get(testKey)
+	AssertNilf(t, err, res, "get returned a wrong value")
+}
+
+type simpleEntryProcessor struct {
+	classId           int32
+	value             string
+	identifiedFactory *identifiedFactory
+}
+
+func newSimpleEntryProcessor(value string) *simpleEntryProcessor {
+	processor := &simpleEntryProcessor{classId: 1, value: value}
+	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
+	processor.identifiedFactory = identifiedFactory
+	return processor
+}
+
+type identifiedFactory struct {
+	simpleEntryProcessor *simpleEntryProcessor
+	factoryId            int32
+}
+
+func (identifiedFactory *identifiedFactory) Create(id int32) IdentifiedDataSerializable {
+	if id == identifiedFactory.simpleEntryProcessor.classId {
+		return &simpleEntryProcessor{classId: 1}
+	} else {
+		return nil
+	}
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input DataInput) error {
+	var err error
+	simpleEntryProcessor.value, err = input.ReadUTF()
+	return err
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output DataOutput) {
+	output.WriteUTF(simpleEntryProcessor.value)
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
+	return simpleEntryProcessor.identifiedFactory.factoryId
+}
+
+func (simpleEntryProcessor *simpleEntryProcessor) ClassId() int32 {
+	return simpleEntryProcessor.classId
 }

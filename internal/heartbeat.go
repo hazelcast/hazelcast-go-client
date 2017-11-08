@@ -61,7 +61,6 @@ func (heartBeat *HeartBeatService) start() {
 func (heartBeat *HeartBeatService) heartBeat() {
 	for _, connection := range heartBeat.client.ConnectionManager.connections {
 		timeSinceLastRead := time.Since(connection.lastRead)
-		log.Println(timeSinceLastRead.Seconds())
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
 				heartBeat.onHeartBeatStopped(connection)

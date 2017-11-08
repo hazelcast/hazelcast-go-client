@@ -33,28 +33,28 @@ type Connection struct {
 	heartBeating           bool
 	readBuffer             []byte
 	connectionId           int64
+	connectionManager      *ConnectionManager
 }
 
-func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64) *Connection {
+func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64, connectionManager *ConnectionManager) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
 		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
-		heartBeating: true,
-		readBuffer:   make([]byte, 0),
-		connectionId: connectionId,
+		heartBeating:      true,
+		readBuffer:        make([]byte, 0),
+		connectionId:      connectionId,
+		connectionManager: connectionManager,
+		endpoint:          address,
 	}
-	//go func() {
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
-		connection.Close()
 		return nil
 	} else {
 		connection.socket = socket
 	}
 	connection.lastRead = time.Now()
 	socket.Write([]byte("CB2"))
-	//}()
 	go connection.writePool()
 	go connection.read()
 	return &connection
@@ -112,7 +112,6 @@ func (connection *Connection) read() {
 		n, err := connection.socket.Read(buf)
 		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
 		if err != nil {
-			//TODO:: Handle error
 			connection.Close()
 			return
 		}
@@ -141,6 +140,7 @@ func (connection *Connection) Close() {
 	}
 	close(connection.closed)
 	connection.closedTime = time.Now()
+	connection.connectionManager.connectionClosed(connection, "socket explicitly closed")
 }
 
 func (connection *Connection) String() string {
@@ -156,5 +156,4 @@ func (connection *Connection) String() string {
 		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Host(), connection.endpoint.Port(),
 		connection.lastRead.String(), connection.lastWrite.String(), connection.closedTime.String(), connection.lastHeartbeatRequested.String(),
 		connection.lastHeartbeatReceived.String(), *connection.serverHazelcastVersion)
-
 }

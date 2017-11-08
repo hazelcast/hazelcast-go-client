@@ -2,27 +2,24 @@ package common
 
 import "time"
 
-//SERVICE NAMES
-type ServiceName string
-
 const (
-	SERVICE_NAME_ATOMIC_LONG                     ServiceName = "hz:impl:atomicLongService"
-	SERVICE_NAME_ATOMIC_REFERENCE                ServiceName = "hz:impl:atomicReferenceService"
-	SERVICE_NAME_COUNT_DOWN_LATCH                ServiceName = "hz:impl:countDownLatchService"
-	SERVICE_NAME_ID_GENERATOR                    ServiceName = "hz:impl:idGeneratorService"
-	SERVICE_NAME_EXECUTOR                        ServiceName = "hz:impl:executorService"
-	SERVICE_NAME_LOCK                            ServiceName = "hz:impl:lockService"
-	SERVICE_NAME_LIST                            ServiceName = "hz:impl:listService"
-	SERVICE_NAME_MULTI_MAP                       ServiceName = "hz:impl:multiMapService"
-	SERVICE_NAME_MAP                             ServiceName = "hz:impl:mapService"
-	SERVICE_NAME_RELIABLE_TOPIC                  ServiceName = "hz:impl:reliableTopicService"
-	SERVICE_NAME_REPLICATED_MAP                  ServiceName = "hz:impl:replicatedMapService"
-	SERVICE_NAME_RINGBUFFER_SERIVCE              ServiceName = "hz:impl:ringbufferService"
-	SERVICE_NAME_SEMAPHORE                       ServiceName = "hz:impl:semaphoreService"
-	SERVICE_NAME_SET                             ServiceName = "hz:impl:setService"
-	SERVICE_NAME_QUEUE                           ServiceName = "hz:impl:queueService"
-	SERVICE_NAME_TOPIC                           ServiceName = "hz:impl:topicService"
-	SERVICE_NAME_ID_GENERATOR_ATOMIC_LONG_PREFIX ServiceName = "hz:atomic:idGenerator:"
+	SERVICE_NAME_ATOMIC_LONG                     = "hz:impl:atomicLongService"
+	SERVICE_NAME_ATOMIC_REFERENCE                = "hz:impl:atomicReferenceService"
+	SERVICE_NAME_COUNT_DOWN_LATCH                = "hz:impl:countDownLatchService"
+	SERVICE_NAME_ID_GENERATOR                    = "hz:impl:idGeneratorService"
+	SERVICE_NAME_EXECUTOR                        = "hz:impl:executorService"
+	SERVICE_NAME_LOCK                            = "hz:impl:lockService"
+	SERVICE_NAME_LIST                            = "hz:impl:listService"
+	SERVICE_NAME_MULTI_MAP                       = "hz:impl:multiMapService"
+	SERVICE_NAME_MAP                             = "hz:impl:mapService"
+	SERVICE_NAME_RELIABLE_TOPIC                  = "hz:impl:reliableTopicService"
+	SERVICE_NAME_REPLICATED_MAP                  = "hz:impl:replicatedMapService"
+	SERVICE_NAME_RINGBUFFER_SERIVCE              = "hz:impl:ringbufferService"
+	SERVICE_NAME_SEMAPHORE                       = "hz:impl:semaphoreService"
+	SERVICE_NAME_SET                             = "hz:impl:setService"
+	SERVICE_NAME_QUEUE                           = "hz:impl:queueService"
+	SERVICE_NAME_TOPIC                           = "hz:impl:topicService"
+	SERVICE_NAME_ID_GENERATOR_ATOMIC_LONG_PREFIX = "hz:atomic:idGenerator:"
 )
 
 type MessageType uint16

@@ -1,7 +1,6 @@
 package compatibility
 
 import (
-	"fmt"
 	"github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/common"
 	"github.com/hazelcast/go-client/internal/serialization"
@@ -72,7 +71,7 @@ func TestBinaryCompatibility(t *testing.T) {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {
-				dataMap[objectKey] = &serialization.Data{payload}
+				dataMap[objectKey] = serialization.NewData(payload)
 			}
 		}
 		index++
@@ -97,16 +96,14 @@ func TestBinaryCompatibility(t *testing.T) {
 		} else {
 			temp2, _ = serviceLE.ToObject(dataMap[supporteds[i]])
 			if !reflect.DeepEqual(temp, temp2) {
-				t.Errorf("compatibility test is incorrectly coded!")
+				t.Errorf("compatibility test is incorrectly coded")
 			}
 		}
 		retObjects[i/2] = temp
 	}
 
 	if !reflect.DeepEqual(objects, retObjects) {
-		fmt.Println(objects)
-		fmt.Println(retObjects)
-		t.Errorf("Go Serialization is not compatible with Java!")
+		t.Errorf("go Serialization is not compatible with java")
 	}
 
 }
