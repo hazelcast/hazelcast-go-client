@@ -3,6 +3,7 @@ package serialization
 import (
 	"fmt"
 	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/serialization"
 	"unicode/utf8"
 )
 
@@ -245,7 +246,7 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteData(data *Data) {
+func (o *ObjectDataOutput) WriteData(data IData) {
 	var length int32
 	if data == nil {
 		length = NIL_ARRAY_LENGTH
@@ -792,6 +793,14 @@ func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]string, error) 
 	}
 	i.position = backupPos
 	return arr, nil
+}
+
+func (i *ObjectDataInput) ReadData() (IData, error) {
+	array, _ := i.ReadByteArray()
+	if array == nil {
+		return nil, nil
+	}
+	return &Data{array}, nil
 }
 
 type PositionalObjectDataOutput struct {

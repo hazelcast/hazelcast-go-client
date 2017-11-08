@@ -21,10 +21,10 @@ type HazelcastClient struct {
 	HeartBeatService     *HeartBeatService
 }
 
-func NewHazelcastClient(config *ClientConfig) *HazelcastClient {
+func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
 	client := HazelcastClient{ClientConfig: config}
-	client.init()
-	return &client
+	err := client.init()
+	return &client, err
 }
 
 func (client *HazelcastClient) GetMap(name *string) (core.IMap, error) {
@@ -49,7 +49,7 @@ func (client *HazelcastClient) GetLifecycle() core.ILifecycle {
 	return client.LifecycleService
 }
 
-func (client *HazelcastClient) init() {
+func (client *HazelcastClient) init() error {
 	client.LifecycleService = newLifecycleService(client.ClientConfig)
 	client.ConnectionManager = NewConnectionManager(client)
 	client.HeartBeatService = newHeartBeatService(client)
@@ -60,11 +60,14 @@ func (client *HazelcastClient) init() {
 	client.ProxyManager = newProxyManager(client)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
 	client.SerializationService = NewSerializationService(NewSerializationConfig())
-
-	client.ClusterService.start()
+	err := client.ClusterService.start()
+	if err != nil {
+		return err
+	}
 	client.HeartBeatService.start()
 	client.PartitionService.start()
 	client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_STARTED)
+	return nil
 }
 
 func (client *HazelcastClient) Shutdown() {

@@ -2,7 +2,7 @@ package serialization
 
 import (
 	"errors"
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/serialization"
 )
 
 type MorphingPortableReader struct {

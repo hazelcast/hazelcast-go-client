@@ -1,4 +1,4 @@
-package api
+package serialization
 
 type IdentifiedDataSerializableFactory interface {
 	Create(id int32) IdentifiedDataSerializable
@@ -26,6 +26,20 @@ type PortableFactory interface {
 	Create(classId int32) Portable
 }
 
+type Serializer interface {
+	Id() int32
+	Read(input DataInput) (interface{}, error)
+	Write(output DataOutput, object interface{})
+}
+
+type IData interface {
+	Buffer() []byte
+	GetType() int32
+	TotalSize() int
+	DataSize() int
+	GetPartitionHash() int32
+}
+
 type DataOutput interface {
 	Position() int32
 	SetPosition(pos int32)
@@ -39,6 +53,7 @@ type DataOutput interface {
 	WriteFloat64(v float64)
 	WriteUTF(v string)
 	WriteObject(i interface{})
+	WriteData(data IData)
 	WriteByteArray(v []byte)
 	WriteBoolArray(v []bool)
 	WriteUInt16Array(v []uint16)
@@ -76,6 +91,7 @@ type DataInput interface {
 	ReadFloat64() (float64, error)
 	ReadUTF() (string, error)
 	ReadObject() (interface{}, error)
+	ReadData() (IData, error)
 	ReadByteArray() ([]byte, error)
 	ReadBoolArray() ([]bool, error)
 	ReadUInt16Array() ([]uint16, error)
@@ -134,4 +150,8 @@ type PortableReader interface {
 	ReadUTFArray(fieldName string) ([]string, error)
 	ReadPortableArray(fieldName string) ([]Portable, error)
 	End()
+}
+
+type IPredicate interface {
+	IdentifiedDataSerializable
 }

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"strconv"
 	"sync"
@@ -68,12 +69,13 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
-func (connectionManager *ConnectionManager) GetConnection(address *Address) chan *Connection {
+func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
 	if address == nil {
 		address = NewAddress()
 	}
 	ch := make(chan *Connection, 0)
+	err := make(chan error, 1)
 	go func() {
 		connectionManager.lock.RLock()
 		//defer connectionManager.lock.RUnlock()
@@ -84,30 +86,30 @@ func (connectionManager *ConnectionManager) GetConnection(address *Address) chan
 		}
 		connectionManager.lock.RUnlock()
 		//Open new connection
-		connectionManager.openNewConnection(address, ch)
+		err <- connectionManager.openNewConnection(address, ch)
 	}()
-	return ch
+	return ch, err
 }
 func (connectionManager *ConnectionManager) ConnectionCount() int32 {
 	connectionManager.lock.RLock()
 	defer connectionManager.lock.RUnlock()
 	return int32(len(connectionManager.connections))
 }
-func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection) {
+func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection) error {
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionManager)
 	if con == nil {
-		close(resp)
-		return
+		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
 	connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = con
 	err := connectionManager.clusterAuthenticator(con)
 	if err != nil {
-		//TODO ::Handle error
+		return err
 	}
 	resp <- con
+	return nil
 }
 func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection) error {
 	uuid := connectionManager.client.ClusterService.uuid
@@ -125,12 +127,12 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	)
 	result, err := connectionManager.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
-		//TODO:: Handle error
+		return err
 	} else {
 
 		parameters := ClientAuthenticationDecodeResponse(result)
 		if parameters.Status != 0 {
-			//TODO:: Handle error Authentication failed
+			return common.NewHazelcastAuthenticationError("authentication failed", nil)
 		}
 		//TODO:: Process the parameters
 		connection.endpoint = parameters.Address
