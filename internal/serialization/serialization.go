@@ -15,9 +15,10 @@ type SerializationService struct {
 	nameToId            map[string]int32
 }
 
-func NewSerializationService(serializationConfig *SerializationConfig) *SerializationService {
+func NewSerializationService(serializationConfig *SerializationConfig,
+	builtInDataSerializableFactories map[int32]IdentifiedDataSerializableFactory) *SerializationService {
 	v1 := SerializationService{serializationConfig: serializationConfig, nameToId: make(map[string]int32), registry: make(map[int32]Serializer)}
-	v1.registerDefaultSerializers()
+	v1.registerDefaultSerializers(builtInDataSerializableFactories)
 	v1.registerCustomSerializers(serializationConfig.CustomSerializers())
 	return &v1
 }
@@ -93,7 +94,7 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) (Seriali
 	return serializer, nil
 }
 
-func (service *SerializationService) registerDefaultSerializers() {
+func (service *SerializationService) registerDefaultSerializers(builtinDataSerializableFactories map[int32]IdentifiedDataSerializableFactory) {
 	service.registerSerializer(&ByteSerializer{})
 	service.nameToId["uint8"] = CONSTANT_TYPE_BYTE
 
@@ -151,7 +152,7 @@ func (service *SerializationService) registerDefaultSerializers() {
 	service.registerSerializer(&StringArraySerializer{})
 	service.nameToId["[]string"] = CONSTANT_TYPE_STRING_ARRAY
 
-	service.registerIdentifiedFactories()
+	service.registerIdentifiedFactories(builtinDataSerializableFactories)
 
 	service.registerSerializer(NewPortableSerializer(service, service.serializationConfig.PortableFactories(), service.serializationConfig.PortableVersion()))
 	service.nameToId["!portable"] = CONSTANT_TYPE_PORTABLE
@@ -207,24 +208,18 @@ func (service *SerializationService) lookUpCustomSerializer(obj interface{}) Ser
 	return nil
 }
 
-func (service *SerializationService) registerIdentifiedFactories() {
+func (service *SerializationService) registerIdentifiedFactories(builtInDataSerializableFactories map[int32]IdentifiedDataSerializableFactory) {
 	factories := make(map[int32]IdentifiedDataSerializableFactory)
 	for id, _ := range service.serializationConfig.DataSerializableFactories() {
 		factories[id] = service.serializationConfig.DataSerializableFactories()[id]
 	}
 
-	idToPredicate := make(map[int32]IdentifiedDataSerializable)
-	fillPredicateIds(idToPredicate)
-	factories[PREDICATE_FACTORY_ID] = &PredicateFactory{idToPredicate}
+	for id, factory := range builtInDataSerializableFactories {
+		factories[id] = factory
+	}
 
-	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
-	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
 	service.registerSerializer(NewIdentifiedDataSerializableSerializer(factories))
 	service.nameToId["identified"] = CONSTANT_TYPE_DATA_SERIALIZABLE
-}
-
-func fillPredicateIds(idToPredicate map[int32]IdentifiedDataSerializable) {
-	idToPredicate[0] = &SqlPredicate{}
 }
 
 func isIdentifiedDataSerializable(obj interface{}) bool {

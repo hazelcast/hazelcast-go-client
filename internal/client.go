@@ -5,6 +5,7 @@ import (
 	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/go-client/internal/serialization/api"
 )
 
 type HazelcastClient struct {
@@ -59,7 +60,7 @@ func (client *HazelcastClient) init() error {
 	client.PartitionService = NewPartitionService(client)
 	client.ProxyManager = newProxyManager(client)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
-	client.SerializationService = NewSerializationService(NewSerializationConfig())
+	client.SerializationService = NewSerializationService(NewSerializationConfig(), createBuiltinDataSerializableFactories())
 	err := client.ClusterService.start()
 	if err != nil {
 		return err
@@ -68,6 +69,22 @@ func (client *HazelcastClient) init() error {
 	client.PartitionService.start()
 	client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_STARTED)
 	return nil
+}
+
+func createBuiltinDataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
+	builtInDataSerializableFactories := make(map[int32]IdentifiedDataSerializableFactory)
+	builtInDataSerializableFactories[core.PREDICATE_FACTORY_ID] = createPredicateDataSerializableFactory()
+	//builtInDataSerializableFactories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
+	//builtInDataSerializableFactories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
+	return builtInDataSerializableFactories
+}
+
+func createPredicateDataSerializableFactory() IdentifiedDataSerializableFactory {
+	idToPredicate := make(map[int32]IdentifiedDataSerializable)
+	idToPredicate[0] = &core.SqlPredicate{}
+	factory := PredicateFactory{IdToDataSerializable: idToPredicate}
+	return &factory
+
 }
 
 func (client *HazelcastClient) Shutdown() {

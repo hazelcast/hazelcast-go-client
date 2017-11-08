@@ -6,7 +6,6 @@ import (
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
-	"github.com/hazelcast/go-client/internal/serialization/api"
 	"time"
 )
 
@@ -504,7 +503,7 @@ func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) EntrySetWithPredicate(predicate api.IPredicate) ([]core.IPair, error) {
+func (imap *MapProxy) EntrySetWithPredicate(predicate core.IPredicate) ([]core.IPair, error) {
 	predicateData, err := imap.ToData(predicate)
 	if err != nil {
 		return nil, err

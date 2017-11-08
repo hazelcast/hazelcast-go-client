@@ -1,5 +1,9 @@
 package core
 
+import (
+	. "github.com/hazelcast/go-client/internal/serialization/api"
+)
+
 type IAddress interface {
 	Host() string
 	Port() int
@@ -14,13 +18,7 @@ type IPair interface {
 	Key() interface{}
 	Value() interface{}
 }
-type IData interface {
-	Buffer() []byte
-	GetType() int32
-	TotalSize() int
-	DataSize() int
-	GetPartitionHash() int32
-}
+
 type IDistributedObjectInfo interface {
 	Name() string
 	ServiceName() string
@@ -100,4 +98,8 @@ type IMemberRemovedListener interface {
 }
 type ILifecycleListener interface {
 	LifecycleStateChanged(string)
+}
+
+type IPredicate interface {
+	IdentifiedDataSerializable
 }

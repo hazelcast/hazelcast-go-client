@@ -1,7 +1,6 @@
 package core
 
 import (
-	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"time"
 )
 

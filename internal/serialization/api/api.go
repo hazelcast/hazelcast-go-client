@@ -1,7 +1,5 @@
 package api
 
-import . "github.com/hazelcast/go-client/core"
-
 type IdentifiedDataSerializableFactory interface {
 	Create(id int32) IdentifiedDataSerializable
 }
@@ -146,6 +144,10 @@ type PortableReader interface {
 	End()
 }
 
-type IPredicate interface {
-	IdentifiedDataSerializable
+type IData interface {
+	Buffer() []byte
+	GetType() int32
+	TotalSize() int
+	DataSize() int
+	GetPartitionHash() int32
 }

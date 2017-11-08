@@ -3,7 +3,7 @@ package serialization
 import . "github.com/hazelcast/go-client/internal/serialization/api"
 
 type PredicateFactory struct {
-	idToDataSerializable map[int32]IdentifiedDataSerializable
+	IdToDataSerializable map[int32]IdentifiedDataSerializable
 }
 
 func NewPredicateFactory(ids map[int32]IdentifiedDataSerializable) PredicateFactory {
@@ -11,8 +11,8 @@ func NewPredicateFactory(ids map[int32]IdentifiedDataSerializable) PredicateFact
 }
 
 func (pf *PredicateFactory) Create(id int32) IdentifiedDataSerializable {
-	if pf.idToDataSerializable[id] != nil {
-		return pf.idToDataSerializable[id]
+	if pf.IdToDataSerializable[id] != nil {
+		return pf.IdToDataSerializable[id]
 	}
 	return nil
 }
