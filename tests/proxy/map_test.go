@@ -518,6 +518,7 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	newValue, err := mp2.Get("testingKey1")
 	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
 	mp.Clear()
+	client.Shutdown()
 }
 func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 
@@ -543,6 +544,7 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 	newValue, err = mp2.Get("testingKey2")
 	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
 	mp2.Clear()
+	client.Shutdown()
 }
 func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
@@ -565,6 +567,7 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	}
 
 	mp.Clear()
+	client.Shutdown()
 }
 func TestMapProxy_Destroy(t *testing.T) {
 	testKey := "testingKey"
