@@ -2,9 +2,9 @@ package proxy
 
 import (
 	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/rc"
+	. "github.com/hazelcast/go-client/serialization"
 	. "github.com/hazelcast/go-client/tests"
 	"log"
 	"strconv"
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var mp core.IMap
+var mp IMap
 var client hazelcast.IHazelcastInstance
 
 func TestMain(m *testing.M) {
@@ -322,7 +322,7 @@ func TestMapProxy_EntrySetWithPredicate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	} else {
-		entryList, err := mp.EntrySetWithPredicate(core.Sql("this == wantedValue"))
+		entryList, err := mp.EntrySetWithPredicate(Sql("this == wantedValue"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -387,22 +387,22 @@ type AddEntry struct {
 	wg *sync.WaitGroup
 }
 
-func (addEntry *AddEntry) EntryAdded(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryAdded(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryUpdated(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryUpdated(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryRemoved(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryRemoved(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryEvicted(event core.IEntryEvent) {
+func (addEntry *AddEntry) EntryEvicted(event IEntryEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryEvictAll(event core.IMapEvent) {
+func (addEntry *AddEntry) EntryEvictAll(event IMapEvent) {
 	addEntry.wg.Done()
 }
-func (addEntry *AddEntry) EntryClearAll(event core.IMapEvent) {
+func (addEntry *AddEntry) EntryClearAll(event IMapEvent) {
 	addEntry.wg.Done()
 }
 
@@ -595,7 +595,7 @@ type identifiedFactory struct {
 	factoryId            int32
 }
 
-func (identifiedFactory *identifiedFactory) Create(id int32) api.IdentifiedDataSerializable {
+func (identifiedFactory *identifiedFactory) Create(id int32) IdentifiedDataSerializable {
 	if id == identifiedFactory.simpleEntryProcessor.classId {
 		return &simpleEntryProcessor{classId: 1}
 	} else {
@@ -603,13 +603,13 @@ func (identifiedFactory *identifiedFactory) Create(id int32) api.IdentifiedDataS
 	}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input api.DataInput) error {
+func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input DataInput) error {
 	var err error
 	simpleEntryProcessor.value, err = input.ReadUTF()
 	return err
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output api.DataOutput) {
+func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output DataOutput) {
 	output.WriteUTF(simpleEntryProcessor.value)
 }
 

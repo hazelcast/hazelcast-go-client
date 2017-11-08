@@ -1,9 +1,5 @@
 package serialization
 
-import (
-	. "github.com/hazelcast/go-client/internal/serialization/api"
-)
-
 const PREDICATE_FACTORY_ID = -32
 
 type predicate struct {
