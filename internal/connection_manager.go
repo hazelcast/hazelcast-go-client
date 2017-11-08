@@ -1,17 +1,20 @@
 package internal
 
 import (
+	"fmt"
 	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"strconv"
 	"sync"
+	"sync/atomic"
 )
 
 type ConnectionManager struct {
-	client       *HazelcastClient
-	connections  map[string]*Connection
-	ownerAddress *Address
-	lock         sync.RWMutex
+	client           *HazelcastClient
+	connections      map[string]*Connection
+	ownerAddress     *Address
+	lock             sync.RWMutex
+	nextConnectionId int64
 }
 
 func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
@@ -19,6 +22,10 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 		connections: make(map[string]*Connection),
 	}
 	return &cm
+}
+func (connectionManager *ConnectionManager) NextConnectionId() int64 {
+	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
+	return connectionManager.nextConnectionId
 }
 func (connectionManager *ConnectionManager) GetConnection(address *Address) chan *Connection {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
@@ -45,7 +52,8 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
-	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages)
+	connectionId := connectionManager.NextConnectionId()
+	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId)
 	if con == nil {
 		close(resp)
 		return
@@ -81,6 +89,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 			//TODO:: Handle error Authentication failed
 		}
 		//TODO:: Process the parameters
+		connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 		connection.endpoint = parameters.Address
 		connection.isOwnerConnection = true
 		return nil

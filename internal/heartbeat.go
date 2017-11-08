@@ -64,14 +64,19 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		log.Println(timeSinceLastRead.Seconds())
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
-
-				log.Println("Didnt hear back from a connection")
 				heartBeat.onHeartBeatStopped(connection)
 			}
 		}
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
+			connection.lastHeartbeatRequested = time.Now()
 			request := protocol.ClientPingEncodeRequest()
-			heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
+			_, err := heartBeat.client.InvocationService.InvokeOnConnection(request, connection).Result()
+			if err != nil {
+				log.Println("error receiving heartbeat for connection, ", connection)
+			} else {
+				connection.lastHeartbeatReceived = time.Now()
+			}
+
 		} else {
 			if !connection.heartBeating {
 				heartBeat.onHeartBeatRestored(connection)
@@ -80,7 +85,7 @@ func (heartBeat *HeartBeatService) heartBeat() {
 	}
 }
 func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
-	log.Println("Heartbeat restored for a connection")
+	log.Println("Heartbeat restored for a connection ", connection)
 	connection.heartBeating = true
 	listeners := heartBeat.listeners.Load().([]interface{})
 	for _, listener := range listeners {
@@ -90,6 +95,7 @@ func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
 	}
 }
 func (heartBeat *HeartBeatService) onHeartBeatStopped(connection *Connection) {
+	log.Println("Heartbeat stopped for a connection ", connection)
 	connection.heartBeating = false
 	listeners := heartBeat.listeners.Load().([]interface{})
 	for _, listener := range listeners {
