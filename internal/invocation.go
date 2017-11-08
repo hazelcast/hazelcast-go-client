@@ -14,6 +14,8 @@ import (
 	"sync"
 )
 
+const RETRY_WAIT_TIME_IN_SECONDS = 1
+
 type Invocation struct {
 	boundConnection         *Connection
 	sentConnection          *Connection
@@ -170,7 +172,7 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 			invocationService.sendToConnection(invocation, connection)
 		case err := <-errorChannel:
 			log.Println("the following error occured while trying to send the invocation ", err)
-			//TODO::Handle error
+			invocationService.handleException(invocation, err)
 		}
 	}()
 }
@@ -221,7 +223,7 @@ func (invocationService *InvocationService) unRegisterInvocation(correlationId i
 	if invocation, ok := invocationService.eventHandlers[correlationId]; ok {
 		return invocation, ok
 	}
-	//TODO::HANDLE no invocation found with correleationID
+	log.Println("no invocation has been found with the correlation id: ", correlationId)
 	return nil, false
 }
 
@@ -309,7 +311,10 @@ func (invocationService *InvocationService) tryRetry(invocation *Invocation) boo
 	if invocation.boundConnection != nil {
 		return false
 	}
-	invocationService.sending <- invocation
+	go func() {
+		time.Sleep(RETRY_WAIT_TIME_IN_SECONDS * time.Second)
+		invocationService.sending <- invocation
+	}()
 	return true
 }
 func (invocationService *InvocationService) IsRedoOperation() bool {
