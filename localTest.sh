@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 gofmt -d . 2>&1 | read; [ $? == 1 ]
 
 if [ "$?" = "1" ]; then
@@ -9,6 +7,8 @@ if [ "$?" = "1" ]; then
     gofmt -d .
     exit 1
 fi
+
+set -xe
 
 HZ_VERSION="3.9-SNAPSHOT"
 
@@ -21,6 +21,8 @@ CLASSPATH="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar:hazelcast-${H
 CLASSPATH="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar:"${CLASSPATH}
 CLASSPATH="hazelcast-${HAZELCAST_VERSION}.jar:"${CLASSPATH}
 echo "Starting Remote Controller ... oss ..."
+
+go build
 
 java -cp ${CLASSPATH} com.hazelcast.remotecontroller.Main&
 serverPid=$!
@@ -36,7 +38,7 @@ do
       echo "testing... $pkg"
       go test -v -coverprofile=tmp.out $pkg >> test.out
       if [ -f tmp.out ]; then
-         cat tmp.out | grep -v "mode: set" >> coverage.out
+         cat tmp.out | grep -v "mode: set" >> coverage.out | echo
       fi
     fi
 done
