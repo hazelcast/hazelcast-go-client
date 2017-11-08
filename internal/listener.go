@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"errors"
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
 )
@@ -60,7 +60,7 @@ func (listenerService *ListenerService) stopListening(registrationId *string, re
 	listenerService.unregister <- registrationId
 	correlationId := <-listenerService.unregisterResult
 	if correlationId == -1 {
-		return errors.New("Couldn't find the listener for the given registrationId")
+		return common.NewHazelcastKeyError("Couldn't find the listener for the given registrationId", nil)
 	}
 	err := listenerService.client.InvocationService.removeEventHandler(correlationId)
 	if err != nil {

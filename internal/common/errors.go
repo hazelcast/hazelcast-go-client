@@ -48,7 +48,13 @@ type HazelcastTargetDisconnectedError struct {
 type HazelcastInstanceNotActiveError struct {
 	*HazelcastErrorType
 }
+type HazelcastKeyError struct {
+	*HazelcastErrorType
+}
 
+func NewHazelcastKeyError(message string, cause error) *HazelcastKeyError {
+	return &HazelcastKeyError{&HazelcastErrorType{message: message, cause: cause}}
+}
 func NewHazelcastClientNotActiveError(message string, cause error) *HazelcastClientNotActiveError {
 	return &HazelcastClientNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
 }
