@@ -1,6 +1,4 @@
-package api
-
-import . "github.com/hazelcast/go-client/core"
+package serialization
 
 type IdentifiedDataSerializableFactory interface {
 	Create(id int32) IdentifiedDataSerializable
@@ -32,6 +30,14 @@ type Serializer interface {
 	Id() int32
 	Read(input DataInput) (interface{}, error)
 	Write(output DataOutput, object interface{})
+}
+
+type IData interface {
+	Buffer() []byte
+	GetType() int32
+	TotalSize() int
+	DataSize() int
+	GetPartitionHash() int32
 }
 
 type DataOutput interface {

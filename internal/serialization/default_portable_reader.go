@@ -3,7 +3,7 @@ package serialization
 import (
 	"fmt"
 	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/serialization"
 )
 
 type DefaultPortableReader struct {

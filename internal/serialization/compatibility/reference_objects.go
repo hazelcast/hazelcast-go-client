@@ -1,6 +1,6 @@
 package compatibility
 
-import "github.com/hazelcast/go-client/internal/serialization/api"
+import . "github.com/hazelcast/go-client/serialization"
 
 const (
 	//PORTABLE IDS
@@ -42,7 +42,7 @@ type allTestObjects struct {
 	strings []*string
 
 	anInnerPortable *AnInnerPortable
-	portables       []api.Portable
+	portables       []Portable
 	anIdentified    *anIdentifiedDataSerializable
 	aPortable       *aPortable
 }
@@ -75,7 +75,7 @@ func (allTestObjects) getAllTestObjects() []interface{} {
 	var strings []string = []string{w1, w2, w3}
 
 	anInnerPortable := &AnInnerPortable{anInt, aFloat}
-	var portables []api.Portable = []api.Portable{anInnerPortable, anInnerPortable, anInnerPortable}
+	var portables []Portable = []Portable{anInnerPortable, anInnerPortable, anInnerPortable}
 	anIdentified := &anIdentifiedDataSerializable{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
 		booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, anInnerPortable,

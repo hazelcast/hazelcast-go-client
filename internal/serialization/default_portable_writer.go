@@ -2,7 +2,7 @@ package serialization
 
 import (
 	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/serialization"
 )
 
 type DefaultPortableWriter struct {
