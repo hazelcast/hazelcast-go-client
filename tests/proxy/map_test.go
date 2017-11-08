@@ -3,6 +3,7 @@ package proxy
 import (
 	"github.com/hazelcast/go-client"
 	. "github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/rc"
 	. "github.com/hazelcast/go-client/serialization"
 	. "github.com/hazelcast/go-client/tests"
@@ -498,6 +499,19 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	mp.Put("key2", "value1")
 	timeout = WaitTimeout(wg, Timeout/20)
 	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKey failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
+func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListenerToKey(entryAdded, "key1", true)
+	AssertEqual(t, err, nil, nil)
+	invalidRegistrationId := "invalid"
+	err = mp.RemoveEntryListener(&invalidRegistrationId)
+	if _, ok := err.(*common.HazelcastKeyError); !ok {
+		t.Fatal("remove entry listener to key with invalid registration id failed")
+	}
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
