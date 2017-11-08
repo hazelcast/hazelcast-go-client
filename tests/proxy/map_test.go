@@ -14,6 +14,7 @@ import (
 )
 
 var mp IMap
+var mp2 IMap
 var client hazelcast.IHazelcastInstance
 
 func TestMain(m *testing.M) {
@@ -26,6 +27,7 @@ func TestMain(m *testing.M) {
 	client, _ = hazelcast.NewHazelcastClient()
 	mapName := "myMap"
 	mp, _ = client.GetMap(&mapName)
+	fillMapForPredicates()
 	m.Run()
 	mp.Clear()
 	client.Shutdown()
