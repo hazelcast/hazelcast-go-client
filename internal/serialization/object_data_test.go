@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/hazelcast/go-client/config"
 	"github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"reflect"
 	"testing"
 )
@@ -222,7 +223,7 @@ func TestObjectDataInput_ReadUTF2(t *testing.T) {
 
 func TestObjectDataInput_ReadObject(t *testing.T) {
 	conf := config.NewSerializationConfig()
-	service := NewSerializationService(conf)
+	service := NewSerializationService(conf, make(map[int32]IdentifiedDataSerializableFactory))
 	o := NewObjectDataOutput(500, service, false)
 	var a float64 = 6.739
 	var b byte = 125

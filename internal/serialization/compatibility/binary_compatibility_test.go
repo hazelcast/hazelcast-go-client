@@ -4,6 +4,7 @@ import (
 	"github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/common"
 	"github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/go-client/internal/serialization/api"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -109,15 +110,15 @@ func TestBinaryCompatibility(t *testing.T) {
 }
 
 func createSerializationService(byteOrder bool) *serialization.SerializationService {
-	serConfing := config.NewSerializationConfig()
+	config := config.NewSerializationConfig()
 	pf := &aPortableFactory{}
 	idf := &aDataSerializableFactory{}
-	serConfing.AddPortableFactory(PORTABLE_FACTORY_ID, pf)
-	serConfing.AddDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, idf)
+	config.AddPortableFactory(PORTABLE_FACTORY_ID, pf)
+	config.AddDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, idf)
 
 	if byteOrder {
-		return serialization.NewSerializationService(serConfing)
+		return serialization.NewSerializationService(config, make(map[int32]IdentifiedDataSerializableFactory))
 	}
-	serConfing.SetByteOrder(false)
-	return serialization.NewSerializationService(serConfing)
+	config.SetByteOrder(false)
+	return serialization.NewSerializationService(config, make(map[int32]IdentifiedDataSerializableFactory))
 }

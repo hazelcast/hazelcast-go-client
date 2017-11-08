@@ -49,7 +49,7 @@ func TestPortableSerializer(t *testing.T) {
 
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
-	service := NewSerializationService(config)
+	service := NewSerializationService(config, make(map[int32]IdentifiedDataSerializableFactory))
 	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
@@ -142,7 +142,7 @@ func TestPortableSerializer2(t *testing.T) {
 
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
-	service := NewSerializationService(config)
+	service := NewSerializationService(config, make(map[int32]IdentifiedDataSerializableFactory))
 
 	var byt byte = 255
 	var boo bool = true

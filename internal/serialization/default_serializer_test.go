@@ -58,10 +58,10 @@ func (*employee) ClassId() int32 {
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 employee = employee{22, "Furkan Şenharputlu"}
-	c := NewSerializationConfig()
-	c.AddDataSerializableFactory(employee1.FactoryId(), factory{})
+	config := NewSerializationConfig()
+	config.AddDataSerializableFactory(employee1.FactoryId(), factory{})
 
-	service := NewSerializationService(c)
+	service := NewSerializationService(config, make(map[int32]IdentifiedDataSerializableFactory))
 
 	data, _ := service.ToData(&employee1)
 	ret_employee, _ := service.ToObject(data)
