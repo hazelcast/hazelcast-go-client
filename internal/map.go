@@ -6,6 +6,7 @@ import (
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/go-client/serialization"
 	"time"
 )
 
@@ -482,7 +483,6 @@ func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) error {
 	return nil
 }
 func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
-
 	request := MapEntrySetEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
 	if err != nil {
@@ -504,6 +504,32 @@ func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
 	}
 	return pairList, nil
 }
+func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) ([]core.IPair, error) {
+	predicateData, err := imap.ToData(predicate)
+	if err != nil {
+		return nil, err
+	}
+	request := MapEntriesWithPredicateEncodeRequest(imap.name, predicateData)
+	responseMessage, err := imap.InvokeOnRandomTarget(request)
+	if err != nil {
+		return nil, err
+	}
+	response := MapEntriesWithPredicateDecodeResponse(responseMessage).Response
+	pairList := make([]core.IPair, len(*response))
+	for index, pairData := range *response {
+		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		value, err := imap.ToObject(pairData.Value().(*serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		pairList[index] = core.IPair(NewPair(key, value))
+	}
+	return pairList, nil
+}
+
 func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
 	if !CheckNotEmpty(keys) {
 		return nil, errors.New(NIL_KEYS_ARE_NOT_ALLOWED)

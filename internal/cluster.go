@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"github.com/hazelcast/go-client/config"
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
@@ -44,8 +43,8 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 	go service.process()
 	return service
 }
-func (clusterService *ClusterService) start() {
-	clusterService.connectToCluster()
+func (clusterService *ClusterService) start() error {
+	return clusterService.connectToCluster()
 }
 func getPossibleAddresses(addressList *[]string, memberList *[]Member) *[]Address {
 	if addressList == nil {
@@ -93,16 +92,21 @@ func (clusterService *ClusterService) reconnect() {
 
 }
 func (clusterService *ClusterService) connectToCluster() error {
-	members := clusterService.members.Load().([]Member)
-	addresses := getPossibleAddresses(&clusterService.config.ClientNetworkConfig.Addresses, &members)
+
 	currentAttempt := int32(1)
 	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
 	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
 	for currentAttempt <= attempLimit {
 		currentAttempt++
+		members := clusterService.members.Load().([]Member)
+		addresses := getPossibleAddresses(&clusterService.config.ClientNetworkConfig.Addresses, &members)
 		for _, address := range *addresses {
 			err := clusterService.connectToAddress(&address)
 			if err != nil {
+				log.Println("the following error occured while trying to connect to cluster: ", err)
+				if _, ok := err.(*common.HazelcastAuthenticationError); ok {
+					return err
+				}
 				continue
 			}
 			return nil
@@ -111,25 +115,33 @@ func (clusterService *ClusterService) connectToCluster() error {
 			time.Sleep(time.Duration(retryDelay) * time.Second)
 		}
 	}
-	return errors.New("Couldn't connect to the cluster")
+	return common.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
-	connectionChannel := clusterService.client.ConnectionManager.GetConnection(address)
-	con, alive := <-connectionChannel
-	if !alive {
-		return errors.New("connection is closed")
+	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address)
+	var con *Connection
+	select {
+	case con = <-connectionChannel:
+	case err := <-errChannel:
+		return err
 	}
 	if !con.isOwnerConnection {
-		clusterService.client.ConnectionManager.clusterAuthenticator(con)
+		err := clusterService.client.ConnectionManager.clusterAuthenticator(con)
+		if err != nil {
+			return err
+		}
 	}
 
 	clusterService.ownerConnectionAddress = con.endpoint
-	clusterService.initMembershipListener(con)
+	err := clusterService.initMembershipListener(con)
+	if err != nil {
+		return err
+	}
 	clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_CONNECTED)
 	return nil
 }
 
-func (clusterService *ClusterService) initMembershipListener(connection *Connection) {
+func (clusterService *ClusterService) initMembershipListener(connection *Connection) error {
 	wg.Add(1)
 	request := ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *ClientMessage) {
@@ -139,11 +151,12 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	invocation.eventHandler = eventHandler
 	response, err := clusterService.client.InvocationService.SendInvocation(invocation).Result()
 	if err != nil {
-		//TODO:: Handle error
+		return err
 	}
 	registrationId := ClientAddMembershipListenerDecodeResponse(response).Response
 	wg.Wait() //Wait until the inital member list is fetched.
 	log.Println("Registered membership listener with Id ", *registrationId)
+	return nil
 }
 func (clusterService *ClusterService) AddListener(listener interface{}) *string {
 	registrationId, _ := common.NewUUID()

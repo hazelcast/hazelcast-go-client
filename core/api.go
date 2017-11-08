@@ -1,5 +1,7 @@
 package core
 
+import . "github.com/hazelcast/go-client/serialization"
+
 type IAddress interface {
 	Host() string
 	Port() int
@@ -13,9 +15,6 @@ type IMember interface {
 type IPair interface {
 	Key() interface{}
 	Value() interface{}
-}
-type IData interface {
-	Buffer() []byte
 }
 type IDistributedObjectInfo interface {
 	Name() string

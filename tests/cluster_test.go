@@ -4,6 +4,7 @@ import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal"
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"sync"
@@ -40,7 +41,7 @@ func TestInitialMembershipListener(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster initialMembershipListener failed")
 	client.Shutdown()
@@ -53,7 +54,7 @@ func TestMemberAddedandRemoved(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Cluster initialMembershipListener failed")
 	wg.Add(1)
@@ -71,7 +72,7 @@ func TestAddListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewHazelcastClient()
 	wg.Add(1)
 	registrationId := client.GetCluster().AddListener(&membershipListener{wg: wg})
 	member, _ := remoteController.StartMember(cluster.ID)
@@ -96,7 +97,7 @@ func TestGetMembers(t *testing.T) {
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	member3, _ := remoteController.StartMember(cluster.ID)
-	client := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewHazelcastClient()
 	members := client.GetCluster().GetMemberList()
 	AssertEqualf(t, nil, len(members), 3, "GetMemberList returned wrong number of members")
 	client.Shutdown()
@@ -105,13 +106,35 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
+func TestAuthenticationWithWrongCredentials(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.GroupConfig.SetName("wrongName")
+	config.GroupConfig.SetPassword("wrongPassword")
+	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	if _, ok := err.(*common.HazelcastAuthenticationError); !ok {
+		t.Fatal("client should have returned an authentication error")
+	}
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestClientWithoutMember(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	client, err := hazelcast.NewHazelcastClient()
+	if _, ok := err.(*common.HazelcastIllegalStateError); !ok {
+		t.Fatal("client should have returned a hazelcastError")
+	}
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
 func TestRestartMember(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
 	wg.Add(1)
 	registratonId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
@@ -134,7 +157,7 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig.ConnectionAttemptLimit = 100
 	config.ClientNetworkConfig.SmartRouting = false
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	newMember, _ := remoteController.StartMember(cluster.ID)
 	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
 	time.Sleep(10 * time.Second)
