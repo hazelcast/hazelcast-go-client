@@ -53,13 +53,19 @@ func TestInvocationRetry(t *testing.T) {
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 10
-	client := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)
-	remoteController.ShutdownMember(member1.UUID, cluster.ID)
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	//Open the new member in a new subroutine after 5 seconds to ensure that Put will be forced to retry.
+	go func() {
+		time.Sleep(5 * time.Second)
+		remoteController.StartMember(cluster.ID)
+	}()
 	_, err := mp.Put("testKey", "testValue")
-	time.Sleep(5 * time.Second)
-	remoteController.StartMember(cluster.ID)
 	AssertNilf(t, err, nil, "InvocationRetry failed")
-
+	result, err := mp.Get("testKey")
+	AssertEqualf(t, err, result, "testValue", "invocation retry failed")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
 }
