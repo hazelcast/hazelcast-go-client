@@ -4,7 +4,7 @@ import (
 	"fmt"
 	. "github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 )
 
