@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 gofmt -d . 2>&1 | read; [ $? == 1 ]
 
 if [ "$?" = "1" ]; then
@@ -9,6 +7,8 @@ if [ "$?" = "1" ]; then
     gofmt -d .
     exit 1
 fi
+
+set -xe
 
 HZ_VERSION="3.9-SNAPSHOT"
 
@@ -21,6 +21,8 @@ CLASSPATH="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar:hazelcast-${H
 CLASSPATH="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar:"${CLASSPATH}
 CLASSPATH="hazelcast-${HAZELCAST_VERSION}.jar:"${CLASSPATH}
 echo "Starting Remote Controller ... oss ..."
+
+go build
 
 java -cp ${CLASSPATH} com.hazelcast.remotecontroller.Main&
 serverPid=$!

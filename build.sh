@@ -5,10 +5,6 @@
 # gocov-xml: go get github.com/t-yuki/gocov-xml
 # go2xunit: go get github.com/tebeka/go2xunit
 
-set -x
-
-# Set up environment
-export PRJ=`git config --get remote.origin.url | sed 's/^https:\/\///' | sed 's/\.git$//'`
 
 gofmt -d . 2>&1 | read; [ $? == 1 ]
 
@@ -18,10 +14,19 @@ if [ "$?" = "1" ]; then
     exit 1
 fi
 
+set -ex
+
+# Set up environment
+export PRJ=`git config --get remote.origin.url | sed 's/^https:\/\///' | sed 's/\.git$//'`
+
 go get git.apache.org/thrift.git/lib/go/thrift
 pushd $GOPATH/src/git.apache.org/thrift.git/
 git fetch --tags --quiet
 git checkout 0.10.0
+popd
+
+pushd src/$PRJ
+go build
 popd
 
 bash ./start-rc.sh
