@@ -1,7 +1,7 @@
 package compatibility
 
 import (
-	. "github.com/hazelcast/go-client/internal/serialization/api"
+	. "github.com/hazelcast/go-client/serialization"
 )
 
 type aPortable struct {

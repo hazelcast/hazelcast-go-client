@@ -2,8 +2,8 @@ package serialization
 
 import (
 	"fmt"
-	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/serialization"
 	"unicode/utf8"
 )
 
@@ -246,7 +246,7 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteData(data core.IData) {
+func (o *ObjectDataOutput) WriteData(data IData) {
 	var length int32
 	if data == nil {
 		length = NIL_ARRAY_LENGTH
@@ -795,7 +795,7 @@ func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]string, error) 
 	return arr, nil
 }
 
-func (i *ObjectDataInput) ReadData() (core.IData, error) {
+func (i *ObjectDataInput) ReadData() (IData, error) {
 	array, _ := i.ReadByteArray()
 	if array == nil {
 		return nil, nil

@@ -1,6 +1,6 @@
 package serialization
 
-import . "github.com/hazelcast/go-client/internal/serialization/api"
+import . "github.com/hazelcast/go-client/serialization"
 
 type PredicateFactory struct {
 	idToDataSerializable map[int32]IdentifiedDataSerializable
