@@ -44,8 +44,19 @@ func (connectionManager *ConnectionManager) AddListener(listener connectionListe
 		connectionManager.connectionListeners.Store(copyListeners)
 	}
 }
-
-func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause string) {
+func (connectionManager *ConnectionManager) getActiveConnection(address *Address) *Connection {
+	if address == nil {
+		return nil
+	}
+	connectionManager.lock.RLock()
+	if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
+		connectionManager.lock.RUnlock()
+		return conn
+	}
+	connectionManager.lock.RUnlock()
+	return nil
+}
+func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause error) {
 	//If connection was authenticated fire event
 	if connection.endpoint != nil {
 		connectionManager.lock.Lock()
@@ -54,13 +65,13 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 		connectionManager.lock.Unlock()
 		for _, listener := range listeners {
 			if _, ok := listener.(connectionListener); ok {
-				listener.(connectionListener).onConnectionClosed(connection)
+				listener.(connectionListener).onConnectionClosed(connection, cause)
 			}
 		}
 	} else {
 		//Clean up unauthenticated connection
 		//TODO::Send the cause as well
-		connectionManager.client.InvocationService.cleanupConnection(connection)
+		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
 func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
@@ -137,16 +148,16 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	}
 	return nil
 }
-func (connectionManager *ConnectionManager) closeConnection(address core.IAddress) {
+func (connectionManager *ConnectionManager) closeConnection(address core.IAddress, cause error) {
 	connectionManager.lock.RLock()
 	connection, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]
 	connectionManager.lock.RUnlock()
 	if found {
-		connection.Close()
+		connection.Close(cause)
 	}
 }
 
 type connectionListener interface {
-	onConnectionClosed(connection *Connection)
+	onConnectionClosed(connection *Connection, cause error)
 	onConnectionOpened(connection *Connection)
 }

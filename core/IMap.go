@@ -44,7 +44,7 @@ type IMap interface {
 	PutTransient(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error)
 	AddEntryListener(listener interface{}, includeValue bool) (*string, error)
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error)
-	RemoveEntryListener(registrationId *string) error
+	RemoveEntryListener(registrationId *string) (bool, error)
 	ExecuteOnKey(key interface{}, entryProcessor interface{}) (interface{}, error)
 	ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) ([]IPair, error)
 	ExecuteOnEntries(entryProcessor interface{}) ([]IPair, error)
