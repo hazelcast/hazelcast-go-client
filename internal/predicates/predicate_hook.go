@@ -1,4 +1,4 @@
-package serialization
+package predicates
 
 const (
 	SQL_PREDICATE         = 0
