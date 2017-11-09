@@ -14,6 +14,7 @@ type ConnectionManager struct {
 	connections         map[string]*Connection
 	ownerAddress        *Address
 	lock                sync.RWMutex
+	nextConnectionId    int64
 	connectionListeners atomic.Value
 	mu                  sync.Mutex
 }
@@ -24,6 +25,10 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
 	return &cm
+}
+func (connectionManager *ConnectionManager) NextConnectionId() int64 {
+	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
+	return connectionManager.nextConnectionId
 }
 func (connectionManager *ConnectionManager) AddListener(listener connectionListener) {
 	connectionManager.mu.Lock()
@@ -88,7 +93,8 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
-	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionManager)
+	connectionId := connectionManager.NextConnectionId()
+	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
 	if con == nil {
 		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
@@ -124,6 +130,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 			return common.NewHazelcastAuthenticationError("authentication failed", nil)
 		}
 		//TODO:: Process the parameters
+		connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 		connection.endpoint = parameters.Address
 		connection.isOwnerConnection = true
 		return nil
