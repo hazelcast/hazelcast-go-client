@@ -76,7 +76,6 @@ func (connection *Connection) writePool() {
 			}
 			connection.lastWrite = time.Now()
 		case <-connection.closed:
-			connection.Close()
 			return
 		}
 	}
@@ -112,7 +111,7 @@ func (connection *Connection) read() {
 		n, err := connection.socket.Read(buf)
 		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
 		if err != nil {
-			connection.Close()
+			connection.Close(err)
 			return
 		}
 		if n == 0 {
@@ -133,14 +132,13 @@ func (connection *Connection) receiveMessage() {
 		connection.clientMessageBuilder.OnMessage(resp)
 	}
 }
-func (connection *Connection) Close() {
-	//TODO :: Should the status be 1 for alive and 0 when closed ?
+func (connection *Connection) Close(err error) {
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
 		return
 	}
 	close(connection.closed)
 	connection.closedTime = time.Now()
-	connection.connectionManager.connectionClosed(connection, "socket explicitly closed")
+	connection.connectionManager.connectionClosed(connection, err)
 }
 
 func (connection *Connection) String() string {
