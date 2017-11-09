@@ -149,7 +149,7 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	}
 	invocation := NewInvocation(request, -1, nil, connection)
 	invocation.eventHandler = eventHandler
-	response, err := clusterService.client.InvocationService.SendInvocation(invocation).Result()
+	response, err := clusterService.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
 )
@@ -47,7 +46,7 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 	}
 	invocation.eventHandler = eventHandler
 	invocation.listenerResponseDecoder = responseDecoder
-	responseMessage, err := listenerService.client.InvocationService.SendInvocation(invocation).Result()
+	responseMessage, err := listenerService.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -56,26 +55,26 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 	listenerService.register <- invocation
 	return registrationId, nil
 }
-func (listenerService *ListenerService) stopListening(registrationId *string, requestEncoder EncodeListenerRemoveRequest) error {
+func (listenerService *ListenerService) stopListening(registrationId *string, requestEncoder EncodeListenerRemoveRequest) (bool, error) {
 	listenerService.unregister <- registrationId
 	correlationId := <-listenerService.unregisterResult
 	if correlationId == -1 {
-		return common.NewHazelcastKeyError("Couldn't find the listener for the given registrationId", nil)
+		return false, nil
 	}
-	err := listenerService.client.InvocationService.removeEventHandler(correlationId)
-	if err != nil {
-		return err
-	}
+	listenerService.client.InvocationService.removeEventHandler(correlationId)
 
-	_, err = listenerService.client.InvocationService.InvokeOnRandomTarget(requestEncoder(registrationId)).Result()
-	return err
+	_, err := listenerService.client.InvocationService.InvokeOnRandomTarget(requestEncoder(registrationId)).Result()
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (listenerService *ListenerService) reregisterListener(invocation *Invocation) {
 	newInvocation := NewInvocation(invocation.request, invocation.partitionId, nil, nil)
 	newInvocation.eventHandler = invocation.eventHandler
 	newInvocation.listenerResponseDecoder = invocation.listenerResponseDecoder
-	responseMessage, err := listenerService.client.InvocationService.SendInvocation(invocation).Result()
+	responseMessage, err := listenerService.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return
 	}

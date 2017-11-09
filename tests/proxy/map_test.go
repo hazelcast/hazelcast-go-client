@@ -3,7 +3,6 @@ package proxy
 import (
 	"github.com/hazelcast/go-client"
 	. "github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/rc"
 	. "github.com/hazelcast/go-client/serialization"
 	. "github.com/hazelcast/go-client/tests"
@@ -508,8 +507,8 @@ func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T
 	registrationId, err := mp.AddEntryListenerToKey(entryAdded, "key1", true)
 	AssertEqual(t, err, nil, nil)
 	invalidRegistrationId := "invalid"
-	err = mp.RemoveEntryListener(&invalidRegistrationId)
-	if _, ok := err.(*common.HazelcastKeyError); !ok {
+	removed, _ := mp.RemoveEntryListener(&invalidRegistrationId)
+	if removed {
 		t.Fatal("remove entry listener to key with invalid registration id failed")
 	}
 	mp.RemoveEntryListener(registrationId)
