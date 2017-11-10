@@ -26,7 +26,7 @@ type ClusterService struct {
 	members                atomic.Value
 	ownerUuid              string
 	uuid                   string
-	ownerConnectionAddress *Address
+	ownerConnectionAddress atomic.Value
 	listeners              atomic.Value
 	mu                     sync.Mutex
 	reconnectChan          chan struct{}
@@ -34,6 +34,7 @@ type ClusterService struct {
 
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
 	service := &ClusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
+	service.ownerConnectionAddress.Store(&Address{})
 	service.members.Store(make([]Member, 0))              //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners {
@@ -132,7 +133,7 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 		}
 	}
 
-	clusterService.ownerConnectionAddress = con.endpoint
+	clusterService.ownerConnectionAddress.Store(con.endpoint)
 	err := clusterService.initMembershipListener(con)
 	if err != nil {
 		return err
@@ -289,9 +290,11 @@ func (clusterService *ClusterService) GetMember(address *Address) *Member {
 	return nil
 }
 func (clusterService *ClusterService) onConnectionClosed(connection *Connection, cause error) {
-	if connection.endpoint != nil && clusterService.ownerConnectionAddress != nil && *connection.endpoint == *clusterService.ownerConnectionAddress && clusterService.client.LifecycleService.isLive {
+	ownerConnectionAddress := clusterService.ownerConnectionAddress.Load().(*Address)
+	if connection.endpoint != nil && ownerConnectionAddress != nil &&
+		*connection.endpoint == *ownerConnectionAddress && clusterService.client.LifecycleService.isLive.Load().(bool) {
 		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
-		clusterService.ownerConnectionAddress = nil
+		clusterService.ownerConnectionAddress.Store(&Address{})
 		clusterService.reconnectChan <- struct{}{}
 	}
 }
