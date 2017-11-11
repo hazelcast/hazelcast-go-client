@@ -45,7 +45,6 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 		readBuffer:        make([]byte, 0),
 		connectionId:      connectionId,
 		connectionManager: connectionManager,
-		endpoint:          address,
 	}
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
