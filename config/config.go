@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 )
@@ -24,7 +25,7 @@ type SerializationConfig struct {
 	portableFactories         map[int32]PortableFactory
 	portableVersion           int32
 	customSerializers         map[reflect.Type]Serializer
-	//globalSerializer
+	globalSerializer          Serializer
 }
 
 func NewSerializationConfig() *SerializationConfig {
@@ -32,12 +33,12 @@ func NewSerializationConfig() *SerializationConfig {
 		portableFactories: make(map[int32]PortableFactory), portableVersion: 0, customSerializers: make(map[reflect.Type]Serializer)}
 }
 
-func (c *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
-	c.dataSerializableFactories[factoryId] = f
+func (sc *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
+	sc.dataSerializableFactories[factoryId] = f
 }
 
-func (c *SerializationConfig) AddPortableFactory(factoryId int32, pf PortableFactory) {
-	c.portableFactories[factoryId] = pf
+func (sc *SerializationConfig) AddPortableFactory(factoryId int32, pf PortableFactory) {
+	sc.portableFactories[factoryId] = pf
 }
 
 func (sc *SerializationConfig) IsBigEndian() bool {
@@ -64,12 +65,30 @@ func (sc *SerializationConfig) SetPortableVersion(version int32) {
 	sc.portableVersion = version
 }
 
-func (c *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer Serializer) {
-	c.customSerializers[typ] = serializer
+func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer Serializer) error {
+	if serializer.Id() > 0 {
+		sc.customSerializers[typ] = serializer
+	} else {
+		return common.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
+	}
+	return nil
 }
 
 func (sc *SerializationConfig) CustomSerializers() map[reflect.Type]Serializer {
 	return sc.customSerializers
+}
+
+func (sc *SerializationConfig) SetGlobalSerializer(serializer Serializer) error {
+	if serializer.Id() > 0 {
+		sc.globalSerializer = serializer
+	} else {
+		return common.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
+	}
+	return nil
+}
+
+func (sc *SerializationConfig) GlobalSerializer() Serializer {
+	return sc.globalSerializer
 }
 
 func NewClientConfig() *ClientConfig {

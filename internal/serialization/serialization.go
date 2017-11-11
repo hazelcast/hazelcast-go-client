@@ -20,6 +20,7 @@ func NewSerializationService(serializationConfig *SerializationConfig) *Serializ
 	v1 := SerializationService{serializationConfig: serializationConfig, nameToId: make(map[string]int32), registry: make(map[int32]Serializer)}
 	v1.registerDefaultSerializers()
 	v1.registerCustomSerializers(serializationConfig.CustomSerializers())
+	v1.registerGlobalSerializer(serializationConfig.GlobalSerializer())
 	return &v1
 }
 
@@ -81,7 +82,7 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) (Seriali
 	}
 
 	if serializer == nil {
-		//serializer=lookupGlobalSerializer
+		serializer = service.lookUpGlobalSerializer()
 	}
 
 	if serializer == nil {
@@ -173,6 +174,12 @@ func (service *SerializationService) registerSerializer(serializer Serializer) e
 	return nil
 }
 
+func (service *SerializationService) registerGlobalSerializer(globalSerializer Serializer) {
+	if globalSerializer != nil {
+		service.registerSerializer(globalSerializer)
+	}
+}
+
 func (service *SerializationService) getIdByObject(obj interface{}) *int32 {
 	if val, ok := service.nameToId[reflect.TypeOf(obj).String()]; ok {
 		return &val
@@ -199,13 +206,22 @@ func (service *SerializationService) lookUpDefaultSerializer(obj interface{}) Se
 }
 
 func (service *SerializationService) lookUpCustomSerializer(obj interface{}) Serializer {
-
 	for key, val := range service.serializationConfig.CustomSerializers() {
-		if reflect.TypeOf(obj).Implements(key) {
-			return val
+		if key.Kind() == 20 { // check whether interface
+			if reflect.TypeOf(obj).Implements(key) {
+				return val
+			}
+		} else {
+			if reflect.TypeOf(obj) == key {
+				return val
+			}
 		}
 	}
 	return nil
+}
+
+func (service *SerializationService) lookUpGlobalSerializer() Serializer {
+	return service.serializationConfig.GlobalSerializer()
 }
 
 func (service *SerializationService) registerIdentifiedFactories() {
