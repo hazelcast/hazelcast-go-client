@@ -291,7 +291,7 @@ func (clusterService *ClusterService) GetMember(address *Address) *Member {
 }
 func (clusterService *ClusterService) onConnectionClosed(connection *Connection, cause error) {
 	ownerConnectionAddress := clusterService.ownerConnectionAddress.Load().(*Address)
-	if connection.endpoint != nil && ownerConnectionAddress != nil &&
+	if connection.endpoint != nil && ownerConnectionAddress.Host() != "" &&
 		*connection.endpoint == *ownerConnectionAddress && clusterService.client.LifecycleService.isLive.Load().(bool) {
 		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
 		clusterService.ownerConnectionAddress.Store(&Address{})
