@@ -24,11 +24,11 @@ type Connection struct {
 	sendingError           chan int64
 	status                 int32
 	isOwnerConnection      bool
-	lastRead               time.Time
-	lastWrite              time.Time
-	closedTime             time.Time
-	lastHeartbeatRequested time.Time
-	lastHeartbeatReceived  time.Time
+	lastRead               atomic.Value
+	lastWrite              atomic.Value
+	closedTime             atomic.Value
+	lastHeartbeatRequested atomic.Value
+	lastHeartbeatReceived  atomic.Value
 	serverHazelcastVersion *string
 	heartBeating           bool
 	readBuffer             []byte
@@ -53,7 +53,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	} else {
 		connection.socket = socket
 	}
-	connection.lastRead = time.Now()
+	connection.lastRead.Store(time.Now())
 	socket.Write([]byte("CB2"))
 	go connection.writePool()
 	go connection.read()
@@ -74,7 +74,7 @@ func (connection *Connection) writePool() {
 			if err != nil {
 				connection.sendingError <- request.CorrelationId()
 			}
-			connection.lastWrite = time.Now()
+			connection.lastWrite.Store(time.Now())
 		case <-connection.closed:
 			return
 		}
@@ -121,7 +121,7 @@ func (connection *Connection) read() {
 	}
 }
 func (connection *Connection) receiveMessage() {
-	connection.lastRead = time.Now()
+	connection.lastRead.Store(time.Now())
 	for len(connection.readBuffer) > common.INT_SIZE_IN_BYTES {
 		frameLength := binary.LittleEndian.Uint32(connection.readBuffer[0:4])
 		if frameLength > uint32(len(connection.readBuffer)) {
@@ -138,7 +138,7 @@ func (connection *Connection) Close(err error) {
 		return
 	}
 	close(connection.closed)
-	connection.closedTime = time.Now()
+	connection.closedTime.Store(time.Now())
 	connection.connectionManager.connectionClosed(connection, err)
 
 }
@@ -154,7 +154,7 @@ func (connection *Connection) String() string {
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
 		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Host(), connection.endpoint.Port(),
-		connection.lastRead.String(), connection.lastWrite.String(), connection.closedTime.String(), connection.lastHeartbeatRequested.String(),
-		connection.lastHeartbeatReceived.String(), *connection.serverHazelcastVersion)
-
+		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
+		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
+		connection.lastHeartbeatReceived.Load().(time.Time).String(), *connection.serverHazelcastVersion)
 }

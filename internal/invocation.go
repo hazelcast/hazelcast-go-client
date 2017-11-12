@@ -173,7 +173,7 @@ func (invocationService *InvocationService) invokeNonSmart(invocation *Invocatio
 	if invocation.boundConnection != nil {
 		invocationService.sendToConnectionChannel <- &invocationConnection{invocation: invocation, connection: invocation.boundConnection}
 	} else {
-		addr := invocationService.client.ClusterService.ownerConnectionAddress
+		addr := invocationService.client.ClusterService.ownerConnectionAddress.Load().(*Address)
 		invocationService.sendToAddress(invocation, addr)
 	}
 }
@@ -294,9 +294,10 @@ func (invocationService *InvocationService) cleanupConnectionInternal(connection
 			invocationService.handleException(invocation, cause)
 		}
 	}
+
 }
 func (invocationService *InvocationService) handleException(invocation *Invocation, err error) {
-	if !invocationService.client.LifecycleService.isLive {
+	if !invocationService.client.LifecycleService.isLive.Load().(bool) {
 		invocation.err <- NewHazelcastClientNotActiveError(err.Error(), err)
 		return
 	}
