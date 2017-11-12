@@ -327,16 +327,6 @@ func (invocationService *InvocationService) cleanupConnectionInternal(connection
 		}
 	}
 
-	if invocationService.client.LifecycleService.isLive.Load().(bool) {
-		for _, invocation := range invocationService.eventHandlers {
-			if invocation.sentConnection == connection && invocation.boundConnection == nil {
-				// Since reregistration is done independently,it uses different resources than invocation service
-				// we dont need to wait for it.
-				go invocationService.client.ListenerService.reregisterListener(invocation)
-			}
-		}
-	}
-
 }
 func (invocationService *InvocationService) handleException(invocation *Invocation, err error) {
 	if !invocationService.client.LifecycleService.isLive.Load().(bool) {
