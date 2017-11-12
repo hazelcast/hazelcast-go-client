@@ -60,7 +60,7 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 }
 
 func (partitionService *PartitionService) doRefresh() {
-	address := partitionService.client.ClusterService.ownerConnectionAddress
+	address := partitionService.client.ClusterService.ownerConnectionAddress.Load().(*Address)
 	connectionChan, errChannel := partitionService.client.ConnectionManager.GetOrConnect(address)
 	var connection *Connection
 	select {
