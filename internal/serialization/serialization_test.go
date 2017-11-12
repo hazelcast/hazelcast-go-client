@@ -74,6 +74,39 @@ func (s *CustomArtistSerializer) Write(output DataOutput, obj interface{}) {
 
 }
 
+type customObject struct {
+	Id     int
+	Person string
+}
+
+type GlobalSerializer struct {
+}
+
+func (s *GlobalSerializer) Id() int32 {
+	return 123
+}
+
+func (s *GlobalSerializer) Read(input DataInput) (interface{}, error) {
+	var network bytes.Buffer
+	data, _ := input.ReadData()
+	network.Write(data.Buffer())
+	dec := gob.NewDecoder(&network)
+	v := &customObject{}
+	dec.Decode(v)
+	return v, nil
+}
+
+func (s *GlobalSerializer) Write(output DataOutput, obj interface{}) {
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	err := enc.Encode(obj)
+	if err != nil {
+		log.Fatal("encode:", err)
+	}
+	payload := (&network).Bytes()
+	output.WriteData(NewData(payload))
+}
+
 type artist interface {
 	Type() int32
 }
@@ -111,5 +144,18 @@ func TestCustomSerializer(t *testing.T) {
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
 		t.Errorf("custom serialization failed")
+	}
+}
+
+func TestGlobalSerializer(t *testing.T) {
+	obj := &customObject{10, "Furkan Şenharputlu"}
+	config := NewSerializationConfig()
+	config.SetGlobalSerializer(&GlobalSerializer{})
+	service := NewSerializationService(config)
+	data, _ := service.ToData(obj)
+	ret, _ := service.ToObject(data)
+
+	if !reflect.DeepEqual(obj, ret) {
+		t.Errorf("global serialization failed")
 	}
 }
