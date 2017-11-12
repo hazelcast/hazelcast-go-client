@@ -18,7 +18,7 @@ type ListenerService struct {
 	deregisterListenerErrChannel               chan removedErr
 	onConnectionClosedChannel                  chan *Connection
 	onConnectionOpenedChannel                  chan *Connection
-	OnHeartbeatRestoredChannel                 chan *Connection
+	onHeartbeatRestoredChannel                 chan *Connection
 	registerListenerInternalHandleErrorChannel chan registrationIdConnection
 	registerListenerInitChannel                chan *listenerRegistrationKey
 }
@@ -58,7 +58,7 @@ func newListenerService(client *HazelcastClient) *ListenerService {
 		deregisterListenerErrChannel:               make(chan removedErr, 1),
 		onConnectionClosedChannel:                  make(chan *Connection, 1),
 		onConnectionOpenedChannel:                  make(chan *Connection, 1),
-		OnHeartbeatRestoredChannel:                 make(chan *Connection, 1),
+		onHeartbeatRestoredChannel:                 make(chan *Connection, 1),
 		registerListenerInternalHandleErrorChannel: make(chan registrationIdConnection, 1),
 		registerListenerInitChannel:                make(chan *listenerRegistrationKey, 1),
 	}
@@ -85,7 +85,7 @@ func (listenerService *ListenerService) process() {
 			listenerService.onConnectionClosedInternal(connection)
 		case connection := <-listenerService.onConnectionOpenedChannel:
 			listenerService.onConnectionOpenedInternal(connection)
-		case connection := <-listenerService.OnHeartbeatRestoredChannel:
+		case connection := <-listenerService.onHeartbeatRestoredChannel:
 			listenerService.OnHeartbeatRestoredInternal(connection)
 		case registrationIdConnection := <-listenerService.registerListenerInternalHandleErrorChannel:
 			listenerService.registerListenerFromInternalHandleError(registrationIdConnection.registrationId, registrationIdConnection.connection)
@@ -199,16 +199,14 @@ func (listenerService *ListenerService) registerListenerFromInternal(registratio
 	}
 	listenerService.registerListenerOnConnectionChannel <- registrationIdConnection
 	err := <-listenerService.registerListenerOnConnectionErrChannel
-	if _, ok := err.(*common.HazelcastIOError); ok {
-		failedRegsToConnection, found := listenerService.failedRegistrations[connection]
-		if !found {
-			listenerService.failedRegistrations[connection] = make([]*listenerRegistrationKey, 0)
+	if err != nil {
+		if _, ok := err.(*common.HazelcastIOError); ok {
+			listenerService.registerListenerInternalHandleErrorChannel <- registrationIdConnection
+		} else {
+			log.Println("listener ", registrationId, " cannot be added to a new connection ", connection, ", reason :", err)
 		}
-		registrationKey := listenerService.registrationIdToListenerRegistration[registrationId]
-		listenerService.failedRegistrations[connection] = append(failedRegsToConnection, registrationKey)
-	} else {
-		log.Println("listener ", registrationId, " cannot be added to a new connection ", connection, ", reason :", err)
 	}
+
 }
 func (listenerService *ListenerService) registerListenerFromInternalHandleError(registrationId string, connection *Connection) {
 	failedRegsToConnection, found := listenerService.failedRegistrations[connection]
@@ -240,7 +238,7 @@ func (listenerService *ListenerService) onConnectionOpenedInternal(connection *C
 	}
 }
 func (listenerService *ListenerService) OnHeartbeatRestored(connection *Connection) {
-	listenerService.OnHeartbeatRestoredChannel <- connection
+	listenerService.onHeartbeatRestoredChannel <- connection
 }
 func (listenerService *ListenerService) OnHeartbeatRestoredInternal(connection *Connection) {
 	registrationKeys := listenerService.failedRegistrations[connection]

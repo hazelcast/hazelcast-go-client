@@ -36,15 +36,15 @@ type Connection struct {
 	connectionManager      *ConnectionManager
 }
 
-func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionManager *ConnectionManager, connectionId int64) *Connection {
+func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64, connectionManager *ConnectionManager) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
 		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
-		connectionManager: connectionManager,
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
 		connectionId:      connectionId,
+		connectionManager: connectionManager,
 	}
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
@@ -133,7 +133,6 @@ func (connection *Connection) receiveMessage() {
 	}
 }
 func (connection *Connection) Close(err error) {
-	//TODO :: Should the status be 1 for alive and 0 when closed ?
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
 		return
 	}

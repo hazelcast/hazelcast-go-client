@@ -62,7 +62,6 @@ func (heartBeat *HeartBeatService) heartBeat() {
 	heartBeat.client.ConnectionManager.lock.RLock()
 	defer heartBeat.client.ConnectionManager.lock.RUnlock()
 	for _, connection := range heartBeat.client.ConnectionManager.connections {
-
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {

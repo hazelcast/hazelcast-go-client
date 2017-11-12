@@ -26,6 +26,10 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
 	return &cm
 }
+func (connectionManager *ConnectionManager) NextConnectionId() int64 {
+	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
+	return connectionManager.nextConnectionId
+}
 func (connectionManager *ConnectionManager) AddListener(listener connectionListener) {
 	connectionManager.mu.Lock()
 	defer connectionManager.mu.Unlock()
@@ -80,10 +84,6 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 	}
 }
 
-func (connectionManager *ConnectionManager) NextConnectionId() int64 {
-	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
-	return connectionManager.nextConnectionId
-}
 func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
 	if address == nil {
@@ -115,7 +115,7 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
 	connectionId := connectionManager.NextConnectionId()
-	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionManager, connectionId)
+	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
 	if con == nil {
 		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
