@@ -16,6 +16,7 @@ type ConnectionManager struct {
 	lock                sync.RWMutex
 	connectionListeners atomic.Value
 	mu                  sync.Mutex
+	nextConnectionId    int64
 }
 
 func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
@@ -51,6 +52,15 @@ func (connectionManager *ConnectionManager) getActiveConnection(address *Address
 	connectionManager.lock.RUnlock()
 	return nil
 }
+func (connectionManager *ConnectionManager) getActiveConnections() map[string]*Connection {
+	connections := make(map[string]*Connection)
+	connectionManager.lock.RLock()
+	defer connectionManager.lock.RUnlock()
+	for k, v := range connectionManager.connections {
+		connections[k] = v
+	}
+	return connections
+}
 func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause error) {
 	//If connection was authenticated fire event
 	if connection.endpoint != nil {
@@ -68,6 +78,11 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 		//TODO::Send the cause as well
 		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
 	}
+}
+
+func (connectionManager *ConnectionManager) NextConnectionId() int64 {
+	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
+	return connectionManager.nextConnectionId
 }
 func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
@@ -99,7 +114,8 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
-	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionManager)
+	connectionId := connectionManager.NextConnectionId()
+	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionManager, connectionId)
 	if con == nil {
 		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
@@ -135,6 +151,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 			return common.NewHazelcastAuthenticationError("authentication failed", nil)
 		}
 		//TODO:: Process the parameters
+		connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 		connection.endpoint = parameters.Address
 		connection.isOwnerConnection = true
 		return nil

@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"net"
@@ -14,33 +15,40 @@ import (
 const BUFFER_SIZE = 8192 * 2
 
 type Connection struct {
-	pending              chan *ClientMessage
-	received             chan *ClientMessage
-	socket               net.Conn
-	clientMessageBuilder *ClientMessageBuilder
-	closed               chan bool
-	endpoint             *Address
-	sendingError         chan int64
-	status               int32
-	isOwnerConnection    bool
-	lastRead             time.Time
-	heartBeating         bool
-	readBuffer           []byte
-	connectionManager    *ConnectionManager
+	pending                chan *ClientMessage
+	received               chan *ClientMessage
+	socket                 net.Conn
+	clientMessageBuilder   *ClientMessageBuilder
+	closed                 chan bool
+	endpoint               *Address
+	sendingError           chan int64
+	status                 int32
+	isOwnerConnection      bool
+	lastRead               time.Time
+	lastWrite              time.Time
+	closedTime             time.Time
+	lastHeartbeatRequested time.Time
+	lastHeartbeatReceived  time.Time
+	serverHazelcastVersion *string
+	heartBeating           bool
+	readBuffer             []byte
+	connectionId           int64
+	connectionManager      *ConnectionManager
 }
 
-func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionManager *ConnectionManager) *Connection {
+func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionManager *ConnectionManager, connectionId int64) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 0),
 		closed:               make(chan bool, 0),
 		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
+		connectionManager: connectionManager,
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
-		connectionManager: connectionManager,
-		endpoint:          address,
+		connectionId:      connectionId,
 	}
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
+		connection.Close(err)
 		return nil
 	} else {
 		connection.socket = socket
@@ -54,7 +62,9 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 func (connection *Connection) IsConnected() bool {
 	return connection.socket != nil && connection.socket.RemoteAddr() != nil
 }
-
+func (connection *Connection) IsAlive() bool {
+	return connection.status == 0
+}
 func (connection *Connection) writePool() {
 	//Writer process
 	for {
@@ -64,6 +74,7 @@ func (connection *Connection) writePool() {
 			if err != nil {
 				connection.sendingError <- request.CorrelationId()
 			}
+			connection.lastWrite = time.Now()
 		case <-connection.closed:
 			return
 		}
@@ -127,5 +138,23 @@ func (connection *Connection) Close(err error) {
 		return
 	}
 	close(connection.closed)
+	connection.closedTime = time.Now()
 	connection.connectionManager.connectionClosed(connection, err)
+
+}
+
+func (connection *Connection) String() string {
+	return fmt.Sprintf("ClientConnection{"+
+		"isAlive=%t"+
+		", connectionId=%d"+
+		", endpoint=%s:%d"+
+		", lastReadTime=%s"+
+		", lastWriteTime=%s"+
+		", closedTime=%s"+
+		", lastHeartbeatRequested=%s"+
+		", lastHeartbeatReceived=%s"+
+		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Host(), connection.endpoint.Port(),
+		connection.lastRead.String(), connection.lastWrite.String(), connection.closedTime.String(), connection.lastHeartbeatRequested.String(),
+		connection.lastHeartbeatReceived.String(), *connection.serverHazelcastVersion)
+
 }

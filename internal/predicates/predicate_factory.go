@@ -1,4 +1,4 @@
-package serialization
+package predicates
 
 import . "github.com/hazelcast/go-client/serialization"
 
@@ -6,8 +6,8 @@ type PredicateFactory struct {
 	idToDataSerializable map[int32]IdentifiedDataSerializable
 }
 
-func NewPredicateFactory(ids map[int32]IdentifiedDataSerializable) PredicateFactory {
-	return PredicateFactory{ids}
+func NewPredicateFactory(ids map[int32]IdentifiedDataSerializable) *PredicateFactory {
+	return &PredicateFactory{ids}
 }
 
 func (pf *PredicateFactory) Create(id int32) IdentifiedDataSerializable {

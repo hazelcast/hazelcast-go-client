@@ -529,7 +529,6 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) ([]core.IPair,
 	}
 	return pairList, nil
 }
-
 func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
 	if !CheckNotEmpty(keys) {
 		return nil, errors.New(NIL_KEYS_ARE_NOT_ALLOWED)

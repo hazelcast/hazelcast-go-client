@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/go-client/internal/predicates"
 	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 )
@@ -215,7 +216,7 @@ func (service *SerializationService) registerIdentifiedFactories() {
 
 	idToPredicate := make(map[int32]IdentifiedDataSerializable)
 	fillPredicateIds(idToPredicate)
-	factories[PREDICATE_FACTORY_ID] = &PredicateFactory{idToPredicate}
+	factories[PREDICATE_FACTORY_ID] = NewPredicateFactory(idToPredicate)
 
 	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
 	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
@@ -224,7 +225,21 @@ func (service *SerializationService) registerIdentifiedFactories() {
 }
 
 func fillPredicateIds(idToPredicate map[int32]IdentifiedDataSerializable) {
-	idToPredicate[0] = &SqlPredicate{}
+	idToPredicate[SQL_PREDICATE] = &SqlPredicate{}
+	idToPredicate[AND_PREDICATE] = &AndPredicate{}
+	idToPredicate[BETWEEN_PREDICATE] = &BetweenPredicate{}
+	idToPredicate[EQUAL_PREDICATE] = &EqualPredicate{}
+	idToPredicate[GREATERLESS_PREDICATE] = &GreaterLessPredicate{}
+	idToPredicate[LIKE_PREDICATE] = &LikePredicate{}
+	idToPredicate[ILIKE_PREDICATE] = &ILikePredicate{}
+	idToPredicate[IN_PREDICATE] = &InPredicate{}
+	idToPredicate[INSTANCEOF_PREDICATE] = &InstanceOfPredicate{}
+	idToPredicate[NOTEQUAL_PREDICATE] = &NotEqualPredicate{}
+	idToPredicate[NOT_PREDICATE] = &NotPredicate{}
+	idToPredicate[OR_PREDICATE] = &OrPredicate{}
+	idToPredicate[REGEX_PREDICATE] = &RegexPredicate{}
+	idToPredicate[FALSE_PREDICATE] = &FalsePredicate{}
+	idToPredicate[TRUE_PREDICATE] = &TruePredicate{}
 }
 
 func isIdentifiedDataSerializable(obj interface{}) bool {
