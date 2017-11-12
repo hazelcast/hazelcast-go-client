@@ -77,6 +77,15 @@ func (connectionManager *ConnectionManager) getActiveConnection(address *Address
 	connectionManager.lock.RUnlock()
 	return nil
 }
+func (connectionManager *ConnectionManager) getActiveConnections() map[string]*Connection {
+	connections := make(map[string]*Connection)
+	connectionManager.lock.RLock()
+	defer connectionManager.lock.RUnlock()
+	for k, v := range connectionManager.connections {
+		connections[k] = v
+	}
+	return connections
+}
 func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause error) {
 	//If connection was authenticated fire event
 	if connection.endpoint != nil {
@@ -190,6 +199,14 @@ func (connectionManager *ConnectionManager) closeConnection(address core.IAddres
 	connectionManager.lock.RUnlock()
 	if found {
 		connection.Close(cause)
+	}
+}
+func (connectionManager *ConnectionManager) fireConnectionAddedEvent(connection *Connection) {
+	listeners := connectionManager.connectionListeners.Load().([]connectionListener)
+	for _, listener := range listeners {
+		if _, ok := listener.(connectionListener); ok {
+			listener.(connectionListener).onConnectionOpened(connection)
+		}
 	}
 }
 
