@@ -1,0 +1,38 @@
+package tests
+
+import (
+	"github.com/hazelcast/go-client"
+	"strconv"
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestListenerWithNewConnection(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	entryAdded := &mapListener{wg: wg}
+	mapName := "testMap"
+	mp, _ := client.GetMap(&mapName)
+	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	AssertEqual(t, err, nil, nil)
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	time.Sleep(3 * time.Second)
+	remoteController.StartMember(cluster.ID)
+	wg.Add(100)
+	for i := 0; i < 100; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := "testingValue" + strconv.Itoa(i)
+		mp.Put(testKey, testValue)
+	}
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "listener reregister failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}

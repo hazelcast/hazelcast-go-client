@@ -589,9 +589,11 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 			onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	return imap.client.ListenerService.startListening(request, eventHandler, func(clientMessage *ClientMessage) *string {
+	return imap.client.ListenerService.startListening(request, eventHandler, func(registrationId *string) *ClientMessage {
+		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
+	}, func(clientMessage *ClientMessage) *string {
 		return MapAddEntryListenerDecodeResponse(clientMessage).Response
-	}, nil)
+	})
 }
 
 func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error) {
@@ -607,9 +609,11 @@ func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{
 			onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	return imap.client.ListenerService.startListening(request, eventHandler, func(clientMessage *ClientMessage) *string {
+	return imap.client.ListenerService.startListening(request, eventHandler, func(registrationId *string) *ClientMessage {
+		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
+	}, func(clientMessage *ClientMessage) *string {
 		return MapAddEntryListenerToKeyDecodeResponse(clientMessage).Response
-	}, keyData)
+	})
 }
 func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
 	entryEvent := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid)
@@ -634,7 +638,7 @@ func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *
 	}
 }
 func (imap *MapProxy) RemoveEntryListener(registrationId *string) (bool, error) {
-	return imap.client.ListenerService.stopListening(registrationId, func(registrationId *string) *ClientMessage {
+	return imap.client.ListenerService.stopListening(*registrationId, func(registrationId *string) *ClientMessage {
 		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
 	})
 }

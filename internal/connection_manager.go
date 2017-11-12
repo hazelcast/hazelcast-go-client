@@ -154,6 +154,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 		connection.endpoint = parameters.Address
 		connection.isOwnerConnection = true
+		connectionManager.fireConnectionAddedEvent(connection)
 		return nil
 	}
 	return nil
@@ -164,6 +165,14 @@ func (connectionManager *ConnectionManager) closeConnection(address core.IAddres
 	connectionManager.lock.RUnlock()
 	if found {
 		connection.Close(cause)
+	}
+}
+func (connectionManager *ConnectionManager) fireConnectionAddedEvent(connection *Connection) {
+	listeners := connectionManager.connectionListeners.Load().([]connectionListener)
+	for _, listener := range listeners {
+		if _, ok := listener.(connectionListener); ok {
+			listener.(connectionListener).onConnectionOpened(connection)
+		}
 	}
 }
 
