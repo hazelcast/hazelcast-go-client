@@ -4,19 +4,35 @@ import (
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"log"
-	"sync"
 )
 
 type ListenerService struct {
-	client                               *HazelcastClient
-	registrations                        map[string]map[*Connection]*eventRegistration
-	registrationIdToListenerRegistration map[string]*listenerRegistrationKey
-	failedRegistrations                  map[*Connection][]*listenerRegistrationKey
-	register                             chan *Invocation
-	unregister                           chan *string
-	unregisterResult                     chan int64
-	registrationsChannel                 chan *sync.WaitGroup
-	failedRegistrationsChannel           chan *sync.WaitGroup
+	client                                     *HazelcastClient
+	registrations                              map[string]map[*Connection]*eventRegistration
+	registrationIdToListenerRegistration       map[string]*listenerRegistrationKey
+	failedRegistrations                        map[*Connection][]*listenerRegistrationKey
+	register                                   chan *Invocation
+	registerListenerOnConnectionChannel        chan registrationIdConnection
+	registerListenerOnConnectionErrChannel     chan error
+	deregisterListenerChannel                  chan registrationIdRequestEncoder
+	deregisterListenerErrChannel               chan removedErr
+	onConnectionClosedChannel                  chan *Connection
+	onConnectionOpenedChannel                  chan *Connection
+	OnHeartbeatRestoredChannel                 chan *Connection
+	registerListenerInternalHandleErrorChannel chan registrationIdConnection
+	registerListenerInitChannel                chan *listenerRegistrationKey
+}
+type removedErr struct {
+	removed bool
+	err     error
+}
+type registrationIdRequestEncoder struct {
+	registrationId string
+	requestEncoder EncodeListenerRemoveRequest
+}
+type registrationIdConnection struct {
+	registrationId string
+	connection     *Connection
 }
 type eventRegistration struct {
 	serverRegistrationId string
@@ -32,13 +48,19 @@ type listenerRegistrationKey struct {
 
 func newListenerService(client *HazelcastClient) *ListenerService {
 	service := &ListenerService{client: client, register: make(chan *Invocation, 1),
-		unregister:                           make(chan *string, 1),
-		unregisterResult:                     make(chan int64, 0),
-		registrations:                        make(map[string]map[*Connection]*eventRegistration),
-		registrationIdToListenerRegistration: make(map[string]*listenerRegistrationKey),
-		failedRegistrations:                  make(map[*Connection][]*listenerRegistrationKey),
-		registrationsChannel:                 make(chan *sync.WaitGroup, 1),
-		failedRegistrationsChannel:           make(chan *sync.WaitGroup, 1),
+
+		registrations:                              make(map[string]map[*Connection]*eventRegistration),
+		registrationIdToListenerRegistration:       make(map[string]*listenerRegistrationKey),
+		failedRegistrations:                        make(map[*Connection][]*listenerRegistrationKey),
+		registerListenerOnConnectionChannel:        make(chan registrationIdConnection, 1),
+		registerListenerOnConnectionErrChannel:     make(chan error, 1),
+		deregisterListenerChannel:                  make(chan registrationIdRequestEncoder, 1),
+		deregisterListenerErrChannel:               make(chan removedErr, 1),
+		onConnectionClosedChannel:                  make(chan *Connection, 1),
+		onConnectionOpenedChannel:                  make(chan *Connection, 1),
+		OnHeartbeatRestoredChannel:                 make(chan *Connection, 1),
+		registerListenerInternalHandleErrorChannel: make(chan registrationIdConnection, 1),
+		registerListenerInitChannel:                make(chan *listenerRegistrationKey, 1),
 	}
 	service.client.ConnectionManager.AddListener(service)
 	service.client.HeartBeatService.AddHeartbeatListener(service)
@@ -46,25 +68,38 @@ func newListenerService(client *HazelcastClient) *ListenerService {
 
 	return service
 }
+
 func (listenerService *ListenerService) process() {
-	go func() {
-		for {
-			select {
-			case wg := <-listenerService.failedRegistrationsChannel:
-				wg.Wait()
+	for {
+		select {
+		case registrationIdConnection := <-listenerService.registerListenerOnConnectionChannel:
+			listenerService.registerListenerOnConnectionErrChannel <- listenerService.registerListenerOnConnection(registrationIdConnection.registrationId, registrationIdConnection.connection)
+		case registrationIdRequestEncoder := <-listenerService.deregisterListenerChannel:
+			removed, err := listenerService.deregisterListenerInternal(registrationIdRequestEncoder.registrationId, registrationIdRequestEncoder.requestEncoder)
+			removedErr := removedErr{
+				removed: removed,
+				err:     err,
 			}
+			listenerService.deregisterListenerErrChannel <- removedErr
+		case connection := <-listenerService.onConnectionClosedChannel:
+			listenerService.onConnectionClosedInternal(connection)
+		case connection := <-listenerService.onConnectionOpenedChannel:
+			listenerService.onConnectionOpenedInternal(connection)
+		case connection := <-listenerService.OnHeartbeatRestoredChannel:
+			listenerService.OnHeartbeatRestoredInternal(connection)
+		case registrationIdConnection := <-listenerService.registerListenerInternalHandleErrorChannel:
+			listenerService.registerListenerFromInternalHandleError(registrationIdConnection.registrationId, registrationIdConnection.connection)
+		case listenerRegistrationKey := <-listenerService.registerListenerInitChannel:
+			listenerService.registerListenerInit(listenerRegistrationKey)
 		}
-	}()
-	go func() {
-		for {
-			select {
-			case wg := <-listenerService.registrationsChannel:
-				wg.Wait()
-			}
-		}
-	}()
+	}
+
 }
-func (listenerService *ListenerService) startListening(request *ClientMessage, eventHandler func(clientMessage *ClientMessage),
+func (listenerService *ListenerService) registerListenerInit(key *listenerRegistrationKey) {
+	listenerService.registrationIdToListenerRegistration[key.userRegistrationKey] = key
+	listenerService.registrations[key.userRegistrationKey] = make(map[*Connection]*eventRegistration)
+}
+func (listenerService *ListenerService) registerListener(request *ClientMessage, eventHandler func(clientMessage *ClientMessage),
 	encodeListenerRemoveRequest EncodeListenerRemoveRequest, responseDecoder DecodeListenerResponse) (*string, error) {
 	userRegistrationId, _ := common.NewUUID()
 	registrationKey := listenerRegistrationKey{
@@ -74,17 +109,17 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 		eventHandler:        eventHandler,
 	}
 	connections := listenerService.client.ConnectionManager.getActiveConnections()
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	listenerService.registrationsChannel <- wg
-	wg.Add(1)
-	listenerService.registrationIdToListenerRegistration[userRegistrationId] = &registrationKey
-	listenerService.registrations[userRegistrationId] = make(map[*Connection]*eventRegistration)
-	wg.Done()
+	listenerService.registerListenerInitChannel <- &registrationKey
 	for _, connection := range connections {
-		err := listenerService.registerListenerOnConnection(userRegistrationId, connection)
+		registrationIdConnection := registrationIdConnection{
+			registrationId: userRegistrationId,
+			connection:     connection,
+		}
+		listenerService.registerListenerOnConnectionChannel <- registrationIdConnection
+		err := <-listenerService.registerListenerOnConnectionErrChannel
 		if err != nil {
 			if connection.IsAlive() {
-				listenerService.stopListening(userRegistrationId, encodeListenerRemoveRequest)
+				listenerService.deregisterListener(userRegistrationId, encodeListenerRemoveRequest)
 				return nil, common.NewHazelcastErrorType("listener cannot be added", nil)
 			}
 		}
@@ -93,9 +128,6 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 	return &userRegistrationId, nil
 }
 func (listenerService *ListenerService) registerListenerOnConnection(registrationId string, connection *Connection) error {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	listenerService.registrationsChannel <- wg
-	wg.Add(1)
 	if registrationMap, found := listenerService.registrations[registrationId]; found {
 		_, found := registrationMap[connection]
 		if found {
@@ -118,15 +150,20 @@ func (listenerService *ListenerService) registerListenerOnConnection(registratio
 		connection:           connection,
 	}
 	listenerService.registrations[registrationId][connection] = registration
-	wg.Done()
 	return nil
 }
-func (listenerService *ListenerService) stopListening(registrationId string, requestEncoder EncodeListenerRemoveRequest) (bool, error) {
+func (listenerService *ListenerService) deregisterListener(registrationId string, requestEncoder EncodeListenerRemoveRequest) (bool, error) {
+	registrationIdRequestEncoder := registrationIdRequestEncoder{
+		registrationId: registrationId,
+		requestEncoder: requestEncoder,
+	}
+	listenerService.deregisterListenerChannel <- registrationIdRequestEncoder
+	removedErr := <-listenerService.deregisterListenerErrChannel
+	return removedErr.removed, removedErr.err
+}
+func (listenerService *ListenerService) deregisterListenerInternal(registrationId string, requestEncoder EncodeListenerRemoveRequest) (bool, error) {
 	var registrationMap map[*Connection]*eventRegistration
 	var found bool
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	listenerService.registrationsChannel <- wg
-	wg.Add(1)
 	if registrationMap, found = listenerService.registrations[registrationId]; !found {
 		return false, nil
 	}
@@ -153,32 +190,39 @@ func (listenerService *ListenerService) stopListening(registrationId string, req
 		delete(listenerService.registrations, registrationId)
 		delete(listenerService.registrationIdToListenerRegistration, registrationId)
 	}
-	wg.Done()
 	return successful, err
 }
 func (listenerService *ListenerService) registerListenerFromInternal(registrationId string, connection *Connection) {
-	err := listenerService.registerListenerOnConnection(registrationId, connection)
-	if err != nil {
-		if _, ok := err.(*common.HazelcastIOError); ok {
-			failedRegsToConnection, found := listenerService.failedRegistrations[connection]
-			if !found {
-				listenerService.failedRegistrations[connection] = make([]*listenerRegistrationKey, 0)
-			}
-			registrationKey := listenerService.registrationIdToListenerRegistration[registrationId]
-			listenerService.failedRegistrations[connection] = append(failedRegsToConnection, registrationKey)
-		} else {
-			log.Println("listener ", registrationId, " cannot be added to a new connection ", connection, ", reason :", err)
+	registrationIdConnection := registrationIdConnection{
+		registrationId: registrationId,
+		connection:     connection,
+	}
+	listenerService.registerListenerOnConnectionChannel <- registrationIdConnection
+	err := <-listenerService.registerListenerOnConnectionErrChannel
+	if _, ok := err.(*common.HazelcastIOError); ok {
+		failedRegsToConnection, found := listenerService.failedRegistrations[connection]
+		if !found {
+			listenerService.failedRegistrations[connection] = make([]*listenerRegistrationKey, 0)
 		}
+		registrationKey := listenerService.registrationIdToListenerRegistration[registrationId]
+		listenerService.failedRegistrations[connection] = append(failedRegsToConnection, registrationKey)
+	} else {
+		log.Println("listener ", registrationId, " cannot be added to a new connection ", connection, ", reason :", err)
 	}
 }
+func (listenerService *ListenerService) registerListenerFromInternalHandleError(registrationId string, connection *Connection) {
+	failedRegsToConnection, found := listenerService.failedRegistrations[connection]
+	if !found {
+		listenerService.failedRegistrations[connection] = make([]*listenerRegistrationKey, 0)
+	}
+	registrationKey := listenerService.registrationIdToListenerRegistration[registrationId]
+	listenerService.failedRegistrations[connection] = append(failedRegsToConnection, registrationKey)
+}
 func (listenerService *ListenerService) onConnectionClosed(connection *Connection, cause error) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	listenerService.failedRegistrationsChannel <- wg
-	wg.Add(1)
+	listenerService.onConnectionClosedChannel <- connection
+}
+func (listenerService *ListenerService) onConnectionClosedInternal(connection *Connection) {
 	delete(listenerService.failedRegistrations, connection)
-	wg.Done()
-	listenerService.registrationsChannel <- wg
-	wg.Add(1)
 	for _, registrationMap := range listenerService.registrations {
 		registration, found := registrationMap[connection]
 		if found {
@@ -186,20 +230,21 @@ func (listenerService *ListenerService) onConnectionClosed(connection *Connectio
 			listenerService.client.InvocationService.removeEventHandler(registration.correlationId)
 		}
 	}
-	wg.Done()
 }
 func (listenerService *ListenerService) onConnectionOpened(connection *Connection) {
+	listenerService.onConnectionOpenedChannel <- connection
+}
+func (listenerService *ListenerService) onConnectionOpenedInternal(connection *Connection) {
 	for registrationKey, _ := range listenerService.registrations {
-		listenerService.registerListenerFromInternal(registrationKey, connection)
+		go listenerService.registerListenerFromInternal(registrationKey, connection)
 	}
 }
 func (listenerService *ListenerService) OnHeartbeatRestored(connection *Connection) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	listenerService.failedRegistrationsChannel <- wg
-	wg.Add(1)
+	listenerService.OnHeartbeatRestoredChannel <- connection
+}
+func (listenerService *ListenerService) OnHeartbeatRestoredInternal(connection *Connection) {
 	registrationKeys := listenerService.failedRegistrations[connection]
-	wg.Done()
 	for _, registrationKey := range registrationKeys {
-		listenerService.registerListenerFromInternal(registrationKey.userRegistrationKey, connection)
+		go listenerService.registerListenerFromInternal(registrationKey.userRegistrationKey, connection)
 	}
 }
