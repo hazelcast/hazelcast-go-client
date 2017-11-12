@@ -20,7 +20,6 @@ const (
 
 type LifecycleService struct {
 	isLive    atomic.Value
-	state     atomic.Value
 	listeners atomic.Value
 	mu        sync.Mutex
 }
@@ -69,12 +68,11 @@ func (lifecycleService *LifecycleService) fireLifecycleEvent(newState string) {
 	if newState == LIFECYCLE_STATE_SHUTTING_DOWN {
 		lifecycleService.isLive.Store(false)
 	}
-	lifecycleService.state.Store(newState)
 	listeners := lifecycleService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(core.ILifecycleListener); ok {
 			listener.(core.ILifecycleListener).LifecycleStateChanged(newState)
 		}
 	}
-	log.Println("New State : ", lifecycleService.state.Load().(string))
+	log.Println("New State : ", newState)
 }
