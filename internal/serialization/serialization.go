@@ -207,7 +207,7 @@ func (service *SerializationService) lookUpDefaultSerializer(obj interface{}) Se
 
 func (service *SerializationService) lookUpCustomSerializer(obj interface{}) Serializer {
 	for key, val := range service.serializationConfig.CustomSerializers() {
-		if key.Kind() == 20 { // check whether interface
+		if key.Kind() == reflect.Interface {
 			if reflect.TypeOf(obj).Implements(key) {
 				return val
 			}
