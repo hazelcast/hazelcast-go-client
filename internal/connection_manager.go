@@ -14,9 +14,9 @@ type ConnectionManager struct {
 	connections         map[string]*Connection
 	ownerAddress        *Address
 	lock                sync.RWMutex
-	nextConnectionId    int64
 	connectionListeners atomic.Value
 	mu                  sync.Mutex
+	nextConnectionId    int64
 }
 
 func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
@@ -56,6 +56,15 @@ func (connectionManager *ConnectionManager) getActiveConnection(address *Address
 	connectionManager.lock.RUnlock()
 	return nil
 }
+func (connectionManager *ConnectionManager) getActiveConnections() map[string]*Connection {
+	connections := make(map[string]*Connection)
+	connectionManager.lock.RLock()
+	defer connectionManager.lock.RUnlock()
+	for k, v := range connectionManager.connections {
+		connections[k] = v
+	}
+	return connections
+}
 func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause error) {
 	//If connection was authenticated fire event
 	if connection.endpoint != nil {
@@ -74,6 +83,7 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
+
 func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
 	if address == nil {
@@ -144,6 +154,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 		connection.endpoint = parameters.Address
 		connection.isOwnerConnection = true
+		connectionManager.fireConnectionAddedEvent(connection)
 		return nil
 	}
 	return nil
@@ -154,6 +165,14 @@ func (connectionManager *ConnectionManager) closeConnection(address core.IAddres
 	connectionManager.lock.RUnlock()
 	if found {
 		connection.Close(cause)
+	}
+}
+func (connectionManager *ConnectionManager) fireConnectionAddedEvent(connection *Connection) {
+	listeners := connectionManager.connectionListeners.Load().([]connectionListener)
+	for _, listener := range listeners {
+		if _, ok := listener.(connectionListener); ok {
+			listener.(connectionListener).onConnectionOpened(connection)
+		}
 	}
 }
 

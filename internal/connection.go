@@ -48,6 +48,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	}
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
+		connection.Close(err)
 		return nil
 	} else {
 		connection.socket = socket
@@ -138,6 +139,7 @@ func (connection *Connection) Close(err error) {
 	close(connection.closed)
 	connection.closedTime.Store(time.Now())
 	connection.connectionManager.connectionClosed(connection, err)
+
 }
 
 func (connection *Connection) String() string {
