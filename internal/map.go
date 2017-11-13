@@ -237,7 +237,7 @@ func (imap *MapProxy) AddIndex(attributes *string, ordered bool) (err error) {
 	_, err = imap.InvokeOnRandomTarget(request)
 	return err
 }
-func (imap *MapProxy) Evict(key interface{}) (bool, error) {
+func (imap *MapProxy) Evict(key interface{}) (evicted bool, err error) {
 	if !CheckNotNil(key) {
 		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -253,26 +253,26 @@ func (imap *MapProxy) Evict(key interface{}) (bool, error) {
 	response := MapEvictDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) EvictAll() error {
+func (imap *MapProxy) EvictAll() (err error) {
 	request := MapEvictAllEncodeRequest(imap.name)
-	_, err := imap.InvokeOnRandomTarget(request)
+	_, err = imap.InvokeOnRandomTarget(request)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (imap *MapProxy) Flush() error {
+func (imap *MapProxy) Flush() (err error) {
 	request := MapFlushEncodeRequest(imap.name)
-	_, err := imap.InvokeOnRandomTarget(request)
+	_, err = imap.InvokeOnRandomTarget(request)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (imap *MapProxy) Lock(key interface{}) error {
+func (imap *MapProxy) Lock(key interface{}) (err error) {
 	return imap.LockWithLeaseTime(key, -1, time.Second)
 }
-func (imap *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) error {
+func (imap *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) (err error) {
 	if !CheckNotNil(key) {
 		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -286,13 +286,13 @@ func (imap *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeU
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
-func (imap *MapProxy) TryLock(key interface{}) (bool, error) {
+func (imap *MapProxy) TryLock(key interface{}) (locked bool, err error) {
 	return imap.TryLockWithTimeout(key, 0, time.Second)
 }
-func (imap *MapProxy) TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (bool, error) {
+func (imap *MapProxy) TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (locked bool, err error) {
 	return imap.TryLockWithTimeoutAndLease(key, timeout, timeoutTimeUnit, -1, time.Second)
 }
-func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (bool, error) {
+func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (locked bool, err error) {
 	if !CheckNotNil(key) {
 		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -310,7 +310,7 @@ func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64,
 	response := MapTryLockDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) Unlock(key interface{}) error {
+func (imap *MapProxy) Unlock(key interface{}) (err error) {
 	if !CheckNotNil(key) {
 		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -323,7 +323,7 @@ func (imap *MapProxy) Unlock(key interface{}) error {
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
-func (imap *MapProxy) ForceUnlock(key interface{}) error {
+func (imap *MapProxy) ForceUnlock(key interface{}) (err error) {
 	if !CheckNotNil(key) {
 		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -335,7 +335,7 @@ func (imap *MapProxy) ForceUnlock(key interface{}) error {
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
-func (imap *MapProxy) IsLocked(key interface{}) (bool, error) {
+func (imap *MapProxy) IsLocked(key interface{}) (locked bool, err error) {
 	if !CheckNotNil(key) {
 		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -352,7 +352,7 @@ func (imap *MapProxy) IsLocked(key interface{}) (bool, error) {
 	response := MapIsLockedDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) Replace(key interface{}, value interface{}) (interface{}, error) {
+func (imap *MapProxy) Replace(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	if !CheckNotNil(key) {
 		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -375,7 +375,7 @@ func (imap *MapProxy) Replace(key interface{}, value interface{}) (interface{}, 
 	responseData := MapReplaceDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (replaced bool, err error) {
 	if !CheckNotNil(key) {
 		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -405,10 +405,10 @@ func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newVa
 	response := MapRemoveIfSameDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) Set(key interface{}, value interface{}) error {
+func (imap *MapProxy) Set(key interface{}, value interface{}) (err error) {
 	return imap.SetWithTtl(key, value, TTL, time.Second)
 }
-func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) error {
+func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
 	if !CheckNotNil(key) {
 		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -455,7 +455,7 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 	responseData := MapPutIfAbsentDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) error {
+func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) (err error) {
 	if !CheckNotNil(mp) {
 		return errors.New("Null argument map is not allowed")
 	}
@@ -482,7 +482,7 @@ func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) error {
 	}
 	return nil
 }
-func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
+func (imap *MapProxy) EntrySet() (resultPairs []core.IPair, err error) {
 	request := MapEntrySetEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
 	if err != nil {
@@ -504,7 +504,7 @@ func (imap *MapProxy) EntrySet() ([]core.IPair, error) {
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) ([]core.IPair, error) {
+func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs []core.IPair, err error) {
 	predicateData, err := imap.ToData(predicate)
 	if err != nil {
 		return nil, err
@@ -529,7 +529,7 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) ([]core.IPair,
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
+func (imap *MapProxy) GetAll(keys []interface{}) (entryPairs []core.IPair, err error) {
 	if !CheckNotEmpty(keys) {
 		return nil, errors.New(NIL_KEYS_ARE_NOT_ALLOWED)
 	}
@@ -564,7 +564,7 @@ func (imap *MapProxy) GetAll(keys []interface{}) ([]core.IPair, error) {
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) GetEntryView(key interface{}) (core.IEntryView, error) {
+func (imap *MapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, err error) {
 	if !CheckNotNil(key) {
 		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -580,7 +580,7 @@ func (imap *MapProxy) GetEntryView(key interface{}) (core.IEntryView, error) {
 	response := MapGetEntryViewDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) (*string, error) {
+func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
 	request = MapAddEntryListenerEncodeRequest(imap.name, includeValue, listenerFlags, false)
@@ -594,7 +594,7 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 	}, nil)
 }
 
-func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (*string, error) {
+func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
 	keyData, err := imap.ToData(key)
@@ -633,13 +633,13 @@ func onEntryEvent(key *serialization.Data, oldValue *serialization.Data, value *
 		listener.(EntryExpiredListener).EntryExpired(entryEvent)
 	}
 }
-func (imap *MapProxy) RemoveEntryListener(registrationId *string) (bool, error) {
+func (imap *MapProxy) RemoveEntryListener(registrationId *string) (removed bool, err error) {
 	return imap.client.ListenerService.stopListening(registrationId, func(registrationId *string) *ClientMessage {
 		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
 	})
 }
 
-func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (interface{}, error) {
+func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (result interface{}, err error) {
 	keyData, err := imap.ToData(key)
 	if err != nil {
 		return nil, err
@@ -656,7 +656,7 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) 
 	responseData := MapExecuteOnKeyDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) ([]core.IPair, error) {
+func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
 	keysData := make([]serialization.Data, len(keys))
 	for index, key := range keys {
 		keyData, err := imap.ToData(key)
@@ -689,7 +689,7 @@ func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) ([]core.IPair, error) {
+func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
 	entryProcessorData, err := imap.ToData(entryProcessor)
 	if err != nil {
 		return nil, err
