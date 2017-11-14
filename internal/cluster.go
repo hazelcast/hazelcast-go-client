@@ -194,7 +194,7 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 	} else if eventType == MEMBER_REMOVED {
 		clusterService.memberRemoved(member)
 	}
-	clusterService.client.PartitionService.refresh <- true
+	clusterService.client.PartitionService.refresh <- struct{}{}
 }
 
 func (clusterService *ClusterService) handleMemberList(members *[]Member) {
@@ -227,7 +227,7 @@ func (clusterService *ClusterService) handleMemberList(members *[]Member) {
 			clusterService.memberAdded(&member)
 		}
 	}
-	clusterService.client.PartitionService.refresh <- true
+	clusterService.client.PartitionService.refresh <- struct{}{}
 	wg.Done() //initial member list is fetched
 }
 func (clusterService *ClusterService) handleMemberAttributeChange(uuid *string, key *string, operationType int32, value *string) {
