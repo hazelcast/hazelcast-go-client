@@ -159,3 +159,73 @@ func TestGlobalSerializer(t *testing.T) {
 		t.Errorf("global serialization failed")
 	}
 }
+
+type fake2 struct {
+	Bool bool
+	B    byte
+	C    uint16
+	D    float64
+	S    int16
+	F    float32
+	I    int32
+	L    int64
+	Str  string
+
+	Bools   []bool
+	Bytes   []byte
+	Chars   []uint16
+	Doubles []float64
+	Shorts  []int16
+	Floats  []float32
+	Ints    []int32
+	Longs   []int64
+	Strings []string
+
+	BoolsNil   []bool
+	BytesNil   []byte
+	CharsNil   []uint16
+	DoublesNil []float64
+	ShortsNil  []int16
+	FloatsNil  []float32
+	IntsNil    []int32
+	LongsNil   []int64
+	StringsNil []string
+}
+
+func TestGobSerializer(t *testing.T) {
+	var aBoolean bool = true
+	var aByte byte = 113
+	var aChar uint16 = 'x'
+	var aDouble float64 = -897543.3678909
+	var aShort int16 = -500
+	var aFloat float32 = 900.5678
+	var anInt int32 = 56789
+	var aLong int64 = -50992225
+	var aString string = "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラムThe quick brown fox jumps over the lazy dog"
+
+	var bools []bool = []bool{true, false, true}
+
+	// byte is signed in Java but unsigned in Go!
+	var bytes []byte = []byte{112, 4, 255, 4, 112, 221, 43}
+	var chars []uint16 = []uint16{'a', 'b', 'c'}
+	var doubles []float64 = []float64{-897543.3678909, 11.1, 22.2, 33.3}
+	var shorts []int16 = []int16{-500, 2, 3}
+	var floats []float32 = []float32{900.5678, 1.0, 2.1, 3.4}
+	var ints []int32 = []int32{56789, 2, 3}
+	var longs []int64 = []int64{-50992225, 1231232141, 2, 3}
+	w1 := "Pijamalı hasta, yağız şoföre çabucak güvendi."
+	w2 := "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム"
+	w3 := "The quick brown fox jumps over the lazy dog"
+	var strings []string = []string{w1, w2, w3}
+	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
+		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
+		nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	service := NewSerializationService(NewSerializationConfig())
+	data, _ := service.ToData(expected)
+	ret, _ := service.ToObject(data)
+
+	if !reflect.DeepEqual(expected, ret) {
+		t.Errorf("Gob Serializer failed")
+	}
+
+}

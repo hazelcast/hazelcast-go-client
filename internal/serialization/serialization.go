@@ -86,7 +86,7 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) (Seriali
 	}
 
 	if serializer == nil {
-		//serializer=findSerializerByName('!json', false)
+		serializer = service.registry[service.nameToId["!gob"]]
 	}
 
 	if serializer == nil {
@@ -152,6 +152,9 @@ func (service *SerializationService) registerDefaultSerializers() {
 
 	service.registerSerializer(&StringArraySerializer{})
 	service.nameToId["[]string"] = CONSTANT_TYPE_STRING_ARRAY
+
+	service.registerSerializer(&GobSerializer{})
+	service.nameToId["!gob"] = GO_DEFAULT_TYPE_GOB_SERIALIZER
 
 	service.registerIdentifiedFactories()
 

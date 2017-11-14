@@ -1,9 +1,13 @@
 package serialization
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/serialization"
+	"log"
+	"reflect"
 )
 
 type NilSerializer struct{}
@@ -320,4 +324,39 @@ func (*StringArraySerializer) Read(input DataInput) (interface{}, error) {
 
 func (*StringArraySerializer) Write(output DataOutput, i interface{}) {
 	output.WriteUTFArray(i.([]string))
+}
+
+type GobSerializer struct{}
+
+func (*GobSerializer) Id() int32 {
+	return GO_DEFAULT_TYPE_GOB_SERIALIZER
+}
+
+func (*GobSerializer) Read(input DataInput) (interface{}, error) {
+	var network bytes.Buffer
+	data, err := input.ReadData()
+	if err != nil {
+		return nil, err
+	}
+	network.Write(data.Buffer())
+	dec := gob.NewDecoder(&network)
+	var result interface{}
+	err = dec.Decode(&result)
+	if err != nil {
+		log.Println("decode:", err)
+	}
+	return result, err
+}
+
+func (*GobSerializer) Write(output DataOutput, i interface{}) {
+	var network bytes.Buffer
+	t := reflect.TypeOf(i)
+	v := reflect.New(t).Elem().Interface()
+	gob.Register(v)
+	enc := gob.NewEncoder(&network)
+	err := enc.Encode(&i)
+	if err != nil {
+		log.Println("encode:", err)
+	}
+	output.WriteData(&Data{network.Bytes()})
 }
