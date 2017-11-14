@@ -369,3 +369,19 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 		t.Errorf("ReadPortableArray() returns %v expected %v", ret, expectedRet)
 	}
 }
+
+func TestNewMorphingPortableReader(t *testing.T) {
+	s := &student{10, 22, "Furkan Şenharputlu"}
+	config := NewSerializationConfig()
+	config.AddPortableFactory(2, &PortableFactory2{})
+	service := NewSerializationService(config)
+	data, _ := service.ToData(s)
+
+	service.serializationConfig.SetPortableVersion(1)
+	expectedRet := &student2{10, 22, "Furkan Şenharputlu"}
+	ret, _ := service.ToObject(data)
+
+	if !reflect.DeepEqual(expectedRet, ret) {
+		t.Errorf("MorphingPortableReader failed")
+	}
+}
