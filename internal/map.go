@@ -696,7 +696,7 @@ func (imap *MapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, 
 func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
-	request = MapAddEntryListenerEncodeRequest(imap.name, includeValue, listenerFlags, imap.client.ClientConfig.IsSmartRouting())
+	request = MapAddEntryListenerEncodeRequest(imap.name, includeValue, listenerFlags, imap.isSmart())
 	eventHandler := func(clientMessage *ClientMessage) {
 		MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32) {
 			imap.onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
@@ -735,7 +735,7 @@ func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{
 	if err != nil {
 		return nil, err
 	}
-	request = MapAddEntryListenerToKeyEncodeRequest(imap.name, keyData, includeValue, listenerFlags, imap.client.ClientConfig.IsSmartRouting())
+	request = MapAddEntryListenerToKeyEncodeRequest(imap.name, keyData, includeValue, listenerFlags, imap.isSmart())
 	eventHandler := func(clientMessage *ClientMessage) {
 		MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32) {
 			imap.onEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid, numberOfAffectedEntries, includeValue, listener)
