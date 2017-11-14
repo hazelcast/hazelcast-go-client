@@ -4,6 +4,7 @@ import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/internal"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 )
@@ -48,6 +49,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
+
 func TestInvocationRetry(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
@@ -57,15 +59,20 @@ func TestInvocationRetry(t *testing.T) {
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	mu := sync.Mutex{}
 	//Open the new member in a new subroutine after 5 seconds to ensure that Put will be forced to retry.
 	go func() {
 		time.Sleep(5 * time.Second)
+		mu.Lock()
 		remoteController.StartMember(cluster.ID)
+		mu.Unlock()
 	}()
 	_, err := mp.Put("testKey", "testValue")
 	AssertNilf(t, err, nil, "InvocationRetry failed")
 	result, err := mp.Get("testKey")
 	AssertEqualf(t, err, result, "testValue", "invocation retry failed")
 	client.Shutdown()
+	mu.Lock()
 	remoteController.ShutdownCluster(cluster.ID)
+	mu.Unlock()
 }

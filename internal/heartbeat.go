@@ -45,7 +45,7 @@ func (heartBeat *HeartBeatService) start() {
 	go func() {
 		ticker := time.NewTicker(DEFAULT_HEARTBEAT_INTERVAL * time.Second)
 		for {
-			if !heartBeat.client.LifecycleService.isLive {
+			if !heartBeat.client.LifecycleService.isLive.Load().(bool) {
 				return
 			}
 			select {
@@ -59,21 +59,23 @@ func (heartBeat *HeartBeatService) start() {
 	}()
 }
 func (heartBeat *HeartBeatService) heartBeat() {
+	heartBeat.client.ConnectionManager.lock.RLock()
+	defer heartBeat.client.ConnectionManager.lock.RUnlock()
 	for _, connection := range heartBeat.client.ConnectionManager.connections {
-		timeSinceLastRead := time.Since(connection.lastRead)
+		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
 				heartBeat.onHeartBeatStopped(connection)
 			}
 		}
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
-			connection.lastHeartbeatRequested = time.Now()
+			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
 			_, err := heartBeat.client.InvocationService.InvokeOnConnection(request, connection).Result()
 			if err != nil {
 				log.Println("error receiving heartbeat for connection, ", connection)
 			} else {
-				connection.lastHeartbeatReceived = time.Now()
+				connection.lastHeartbeatReceived.Store(time.Now())
 			}
 
 		} else {

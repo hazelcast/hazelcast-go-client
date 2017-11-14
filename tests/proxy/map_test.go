@@ -7,6 +7,8 @@ import (
 	. "github.com/hazelcast/go-client/serialization"
 	. "github.com/hazelcast/go-client/tests"
 	"log"
+	"reflect"
+	"sort"
 	"strconv"
 	"sync"
 	"testing"
@@ -59,11 +61,33 @@ func TestMapProxy_Remove(t *testing.T) {
 	removed, err := mp.Remove(testKey)
 	AssertEqualf(t, err, removed, testValue, "remove returned a wrong value")
 	size, err := mp.Size()
-	AssertEqualf(t, err, size, int32(0), "Map size should be 0.")
+	AssertEqualf(t, err, size, int32(0), "map size should be 0.")
 	found, err := mp.ContainsKey(testKey)
 	AssertEqualf(t, err, found, false, "containsKey returned a wrong result")
 	mp.Clear()
-
+}
+func TestMapProxy_RemoveAll(t *testing.T) {
+	var testMap map[interface{}]interface{} = make(map[interface{}]interface{}, 41)
+	for i := 0; i < 50; i++ {
+		mp.Put("testingKey"+strconv.Itoa(i), int32(i))
+		if i < 41 {
+			testMap["testingKey"+strconv.Itoa(i)] = int32(i)
+		}
+	}
+	mp.RemoveAll(GreaterThan("this", int32(40)))
+	entryList, _ := mp.EntrySet()
+	if len(testMap) != len(entryList) {
+		t.Fatalf("map RemoveAll failed")
+	}
+	for _, pair := range entryList {
+		key := pair.Key()
+		value := pair.Value()
+		expectedValue, found := testMap[key]
+		if !found || expectedValue != value {
+			t.Fatalf("map RemoveAll failed")
+		}
+	}
+	mp.Clear()
 }
 func TestMapProxy_RemoveIfSame(t *testing.T) {
 	testKey := "testingKey"
@@ -308,6 +332,58 @@ func TestMapProxy_PutAll(t *testing.T) {
 	}
 	mp.Clear()
 }
+func TestMapProxy_KeySet(t *testing.T) {
+	var expecteds []string = make([]string, 10)
+	var ret []string = make([]string, 10)
+	for i := 0; i < 10; i++ {
+		mp.Put(strconv.Itoa(i), int32(i))
+		expecteds[i] = strconv.Itoa(i)
+	}
+	keySet, _ := mp.KeySet()
+	for j := 0; j < 10; j++ {
+		ret[j] = keySet[j].(string)
+	}
+	sort.Strings(ret)
+	if len(keySet) != len(expecteds) || !reflect.DeepEqual(ret, expecteds) {
+		t.Fatalf("map KeySet failed")
+	}
+}
+func TestMapProxy_KeySetWihPredicate(t *testing.T) {
+	expected := "5"
+	for i := 0; i < 10; i++ {
+		mp.Put(strconv.Itoa(i), int32(i))
+	}
+	keySet, _ := mp.KeySetWithPredicate(Equal("this", "5"))
+	if len(keySet) != 1 || keySet[0].(string) != expected {
+		t.Fatalf("map KeySetWithPredicate failed")
+	}
+}
+func TestMapProxy_Values(t *testing.T) {
+	var expecteds []string = make([]string, 10)
+	var ret []string = make([]string, 10)
+	for i := 0; i < 10; i++ {
+		mp.Put(strconv.Itoa(i), strconv.Itoa(i))
+		expecteds[i] = strconv.Itoa(i)
+	}
+	values, _ := mp.Values()
+	for j := 0; j < 10; j++ {
+		ret[j] = values[j].(string)
+	}
+	sort.Strings(ret)
+	if len(values) != len(expecteds) || !reflect.DeepEqual(ret, expecteds) {
+		t.Fatalf("map Values failed")
+	}
+}
+func TestMapProxy_ValuesWithPredicate(t *testing.T) {
+	expected := "5"
+	for i := 0; i < 10; i++ {
+		mp.Put(strconv.Itoa(i), strconv.Itoa(i))
+	}
+	values, _ := mp.ValuesWithPredicate(Equal("this", "5"))
+	if len(values) != 1 || values[0].(string) != expected {
+		t.Fatalf("map ValuesWithPredicate failed")
+	}
+}
 func TestMapProxy_EntrySetWithPredicate(t *testing.T) {
 	testMap := make(map[interface{}]interface{})
 	searchedMap := make(map[interface{}]interface{})
@@ -487,6 +563,18 @@ func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
+func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListenerWithPredicate(entryAdded, Equal("this", "value"), true)
+	AssertEqual(t, err, nil, nil)
+	wg.Add(1)
+	mp.Put("key123", "value")
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "AddEntryListenerWithPredicate failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
 func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryAdded := &AddEntry{wg: wg}
@@ -503,6 +591,22 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
+func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	entryAdded := &AddEntry{wg: wg}
+	registrationId, err := mp.AddEntryListenerToKeyWithPredicate(entryAdded, Equal("this", "value1"), "key1", true)
+	AssertEqual(t, err, nil, nil)
+	wg.Add(1)
+	mp.Put("key1", "value1")
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "AddEntryListenerToKeyWithPredicate failed")
+	wg.Add(1)
+	mp.Put("key1", "value2")
+	timeout = WaitTimeout(wg, Timeout/20)
+	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKeyWithPredicate failed")
+	mp.RemoveEntryListener(registrationId)
+	mp.Clear()
+}
 func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryAdded := &AddEntry{wg: wg}
@@ -516,7 +620,6 @@ func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
-
 func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
@@ -576,11 +679,35 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	}
 	result, err := mp2.ExecuteOnEntries(processor)
 	for _, pair := range result {
-		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed.")
+		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed")
 		newValue, err := mp2.Get(pair.Key())
 		AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnEntries failed")
 	}
-
+	mp.Clear()
+	client.Shutdown()
+}
+func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue)
+	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mpName := "testMap2"
+	mp2, _ := client.GetMap(&mpName)
+	for i := 0; i < 10; i++ {
+		testKey := "testingKey" + strconv.Itoa(i)
+		testValue := int32(i)
+		mp2.Put(testKey, testValue)
+	}
+	result, err := mp2.ExecuteOnEntriesWithPredicate(processor, GreaterThan("this", int32(6)))
+	if len(result) != 3 {
+		t.Fatal("ExecuteOnEntriesWithPredicate failed")
+	}
+	for _, pair := range result {
+		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntriesWithPredicate failed")
+		newValue, err := mp2.Get(pair.Key())
+		AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnEntriesWithPredicate failed")
+	}
 	mp.Clear()
 	client.Shutdown()
 }
