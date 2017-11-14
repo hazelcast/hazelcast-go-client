@@ -104,7 +104,8 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 	}
 }
 func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwner bool) (chan *Connection, chan error) {
-	ch := make(chan *Connection, 0)
+
+	ch := make(chan *Connection, 1)
 	err := make(chan error, 1)
 	go func() {
 		//First try readLock

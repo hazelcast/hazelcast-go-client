@@ -246,7 +246,6 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 }
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
-
 	connectionChannel, errorChannel := invocationService.client.ConnectionManager.GetOrConnect(address, false)
 	invocationService.send(invocation, connectionChannel, errorChannel)
 }

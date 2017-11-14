@@ -261,7 +261,6 @@ func (clusterService *ClusterService) memberAdded(member *Member) {
 			listener.(MemberAddedListener).MemberAdded(member)
 		}
 	}
-
 }
 func (clusterService *ClusterService) memberRemoved(member *Member) {
 	members := clusterService.members.Load().([]Member)
