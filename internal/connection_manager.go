@@ -18,7 +18,7 @@ const (
 type ConnectionManager struct {
 	client              *HazelcastClient
 	connections         map[string]*Connection
-	ownerAddress        *Address
+	ownerAddress        atomic.Value
 	lock                sync.RWMutex
 	nextConnectionId    int64
 	connectionListeners atomic.Value
@@ -30,6 +30,7 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 		connections: make(map[string]*Connection),
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
+	cm.ownerAddress.Store(&Address{})
 	return &cm
 }
 func (connectionManager *ConnectionManager) NextConnectionId() int64 {
@@ -121,6 +122,14 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	resp <- con
 	return nil
 }
+func (connectionManager *ConnectionManager) getOwnerConnection() *Connection {
+	ownerConnectionAddress := connectionManager.ownerAddress.Load().(*Address)
+	if ownerConnectionAddress.Host() == "" {
+		return nil
+	}
+	return connectionManager.getActiveConnection(ownerConnectionAddress)
+
+}
 func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
 	uuid := connectionManager.client.ClusterService.uuid
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid
@@ -146,6 +155,9 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 			connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 			connection.endpoint = parameters.Address
 			connection.isOwnerConnection = asOwner
+			if asOwner {
+				connectionManager.ownerAddress.Store(connection.endpoint)
+			}
 		case CREDENTIALS_FAILED:
 			return common.NewHazelcastAuthenticationError("invalid credentials!", nil)
 		case SERIALIZATION_VERSION_MISMATCH:

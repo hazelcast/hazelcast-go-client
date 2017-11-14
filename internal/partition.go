@@ -60,25 +60,15 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 }
 
 func (partitionService *PartitionService) doRefresh() {
-	address := partitionService.client.ClusterService.ownerConnectionAddress.Load().(*Address)
-	connectionChan, errChannel := partitionService.client.ConnectionManager.GetOrConnect(address, true)
-	var connection *Connection
-	select {
-	case connection = <-connectionChan:
-	case err := <-errChannel:
-		log.Println("error while fetching cluster partition table! ", err)
-		return
-	}
+	connection := partitionService.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
 		log.Println("error while fetching cluster partition table!")
-		//TODO:: Handle error
 		return
 	}
 	request := ClientGetPartitionsEncodeRequest()
 	result, err := partitionService.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		log.Println("error while fetching cluster partition table! ", err)
-		//TODO:: Handle error
 		return
 	}
 	partitionService.processPartitionResponse(result)
