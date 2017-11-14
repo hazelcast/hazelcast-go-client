@@ -16,11 +16,11 @@ type PartitionService struct {
 	mp             atomic.Value
 	partitionCount int32
 	cancel         chan struct{}
-	refresh        chan bool
+	refresh        chan struct{}
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	return &PartitionService{client: client, cancel: make(chan struct{}), refresh: make(chan bool, 1)}
+	return &PartitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 1)}
 }
 
 func (partitionService *PartitionService) start() {
