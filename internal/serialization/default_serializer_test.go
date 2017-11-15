@@ -43,9 +43,10 @@ func (e *employee) ReadData(input DataInput) error {
 	return nil
 }
 
-func (e *employee) WriteData(output DataOutput) {
+func (e *employee) WriteData(output DataOutput) error {
 	output.WriteInt32(e.age)
 	output.WriteUTF(e.name)
+	return nil
 }
 
 func (*employee) FactoryId() int32 {
