@@ -148,7 +148,7 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	eventHandler := func(message *ClientMessage) {
 		ClientAddMembershipListenerHandle(message, clusterService.handleMember, clusterService.handleMemberList, clusterService.handleMemberAttributeChange)
 	}
-	invocation := NewInvocation(request, -1, nil, connection)
+	invocation := NewInvocation(request, -1, nil, connection, clusterService.client)
 	invocation.eventHandler = eventHandler
 	response, err := clusterService.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
