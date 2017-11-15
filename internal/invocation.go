@@ -23,7 +23,9 @@ type Invocation struct {
 	err                     chan error
 	eventHandler            func(clientMessage *ClientMessage)
 	registrationId          *string
-	timeout                 <-chan time.Time //TODO invocation should be sent in this timeout
+	timeout                 <-chan time.Time
+	isTimedout              atomic.Value
+	timedoutTime            atomic.Value
 	listenerResponseDecoder DecodeListenerResponse
 }
 type ConnectionAndError struct {
@@ -34,8 +36,8 @@ type InvocationResult interface {
 	Result() (*ClientMessage, error)
 }
 
-func NewInvocation(request *ClientMessage, partitionId int32, address *Address, connection *Connection) *Invocation {
-	return &Invocation{
+func NewInvocation(request *ClientMessage, partitionId int32, address *Address, connection *Connection, client *HazelcastClient) *Invocation {
+	invocation := &Invocation{
 		request:         request,
 		partitionId:     partitionId,
 		address:         address,
@@ -43,7 +45,17 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 		response:        make(chan *ClientMessage, 10),
 		err:             make(chan error, 1),
 		closed:          make(chan bool, 1),
-		timeout:         time.After(DEFAULT_INVOCATION_TIMEOUT)}
+		timeout:         time.After(client.ClientConfig.ClientNetworkConfig.InvocationTimeout()),
+	}
+	invocation.isTimedout.Store(false)
+	go func() {
+		select {
+		case <-invocation.timeout:
+			invocation.timedoutTime.Store(time.Now())
+			invocation.isTimedout.Store(true)
+		}
+	}()
+	return invocation
 }
 
 func (invocation *Invocation) Result() (*ClientMessage, error) {
@@ -68,6 +80,7 @@ type InvocationService struct {
 	notSentMessages           chan int64
 	invoke                    func(*Invocation)
 	sendToConnectionChannel   chan *invocationConnection
+	isShutdown                atomic.Value
 }
 type invocationConnection struct {
 	invocation *Invocation
@@ -83,6 +96,7 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 		sendToConnectionChannel:   make(chan *invocationConnection, 100),
 		removeEventHandlerChannel: make(chan int64, 1),
 	}
+	service.isShutdown.Store(false)
 	if client.ClientConfig.IsSmartRouting() {
 		service.invoke = service.invokeSmart
 	} else {
@@ -102,17 +116,17 @@ func (invocationService *InvocationService) nextCorrelationId() int64 {
 }
 
 func (invocationService *InvocationService) InvokeOnPartitionOwner(request *ClientMessage, partitionId int32) InvocationResult {
-	invocation := NewInvocation(request, partitionId, nil, nil)
+	invocation := NewInvocation(request, partitionId, nil, nil, invocationService.client)
 	return invocationService.sendInvocation(invocation)
 }
 
 func (invocationService *InvocationService) InvokeOnRandomTarget(request *ClientMessage) InvocationResult {
-	invocation := NewInvocation(request, -1, nil, nil)
+	invocation := NewInvocation(request, -1, nil, nil, invocationService.client)
 	return invocationService.sendInvocation(invocation)
 }
 
 func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessage, target *Address) InvocationResult {
-	invocation := NewInvocation(request, -1, target, nil)
+	invocation := NewInvocation(request, -1, target, nil, invocationService.client)
 	return invocationService.sendInvocation(invocation)
 }
 
@@ -125,6 +139,7 @@ func (invocationService *InvocationService) process() {
 	for {
 		select {
 		case invocation := <-invocationService.sending:
+			invocationService.registerInvocation(invocation)
 			invocationService.invoke(invocation)
 		case response := <-invocationService.responseChannel:
 			invocationService.handleResponse(response)
@@ -192,16 +207,18 @@ func (invocationService *InvocationService) send(invocation *Invocation, connect
 	}()
 }
 func (invocationService *InvocationService) sendInvocation(invocation *Invocation) InvocationResult {
+	if invocationService.isShutdown.Load().(bool) {
+		invocation.err <- NewHazelcastClientNotActiveError("Client is shut down", nil)
+		return invocation
+	}
 	invocationService.sending <- invocation
 	return invocation
 }
 func (invocationService *InvocationService) InvokeOnConnection(request *ClientMessage, connection *Connection) InvocationResult {
-	invocation := NewInvocation(request, -1, nil, connection)
+	invocation := NewInvocation(request, -1, nil, connection, invocationService.client)
 	return invocationService.sendInvocation(invocation)
 }
 func (invocationService *InvocationService) sendToConnection(invocation *Invocation, connection *Connection) {
-	invocationService.registerInvocation(invocation)
-
 	err := connection.Send(invocation.request)
 	if err != nil {
 		//not sent
@@ -215,7 +232,7 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
 
-	connectionChannel, errorChannel := invocationService.client.ConnectionManager.GetOrConnect(address)
+	connectionChannel, errorChannel := invocationService.client.ConnectionManager.GetOrConnect(address, false)
 	invocationService.send(invocation, connectionChannel, errorChannel)
 }
 
@@ -315,14 +332,23 @@ func (invocationService *InvocationService) handleException(invocation *Invocati
 		invocation.err <- err
 		return
 	}
-	//TODO:: Check invocation timeout
 
+	if invocation.isTimedout.Load().(bool) {
+		timeSinceDeadline := time.Since(invocation.timedoutTime.Load().(time.Time))
+		log.Println("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
+		invocation.err <- NewHazelcastTimeoutError("invocation timed out by"+timeSinceDeadline.String(), nil)
+		return
+	}
 	if invocationService.shouldRetryInvocation(invocation, err) {
 		if invocation.boundConnection != nil {
 			return
 		}
 		go func() {
 			time.Sleep(RETRY_WAIT_TIME_IN_SECONDS * time.Second)
+			if invocationService.isShutdown.Load().(bool) {
+				invocation.err <- NewHazelcastClientNotActiveError(err.Error(), err)
+				return
+			}
 			invocationService.sending <- invocation
 		}()
 		return
@@ -348,7 +374,6 @@ func isRetrySafeError(err error) bool {
 	isRetrySafe = isRetrySafe || ok
 	_, ok = err.(*HazelcastIOError)
 	isRetrySafe = isRetrySafe || ok
-	//TODO:: add other errors
 	return isRetrySafe
 }
 func (invocationService *InvocationService) isNotAllowedToRetryOnConnection(invocation *Invocation, err error) bool {
@@ -366,5 +391,6 @@ func (invocation *Invocation) isBoundToSingleConnection() bool {
 	return invocation.boundConnection != nil
 }
 func (invocationService *InvocationService) shutdown() {
+	invocationService.isShutdown.Store(true)
 	close(invocationService.quit)
 }

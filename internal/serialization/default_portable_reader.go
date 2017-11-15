@@ -22,7 +22,7 @@ func NewDefaultPortableReader(serializer *PortableSerializer, input DataInput, c
 	return &DefaultPortableReader{serializer, input, classdefinition, offset, finalPos, false}
 }
 
-func (pr *DefaultPortableReader) getTypeByConst(fieldType int32) string {
+func getTypeByConst(fieldType int32) string {
 	var ret string
 	switch t := fieldType; t {
 	case PORTABLE:
@@ -78,7 +78,7 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	}
 
 	if field.fieldType != fieldType {
-		return 0, NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", pr.getTypeByConst(fieldType), fieldName), nil)
+		return 0, NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", getTypeByConst(fieldType), fieldName), nil)
 	}
 	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.index*INT_SIZE_IN_BYTES)
 	if err != nil {

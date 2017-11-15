@@ -4,18 +4,20 @@ import (
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
+	"time"
 )
 
 const (
-	DEFAULT_GROUP_NAME     = "dev"
-	DEFAULT_GROUP_PASSWORD = "dev-pass"
+	DEFAULT_GROUP_NAME         = "dev"
+	DEFAULT_GROUP_PASSWORD     = "dev-pass"
+	DEFAULT_INVOCATION_TIMEOUT = 120 * time.Second //secs
 )
 
 type ClientConfig struct {
 	MembershipListeners []interface{}
 	LifecycleListeners  []interface{}
+	ClientNetworkConfig *ClientNetworkConfig
 	GroupConfig         *GroupConfig
-	ClientNetworkConfig ClientNetworkConfig
 	SerializationConfig *SerializationConfig
 }
 
@@ -125,46 +127,31 @@ func (groupConfig *GroupConfig) SetPassword(password string) {
 }
 
 type ClientNetworkConfig struct {
-	Addresses []string
-	//The candidate address list that client will use to establish initial connection
-	ConnectionAttemptLimit int32
-	/*
-		While client is trying to connect initially to one of the members in the addressList, all might be not
-		available. Instead of giving up, throwing Error and stopping client, it will attempt to retry as much as defined
-		by this parameter.
-	*/
-	ConnectionAttemptPeriod int32
-	//Period for the next attempt to find a member to connect
-	ConnectionTimeout int32
-	/*
-			Socket connection timeout is a float, giving in seconds, or None.
-		    Setting a timeout of None disables the timeout feature and is equivalent to block the socket until it connects.
-		    Setting a timeout of zero is the same as disables blocking on connect.
-	*/
-	RedoOperation bool
-	/*
-		If true, client will redo the operations that were executing on the server and client lost the connection.
-		This can be because of network, or simply because the member died. However it is not clear whether the
-		application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
-		retrying can cause to undesirable effects. Note that the redo can perform on any member.
-	*/
-	SmartRouting bool
-	/*
-		If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a
-		cached value of partition count and doesn't guarantee that the operation will always be executed on the owner.
-		The cached table is updated every 10 seconds.
-	*/
+	Addresses                  []string
+	ConnectionAttemptLimit     int32
+	ConnectionAttemptPeriod    int32
+	ConnectionTimeout          int32
+	RedoOperation              bool
+	SmartRouting               bool
+	InvocationTimeoutInSeconds time.Duration
 }
 
-func NewClientNetworkConfig() ClientNetworkConfig {
-	return ClientNetworkConfig{
-		Addresses:               make([]string, 0),
-		ConnectionAttemptLimit:  2,
-		ConnectionAttemptPeriod: 3,
-		ConnectionTimeout:       5.0,
-		RedoOperation:           false,
-		SmartRouting:            true,
+func NewClientNetworkConfig() *ClientNetworkConfig {
+	return &ClientNetworkConfig{
+		Addresses:                  make([]string, 0),
+		ConnectionAttemptLimit:     2,
+		ConnectionAttemptPeriod:    3,
+		ConnectionTimeout:          5.0,
+		RedoOperation:              false,
+		SmartRouting:               true,
+		InvocationTimeoutInSeconds: DEFAULT_INVOCATION_TIMEOUT,
 	}
+}
+func (clientNetworkConfig *ClientNetworkConfig) SetInvocationTimeoutInSeconds(invocationTimeoutInSeconds int32) {
+	clientNetworkConfig.InvocationTimeoutInSeconds = time.Duration(invocationTimeoutInSeconds) * time.Second
+}
+func (clientNetworkConfig *ClientNetworkConfig) InvocationTimeout() time.Duration {
+	return clientNetworkConfig.InvocationTimeoutInSeconds
 }
 func (clientNetworkConfig *ClientNetworkConfig) SetRedoOperation(RedoOperation bool) *ClientNetworkConfig {
 	clientNetworkConfig.RedoOperation = RedoOperation
