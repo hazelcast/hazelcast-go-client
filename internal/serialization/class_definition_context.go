@@ -44,10 +44,16 @@ func encodeVersionedClassId(classId int32, version int32) string {
 	return strconv.Itoa(int(classId)) + "v" + strconv.Itoa(int(version))
 }
 
-func decodeVersionedClassId(encoded string) (int32, int32) {
+func decodeVersionedClassId(encoded string) (int32, int32, error) {
 	re := regexp.MustCompile("[0-9]+")
 	pair := re.FindAllString(encoded, -1)
-	classId, _ := strconv.Atoi(pair[0])
-	version, _ := strconv.Atoi(pair[1])
-	return int32(classId), int32(version)
+	classId, err := strconv.Atoi(pair[0])
+	if err != nil {
+		return 0, 0, err
+	}
+	version, err := strconv.Atoi(pair[1])
+	if err != nil {
+		return 0, 0, err
+	}
+	return int32(classId), int32(version), nil
 }

@@ -45,7 +45,7 @@ func (*anIdentifiedDataSerializable) FactoryId() int32 {
 	return IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID
 }
 
-func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) {
+func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) error {
 	output.WriteBool(i.bool)
 	output.WriteByte(i.b)
 	output.WriteUInt16(i.c)
@@ -79,8 +79,7 @@ func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) {
 	output.WriteObject(i.portableObject)
 	output.WriteObject(i.identifiedDataSerializableObject)
 
-	//output.WriteData(i.data)
-
+	return nil
 }
 
 func (i *anIdentifiedDataSerializable) ReadData(input DataInput) error {
