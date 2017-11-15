@@ -154,7 +154,7 @@ func (service *SerializationService) registerDefaultSerializers() {
 	service.nameToId["[]string"] = CONSTANT_TYPE_STRING_ARRAY
 
 	service.registerSerializer(&GobSerializer{})
-	service.nameToId["!gob"] = GO_DEFAULT_TYPE_GOB_SERIALIZER
+	service.nameToId["!gob"] = GO_GOB_SERIALIZATION_TYPE
 
 	service.registerIdentifiedFactories()
 
