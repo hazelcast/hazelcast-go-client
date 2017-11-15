@@ -36,7 +36,7 @@ for pkg in $(go list ./...);
 do
     if [[ $pkg != *"vendor"* ]]; then
       echo "testing... $pkg"
-      go test -v -coverprofile=tmp.out $pkg >> test.out
+      go test -v -race -coverprofile=tmp.out $pkg >> test.out
       if [ -f tmp.out ]; then
          cat tmp.out | grep -v "mode: set" >> coverage.out | echo
       fi

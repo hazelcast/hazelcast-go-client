@@ -33,6 +33,16 @@ bash ./start-rc.sh
 
 sleep 10
 
+# Run tests (JUnit plugin) with race detection
+for pkg in $(go list $PRJ/...);
+do
+    if [[ $pkg != *"vendor"* ]]; then
+      echo "testing with race detection on ... $pkg"
+      go test -race -v  $pkg
+    fi
+done
+
+
 # Run tests (JUnit plugin)
 echo "mode: set" > coverage.out
 for pkg in $(go list $PRJ/...);
