@@ -16,7 +16,8 @@ func (sp *predicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (sp *predicate) WriteData(output DataOutput) {
+func (sp *predicate) WriteData(output DataOutput) error {
+	return nil
 }
 
 func (*predicate) FactoryId() int32 {
@@ -42,8 +43,9 @@ func (sp *SqlPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (sp *SqlPredicate) WriteData(output DataOutput) {
+func (sp *SqlPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(sp.sql)
+	return nil
 }
 
 type AndPredicate struct {
@@ -71,11 +73,15 @@ func (ap *AndPredicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (ap *AndPredicate) WriteData(output DataOutput) {
+func (ap *AndPredicate) WriteData(output DataOutput) error {
 	output.WriteInt32(int32(len(ap.predicates)))
 	for _, pred := range ap.predicates {
-		output.WriteObject(pred)
+		err := output.WriteObject(pred)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 type BetweenPredicate struct {
@@ -104,11 +110,13 @@ func (bp *BetweenPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (bp *BetweenPredicate) WriteData(output DataOutput) {
+func (bp *BetweenPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(bp.field)
-	output.WriteObject(bp.to)
-	output.WriteObject(bp.from)
-
+	err := output.WriteObject(bp.to)
+	if err != nil {
+		return err
+	}
+	return output.WriteObject(bp.from)
 }
 
 type EqualPredicate struct {
@@ -132,9 +140,9 @@ func (ep *EqualPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (ep *EqualPredicate) WriteData(output DataOutput) {
+func (ep *EqualPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(ep.field)
-	output.WriteObject(ep.value)
+	return output.WriteObject(ep.value)
 }
 
 type GreaterLessPredicate struct {
@@ -167,11 +175,15 @@ func (glp *GreaterLessPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (glp *GreaterLessPredicate) WriteData(output DataOutput) {
+func (glp *GreaterLessPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(glp.field)
-	output.WriteObject(glp.value)
+	err := output.WriteObject(glp.value)
+	if err != nil {
+		return err
+	}
 	output.WriteBool(glp.equal)
 	output.WriteBool(glp.less)
+	return nil
 }
 
 type LikePredicate struct {
@@ -194,9 +206,10 @@ func (lp *LikePredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (lp *LikePredicate) WriteData(output DataOutput) {
+func (lp *LikePredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(lp.field)
 	output.WriteUTF(lp.expr)
+	return nil
 }
 
 type ILikePredicate struct {
@@ -237,12 +250,16 @@ func (ip *InPredicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (ip *InPredicate) WriteData(output DataOutput) {
+func (ip *InPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(ip.field)
 	output.WriteInt32(int32(len(ip.values)))
 	for _, value := range ip.values {
-		output.WriteObject(value)
+		err := output.WriteObject(value)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 type InstanceOfPredicate struct {
@@ -260,8 +277,9 @@ func (iop *InstanceOfPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (iop *InstanceOfPredicate) WriteData(output DataOutput) {
+func (iop *InstanceOfPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(iop.className)
+	return nil
 }
 
 type NotEqualPredicate struct {
@@ -287,8 +305,8 @@ func (np *NotPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (np *NotPredicate) WriteData(output DataOutput) {
-	output.WriteObject(np.pred)
+func (np *NotPredicate) WriteData(output DataOutput) error {
+	return output.WriteObject(np.pred)
 }
 
 type OrPredicate struct {
@@ -317,11 +335,15 @@ func (or *OrPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (or *OrPredicate) WriteData(output DataOutput) {
+func (or *OrPredicate) WriteData(output DataOutput) error {
 	output.WriteInt32(int32(len(or.predicates)))
 	for _, pred := range or.predicates {
-		output.WriteObject(pred)
+		err := output.WriteObject(pred)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 type RegexPredicate struct {
@@ -344,9 +366,10 @@ func (rp *RegexPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (rp *RegexPredicate) WriteData(output DataOutput) {
+func (rp *RegexPredicate) WriteData(output DataOutput) error {
 	output.WriteUTF(rp.field)
 	output.WriteUTF(rp.regex)
+	return nil
 }
 
 type FalsePredicate struct {
@@ -361,8 +384,9 @@ func (fp *FalsePredicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (fp *FalsePredicate) WriteData(output DataOutput) {
+func (fp *FalsePredicate) WriteData(output DataOutput) error {
 	//Empty method
+	return nil
 }
 
 type TruePredicate struct {
@@ -377,6 +401,7 @@ func (tp *TruePredicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (tp *TruePredicate) WriteData(output DataOutput) {
+func (tp *TruePredicate) WriteData(output DataOutput) error {
 	//Empty method
+	return nil
 }

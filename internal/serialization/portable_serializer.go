@@ -65,16 +65,21 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 	return portable, nil
 }
 
-func (ps *PortableSerializer) Write(output DataOutput, i interface{}) {
+func (ps *PortableSerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt32(i.(Portable).FactoryId())
 	output.WriteInt32(i.(Portable).ClassId())
-	ps.WriteObject(output, i)
+	err := ps.WriteObject(output, i)
+	return err
 }
 
-func (ps *PortableSerializer) WriteObject(output DataOutput, i interface{}) {
-	classDefinition, _ := ps.portableContext.LookUpOrRegisterClassDefiniton(i.(Portable))
+func (ps *PortableSerializer) WriteObject(output DataOutput, i interface{}) error {
+	classDefinition, err := ps.portableContext.LookUpOrRegisterClassDefiniton(i.(Portable))
+	if err != nil {
+		return err
+	}
 	output.WriteInt32(classDefinition.version)
 	writer := NewDefaultPortableWriter(ps, output.(PositionalDataOutput), classDefinition)
 	i.(Portable).WritePortable(writer)
 	writer.End()
+	return nil
 }

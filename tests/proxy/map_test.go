@@ -754,8 +754,9 @@ func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input DataInput) erro
 	return err
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output DataOutput) {
+func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output DataOutput) error {
 	output.WriteUTF(simpleEntryProcessor.value)
+	return nil
 }
 
 func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
