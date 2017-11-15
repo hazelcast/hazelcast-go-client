@@ -329,7 +329,7 @@ func (*StringArraySerializer) Write(output DataOutput, i interface{}) {
 type GobSerializer struct{}
 
 func (*GobSerializer) Id() int32 {
-	return GO_DEFAULT_TYPE_GOB_SERIALIZER
+	return GO_GOB_SERIALIZATION_TYPE
 }
 
 func (*GobSerializer) Read(input DataInput) (interface{}, error) {
