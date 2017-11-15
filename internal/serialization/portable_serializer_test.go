@@ -19,6 +19,16 @@ func (*PortableFactory1) Create(classId int32) Portable {
 	return nil
 }
 
+type PortableFactory2 struct {
+}
+
+func (*PortableFactory2) Create(classId int32) Portable {
+	if classId == 1 {
+		return &student2{}
+	}
+	return nil
+}
+
 type student struct {
 	id   int16
 	age  int32
@@ -41,6 +51,36 @@ func (s *student) WritePortable(writer PortableWriter) {
 
 func (s *student) ReadPortable(reader PortableReader) {
 	s.id, _ = reader.ReadInt16("id")
+	s.age, _ = reader.ReadInt32("age")
+	s.name, _ = reader.ReadUTF("name")
+}
+
+type student2 struct {
+	id   int32
+	age  int32
+	name string
+}
+
+func (*student2) FactoryId() int32 {
+	return 2
+}
+
+func (*student2) ClassId() int32 {
+	return 1
+}
+
+func (*student2) Version() int32 {
+	return 1
+}
+
+func (s *student2) WritePortable(writer PortableWriter) {
+	writer.WriteInt32("id", s.id)
+	writer.WriteInt32("age", s.age)
+	writer.WriteUTF("name", s.name)
+}
+
+func (s *student2) ReadPortable(reader PortableReader) {
+	s.id, _ = reader.ReadInt32("id")
 	s.age, _ = reader.ReadInt32("age")
 	s.name, _ = reader.ReadUTF("name")
 }
