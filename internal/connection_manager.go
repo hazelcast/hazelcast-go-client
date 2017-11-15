@@ -18,6 +18,7 @@ import (
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
+	"log"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -112,7 +113,7 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwn
 		connectionManager.lock.RLock()
 		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
-			connectionManager.lock.RUnlock()
+			connectionManager.lock.Unlock()
 			return
 		}
 		connectionManager.lock.RUnlock()
@@ -173,6 +174,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	)
 	result, err := connectionManager.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
+		log.Println(err)
 		return err
 	} else {
 
