@@ -81,13 +81,10 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 	}
 }
 func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwner bool) (chan *Connection, chan error) {
-	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
-	if address == nil {
-		address = NewAddress()
-	}
 	ch := make(chan *Connection, 0)
 	err := make(chan error, 1)
 	go func() {
+		//First try readLock
 		connectionManager.lock.RLock()
 		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
@@ -95,6 +92,13 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwn
 			return
 		}
 		connectionManager.lock.RUnlock()
+		connectionManager.lock.Lock()
+		defer connectionManager.lock.Unlock()
+		//Check if connection is opened
+		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
+			ch <- conn
+			return
+		}
 		//Open new connection
 		err <- connectionManager.openNewConnection(address, ch, asOwner)
 	}()
@@ -106,8 +110,6 @@ func (connectionManager *ConnectionManager) ConnectionCount() int32 {
 	return int32(len(connectionManager.connections))
 }
 func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection, asOwner bool) error {
-	connectionManager.lock.Lock()
-	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
 	connectionId := connectionManager.NextConnectionId()
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
