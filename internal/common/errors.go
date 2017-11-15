@@ -25,7 +25,9 @@ type HazelcastEOFError struct {
 type HazelcastSerializationError struct {
 	*HazelcastErrorType
 }
-
+type HazelcastTimeoutError struct {
+	*HazelcastErrorType
+}
 type HazelcastAuthenticationError struct {
 	*HazelcastErrorType
 }
@@ -52,6 +54,9 @@ type HazelcastIOError struct {
 	*HazelcastErrorType
 }
 
+func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
+	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
+}
 func NewHazelcastIOError(message string, cause error) *HazelcastIOError {
 	return &HazelcastIOError{&HazelcastErrorType{message: message, cause: cause}}
 }
