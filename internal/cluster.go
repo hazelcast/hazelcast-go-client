@@ -119,7 +119,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 	return common.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
-	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address)
+	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address, true)
 	var con *Connection
 	select {
 	case con = <-connectionChannel:
@@ -127,7 +127,7 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 		return err
 	}
 	if !con.isOwnerConnection {
-		err := clusterService.client.ConnectionManager.clusterAuthenticator(con)
+		err := clusterService.client.ConnectionManager.clusterAuthenticator(con, true)
 		if err != nil {
 			return err
 		}
@@ -148,7 +148,7 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	eventHandler := func(message *ClientMessage) {
 		ClientAddMembershipListenerHandle(message, clusterService.handleMember, clusterService.handleMemberList, clusterService.handleMemberAttributeChange)
 	}
-	invocation := NewInvocation(request, -1, nil, connection)
+	invocation := NewInvocation(request, -1, nil, connection, clusterService.client)
 	invocation.eventHandler = eventHandler
 	response, err := clusterService.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
@@ -194,7 +194,7 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 	} else if eventType == MEMBER_REMOVED {
 		clusterService.memberRemoved(member)
 	}
-	clusterService.client.PartitionService.refresh <- true
+	clusterService.client.PartitionService.refresh <- struct{}{}
 }
 
 func (clusterService *ClusterService) handleMemberList(members *[]Member) {
@@ -227,7 +227,7 @@ func (clusterService *ClusterService) handleMemberList(members *[]Member) {
 			clusterService.memberAdded(&member)
 		}
 	}
-	clusterService.client.PartitionService.refresh <- true
+	clusterService.client.PartitionService.refresh <- struct{}{}
 	wg.Done() //initial member list is fetched
 }
 func (clusterService *ClusterService) handleMemberAttributeChange(uuid *string, key *string, operationType int32, value *string) {

@@ -16,11 +16,11 @@ type PartitionService struct {
 	mp             atomic.Value
 	partitionCount int32
 	cancel         chan struct{}
-	refresh        chan bool
+	refresh        chan struct{}
 }
 
 func NewPartitionService(client *HazelcastClient) *PartitionService {
-	return &PartitionService{client: client, cancel: make(chan struct{}), refresh: make(chan bool, 1)}
+	return &PartitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 1)}
 }
 
 func (partitionService *PartitionService) start() {
@@ -60,25 +60,15 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 }
 
 func (partitionService *PartitionService) doRefresh() {
-	address := partitionService.client.ClusterService.ownerConnectionAddress.Load().(*Address)
-	connectionChan, errChannel := partitionService.client.ConnectionManager.GetOrConnect(address)
-	var connection *Connection
-	select {
-	case connection = <-connectionChan:
-	case err := <-errChannel:
-		log.Println("error while fetching cluster partition table! ", err)
-		return
-	}
+	connection := partitionService.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
 		log.Println("error while fetching cluster partition table!")
-		//TODO:: Handle error
 		return
 	}
 	request := ClientGetPartitionsEncodeRequest()
 	result, err := partitionService.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		log.Println("error while fetching cluster partition table! ", err)
-		//TODO:: Handle error
 		return
 	}
 	partitionService.processPartitionResponse(result)

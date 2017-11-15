@@ -1,7 +1,5 @@
 package common
 
-import "time"
-
 const (
 	SERVICE_NAME_ATOMIC_LONG                     = "hz:impl:atomicLongService"
 	SERVICE_NAME_ATOMIC_REFERENCE                = "hz:impl:atomicReferenceService"
@@ -177,9 +175,6 @@ const (
 	NIL_ARRAY_LENGTH = -1
 )
 
-const (
-	DEFAULT_INVOCATION_TIMEOUT = 120 * time.Second //secs
-)
 const (
 	ENTRYEVENT_ADDED        int32 = 1
 	ENTRYEVENT_REMOVED      int32 = 2
