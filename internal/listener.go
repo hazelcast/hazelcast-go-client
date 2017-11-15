@@ -40,9 +40,9 @@ func (listenerService *ListenerService) startListening(request *ClientMessage, e
 	var invocation *Invocation
 	if keyData != nil {
 		partitionId := listenerService.client.PartitionService.GetPartitionId(keyData)
-		invocation = NewInvocation(request, partitionId, nil, nil)
+		invocation = NewInvocation(request, partitionId, nil, nil, listenerService.client)
 	} else {
-		invocation = NewInvocation(request, -1, nil, nil)
+		invocation = NewInvocation(request, -1, nil, nil, listenerService.client)
 	}
 	invocation.eventHandler = eventHandler
 	invocation.listenerResponseDecoder = responseDecoder
@@ -71,7 +71,7 @@ func (listenerService *ListenerService) stopListening(registrationId *string, re
 }
 
 func (listenerService *ListenerService) reregisterListener(invocation *Invocation) {
-	newInvocation := NewInvocation(invocation.request, invocation.partitionId, nil, nil)
+	newInvocation := NewInvocation(invocation.request, invocation.partitionId, nil, nil, listenerService.client)
 	newInvocation.eventHandler = invocation.eventHandler
 	newInvocation.listenerResponseDecoder = invocation.listenerResponseDecoder
 	responseMessage, err := listenerService.client.InvocationService.sendInvocation(invocation).Result()

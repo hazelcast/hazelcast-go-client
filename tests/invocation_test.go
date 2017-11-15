@@ -3,6 +3,7 @@ package tests
 import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/internal"
+	"github.com/hazelcast/go-client/internal/common"
 	"strconv"
 	"sync"
 	"testing"
@@ -49,6 +50,23 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
+func TestInvocationTimeout(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 100
+	config.ClientNetworkConfig.SetInvocationTimeoutInSeconds(5)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mapName := "testMap"
+	mp, _ := client.GetMap(&mapName)
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	_, err := mp.Put("a", "b")
+	if _, ok := err.(*common.HazelcastTimeoutError); !ok {
+		t.Fatal("invocation should have timed out but returned, ", err)
+	}
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
 
 func TestInvocationRetry(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
@@ -75,4 +93,19 @@ func TestInvocationRetry(t *testing.T) {
 	mu.Lock()
 	remoteController.ShutdownCluster(cluster.ID)
 	mu.Unlock()
+}
+func TestInvocationWithShutdown(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 10
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mapName := "testMap"
+	mp, _ := client.GetMap(&mapName)
+	client.Shutdown()
+	_, err := mp.Put("testingKey", "testingValue")
+	if _, ok := err.(*common.HazelcastClientNotActiveError); !ok {
+		t.Fatal("HazelcastClientNotActiveError was expected")
+	}
+	remoteController.ShutdownCluster(cluster.ID)
 }
