@@ -5,7 +5,7 @@ type IdentifiedDataSerializableFactory interface {
 }
 type IdentifiedDataSerializable interface {
 	ReadData(input DataInput) error
-	WriteData(output DataOutput)
+	WriteData(output DataOutput) error
 	FactoryId() int32
 	ClassId() int32
 }
@@ -29,7 +29,7 @@ type PortableFactory interface {
 type Serializer interface {
 	Id() int32
 	Read(input DataInput) (interface{}, error)
-	Write(output DataOutput, object interface{})
+	Write(output DataOutput, object interface{}) error
 }
 
 type IData interface {
@@ -52,7 +52,7 @@ type DataOutput interface {
 	WriteFloat32(v float32)
 	WriteFloat64(v float64)
 	WriteUTF(v string)
-	WriteObject(i interface{})
+	WriteObject(i interface{}) error
 	WriteData(data IData)
 	WriteByteArray(v []byte)
 	WriteBoolArray(v []bool)

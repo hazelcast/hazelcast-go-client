@@ -6,7 +6,6 @@ import (
 	"fmt"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/serialization"
-	"log"
 	"reflect"
 )
 
@@ -20,8 +19,9 @@ func (*NilSerializer) Read(input DataInput) (interface{}, error) {
 	return nil, nil
 }
 
-func (*NilSerializer) Write(output DataOutput, i interface{}) {
+func (*NilSerializer) Write(output DataOutput, i interface{}) error {
 	// Empty method
+	return nil
 }
 
 type IdentifiedDataSerializableSerializer struct {
@@ -66,12 +66,12 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 	return object, nil
 }
 
-func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interface{}) {
+func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interface{}) error {
 	r := i.(IdentifiedDataSerializable)
 	output.WriteBool(true)
 	output.WriteInt32(r.FactoryId())
 	output.WriteInt32(r.ClassId())
-	r.WriteData(output)
+	return r.WriteData(output)
 }
 
 type ByteSerializer struct{}
@@ -84,8 +84,9 @@ func (*ByteSerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadByte()
 }
 
-func (*ByteSerializer) Write(output DataOutput, i interface{}) {
+func (*ByteSerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteByte(i.(byte))
+	return nil
 }
 
 type BoolSerializer struct{}
@@ -98,8 +99,9 @@ func (*BoolSerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadBool()
 }
 
-func (*BoolSerializer) Write(output DataOutput, i interface{}) {
+func (*BoolSerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteBool(i.(bool))
+	return nil
 }
 
 type UInteger16Serializer struct{}
@@ -112,8 +114,9 @@ func (*UInteger16Serializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadUInt16()
 }
 
-func (*UInteger16Serializer) Write(output DataOutput, i interface{}) {
+func (*UInteger16Serializer) Write(output DataOutput, i interface{}) error {
 	output.WriteUInt16(i.(uint16))
+	return nil
 }
 
 type Integer16Serializer struct{}
@@ -126,8 +129,9 @@ func (*Integer16Serializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadInt16()
 }
 
-func (*Integer16Serializer) Write(output DataOutput, i interface{}) {
+func (*Integer16Serializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt16(i.(int16))
+	return nil
 }
 
 type Integer32Serializer struct{}
@@ -140,8 +144,9 @@ func (*Integer32Serializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadInt32()
 }
 
-func (*Integer32Serializer) Write(output DataOutput, i interface{}) {
+func (*Integer32Serializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt32(i.(int32))
+	return nil
 }
 
 type Integer64Serializer struct{}
@@ -154,8 +159,9 @@ func (*Integer64Serializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadInt64()
 }
 
-func (*Integer64Serializer) Write(output DataOutput, i interface{}) {
+func (*Integer64Serializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt64(i.(int64))
+	return nil
 }
 
 type Float32Serializer struct{}
@@ -168,8 +174,9 @@ func (*Float32Serializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadFloat32()
 }
 
-func (*Float32Serializer) Write(output DataOutput, i interface{}) {
+func (*Float32Serializer) Write(output DataOutput, i interface{}) error {
 	output.WriteFloat32(i.(float32))
+	return nil
 }
 
 type Float64Serializer struct{}
@@ -182,8 +189,9 @@ func (*Float64Serializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadFloat64()
 }
 
-func (*Float64Serializer) Write(output DataOutput, i interface{}) {
+func (*Float64Serializer) Write(output DataOutput, i interface{}) error {
 	output.WriteFloat64(i.(float64))
+	return nil
 }
 
 type StringSerializer struct{}
@@ -196,8 +204,9 @@ func (*StringSerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadUTF()
 }
 
-func (*StringSerializer) Write(output DataOutput, i interface{}) {
+func (*StringSerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteUTF(i.(string))
+	return nil
 }
 
 type ByteArraySerializer struct{}
@@ -210,8 +219,9 @@ func (*ByteArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadByteArray()
 }
 
-func (*ByteArraySerializer) Write(output DataOutput, i interface{}) {
+func (*ByteArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteByteArray(i.([]byte))
+	return nil
 }
 
 type BoolArraySerializer struct{}
@@ -224,8 +234,9 @@ func (*BoolArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadBoolArray()
 }
 
-func (*BoolArraySerializer) Write(output DataOutput, i interface{}) {
+func (*BoolArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteBoolArray(i.([]bool))
+	return nil
 }
 
 type UInteger16ArraySerializer struct{}
@@ -238,8 +249,9 @@ func (*UInteger16ArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadUInt16Array()
 }
 
-func (*UInteger16ArraySerializer) Write(output DataOutput, i interface{}) {
+func (*UInteger16ArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteUInt16Array(i.([]uint16))
+	return nil
 }
 
 type Integer16ArraySerializer struct{}
@@ -252,8 +264,9 @@ func (*Integer16ArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadInt16Array()
 }
 
-func (*Integer16ArraySerializer) Write(output DataOutput, i interface{}) {
+func (*Integer16ArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt16Array(i.([]int16))
+	return nil
 }
 
 type Integer32ArraySerializer struct{}
@@ -266,8 +279,9 @@ func (*Integer32ArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadInt32Array()
 }
 
-func (*Integer32ArraySerializer) Write(output DataOutput, i interface{}) {
+func (*Integer32ArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt32Array(i.([]int32))
+	return nil
 }
 
 type Integer64ArraySerializer struct{}
@@ -280,8 +294,9 @@ func (*Integer64ArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadInt64Array()
 }
 
-func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) {
+func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteInt64Array(i.([]int64))
+	return nil
 }
 
 type Float32ArraySerializer struct{}
@@ -294,8 +309,9 @@ func (*Float32ArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadFloat32Array()
 }
 
-func (*Float32ArraySerializer) Write(output DataOutput, i interface{}) {
+func (*Float32ArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteFloat32Array(i.([]float32))
+	return nil
 }
 
 type Float64ArraySerializer struct{}
@@ -308,8 +324,9 @@ func (*Float64ArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadFloat64Array()
 }
 
-func (*Float64ArraySerializer) Write(output DataOutput, i interface{}) {
+func (*Float64ArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteFloat64Array(i.([]float64))
+	return nil
 }
 
 type StringArraySerializer struct{}
@@ -322,8 +339,9 @@ func (*StringArraySerializer) Read(input DataInput) (interface{}, error) {
 	return input.ReadUTFArray()
 }
 
-func (*StringArraySerializer) Write(output DataOutput, i interface{}) {
+func (*StringArraySerializer) Write(output DataOutput, i interface{}) error {
 	output.WriteUTFArray(i.([]string))
+	return nil
 }
 
 type GobSerializer struct{}
@@ -343,12 +361,12 @@ func (*GobSerializer) Read(input DataInput) (interface{}, error) {
 	var result interface{}
 	err = dec.Decode(&result)
 	if err != nil {
-		log.Println("decode:", err)
+		return nil, err
 	}
-	return result, err
+	return result, nil
 }
 
-func (*GobSerializer) Write(output DataOutput, i interface{}) {
+func (*GobSerializer) Write(output DataOutput, i interface{}) error {
 	var network bytes.Buffer
 	t := reflect.TypeOf(i)
 	v := reflect.New(t).Elem().Interface()
@@ -356,7 +374,8 @@ func (*GobSerializer) Write(output DataOutput, i interface{}) {
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(&i)
 	if err != nil {
-		log.Println("encode:", err)
+		return err
 	}
 	output.WriteData(&Data{network.Bytes()})
+	return nil
 }

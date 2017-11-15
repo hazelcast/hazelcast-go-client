@@ -119,8 +119,9 @@ func (o *ObjectDataOutput) WriteUTF(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteObject(object interface{}) {
-	o.service.WriteObject(o, object)
+func (o *ObjectDataOutput) WriteObject(object interface{}) error {
+	return o.service.WriteObject(o, object)
+
 }
 
 func (o *ObjectDataOutput) WriteByteArray(v []byte) {
@@ -796,7 +797,10 @@ func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]string, error) 
 }
 
 func (i *ObjectDataInput) ReadData() (IData, error) {
-	array, _ := i.ReadByteArray()
+	array, err := i.ReadByteArray()
+	if err != nil {
+		return nil, err
+	}
 	if array == nil {
 		return nil, nil
 	}

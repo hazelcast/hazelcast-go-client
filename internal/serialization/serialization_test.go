@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	. "github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/serialization"
-	"log"
 	"reflect"
 	"testing"
 )
@@ -61,17 +60,17 @@ func (s *CustomArtistSerializer) Read(input DataInput) (interface{}, error) {
 	return v, nil
 }
 
-func (s *CustomArtistSerializer) Write(output DataOutput, obj interface{}) {
+func (s *CustomArtistSerializer) Write(output DataOutput, obj interface{}) error {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
 	if err != nil {
-		log.Fatal("encode:", err)
+		return err
 	}
 	payload := (&network).Bytes()
 	output.WriteInt32(obj.(artist).Type())
 	output.WriteData(NewData(payload))
-
+	return nil
 }
 
 type customObject struct {
@@ -96,15 +95,16 @@ func (s *GlobalSerializer) Read(input DataInput) (interface{}, error) {
 	return v, nil
 }
 
-func (s *GlobalSerializer) Write(output DataOutput, obj interface{}) {
+func (s *GlobalSerializer) Write(output DataOutput, obj interface{}) error {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
 	if err != nil {
-		log.Fatal("encode:", err)
+		return err
 	}
 	payload := (&network).Bytes()
 	output.WriteData(NewData(payload))
+	return nil
 }
 
 type artist interface {

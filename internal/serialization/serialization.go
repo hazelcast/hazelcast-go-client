@@ -32,8 +32,8 @@ func (service *SerializationService) ToData(object interface{}) (*Data, error) {
 	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.Id())
-	serializer.Write(dataOutput, object)
-	return &Data{dataOutput.buffer}, nil
+	err = serializer.Write(dataOutput, object)
+	return &Data{dataOutput.buffer}, err
 }
 
 func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
@@ -54,8 +54,7 @@ func (service *SerializationService) WriteObject(output DataOutput, object inter
 		return err
 	}
 	output.WriteInt32(serializer.Id())
-	serializer.Write(output, object)
-	return nil
+	return serializer.Write(output, object)
 }
 
 func (service *SerializationService) ReadObject(input DataInput) (interface{}, error) {

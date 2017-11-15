@@ -75,7 +75,10 @@ func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable Portab
 	pw.output.WriteInt32(fieldDefinition.factoryId)
 	pw.output.WriteInt32(fieldDefinition.classId)
 	if !isNullPortable {
-		pw.serializer.WriteObject(pw.output, portable)
+		err := pw.serializer.WriteObject(pw.output, portable)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -154,7 +157,10 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 			sample = portableArray[i]
 			posVal := pw.output.Position()
 			pw.output.PWriteInt32(innerOffset+i*INT_SIZE_IN_BYTES, posVal)
-			pw.serializer.WriteObject(pw.output, sample)
+			err := pw.serializer.WriteObject(pw.output, sample)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
