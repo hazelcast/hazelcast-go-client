@@ -119,7 +119,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 	return common.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
-	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address)
+	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address, true)
 	var con *Connection
 	select {
 	case con = <-connectionChannel:
@@ -127,7 +127,7 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 		return err
 	}
 	if !con.isOwnerConnection {
-		err := clusterService.client.ConnectionManager.clusterAuthenticator(con)
+		err := clusterService.client.ConnectionManager.clusterAuthenticator(con, true)
 		if err != nil {
 			return err
 		}
