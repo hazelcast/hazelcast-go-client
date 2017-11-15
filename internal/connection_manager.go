@@ -9,10 +9,16 @@ import (
 	"sync/atomic"
 )
 
+const (
+	AUTHENTICATED                  = iota
+	CREDENTIALS_FAILED             = iota
+	SERIALIZATION_VERSION_MISMATCH = iota
+)
+
 type ConnectionManager struct {
 	client              *HazelcastClient
 	connections         map[string]*Connection
-	ownerAddress        *Address
+	ownerAddress        atomic.Value
 	lock                sync.RWMutex
 	nextConnectionId    int64
 	connectionListeners atomic.Value
@@ -24,6 +30,7 @@ func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
 		connections: make(map[string]*Connection),
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
+	cm.ownerAddress.Store(&Address{})
 	return &cm
 }
 func (connectionManager *ConnectionManager) NextConnectionId() int64 {
@@ -70,11 +77,10 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 		}
 	} else {
 		//Clean up unauthenticated connection
-		//TODO::Send the cause as well
 		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
-func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan *Connection, chan error) {
+func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwner bool) (chan *Connection, chan error) {
 	//TODO:: this is the default address : 127.0.0.1 9701 , add this to config as a default value
 	if address == nil {
 		address = NewAddress()
@@ -83,7 +89,6 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan
 	err := make(chan error, 1)
 	go func() {
 		connectionManager.lock.RLock()
-		//defer connectionManager.lock.RUnlock()
 		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
 			connectionManager.lock.RUnlock()
@@ -91,7 +96,7 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address) (chan
 		}
 		connectionManager.lock.RUnlock()
 		//Open new connection
-		err <- connectionManager.openNewConnection(address, ch)
+		err <- connectionManager.openNewConnection(address, ch, asOwner)
 	}()
 	return ch, err
 }
@@ -100,7 +105,7 @@ func (connectionManager *ConnectionManager) ConnectionCount() int32 {
 	defer connectionManager.lock.RUnlock()
 	return int32(len(connectionManager.connections))
 }
-func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection) error {
+func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection, asOwner bool) error {
 	connectionManager.lock.Lock()
 	defer connectionManager.lock.Unlock()
 	invocationService := connectionManager.client.InvocationService
@@ -110,14 +115,22 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
 	connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = con
-	err := connectionManager.clusterAuthenticator(con)
+	err := connectionManager.clusterAuthenticator(con, asOwner)
 	if err != nil {
 		return err
 	}
 	resp <- con
 	return nil
 }
-func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection) error {
+func (connectionManager *ConnectionManager) getOwnerConnection() *Connection {
+	ownerConnectionAddress := connectionManager.ownerAddress.Load().(*Address)
+	if ownerConnectionAddress.Host() == "" {
+		return nil
+	}
+	return connectionManager.getActiveConnection(ownerConnectionAddress)
+
+}
+func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
 	uuid := connectionManager.client.ClusterService.uuid
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid
 	clientType := CLIENT_TYPE
@@ -126,7 +139,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		&connectionManager.client.ClientConfig.GroupConfig.Password,
 		&uuid,
 		&ownerUuid,
-		true,
+		asOwner,
 		&clientType,
 		1,
 		//"3.9", //TODO::What should this be ?
@@ -137,14 +150,19 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	} else {
 
 		parameters := ClientAuthenticationDecodeResponse(result)
-		if parameters.Status != 0 {
-			return common.NewHazelcastAuthenticationError("authentication failed", nil)
+		switch parameters.Status {
+		case AUTHENTICATED:
+			connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
+			connection.endpoint = parameters.Address
+			connection.isOwnerConnection = asOwner
+			if asOwner {
+				connectionManager.ownerAddress.Store(connection.endpoint)
+			}
+		case CREDENTIALS_FAILED:
+			return common.NewHazelcastAuthenticationError("invalid credentials!", nil)
+		case SERIALIZATION_VERSION_MISMATCH:
+			return common.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
 		}
-		//TODO:: Process the parameters
-		connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
-		connection.endpoint = parameters.Address
-		connection.isOwnerConnection = true
-		return nil
 	}
 	return nil
 }
