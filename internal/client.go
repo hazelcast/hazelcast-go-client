@@ -59,7 +59,7 @@ func (client *HazelcastClient) init() error {
 	client.PartitionService = NewPartitionService(client)
 	client.ProxyManager = newProxyManager(client)
 	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
-	client.SerializationService = NewSerializationService(client.ClientConfig.SerializationConfig)
+	client.SerializationService = NewSerializationService(client.ClientConfig.SerializationConfig())
 	err := client.ClusterService.start()
 	if err != nil {
 		return err

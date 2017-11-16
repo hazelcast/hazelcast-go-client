@@ -14,7 +14,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.SmartRouting = false
+	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "myMap"
 	mp, _ := client.GetMap(&mapName)
@@ -33,7 +33,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.SmartRouting = false
+	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)
@@ -54,8 +54,8 @@ func TestInvocationTimeout(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 100
-	config.ClientNetworkConfig.SetInvocationTimeoutInSeconds(5)
+	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100)
+	config.ClientNetworkConfig().SetInvocationTimeoutInSeconds(5)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)
@@ -72,7 +72,7 @@ func TestInvocationRetry(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 10
+	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)
@@ -98,7 +98,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.SetRedoOperation(true).ConnectionAttemptLimit = 10
+	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mapName := "testMap"
 	mp, _ := client.GetMap(&mapName)

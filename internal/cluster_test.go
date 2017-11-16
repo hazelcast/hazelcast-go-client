@@ -18,12 +18,12 @@ func Test_getPossibleAddresses(t *testing.T) {
 		*protocol.NewMember(*protocol.NewAddressWithParameters("132.63.211.12", 5012), "", false, nil),
 		*protocol.NewMember(*protocol.NewAddressWithParameters("55.63.211.112", 5011), "", false, nil),
 	}
-	addresses := getPossibleAddresses(&configAddresses, &members)
-	if len(*addresses) != 5 {
+	addresses := getPossibleAddresses(configAddresses, members)
+	if len(addresses) != 5 {
 		t.Fatal("getPossibleAddresses failed")
 	}
-	addressesInMap := make(map[protocol.Address]struct{}, len(*addresses))
-	for _, address := range *addresses {
+	addressesInMap := make(map[protocol.Address]struct{}, len(addresses))
+	for _, address := range addresses {
 		addressesInMap[address] = struct{}{}
 	}
 	for _, address := range configAddresses {
@@ -40,11 +40,11 @@ func Test_getPossibleAddresses(t *testing.T) {
 }
 func Test_getPossibleAddressesWithEmptyParamters(t *testing.T) {
 	addresses := getPossibleAddresses(nil, nil)
-	if len(*addresses) != 1 {
+	if len(addresses) != 1 {
 		t.Fatal("getPossibleAddresses failed")
 	}
 	defaultAddress := protocol.NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT)
-	for _, address := range *addresses {
+	for _, address := range addresses {
 		if address != *defaultAddress {
 			t.Fatal("getPossibleAddresses failed")
 		}

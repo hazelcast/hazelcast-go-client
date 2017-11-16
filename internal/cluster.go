@@ -37,7 +37,7 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 	service.ownerConnectionAddress.Store(&Address{})
 	service.members.Store(make([]Member, 0))              //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
-	for _, membershipListener := range client.ClientConfig.MembershipListeners {
+	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
 		service.AddListener(membershipListener)
 	}
 	service.client.ConnectionManager.AddListener(service)
@@ -47,21 +47,21 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 func (clusterService *ClusterService) start() error {
 	return clusterService.connectToCluster()
 }
-func getPossibleAddresses(addressList *[]string, memberList *[]Member) *[]Address {
+func getPossibleAddresses(addressList []string, memberList []Member) []Address {
 	if addressList == nil {
-		addressList = new([]string)
+		addressList = make([]string, 0)
 	}
 	if memberList == nil {
-		memberList = new([]Member)
+		memberList = make([]Member, 0)
 	}
-	allAddresses := make(map[Address]struct{}, len(*addressList)+len(*memberList))
-	for _, address := range *addressList {
+	allAddresses := make(map[Address]struct{}, len(addressList)+len(memberList))
+	for _, address := range addressList {
 		ip, port := common.GetIpAndPort(address)
 		if common.IsValidIpAddress(ip) {
 			allAddresses[*NewAddressWithParameters(ip, port)] = struct{}{}
 		}
 	}
-	for _, member := range *memberList {
+	for _, member := range memberList {
 		allAddresses[*member.Address().(*Address)] = struct{}{}
 	}
 	addresses := make([]Address, len(allAddresses))
@@ -73,7 +73,7 @@ func getPossibleAddresses(addressList *[]string, memberList *[]Member) *[]Addres
 	if len(addresses) == 0 {
 		addresses = append(addresses, *NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT))
 	}
-	return &addresses
+	return addresses
 }
 func (clusterService *ClusterService) process() {
 	for {
@@ -95,13 +95,13 @@ func (clusterService *ClusterService) reconnect() {
 func (clusterService *ClusterService) connectToCluster() error {
 
 	currentAttempt := int32(1)
-	attempLimit := clusterService.config.ClientNetworkConfig.ConnectionAttemptLimit
-	retryDelay := clusterService.config.ClientNetworkConfig.ConnectionAttemptPeriod
+	attempLimit := clusterService.config.ClientNetworkConfig().ConnectionAttemptLimit()
+	retryDelay := clusterService.config.ClientNetworkConfig().ConnectionAttemptPeriod()
 	for currentAttempt <= attempLimit {
 		currentAttempt++
 		members := clusterService.members.Load().([]Member)
-		addresses := getPossibleAddresses(&clusterService.config.ClientNetworkConfig.Addresses, &members)
-		for _, address := range *addresses {
+		addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig().Addresses(), members)
+		for _, address := range addresses {
 			err := clusterService.connectToAddress(&address)
 			if err != nil {
 				log.Println("the following error occured while trying to connect to cluster: ", err)
