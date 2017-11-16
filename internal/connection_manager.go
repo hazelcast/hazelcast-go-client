@@ -134,9 +134,11 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	uuid := connectionManager.client.ClusterService.uuid
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid
 	clientType := CLIENT_TYPE
+	name := connectionManager.client.ClientConfig.GroupConfig().Name()
+	password := connectionManager.client.ClientConfig.GroupConfig().Password()
 	request := ClientAuthenticationEncodeRequest(
-		&connectionManager.client.ClientConfig.GroupConfig.Name,
-		&connectionManager.client.ClientConfig.GroupConfig.Password,
+		&name,
+		&password,
 		&uuid,
 		&ownerUuid,
 		asOwner,

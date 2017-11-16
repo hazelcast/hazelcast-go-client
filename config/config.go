@@ -13,13 +13,66 @@ const (
 	DEFAULT_INVOCATION_TIMEOUT = 120 * time.Second //secs
 )
 
+////////////////////// ClientConfig //////////////////////////////
+
 type ClientConfig struct {
-	MembershipListeners []interface{}
-	LifecycleListeners  []interface{}
-	ClientNetworkConfig *ClientNetworkConfig
-	GroupConfig         *GroupConfig
-	SerializationConfig *SerializationConfig
+	membershipListeners []interface{}
+	lifecycleListeners  []interface{}
+	groupConfig         *GroupConfig
+	clientNetworkConfig *ClientNetworkConfig
+	serializationConfig *SerializationConfig
 }
+
+func NewClientConfig() *ClientConfig {
+	return &ClientConfig{groupConfig: NewGroupConfig(),
+		clientNetworkConfig: NewClientNetworkConfig(),
+		membershipListeners: make([]interface{}, 0),
+		serializationConfig: NewSerializationConfig(),
+		lifecycleListeners:  make([]interface{}, 0),
+	}
+}
+
+func (clientConfig *ClientConfig) MembershipListeners() []interface{} {
+	return clientConfig.membershipListeners
+}
+
+func (clientConfig *ClientConfig) LifecycleListeners() []interface{} {
+	return clientConfig.lifecycleListeners
+}
+
+func (clientConfig *ClientConfig) GroupConfig() *GroupConfig {
+	return clientConfig.groupConfig
+}
+
+func (clientConfig *ClientConfig) ClientNetworkConfig() *ClientNetworkConfig {
+	return clientConfig.clientNetworkConfig
+}
+
+func (clientConfig *ClientConfig) SerializationConfig() *SerializationConfig {
+	return clientConfig.serializationConfig
+}
+
+func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
+	clientConfig.membershipListeners = append(clientConfig.membershipListeners, listener)
+}
+
+func (clientConfig *ClientConfig) AddLifecycleListener(listener interface{}) {
+	clientConfig.lifecycleListeners = append(clientConfig.lifecycleListeners, listener)
+}
+
+func (clientConfig *ClientConfig) SetGroupConfig(groupConfig *GroupConfig) {
+	clientConfig.groupConfig = groupConfig
+}
+
+func (clientConfig *ClientConfig) SetClientNetworkConfig(clientNetworkConfig *ClientNetworkConfig) {
+	clientConfig.clientNetworkConfig = clientNetworkConfig
+}
+
+func (clientConfig *ClientConfig) SetSerializationConfig(serializationConfig *SerializationConfig) {
+	clientConfig.serializationConfig = serializationConfig
+}
+
+////////////////////// SerializationConfig //////////////////////////////
 
 type SerializationConfig struct {
 	isBigEndian               bool
@@ -35,128 +88,176 @@ func NewSerializationConfig() *SerializationConfig {
 		portableFactories: make(map[int32]PortableFactory), portableVersion: 0, customSerializers: make(map[reflect.Type]Serializer)}
 }
 
-func (sc *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
-	sc.dataSerializableFactories[factoryId] = f
+func (serializationConfig *SerializationConfig) IsBigEndian() bool {
+	return serializationConfig.isBigEndian
 }
 
-func (sc *SerializationConfig) AddPortableFactory(factoryId int32, pf PortableFactory) {
-	sc.portableFactories[factoryId] = pf
+func (serializationConfig *SerializationConfig) DataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
+	return serializationConfig.dataSerializableFactories
 }
 
-func (sc *SerializationConfig) IsBigEndian() bool {
-	return sc.isBigEndian
+func (serializationConfig *SerializationConfig) PortableFactories() map[int32]PortableFactory {
+	return serializationConfig.portableFactories
 }
 
-func (sc *SerializationConfig) DataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
-	return sc.dataSerializableFactories
+func (serializationConfig *SerializationConfig) PortableVersion() int32 {
+	return serializationConfig.portableVersion
 }
 
-func (sc *SerializationConfig) PortableFactories() map[int32]PortableFactory {
-	return sc.portableFactories
+func (serializationConfig *SerializationConfig) CustomSerializers() map[reflect.Type]Serializer {
+	return serializationConfig.customSerializers
 }
 
-func (sc *SerializationConfig) PortableVersion() int32 {
-	return sc.portableVersion
+func (serializationConfig *SerializationConfig) GlobalSerializer() Serializer {
+	return serializationConfig.globalSerializer
 }
 
-func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
-	sc.isBigEndian = isBigEndian
+func (serializationConfig *SerializationConfig) SetByteOrder(isBigEndian bool) {
+	serializationConfig.isBigEndian = isBigEndian
 }
 
-func (sc *SerializationConfig) SetPortableVersion(version int32) {
-	sc.portableVersion = version
+func (serializationConfig *SerializationConfig) AddDataSerializableFactory(factoryId int32, f IdentifiedDataSerializableFactory) {
+	serializationConfig.dataSerializableFactories[factoryId] = f
 }
 
-func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer Serializer) error {
+func (serializationConfig *SerializationConfig) AddPortableFactory(factoryId int32, pf PortableFactory) {
+	serializationConfig.portableFactories[factoryId] = pf
+}
+
+func (serializationConfig *SerializationConfig) SetPortableVersion(version int32) {
+	serializationConfig.portableVersion = version
+}
+
+func (serializationConfig *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer Serializer) error {
 	if serializer.Id() > 0 {
-		sc.customSerializers[typ] = serializer
+		serializationConfig.customSerializers[typ] = serializer
 	} else {
 		return common.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
 	}
 	return nil
 }
 
-func (sc *SerializationConfig) CustomSerializers() map[reflect.Type]Serializer {
-	return sc.customSerializers
-}
-
-func (sc *SerializationConfig) SetGlobalSerializer(serializer Serializer) error {
+func (serializationConfig *SerializationConfig) SetGlobalSerializer(serializer Serializer) error {
 	if serializer.Id() > 0 {
-		sc.globalSerializer = serializer
+		serializationConfig.globalSerializer = serializer
 	} else {
 		return common.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
 	}
 	return nil
 }
 
-func (sc *SerializationConfig) GlobalSerializer() Serializer {
-	return sc.globalSerializer
-}
-
-func NewClientConfig() *ClientConfig {
-	return &ClientConfig{GroupConfig: NewGroupConfig(),
-		ClientNetworkConfig: NewClientNetworkConfig(),
-		MembershipListeners: make([]interface{}, 0),
-		SerializationConfig: NewSerializationConfig(),
-		LifecycleListeners:  make([]interface{}, 0),
-	}
-}
-func (clientConfig *ClientConfig) IsSmartRouting() bool {
-	return clientConfig.ClientNetworkConfig.SmartRouting
-}
-func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
-	clientConfig.MembershipListeners = append(clientConfig.MembershipListeners, listener)
-}
-func (clientConfig *ClientConfig) AddLifecycleListener(listener interface{}) {
-	clientConfig.LifecycleListeners = append(clientConfig.LifecycleListeners, listener)
-}
-
+////////////////////// GroupConfig //////////////////////////////
 type GroupConfig struct {
-	Name     string
-	Password string
+	name     string
+	password string
 }
 
 func NewGroupConfig() *GroupConfig {
-	return &GroupConfig{Name: DEFAULT_GROUP_NAME, Password: DEFAULT_GROUP_PASSWORD}
-}
-func (groupConfig *GroupConfig) SetName(name string) {
-	groupConfig.Name = name
-}
-func (groupConfig *GroupConfig) SetPassword(password string) {
-	groupConfig.Password = password
+	return &GroupConfig{name: DEFAULT_GROUP_NAME, password: DEFAULT_GROUP_PASSWORD}
 }
 
+func (groupConfig *GroupConfig) Name() string {
+	return groupConfig.name
+}
+
+func (groupConfig *GroupConfig) Password() string {
+	return groupConfig.password
+}
+
+func (groupConfig *GroupConfig) SetName(name string) {
+	groupConfig.name = name
+}
+
+func (groupConfig *GroupConfig) SetPassword(password string) {
+	groupConfig.password = password
+}
+
+////////////////////// ClientNetworkConfig //////////////////////////////
 type ClientNetworkConfig struct {
-	Addresses                  []string
-	ConnectionAttemptLimit     int32
-	ConnectionAttemptPeriod    int32
-	ConnectionTimeout          int32
-	RedoOperation              bool
-	SmartRouting               bool
-	InvocationTimeoutInSeconds time.Duration
+	addresses                  []string
+	connectionAttemptLimit     int32
+	connectionAttemptPeriod    int32
+	connectionTimeout          int32
+	redoOperation              bool
+	smartRouting               bool
+	invocationTimeoutInSeconds time.Duration
 }
 
 func NewClientNetworkConfig() *ClientNetworkConfig {
 	return &ClientNetworkConfig{
-		Addresses:                  make([]string, 0),
-		ConnectionAttemptLimit:     2,
-		ConnectionAttemptPeriod:    3,
-		ConnectionTimeout:          5.0,
-		RedoOperation:              false,
-		SmartRouting:               true,
-		InvocationTimeoutInSeconds: DEFAULT_INVOCATION_TIMEOUT,
+		addresses:                  make([]string, 0),
+		connectionAttemptLimit:     2,
+		connectionAttemptPeriod:    3,
+		connectionTimeout:          5,
+		redoOperation:              false,
+		smartRouting:               true,
+		invocationTimeoutInSeconds: DEFAULT_INVOCATION_TIMEOUT,
 	}
 }
-func (clientNetworkConfig *ClientNetworkConfig) SetInvocationTimeoutInSeconds(invocationTimeoutInSeconds int32) {
-	clientNetworkConfig.InvocationTimeoutInSeconds = time.Duration(invocationTimeoutInSeconds) * time.Second
+
+func (clientNetworkConfig *ClientNetworkConfig) Addresses() []string {
+	return clientNetworkConfig.addresses
 }
+
+func (clientNetworkConfig *ClientNetworkConfig) ConnectionAttemptLimit() int32 {
+	return clientNetworkConfig.connectionAttemptLimit
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) ConnectionAttemptPeriod() int32 {
+	return clientNetworkConfig.connectionAttemptPeriod
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) ConnectionTimeout() int32 {
+	return clientNetworkConfig.connectionTimeout
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) IsRedoOperation() bool {
+	return clientNetworkConfig.redoOperation
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) IsSmartRouting() bool {
+	return clientNetworkConfig.smartRouting
+}
+
 func (clientNetworkConfig *ClientNetworkConfig) InvocationTimeout() time.Duration {
-	return clientNetworkConfig.InvocationTimeoutInSeconds
+	return clientNetworkConfig.invocationTimeoutInSeconds
 }
-func (clientNetworkConfig *ClientNetworkConfig) SetRedoOperation(RedoOperation bool) *ClientNetworkConfig {
-	clientNetworkConfig.RedoOperation = RedoOperation
+
+func (clientNetworkConfig *ClientNetworkConfig) AddAddress(addresses ...string) *ClientNetworkConfig {
+	clientNetworkConfig.addresses = append(clientNetworkConfig.addresses, addresses...)
 	return clientNetworkConfig
 }
-func (clientNetworkConfig *ClientNetworkConfig) IsRedoOperation() bool {
-	return clientNetworkConfig.RedoOperation
+
+func (clientNetworkConfig *ClientNetworkConfig) SetAddresses(addresses []string) *ClientNetworkConfig {
+	clientNetworkConfig.addresses = addresses
+	return clientNetworkConfig
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) SetConnectionAttemptLimit(connectionAttemptLimit int32) *ClientNetworkConfig {
+	clientNetworkConfig.connectionAttemptLimit = connectionAttemptLimit
+	return clientNetworkConfig
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod int32) *ClientNetworkConfig {
+	clientNetworkConfig.connectionAttemptPeriod = connectionAttemptPeriod
+	return clientNetworkConfig
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout int32) *ClientNetworkConfig {
+	clientNetworkConfig.connectionTimeout = connectionTimeout
+	return clientNetworkConfig
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) SetRedoOperation(redoOperation bool) *ClientNetworkConfig {
+	clientNetworkConfig.redoOperation = redoOperation
+	return clientNetworkConfig
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) SetSmartRouting(smartRouting bool) *ClientNetworkConfig {
+	clientNetworkConfig.smartRouting = smartRouting
+	return clientNetworkConfig
+}
+
+func (clientNetworkConfig *ClientNetworkConfig) SetInvocationTimeoutInSeconds(invocationTimeoutInSeconds int32) {
+	clientNetworkConfig.invocationTimeoutInSeconds = time.Duration(invocationTimeoutInSeconds) * time.Second
 }

@@ -624,7 +624,7 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
-	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
@@ -643,7 +643,7 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
-	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
@@ -668,7 +668,7 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
-	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
@@ -690,7 +690,7 @@ func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
 	processor := newSimpleEntryProcessor(expectedValue)
-	config.SerializationConfig.AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mpName := "testMap2"
 	mp2, _ := client.GetMap(&mpName)
