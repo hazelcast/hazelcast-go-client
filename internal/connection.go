@@ -34,7 +34,7 @@ type Connection struct {
 	socket                 net.Conn
 	clientMessageBuilder   *ClientMessageBuilder
 	closed                 chan bool
-	endpoint               *Address
+	endpoint               atomic.Value
 	sendingError           chan int64
 	status                 int32
 	isOwnerConnection      bool
@@ -60,6 +60,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 		connectionId:      connectionId,
 		connectionManager: connectionManager,
 	}
+	connection.endpoint.Store(&Address{})
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
 		return nil
@@ -164,7 +165,7 @@ func (connection *Connection) String() string {
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
-		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Host(), connection.endpoint.Port(),
+		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Load().(*Address).Host(), connection.endpoint.Load().(*Address).Port(),
 		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
 		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
 		connection.lastHeartbeatReceived.Load().(time.Time).String(), *connection.serverHazelcastVersion)

@@ -38,8 +38,8 @@ type ClusterService struct {
 	client                 *HazelcastClient
 	config                 *config.ClientConfig
 	members                atomic.Value
-	ownerUuid              string
-	uuid                   string
+	ownerUuid              atomic.Value
+	uuid                   atomic.Value
 	ownerConnectionAddress atomic.Value
 	listeners              atomic.Value
 	mu                     sync.Mutex
@@ -51,6 +51,8 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 	service.ownerConnectionAddress.Store(&Address{})
 	service.members.Store(make([]Member, 0))              //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
+	service.ownerUuid.Store("")                           //Initialize
+	service.uuid.Store("")                                //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
 		service.AddListener(membershipListener)
 	}
@@ -116,6 +118,9 @@ func (clusterService *ClusterService) connectToCluster() error {
 		members := clusterService.members.Load().([]Member)
 		addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig().Addresses(), members)
 		for _, address := range addresses {
+			if !clusterService.client.LifecycleService.isLive.Load().(bool) {
+				return common.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
+			}
 			err := clusterService.connectToAddress(&address)
 			if err != nil {
 				log.Println("the following error occured while trying to connect to cluster: ", err)
@@ -147,7 +152,6 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 		}
 	}
 
-	clusterService.ownerConnectionAddress.Store(con.endpoint)
 	err := clusterService.initMembershipListener(con)
 	if err != nil {
 		return err
@@ -304,8 +308,8 @@ func (clusterService *ClusterService) GetMember(address *Address) *Member {
 }
 func (clusterService *ClusterService) onConnectionClosed(connection *Connection, cause error) {
 	ownerConnectionAddress := clusterService.ownerConnectionAddress.Load().(*Address)
-	if connection.endpoint != nil && ownerConnectionAddress.Host() != "" &&
-		*connection.endpoint == *ownerConnectionAddress && clusterService.client.LifecycleService.isLive.Load().(bool) {
+	if connection.endpoint.Load().(*Address).Host() != "" && ownerConnectionAddress.Host() != "" &&
+		*connection.endpoint.Load().(*Address) == *ownerConnectionAddress && clusterService.client.LifecycleService.isLive.Load().(bool) {
 		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
 		clusterService.ownerConnectionAddress.Store(&Address{})
 		clusterService.reconnectChan <- struct{}{}

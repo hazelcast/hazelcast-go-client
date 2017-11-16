@@ -13,11 +13,10 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
+	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	entryAdded := &mapListener{wg: wg}
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
 	AssertEqual(t, err, nil, nil)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
@@ -44,8 +43,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
 	entryAdded := &mapListener{wg: wg}
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(100)
@@ -66,11 +64,10 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
+	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	entryAdded := &mapListener{wg: wg}
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
 	AssertEqual(t, err, nil, nil)
 	remoteController.StartMember(cluster.ID)
