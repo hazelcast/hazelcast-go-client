@@ -799,7 +799,7 @@ func (imap *MapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *se
 }
 
 func (imap *MapProxy) RemoveEntryListener(registrationId *string) (bool, error) {
-	return imap.client.ListenerService.deregisterListenerInternal(*registrationId, func(registrationId *string) *ClientMessage {
+	return imap.client.ListenerService.deregisterListener(*registrationId, func(registrationId *string) *ClientMessage {
 		return MapRemoveEntryListenerEncodeRequest(imap.name, registrationId)
 	})
 }

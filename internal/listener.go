@@ -80,9 +80,11 @@ func newListenerService(client *HazelcastClient) *ListenerService {
 		connectToAllMembersChannel:                 make(chan struct{}, 1),
 	}
 	service.client.ConnectionManager.AddListener(service)
-	service.client.HeartBeatService.AddHeartbeatListener(service)
 	go service.process()
-	go service.connectToAllMembersPeriodically()
+	if service.client.ClientConfig.ClientNetworkConfig().IsSmartRouting() {
+		service.client.HeartBeatService.AddHeartbeatListener(service)
+		go service.connectToAllMembersPeriodically()
+	}
 	return service
 }
 func (listenerService *ListenerService) connectToAllMembersInternal() {
@@ -146,8 +148,8 @@ func (listenerService *ListenerService) registerListener(request *ClientMessage,
 		responseDecoder:     responseDecoder,
 		eventHandler:        eventHandler,
 	}
-	connections := listenerService.client.ConnectionManager.getActiveConnections()
 	listenerService.registerListenerInitChannel <- &registrationKey
+	connections := listenerService.client.ConnectionManager.getActiveConnections()
 	for _, connection := range connections {
 		registrationIdConnection := registrationIdConnection{
 			registrationId: userRegistrationId,
@@ -216,8 +218,8 @@ func (listenerService *ListenerService) deregisterListenerInternal(registrationI
 		if err != nil {
 			if connection.IsAlive() {
 				successful = false
-				log.Println("deregistration of listener with ID ", registrationId, " has failed to address ", connection.endpoint.Host(),
-					":", connection.endpoint.Port())
+				log.Println("deregistration of listener with ID ", registrationId, " has failed to address ", connection.endpoint.Load().(*Address).Host(),
+					":", connection.endpoint.Load().(*Address).Port())
 				continue
 			}
 		}
@@ -286,10 +288,10 @@ func (listenerService *ListenerService) OnHeartbeatRestoredInternal(connection *
 	}
 }
 func (listenerService *ListenerService) trySyncConnectToAllConnections() error {
-	if !listenerService.client.ClientConfig.IsSmartRouting() {
+	if !listenerService.client.ClientConfig.ClientNetworkConfig().IsSmartRouting() {
 		return nil
 	}
-	remainingTime := listenerService.client.ClientConfig.ClientNetworkConfig.InvocationTimeout()
+	remainingTime := listenerService.client.ClientConfig.ClientNetworkConfig().InvocationTimeout()
 	for listenerService.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
 		members := listenerService.client.GetCluster().GetMemberList()
 		start := time.Now()
