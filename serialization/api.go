@@ -1,19 +1,48 @@
+// Package serialization serializes user objects to Data and back to Object.
+// Data is the internal representation of binary data in hazelcast.
 package serialization
 
 type IdentifiedDataSerializableFactory interface {
 	Create(id int32) IdentifiedDataSerializable
 }
+
+// IdentifiedDataSerializable is a serialization method as an alternative to standard Gob serialization.
+// Each IdentifiedDataSerializable is created by a registered IdentifiedDataSerializableFactory.
 type IdentifiedDataSerializable interface {
+
+	// Reads fields from the input stream.
 	ReadData(input DataInput) error
+
+	// Writes object fields to output stream.
 	WriteData(output DataOutput) error
+
+	// Returns IdentifiedDataSerializableFactory factory ID for this struct.
 	FactoryId() int32
+
+	// Returns type identifier for this struct. It should be unique per IdentifiedDataSerializableFactory.
 	ClassId() int32
 }
 
+// Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
+// created by a registered PortableFactory.
+// Portable serialization that have the following advantages:
+// <ul>
+//     <li>Support multiversion of the same object type.</li>
+//     <li>Fetching individual fields without having to rely on reflection.</li>
+// <li>Querying and indexing support without de-serialization and/or reflection.</li>
+// </ul>
 type Portable interface {
+
+	// Returns PortableFactory ID for this portable struct.
 	FactoryId() int32
+
+	// Returns type identifier for this portable struct. Class ID should be unique per PortableFactory.
 	ClassId() int32
+
+	// Serialize this portable object using PortableWriter.
 	WritePortable(writer PortableWriter)
+
+	// Read portable fields using PortableReader
 	ReadPortable(reader PortableReader)
 }
 
