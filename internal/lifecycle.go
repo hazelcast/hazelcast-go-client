@@ -28,7 +28,7 @@ func newLifecycleService(config *config.ClientConfig) *LifecycleService {
 	newLifecycle := &LifecycleService{}
 	newLifecycle.isLive.Store(true)
 	newLifecycle.listeners.Store(make(map[string]interface{})) //Initialize
-	for _, listener := range config.LifecycleListeners {
+	for _, listener := range config.LifecycleListeners() {
 		if _, ok := listener.(core.ILifecycleListener); ok {
 			newLifecycle.AddListener(listener)
 		}

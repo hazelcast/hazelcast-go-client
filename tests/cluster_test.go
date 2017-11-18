@@ -110,8 +110,8 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.GroupConfig.SetName("wrongName")
-	config.GroupConfig.SetPassword("wrongPassword")
+	config.GroupConfig().SetName("wrongName")
+	config.GroupConfig().SetPassword("wrongPassword")
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
 	if _, ok := err.(*common.HazelcastAuthenticationError); !ok {
 		t.Fatal("client should have returned an authentication error")
@@ -133,7 +133,7 @@ func TestRestartMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.ConnectionAttemptLimit = 10
+	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
 	wg.Add(1)
@@ -155,8 +155,8 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	oldMember, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig.ConnectionAttemptLimit = 100
-	config.ClientNetworkConfig.SmartRouting = false
+	config.ClientNetworkConfig().SetConnectionAttemptLimit(100)
+	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	newMember, _ := remoteController.StartMember(cluster.ID)
 	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
