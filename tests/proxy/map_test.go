@@ -326,7 +326,7 @@ func TestMapProxy_PutAll(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
 	}
-	err := mp.PutAll(&testMap)
+	err := mp.PutAll(testMap)
 	if err != nil {
 		t.Fatal(err)
 	} else {
@@ -409,7 +409,7 @@ func TestMapProxy_EntrySetWithPredicate(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		testMap["testingKey"+strconv.Itoa(i)] = values[i]
 	}
-	err := mp.PutAll(&testMap)
+	err := mp.PutAll(testMap)
 	if err != nil {
 		t.Fatal(err)
 	} else {
@@ -436,7 +436,7 @@ func TestMapProxy_GetAll(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
 	}
-	err := mp.PutAll(&testMap)
+	err := mp.PutAll(testMap)
 	if err != nil {
 		t.Fatal(err)
 	} else {
@@ -444,15 +444,12 @@ func TestMapProxy_GetAll(t *testing.T) {
 		for k, _ := range testMap {
 			keys = append(keys, k)
 		}
-		valueList, err := mp.GetAll(keys)
+		valueMap, err := mp.GetAll(keys)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, pair := range valueList {
-			key := pair.Key()
-			value := pair.Value()
+		for key, value := range valueMap {
 			expectedValue, found := testMap[key]
-
 			if !found || expectedValue != value {
 				t.Fatalf("Map GetAll failed")
 			}
