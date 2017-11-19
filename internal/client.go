@@ -27,13 +27,13 @@ func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
 	return &client, err
 }
 
-func (client *HazelcastClient) GetMap(name *string) (core.IMap, error) {
+func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 	mapService := SERVICE_NAME_MAP
-	mp, err := client.GetDistributedObject(&mapService, name)
+	mp, err := client.GetDistributedObject(mapService, name)
 	return mp.(core.IMap), err
 }
 
-func (client *HazelcastClient) GetDistributedObject(serviceName *string, name *string) (core.IDistributedObject, error) {
+func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
 	if err != nil {
 		return nil, err

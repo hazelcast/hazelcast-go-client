@@ -27,15 +27,15 @@ func (proxyManager *ProxyManager) nextReferenceId() int64 {
 	return atomic.AddInt64(&proxyManager.ReferenceId, 1)
 }
 
-func (proxyManager *ProxyManager) GetOrCreateProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
-	var ns string = *serviceName + *name
+func (proxyManager *ProxyManager) GetOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
+	var ns string = serviceName + name
 	proxyManager.mu.RLock()
 	if _, ok := proxyManager.proxies[ns]; ok {
 		defer proxyManager.mu.RUnlock()
 		return proxyManager.proxies[ns], nil
 	}
 	proxyManager.mu.RUnlock()
-	proxy, err := proxyManager.createProxy(serviceName, name)
+	proxy, err := proxyManager.createProxy(&serviceName, &name)
 	if err != nil {
 		return nil, err
 	}
