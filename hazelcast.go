@@ -27,12 +27,14 @@ func NewHazelcastClient() (IHazelcastInstance, error) {
 func NewHazelcastClientWithConfig(config *config.ClientConfig) (IHazelcastInstance, error) {
 	return internal.NewHazelcastClient(config)
 }
+
 func NewHazelcastConfig() *config.ClientConfig {
 	return config.NewClientConfig()
 }
 
 type IHazelcastInstance interface {
-	GetMap(name *string) (core.IMap, error)
+	GetMap(name string) (core.IMap, error)
+	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 	Shutdown()
 	GetCluster() core.ICluster
 	GetLifecycle() core.ILifecycle
