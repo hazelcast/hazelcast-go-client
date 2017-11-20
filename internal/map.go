@@ -258,8 +258,8 @@ func (imap *MapProxy) IsEmpty() (empty bool, err error) {
 	response := MapIsEmptyDecodeResponse(responseMessage).Response
 	return response, nil
 }
-func (imap *MapProxy) AddIndex(attributes *string, ordered bool) (err error) {
-	request := MapAddIndexEncodeRequest(imap.name, attributes, ordered)
+func (imap *MapProxy) AddIndex(attribute string, ordered bool) (err error) {
+	request := MapAddIndexEncodeRequest(imap.name, &attribute, ordered)
 	_, err = imap.InvokeOnRandomTarget(request)
 	return err
 }
@@ -481,12 +481,12 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 	responseData := MapPutIfAbsentDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) PutAll(mp *map[interface{}]interface{}) (err error) {
+func (imap *MapProxy) PutAll(mp map[interface{}]interface{}) (err error) {
 	if !CheckNotNil(mp) {
 		return errors.New("Null argument map is not allowed")
 	}
 	partitions := make(map[int32][]Pair)
-	for key, value := range *mp {
+	for key, value := range mp {
 		keyData, err := imap.ToData(key)
 		if err != nil {
 			return err
@@ -637,12 +637,12 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs [
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) GetAll(keys []interface{}) (entryPairs []core.IPair, err error) {
+func (imap *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if !CheckNotEmpty(keys) {
 		return nil, errors.New(NIL_KEYS_ARE_NOT_ALLOWED)
 	}
 	partitions := make(map[int32][]serialization.Data)
-	pairList := make([]core.IPair, 0)
+	entryMap = make(map[interface{}]interface{}, 0)
 	for _, key := range keys {
 		keyData, err := imap.ToData(key)
 		if err != nil {
@@ -667,10 +667,10 @@ func (imap *MapProxy) GetAll(keys []interface{}) (entryPairs []core.IPair, err e
 			if err != nil {
 				return nil, err
 			}
-			pairList = append(pairList, core.IPair(NewPair(key, value)))
+			entryMap[key] = value
 		}
 	}
-	return pairList, nil
+	return entryMap, nil
 }
 func (imap *MapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, err error) {
 	if !CheckNotNil(key) {
