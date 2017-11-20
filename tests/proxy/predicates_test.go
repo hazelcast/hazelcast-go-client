@@ -203,7 +203,7 @@ func TestOr(t *testing.T) {
 
 func TestRegex(t *testing.T) {
 	localMap, _ := client.GetMap("regexMap")
-	localMap.PutAll(&map[interface{}]interface{}{"06": "ankara", "07": "antalya"})
+	localMap.PutAll(map[interface{}]interface{}{"06": "ankara", "07": "antalya"})
 	rp := Regex("this", "^.*ya$")
 	set, _ := localMap.EntrySetWithPredicate(rp)
 	expecteds := make(map[interface{}]interface{}, 0)
