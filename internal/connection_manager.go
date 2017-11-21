@@ -130,7 +130,6 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	if con == nil {
 		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
-	connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = con
 	err := connectionManager.clusterAuthenticator(con, asOwner)
 	if err != nil {
 		return err
@@ -173,6 +172,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 			connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
 			connection.endpoint = parameters.Address
 			connection.isOwnerConnection = asOwner
+			connectionManager.connections[connection.endpoint.Host()+":"+strconv.Itoa(connection.endpoint.Port())] = connection
 			if asOwner {
 				connectionManager.ownerAddress.Store(connection.endpoint)
 			}
