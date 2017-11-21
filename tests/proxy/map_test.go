@@ -464,6 +464,8 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	mp.Put("key", "newValue")
 
 	entryView, err := mp.GetEntryView("key")
+	AssertEqualf(t, err, entryView.Key(), "key", "Map GetEntryView returned a wrong view.")
+	AssertEqualf(t, err, entryView.Value(), "newValue", "Map GetEntryView returned a wrong view.")
 	AssertEqualf(t, err, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
 	AssertEqualf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
 	AssertEqualf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")

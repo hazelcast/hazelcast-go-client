@@ -20,7 +20,7 @@ import (
 )
 
 type MapGetEntryViewResponseParameters struct {
-	Response *EntryView
+	Response *DataEntryView
 }
 
 func MapGetEntryViewCalculateSize(name *string, key *Data, threadId int64) int {
@@ -49,7 +49,7 @@ func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) *MapGetEntryVie
 	parameters := new(MapGetEntryViewResponseParameters)
 
 	if !clientMessage.ReadBool() {
-		parameters.Response = EntryViewCodecDecode(clientMessage)
+		parameters.Response = DataEntryViewCodecDecode(clientMessage)
 	}
 	return parameters
 }
