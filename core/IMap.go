@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package core
 
 import (
@@ -97,7 +111,7 @@ type IMap interface {
 	//	mp, _ := client.GetMap("employee")
 	//	mp.AddIndex("age", true);        // ordered, since we have ranged queries for this field
 	//	mp.AddIndex("active", false);    // not ordered, because boolean field cannot have range
-	AddIndex(attributes *string, ordered bool) (err error)
+	AddIndex(attribute string, ordered bool) (err error)
 
 	// Evict evicts the specified key from this map.
 	// Evict returns true if the key is evicted, false otherwise.
@@ -210,7 +224,7 @@ type IMap interface {
 
 	// PutAll copies all of the mappings from the specified map to this map. No atomicity guarantees are
 	// given. In the case of a failure, some of the key-value tuples may get written, while others are not.
-	PutAll(mp *map[interface{}]interface{}) (err error)
+	PutAll(mp map[interface{}]interface{}) (err error)
 
 	// KeySet returns a slice clone of the keys contained in this map.
 	// Warning:
@@ -280,7 +294,7 @@ type IMap interface {
 	// GetAll returns the entries for the given keys.
 	// The returned map is NOT backed by the original map,
 	// so changes to the original map are NOT reflected in the returned map, and vice-versa.
-	GetAll(keys []interface{}) (entryPairs []IPair, err error)
+	GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error)
 
 	// GetEntryView returns the IEntryView for the specified key.
 	// GetEntryView returns a clone of original mapping, modifying the returned value does not change
