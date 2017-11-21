@@ -14,8 +14,6 @@
 
 package core
 
-import . "github.com/hazelcast/go-client/serialization"
-
 type IAddress interface {
 	Host() string
 	Port() int
@@ -51,8 +49,8 @@ type IStackTraceElement interface {
 }
 
 type IEntryView interface {
-	Key() IData
-	Value() IData
+	Key() interface{}
+	Value() interface{}
 	Cost() int64
 	CreationTime() int64
 	ExpirationTime() int64
@@ -65,10 +63,10 @@ type IEntryView interface {
 	Ttl() int64
 }
 type IEntryEvent interface {
-	KeyData() IData
-	ValueData() IData
-	OldValueData() IData
-	MergingValueData() IData
+	Key() interface{}
+	Value() interface{}
+	OldValue() interface{}
+	MergingValue() interface{}
 	EventType() int32
 	Uuid() *string
 }
