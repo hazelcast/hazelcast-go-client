@@ -70,6 +70,22 @@ func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
 	entryView.ttl = msg.ReadInt64()
 	return &entryView
 }
+func DataEntryViewCodecDecode(msg *ClientMessage) *DataEntryView {
+	dataEntryView := DataEntryView{}
+	dataEntryView.keyData = msg.ReadData()
+	dataEntryView.valueData = msg.ReadData()
+	dataEntryView.cost = msg.ReadInt64()
+	dataEntryView.creationTime = msg.ReadInt64()
+	dataEntryView.expirationTime = msg.ReadInt64()
+	dataEntryView.hits = msg.ReadInt64()
+	dataEntryView.lastAccessTime = msg.ReadInt64()
+	dataEntryView.lastStoredTime = msg.ReadInt64()
+	dataEntryView.lastUpdateTime = msg.ReadInt64()
+	dataEntryView.version = msg.ReadInt64()
+	dataEntryView.evictionCriteriaNumber = msg.ReadInt64()
+	dataEntryView.ttl = msg.ReadInt64()
+	return &dataEntryView
+}
 
 func UuidCodecEncode(msg *ClientMessage, uuid Uuid) {
 	msg.AppendInt64(uuid.Msb)
