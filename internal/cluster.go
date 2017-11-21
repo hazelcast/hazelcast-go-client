@@ -126,7 +126,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 			}
 			return nil
 		}
-		if currentAttempt < attempLimit {
+		if currentAttempt <= attempLimit {
 			time.Sleep(time.Duration(retryDelay) * time.Second)
 		}
 	}
