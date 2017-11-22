@@ -28,7 +28,9 @@ type proxy struct {
 func (proxy *proxy) Destroy() (bool, error) {
 	return proxy.client.ProxyManager.destroyProxy(proxy.serviceName, proxy.name)
 }
-
+func (proxy *proxy) isSmart() bool {
+	return proxy.client.ClientConfig.ClientNetworkConfig().IsSmartRouting()
+}
 func (proxy *proxy) Name() string {
 	return *proxy.name
 }
