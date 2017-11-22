@@ -21,7 +21,7 @@ func main() {
 
 	// 0 if first run, non-zero if Hazelcast has data already
 	size, _ := greetings.Size();
-	fmt.Println("Map '%v' Size before %v", greetings.Name(), size)
+	fmt.Printf("Map '%v' Size before %v\n", greetings.Name(), size)
 
 	// Write or overwrite data in the map as if it was stored in the client
 	greetings.Put("English", "hello world")
@@ -32,7 +32,7 @@ func main() {
 
 	// 5 added, so at least 5 on the server side
 	size, _ = greetings.Size();
-	fmt.Println("Map '%v' Size after %v", greetings.Name(), size)
+	fmt.Printf("Map '%v' Size after %v\n", greetings.Name(), size)
 
 	// Disconnect
 	client.Shutdown()
