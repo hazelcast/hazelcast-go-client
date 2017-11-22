@@ -72,7 +72,14 @@ func getPossibleAddresses(addressList []string, memberList []Member) []Address {
 	for _, address := range addressList {
 		ip, port := common.GetIpAndPort(address)
 		if common.IsValidIpAddress(ip) {
-			allAddresses[*NewAddressWithParameters(ip, port)] = struct{}{}
+			if port == -1 {
+				allAddresses[*NewAddressWithParameters(ip, DEFAULT_PORT)] = struct{}{}
+				allAddresses[*NewAddressWithParameters(ip, DEFAULT_PORT+1)] = struct{}{}
+				allAddresses[*NewAddressWithParameters(ip, DEFAULT_PORT+2)] = struct{}{}
+			} else {
+				allAddresses[*NewAddressWithParameters(ip, port)] = struct{}{}
+			}
+
 		}
 	}
 	for _, member := range memberList {
