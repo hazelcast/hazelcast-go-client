@@ -271,6 +271,10 @@ servers in the cluster.
 
 ##### TODO 
 
+## Bonus Step - Clustering
+
+##### TODO 
+
 ## Summary
 
 
