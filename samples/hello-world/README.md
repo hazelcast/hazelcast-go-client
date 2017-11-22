@@ -138,7 +138,7 @@ You should see something like this, assuming a version of 3.9,
 
 Firstly, run the `java -version` command to see the Java version.
 
-You will likely need to open a new window to ensure Java is on known to the command interpreter, but
+You will likely need to open a new window to ensure Java is known to the command interpreter, but
 should then get version output. The exact wording will likely differ.
 
 ```
@@ -186,11 +186,11 @@ then it's time for Hello World.
 
 #### TODO 
 
-### The Hazelcast half
+### The _Hazelcast_ half
 
 #### TODO 
 
-### The Go half
+### The _Go_ half
 
 There are three programs, imaginatively named `one.go`, `two.go` and `three.go`.
 
@@ -266,11 +266,142 @@ servers in the cluster.
 
 #### `two.go`
 
-##### TODO 
+Run
+
+```
+go run two.go
+```
+
+from the `hello-world` folder in the _Go_ source hierarchy.
+
+You should get output like
+
+```
+Map 'greetings' Size before 0
+Map 'greetings' Size after 5
+```
+
+##### What is this doing ?
+
+What `two.go` does is connect to the _Hazelcast_ servers, of which there is currently just one.
+
+The data structure being used is a _key-value_ store. Both the _key_ and the _value_ here are
+strings. In _Hazelcast_ and in _Java_ in general this structure is called a *map*. Other technologies
+call it a properties list, or a dictionary.
+
+These maps are named, you can have several of them and use the names to distinguish.
+
+Five data records are inserted.
+
+For the key "_English_", the string value "_hello world_" is saved.
+
+This is repeated for French, German, Italian and Spanish, making for five data records.
+
+##### Optional
+Run `two.go` a second time, output should look like
+
+```
+Map 'greetings' Size before 5
+Map 'greetings' Size after 5
+```
+
+We are using _Hazelcast_'s map structure, which is a *key-value* store.
+
+The first run of `two.go` added five new keys to an empty Hazelcast, so the before count was
+0 and the after 5.
+
+This second run of `two.go` inserts the same five keys. So there were 5 before, and as the
+same 5 are written there are still 5. The writes here replace the values that were present.
+
+Specifically the _Go_ code is doing a "_Put_" operation on the map which inserts the data
+if not present and replaces the data is present. This is good enough for most purposes
+but there are other versions, "_PutIfAbsent_" and "_Replace_" that allow a finer degree
+of control depending on if the data is already present. See 
+[IMap](http://docs.hazelcast.org/docs/3.9/javadoc/com/hazelcast/core/IMap.html)
+for more details
+
+##### What is this doing (contd.)? 
+
+Hazelcast uses a lazy-creation strategy.
+
+When a _Go_ client requests a map with the name "_greetings_", it will be created if it
+doesn't already exist.
+
+This is how you can run `two.go` more than once and keep retrieving access to the same
+map. At the first reference the map is created and access to it is returned. At the
+second reference it already exists and again access to it is returned.
+
+Lookup is by name, and the data itself is stored on _Hazelcast_ java processes. As far
+as the _Go_ client is concerned, the data is retrieved from a _Go_ call so appears
+not to have been fetched across the network.
+
+##### Optimizations
+
+The five data records are sent individually, using "_Put_".
+
+So there are ten network interactions. Five send and receive pairs.
+
+There is also a bulk send operation, "_PutAll_" then sends a collection of inserts together
+in a batch. This would be two network interactions, so more efficient for the same effect.
 
 #### `three.go`
 
-##### TODO 
+Run
+
+```
+go run three.go
+```
+
+from the `hello-world` folder in the _Go_ source hierarchy.
+
+You should get output like this
+
+```
+ -> 'Spanish'=='hola mundo'
+ -> 'German'=='hallo welt'
+ -> 'Italian'=='ciao mondo'
+ -> 'English'=='hello world'
+ -> 'French'=='bonjour monde'
+[5 records]
+```
+
+You should definitely get five records back. We've not bothered to sort, so the
+sequence you have them displayed will likely vary.
+
+##### What is this doing ?
+
+The main operation here is "_KeySet_" on the map. This returns a set
+of keys in the map, similar to selecting the primary key column on a relational
+database. Every key is present in the set exactly once.
+
+Thereafter, the code iterates through the set of keys, retrieving each value to
+print 
+
+##### Danger area
+
+Earlier we mentioned that it would be more efficient for `two.go` to send all
+data at once using the "_PutAll_" bulk operation.
+
+The counterpart for "_PutAll_" bulk sending is "_GetAll_" for bulk receiving.
+
+"_GetAll_" is indeed more efficient for bulk receiving than to iterate and
+get each item individually. However, there is a risk to be aware of.
+
+_Hazelcast_ server processes are usually deployed in numbers. There might be
+for example 10 _Hazelcast_ processes in the cluster, each with 1/10 of the
+data. If a single _Go_ process connected to that cluster requests all the
+data, what this could mean is sending content from ten processes to one
+processes and this could swamp the memory of that receiving process.
+
+##### Optimizations
+
+The output order is effectively random, which is a bit irritating.
+
+However, the keys are strings. The set of keys retrieved could easily be sorted
+before displaying the value for each one.
+
+This sort occurs on the _Go_ side, not on the _Hazelcast_ side. If it's an inefficient
+sort such as bubblesort, it doesn't slow _Hazelcast_ down for other clients.
 
 ## Bonus Step - Clustering
 
@@ -450,11 +581,18 @@ as a resilient and scalable store.
 Although some of _Hazelcast_ servers may suffer mishaps and go offline,
 so long as sufficient others remain you don't lose data.
 
-(And you shouldn't lose access to the data either, if you've configured
-correctly!)
+(And you should always be able to find the cluster as it scales up and down, 
+if you've configured correctly!)
 
 ## Summary
 
+For _Hazelcast_ users, the _Go_ client is welcome addition to the family of
+client languages, joining the likes of _Java_, _.NET_, _Scala_, _C++_, _Python_
+and _Node.js_.
 
-#### TODO 
+For _Go_ users, _Hazelcast_ respresents a fast, scalable, resilient data
+store that allows data to be easily shared between independent _Go_ routines
+that might be running on different hosts. 
 
+_Hazelcast_ has many more features too, queues, topics, executors, entry
+processors, listeners, etc, etc... the subject for another day.
