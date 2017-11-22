@@ -246,7 +246,6 @@ func (invocationService *InvocationService) sendToConnection(invocation *Invocat
 }
 
 func (invocationService *InvocationService) sendToAddress(invocation *Invocation, address *Address) {
-
 	connectionChannel, errorChannel := invocationService.client.ConnectionManager.GetOrConnect(address, false)
 	invocationService.send(invocation, connectionChannel, errorChannel)
 }
@@ -324,16 +323,6 @@ func (invocationService *InvocationService) cleanupConnectionInternal(connection
 	for _, invocation := range invocationService.responseWaitings {
 		if invocation.sentConnection == connection {
 			invocationService.handleException(invocation, cause)
-		}
-	}
-
-	if invocationService.client.LifecycleService.isLive.Load().(bool) {
-		for _, invocation := range invocationService.eventHandlers {
-			if invocation.sentConnection == connection && invocation.boundConnection == nil {
-				// Since reregistration is done independently,it uses different resources than invocation service
-				// we dont need to wait for it.
-				go invocationService.client.ListenerService.reregisterListener(invocation)
-			}
 		}
 	}
 

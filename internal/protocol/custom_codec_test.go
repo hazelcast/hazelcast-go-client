@@ -66,12 +66,12 @@ func TestMemberCodecEncodeDecode(t *testing.T) {
 		t.Errorf("MemberCodecDecode returned a wrong member")
 	}
 }
-func TestEntryViewCodecEncodeDecode(t *testing.T) {
+func TestDataEntryViewCodecEncodeDecode(t *testing.T) {
 	key := "test-key"
 	value := "test-value"
-	entryView := EntryView{}
-	entryView.key = Data{[]byte(key)}
-	entryView.value = Data{[]byte(value)}
+	entryView := DataEntryView{}
+	entryView.keyData = &Data{[]byte(key)}
+	entryView.valueData = &Data{[]byte(value)}
 	entryView.cost = 123123
 	entryView.creationTime = 1212
 	entryView.expirationTime = 12
@@ -82,13 +82,13 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 	entryView.version = 1
 	entryView.evictionCriteriaNumber = 122
 	entryView.ttl = 14555
-	msg := NewClientMessage(nil, EntryViewCalculateSize(&entryView))
-	EntryViewCodecEncode(msg, &entryView)
+	msg := NewClientMessage(nil, DataEntryViewCalculateSize(&entryView))
+	DataEntryViewCodecEncode(msg, &entryView)
 	//Skip the header.
 	for i := 0; i < len(READ_HEADER); i++ {
 		msg.ReadUint8()
 	}
-	if result := EntryViewCodecDecode(msg); !result.Equal(entryView) {
+	if result := DataEntryViewCodecDecode(msg); !result.Equal(entryView) {
 		t.Errorf("EntryViewCodecDecode returned a wrong member")
 	}
 
@@ -100,9 +100,9 @@ func TestEntryViewCodecEncodeDecode(t *testing.T) {
 /*
 	EntryView helper functions
 */
-func EntryViewCodecEncode(msg *ClientMessage, entryView *EntryView) {
-	msg.AppendData(&entryView.key)
-	msg.AppendData(&entryView.value)
+func DataEntryViewCodecEncode(msg *ClientMessage, entryView *DataEntryView) {
+	msg.AppendData(entryView.keyData)
+	msg.AppendData(entryView.valueData)
 	msg.AppendInt64(entryView.cost)
 	//msg.AppendInt64(entryView.Cost)
 	msg.AppendInt64(entryView.creationTime)
@@ -115,10 +115,10 @@ func EntryViewCodecEncode(msg *ClientMessage, entryView *EntryView) {
 	msg.AppendInt64(entryView.evictionCriteriaNumber)
 	msg.AppendInt64(entryView.ttl)
 }
-func EntryViewCalculateSize(ev *EntryView) int {
+func DataEntryViewCalculateSize(ev *DataEntryView) int {
 	dataSize := 0
-	dataSize += DataCalculateSize(&ev.key)
-	dataSize += DataCalculateSize(&ev.value)
+	dataSize += DataCalculateSize(ev.keyData)
+	dataSize += DataCalculateSize(ev.valueData)
 	dataSize += 10 * INT64_SIZE_IN_BYTES
 	return dataSize
 }
