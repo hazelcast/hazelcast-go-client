@@ -178,17 +178,49 @@ In this case, the Hazelcast server is on the machine with IP address 10.37.217.1
 If both "_Go_" and "_Hazelcast_" are successfully installed, and you have a rough understanding of the architecture,
 then it's time for Hello World.
 
-### Client Server architecture
-
-#### TODO 
-
 ### Outline
 
-#### TODO 
+The basic outline here is we will run a cluster of 1 _Hazelcast_ server representing the server-side
+in the _client-server_ architecture. This will stay running throughout all the _Go_ tests.
+
+Three different _Go_ routines are used consecutively as clients in the _client-server_ architecture,
+interacting with the _Hazelcast_ servers.
+
+Only one _Hazelcast_ server isn't typical. In the bonus section towards the end we expand the cluster
+to two!
+
+Similarly, running clients consecutively isn't typical either. Multiple clients can be connected
+to the cluster at once, all doing data operations.
 
 ### The _Hazelcast_ half
 
-#### TODO 
+This example has no coding for the _Hazelcast_ half.
+We use the pre-build _Hazelcast_ start script provided in the download.
+
+In the Hazelcast download there is a folder `bin` with a script in it called `start.sh` and
+`stop.sh` (and Windows variants, `start.bat` and `stop.bat`).
+
+In the earlier _Hazelcast_ verification step you will have run the start script, so
+Hazelcast will already be running. Proof of this is to look in the `hazelcast_instance.pid`
+file in this folder and see if the listed process id is indeed running.
+
+If it is running, use the stop script to stop it. This should close that running Hazelcast
+process, and remove the `hazelcast_instance.pid` file.
+
+Now no _Hazelcast_ server is running, so use the start script to start one.
+Towards the end, you will see output like
+
+```
+Members {size:1, ver:1} [
+	Member [192.168.1.156]:5701 - f4855568-dcd6-4cbc-b231-6f8af5c72487 this
+]
+```
+
+This indicates a process has started, on IP address 192.168.1.156 port 5701, and
+as it is the only one listed the cluster size is one member.
+
+This example does not do server-side processing, so we don't need to pay attention
+to the _Hazelcast_ server logs for any insights.
 
 ### The _Go_ half
 
@@ -196,7 +228,6 @@ There are three programs, imaginatively named `one.go`, `two.go` and `three.go`.
 
 All three are clients of the Hazelcast server, and for this example we run them in sequence,
 though they could be run concurrently.
-
 
 #### `one.go`
 
@@ -382,7 +413,8 @@ print
 Earlier we mentioned that it would be more efficient for `two.go` to send all
 data at once using the "_PutAll_" bulk operation.
 
-The counterpart for "_PutAll_" bulk sending is "_GetAll_" for bulk receiving.
+The counterpart for "_PutAll_" bulk sending is "_GetAll_" for bulk receiving,
+and `three.go` could use this.
 
 "_GetAll_" is indeed more efficient for bulk receiving than to iterate and
 get each item individually. However, there is a risk to be aware of.
