@@ -260,7 +260,7 @@ you can still configure the Go client with _host:port_ of one of the Hazelcast
 servers. It's a better idea to list the _host:port_ pairings for two or three of
 the Hazelcast servers than just one, in case that one is offline. But you don't
 need to list them all, if you get an answer from any of the listed Hazelcast
-servers, the answer includes the location of the all the other Hazelcast
+servers, the answer includes the location of all the other Hazelcast
 servers in the cluster.
 
 #### `two.go`
