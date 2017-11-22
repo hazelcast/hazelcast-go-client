@@ -149,7 +149,8 @@ Java HotSpot(TM) 64-Bit Server VM (build 9.0.1+11, mixed mode)
 $ 
 ```
 
-If Java is found, then you can try Hazelcast, using the `start.sh` script in the `bin` folder.
+If Java is found, then you can try Hazelcast, using the `start.sh` script in
+Hazelcast's `bin` folder.
 
 This will give a lot of output, as Hazelcast is quite verbose by default about what it is doing,
 but towards the end you should see messages like
@@ -273,7 +274,184 @@ servers in the cluster.
 
 ## Bonus Step - Clustering
 
-##### TODO 
+As per above, typical usage of Hazelcast is to run multiple servers that join
+together to form a cluster, providing resilience and scalable storage.
+
+The `start.sh` script in Hazelcast's `bin` folder creates one Hazelcast
+instance, and logs it's process id in a `*.pid` file for later user.
+
+### Clean start
+
+Firstly, we want to ensure no Hazelcast servers are running.
+
+The easiest way is just to kill off any Java processes from the O/s. On Windows
+this might be with `taskkill`, on Mac with `kill -9`.
+
+Also make sure the `hazelcast_instance.pid` is removed.
+
+### Start a first _Hazelcast_ server
+
+Use the `start.sh` script to start up a server.
+
+You are looking for a message like this to confirm it is up:
+
+```
+Members {size:1, ver:1} [
+	Member [192.168.1.156]:5701 - f4855568-dcd6-4cbc-b231-6f8af5c72487 this
+]
+```
+
+This lists the members of the cluster, and if you're starting from clean there
+should only be one member, the process just started.
+
+Take a note of the process id of this server, for instance by looking in the 
+`hazelcast_instance.pid` file.
+
+*NOTE* The default port for _Hazelcast_ is 5701. 5701 was free, so 5701 was selected.
+
+### Write some data using _Go_
+
+Run
+
+```
+go run two.go
+```
+
+from the `hello-world` folder in the _Go_ source hierarchy.
+
+Amongst the output you should see the same message as before,
+
+```
+Map 'greetings' Size before 0
+Map 'greetings' Size after 5
+```
+
+confirming that the "_greetings_" map has changed from empty to having 5 data records.
+
+### Start a second _Hazelcast_ server
+
+In _Hazelcast_'s `bin` folder, remove the `hazelcast_instance.pid` file.
+
+This file is what the `start.sh` script uses to determine if a process is running,
+so by removing it we can trick the `start.sh` script (and lose the ability for the
+`stop.sh` script to find it to shut it down cleanly)
+
+So now if we run `start.sh`, it should start another Hazelcast server
+
+You should now see messages like this
+
+```
+Members {size:2, ver:2} [
+	Member [192.168.1.156]:5701 - f4855568-dcd6-4cbc-b231-6f8af5c72487
+	Member [192.168.1.156]:5702 - 3f84bc0e-5ce2-457f-8db2-c52c82e34d82 this
+]
+```
+
+Two Hazelcast servers are running, they have found each other and joined together
+to form a cluster. Each will log out the presence of the others.
+
+*NOTE* The default port for _Hazelcast_ is 5701. 5701 is in use by the first
+server, so the second server takes the next available one, 5702.
+
+### Kill the first _Hazelcast_ server
+
+Using your O/s (`kill -9`, `taskkill`, etc) forceably terminate the first
+Hazelcast server that you started.
+
+The second _Hazelcast_ server will notice the first disappear, and moan
+about it. 
+
+It should then produce a message with the new member list of the cluster,
+only containing itself.
+
+```
+Members {size:1, ver:3} [
+	Member [192.168.1.156]:5702 - 3f84bc0e-5ce2-457f-8db2-c52c82e34d82 this
+]
+```
+
+The proof you've killed the right one of the two, is that the one using
+port 5702 is still running and reporting the other as AWOL.
+
+### Read some data from _Go_
+
+From the `hello-world` folder in your _Go_ source tree, run the third
+program to inspect the data in Hazelcast
+
+```
+go run three.go
+```
+
+Problems!
+
+The _Go_ client routine is looking for a _Hazelcast_ server on 127.0.0.1:5701
+and there is no server there as we've just killed it.
+
+The _Go_ routine `three.go` has been deliberately configured with only one place to look for
+a connection and there's nothing there. That's not good practice.
+
+So it'll produce a slew of error messages starting with
+
+```
+2017/11/22 20:58:13 the following error occured while trying to connect to cluster:  target is disconnected
+2017/11/22 20:58:17 the following error occured while trying to connect to cluster:  target is disconnected
+```
+
+and shutdown.
+
+### Start another _Hazelcast_ server
+
+Back to _Hazelcast_'s `bin` folder, remove the `hazelcast_instance.pid` file again, and
+run the `start.sh` again.
+
+A _Hazelcast_ server will start up, find the other one that is still running, and both 
+will produce a message showing who is now in the cluster.
+
+```
+Members {size:2, ver:4} [
+	Member [192.168.1.156]:5702 - 3f84bc0e-5ce2-457f-8db2-c52c82e34d82
+	Member [192.168.1.156]:5701 - b1536a80-78c6-401e-b870-8515acbbabe7 this
+]
+```
+
+*NOTE* As mentioned a few times now, the default port for _Hazelcast_ is 5701.
+This port is available, so this port is selected for this new server. It's
+not the first server revived, it's an entirely new server that is utlising the
+same port (the UUID _b1536a80-78c6-401e-b870-8515acbbabe7_ is different).
+
+### Try again to read some data from _Go_
+
+Now try
+
+```
+go run three.go
+```
+
+again.
+
+Output should be
+
+```
+ -> 'Spanish'=='hola mundo'
+ -> 'German'=='hallo welt'
+ -> 'Italian'=='ciao mondo'
+ -> 'English'=='hello world'
+ -> 'French'=='bonjour monde'
+[5 records]
+```
+
+the five data records is an unspecified order.
+
+### Recap
+
+So what we've seen in the bonus section is some of the power of Hazelcast
+as a resilient and scalable store.
+
+Although some of _Hazelcast_ servers may suffer mishaps and go offline,
+so long as sufficient others remain you don't lose data.
+
+(And you shouldn't lose access to the data either, if you've configured
+correctly!)
 
 ## Summary
 
