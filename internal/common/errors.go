@@ -68,9 +68,6 @@ type HazelcastIOError struct {
 	*HazelcastErrorType
 }
 
-func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
-	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
-}
 func NewHazelcastIOError(message string, cause error) *HazelcastIOError {
 	return &HazelcastIOError{&HazelcastErrorType{message: message, cause: cause}}
 }
@@ -100,4 +97,7 @@ func NewHazelcastIllegalArgumentError(message string, cause error) *HazelcastIll
 
 func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuthenticationError {
 	return &HazelcastAuthenticationError{&HazelcastErrorType{message, cause}}
+}
+func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
+	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
 }
