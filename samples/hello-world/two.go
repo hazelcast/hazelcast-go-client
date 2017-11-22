@@ -17,10 +17,10 @@ func main() {
 
 	// The map is stored on the server but we can access it from the client
 	mapName := "greetings"
-	greetings, _ := client.GetMap(&mapName)
+	greetings, _ := client.GetMap(mapName)
 
 	// 0 if first run, non-zero if Hazelcast has data already
-	size, _ := greetings.Size();
+	size, _ := greetings.Size()
 	fmt.Printf("Map '%v' Size before %v\n", greetings.Name(), size)
 
 	// Write or overwrite data in the map as if it was stored in the client
@@ -31,7 +31,7 @@ func main() {
 	greetings.Put("French", "bonjour monde")
 
 	// 5 added, so at least 5 on the server side
-	size, _ = greetings.Size();
+	size, _ = greetings.Size()
 	fmt.Printf("Map '%v' Size after %v\n", greetings.Name(), size)
 
 	// Disconnect
