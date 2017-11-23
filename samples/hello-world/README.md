@@ -255,7 +255,7 @@ processing function to the data to modify it in situ.
 For now, the closing point on this section is that the _Go_ client is acting
 here as a proxy. Data is copied across the network from _Hazelcast_'s memory to 
 the _Go_ routine's memory. If something else changes the copy held in _Hazelcast_
-the _Go_ routine won't by default know this has happened. If the _Go_ routine
+the _Go_ routine won't (by default!) know this has happened. If the _Go_ routine
 does not save the data back to _Hazelcast_ after changing it, the master copy
 held on _Hazelcast_ won't change and no other client with have visibility of
 the update.
