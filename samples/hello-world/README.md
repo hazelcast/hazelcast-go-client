@@ -1,5 +1,7 @@
 # Hazelcast for Go Getters
 
+[architecture]: _assets/markdown/images/architecture.png "Image architecture.png"
+
 Know "_Go_" but don't know about "_Hazelcast_" ?
 
 Know "_Hazelcast_" but don't know about "_Go_" ?
@@ -171,7 +173,21 @@ In this case, the Hazelcast server is on the machine with IP address 10.37.217.1
 
 ## Architecture
 
+Refer to the following diagram and subsequent explanation
+
+![Image of several Hazelcast JVMs and one Go routine][architecture] 
+
+### The servers - _Hazelcast_ running _Java_ 
+
 ## TODO 
+## TODO 
+## Partition
+## Smark client
+## Backsup
+
+### The client - _Go_ 
+
+## TODO mention protocol and proxies
 
 ## Coding
 
