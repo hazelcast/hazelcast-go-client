@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package proxy
 
 import (
@@ -10,8 +24,7 @@ import (
 )
 
 func fillMapForPredicates() {
-	mapName2 := "myMap2"
-	mp2, _ = client.GetMap(&mapName2)
+	mp2, _ = client.GetMap("myMap2")
 	for i := 0; i < 50; i++ {
 		mp2.Put("key"+strconv.Itoa(i), int32(i))
 	}
@@ -86,8 +99,7 @@ func TestLessEqual(t *testing.T) {
 }
 
 func TestLike(t *testing.T) {
-	name := "likePredMap"
-	localMap, _ := client.GetMap(&name)
+	localMap, _ := client.GetMap("likePredMap")
 	localMap.Put("temp", "tempval")
 	localMap.Put("temp1", "tempval1")
 	localMap.Put("temp2", "val2")
@@ -116,8 +128,7 @@ func TestLike(t *testing.T) {
 }
 
 func TestILike(t *testing.T) {
-	name := "ilikePredMap"
-	localMap, _ := client.GetMap(&name)
+	localMap, _ := client.GetMap("ilikePredMap")
 	localMap.Put("temp", "tempval")
 	localMap.Put("TEMP", "TeMPVAL")
 	localMap.Put("temp1", "teMpvAl1")
@@ -191,9 +202,8 @@ func TestOr(t *testing.T) {
 }
 
 func TestRegex(t *testing.T) {
-	name := "regexMap"
-	localMap, _ := client.GetMap(&name)
-	localMap.PutAll(&map[interface{}]interface{}{"06": "ankara", "07": "antalya"})
+	localMap, _ := client.GetMap("regexMap")
+	localMap.PutAll(map[interface{}]interface{}{"06": "ankara", "07": "antalya"})
 	rp := Regex("this", "^.*ya$")
 	set, _ := localMap.EntrySetWithPredicate(rp)
 	expecteds := make(map[interface{}]interface{}, 0)

@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Package serialization serializes user objects to Data and back to Object.
 // Data is the internal representation of binary data in Hazelcast.
 package serialization
@@ -333,9 +347,6 @@ type PortableWriter interface {
 
 	// Writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable) error
-
-	// Should not be called by the end user.
-	End()
 }
 
 // Provides a mean of reading portable fields from a binary in form of go primitives
@@ -400,9 +411,6 @@ type PortableReader interface {
 
 	// It takes fieldName name of the field and returns the []Portable value read and error.
 	ReadPortableArray(fieldName string) ([]Portable, error)
-
-	// Should not be called by the end user.
-	End()
 }
 
 // Represents a predicate (boolean-valued function) of one argument.
