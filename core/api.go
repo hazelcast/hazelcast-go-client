@@ -2,24 +2,45 @@ package core
 
 import . "github.com/hazelcast/go-client/serialization"
 
+// IAddress represents an address of a member in the cluster.
 type IAddress interface {
 	Host() string
 	Port() int
 }
+
+// IMember represents a member in the cluster with its address, UUID, lite member status and attributes.
 type IMember interface {
+	// Address returns the address of this member.
 	Address() IAddress
+
+	// Uuid returns the UUID of this member.
 	Uuid() string
+
+	// IsLiteMember returns true if this member is a lite member.
 	IsLiteMember() bool
+
+	// Attributes returns configured attributes for this member.
 	Attributes() map[string]string
 }
+
+// IPair represents IMap entry pair.
 type IPair interface {
+	// Key returns key of entry.
 	Key() interface{}
+
+	// Values returns value of entry.
 	Value() interface{}
 }
+
+// IDistributedObjectInfo contains name and service name of distributed objects.
 type IDistributedObjectInfo interface {
+	// Name returns the name of distributed object.
 	Name() string
+
+	// ServiceName returns the service name of distributed object.
 	ServiceName() string
 }
+
 type IError interface {
 	ErrorCode() int32
 	ClassName() string
@@ -30,69 +51,150 @@ type IError interface {
 }
 
 type IStackTraceElement interface {
+	// DeclaringClass returns the fully qualified name of the class containing
+	// the execution point represented by the stack trace element.
 	DeclaringClass() string
+
+	// MethodName returns the name of the method containing the execution point
+	// represented by this stack trace element.
 	MethodName() string
+
+	// FileName returns the name of the file containing the execution point
+	// represented by the stack trace element, or nil if
+	// this information is unavailable.
 	FileName() string
+
+	// LineNumber returns the line number of the source line containing the
+	// execution point represented by this stack trace element, or
+	// a negative number if this information is unavailable. A value
+	// of -2 indicates that the method containing the execution point
+	// is a native method.
 	LineNumber() int32
 }
 
+// IEntryView represents a readonly view of a map entry.
 type IEntryView interface {
+	// Key returns the key of the entry.
 	Key() IData
+
+	// Value returns the value of the entry.
 	Value() IData
+
+	// Cost returns the cost in bytes of the entry.
 	Cost() int64
+
+	// CreationTime returns the creation time of the entry.
 	CreationTime() int64
+
+	// ExpirationTime returns the expiration time of the entry.
 	ExpirationTime() int64
+
+	// Hits returns the number of hits of the entry.
 	Hits() int64
+
+	// LastAccessTime returns the last access time for the entry.
 	LastAccessTime() int64
+
+	// LastStoredTime returns the last store time for the value.
 	LastStoredTime() int64
+
+	// LastUpdateTime returns the last time the value was updated.
 	LastUpdateTime() int64
+
+	// Version returns the version of the entry.
 	Version() int64
+
+	// EvictionCriteriaNumber returns the criteria number for eviction.
 	EvictionCriteriaNumber() int64
+
+	// Ttl returns the last set time to live second.
 	Ttl() int64
 }
+
 type IEntryEvent interface {
+	// KeyData returns the key of the entry event.
 	KeyData() IData
+
+	// ValueData returns the value of the entry event.
 	ValueData() IData
+
+	// OldValueData returns the old value of the entry event.
 	OldValueData() IData
+
+	// MergingValueData returns the incoming merging value of the entry event.
 	MergingValueData() IData
+
+	// EventType returns the type of entry event.
 	EventType() int32
 	Uuid() *string
 }
+
+// IMapEvent is map events common contract.
 type IMapEvent interface {
+	// EventType returns the event type.
 	EventType() int32
 	Uuid() *string
 	NumberOfAffectedEntries() int32
 }
+
+// IEntryAddedListener is invoked upon addition of an entry.
 type IEntryAddedListener interface {
+	// EntryAdded is invoked upon addition of an entry.
 	EntryAdded(IEntryEvent)
 }
+
+// IEntryRemovedListener invoked upon removal of an entry.
 type IEntryRemovedListener interface {
+	// EntryRemoved invoked upon removal of an entry.
 	EntryRemoved(IEntryEvent)
 }
+
+// IEntryUpdatedListener is invoked upon update of an entry.
 type IEntryUpdatedListener interface {
+	// EntryUpdated is invoked upon update of an entry.
 	EntryUpdated(IEntryEvent)
 }
+
+// IEntryEvictedListener is invoked upon eviction of an entry.
 type IEntryEvictedListener interface {
+	// EntryEvicted is invoked upon eviction of an entry.
 	EntryEvicted(IEntryEvent)
 }
+
 type IEntryEvictAllListener interface {
 	EntryEvictAll(IMapEvent)
 }
+
 type IEntryClearAllListener interface {
 	EntryClearAll(IMapEvent)
 }
+
+// IEntryMergedListener is invoked after WAN replicated entry is merged.
 type IEntryMergedListener interface {
+	// EntryMerged is invoked after WAN replicated entry is merged.
 	EntryMerged(IEntryEvent)
 }
+
+// IEntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.
 type IEntryExpiredListener interface {
+	// EntryExpired is invoked upon expiration of an entry.
 	EntryExpired(IEntryEvent)
 }
+
+// IMemberAddedListener is invoked when a new member is added to the cluster.
 type IMemberAddedListener interface {
+	// MemberAdded is invoked when a new member is added to the cluster.
 	MemberAdded(member IMember)
 }
+
+// IMemberRemovedListener is invoked when an existing member leaves the cluster.
 type IMemberRemovedListener interface {
+	// MemberRemoved is invoked when an existing member leaves the cluster.
 	MemberRemoved(member IMember)
 }
+
+// ILifecycleListener is a listener object for listening to lifecycle events of the Hazelcast instance.
 type ILifecycleListener interface {
+	// LifecycleStateChanged is called when instance's state changes. No blocking calls should be made in this method.
 	LifecycleStateChanged(string)
 }
