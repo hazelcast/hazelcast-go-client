@@ -179,15 +179,82 @@ Refer to the following diagram and subsequent explanation
 
 ### The servers - _Hazelcast_ running _Java_ 
 
-## TODO 
-## TODO 
-## Partition
-## Smark client
-## Backsup
+Hazelcast's software here is the In-Memory Data Grid, or IMDG.
+
+A _Hazelcast_ IMDG server is a Java process, and therefore runs in a Java Virtual Machine (JVM).
+In this diagram these are represented by the orange box (the JVM) hosting the IMDG server.
+
+Four of these are shown. So there are four Hazelcast servers acting as a cluster here, doing 1/4 of
+the work each. This is easily scalable, add a fifth server and the processing and storage capacity
+will automatically increase by 25%.
+
+In this diagram Hazelcast has a data storage area named "card" to hold playing cards.
+This is a superset of a Java `Map` and similar to a database table. 
+
+One major difference is the storage is spread across the available servers -- seven light green boxes indicates
+the "card" storage area has been split into seven parts. This is how scaling is achieved,
+when more servers join the cluster the available parts are rearranged as evenly as possible.
+Seven parts spread across four servers is just for the diagram, the default if two hundred and
+seventy one parts, but that would be too cluttered to visualize.
+
+A second major difference is the data is mirrored. In the diagram each light green box for
+part of the "card" storage area has a counterpart dark green box somewhere else. Should
+a process fail and a light green box be lost, the dark green pair can be brought into
+service and no data is actually lost. Naturally this is configurable, you can have as
+many backup copies as you feel appropriate.
+
+So, this is the IMDG in a nutshell. A group of Java processes join together to form a
+cluster taking an equal share of data storage and processing. Data is held in memory,
+so very fast to access. The storage containers are Java JVMs, so data process is
+handled by familiar Java classes that you can write. Scalability and resilience are
+enabled by default.
 
 ### The client - _Go_ 
 
-## TODO mention protocol and proxies
+The _Hazelcast_ cluster can exist and operate on it's own, connecting to the outside world
+to handle HTTP traffic or whatever external connection is needed. But that means the
+processing is only in _Java_, which isn't much interest to the _Go_ programmer.
+
+Instead, the _Hazelcast_ cluster can be regarded as a server layer, and a _Go_ routine
+can connect to it as a client to retrieve data, process retrieved data, and to save
+retrieved data back to the cluster.
+
+This is represented in the diagram by the _Go_ routine in the top left. This is one
+_Go_ routine connected to the cluster. Several _Go_ routines can connect to cluster
+at once, all reading and writing data safely. Indeed, if you want multiple clients
+connected to the _Hazelcast_ cluster can be in a mix of languages - _Node.js_, _Java_,
+_Go_ and so on.
+
+As far as _Go_ is concerned, the presence of _Hazelcast_ is abstracted.
+Functions are provided such as "_GetMap_" to return a reference to a map, and
+"_Get_" to get an item from that map. The _Go_ routine does not need to concern
+itself that the map is stored elsewhere -- across multiple Java JVMs -- as this
+is handled by _Hazelcast_.
+
+In the diagram, arrows show that the _Go_ routine opens a connection to every _Hazelcast_
+server at once. If data is needed from part 1 of the map distributed across the cluster,
+this will use the appropriate connection, in this case to the second server from the
+left. If data is needed from part 2, the connection to the second server from the
+right is used. So each retrieval only needs one network interaction, regardless of
+how many servers are used to spread the data -- network transfer is reduced to the
+minimum. In this second case, asking for data from part 2, the required data record
+may not be present, just like any storage system a request may return not found.
+
+This is the standard _read-mutate-save_ cycle. The _Go_ client retrieves data
+directly from the server that has the particular item, the _Go_ client does something
+with the data to change it perhaps, and then the _Go_ client sends the data back
+to the _Hazelcast_ server to update the master copy.
+
+If the data is big or the network is poor, it can be more efficient to send the
+processing function to the data to modify it in situ.
+
+For now, the closing point on this section is that the _Go_ client is acting
+here as a proxy. Data is copied across the network from _Hazelcast_'s memory to 
+the _Go_ routine's memory. If something else changes the copy held in _Hazelcast_
+the _Go_ routine won't by default know this has happened. If the _Go_ routine
+does not save the data back to _Hazelcast_ after changing it, the master copy
+held on _Hazelcast_ won't change and no other client with have visibility of
+the update.
 
 ## Coding
 
