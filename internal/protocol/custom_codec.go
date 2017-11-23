@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package protocol
 
 /*
@@ -55,6 +69,22 @@ func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
 	entryView.evictionCriteriaNumber = msg.ReadInt64()
 	entryView.ttl = msg.ReadInt64()
 	return &entryView
+}
+func DataEntryViewCodecDecode(msg *ClientMessage) *DataEntryView {
+	dataEntryView := DataEntryView{}
+	dataEntryView.keyData = msg.ReadData()
+	dataEntryView.valueData = msg.ReadData()
+	dataEntryView.cost = msg.ReadInt64()
+	dataEntryView.creationTime = msg.ReadInt64()
+	dataEntryView.expirationTime = msg.ReadInt64()
+	dataEntryView.hits = msg.ReadInt64()
+	dataEntryView.lastAccessTime = msg.ReadInt64()
+	dataEntryView.lastStoredTime = msg.ReadInt64()
+	dataEntryView.lastUpdateTime = msg.ReadInt64()
+	dataEntryView.version = msg.ReadInt64()
+	dataEntryView.evictionCriteriaNumber = msg.ReadInt64()
+	dataEntryView.ttl = msg.ReadInt64()
+	return &dataEntryView
 }
 
 func UuidCodecEncode(msg *ClientMessage, uuid Uuid) {

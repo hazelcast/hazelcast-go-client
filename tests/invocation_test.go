@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package tests
 
 import (
@@ -16,8 +30,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mapName := "myMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("myMap")
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -35,8 +48,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)
 		testValue := "testingValue" + strconv.Itoa(i)
@@ -57,8 +69,7 @@ func TestInvocationTimeout(t *testing.T) {
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100)
 	config.ClientNetworkConfig().SetInvocationTimeoutInSeconds(5)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	_, err := mp.Put("a", "b")
 	if _, ok := err.(*common.HazelcastTimeoutError); !ok {
@@ -74,8 +85,7 @@ func TestInvocationRetry(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	mu := sync.Mutex{}
 	//Open the new member in a new subroutine after 5 seconds to ensure that Put will be forced to retry.
@@ -100,8 +110,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mapName := "testMap"
-	mp, _ := client.GetMap(&mapName)
+	mp, _ := client.GetMap("testMap")
 	client.Shutdown()
 	_, err := mp.Put("testingKey", "testingValue")
 	if _, ok := err.(*common.HazelcastClientNotActiveError); !ok {
