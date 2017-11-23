@@ -203,9 +203,13 @@ a process fail and a light green box be lost, the dark green pair can be brought
 service and no data is actually lost. Naturally this is configurable, you can have as
 many backup copies as you feel appropriate.
 
+These JVMs can be anywhere so long as the network between them is fast enough. They
+could all be running on the same physical machine. This is easy for development but not
+too clever for production, as should the physical machine fail it takes every JVM offline.
+
 So, this is the IMDG in a nutshell. A group of Java processes join together to form a
 cluster taking an equal share of data storage and processing. Data is held in memory,
-so very fast to access. The storage containers are Java JVMs, so data process is
+so very fast to access. The storage containers are Java JVMs, so data processing is
 handled by familiar Java classes that you can write. Scalability and resilience are
 enabled by default.
 
