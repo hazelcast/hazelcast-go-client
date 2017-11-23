@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package internal
 
 import (
@@ -20,7 +34,7 @@ type Connection struct {
 	socket                 net.Conn
 	clientMessageBuilder   *ClientMessageBuilder
 	closed                 chan bool
-	endpoint               *Address
+	endpoint               atomic.Value
 	sendingError           chan int64
 	status                 int32
 	isOwnerConnection      bool
@@ -46,6 +60,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 		connectionId:      connectionId,
 		connectionManager: connectionManager,
 	}
+	connection.endpoint.Store(&Address{})
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
 		return nil
@@ -150,7 +165,7 @@ func (connection *Connection) String() string {
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
-		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Host(), connection.endpoint.Port(),
+		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Load().(*Address).Host(), connection.endpoint.Load().(*Address).Port(),
 		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
 		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
 		connection.lastHeartbeatReceived.Load().(time.Time).String(), *connection.serverHazelcastVersion)

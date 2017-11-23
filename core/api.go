@@ -1,6 +1,18 @@
-package core
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-import . "github.com/hazelcast/go-client/serialization"
+package core
 
 // IAddress represents an address of a member in the cluster.
 type IAddress interface {
@@ -75,10 +87,10 @@ type IStackTraceElement interface {
 // IEntryView represents a readonly view of a map entry.
 type IEntryView interface {
 	// Key returns the key of the entry.
-	Key() IData
+	Key() interface{}
 
 	// Value returns the value of the entry.
-	Value() IData
+	Value() interface{}
 
 	// Cost returns the cost in bytes of the entry.
 	Cost() int64
@@ -113,16 +125,16 @@ type IEntryView interface {
 
 type IEntryEvent interface {
 	// KeyData returns the key of the entry event.
-	KeyData() IData
+	Key() interface{}
 
 	// ValueData returns the value of the entry event.
-	ValueData() IData
+	Value() interface{}
 
 	// OldValueData returns the old value of the entry event.
-	OldValueData() IData
+	OldValue() interface{}
 
 	// MergingValueData returns the incoming merging value of the entry event.
-	MergingValueData() IData
+	MergingValue() interface{}
 
 	// EventType returns the type of entry event.
 	EventType() int32
