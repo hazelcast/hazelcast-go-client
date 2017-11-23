@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package protocol
 
 import (
@@ -5,7 +19,6 @@ import (
 	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/serialization"
-	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 )
 
@@ -103,9 +116,9 @@ func (obj *DistributedObjectInfo) ServiceName() string {
 	return obj.serviceName
 }
 
-type EntryView struct {
-	key                    Data
-	value                  Data
+type DataEntryView struct {
+	keyData                *Data
+	valueData              *Data
 	cost                   int64
 	creationTime           int64
 	expirationTime         int64
@@ -118,11 +131,91 @@ type EntryView struct {
 	ttl                    int64
 }
 
-func (ev1 *EntryView) Key() IData {
+func (ev1 *DataEntryView) KeyData() *Data {
+	return ev1.keyData
+}
+
+func (ev1 *DataEntryView) ValueData() *Data {
+	return ev1.valueData
+}
+
+func (ev1 *DataEntryView) Cost() int64 {
+	return ev1.cost
+}
+
+func (ev1 *DataEntryView) CreationTime() int64 {
+	return ev1.creationTime
+}
+
+func (ev1 *DataEntryView) ExpirationTime() int64 {
+	return ev1.expirationTime
+}
+
+func (ev1 *DataEntryView) Hits() int64 {
+	return ev1.hits
+}
+
+func (ev1 *DataEntryView) LastAccessTime() int64 {
+	return ev1.lastAccessTime
+}
+
+func (ev1 *DataEntryView) LastStoredTime() int64 {
+	return ev1.lastStoredTime
+}
+
+func (ev1 *DataEntryView) LastUpdateTime() int64 {
+	return ev1.lastUpdateTime
+}
+
+func (ev1 *DataEntryView) Version() int64 {
+	return ev1.version
+}
+
+func (ev1 *DataEntryView) EvictionCriteriaNumber() int64 {
+	return ev1.evictionCriteriaNumber
+}
+
+func (ev1 *DataEntryView) Ttl() int64 {
+	return ev1.ttl
+}
+
+type EntryView struct {
+	key                    interface{}
+	value                  interface{}
+	cost                   int64
+	creationTime           int64
+	expirationTime         int64
+	hits                   int64
+	lastAccessTime         int64
+	lastStoredTime         int64
+	lastUpdateTime         int64
+	version                int64
+	evictionCriteriaNumber int64
+	ttl                    int64
+}
+
+func NewEntryView(key interface{}, value interface{}, cost int64, creationTime int64, expirationTime int64, hits int64,
+	lastAccessTime int64, lastStoredTime int64, lastUpdateTime int64, version int64, evictionCriteriaNumber int64, ttl int64) *EntryView {
+	return &EntryView{
+		key:                    key,
+		value:                  value,
+		cost:                   cost,
+		creationTime:           creationTime,
+		expirationTime:         expirationTime,
+		hits:                   hits,
+		lastAccessTime:         lastAccessTime,
+		lastStoredTime:         lastStoredTime,
+		lastUpdateTime:         lastUpdateTime,
+		version:                version,
+		evictionCriteriaNumber: evictionCriteriaNumber,
+		ttl: ttl,
+	}
+}
+func (ev1 *EntryView) Key() interface{} {
 	return ev1.key
 }
 
-func (ev1 *EntryView) Value() IData {
+func (ev1 *EntryView) Value() interface{} {
 	return ev1.value
 }
 
@@ -166,8 +259,8 @@ func (ev1 *EntryView) Ttl() int64 {
 	return ev1.ttl
 }
 
-func (ev1 EntryView) Equal(ev2 EntryView) bool {
-	if !bytes.Equal(ev1.key.Buffer(), ev2.key.Buffer()) || !bytes.Equal(ev1.value.Buffer(), ev2.value.Buffer()) {
+func (ev1 DataEntryView) Equal(ev2 DataEntryView) bool {
+	if !bytes.Equal(ev1.keyData.Buffer(), ev2.keyData.Buffer()) || !bytes.Equal(ev1.valueData.Buffer(), ev2.valueData.Buffer()) {
 		return false
 	}
 	if ev1.cost != ev2.cost || ev1.creationTime != ev2.creationTime || ev1.expirationTime != ev2.expirationTime || ev1.hits != ev2.hits {
@@ -247,28 +340,28 @@ func (st *StackTraceElement) LineNumber() int32 {
 }
 
 type EntryEvent struct {
-	keyData          *Data
-	valueData        *Data
-	oldValueData     *Data
-	mergingValueData *Data
-	eventType        int32
-	uuid             *string
+	key          interface{}
+	value        interface{}
+	oldValue     interface{}
+	mergingValue interface{}
+	eventType    int32
+	uuid         *string
 }
 
-func (entryEvent *EntryEvent) KeyData() IData {
-	return entryEvent.keyData
+func (entryEvent *EntryEvent) Key() interface{} {
+	return entryEvent.key
 }
 
-func (entryEvent *EntryEvent) ValueData() IData {
-	return entryEvent.valueData
+func (entryEvent *EntryEvent) Value() interface{} {
+	return entryEvent.value
 }
 
-func (entryEvent *EntryEvent) OldValueData() IData {
-	return entryEvent.oldValueData
+func (entryEvent *EntryEvent) OldValue() interface{} {
+	return entryEvent.oldValue
 }
 
-func (entryEvent *EntryEvent) MergingValueData() IData {
-	return entryEvent.mergingValueData
+func (entryEvent *EntryEvent) MergingValue() interface{} {
+	return entryEvent.mergingValue
 }
 
 func (entryEvent *EntryEvent) Uuid() *string {
@@ -278,8 +371,8 @@ func (entryEvent *EntryEvent) EventType() int32 {
 	return entryEvent.eventType
 }
 
-func NewEntryEvent(keyData *Data, valueData *Data, oldValueData *Data, mergingValueData *Data, eventType int32, Uuid *string) *EntryEvent {
-	return &EntryEvent{keyData: keyData, valueData: valueData, oldValueData: oldValueData, eventType: eventType, uuid: Uuid}
+func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, Uuid *string) *EntryEvent {
+	return &EntryEvent{key: key, value: value, oldValue: oldValue, mergingValue: mergingValue, eventType: eventType, uuid: Uuid}
 }
 
 type MapEvent struct {
