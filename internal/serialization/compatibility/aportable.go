@@ -60,7 +60,7 @@ func (*aPortable) FactoryId() int32 {
 	return PORTABLE_FACTORY_ID
 }
 
-func (p *aPortable) WritePortable(writer PortableWriter) error{
+func (p *aPortable) WritePortable(writer PortableWriter) error {
 	writer.WriteBool("bool", p.bool)
 	writer.WriteByte("b", p.b)
 	writer.WriteUInt16("c", p.c)
