@@ -15,10 +15,10 @@
 package main
 
 import (
-	"github.com/hazelcast/go-client/serialization"
-	"github.com/hazelcast/go-client"
-	"log"
 	"fmt"
+	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/serialization"
+	"log"
 )
 
 const (
@@ -56,10 +56,10 @@ func (e *engineer) ReadPortable(reader serialization.PortableReader) error {
 	return nil
 }
 func (e *engineer) WritePortable(writer serialization.PortableWriter) error {
-	writer.WriteUTF("name",e.name)
-	writer.WriteUTF("surname",e.surname)
-	writer.WriteInt32("age",e.age)
-	writer.WriteUTFArray("languages",e.languages)
+	writer.WriteUTF("name", e.name)
+	writer.WriteUTF("surname", e.surname)
+	writer.WriteInt32("age", e.age)
+	writer.WriteUTFArray("languages", e.languages)
 	return nil
 }
 
@@ -85,7 +85,7 @@ func main() {
 	var err error
 	config := hazelcast.NewHazelcastConfig()
 
-	en := &engineer{"Furkan", "Şenharputlu", 22, []string{"Turkish","English","Arabic"}}
+	en := &engineer{"Furkan", "Şenharputlu", 22, []string{"Turkish", "English", "Arabic"}}
 	enFactory := &engineerFactory{}
 
 	config.SerializationConfig().AddPortableFactory(en.FactoryId(), enFactory)

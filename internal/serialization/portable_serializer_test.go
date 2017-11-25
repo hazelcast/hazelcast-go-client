@@ -57,14 +57,14 @@ func (*student) ClassId() int32 {
 	return 1
 }
 
-func (s *student) WritePortable(writer PortableWriter) error{
+func (s *student) WritePortable(writer PortableWriter) error {
 	writer.WriteInt16("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteUTF("name", s.name)
 	return nil
 }
 
-func (s *student) ReadPortable(reader PortableReader) error{
+func (s *student) ReadPortable(reader PortableReader) error {
 	s.id, _ = reader.ReadInt16("id")
 	s.age, _ = reader.ReadInt32("age")
 	s.name, _ = reader.ReadUTF("name")
@@ -89,14 +89,14 @@ func (*student2) Version() int32 {
 	return 1
 }
 
-func (s *student2) WritePortable(writer PortableWriter) error{
+func (s *student2) WritePortable(writer PortableWriter) error {
 	writer.WriteInt32("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteUTF("name", s.name)
 	return nil
 }
 
-func (s *student2) ReadPortable(reader PortableReader) error{
+func (s *student2) ReadPortable(reader PortableReader) error {
 	s.id, _ = reader.ReadInt32("id")
 	s.age, _ = reader.ReadInt32("age")
 	s.name, _ = reader.ReadUTF("name")
@@ -149,7 +149,7 @@ func (*fake) ClassId() int32 {
 	return 2
 }
 
-func (f *fake) WritePortable(writer PortableWriter)error {
+func (f *fake) WritePortable(writer PortableWriter) error {
 	writer.WriteByte("byt", f.byt)
 	writer.WriteBool("boo", f.boo)
 	writer.WriteUInt16("ui16", f.ui16)
@@ -173,7 +173,7 @@ func (f *fake) WritePortable(writer PortableWriter)error {
 	return nil
 }
 
-func (f *fake) ReadPortable(reader PortableReader) error{
+func (f *fake) ReadPortable(reader PortableReader) error {
 	f.byt, _ = reader.ReadByte("byt")
 	f.boo, _ = reader.ReadBool("boo")
 	f.ui16, _ = reader.ReadUInt16("ui16")

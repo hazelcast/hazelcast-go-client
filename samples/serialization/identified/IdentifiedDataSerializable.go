@@ -15,10 +15,10 @@
 package main
 
 import (
-	"github.com/hazelcast/go-client/serialization"
-	"github.com/hazelcast/go-client"
-	"log"
 	"fmt"
+	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/serialization"
+	"log"
 )
 
 const (
