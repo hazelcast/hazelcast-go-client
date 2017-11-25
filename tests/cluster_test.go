@@ -181,6 +181,18 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
+func TestConnectToClusterWithoutPort(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig().AddAddress("127.1.1.1")
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	members := client.GetCluster().GetMemberList()
+	AssertEqualf(t, nil, members[0].Address().Host(), "localhost", "connectToClusterWithoutPort returned a wrong member address")
+	AssertEqualf(t, nil, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
 
 type mapListener struct {
 	wg *sync.WaitGroup

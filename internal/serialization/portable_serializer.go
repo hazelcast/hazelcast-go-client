@@ -69,16 +69,25 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 		input.SetPosition(backupPos)
 	}
 	var reader PortableReader
+	var isMorphing bool
 	if classDefinition.version == ps.portableContext.ClassVersion(portable) {
 		reader = NewDefaultPortableReader(ps, input, classDefinition)
+		isMorphing = false
 	} else {
 		reader = NewMorphingPortableReader(ps, input, classDefinition)
+		isMorphing = true
 	}
+
 	err = portable.ReadPortable(reader)
 	if err != nil {
 		return nil, err
 	}
-	reader.End()
+	if isMorphing {
+		reader.(*MorphingPortableReader).End()
+	} else {
+		reader.(*DefaultPortableReader).End()
+	}
+
 	return portable, nil
 }
 
