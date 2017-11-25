@@ -101,10 +101,10 @@ func main() {
 
 	mp.Put("engineer1", en)
 	ret, err := mp.Get("engineer1")
-	retEngineer := ret.(*engineer)
 	if err != nil {
 		log.Println(err)
 	}
+	retEngineer := ret.(*engineer)
 	fmt.Println(retEngineer.name, retEngineer.surname, retEngineer.age, retEngineer.languages)
 
 	mp.Clear()

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package Hazelcast provides methods for creating Hazelcast clients and client configurations.
 package hazelcast
 
 import (
@@ -20,22 +21,52 @@ import (
 	"github.com/hazelcast/go-client/internal"
 )
 
+// NewHazelcastClient creates and returns a new IHazelcastInstance.
+// IHazelcast instance enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one of the
+// cluster members and delegates all cluster wide operations to it.
+// When the connected cluster member dies, client will
+// automatically switch to another live member.
 func NewHazelcastClient() (IHazelcastInstance, error) {
 	return NewHazelcastClientWithConfig(config.NewClientConfig())
 }
 
+// NewHazelcastClient creates and returns a new IHazelcastInstance with the given config.
+// IHazelcast instance enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one of the
+// cluster members and delegates all cluster wide operations to it.
+// When the connected cluster member dies, client will
+// automatically switch to another live member.
 func NewHazelcastClientWithConfig(config *config.ClientConfig) (IHazelcastInstance, error) {
 	return internal.NewHazelcastClient(config)
 }
 
+// NewHazelcsatConfig creates and returns a new ClientConfig.
 func NewHazelcastConfig() *config.ClientConfig {
 	return config.NewClientConfig()
 }
 
+// IHazelcastInstance is a Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
+// Multiple Hazelcast instances can be created.
+// Each Hazelcast instance has its own socket, goroutines.
 type IHazelcastInstance interface {
+
+	// GetMap returns the distributed map instance with the specified name.
 	GetMap(name string) (core.IMap, error)
+
+	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
+
+	// Shutdown shuts down this IHazelcastInstance.
 	Shutdown()
+
+	// GetCluster returns the ICluster this instance is part of.
+	// ICluster interface allows you to add listener for membership
+	// events and learn more about the cluster this Hazelcast
+	// instance is part of.
 	GetCluster() core.ICluster
+
+	// GetLifecycle returns the lifecycle service for this instance. ILifecycleService allows you
+	// to listen for the lifecycle events.
 	GetLifecycle() core.ILifecycle
 }
