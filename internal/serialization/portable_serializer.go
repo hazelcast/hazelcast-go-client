@@ -74,7 +74,10 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 	} else {
 		reader = NewMorphingPortableReader(ps, input, classDefinition)
 	}
-	portable.ReadPortable(reader)
+	err = portable.ReadPortable(reader)
+	if err != nil {
+		return nil, err
+	}
 	reader.End()
 	return portable, nil
 }
@@ -93,7 +96,10 @@ func (ps *PortableSerializer) WriteObject(output DataOutput, i interface{}) erro
 	}
 	output.WriteInt32(classDefinition.version)
 	writer := NewDefaultPortableWriter(ps, output.(PositionalDataOutput), classDefinition)
-	i.(Portable).WritePortable(writer)
+	err = i.(Portable).WritePortable(writer)
+	if err != nil {
+		return err
+	}
 	writer.End()
 	return nil
 }

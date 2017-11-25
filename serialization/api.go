@@ -27,8 +27,8 @@ type IdentifiedDataSerializable interface {
 type Portable interface {
 	FactoryId() int32
 	ClassId() int32
-	WritePortable(writer PortableWriter)
-	ReadPortable(reader PortableReader)
+	WritePortable(writer PortableWriter) error
+	ReadPortable(reader PortableReader) error
 }
 
 type VersionedPortable interface {
