@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package main
 
 import (
 	"github.com/hazelcast/go-client/serialization"
 	"github.com/hazelcast/go-client"
 	"log"
+	"fmt"
 )
 
 const (
-	SAMPLE_CLASS_ID   = 1
-	SAMPLE_FACTORY_ID = 1
+	sampleClassId   = 1
+	sampleFactoryId = 1
 )
 
 // student implements IdentifiedDataSerializable interface.
@@ -63,31 +64,31 @@ func (s *student) WriteData(output serialization.DataOutput) error {
 }
 
 func (s *student) FactoryId() int32 {
-	return SAMPLE_FACTORY_ID
+	return sampleFactoryId
 }
 
 func (s *student) ClassId() int32 {
-	return SAMPLE_CLASS_ID
+	return sampleClassId
 }
 
 type studentFactory struct {
 }
 
 func (*studentFactory) Create(classId int32) serialization.IdentifiedDataSerializable {
-	if classId == SAMPLE_CLASS_ID {
+	if classId == sampleClassId {
 		return &student{}
 	}
 	return nil
 }
 
-func putAndGetUser() *student{
+func main() {
 	var err error
 	config := hazelcast.NewHazelcastConfig()
 
-	student := &student{10, "Furkan", "Şenharputlu", 3.5}
-	studentFactory := &studentFactory{}
+	st := &student{10, "Furkan", "Şenharputlu", 3.5}
+	stFactory := &studentFactory{}
 
-	config.SerializationConfig().AddDataSerializableFactory(student.FactoryId(), studentFactory)
+	config.SerializationConfig().AddDataSerializableFactory(st.FactoryId(), stFactory)
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
 	if err != nil {
 		log.Println(err)
@@ -98,13 +99,14 @@ func putAndGetUser() *student{
 		log.Println(err)
 	}
 
-	mp.Put("student1", student)
-	retStudent, err := mp.Get("student1")
+	mp.Put("student1", st)
+	ret, err := mp.Get("student1")
+	retStudent := ret.(*student)
 	if err != nil {
 		log.Println(err)
 	}
+	fmt.Println(retStudent.id, retStudent.name, retStudent.surname, retStudent.gpa)
 
 	mp.Clear()
 	client.Shutdown()
-	return retStudent.(*student)
 }
