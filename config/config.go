@@ -16,7 +16,7 @@
 package config
 
 import (
-	"github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 	"time"
@@ -189,7 +189,7 @@ func (serializationConfig *SerializationConfig) AddCustomSerializer(typ reflect.
 	if serializer.Id() > 0 {
 		serializationConfig.customSerializers[typ] = serializer
 	} else {
-		return common.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
+		return core.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
 	}
 	return nil
 }
@@ -199,7 +199,7 @@ func (serializationConfig *SerializationConfig) SetGlobalSerializer(serializer S
 	if serializer.Id() > 0 {
 		serializationConfig.globalSerializer = serializer
 	} else {
-		return common.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
+		return core.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
 	}
 	return nil
 }

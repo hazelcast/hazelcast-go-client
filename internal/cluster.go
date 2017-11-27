@@ -126,12 +126,12 @@ func (clusterService *ClusterService) connectToCluster() error {
 		addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig().Addresses(), members)
 		for _, address := range addresses {
 			if !clusterService.client.LifecycleService.isLive.Load().(bool) {
-				return common.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
+				return core.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
 			}
 			err := clusterService.connectToAddress(&address)
 			if err != nil {
 				log.Println("the following error occured while trying to connect to cluster: ", err)
-				if _, ok := err.(*common.HazelcastAuthenticationError); ok {
+				if _, ok := err.(*core.HazelcastAuthenticationError); ok {
 					return err
 				}
 				continue
@@ -142,7 +142,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 			time.Sleep(time.Duration(retryDelay) * time.Second)
 		}
 	}
-	return common.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
+	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 func (clusterService *ClusterService) connectToAddress(address *Address) error {
 	connectionChannel, errChannel := clusterService.client.ConnectionManager.GetOrConnect(address, true)
@@ -286,7 +286,7 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 	clusterService.members.Store(copyMembers)
 	connection := clusterService.client.ConnectionManager.getActiveConnection(member.Address().(*Address))
 	if connection != nil {
-		connection.Close(common.NewHazelcastTargetDisconnectedError("the client"+
+		connection.Close(core.NewHazelcastTargetDisconnectedError("the client"+
 			"has closed the connection to this member after receiving a member left event from the cluster", nil))
 	}
 	listeners := clusterService.listeners.Load().(map[string]interface{})

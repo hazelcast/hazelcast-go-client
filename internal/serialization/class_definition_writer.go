@@ -15,7 +15,7 @@
 package serialization
 
 import (
-	"github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/serialization"
 )
 
@@ -73,7 +73,7 @@ func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
 
 func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable Portable) error {
 	if portable == nil {
-		return common.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
 	nestedCD, err := cdw.portableContext.LookUpOrRegisterClassDefiniton(portable)
 	if err != nil {
@@ -87,7 +87,7 @@ func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryId i
 	var version int32 = 0
 	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryId, classId, version)
 	if nestedCD == nil {
-		return common.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
 	cdw.addFieldByType(fieldName, PORTABLE, nestedCD.factoryId, nestedCD.classId)
 	return nil
@@ -131,10 +131,10 @@ func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []Portable) error {
 	if portables == nil {
-		return common.NewHazelcastSerializationError("non nil value expected", nil)
+		return core.NewHazelcastSerializationError("non nil value expected", nil)
 	}
 	if len(portables) == 0 || portables == nil {
-		return common.NewHazelcastSerializationError("cannot write empty array", nil)
+		return core.NewHazelcastSerializationError("cannot write empty array", nil)
 	}
 	var sample = portables[0]
 	var nestedCD, err = cdw.portableContext.LookUpOrRegisterClassDefiniton(sample)

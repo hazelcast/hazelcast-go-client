@@ -16,6 +16,7 @@ package serialization
 
 import (
 	"fmt"
+	. "github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/serialization"
 	"unicode/utf8"

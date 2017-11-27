@@ -16,8 +16,8 @@ package tests
 
 import (
 	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal"
-	"github.com/hazelcast/go-client/internal/common"
 	"strconv"
 	"sync"
 	"testing"
@@ -72,7 +72,7 @@ func TestInvocationTimeout(t *testing.T) {
 	mp, _ := client.GetMap("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	_, err := mp.Put("a", "b")
-	if _, ok := err.(*common.HazelcastTimeoutError); !ok {
+	if _, ok := err.(*core.HazelcastTimeoutError); !ok {
 		t.Fatal("invocation should have timed out but returned, ", err)
 	}
 	client.Shutdown()
@@ -113,7 +113,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 	mp, _ := client.GetMap("testMap")
 	client.Shutdown()
 	_, err := mp.Put("testingKey", "testingValue")
-	if _, ok := err.(*common.HazelcastClientNotActiveError); !ok {
+	if _, ok := err.(*core.HazelcastClientNotActiveError); !ok {
 		t.Fatal("HazelcastClientNotActiveError was expected")
 	}
 	remoteController.ShutdownCluster(cluster.ID)
