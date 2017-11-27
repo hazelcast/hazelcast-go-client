@@ -16,7 +16,6 @@ package internal
 
 import (
 	"github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"strconv"
 	"sync"
@@ -134,13 +133,13 @@ func (connectionManager *ConnectionManager) ConnectionCount() int32 {
 }
 func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection, asOwner bool) error {
 	if !asOwner && connectionManager.client.ClusterService.ownerConnectionAddress.Load().(*Address).Host() == "" {
-		return common.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
+		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
 	invocationService := connectionManager.client.InvocationService
 	connectionId := connectionManager.NextConnectionId()
 	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
 	if con == nil {
-		return common.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
+		return core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
 	err := connectionManager.clusterAuthenticator(con, asOwner)
 
@@ -193,9 +192,9 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 				connectionManager.client.ClusterService.uuid.Store(*parameters.Uuid)
 			}
 		case CREDENTIALS_FAILED:
-			return common.NewHazelcastAuthenticationError("invalid credentials!", nil)
+			return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
 		case SERIALIZATION_VERSION_MISMATCH:
-			return common.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
+			return core.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
 		}
 	}
 	return nil

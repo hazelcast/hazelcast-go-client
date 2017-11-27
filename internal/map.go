@@ -16,7 +16,7 @@ package internal
 
 import (
 	"errors"
-	"github.com/hazelcast/go-client/core"
+	. "github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"github.com/hazelcast/go-client/internal/serialization"
@@ -590,7 +590,7 @@ func (imap *MapProxy) ValuesWithPredicate(predicate IPredicate) (values []interf
 	}
 	return valueList, nil
 }
-func (imap *MapProxy) EntrySet() (resultPairs []core.IPair, err error) {
+func (imap *MapProxy) EntrySet() (resultPairs []IPair, err error) {
 	request := MapEntrySetEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
 	if err != nil {
@@ -598,7 +598,7 @@ func (imap *MapProxy) EntrySet() (resultPairs []core.IPair, err error) {
 	}
 
 	response := MapEntrySetDecodeResponse(responseMessage).Response
-	pairList := make([]core.IPair, len(*response))
+	pairList := make([]IPair, len(*response))
 	for index, pairData := range *response {
 		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -608,11 +608,11 @@ func (imap *MapProxy) EntrySet() (resultPairs []core.IPair, err error) {
 		if err != nil {
 			return nil, err
 		}
-		pairList[index] = core.IPair(NewPair(key, value))
+		pairList[index] = IPair(NewPair(key, value))
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs []core.IPair, err error) {
+func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs []IPair, err error) {
 	predicateData, err := imap.ToData(predicate)
 	if err != nil {
 		return nil, err
@@ -623,7 +623,7 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs [
 		return nil, err
 	}
 	response := MapEntriesWithPredicateDecodeResponse(responseMessage).Response
-	pairList := make([]core.IPair, len(*response))
+	pairList := make([]IPair, len(*response))
 	for index, pairData := range *response {
 		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -633,7 +633,7 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs [
 		if err != nil {
 			return nil, err
 		}
-		pairList[index] = core.IPair(NewPair(key, value))
+		pairList[index] = IPair(NewPair(key, value))
 	}
 	return pairList, nil
 }
@@ -672,7 +672,7 @@ func (imap *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]inter
 	}
 	return entryMap, nil
 }
-func (imap *MapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, err error) {
+func (imap *MapProxy) GetEntryView(key interface{}) (entryView IEntryView, err error) {
 	if !CheckNotNil(key) {
 		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
 	}
@@ -821,7 +821,7 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) 
 	responseData := MapExecuteOnKeyDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
+func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []IPair, err error) {
 	keysData := make([]serialization.Data, len(keys))
 	for index, key := range keys {
 		keyData, err := imap.ToData(key)
@@ -840,7 +840,7 @@ func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface
 		return nil, err
 	}
 	responseData := MapExecuteOnKeysDecodeResponse(responseMessage).Response
-	pairList := make([]core.IPair, len(*responseData))
+	pairList := make([]IPair, len(*responseData))
 	for index, pairData := range *responseData {
 		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -850,11 +850,11 @@ func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface
 		if err != nil {
 			return nil, err
 		}
-		pairList[index] = core.IPair(NewPair(key, value))
+		pairList[index] = IPair(NewPair(key, value))
 	}
 	return pairList, nil
 }
-func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
+func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []IPair, err error) {
 	entryProcessorData, err := imap.ToData(entryProcessor)
 	if err != nil {
 		return nil, err
@@ -865,7 +865,7 @@ func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultP
 		return nil, err
 	}
 	responseData := MapExecuteOnAllKeysDecodeResponse(responseMessage).Response
-	pairList := make([]core.IPair, len(*responseData))
+	pairList := make([]IPair, len(*responseData))
 	for index, pairData := range *responseData {
 		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -875,12 +875,12 @@ func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultP
 		if err != nil {
 			return nil, err
 		}
-		pairList[index] = core.IPair(NewPair(key, value))
+		pairList[index] = IPair(NewPair(key, value))
 	}
 	return pairList, nil
 }
 
-func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate IPredicate) ([]core.IPair, error) {
+func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate IPredicate) ([]IPair, error) {
 	predicateData, err := imap.ToData(predicate)
 	if err != nil {
 		return nil, err
@@ -895,7 +895,7 @@ func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, 
 		return nil, err
 	}
 	responseData := MapExecuteWithPredicateDecodeResponse(responseMessage).Response
-	pairList := make([]core.IPair, len(*responseData))
+	pairList := make([]IPair, len(*responseData))
 	for index, pairData := range *responseData {
 		key, err := imap.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -905,7 +905,7 @@ func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, 
 		if err != nil {
 			return nil, err
 		}
-		pairList[index] = core.IPair(NewPair(key, value))
+		pairList[index] = IPair(NewPair(key, value))
 	}
 	return pairList, nil
 }

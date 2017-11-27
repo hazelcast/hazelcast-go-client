@@ -17,7 +17,7 @@ package serialization
 import (
 	"bytes"
 	"github.com/hazelcast/go-client/config"
-	"github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	"reflect"
 	"testing"
 )
@@ -81,7 +81,7 @@ func TestObjectDataInput_AssertAvailable(t *testing.T) {
 func TestObjectDataInput_AssertAvailable2(t *testing.T) {
 	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &SerializationService{}, true)
 	ret := o.AssertAvailable(2)
-	if _, ok := ret.(*common.HazelcastEOFError); !ok {
+	if _, ok := ret.(*core.HazelcastEOFError); !ok {
 		t.Errorf("AssertAvailable() should return error type *common.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
 	}
 }
