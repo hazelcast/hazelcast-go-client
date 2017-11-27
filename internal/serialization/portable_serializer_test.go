@@ -57,16 +57,18 @@ func (*student) ClassId() int32 {
 	return 1
 }
 
-func (s *student) WritePortable(writer PortableWriter) {
+func (s *student) WritePortable(writer PortableWriter) error {
 	writer.WriteInt16("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteUTF("name", s.name)
+	return nil
 }
 
-func (s *student) ReadPortable(reader PortableReader) {
+func (s *student) ReadPortable(reader PortableReader) error {
 	s.id, _ = reader.ReadInt16("id")
 	s.age, _ = reader.ReadInt32("age")
 	s.name, _ = reader.ReadUTF("name")
+	return nil
 }
 
 type student2 struct {
@@ -87,16 +89,18 @@ func (*student2) Version() int32 {
 	return 1
 }
 
-func (s *student2) WritePortable(writer PortableWriter) {
+func (s *student2) WritePortable(writer PortableWriter) error {
 	writer.WriteInt32("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteUTF("name", s.name)
+	return nil
 }
 
-func (s *student2) ReadPortable(reader PortableReader) {
+func (s *student2) ReadPortable(reader PortableReader) error {
 	s.id, _ = reader.ReadInt32("id")
 	s.age, _ = reader.ReadInt32("age")
 	s.name, _ = reader.ReadUTF("name")
+	return nil
 }
 
 func TestPortableSerializer(t *testing.T) {
@@ -145,7 +149,7 @@ func (*fake) ClassId() int32 {
 	return 2
 }
 
-func (f *fake) WritePortable(writer PortableWriter) {
+func (f *fake) WritePortable(writer PortableWriter) error {
 	writer.WriteByte("byt", f.byt)
 	writer.WriteBool("boo", f.boo)
 	writer.WriteUInt16("ui16", f.ui16)
@@ -166,10 +170,10 @@ func (f *fake) WritePortable(writer PortableWriter) {
 	writer.WriteFloat64Array("f64_arr", f.f64_arr)
 	writer.WriteUTFArray("utf_arr", f.utf_arr)
 	writer.WritePortableArray("portable_arr", f.portable_arr)
-
+	return nil
 }
 
-func (f *fake) ReadPortable(reader PortableReader) {
+func (f *fake) ReadPortable(reader PortableReader) error {
 	f.byt, _ = reader.ReadByte("byt")
 	f.boo, _ = reader.ReadBool("boo")
 	f.ui16, _ = reader.ReadUInt16("ui16")
@@ -190,6 +194,7 @@ func (f *fake) ReadPortable(reader PortableReader) {
 	f.f64_arr, _ = reader.ReadFloat64Array("f64_arr")
 	f.utf_arr, _ = reader.ReadUTFArray("utf_arr")
 	f.portable_arr, _ = reader.ReadPortableArray("portable_arr")
+	return nil
 }
 
 func TestPortableSerializer2(t *testing.T) {

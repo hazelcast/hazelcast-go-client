@@ -29,12 +29,14 @@ func (*AnInnerPortable) ClassId() int32 {
 	return INNER_PORTABLE_CLASS_ID
 }
 
-func (ip *AnInnerPortable) WritePortable(writer PortableWriter) {
+func (ip *AnInnerPortable) WritePortable(writer PortableWriter) error {
 	writer.WriteInt32("i", ip.anInt)
 	writer.WriteFloat32("f", ip.aFloat)
+	return nil
 }
 
-func (ip *AnInnerPortable) ReadPortable(reader PortableReader) {
+func (ip *AnInnerPortable) ReadPortable(reader PortableReader) error {
 	ip.anInt, _ = reader.ReadInt32("i")
 	ip.aFloat, _ = reader.ReadFloat32("f")
+	return nil
 }

@@ -25,17 +25,17 @@ type IdentifiedDataSerializableFactory interface {
 // IdentifiedDataSerializable is a serialization method as an alternative to standard Gob serialization.
 // Each IdentifiedDataSerializable is created by a registered IdentifiedDataSerializableFactory.
 type IdentifiedDataSerializable interface {
-	// ReadData reads fields from the input stream.
-	ReadData(input DataInput) error
-
-	// WriteData writes object fields to output stream.
-	WriteData(output DataOutput) error
-
 	// FactoryId returns IdentifiedDataSerializableFactory factory ID for this struct.
 	FactoryId() int32
 
 	// ClassId returns type identifier for this struct. It should be unique per IdentifiedDataSerializableFactory.
 	ClassId() int32
+
+	// WriteData writes object fields to output stream.
+	WriteData(output DataOutput) error
+
+	// ReadData reads fields from the input stream.
+	ReadData(input DataInput) error
 }
 
 // Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
@@ -55,10 +55,10 @@ type Portable interface {
 	ClassId() int32
 
 	// WritePortable serializes this portable object using PortableWriter.
-	WritePortable(writer PortableWriter)
+	WritePortable(writer PortableWriter) error
 
 	// ReadPortable reads portable fields using PortableReader.
-	ReadPortable(reader PortableReader)
+	ReadPortable(reader PortableReader) error
 }
 
 // VersionedPortable is an extension to Portable
