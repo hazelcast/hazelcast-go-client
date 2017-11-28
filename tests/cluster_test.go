@@ -18,7 +18,6 @@ import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal"
-	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"sync"
@@ -127,7 +126,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	config.GroupConfig().SetName("wrongName")
 	config.GroupConfig().SetPassword("wrongPassword")
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
-	if _, ok := err.(*common.HazelcastAuthenticationError); !ok {
+	if _, ok := err.(*core.HazelcastAuthenticationError); !ok {
 		t.Fatal("client should have returned an authentication error")
 	}
 	client.Shutdown()
@@ -136,7 +135,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 func TestClientWithoutMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	client, err := hazelcast.NewHazelcastClient()
-	if _, ok := err.(*common.HazelcastIllegalStateError); !ok {
+	if _, ok := err.(*core.HazelcastIllegalStateError); !ok {
 		t.Fatal("client should have returned a hazelcastError")
 	}
 	client.Shutdown()
