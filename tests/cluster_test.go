@@ -149,7 +149,7 @@ func TestRestartMember(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
+	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	wg.Add(1)
 	registratonId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
