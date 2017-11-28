@@ -16,7 +16,7 @@ package serialization
 
 import (
 	. "github.com/hazelcast/go-client/config"
-	"github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
 	"testing"
@@ -35,7 +35,7 @@ func TestMorphingPortableReader_createIncompatibleClassChangeError(t *testing.T)
 	classDef2.addFieldDefinition(NewFieldDefinition(0, "age", FLOAT, classDef2.factoryId, classDef2.classId))
 	mpr := NewMorphingPortableReader(nil, i, classDef2)
 	_, err := mpr.ReadInt32("age")
-	if _, ok := err.(*common.HazelcastSerializationError); !ok || err == nil {
+	if _, ok := err.(*core.HazelcastSerializationError); !ok || err == nil {
 		t.Errorf("ReadInt32() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }

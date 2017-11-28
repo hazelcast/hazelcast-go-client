@@ -16,7 +16,7 @@ package serialization
 
 import (
 	"fmt"
-	. "github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/serialization"
 )
 
@@ -54,7 +54,7 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 
 	factory := ps.factories[factoryId]
 	if factory == nil {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryId), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryId), nil)
 	}
 
 	portable := factory.Create(classId)
