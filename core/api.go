@@ -16,7 +16,10 @@ package core
 
 // IAddress represents an address of a member in the cluster.
 type IAddress interface {
+	// Host returns host of the member.
 	Host() string
+
+	// Port returns the port of the member.
 	Port() int
 }
 
@@ -53,12 +56,24 @@ type IDistributedObjectInfo interface {
 	ServiceName() string
 }
 
+// IError contains error information that occurred in the server.
 type IError interface {
+	// ErrorCode returns the error code.
 	ErrorCode() int32
+
+	// ClassName returns the class name where error occurred.
 	ClassName() string
+
+	// Message returns the error message.
 	Message() string
+
+	// StackTrace returns a slice of StackTraceElement.
 	StackTrace() []IStackTraceElement
+
+	// CauseErrorCode returns the cause error code.
 	CauseErrorCode() int32
+
+	// CauseClassName returns the cause class name.
 	CauseClassName() string
 }
 
@@ -138,6 +153,8 @@ type IEntryEvent interface {
 
 	// EventType returns the type of entry event.
 	EventType() int32
+
+	// Uuid returns the Uuid of the member.
 	Uuid() *string
 }
 
@@ -145,7 +162,12 @@ type IEntryEvent interface {
 type IMapEvent interface {
 	// EventType returns the event type.
 	EventType() int32
+
+	// Uuid returns the Uuid of the member.
 	Uuid() *string
+
+	// NumberOfAffectedEntries returns the number of affected
+	// entries by this event.
 	NumberOfAffectedEntries() int32
 }
 
@@ -173,11 +195,19 @@ type IEntryEvictedListener interface {
 	EntryEvicted(IEntryEvent)
 }
 
+// IEntryEvictAllListener is invoked when all entries are evicted
+// by IMap.EvictAll() method.
 type IEntryEvictAllListener interface {
+	// EntryEvictAll is invoked when all entries are evicted
+	// by IMap.EvictAll() method.
 	EntryEvictAll(IMapEvent)
 }
 
+// IEntryClearAllListener is invoked when all entries are removed
+// by Imap.Clear() method.
 type IEntryClearAllListener interface {
+	// EntryClearAll is invoked when all entries are removed
+	// by Imap.Clear() method.
 	EntryClearAll(IMapEvent)
 }
 
