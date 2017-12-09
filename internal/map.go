@@ -482,8 +482,8 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) PutAll(mp map[interface{}]interface{}) (err error) {
-	if !CheckNotNil(mp) {
-		return errors.New("Null argument map is not allowed")
+	if len(mp) == 0 {
+		return errors.New("empty map is not allowed")
 	}
 	partitions := make(map[int32][]Pair)
 	for key, value := range mp {
