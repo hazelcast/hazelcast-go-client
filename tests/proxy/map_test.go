@@ -656,6 +656,14 @@ func TestMapProxy_GetAllWithNilKeys(t *testing.T) {
 	AssertErrorNotNil(t, err, "GetAll did not return an error for nil keys")
 	mp.Clear()
 }
+func TestMapProxy_AddIndex(t *testing.T) {
+	mp2, _ := client.GetMap("mp2")
+	err := mp2.AddIndex("age", true)
+	if err != nil {
+		t.Fatal("addIndex failed")
+	}
+	mp2.Clear()
+}
 func TestMapProxy_GetEntryView(t *testing.T) {
 	mp.Put("key", "value")
 	mp.Get("key")
@@ -975,4 +983,212 @@ func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
 
 func (simpleEntryProcessor *simpleEntryProcessor) ClassId() int32 {
 	return simpleEntryProcessor.classId
+}
+
+// Serialization error checks
+
+type student struct {
+	age int32
+}
+
+func TestMapProxy_PutWithNonSerializableKey(t *testing.T) {
+	_, err := mp.Put(student{}, "test")
+	AssertErrorNotNil(t, err, "put did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_PutWithNonSerializableValue(t *testing.T) {
+	_, err := mp.Put("test", student{})
+	AssertErrorNotNil(t, err, "put did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_TryPutWithNonSerializableKey(t *testing.T) {
+	_, err := mp.TryPut(student{}, "test")
+	AssertErrorNotNil(t, err, "tryPut did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_TryPutWithNonSerializableValue(t *testing.T) {
+	_, err := mp.TryPut("test", student{})
+	AssertErrorNotNil(t, err, "tryPut did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_PutTransientWithNonSerializableKey(t *testing.T) {
+	err := mp.PutTransient(student{}, "test", 1, time.Second)
+	AssertErrorNotNil(t, err, "putTransient did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_PutTransientWithNonSerializableValue(t *testing.T) {
+	err := mp.PutTransient("test", student{}, 1, time.Second)
+	AssertErrorNotNil(t, err, "putTransient did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_GetWithNonSerializableKey(t *testing.T) {
+	_, err := mp.Get(student{})
+	AssertErrorNotNil(t, err, "get did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_RemoveIfSameWithNonSerializableKey(t *testing.T) {
+	_, err := mp.RemoveIfSame(student{}, "test")
+	AssertErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_RemoveIfSameWithNonSerializableValue(t *testing.T) {
+	_, err := mp.RemoveIfSame("test", student{})
+	AssertErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable value")
+	mp.Clear()
+}
+
+func TestMapProxy_TryRemoveWithNonSerializableKey(t *testing.T) {
+	_, err := mp.TryRemove(student{}, 1, time.Second)
+	AssertErrorNotNil(t, err, "tryRemove did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ContainsKeyWithNonSerializableKey(t *testing.T) {
+	_, err := mp.ContainsKey(student{})
+	AssertErrorNotNil(t, err, "containsKey did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ContainsValueWithNonSerializableValue(t *testing.T) {
+	_, err := mp.ContainsValue(student{})
+	AssertErrorNotNil(t, err, "containsValue did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_DeleteWithNonSerializableKey(t *testing.T) {
+	err := mp.Delete(student{})
+	AssertErrorNotNil(t, err, "delete did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_EvictWithNonSerializableKey(t *testing.T) {
+	_, err := mp.Evict(student{})
+	AssertErrorNotNil(t, err, "evict did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_LockWithNonSerializableKey(t *testing.T) {
+	err := mp.Lock(student{})
+	AssertErrorNotNil(t, err, "lock did not return an error for nonserializable key")
+	mp.Clear()
+}
+
+func TestMapProxy_TryLockWithNonSerializableKey(t *testing.T) {
+	_, err := mp.TryLock(student{})
+	AssertErrorNotNil(t, err, "tryLock did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_UnlockWithNonSerializableKey(t *testing.T) {
+	err := mp.Unlock(student{})
+	AssertErrorNotNil(t, err, "unlock did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ForceUnlockWithNonSerializableKey(t *testing.T) {
+	err := mp.ForceUnlock(student{})
+	AssertErrorNotNil(t, err, "forceUnlock did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_IsLockedWithNonSerializableKey(t *testing.T) {
+	_, err := mp.IsLocked(student{})
+	AssertErrorNotNil(t, err, "isLocked did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ReplaceWithNonSerializableKey(t *testing.T) {
+	_, err := mp.Replace(student{}, "test")
+	AssertErrorNotNil(t, err, "replace did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ReplaceWithNonSerializableValue(t *testing.T) {
+	_, err := mp.Replace("test", student{})
+	AssertErrorNotNil(t, err, "replace did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_ReplaceIfSameWithNonSerializableKey(t *testing.T) {
+	_, err := mp.ReplaceIfSame(student{}, "test", "test")
+	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ReplaceWithNonSerializableOldValue(t *testing.T) {
+	_, err := mp.ReplaceIfSame("test", student{}, "test")
+	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable oldValue")
+	mp.Clear()
+}
+func TestMapProxy_ReplaceWithNonSerializableNewValue(t *testing.T) {
+	_, err := mp.ReplaceIfSame("test", "test", student{})
+	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable newValue")
+	mp.Clear()
+}
+func TestMapProxy_SetWithNonSerializableKey(t *testing.T) {
+	err := mp.Set(student{}, "test")
+	AssertErrorNotNil(t, err, "set did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_SetWithNonSerializableValue(t *testing.T) {
+	err := mp.Set("test", student{})
+	AssertErrorNotNil(t, err, "set did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_PutIfAbsentWithNonSerializableKey(t *testing.T) {
+	_, err := mp.PutIfAbsent(student{}, "test")
+	AssertErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_PutIfAbsentWithNonSerializableValue(t *testing.T) {
+	_, err := mp.PutIfAbsent("test", student{})
+	AssertErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable value")
+	mp.Clear()
+}
+func TestMapProxy_PutAllWithNonSerializableMapKey(t *testing.T) {
+	testMap := make(map[interface{}]interface{}, 0)
+	testMap[student{}] = 5
+	err := mp.PutAll(testMap)
+	AssertErrorNotNil(t, err, "putAll did not return an error for nonserializable map key")
+	mp.Clear()
+}
+func TestMapProxy_PutAllWithNonSerializableMapValue(t *testing.T) {
+	testMap := make(map[interface{}]interface{}, 0)
+	testMap[5] = student{}
+	err := mp.PutAll(testMap)
+	AssertErrorNotNil(t, err, "putAll did not return an error for nonserializable map value")
+	mp.Clear()
+}
+func TestMapProxy_GetAllWithNonSerializableKey(t *testing.T) {
+	testSlice := make([]interface{}, 1)
+	testSlice[0] = student{}
+	_, err := mp.GetAll(testSlice)
+	AssertErrorNotNil(t, err, "getAll did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_GetEntryViewWithNonSerializableKey(t *testing.T) {
+	_, err := mp.GetEntryView(student{})
+	AssertErrorNotNil(t, err, "getEntryView did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerToKeyWithNonSerializableKey(t *testing.T) {
+	_, err := mp.AddEntryListenerToKey(nil, student{}, false)
+	AssertErrorNotNil(t, err, "addEntryListenerToKey did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_AddEntryListenerToKeyWithPredicateWithNonSerializableKey(t *testing.T) {
+	_, err := mp.AddEntryListenerToKeyWithPredicate(nil, nil, student{}, false)
+	AssertErrorNotNil(t, err, "addEntryListenerToKeyWithPredicate did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ExecuteOnKeyWithNonSerializableKey(t *testing.T) {
+	_, err := mp.ExecuteOnKey(student{}, nil)
+	AssertErrorNotNil(t, err, "executeOnKey did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ExecuteOnEntriesWithNonSerializableKey(t *testing.T) {
+	_, err := mp.ExecuteOnEntries(student{})
+	AssertErrorNotNil(t, err, "executeOnEntries did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ExecuteOnKeysWithNonSerializableKey(t *testing.T) {
+	testSlice := make([]interface{}, 1)
+	testSlice[0] = student{}
+	_, err := mp.ExecuteOnKeys(testSlice, nil)
+	AssertErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable key")
+	mp.Clear()
+}
+func TestMapProxy_ExecuteOnKeysWithNonSerializableProcessor(t *testing.T) {
+
+	_, err := mp.ExecuteOnKeys(nil, student{})
+	AssertErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable processor")
+	mp.Clear()
 }
