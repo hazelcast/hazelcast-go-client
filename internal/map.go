@@ -452,10 +452,7 @@ func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, 
 	ttl = GetTimeInMilliSeconds(ttl, ttlTimeUnit)
 	request := MapSetEncodeRequest(imap.name, keyData, valueData, THREAD_ID, ttl)
 	_, err = imap.InvokeOnKey(request, keyData)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue interface{}, err error) {
