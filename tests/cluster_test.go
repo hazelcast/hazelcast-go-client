@@ -18,7 +18,6 @@ import (
 	"github.com/hazelcast/go-client"
 	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal"
-	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/rc"
 	"log"
 	"sync"
@@ -127,7 +126,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	config.GroupConfig().SetName("wrongName")
 	config.GroupConfig().SetPassword("wrongPassword")
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
-	if _, ok := err.(*common.HazelcastAuthenticationError); !ok {
+	if _, ok := err.(*core.HazelcastAuthenticationError); !ok {
 		t.Fatal("client should have returned an authentication error")
 	}
 	client.Shutdown()
@@ -136,7 +135,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 func TestClientWithoutMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	client, err := hazelcast.NewHazelcastClient()
-	if _, ok := err.(*common.HazelcastIllegalStateError); !ok {
+	if _, ok := err.(*core.HazelcastIllegalStateError); !ok {
 		t.Fatal("client should have returned a hazelcastError")
 	}
 	client.Shutdown()
@@ -149,7 +148,7 @@ func TestRestartMember(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	lifecycleListener := lifecycyleListener{wg: wg, collector: make([]string, 0)}
+	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	wg.Add(1)
 	registratonId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
@@ -180,6 +179,18 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	AssertEqualf(t, nil, memberList[0].Uuid(), newMember.UUID, "client did not use the last member list to reconnect uuid")
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
+}
+func TestConnectToClusterWithoutPort(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig().AddAddress("127.1.1.1")
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	members := client.GetCluster().GetMemberList()
+	AssertEqualf(t, nil, members[0].Address().Host(), "localhost", "connectToClusterWithoutPort returned a wrong member address")
+	AssertEqualf(t, nil, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
 }
 
 type mapListener struct {

@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/go-client/core"
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
 	"log"
@@ -160,7 +161,7 @@ func (listenerService *ListenerService) registerListener(request *ClientMessage,
 		if err != nil {
 			if connection.IsAlive() {
 				listenerService.deregisterListener(userRegistrationId, encodeListenerRemoveRequest)
-				return nil, common.NewHazelcastErrorType("listener cannot be added", nil)
+				return nil, core.NewHazelcastErrorType("listener cannot be added", nil)
 			}
 		}
 	}
@@ -241,7 +242,7 @@ func (listenerService *ListenerService) registerListenerFromInternal(registratio
 	listenerService.registerListenerOnConnectionChannel <- registrationIdConnection
 	err := <-listenerService.registerListenerOnConnectionErrChannel
 	if err != nil {
-		if _, ok := err.(*common.HazelcastIOError); ok {
+		if _, ok := err.(*core.HazelcastIOError); ok {
 			listenerService.registerListenerInternalHandleErrorChannel <- registrationIdConnection
 		} else {
 			log.Println("listener ", registrationId, " cannot be added to a new connection ", connection, ", reason :", err)
@@ -310,6 +311,6 @@ func (listenerService *ListenerService) trySyncConnectToAllConnections() error {
 		timeSinceStart := time.Since(start)
 		remainingTime = remainingTime - timeSinceStart
 	}
-	return common.NewHazelcastTimeoutError("registering listeners timed out.", nil)
+	return core.NewHazelcastTimeoutError("registering listeners timed out.", nil)
 
 }

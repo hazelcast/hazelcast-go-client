@@ -12,29 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package compatibility
+package main
 
-import . "github.com/hazelcast/go-client/serialization"
+import (
+	"fmt"
+	"github.com/hazelcast/go-client"
+)
 
-type AnInnerPortable struct {
-	anInt  int32
-	aFloat float32
-}
+func main() {
 
-func (*AnInnerPortable) FactoryId() int32 {
-	return PORTABLE_FACTORY_ID
-}
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig().AddAddress("127.0.0.1:5701")
 
-func (*AnInnerPortable) ClassId() int32 {
-	return INNER_PORTABLE_CLASS_ID
-}
+	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	mp, _ := client.GetMap("simpleExample")
 
-func (ip *AnInnerPortable) WritePortable(writer PortableWriter) {
-	writer.WriteInt32("i", ip.anInt)
-	writer.WriteFloat32("f", ip.aFloat)
-}
+	mp.Put("key1", "value1")
+	mp.Put("key2", "value2")
 
-func (ip *AnInnerPortable) ReadPortable(reader PortableReader) {
-	ip.anInt, _ = reader.ReadInt32("i")
-	ip.aFloat, _ = reader.ReadFloat32("f")
+	result1, _ := mp.Get("key1")
+	fmt.Println("key1 has the value of ", result1)
+
+	result2, _ := mp.Get("key2")
+	fmt.Println("key2 has the value of ", result2)
+
+	mp.Clear()
+	client.Shutdown()
 }

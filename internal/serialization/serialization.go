@@ -17,7 +17,7 @@ package serialization
 import (
 	"fmt"
 	. "github.com/hazelcast/go-client/config"
-	. "github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/internal/predicates"
 	. "github.com/hazelcast/go-client/serialization"
 	"reflect"
@@ -103,7 +103,7 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) (Seriali
 	}
 
 	if serializer == nil {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no suitable serializer for %v", obj), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable serializer for %v", obj), nil)
 	}
 	return serializer, nil
 }
@@ -184,7 +184,7 @@ func (service *SerializationService) registerCustomSerializers(customSerializers
 
 func (service *SerializationService) registerSerializer(serializer Serializer) error {
 	if service.registry[serializer.Id()] != nil {
-		return NewHazelcastSerializationError("this serializer is already in the registry", nil)
+		return core.NewHazelcastSerializationError("this serializer is already in the registry", nil)
 	}
 	service.registry[serializer.Id()] = serializer
 	return nil
