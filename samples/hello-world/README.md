@@ -318,7 +318,7 @@ though they could be run concurrently.
 
 #### `one.go`
 
-From the command line, in the directory with the `one.go` program (`$GOPATH/src/github.com/hazelcast/go-client/samples/hello-world/`)
+From the command line, in the directory with the `one.go` program (`$GOPATH/src/github.com/hazelcast/go-client/samples/hello-world/one`)
 run this command
 
 ```
@@ -390,7 +390,7 @@ Run
 go run two.go
 ```
 
-from the `hello-world` folder in the _Go_ source hierarchy.
+from the `hello-world/two` folder in the _Go_ source hierarchy.
 
 You should get output like
 
@@ -470,7 +470,7 @@ Run
 go run three.go
 ```
 
-from the `hello-world` folder in the _Go_ source hierarchy.
+from the `hello-world/three` folder in the _Go_ source hierarchy.
 
 You should get output like this
 
