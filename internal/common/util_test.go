@@ -35,6 +35,12 @@ func TestGetIpAndPort(t *testing.T) {
 		t.Fatal("GetIPAndPort failed.")
 	}
 }
+func TestGetIpWithoutPort(t *testing.T) {
+	testAddress := "121.1.23.3"
+	if ip, port := GetIpAndPort(testAddress); ip != "121.1.23.3" || port != -1 {
+		t.Fatal("GetIPAndPort failed.")
+	}
+}
 func TestGetTimeInMilliSeconds(t *testing.T) {
 	var expected int64 = 100
 	var baseTime int64 = 100

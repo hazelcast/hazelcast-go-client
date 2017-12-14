@@ -29,10 +29,15 @@ func IsValidIpAddress(addr string) bool {
 }
 func GetIpAndPort(addr string) (string, int) {
 	var port int
+	var err error
 	parts := strings.Split(addr, ":")
-	port, err := strconv.Atoi(parts[1])
-	if err != nil {
-		port = 5701 // Default port
+	if len(parts) == 2 {
+		port, err = strconv.Atoi(parts[1])
+		if err != nil {
+			port = 5701 // Default port
+		}
+	} else {
+		port = -1
 	}
 	addr = parts[0]
 	return addr, port

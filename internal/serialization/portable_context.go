@@ -165,7 +165,10 @@ func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, 
 func (c *PortableContext) GenerateClassDefinitionForPortable(portable Portable) (*ClassDefinition, error) {
 	version := c.ClassVersion(portable)
 	classDefinitionWriter := NewClassDefinitionWriter(c, portable.FactoryId(), portable.ClassId(), version)
-	portable.WritePortable(classDefinitionWriter)
+	err := portable.WritePortable(classDefinitionWriter)
+	if err != nil {
+		return nil, err
+	}
 	classDefinitionWriter.End()
 	return classDefinitionWriter.RegisterAndGet()
 }

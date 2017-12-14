@@ -44,6 +44,9 @@ func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
 func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 	mapService := SERVICE_NAME_MAP
 	mp, err := client.GetDistributedObject(mapService, name)
+	if err != nil {
+		return nil, err
+	}
 	return mp.(core.IMap), err
 }
 

@@ -60,7 +60,7 @@ func (*aPortable) FactoryId() int32 {
 	return PORTABLE_FACTORY_ID
 }
 
-func (p *aPortable) WritePortable(writer PortableWriter) {
+func (p *aPortable) WritePortable(writer PortableWriter) error {
 	writer.WriteBool("bool", p.bool)
 	writer.WriteByte("b", p.b)
 	writer.WriteUInt16("c", p.c)
@@ -96,11 +96,10 @@ func (p *aPortable) WritePortable(writer PortableWriter) {
 	writer.WriteInt64Array("lsNull", p.longsNull)
 	writer.WriteUTFArray("strsNull", p.stringsNull)
 
-	//ObjectDataOutput dataOutput = writer.GetRawDataOutput()
-
+	return nil
 }
 
-func (p *aPortable) ReadPortable(reader PortableReader) {
+func (p *aPortable) ReadPortable(reader PortableReader) error {
 	p.bool, _ = reader.ReadBool("bool")
 	p.b, _ = reader.ReadByte("b")
 	p.c, _ = reader.ReadUInt16("c")
@@ -132,4 +131,6 @@ func (p *aPortable) ReadPortable(reader PortableReader) {
 	p.intsNull, _ = reader.ReadInt32Array("isNull")
 	p.longsNull, _ = reader.ReadInt64Array("lsNull")
 	p.stringsNull, _ = reader.ReadUTFArray("strsNull")
+
+	return nil
 }

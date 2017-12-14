@@ -16,7 +16,7 @@ package serialization
 
 import (
 	"fmt"
-	. "github.com/hazelcast/go-client/internal/common"
+	"github.com/hazelcast/go-client/core"
 	. "github.com/hazelcast/go-client/serialization"
 )
 
@@ -54,7 +54,7 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 
 	factory := ps.factories[factoryId]
 	if factory == nil {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryId), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryId), nil)
 	}
 
 	portable := factory.Create(classId)
@@ -69,13 +69,25 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 		input.SetPosition(backupPos)
 	}
 	var reader PortableReader
+	var isMorphing bool
 	if classDefinition.version == ps.portableContext.ClassVersion(portable) {
 		reader = NewDefaultPortableReader(ps, input, classDefinition)
+		isMorphing = false
 	} else {
 		reader = NewMorphingPortableReader(ps, input, classDefinition)
+		isMorphing = true
 	}
-	portable.ReadPortable(reader)
-	reader.End()
+
+	err = portable.ReadPortable(reader)
+	if err != nil {
+		return nil, err
+	}
+	if isMorphing {
+		reader.(*MorphingPortableReader).End()
+	} else {
+		reader.(*DefaultPortableReader).End()
+	}
+
 	return portable, nil
 }
 
@@ -93,7 +105,10 @@ func (ps *PortableSerializer) WriteObject(output DataOutput, i interface{}) erro
 	}
 	output.WriteInt32(classDefinition.version)
 	writer := NewDefaultPortableWriter(ps, output.(PositionalDataOutput), classDefinition)
-	i.(Portable).WritePortable(writer)
+	err = i.(Portable).WritePortable(writer)
+	if err != nil {
+		return err
+	}
 	writer.End()
 	return nil
 }
