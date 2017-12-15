@@ -33,7 +33,10 @@ func (mpr *MorphingPortableReader) ReadByte(fieldName string) (byte, error) {
 	if fieldDef == nil {
 		return 0, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, BYTE)
+	err := mpr.validateTypeCompatibility(fieldDef, BYTE)
+	if err != nil {
+		return 0, err
+	}
 	return mpr.DefaultPortableReader.ReadByte(fieldName)
 }
 
@@ -42,7 +45,10 @@ func (mpr *MorphingPortableReader) ReadBool(fieldName string) (bool, error) {
 	if fieldDef == nil {
 		return false, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, BOOLEAN)
+	err := mpr.validateTypeCompatibility(fieldDef, BOOLEAN)
+	if err != nil {
+		return false, err
+	}
 	return mpr.DefaultPortableReader.ReadBool(fieldName)
 }
 
@@ -51,7 +57,10 @@ func (mpr *MorphingPortableReader) ReadUInt16(fieldName string) (uint16, error) 
 	if fieldDef == nil {
 		return 0, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, CHAR)
+	err := mpr.validateTypeCompatibility(fieldDef, CHAR)
+	if err != nil {
+		return 0, err
+	}
 	return mpr.DefaultPortableReader.ReadUInt16(fieldName)
 }
 
@@ -67,8 +76,7 @@ func (mpr *MorphingPortableReader) ReadInt16(fieldName string) (int16, error) {
 		ret, err := mpr.DefaultPortableReader.ReadByte(fieldName)
 		return int16(ret), err
 	default:
-		err := mpr.createIncompatibleClassChangeError(fieldDef, SHORT)
-		return 0, err
+		return 0, mpr.createIncompatibleClassChangeError(fieldDef, SHORT)
 	}
 }
 
@@ -90,8 +98,7 @@ func (mpr *MorphingPortableReader) ReadInt32(fieldName string) (int32, error) {
 		ret, err := mpr.DefaultPortableReader.ReadInt16(fieldName)
 		return int32(ret), err
 	default:
-		err := mpr.createIncompatibleClassChangeError(fieldDef, INT)
-		return 0, err
+		return 0, mpr.createIncompatibleClassChangeError(fieldDef, INT)
 	}
 }
 
@@ -116,8 +123,7 @@ func (mpr *MorphingPortableReader) ReadInt64(fieldName string) (int64, error) {
 		ret, err := mpr.DefaultPortableReader.ReadInt16(fieldName)
 		return int64(ret), err
 	default:
-		err := mpr.createIncompatibleClassChangeError(fieldDef, LONG)
-		return 0, err
+		return 0, mpr.createIncompatibleClassChangeError(fieldDef, LONG)
 	}
 }
 
@@ -142,8 +148,7 @@ func (mpr *MorphingPortableReader) ReadFloat32(fieldName string) (float32, error
 		ret, err := mpr.DefaultPortableReader.ReadInt16(fieldName)
 		return float32(ret), err
 	default:
-		err := mpr.createIncompatibleClassChangeError(fieldDef, FLOAT)
-		return 0, err
+		return 0, mpr.createIncompatibleClassChangeError(fieldDef, FLOAT)
 	}
 }
 
@@ -174,8 +179,7 @@ func (mpr *MorphingPortableReader) ReadFloat64(fieldName string) (float64, error
 		ret, err := mpr.DefaultPortableReader.ReadInt16(fieldName)
 		return float64(ret), err
 	default:
-		err := mpr.createIncompatibleClassChangeError(fieldDef, DOUBLE)
-		return 0, err
+		return 0, mpr.createIncompatibleClassChangeError(fieldDef, DOUBLE)
 	}
 }
 
@@ -184,7 +188,10 @@ func (mpr *MorphingPortableReader) ReadUTF(fieldName string) (string, error) {
 	if fieldDef == nil {
 		return "", nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, UTF)
+	err := mpr.validateTypeCompatibility(fieldDef, UTF)
+	if err != nil {
+		return "", err
+	}
 	return mpr.DefaultPortableReader.ReadUTF(fieldName)
 }
 
@@ -193,7 +200,10 @@ func (mpr *MorphingPortableReader) ReadPortable(fieldName string) (Portable, err
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, PORTABLE)
+	err := mpr.validateTypeCompatibility(fieldDef, PORTABLE)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadPortable(fieldName)
 }
 
@@ -202,7 +212,10 @@ func (mpr *MorphingPortableReader) ReadByteArray(fieldName string) ([]byte, erro
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, BYTE_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, BYTE_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadByteArray(fieldName)
 }
 
@@ -211,7 +224,10 @@ func (mpr *MorphingPortableReader) ReadBoolArray(fieldName string) ([]bool, erro
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, BOOLEAN_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, BOOLEAN_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadBoolArray(fieldName)
 }
 
@@ -220,7 +236,10 @@ func (mpr *MorphingPortableReader) ReadUInt16Array(fieldName string) ([]uint16, 
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, CHAR_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, CHAR_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadUInt16Array(fieldName)
 }
 
@@ -229,7 +248,10 @@ func (mpr *MorphingPortableReader) ReadInt16Array(fieldName string) ([]int16, er
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, SHORT_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, SHORT_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadInt16Array(fieldName)
 }
 
@@ -238,7 +260,10 @@ func (mpr *MorphingPortableReader) ReadInt32Array(fieldName string) ([]int32, er
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, INT_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, INT_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadInt32Array(fieldName)
 }
 
@@ -247,7 +272,10 @@ func (mpr *MorphingPortableReader) ReadInt64Array(fieldName string) ([]int64, er
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, LONG_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, LONG_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadInt64Array(fieldName)
 }
 
@@ -256,7 +284,10 @@ func (mpr *MorphingPortableReader) ReadFloat32Array(fieldName string) ([]float32
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, FLOAT_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, FLOAT_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadFloat32Array(fieldName)
 }
 
@@ -265,16 +296,22 @@ func (mpr *MorphingPortableReader) ReadFloat64Array(fieldName string) ([]float64
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, DOUBLE_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, DOUBLE_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadFloat64Array(fieldName)
 }
 
-func (mpr *MorphingPortableReader) ReadUTfArray(fieldName string) ([]string, error) {
+func (mpr *MorphingPortableReader) ReadUTFArray(fieldName string) ([]string, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.fields[fieldName]
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, UTF_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, UTF_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadUTFArray(fieldName)
 }
 
@@ -283,7 +320,10 @@ func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) ([]Portab
 	if fieldDef == nil {
 		return nil, nil
 	}
-	mpr.validateTypeCompatibility(fieldDef, PORTABLE_ARRAY)
+	err := mpr.validateTypeCompatibility(fieldDef, PORTABLE_ARRAY)
+	if err != nil {
+		return nil, err
+	}
 	return mpr.DefaultPortableReader.ReadPortableArray(fieldName)
 }
 
