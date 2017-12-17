@@ -14,7 +14,9 @@
 
 package predicates
 
-import . "github.com/hazelcast/go-client/serialization"
+import (
+	. "github.com/hazelcast/go-client/serialization"
+)
 
 const PREDICATE_FACTORY_ID = -32
 
@@ -53,6 +55,7 @@ func NewSqlPredicate(sql string) *SqlPredicate {
 
 func (sp *SqlPredicate) ReadData(input DataInput) error {
 	var err error
+	sp.predicate = newPredicate(SQL_PREDICATE)
 	sp.sql, err = input.ReadUTF()
 	return err
 }
@@ -72,11 +75,12 @@ func NewAndPredicate(predicates []IPredicate) *AndPredicate {
 }
 
 func (ap *AndPredicate) ReadData(input DataInput) error {
+	ap.predicate = newPredicate(AND_PREDICATE)
 	length, err := input.ReadInt32()
 	if err != nil {
 		return err
 	}
-	ap.predicates = make([]IPredicate, 0)
+	ap.predicates = make([]IPredicate, length)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
 		if err != nil {
@@ -111,6 +115,7 @@ func NewBetweenPredicate(field string, from interface{}, to interface{}) *Betwee
 
 func (bp *BetweenPredicate) ReadData(input DataInput) error {
 	var err error
+	bp.predicate = newPredicate(BETWEEN_PREDICATE)
 	bp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -145,6 +150,7 @@ func NewEqualPredicate(field string, value interface{}) *EqualPredicate {
 
 func (ep *EqualPredicate) ReadData(input DataInput) error {
 	var err error
+	ep.predicate = newPredicate(EQUAL_PREDICATE)
 	ep.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -173,6 +179,7 @@ func NewGreaterLessPredicate(field string, value interface{}, equal bool, less b
 
 func (glp *GreaterLessPredicate) ReadData(input DataInput) error {
 	var err error
+	glp.predicate = newPredicate(GREATERLESS_PREDICATE)
 	glp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -212,6 +219,7 @@ func NewLikePredicate(field string, expr string) *LikePredicate {
 
 func (lp *LikePredicate) ReadData(input DataInput) error {
 	var err error
+	lp.predicate = newPredicate(LIKE_PREDICATE)
 	lp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -234,6 +242,17 @@ func NewILikePredicate(field string, expr string) *ILikePredicate {
 	return &ILikePredicate{&LikePredicate{newPredicate(ILIKE_PREDICATE), field, expr}}
 }
 
+func (ilp *ILikePredicate) ReadData(input DataInput) error {
+	var err error
+	ilp.LikePredicate = &LikePredicate{predicate: newPredicate(ILIKE_PREDICATE)}
+	ilp.field, err = input.ReadUTF()
+	if err != nil {
+		return err
+	}
+	ilp.expr, err = input.ReadUTF()
+	return err
+}
+
 type InPredicate struct {
 	*predicate
 	field  string
@@ -246,6 +265,7 @@ func NewInPredicate(field string, values []interface{}) *InPredicate {
 
 func (ip *InPredicate) ReadData(input DataInput) error {
 	var err error
+	ip.predicate = newPredicate(IN_PREDICATE)
 	ip.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -287,6 +307,7 @@ func NewInstanceOfPredicate(className string) *InstanceOfPredicate {
 
 func (iop *InstanceOfPredicate) ReadData(input DataInput) error {
 	var err error
+	iop.predicate = newPredicate(INSTANCEOF_PREDICATE)
 	iop.className, err = input.ReadUTF()
 	return err
 }
@@ -304,6 +325,18 @@ func NewNotEqualPredicate(field string, value interface{}) *NotEqualPredicate {
 	return &NotEqualPredicate{&EqualPredicate{newPredicate(NOTEQUAL_PREDICATE), field, value}}
 }
 
+func (nep *NotEqualPredicate) ReadData(input DataInput) error {
+	var err error
+	nep.EqualPredicate = &EqualPredicate{predicate: newPredicate(NOTEQUAL_PREDICATE)}
+	nep.field, err = input.ReadUTF()
+	if err != nil {
+		return err
+	}
+	nep.value, err = input.ReadObject()
+
+	return err
+}
+
 type NotPredicate struct {
 	*predicate
 	pred IPredicate
@@ -314,6 +347,7 @@ func NewNotPredicate(pred IPredicate) *NotPredicate {
 }
 
 func (np *NotPredicate) ReadData(input DataInput) error {
+	np.predicate = newPredicate(NOT_PREDICATE)
 	i, err := input.ReadObject()
 	np.pred = i.(IPredicate)
 	return err
@@ -334,11 +368,12 @@ func NewOrPredicate(predicates []IPredicate) *OrPredicate {
 
 func (or *OrPredicate) ReadData(input DataInput) error {
 	var err error
+	or.predicate = newPredicate(OR_PREDICATE)
 	length, err := input.ReadInt32()
 	if err != nil {
 		return err
 	}
-	or.predicates = make([]IPredicate, 0)
+	or.predicates = make([]IPredicate, length)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
 		if err != nil {
@@ -372,6 +407,7 @@ func NewRegexPredicate(field string, regex string) *RegexPredicate {
 
 func (rp *RegexPredicate) ReadData(input DataInput) error {
 	var err error
+	rp.predicate = newPredicate(REGEX_PREDICATE)
 	rp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -394,7 +430,7 @@ func NewFalsePredicate() *FalsePredicate {
 	return &FalsePredicate{newPredicate(FALSE_PREDICATE)}
 }
 func (fp *FalsePredicate) ReadData(input DataInput) error {
-	//Empty method
+	fp.predicate = newPredicate(FALSE_PREDICATE)
 	return nil
 }
 
@@ -411,7 +447,7 @@ func NewTruePredicate() *TruePredicate {
 	return &TruePredicate{newPredicate(TRUE_PREDICATE)}
 }
 func (tp *TruePredicate) ReadData(input DataInput) error {
-	//Empty method
+	tp.predicate = newPredicate(TRUE_PREDICATE)
 	return nil
 }
 
