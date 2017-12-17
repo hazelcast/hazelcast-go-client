@@ -15,7 +15,9 @@
 package proxy
 
 import (
+	. "github.com/hazelcast/go-client/config"
 	. "github.com/hazelcast/go-client/core"
+	. "github.com/hazelcast/go-client/internal/serialization"
 	"github.com/hazelcast/go-client/serialization"
 	"log"
 	"reflect"
@@ -23,10 +25,36 @@ import (
 	"testing"
 )
 
+var serializationService *SerializationService
+
+func predicateTestInit() {
+	defineSerializationService()
+	fillMapForPredicates()
+}
+
+func defineSerializationService() {
+	config := NewSerializationConfig()
+	serializationService = NewSerializationService(config)
+}
+
 func fillMapForPredicates() {
 	mp2, _ = client.GetMap("myMap2")
 	for i := 0; i < 50; i++ {
 		mp2.Put("key"+strconv.Itoa(i), int32(i))
+	}
+}
+
+func testSerialization(t *testing.T, predicate serialization.IPredicate) {
+	predicateData, err := serializationService.ToData(predicate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	retPredicate, err := serializationService.ToObject(predicateData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(predicate, retPredicate.(serialization.IPredicate)) {
+		t.Errorf("%s failed", reflect.TypeOf(predicate))
 	}
 }
 
@@ -48,12 +76,16 @@ func testPredicate(t *testing.T, predicate serialization.IPredicate, expecteds m
 func TestSql(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["key10"] = int32(10)
-	testPredicate(t, Sql("this == 10"), expecteds)
+	sql := Sql("this == 10")
+	testSerialization(t, sql)
+	testPredicate(t, sql, expecteds)
 }
 
 func TestAnd(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
-	testPredicate(t, And([]serialization.IPredicate{Equal("this", int32(10)), Equal("this", int32(11))}), expecteds)
+	and := And([]serialization.IPredicate{Equal("this", int32(10)), Equal("this", int32(11))})
+	testSerialization(t, and)
+	testPredicate(t, and, expecteds)
 }
 
 func TestBetween(t *testing.T) {
@@ -61,14 +93,18 @@ func TestBetween(t *testing.T) {
 	for i := 5; i < 29; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
-	testPredicate(t, Between("this", int32(5), int32(28)), expecteds)
+	between := Between("this", int32(5), int32(28))
+	testSerialization(t, between)
+	testPredicate(t, between, expecteds)
 }
 
 func TestGreaterThan(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
-	testPredicate(t, GreaterThan("this", int32(47)), expecteds)
+	greaterThan := GreaterThan("this", int32(47))
+	testSerialization(t, greaterThan)
+	testPredicate(t, greaterThan, expecteds)
 }
 
 func TestGreaterEqual(t *testing.T) {
@@ -76,7 +112,9 @@ func TestGreaterEqual(t *testing.T) {
 	expecteds["key47"] = int32(47)
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
-	testPredicate(t, GreaterEqual("this", int32(47)), expecteds)
+	greaterEqual := GreaterEqual("this", int32(47))
+	testSerialization(t, greaterEqual)
+	testPredicate(t, greaterEqual, expecteds)
 }
 
 func TestLessThan(t *testing.T) {
@@ -85,7 +123,9 @@ func TestLessThan(t *testing.T) {
 	expecteds["key1"] = int32(1)
 	expecteds["key2"] = int32(2)
 	expecteds["key3"] = int32(3)
-	testPredicate(t, LessThan("this", int32(4)), expecteds)
+	lessThan := LessThan("this", int32(4))
+	testSerialization(t, lessThan)
+	testPredicate(t, lessThan, expecteds)
 }
 
 func TestLessEqual(t *testing.T) {
@@ -95,7 +135,9 @@ func TestLessEqual(t *testing.T) {
 	expecteds["key2"] = int32(2)
 	expecteds["key3"] = int32(3)
 	expecteds["key4"] = int32(4)
-	testPredicate(t, LessEqual("this", int32(4)), expecteds)
+	lessEqual := LessEqual("this", int32(4))
+	testSerialization(t, lessEqual)
+	testPredicate(t, lessEqual, expecteds)
 }
 
 func TestLike(t *testing.T) {
@@ -104,7 +146,9 @@ func TestLike(t *testing.T) {
 	localMap.Put("temp1", "tempval1")
 	localMap.Put("temp2", "val2")
 	localMap.Put("temp3", "tempval3")
-	set, err := localMap.EntrySetWithPredicate(Like("this", "tempv%"))
+	like := Like("this", "tempv%")
+	testSerialization(t, like)
+	set, err := localMap.EntrySetWithPredicate(like)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,7 +177,9 @@ func TestILike(t *testing.T) {
 	localMap.Put("TEMP", "TeMPVAL")
 	localMap.Put("temp1", "teMpvAl1")
 	localMap.Put("TEMP1", "TEMpVAL1")
-	set, err := localMap.EntrySetWithPredicate(ILike("this", "tempv%"))
+	ilike := ILike("this", "tempv%")
+	testSerialization(t, ilike)
+	set, err := localMap.EntrySetWithPredicate(ilike)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,7 +207,9 @@ func TestIn(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
-	testPredicate(t, In("this", []interface{}{int32(48), int32(49), int32(50), int32(51), int32(52)}), expecteds)
+	in := In("this", []interface{}{int32(48), int32(49), int32(50), int32(51), int32(52)})
+	testSerialization(t, in)
+	testPredicate(t, in, expecteds)
 }
 
 func TestInstanceOf(t *testing.T) {
@@ -169,13 +217,17 @@ func TestInstanceOf(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
-	testPredicate(t, InstanceOf("java.lang.Integer"), expecteds)
+	instanceOf := InstanceOf("java.lang.Integer")
+	testSerialization(t, instanceOf)
+	testPredicate(t, instanceOf, expecteds)
 }
 
 func TestEqual(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["key1"] = int32(1)
-	testPredicate(t, Equal("this", int32(1)), expecteds)
+	equal := Equal("this", int32(1))
+	testSerialization(t, equal)
+	testPredicate(t, equal, expecteds)
 }
 
 func TestNotEqual(t *testing.T) {
@@ -183,14 +235,18 @@ func TestNotEqual(t *testing.T) {
 	for i := 0; i < 49; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
-	testPredicate(t, NotEqual("this", int32(49)), expecteds)
+	notEqual := NotEqual("this", int32(49))
+	testSerialization(t, notEqual)
+	testPredicate(t, notEqual, expecteds)
 }
 
 func TestNot(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["key0"] = int32(0)
 	expecteds["key1"] = int32(1)
-	testPredicate(t, Not(GreaterEqual("this", int32(2))), expecteds)
+	not := Not(GreaterEqual("this", int32(2)))
+	testSerialization(t, not)
+	testPredicate(t, not, expecteds)
 }
 
 func TestOr(t *testing.T) {
@@ -198,13 +254,16 @@ func TestOr(t *testing.T) {
 	expecteds["key0"] = int32(0)
 	expecteds["key35"] = int32(35)
 	expecteds["key49"] = int32(49)
-	testPredicate(t, Or([]serialization.IPredicate{GreaterEqual("this", int32(49)), Equal("this", int32(35)), LessEqual("this", int32(0))}), expecteds)
+	or := Or([]serialization.IPredicate{GreaterEqual("this", int32(49)), Equal("this", int32(35)), LessEqual("this", int32(0))})
+	testSerialization(t, or)
+	testPredicate(t, or, expecteds)
 }
 
 func TestRegex(t *testing.T) {
 	localMap, _ := client.GetMap("regexMap")
 	localMap.PutAll(map[interface{}]interface{}{"06": "ankara", "07": "antalya"})
 	rp := Regex("this", "^.*ya$")
+	testSerialization(t, rp)
 	set, _ := localMap.EntrySetWithPredicate(rp)
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["07"] = "antalya"
@@ -220,7 +279,9 @@ func TestRegex(t *testing.T) {
 
 func TestFalse(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
-	testPredicate(t, False(), expecteds)
+	false := False()
+	testSerialization(t, false)
+	testPredicate(t, false, expecteds)
 }
 
 func TestTrue(t *testing.T) {
@@ -228,5 +289,7 @@ func TestTrue(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
-	testPredicate(t, True(), expecteds)
+	true := True()
+	testSerialization(t, true)
+	testPredicate(t, true, expecteds)
 }

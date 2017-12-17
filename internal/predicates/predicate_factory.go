@@ -14,19 +14,50 @@
 
 package predicates
 
-import . "github.com/hazelcast/go-client/serialization"
+import (
+	. "github.com/hazelcast/go-client/serialization"
+)
 
 type PredicateFactory struct {
-	idToDataSerializable map[int32]IdentifiedDataSerializable
 }
 
-func NewPredicateFactory(ids map[int32]IdentifiedDataSerializable) *PredicateFactory {
-	return &PredicateFactory{ids}
+func NewPredicateFactory() *PredicateFactory {
+	return &PredicateFactory{}
 }
 
 func (pf *PredicateFactory) Create(id int32) IdentifiedDataSerializable {
-	if pf.idToDataSerializable[id] != nil {
-		return pf.idToDataSerializable[id]
+	switch id {
+	case SQL_PREDICATE:
+		return &SqlPredicate{}
+	case AND_PREDICATE:
+		return &AndPredicate{}
+	case BETWEEN_PREDICATE:
+		return &BetweenPredicate{}
+	case EQUAL_PREDICATE:
+		return &EqualPredicate{}
+	case GREATERLESS_PREDICATE:
+		return &GreaterLessPredicate{}
+	case LIKE_PREDICATE:
+		return &LikePredicate{}
+	case ILIKE_PREDICATE:
+		return &ILikePredicate{}
+	case IN_PREDICATE:
+		return &InPredicate{}
+	case INSTANCEOF_PREDICATE:
+		return &InstanceOfPredicate{}
+	case NOTEQUAL_PREDICATE:
+		return &NotEqualPredicate{}
+	case NOT_PREDICATE:
+		return &NotPredicate{}
+	case OR_PREDICATE:
+		return &OrPredicate{}
+	case REGEX_PREDICATE:
+		return &RegexPredicate{}
+	case FALSE_PREDICATE:
+		return &FalsePredicate{}
+	case TRUE_PREDICATE:
+		return &TruePredicate{}
+	default:
+		return nil
 	}
-	return nil
 }
