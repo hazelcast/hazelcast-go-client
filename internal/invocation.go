@@ -141,11 +141,6 @@ func (invocationService *InvocationService) InvokeOnRandomTarget(request *Client
 	return invocationService.sendInvocation(invocation)
 }
 
-func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessage, target *Address) InvocationResult {
-	invocation := NewInvocation(request, -1, target, nil, invocationService.client)
-	return invocationService.sendInvocation(invocation)
-}
-
 func (invocationService *InvocationService) InvokeOnKeyOwner(request *ClientMessage, keyData *serialization.Data) InvocationResult {
 	partitionId := invocationService.client.PartitionService.GetPartitionId(keyData)
 	return invocationService.InvokeOnPartitionOwner(request, partitionId)
