@@ -17,28 +17,34 @@ package internal
 import (
 	"github.com/hazelcast/go-client/internal/common"
 	. "github.com/hazelcast/go-client/internal/protocol"
+	"testing"
 )
 
-type ClientMessageBuilder struct {
-	incompleteMessages map[int64]*ClientMessage
-	responseChannel    chan *ClientMessage
-}
-
-func (cmb *ClientMessageBuilder) OnMessage(msg *ClientMessage) {
-	if msg.HasFlags(common.BEGIN_END_FLAG) > 0 {
-		cmb.responseChannel <- msg
-	} else if msg.HasFlags(common.BEGIN_FLAG) > 0 {
-		cmb.incompleteMessages[msg.CorrelationId()] = msg
-	} else {
-		message, found := cmb.incompleteMessages[msg.CorrelationId()]
-		if !found {
-			return
-		}
-		message.Accumulate(msg)
-		if msg.HasFlags(common.END_FLAG) > 0 {
-			message.AddFlags(common.BEGIN_END_FLAG)
-			cmb.responseChannel <- message
-			delete(cmb.incompleteMessages, msg.CorrelationId())
-		}
+func TestClientMessageBuilder_OnMessage(t *testing.T) {
+	builder := &ClientMessageBuilder{
+		incompleteMessages: make(map[int64]*ClientMessage),
 	}
+	ch := make(chan *ClientMessage)
+	builder.responseChannel = ch
+	go func() {
+		<-ch
+	}()
+
+	msg := NewClientMessage(nil, 40)
+	msg.SetFlags(common.BEGIN_FLAG)
+	msg.SetCorrelationId(1)
+	msg.SetFrameLength(int32(len(msg.Buffer)))
+	builder.OnMessage(msg)
+
+	msg = NewClientMessage(nil, 40)
+	msg.SetCorrelationId(1)
+	msg.SetFrameLength(int32(len(msg.Buffer)))
+	builder.OnMessage(msg)
+	msg.SetFlags(common.END_FLAG)
+	builder.OnMessage(msg)
+
+	msg = NewClientMessage(nil, 40)
+	msg.SetCorrelationId(2)
+	msg.SetFrameLength(int32(len(msg.Buffer)))
+	builder.OnMessage(msg)
 }

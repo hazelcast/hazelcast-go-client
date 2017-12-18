@@ -94,7 +94,11 @@ func (msg *ClientMessage) AddFlags(v uint8) {
 }
 
 func (msg *ClientMessage) HasFlags(flags uint8) uint8 {
-	return msg.Flags() & flags
+	value := msg.Flags() & flags
+	if value == flags {
+		return value
+	}
+	return 0
 }
 
 func (msg *ClientMessage) MessageType() MessageType {
