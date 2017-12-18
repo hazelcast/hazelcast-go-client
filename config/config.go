@@ -44,6 +44,12 @@ type ClientConfig struct {
 
 	// serializationConfig is the serialization configuration of the client.
 	serializationConfig *SerializationConfig
+
+	// heartbeatTimeoutInSeconds is the timeout value for heartbeat in seconds.
+	heartbeatTimeoutInSeconds int32
+
+	// heartbeatIntervalInSeconds is heartbeat internal in seconds.
+	heartbeatIntervalInSeconds int32
 }
 
 // NewClientConfig creates a new ClientConfig with default configuration.
@@ -79,6 +85,30 @@ func (clientConfig *ClientConfig) ClientNetworkConfig() *ClientNetworkConfig {
 // SerializationConfig returns SerializationConfig.
 func (clientConfig *ClientConfig) SerializationConfig() *SerializationConfig {
 	return clientConfig.serializationConfig
+}
+
+// SetHeartbeatTimeout sets the heartbeat timeout value to given timeout value.
+// timeout value is in seconds.
+func (clientConfig *ClientConfig) SetHeartbeatTimeoutInSeconds(timeoutInSeconds int32) *ClientConfig {
+	clientConfig.heartbeatTimeoutInSeconds = timeoutInSeconds
+	return clientConfig
+}
+
+// HeartbeatTimeout returns heartbeat timeout in seconds.
+func (clientConfig *ClientConfig) HeartbeatTimeout() int32 {
+	return clientConfig.heartbeatTimeoutInSeconds
+}
+
+// SetHeartbeatIntervalInSeconds sets the heartbeat timeout value to given interval value.
+// interval value is in seconds.
+func (clientConfig *ClientConfig) SetHeartbeatIntervalInSeconds(intervalInSeconds int32) *ClientConfig {
+	clientConfig.heartbeatIntervalInSeconds = intervalInSeconds
+	return clientConfig
+}
+
+// HeartbeatInterval returns heartbeat interval in seconds.
+func (clientConfig *ClientConfig) HeartbeatInterval() int32 {
+	return clientConfig.heartbeatIntervalInSeconds
 }
 
 // AddMembershipListener adds a membership listener.
