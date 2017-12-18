@@ -37,8 +37,15 @@ type HeartBeatService struct {
 }
 
 func newHeartBeatService(client *HazelcastClient) *HeartBeatService {
-	heartBeat := HeartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL, heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
-		cancel: make(chan struct{}),
+	heartBeat := HeartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
+		heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
+		cancel:           make(chan struct{}),
+	}
+	if client.ClientConfig.HeartbeatTimeout() > 0 {
+		heartBeat.heartBeatTimeout = time.Duration(client.ClientConfig.HeartbeatTimeout())
+	}
+	if client.ClientConfig.HeartbeatInterval() > 0 {
+		heartBeat.heartBeatInterval = time.Duration(client.ClientConfig.HeartbeatInterval())
 	}
 	heartBeat.listeners.Store(make([]interface{}, 0)) //initialize
 	return &heartBeat
@@ -57,7 +64,7 @@ func (heartBeatService *HeartBeatService) AddHeartbeatListener(listener interfac
 }
 func (heartBeat *HeartBeatService) start() {
 	go func() {
-		ticker := time.NewTicker(DEFAULT_HEARTBEAT_INTERVAL * time.Second)
+		ticker := time.NewTicker(heartBeat.heartBeatInterval * time.Second)
 		for {
 			if !heartBeat.client.LifecycleService.isLive.Load().(bool) {
 				return
@@ -85,13 +92,14 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
-			_, err := heartBeat.client.InvocationService.InvokeOnConnection(request, connection).Result()
-			if err != nil {
-				log.Println("error receiving heartbeat for connection, ", connection)
-			} else {
-				connection.lastHeartbeatReceived.Store(time.Now())
-			}
-
+			go func() {
+				_, err := heartBeat.client.InvocationService.InvokeOnConnection(request, connection).Result()
+				if err != nil {
+					log.Println("error receiving heartbeat for connection, ", connection)
+				} else {
+					connection.lastHeartbeatReceived.Store(time.Now())
+				}
+			}()
 		} else {
 			if !connection.heartBeating {
 				heartBeat.onHeartBeatRestored(connection)
