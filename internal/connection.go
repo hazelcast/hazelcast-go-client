@@ -68,6 +68,10 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 		connection.socket = socket
 	}
 	connection.lastRead.Store(time.Now())
+	connection.lastWrite.Store(time.Time{})             //initialization
+	connection.lastHeartbeatReceived.Store(time.Time{}) //initialization
+	connection.lastHeartbeatReceived.Store(time.Time{}) //initialization
+	connection.closedTime.Store(time.Time{})            //initialization
 	socket.Write([]byte("CB2"))
 	go connection.writePool()
 	go connection.read()
@@ -165,7 +169,8 @@ func (connection *Connection) String() string {
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
-		", connected server version=%s", connection.IsAlive(), connection.connectionId, connection.endpoint.Load().(*Address).Host(), connection.endpoint.Load().(*Address).Port(),
+		", connected server version=%s", connection.IsAlive(), connection.connectionId,
+		connection.endpoint.Load().(*Address).Host(), connection.endpoint.Load().(*Address).Port(),
 		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
 		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
 		connection.lastHeartbeatReceived.Load().(time.Time).String(), *connection.serverHazelcastVersion)
