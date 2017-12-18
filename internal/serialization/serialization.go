@@ -245,33 +245,12 @@ func (service *SerializationService) registerIdentifiedFactories() {
 	for id, _ := range service.serializationConfig.DataSerializableFactories() {
 		factories[id] = service.serializationConfig.DataSerializableFactories()[id]
 	}
-
-	idToPredicate := make(map[int32]IdentifiedDataSerializable)
-	fillPredicateIds(idToPredicate)
-	factories[PREDICATE_FACTORY_ID] = NewPredicateFactory(idToPredicate)
+	factories[PREDICATE_FACTORY_ID] = NewPredicateFactory()
 
 	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
 	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
 	service.registerSerializer(NewIdentifiedDataSerializableSerializer(factories))
 	service.nameToId["identified"] = CONSTANT_TYPE_DATA_SERIALIZABLE
-}
-
-func fillPredicateIds(idToPredicate map[int32]IdentifiedDataSerializable) {
-	idToPredicate[SQL_PREDICATE] = &SqlPredicate{}
-	idToPredicate[AND_PREDICATE] = &AndPredicate{}
-	idToPredicate[BETWEEN_PREDICATE] = &BetweenPredicate{}
-	idToPredicate[EQUAL_PREDICATE] = &EqualPredicate{}
-	idToPredicate[GREATERLESS_PREDICATE] = &GreaterLessPredicate{}
-	idToPredicate[LIKE_PREDICATE] = &LikePredicate{}
-	idToPredicate[ILIKE_PREDICATE] = &ILikePredicate{}
-	idToPredicate[IN_PREDICATE] = &InPredicate{}
-	idToPredicate[INSTANCEOF_PREDICATE] = &InstanceOfPredicate{}
-	idToPredicate[NOTEQUAL_PREDICATE] = &NotEqualPredicate{}
-	idToPredicate[NOT_PREDICATE] = &NotPredicate{}
-	idToPredicate[OR_PREDICATE] = &OrPredicate{}
-	idToPredicate[REGEX_PREDICATE] = &RegexPredicate{}
-	idToPredicate[FALSE_PREDICATE] = &FalsePredicate{}
-	idToPredicate[TRUE_PREDICATE] = &TruePredicate{}
 }
 
 func isIdentifiedDataSerializable(obj interface{}) bool {
