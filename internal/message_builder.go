@@ -32,7 +32,7 @@ func (cmb *ClientMessageBuilder) OnMessage(msg *ClientMessage) {
 	} else {
 		message, found := cmb.incompleteMessages[msg.CorrelationId()]
 		if !found {
-			//TODO:: Handle case : a message without a begin part is received.
+			return
 		}
 		message.Accumulate(msg)
 		if msg.HasFlags(common.END_FLAG) > 0 {
