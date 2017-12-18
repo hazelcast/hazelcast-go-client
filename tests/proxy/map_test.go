@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	mp, _ = client.GetMap("myMap")
-	fillMapForPredicates()
+	predicateTestInit()
 	m.Run()
 	mp.Clear()
 	client.Shutdown()
