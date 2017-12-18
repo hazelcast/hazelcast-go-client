@@ -132,6 +132,10 @@ func TestGetMembers(t *testing.T) {
 	client, _ := hazelcast.NewHazelcastClient()
 	members := client.GetCluster().GetMemberList()
 	AssertEqualf(t, nil, len(members), 3, "GetMemberList returned wrong number of members")
+	for _, member := range members {
+		AssertEqualf(t, nil, member.IsLiteMember(), false, "member shouldnt be a lite member")
+		AssertEqualf(t, nil, len(member.Attributes()), 0, "member shouldnt have any attributes")
+	}
 	client.Shutdown()
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
