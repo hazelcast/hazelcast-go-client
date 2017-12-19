@@ -16,7 +16,7 @@ package serialization
 
 import (
 	"encoding/binary"
-	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	"math"
 )
 

@@ -15,10 +15,10 @@
 package proxy
 
 import (
-	. "github.com/hazelcast/go-client/config"
-	. "github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/internal/serialization"
-	"github.com/hazelcast/go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/config"
+	. "github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"reflect"
 	"strconv"

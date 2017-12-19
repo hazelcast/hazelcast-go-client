@@ -15,10 +15,10 @@
 package tests
 
 import (
-	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal"
-	. "github.com/hazelcast/go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	. "github.com/hazelcast/hazelcast-go-client/rc"
 	"log"
 	"sync"
 	"testing"

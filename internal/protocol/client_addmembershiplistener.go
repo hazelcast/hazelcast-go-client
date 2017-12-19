@@ -15,7 +15,7 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 type ClientAddMembershipListenerResponseParameters struct {

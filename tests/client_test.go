@@ -15,7 +15,7 @@
 package tests
 
 import (
-	"github.com/hazelcast/go-client"
+	"github.com/hazelcast/hazelcast-go-client"
 	"testing"
 )
 

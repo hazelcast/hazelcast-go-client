@@ -15,7 +15,7 @@
 package predicates
 
 import (
-	. "github.com/hazelcast/go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const PREDICATE_FACTORY_ID = -32

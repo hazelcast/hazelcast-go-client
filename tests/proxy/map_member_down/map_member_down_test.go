@@ -15,10 +15,10 @@
 package map_member_down
 
 import (
-	"github.com/hazelcast/go-client"
-	. "github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/rc"
-	. "github.com/hazelcast/go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client"
+	. "github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/rc"
+	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"testing"
 	"time"

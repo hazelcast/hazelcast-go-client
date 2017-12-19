@@ -16,8 +16,8 @@
 package config
 
 import (
-	"github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"time"
 )

@@ -15,7 +15,7 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 type MapValuesResponseParameters struct {
