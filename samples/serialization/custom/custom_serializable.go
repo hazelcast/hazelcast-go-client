@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"reflect"
 )

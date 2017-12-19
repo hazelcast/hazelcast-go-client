@@ -16,9 +16,9 @@
 package hazelcast
 
 import (
-	"github.com/hazelcast/go-client/config"
-	"github.com/hazelcast/go-client/core"
-	"github.com/hazelcast/go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 // NewHazelcastClient creates and returns a new IHazelcastInstance.

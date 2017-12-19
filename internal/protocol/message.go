@@ -18,8 +18,8 @@ import (
 	"encoding/binary"
 	"unicode/utf8"
 
-	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 // ClientMessage is the carrier framed data as defined below.

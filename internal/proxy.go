@@ -15,8 +15,8 @@
 package internal
 
 import (
-	. "github.com/hazelcast/go-client/internal/protocol"
-	. "github.com/hazelcast/go-client/internal/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 type proxy struct {
