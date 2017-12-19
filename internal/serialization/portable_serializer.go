@@ -16,8 +16,8 @@ package serialization
 
 import (
 	"fmt"
-	"github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type PortableSerializer struct {

@@ -15,8 +15,8 @@
 package core
 
 import (
-	. "github.com/hazelcast/go-client/internal/predicates"
-	. "github.com/hazelcast/go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/internal/predicates"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // Sql is a helper function for creating SqlPredicate.

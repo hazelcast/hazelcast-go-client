@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/hazelcast/go-client"
-	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"sync"
 )
 

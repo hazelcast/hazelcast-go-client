@@ -15,9 +15,9 @@
 package compatibility
 
 import (
-	"github.com/hazelcast/go-client/config"
-	. "github.com/hazelcast/go-client/internal/common"
-	"github.com/hazelcast/go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"io/ioutil"
 	"reflect"
 	"strings"
