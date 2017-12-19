@@ -16,11 +16,11 @@ package internal
 
 import (
 	"errors"
-	. "github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/internal/protocol"
-	"github.com/hazelcast/go-client/internal/serialization"
-	. "github.com/hazelcast/go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"time"
 )
 

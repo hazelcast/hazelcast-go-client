@@ -16,9 +16,9 @@ package protocol
 
 import (
 	"bytes"
-	"github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/internal/common"
-	. "github.com/hazelcast/go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"reflect"
 )
 

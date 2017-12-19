@@ -16,8 +16,8 @@ package serialization
 
 import (
 	"bytes"
-	"github.com/hazelcast/go-client/config"
-	"github.com/hazelcast/go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"reflect"
 	"testing"
 )
