@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "github.com/hazelcast/go-client"
+import "github.com/hazelcast/hazelcast-go-client"
 
 /* This is the bare minimum test to see if we can connect.
  *
