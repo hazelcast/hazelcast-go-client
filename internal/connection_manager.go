@@ -15,8 +15,8 @@
 package internal
 
 import (
-	"github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"strconv"
 	"sync"
 	"sync/atomic"

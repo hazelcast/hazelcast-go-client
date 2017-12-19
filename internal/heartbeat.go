@@ -15,7 +15,7 @@
 package internal
 
 import (
-	"github.com/hazelcast/go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -92,8 +92,9 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
+			sentInvocation := heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
 			go func() {
-				_, err := heartBeat.client.InvocationService.InvokeOnConnection(request, connection).Result()
+				_, err := sentInvocation.Result()
 				if err != nil {
 					log.Println("error receiving heartbeat for connection, ", connection)
 				} else {

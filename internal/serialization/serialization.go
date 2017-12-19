@@ -16,10 +16,10 @@ package serialization
 
 import (
 	"fmt"
-	. "github.com/hazelcast/go-client/config"
-	"github.com/hazelcast/go-client/core"
-	. "github.com/hazelcast/go-client/internal/predicates"
-	. "github.com/hazelcast/go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/internal/predicates"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 )
 
