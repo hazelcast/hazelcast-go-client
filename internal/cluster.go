@@ -304,10 +304,10 @@ func (clusterService *ClusterService) GetMemberList() []core.IMember {
 	}
 	return members
 }
-func (clusterService *ClusterService) GetMember(address *Address) *Member {
+func (clusterService *ClusterService) GetMember(address core.IAddress) core.IMember {
 	membersList := clusterService.members.Load().([]Member)
 	for _, member := range membersList {
-		if member.Address() == address {
+		if *member.Address().(*Address) == *address.(*Address) {
 			return &member
 		}
 	}
