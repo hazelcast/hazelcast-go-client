@@ -77,9 +77,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	go connection.read()
 	return &connection
 }
-func (connection *Connection) IsConnected() bool {
-	return connection.socket != nil && connection.socket.RemoteAddr() != nil
-}
+
 func (connection *Connection) IsAlive() bool {
 	return connection.status == 0
 }
