@@ -146,3 +146,13 @@ func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuth
 func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
 	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
 }
+
+// NewHazelcastInstanceNotActiveError returns HazelcastInstanceNotActiveError
+func NewHazelcastInstanceNotActiveError(message string, cause error) *HazelcastInstanceNotActiveError {
+	return &HazelcastInstanceNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastTargetNotMemberError returns HazelcastTargetNotMemberError
+func NewHazelcastTargetNotMemberError(message string, cause error) *HazelcastTargetNotMemberError {
+	return &HazelcastTargetNotMemberError{&HazelcastErrorType{message: message, cause: cause}}
+}

@@ -121,8 +121,10 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwn
 			return
 		}
 		//Open new connection
-		err <- connectionManager.openNewConnection(address, ch, asOwner)
-
+		error := connectionManager.openNewConnection(address, ch, asOwner)
+		if error != nil {
+			err <- error
+		}
 	}()
 	return ch, err
 }
