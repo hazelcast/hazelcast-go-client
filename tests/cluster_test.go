@@ -18,6 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	. "github.com/hazelcast/hazelcast-go-client/rc"
 	"log"
 	"sync"
@@ -105,6 +106,24 @@ func TestAddListener(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
+func TestAddListeners(t *testing.T) {
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewHazelcastClient()
+	wg.Add(2)
+	registrationId1 := client.GetCluster().AddListener(&membershipListener{wg: wg})
+	registrationId2 := client.GetCluster().AddListener(&membershipListener{wg: wg})
+	remoteController.StartMember(cluster.ID)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "Cluster initialMembershipListener failed")
+	client.GetCluster().RemoveListener(registrationId1)
+	client.GetCluster().RemoveListener(registrationId2)
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+
 func TestGetMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	member1, _ := remoteController.StartMember(cluster.ID)
@@ -117,6 +136,30 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
+	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestGetMember(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	member2, _ := remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewHazelcastClient()
+	address := protocol.NewAddressWithParameters(member1.GetHost(), int(member1.GetPort()))
+	member := client.GetCluster().GetMember(address)
+	AssertEqualf(t, nil, member.Uuid(), member1.GetUUID(), "GetMember returned wrong member")
+	client.Shutdown()
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	remoteController.ShutdownMember(cluster.ID, member2.UUID)
+	remoteController.ShutdownCluster(cluster.ID)
+}
+func TestGetInvalidMember(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewHazelcastClient()
+	address := protocol.NewAddressWithParameters(member1.GetHost(), 0)
+	member := client.GetCluster().GetMember(address)
+	AssertEqualf(t, nil, member, nil, "GetMember should have returned nil")
+	client.Shutdown()
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestAuthenticationWithWrongCredentials(t *testing.T) {
