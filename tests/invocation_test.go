@@ -118,3 +118,36 @@ func TestInvocationWithShutdown(t *testing.T) {
 	}
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
+func TestInvocationNotSent(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100).
+		SetInvocationTimeoutInSeconds(10).SetConnectionAttemptPeriod(1)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mp, _ := client.GetMap("testMap")
+	wg.Add(50)
+	// make put ops concurrently so that some of them will not be sent when the server gets shut down.
+	go func() {
+		for i := 0; i < 50; i++ {
+			go func() {
+				_, err := mp.Put("testKey", "testValue")
+				wg.Done()
+				if err != nil {
+					t.Fatal("put should have been retried, the error was :", err)
+				}
+			}()
+
+		}
+	}()
+	remoteController.ShutdownMember(cluster.ID, member.UUID)
+	time.Sleep(3 * time.Second)
+	remoteController.StartMember(cluster.ID)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, timeout, false, "invocationNotSent failed")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+
+}

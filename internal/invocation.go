@@ -110,6 +110,7 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 		cleanupConnectionChannel:  make(chan *ConnectionAndError, 1),
 		sendToConnectionChannel:   make(chan *invocationConnection, 100),
 		removeEventHandlerChannel: make(chan int64, 1),
+		notSentMessages:           make(chan int64, 10000),
 	}
 
 	service.isShutdown.Store(false)
@@ -138,11 +139,6 @@ func (invocationService *InvocationService) InvokeOnPartitionOwner(request *Clie
 
 func (invocationService *InvocationService) InvokeOnRandomTarget(request *ClientMessage) InvocationResult {
 	invocation := NewInvocation(request, -1, nil, nil, invocationService.client)
-	return invocationService.sendInvocation(invocation)
-}
-
-func (invocationService *InvocationService) InvokeOnTarget(request *ClientMessage, target *Address) InvocationResult {
-	invocation := NewInvocation(request, -1, target, nil, invocationService.client)
 	return invocationService.sendInvocation(invocation)
 }
 
@@ -235,8 +231,8 @@ func (invocationService *InvocationService) InvokeOnConnection(request *ClientMe
 	return invocationService.sendInvocation(invocation)
 }
 func (invocationService *InvocationService) sendToConnection(invocation *Invocation, connection *Connection) {
-	err := connection.Send(invocation.request)
-	if err != nil {
+	sent := connection.Send(invocation.request)
+	if !sent {
 		//not sent
 		invocationService.notSentMessages <- invocation.request.CorrelationId()
 	} else {
@@ -277,7 +273,7 @@ func (invocationService *InvocationService) unRegisterInvocation(correlationId i
 
 func (invocationService *InvocationService) handleNotSentInvocation(correlationId int64) {
 	if invocation, ok := invocationService.unRegisterInvocation(correlationId); ok {
-		invocationService.sendInvocation(invocation)
+		invocationService.handleException(invocation, NewHazelcastIOError("packet is not sent", nil))
 	}
 }
 func (invocationService *InvocationService) removeEventHandler(correlationId int64) {
@@ -301,7 +297,8 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 			return
 		}
 		if response.MessageType() == MESSAGE_TYPE_EXCEPTION {
-			invocation.err <- convertToError(response)
+			err := CreateHazelcastError(convertToError(response))
+			invocationService.handleException(invocation, err)
 		} else {
 			invocation.response <- response
 		}
@@ -349,12 +346,13 @@ func (invocationService *InvocationService) handleException(invocation *Invocati
 			return
 		}
 		go func() {
-			time.Sleep(RETRY_WAIT_TIME_IN_SECONDS * time.Second)
 			if invocationService.isShutdown.Load().(bool) {
 				invocation.err <- NewHazelcastClientNotActiveError(err.Error(), err)
 				return
 			}
+			time.Sleep(RETRY_WAIT_TIME_IN_SECONDS * time.Second)
 			invocationService.sending <- invocation
+			return
 		}()
 		return
 	}
