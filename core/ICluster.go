@@ -26,4 +26,7 @@ type ICluster interface {
 
 	// GetMemberList returns a slice of members.
 	GetMemberList() []IMember
+
+	// GetMember gets the member with the given address.
+	GetMember(address IAddress) IMember
 }
