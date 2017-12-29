@@ -199,14 +199,6 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	}
 	return nil
 }
-func (connectionManager *ConnectionManager) closeConnection(address core.IAddress, cause error) {
-	connectionManager.lock.RLock()
-	connection, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]
-	connectionManager.lock.RUnlock()
-	if found {
-		connection.Close(cause)
-	}
-}
 func (connectionManager *ConnectionManager) fireConnectionAddedEvent(connection *Connection) {
 	listeners := connectionManager.connectionListeners.Load().([]connectionListener)
 	for _, listener := range listeners {
