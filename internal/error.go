@@ -15,23 +15,30 @@
 package internal
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 func CreateHazelcastError(err *protocol.Error) core.HazelcastError {
+	stackTrace := ""
+	for _, trace := range err.StackTrace() {
+		stackTrace += fmt.Sprintf("\n %s.%s(%s:%d)", trace.DeclaringClass(), trace.MethodName(), trace.FileName(),
+			trace.LineNumber())
+	}
+	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), stackTrace)
 	switch ErrorCode(err.ErrorCode()) {
 	case ERROR_CODE_AUTHENTICATION:
-		return core.NewHazelcastAuthenticationError(err.Message(), nil)
+		return core.NewHazelcastAuthenticationError(message, nil)
 	case ERROR_CODE_HAZELCAST_INSTANCE_NOT_ACTIVE:
-		return core.NewHazelcastInstanceNotActiveError(err.Message(), nil)
+		return core.NewHazelcastInstanceNotActiveError(message, nil)
 	case ERROR_CODE_HAZELCAST_SERIALIZATION:
-		return core.NewHazelcastSerializationError(err.Message(), nil)
+		return core.NewHazelcastSerializationError(message, nil)
 	case ERROR_CODE_TARGET_DISCONNECTED:
-		return core.NewHazelcastTargetDisconnectedError(err.Message(), nil)
+		return core.NewHazelcastTargetDisconnectedError(message, nil)
 	case ERROR_CODE_TARGET_NOT_MEMBER:
-		return core.NewHazelcastTargetNotMemberError(err.Message(), nil)
+		return core.NewHazelcastTargetNotMemberError(message, nil)
 	}
-	return core.NewHazelcastErrorType(err.Message(), nil)
+	return core.NewHazelcastErrorType(message, nil)
 }

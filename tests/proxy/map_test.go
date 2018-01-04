@@ -675,7 +675,25 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	AssertEqualf(t, err, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
 	AssertEqualf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
 	AssertEqualf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
-
+	if cost := entryView.Cost(); cost <= 0 {
+		t.Fatal("entryView cost should be greater than 0.")
+	}
+	if creationTime := entryView.CreationTime(); creationTime <= 0 {
+		t.Fatal("entryView creationTime should be greater than 0.")
+	}
+	if expirationTime := entryView.ExpirationTime(); expirationTime <= 0 {
+		t.Fatal("entryView expirationTime should be greater than 0.")
+	}
+	if lastAccessTime := entryView.LastAccessTime(); lastAccessTime <= 0 {
+		t.Fatal("entryView lastAccessTime should be greater than 0.")
+	}
+	if lastUpdateTime := entryView.LastUpdateTime(); lastUpdateTime <= 0 {
+		t.Fatal("entryView lastUpdateTime should be greater than 0.")
+	}
+	if ttl := entryView.Ttl(); ttl <= 0 {
+		t.Fatal("entryView ttl should be greater than 0.")
+	}
+	AssertEqualf(t, err, entryView.LastStoredTime(), int64(0), "Map GetEntryView returned a wrong view.")
 	mp.Clear()
 }
 func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
@@ -685,10 +703,13 @@ func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
 }
 
 type AddEntry struct {
-	wg *sync.WaitGroup
+	wg       *sync.WaitGroup
+	event    IEntryEvent
+	mapEvent IMapEvent
 }
 
 func (addEntry *AddEntry) EntryAdded(event IEntryEvent) {
+	addEntry.event = event
 	addEntry.wg.Done()
 }
 func (addEntry *AddEntry) EntryUpdated(event IEntryEvent) {
@@ -701,6 +722,7 @@ func (addEntry *AddEntry) EntryEvicted(event IEntryEvent) {
 	addEntry.wg.Done()
 }
 func (addEntry *AddEntry) EntryEvictAll(event IMapEvent) {
+	addEntry.mapEvent = event
 	addEntry.wg.Done()
 }
 func (addEntry *AddEntry) EntryClearAll(event IMapEvent) {
@@ -716,6 +738,12 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	mp.Put("key123", "value")
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryAdded.event.Key(), "key123", "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryAdded.event.Value(), "value", "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryAdded.event.OldValue(), nil, "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryAdded.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryAdded.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -769,6 +797,8 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 	mp.EvictAll()
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
+	AssertEqualf(t, nil, entryAdded.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
+	AssertEqualf(t, nil, entryAdded.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -846,7 +876,7 @@ func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T
 func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
-	processor := newSimpleEntryProcessor(expectedValue)
+	processor := newSimpleEntryProcessor(expectedValue, 66)
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mp2, _ := client.GetMap("testMap2")
@@ -864,7 +894,7 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
-	processor := newSimpleEntryProcessor(expectedValue)
+	processor := newSimpleEntryProcessor(expectedValue, 66)
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mp2, _ := client.GetMap("testMap2")
@@ -888,7 +918,7 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
-	processor := newSimpleEntryProcessor(expectedValue)
+	processor := newSimpleEntryProcessor(expectedValue, 66)
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mp2, _ := client.GetMap("testMap2")
@@ -909,7 +939,7 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	expectedValue := "newValue"
-	processor := newSimpleEntryProcessor(expectedValue)
+	processor := newSimpleEntryProcessor(expectedValue, 66)
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mp2, _ := client.GetMap("testMap2")
@@ -930,6 +960,22 @@ func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 	mp.Clear()
 	client.Shutdown()
 }
+
+func TestMapProxy_ExecuteOnKeyWithNonRegisteredProcessor(t *testing.T) {
+	config := hazelcast.NewHazelcastConfig()
+	expectedValue := "newValue"
+	processor := newSimpleEntryProcessor(expectedValue, 68)
+	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mp2, _ := client.GetMap("testMap2")
+	testKey := "testingKey1"
+	testValue := "testingValue"
+	mp2.Put(testKey, testValue)
+	_, err := mp2.ExecuteOnKey(testKey, processor)
+	AssertErrorNotNil(t, err, "non registered processor should return an error")
+	mp.Clear()
+	client.Shutdown()
+}
 func TestMapProxy_Destroy(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
@@ -946,9 +992,9 @@ type simpleEntryProcessor struct {
 	identifiedFactory *identifiedFactory
 }
 
-func newSimpleEntryProcessor(value string) *simpleEntryProcessor {
+func newSimpleEntryProcessor(value string, factoryId int32) *simpleEntryProcessor {
 	processor := &simpleEntryProcessor{classId: 1, value: value}
-	identifiedFactory := &identifiedFactory{factoryId: 66, simpleEntryProcessor: processor}
+	identifiedFactory := &identifiedFactory{factoryId: factoryId, simpleEntryProcessor: processor}
 	processor.identifiedFactory = identifiedFactory
 	return processor
 }
