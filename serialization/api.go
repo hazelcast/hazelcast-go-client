@@ -418,3 +418,42 @@ type IPredicate interface {
 	// IPredicate implements IdentifiedDataSerializable interface.
 	IdentifiedDataSerializable
 }
+
+// ClassDefinition defines a class schema for Portable structs.
+type ClassDefinition interface {
+	// FactoryId returns factory ID of struct.
+	FactoryId() int32
+
+	// ClassId returns class ID of struct.
+	ClassId() int32
+
+	// Version returns version of struct.
+	Version() int32
+
+	// Field returns field definition of field by given name.
+	Field(name string) FieldDefinition
+
+	// FieldCount returns the number of fields in struct.
+	FieldCount() int
+}
+
+// FieldDefinition defines name, type, index of a field.
+type FieldDefinition interface {
+	// Type returns field type.
+	Type() int32
+
+	// Name returns field name.
+	Name() string
+
+	// Index returns field index.
+	Index() int32
+
+	// ClassId returns class ID of this field's struct.
+	ClassId() int32
+
+	// FactoryId returns factory ID of this field's struct.
+	FactoryId() int32
+
+	// Version returns version of this field's struct.
+	Version() int32
+}
