@@ -16,7 +16,9 @@ package serialization
 
 import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 )
 
 type PortableContext struct {
@@ -33,9 +35,9 @@ func (c *PortableContext) Version() int32 {
 	return c.portableVersion
 }
 
-func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryId int32, classId int32, version int32) (*ClassDefinition, error) {
+func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryId int32, classId int32, version int32) (ClassDefinition, error) {
 	register := true
-	classDefWriter := NewClassDefinitionWriter(c, factoryId, classId, version)
+	classDefBuilder := classdef.NewClassDefinitionBuilder(factoryId, classId, version)
 	input.ReadInt32()
 	fieldCount, err := input.ReadInt32()
 	if err != nil {
@@ -68,6 +70,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 		name := string(temp)
 		var fieldFactoryId int32 = 0
 		var fieldClassId int32 = 0
+		var fieldVersion int32 = 0
 		if fieldType == PORTABLE {
 			temp, err := input.ReadBool()
 			if err != nil {
@@ -86,7 +89,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 			}
 
 			if register {
-				fieldVersion, err := input.ReadInt32()
+				fieldVersion, err = input.ReadInt32()
 				if err != nil {
 					return nil, err
 				}
@@ -111,7 +114,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 					return nil, err
 				}
 				input.SetPosition(p)
-				fieldVersion, err := input.ReadInt32()
+				fieldVersion, err = input.ReadInt32()
 				if err != nil {
 					return nil, err
 				}
@@ -120,13 +123,13 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 				register = false
 			}
 		}
-		classDefWriter.addFieldByType(name, int32(fieldType), fieldFactoryId, fieldClassId)
+		classDefBuilder.AddField(NewFieldDefinitionImpl(i, name, int32(fieldType), fieldFactoryId, fieldClassId, fieldVersion))
 	}
-	classDefWriter.End()
-	classDefinition := classDefWriter.GetDefinition()
+
+	classDefinition := classDefBuilder.Build()
 
 	if register {
-		classDefinition, err = classDefWriter.RegisterAndGet()
+		classDefinition, err = c.RegisterClassDefinition(classDefinition)
 		if err != nil {
 			return classDefinition, nil
 		}
@@ -134,26 +137,20 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 	return classDefinition, nil
 }
 
-func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable Portable) (*ClassDefinition, error) {
+func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable Portable) (ClassDefinition, error) {
 	var err error
 	version := c.ClassVersion(portable)
 	classDef := c.LookUpClassDefinition(portable.FactoryId(), portable.ClassId(), version)
 	if classDef == nil {
-		classDef, err = c.GenerateClassDefinitionForPortable(portable)
-		if err != nil {
-			return classDef, err
-		}
-
-		_, err = c.RegisterClassDefinition(classDef)
-		if err != nil {
-			return classDef, err
-		}
+		writer := NewClassDefinitionWriter(c, portable.FactoryId(), portable.ClassId(), version)
+		portable.WritePortable(writer)
+		classDef, err = writer.registerAndGet()
 	}
-	return classDef, nil
+	return classDef, err
 
 }
 
-func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, version int32) *ClassDefinition {
+func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, version int32) ClassDefinition {
 	factory := c.classDefContext[factoryId]
 	if factory == nil {
 		return nil
@@ -162,19 +159,8 @@ func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, 
 	}
 }
 
-func (c *PortableContext) GenerateClassDefinitionForPortable(portable Portable) (*ClassDefinition, error) {
-	version := c.ClassVersion(portable)
-	classDefinitionWriter := NewClassDefinitionWriter(c, portable.FactoryId(), portable.ClassId(), version)
-	err := portable.WritePortable(classDefinitionWriter)
-	if err != nil {
-		return nil, err
-	}
-	classDefinitionWriter.End()
-	return classDefinitionWriter.RegisterAndGet()
-}
-
-func (c *PortableContext) RegisterClassDefinition(classDefinition *ClassDefinition) (*ClassDefinition, error) {
-	factoryId := classDefinition.factoryId
+func (c *PortableContext) RegisterClassDefinition(classDefinition ClassDefinition) (ClassDefinition, error) {
+	factoryId := classDefinition.FactoryId()
 	if c.classDefContext[factoryId] == nil {
 		c.classDefContext[factoryId] = NewClassDefinitionContext(factoryId, c.portableVersion)
 	}
