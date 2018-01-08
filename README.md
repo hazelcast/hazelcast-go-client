@@ -73,7 +73,7 @@ Following code snippet illustrates a simple usage of Map in Hazelcast Go Client.
 
 Please see Hazelcast Go [code samples](https://github.com/hazelcast/hazelcast-go-client/blob/master/samples) for more examples.
 
-You can also refer to Hazelcast Go [API Documentation](https://github.com/hazelcast/hazelcast-go-client/tree/master/core).
+You can also refer to Hazelcast Go [API Documentation](https://godoc.org/github.com/hazelcast/hazelcast-go-client).
 
 # Serialization Considerations
 
