@@ -1,3 +1,4 @@
+[![GoDoc](https://godoc.org/github.com/hazelcast/hazelcast-go-client?status.svg)](https://godoc.org/github.com/hazelcast/hazelcast-go-client)
 # Table of Contents
 
 * [Hazelcast Go Client](#hazelcast-go-client)
