@@ -17,6 +17,7 @@ package proxy
 import (
 	"github.com/hazelcast/hazelcast-go-client"
 	. "github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
@@ -47,6 +48,27 @@ func TestMain(m *testing.M) {
 	mp.Clear()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestMapProxy_Name(t *testing.T) {
+	name := "myMap"
+	if name != mp.Name() {
+		t.Errorf("Name() failed")
+	}
+}
+
+func TestMapProxy_ServiceName(t *testing.T) {
+	serviceName := common.SERVICE_NAME_MAP
+	if serviceName != mp.ServiceName() {
+		t.Errorf("ServiceName() failed")
+	}
+}
+
+func TestMapProxy_PartitionKey(t *testing.T) {
+	name := "myMap"
+	if name != mp.PartitionKey() {
+		t.Errorf("PartitionKey() failed")
+	}
 }
 
 func TestMapProxy_SinglePutGet(t *testing.T) {
