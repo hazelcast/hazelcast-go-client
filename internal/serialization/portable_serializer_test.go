@@ -15,8 +15,11 @@
 package serialization
 
 import (
+	"fmt"
 	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 	"reflect"
 	"testing"
 )
@@ -103,8 +106,30 @@ func (s *student2) ReadPortable(reader PortableReader) error {
 	return nil
 }
 
-func TestPortableSerializer(t *testing.T) {
+type student3 struct {
+}
 
+func (*student3) FactoryId() int32 {
+	return 1
+}
+
+func (*student3) ClassId() int32 {
+	return 1
+}
+
+func (*student3) Version() int32 {
+	return 1
+}
+
+func (s *student3) WritePortable(writer PortableWriter) error {
+	return nil
+}
+
+func (s *student3) ReadPortable(reader PortableReader) error {
+	return nil
+}
+
+func TestPortableSerializer(t *testing.T) {
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
 	service := NewSerializationService(config)
@@ -115,7 +140,30 @@ func TestPortableSerializer(t *testing.T) {
 	if !reflect.DeepEqual(ret, expectedRet) {
 		t.Errorf("ReadObject() returns %v expected %v", ret, expectedRet)
 	}
+}
 
+func TestPortableSerializer_NoFactory(t *testing.T) {
+	config := NewSerializationConfig()
+	service := NewSerializationService(config)
+	expectedRet := &student3{}
+	data, _ := service.ToData(expectedRet)
+	_, err := service.ToObject(data)
+
+	if _, ok := err.(*core.HazelcastSerializationError); !ok {
+		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
+	}
+}
+
+func TestPortableSerializer_NilPortable(t *testing.T) {
+	config := NewSerializationConfig()
+	service := NewSerializationService(config)
+	expectedRet := &student2{}
+	data, _ := service.ToData(expectedRet)
+	_, err := service.ToObject(data)
+
+	if _, ok := err.(*core.HazelcastSerializationError); !ok {
+		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
+	}
 }
 
 type fake struct {
@@ -159,7 +207,11 @@ func (f *fake) WritePortable(writer PortableWriter) error {
 	writer.WriteFloat32("f32", f.f32)
 	writer.WriteFloat64("f64", f.f64)
 	writer.WriteUTF("utf", f.utf)
-	writer.WritePortable("portable", f.portable)
+	if f.portable != nil {
+		writer.WritePortable("portable", f.portable)
+	} else {
+		writer.WriteNilPortable("portable", 2, 1)
+	}
 	writer.WriteByteArray("byt_arr", f.byt_arr)
 	writer.WriteBoolArray("boo_arr", f.boo_arr)
 	writer.WriteUInt16Array("ui16_arr", f.ui16_arr)
@@ -198,7 +250,6 @@ func (f *fake) ReadPortable(reader PortableReader) error {
 }
 
 func TestPortableSerializer2(t *testing.T) {
-
 	config := NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
 	service := NewSerializationService(config)
@@ -230,7 +281,70 @@ func TestPortableSerializer2(t *testing.T) {
 	ret, _ := service.ToObject(data)
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("ReadObject() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadObject() failed")
 	}
 
+}
+
+func TestPortableSerializer3(t *testing.T) {
+	config := NewSerializationConfig()
+	config.AddPortableFactory(2, &PortableFactory1{})
+	service := NewSerializationService(config)
+	service2 := NewSerializationService(config)
+	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
+	data, _ := service.ToData(expectedRet)
+	ret, _ := service2.ToObject(data)
+
+	if !reflect.DeepEqual(ret, expectedRet) {
+		t.Errorf("ReadObject() returns %v expected %v", ret, expectedRet)
+	}
+}
+
+func TestPortableSerializer4(t *testing.T) {
+	config := NewSerializationConfig()
+	config.AddPortableFactory(2, &PortableFactory1{})
+	builder := classdef.NewClassDefinitionBuilder(2, 1, 0)
+	err := builder.AddInt16Field("id")
+	err = builder.AddInt32Field("age")
+	err = builder.AddUTFField("name")
+	if err != nil {
+		t.Errorf("ClassDefinitionBuilder works wrong")
+	}
+	cd := builder.Build()
+	config.AddClassDefinition(cd)
+
+	service := NewSerializationService(config)
+
+	var byt byte = 255
+	var boo bool = true
+	var ui16 uint16 = 65535
+	var i16 int16 = -32768
+	var i32 int32 = -2147483648
+	var i64 int64 = -9223372036854775808
+	var f32 float32 = -3.4E+38
+	var f64 float64 = -1.7E+308
+	var utf string = "Günaydın, こんにちは"
+	var byt_arr []byte = []byte{127, 128, 255, 0, 4, 6, 8, 121}
+	var boo_arr []bool = []bool{true, true, false, true, false, false, false, true, false, true}
+	var ui16_arr []uint16 = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
+	var i16_arr []int16 = []int16{-32768, -2222, 32767, 0}
+	var i32_arr []int32 = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
+	var i64_arr []int64 = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
+	var f32_arr []float32 = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
+	var f64_arr []float64 = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
+	var utf_arr []string = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
+	var portable_arr []Portable = []Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+
+	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, nil,
+		byt_arr, boo_arr, ui16_arr, i16_arr, i32_arr, i64_arr, f32_arr, f64_arr, utf_arr, portable_arr}
+
+	data, _ := service.ToData(expectedRet)
+	ret, _ := service.ToObject(data)
+
+	config2 := NewSerializationConfig()
+	config2.AddPortableFactory(2, &PortableFactory1{})
+
+	if !reflect.DeepEqual(ret, expectedRet) {
+		t.Errorf("ReadObject() failed")
+	}
 }
