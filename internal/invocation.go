@@ -89,19 +89,20 @@ func (invocation *Invocation) Result() (*ClientMessage, error) {
 }
 
 type InvocationService struct {
-	client                    *HazelcastClient
-	quit                      chan struct{}
-	nextCorrelation           int64
-	responseWaitings          map[int64]*Invocation
-	eventHandlers             map[int64]*Invocation
-	sending                   chan *Invocation
-	responseChannel           chan *ClientMessage
-	cleanupConnectionChannel  chan *ConnectionAndError
-	removeEventHandlerChannel chan int64
-	notSentMessages           chan int64
-	invoke                    func(*Invocation)
-	sendToConnectionChannel   chan *invocationConnection
-	isShutdown                atomic.Value
+	client                      *HazelcastClient
+	quit                        chan struct{}
+	nextCorrelation             int64
+	responseWaitings            map[int64]*Invocation
+	eventHandlers               map[int64]*Invocation
+	sending                     chan *Invocation
+	responseChannel             chan *ClientMessage
+	cleanupConnectionChannel    chan *ConnectionAndError
+	removeEventHandlerChannel   chan int64
+	notSentMessages             chan int64
+	invoke                      func(*Invocation)
+	sendToConnectionChannel     chan *invocationConnection
+	unRegisterInvocationChannel chan int64
+	isShutdown                  atomic.Value
 }
 type invocationConnection struct {
 	invocation *Invocation
@@ -113,10 +114,11 @@ func NewInvocationService(client *HazelcastClient) *InvocationService {
 		eventHandlers:   make(map[int64]*Invocation),
 		responseChannel: make(chan *ClientMessage, 1),
 		quit:            make(chan struct{}, 0),
-		cleanupConnectionChannel:  make(chan *ConnectionAndError, 1),
-		sendToConnectionChannel:   make(chan *invocationConnection, 100),
-		removeEventHandlerChannel: make(chan int64, 1),
-		notSentMessages:           make(chan int64, 10000),
+		cleanupConnectionChannel:    make(chan *ConnectionAndError, 1),
+		sendToConnectionChannel:     make(chan *invocationConnection, 100),
+		removeEventHandlerChannel:   make(chan int64, 1),
+		notSentMessages:             make(chan int64, 10000),
+		unRegisterInvocationChannel: make(chan int64, 10000),
 	}
 
 	service.isShutdown.Store(false)
@@ -167,6 +169,8 @@ func (invocationService *InvocationService) process() {
 			invocationService.cleanupConnectionInternal(connectionAndErr.connection, connectionAndErr.error)
 		case correlationId := <-invocationService.removeEventHandlerChannel:
 			invocationService.removeEventHandlerInternal(correlationId)
+		case correlationId := <-invocationService.unRegisterInvocationChannel:
+			invocationService.unRegisterInvocation(correlationId)
 		case invocationConnection := <-invocationService.sendToConnectionChannel:
 			invocationService.sendToConnection(invocationConnection.invocation, invocationConnection.connection)
 		case <-invocationService.quit:
@@ -273,13 +277,14 @@ func (invocationService *InvocationService) unRegisterInvocation(correlationId i
 	if invocation, ok := invocationService.eventHandlers[correlationId]; ok {
 		return invocation, ok
 	}
-	log.Println("no invocation has been found with the correlation id: ", correlationId)
 	return nil, false
 }
 
 func (invocationService *InvocationService) handleNotSentInvocation(correlationId int64) {
 	if invocation, ok := invocationService.unRegisterInvocation(correlationId); ok {
 		invocationService.handleException(invocation, NewHazelcastIOError("packet is not sent", nil))
+	} else {
+		log.Println("no invocation has been found with the correlation id: ", correlationId)
 	}
 }
 func (invocationService *InvocationService) removeEventHandler(correlationId int64) {
@@ -308,6 +313,8 @@ func (invocationService *InvocationService) handleResponse(response *ClientMessa
 		} else {
 			invocation.response <- response
 		}
+	} else {
+		log.Println("no invocation has been found with the correlation id: ", correlationId)
 	}
 }
 
@@ -332,6 +339,7 @@ func (invocationService *InvocationService) cleanupConnectionInternal(connection
 
 }
 func (invocationService *InvocationService) handleException(invocation *Invocation, err error) {
+	invocationService.unRegisterInvocationChannel <- invocation.request.CorrelationId()
 	if !invocationService.client.LifecycleService.isLive.Load().(bool) {
 		invocation.err <- NewHazelcastClientNotActiveError(err.Error(), err)
 		return
