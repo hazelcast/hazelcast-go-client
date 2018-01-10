@@ -36,6 +36,7 @@ type Invocation struct {
 	response                chan *ClientMessage
 	closed                  chan bool
 	err                     chan error
+	done                    chan bool
 	eventHandler            func(clientMessage *ClientMessage)
 	registrationId          *string
 	timeout                 <-chan time.Time
@@ -60,11 +61,14 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 		response:        make(chan *ClientMessage, 10),
 		err:             make(chan error, 1),
 		closed:          make(chan bool, 1),
+		done:            make(chan bool, 1),
 		timeout:         time.After(client.ClientConfig.ClientNetworkConfig().InvocationTimeout()),
 	}
 	invocation.isTimedout.Store(false)
 	go func() {
 		select {
+		case <-invocation.done:
+			return
 		case <-invocation.timeout:
 			invocation.timedoutTime.Store(time.Now())
 			invocation.isTimedout.Store(true)
@@ -76,8 +80,10 @@ func NewInvocation(request *ClientMessage, partitionId int32, address *Address, 
 func (invocation *Invocation) Result() (*ClientMessage, error) {
 	select {
 	case response := <-invocation.response:
+		invocation.done <- true
 		return response, nil
 	case err := <-invocation.err:
+		invocation.done <- true
 		return nil, err
 	}
 }
