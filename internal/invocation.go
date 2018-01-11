@@ -356,9 +356,6 @@ func (invocationService *InvocationService) handleException(invocation *Invocati
 		return
 	}
 	if invocationService.shouldRetryInvocation(invocation, err) {
-		if invocation.boundConnection != nil {
-			return
-		}
 		go func() {
 			if invocationService.isShutdown.Load().(bool) {
 				invocation.err <- NewHazelcastClientNotActiveError(err.Error(), err)
