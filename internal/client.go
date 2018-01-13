@@ -93,6 +93,7 @@ func (client *HazelcastClient) Shutdown() {
 		client.PartitionService.shutdown()
 		client.InvocationService.shutdown()
 		client.HeartBeatService.shutdown()
+		client.ClusterService.shutdown()
 		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTDOWN)
 	}
 }

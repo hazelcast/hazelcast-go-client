@@ -325,3 +325,7 @@ func (clusterService *ClusterService) onConnectionClosed(connection *Connection,
 func (clusterSerice *ClusterService) onConnectionOpened(connection *Connection) {
 
 }
+
+func (clusterService *ClusterService) shutdown() {
+	clusterService.members.Store(make([]Member, 0))
+}

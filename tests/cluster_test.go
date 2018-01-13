@@ -239,6 +239,27 @@ func TestConnectToClusterWithoutPort(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+func TestMemberScaleDown(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	member2, _ := remoteController.StartMember(cluster.ID)
+	member3, _ := remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewHazelcastClient()
+	mp, _ := client.GetMap("test")
+	members := client.GetCluster().GetMemberList()
+	AssertEqualf(t, nil, len(members), 3, "GetMemberList() returned wrong members")
+	for i := 0; i < 100; i++ {
+		mp.Put(i, i)
+	}
+	remoteController.ShutdownMember(cluster.ID, member2.UUID)
+	remoteController.ShutdownMember(cluster.ID, member3.UUID)
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	time.Sleep(15 * time.Second)
+	newMembers := client.GetCluster().GetMemberList()
+	AssertEqualf(t, nil, len(newMembers), 0, "GetMemberList() returned wrong members")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
 
 type mapListener struct {
 	wg *sync.WaitGroup
