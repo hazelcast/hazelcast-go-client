@@ -80,6 +80,15 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	mp.Clear()
 }
 
+func TestMapProxy_SinglePutGetInt(t *testing.T) {
+	testKey := 1
+	testValue := 25
+	mp.Put(testKey, testValue)
+	res, err := mp.Get(testKey)
+	AssertEqualf(t, err, res, int64(testValue), "get returned a wrong value")
+	mp.Clear()
+}
+
 func TestMapProxy_PutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.Put(nil, testValue)

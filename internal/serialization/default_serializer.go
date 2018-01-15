@@ -174,7 +174,11 @@ func (*Integer64Serializer) Read(input DataInput) (interface{}, error) {
 }
 
 func (*Integer64Serializer) Write(output DataOutput, i interface{}) error {
-	output.WriteInt64(i.(int64))
+	val, ok := i.(int64)
+	if !ok {
+		val = int64(i.(int))
+	}
+	output.WriteInt64(val)
 	return nil
 }
 
@@ -309,7 +313,16 @@ func (*Integer64ArraySerializer) Read(input DataInput) (interface{}, error) {
 }
 
 func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) error {
-	output.WriteInt64Array(i.([]int64))
+	val, ok := i.([]int64)
+	if !ok {
+		tmp := i.([]int)
+		length := len(tmp)
+		val = make([]int64, length)
+		for k := 0; k < length; k++ {
+			val[k] = int64(tmp[k])
+		}
+	}
+	output.WriteInt64Array(val)
 	return nil
 }
 

@@ -21,6 +21,7 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/predicates"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
+	"strconv"
 )
 
 ////// SerializationService ///////////
@@ -206,7 +207,11 @@ func (service *SerializationService) registerGlobalSerializer(globalSerializer S
 }
 
 func (service *SerializationService) getIdByObject(obj interface{}) *int32 {
-	if val, ok := service.nameToId[reflect.TypeOf(obj).String()]; ok {
+	typ := reflect.TypeOf(obj).String()
+	if typ == "int" || typ == "[]int" {
+		typ = typ + strconv.Itoa(64)
+	}
+	if val, ok := service.nameToId[typ]; ok {
 		return &val
 	}
 	return nil
