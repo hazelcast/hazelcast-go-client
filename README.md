@@ -80,6 +80,8 @@ You can also refer to Hazelcast Go [API Documentation](https://godoc.org/github.
 
 Hazelcast needs to serialize objects in order to be able to keep them in the server memory. For primitive types, it uses Hazelcast native serialization. For other complex types (e.g. Go objects), it uses Gob serialization.
 
+> **NOTE: `int` and `[]int` types in Go Language are serialized as `int64` and `[]int64` respectively by Hazelcast Serialization.**
+
 For example, when you try to query your data using predicates, this querying is handled on the server side so Hazelcast does not have to bring all data to the client but only the relevant entries. Otherwise, there would be a lot of unneccessary data traffic between the client and the server and the performance would severely drop.
 Because predicates run on the server side, the server should be able to reason about your objects. That is why you need to implement serialization on the server side.
 
