@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -17,58 +17,52 @@ package serialization
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 )
 
 type ClassDefinitionWriter struct {
-	portableContext    *PortableContext
-	buildingDefinition *ClassDefinition
-	index              int32
-	fieldDefinitions   map[string]*FieldDefinition
+	portableContext        *PortableContext
+	classDefinitionBuilder *ClassDefinitionBuilder
 }
 
 func NewClassDefinitionWriter(portableContext *PortableContext, factoryId int32, classId int32, version int32) *ClassDefinitionWriter {
-	return &ClassDefinitionWriter{portableContext, NewClassDefinition(factoryId, classId, version), 0, make(map[string]*FieldDefinition)}
-}
-
-func (cdw *ClassDefinitionWriter) addFieldByType(fieldName string, fieldType int32, factoryId int32, classId int32) {
-	cdw.fieldDefinitions[fieldName] = NewFieldDefinition(cdw.index, fieldName, fieldType, factoryId, classId)
-	cdw.index += 1
+	return &ClassDefinitionWriter{portableContext, NewClassDefinitionBuilder(factoryId, classId, version)}
 }
 
 func (cdw *ClassDefinitionWriter) WriteByte(fieldName string, value byte) {
-	cdw.addFieldByType(fieldName, BYTE, 0, 0)
+	cdw.classDefinitionBuilder.AddByteField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteBool(fieldName string, value bool) {
-	cdw.addFieldByType(fieldName, BOOLEAN, 0, 0)
+	cdw.classDefinitionBuilder.AddBoolField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteUInt16(fieldName string, value uint16) {
-	cdw.addFieldByType(fieldName, CHAR, 0, 0)
+	cdw.classDefinitionBuilder.AddUInt16Field(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteInt16(fieldName string, value int16) {
-	cdw.addFieldByType(fieldName, SHORT, 0, 0)
+	cdw.classDefinitionBuilder.AddInt16Field(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteInt32(fieldName string, value int32) {
-	cdw.addFieldByType(fieldName, INT, 0, 0)
+	cdw.classDefinitionBuilder.AddInt32Field(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteInt64(fieldName string, value int64) {
-	cdw.addFieldByType(fieldName, LONG, 0, 0)
+	cdw.classDefinitionBuilder.AddInt64Field(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteFloat32(fieldName string, value float32) {
-	cdw.addFieldByType(fieldName, FLOAT, 0, 0)
+	cdw.classDefinitionBuilder.AddFloat32Field(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteFloat64(fieldName string, value float64) {
-	cdw.addFieldByType(fieldName, DOUBLE, 0, 0)
+	cdw.classDefinitionBuilder.AddFloat64Field(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
-	cdw.addFieldByType(fieldName, UTF, 0, 0)
+	cdw.classDefinitionBuilder.AddUTFField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable Portable) error {
@@ -79,7 +73,7 @@ func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable Porta
 	if err != nil {
 		return err
 	}
-	cdw.addFieldByType(fieldName, PORTABLE, nestedCD.factoryId, nestedCD.classId)
+	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
 	return nil
 }
 
@@ -89,44 +83,44 @@ func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryId i
 	if nestedCD == nil {
 		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
-	cdw.addFieldByType(fieldName, PORTABLE, nestedCD.factoryId, nestedCD.classId)
+	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
 	return nil
 }
 
 func (cdw *ClassDefinitionWriter) WriteByteArray(fieldName string, value []byte) {
-	cdw.addFieldByType(fieldName, BYTE_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddByteArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteBoolArray(fieldName string, value []bool) {
-	cdw.addFieldByType(fieldName, BOOLEAN_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddBoolArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteUInt16Array(fieldName string, value []uint16) {
-	cdw.addFieldByType(fieldName, CHAR_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddUInt16ArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteInt16Array(fieldName string, value []int16) {
-	cdw.addFieldByType(fieldName, SHORT_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddInt16ArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteInt32Array(fieldName string, value []int32) {
-	cdw.addFieldByType(fieldName, INT_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddInt32ArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteInt64Array(fieldName string, value []int64) {
-	cdw.addFieldByType(fieldName, LONG_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddInt64ArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteFloat32Array(fieldName string, value []float32) {
-	cdw.addFieldByType(fieldName, FLOAT_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddFloat32ArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteFloat64Array(fieldName string, value []float64) {
-	cdw.addFieldByType(fieldName, DOUBLE_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddFloat64ArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string) {
-	cdw.addFieldByType(fieldName, UTF_ARRAY, 0, 0)
+	cdw.classDefinitionBuilder.AddUTFArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []Portable) error {
@@ -141,20 +135,12 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 	if err != nil {
 		return nil
 	}
-	cdw.addFieldByType(fieldName, PORTABLE_ARRAY, nestedCD.factoryId, nestedCD.classId)
+
+	cdw.classDefinitionBuilder.AddPortableArrayField(fieldName, nestedCD)
 	return nil
 }
 
-func (cdw *ClassDefinitionWriter) End() {
-	for _, field := range cdw.fieldDefinitions {
-		cdw.buildingDefinition.addFieldDefinition(cdw.fieldDefinitions[field.fieldName])
-	}
-}
-
-func (cdw *ClassDefinitionWriter) RegisterAndGet() (*ClassDefinition, error) {
-	return cdw.portableContext.RegisterClassDefinition(cdw.buildingDefinition)
-}
-
-func (cdw *ClassDefinitionWriter) GetDefinition() *ClassDefinition {
-	return cdw.buildingDefinition
+func (cdw *ClassDefinitionWriter) registerAndGet() (ClassDefinition, error) {
+	cd := cdw.classDefinitionBuilder.Build()
+	return cdw.portableContext.RegisterClassDefinition(cd)
 }

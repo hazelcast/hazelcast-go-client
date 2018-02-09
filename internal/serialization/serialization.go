@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/predicates"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
+	"strconv"
 )
 
 ////// SerializationService ///////////
@@ -113,25 +114,25 @@ func (service *SerializationService) registerDefaultSerializers() {
 	service.nameToId["uint8"] = CONSTANT_TYPE_BYTE
 
 	service.registerSerializer(&BoolSerializer{})
-	service.nameToId["bool"] = CONSTANT_TYPE_BOOLEAN
+	service.nameToId["bool"] = CONSTANT_TYPE_BOOL
 
 	service.registerSerializer(&UInteger16Serializer{})
-	service.nameToId["uint16"] = CONSTANT_TYPE_CHAR
+	service.nameToId["uint16"] = CONSTANT_TYPE_UINTEGER16
 
 	service.registerSerializer(&Integer16Serializer{})
-	service.nameToId["int16"] = CONSTANT_TYPE_SHORT
+	service.nameToId["int16"] = CONSTANT_TYPE_INTEGER16
 
 	service.registerSerializer(&Integer32Serializer{})
-	service.nameToId["int32"] = CONSTANT_TYPE_INTEGER
+	service.nameToId["int32"] = CONSTANT_TYPE_INTEGER32
 
 	service.registerSerializer(&Integer64Serializer{})
-	service.nameToId["int64"] = CONSTANT_TYPE_LONG
+	service.nameToId["int64"] = CONSTANT_TYPE_INTEGER64
 
 	service.registerSerializer(&Float32Serializer{})
-	service.nameToId["float32"] = CONSTANT_TYPE_FLOAT
+	service.nameToId["float32"] = CONSTANT_TYPE_FLOAT32
 
 	service.registerSerializer(&Float64Serializer{})
-	service.nameToId["float64"] = CONSTANT_TYPE_DOUBLE
+	service.nameToId["float64"] = CONSTANT_TYPE_FLOAT64
 
 	service.registerSerializer(&StringSerializer{})
 	service.nameToId["string"] = CONSTANT_TYPE_STRING
@@ -143,25 +144,25 @@ func (service *SerializationService) registerDefaultSerializers() {
 	service.nameToId["[]uint8"] = CONSTANT_TYPE_BYTE_ARRAY
 
 	service.registerSerializer(&BoolArraySerializer{})
-	service.nameToId["[]bool"] = CONSTANT_TYPE_BOOLEAN_ARRAY
+	service.nameToId["[]bool"] = CONSTANT_TYPE_BOOL_ARRAY
 
 	service.registerSerializer(&UInteger16ArraySerializer{})
-	service.nameToId["[]uint16"] = CONSTANT_TYPE_CHAR_ARRAY
+	service.nameToId["[]uint16"] = CONSTANT_TYPE_UINTEGER16_ARRAY
 
 	service.registerSerializer(&Integer16ArraySerializer{})
-	service.nameToId["[]int16"] = CONSTANT_TYPE_SHORT_ARRAY
+	service.nameToId["[]int16"] = CONSTANT_TYPE_INTEGER16_ARRAY
 
 	service.registerSerializer(&Integer32ArraySerializer{})
-	service.nameToId["[]int32"] = CONSTANT_TYPE_INTEGER_ARRAY
+	service.nameToId["[]int32"] = CONSTANT_TYPE_INTEGER32_ARRAY
 
 	service.registerSerializer(&Integer64ArraySerializer{})
-	service.nameToId["[]int64"] = CONSTANT_TYPE_LONG_ARRAY
+	service.nameToId["[]int64"] = CONSTANT_TYPE_INTEGER64_ARRAY
 
 	service.registerSerializer(&Float32ArraySerializer{})
-	service.nameToId["[]float32"] = CONSTANT_TYPE_FLOAT_ARRAY
+	service.nameToId["[]float32"] = CONSTANT_TYPE_FLOAT32_ARRAY
 
 	service.registerSerializer(&Float64ArraySerializer{})
-	service.nameToId["[]float64"] = CONSTANT_TYPE_DOUBLE_ARRAY
+	service.nameToId["[]float64"] = CONSTANT_TYPE_FLOAT64_ARRAY
 
 	service.registerSerializer(&StringArraySerializer{})
 	service.nameToId["[]string"] = CONSTANT_TYPE_STRING_ARRAY
@@ -171,7 +172,10 @@ func (service *SerializationService) registerDefaultSerializers() {
 
 	service.registerIdentifiedFactories()
 
-	service.registerSerializer(NewPortableSerializer(service, service.serializationConfig.PortableFactories(), service.serializationConfig.PortableVersion()))
+	portableSerializer := NewPortableSerializer(service, service.serializationConfig.PortableFactories(), service.serializationConfig.PortableVersion())
+
+	service.registerClassDefinitions(portableSerializer, service.serializationConfig.ClassDefinitions())
+	service.registerSerializer(portableSerializer)
 	service.nameToId["!portable"] = CONSTANT_TYPE_PORTABLE
 
 }
@@ -190,6 +194,12 @@ func (service *SerializationService) registerSerializer(serializer Serializer) e
 	return nil
 }
 
+func (service *SerializationService) registerClassDefinitions(portableSerializer *PortableSerializer, classDefinitions []ClassDefinition) {
+	for _, cd := range classDefinitions {
+		portableSerializer.portableContext.RegisterClassDefinition(cd)
+	}
+}
+
 func (service *SerializationService) registerGlobalSerializer(globalSerializer Serializer) {
 	if globalSerializer != nil {
 		service.registerSerializer(globalSerializer)
@@ -197,7 +207,11 @@ func (service *SerializationService) registerGlobalSerializer(globalSerializer S
 }
 
 func (service *SerializationService) getIdByObject(obj interface{}) *int32 {
-	if val, ok := service.nameToId[reflect.TypeOf(obj).String()]; ok {
+	typ := reflect.TypeOf(obj).String()
+	if typ == "int" || typ == "[]int" {
+		typ = typ + strconv.Itoa(64)
+	}
+	if val, ok := service.nameToId[typ]; ok {
 		return &val
 	}
 	return nil

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -121,8 +121,10 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwn
 			return
 		}
 		//Open new connection
-		err <- connectionManager.openNewConnection(address, ch, asOwner)
-
+		error := connectionManager.openNewConnection(address, ch, asOwner)
+		if error != nil {
+			err <- error
+		}
 	}()
 	return ch, err
 }
@@ -198,14 +200,6 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		}
 	}
 	return nil
-}
-func (connectionManager *ConnectionManager) closeConnection(address core.IAddress, cause error) {
-	connectionManager.lock.RLock()
-	connection, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]
-	connectionManager.lock.RUnlock()
-	if found {
-		connection.Close(cause)
-	}
 }
 func (connectionManager *ConnectionManager) fireConnectionAddedEvent(connection *Connection) {
 	listeners := connectionManager.connectionListeners.Load().([]connectionListener)

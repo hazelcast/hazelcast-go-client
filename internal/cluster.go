@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -304,10 +304,10 @@ func (clusterService *ClusterService) GetMemberList() []core.IMember {
 	}
 	return members
 }
-func (clusterService *ClusterService) GetMember(address *Address) *Member {
+func (clusterService *ClusterService) GetMember(address core.IAddress) core.IMember {
 	membersList := clusterService.members.Load().([]Member)
 	for _, member := range membersList {
-		if member.Address() == address {
+		if *member.Address().(*Address) == *address.(*Address) {
 			return &member
 		}
 	}

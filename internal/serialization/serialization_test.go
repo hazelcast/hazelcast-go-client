@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -242,4 +242,33 @@ func TestGobSerializer(t *testing.T) {
 		t.Errorf("Gob Serializer failed")
 	}
 
+}
+
+func TestInt64SerializerWithInt(t *testing.T) {
+	var id int = 15
+	config := NewSerializationConfig()
+	service := NewSerializationService(config)
+	data, _ := service.ToData(id)
+	ret, _ := service.ToObject(data)
+
+	if !reflect.DeepEqual(int64(id), ret) {
+		t.Errorf("int type serialization failed")
+	}
+}
+
+func TestInt64ArraySerializerWithIntArray(t *testing.T) {
+	var ids []int = []int{15, 10, 20, 12, 35}
+	config := NewSerializationConfig()
+	service := NewSerializationService(config)
+	data, _ := service.ToData(ids)
+	ret, _ := service.ToObject(data)
+
+	var ids64 []int64 = make([]int64, 5)
+	for k := 0; k < 5; k++ {
+		ids64[k] = int64(ids[k])
+	}
+
+	if !reflect.DeepEqual(ids64, ret) {
+		t.Errorf("[]int type serialization failed")
+	}
 }

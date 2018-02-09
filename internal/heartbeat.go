@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -80,9 +80,7 @@ func (heartBeat *HeartBeatService) start() {
 	}()
 }
 func (heartBeat *HeartBeatService) heartBeat() {
-	heartBeat.client.ConnectionManager.lock.RLock()
-	defer heartBeat.client.ConnectionManager.lock.RUnlock()
-	for _, connection := range heartBeat.client.ConnectionManager.connections {
+	for _, connection := range heartBeat.client.ConnectionManager.getActiveConnections() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
 			if connection.heartBeating {
@@ -93,12 +91,13 @@ func (heartBeat *HeartBeatService) heartBeat() {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
 			sentInvocation := heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
+			copyConnection := connection
 			go func() {
 				_, err := sentInvocation.Result()
 				if err != nil {
-					log.Println("error receiving heartbeat for connection, ", connection)
+					log.Println("error receiving heartbeat for connection, ", copyConnection)
 				} else {
-					connection.lastHeartbeatReceived.Store(time.Now())
+					copyConnection.lastHeartbeatReceived.Store(time.Now())
 				}
 			}()
 		} else {

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package internal
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
@@ -52,8 +51,8 @@ type Connection struct {
 
 func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64, connectionManager *ConnectionManager) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
-		received:             make(chan *ClientMessage, 0),
-		closed:               make(chan bool, 0),
+		received:             make(chan *ClientMessage, 1),
+		closed:               make(chan bool, 1),
 		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
@@ -77,11 +76,9 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	go connection.read()
 	return &connection
 }
-func (connection *Connection) IsConnected() bool {
-	return connection.socket != nil && connection.socket.RemoteAddr() != nil
-}
+
 func (connection *Connection) IsAlive() bool {
-	return connection.status == 0
+	return atomic.LoadInt32(&connection.status) == 0
 }
 func (connection *Connection) writePool() {
 	//Writer process
@@ -99,12 +96,16 @@ func (connection *Connection) writePool() {
 	}
 }
 
-func (connection *Connection) Send(clientMessage *ClientMessage) error {
+func (connection *Connection) Send(clientMessage *ClientMessage) bool {
+	if !connection.IsAlive() {
+		return false
+	}
 	select {
-	case connection.pending <- clientMessage:
-		return nil
 	case <-connection.closed:
-		return errors.New("Connection Closed.")
+		return false
+	case connection.pending <- clientMessage:
+		return true
+
 	}
 }
 

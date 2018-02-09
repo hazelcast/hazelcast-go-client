@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package classdef
 
 import (
 	"fmt"
 	. "github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -24,32 +25,32 @@ import (
 
 type ClassDefinitionContext struct {
 	factoryId int32
-	classDefs map[string]*ClassDefinition
+	classDefs map[string]ClassDefinition
 }
 
 func NewClassDefinitionContext(factoryId int32, portableVersion int32) *ClassDefinitionContext {
-	return &ClassDefinitionContext{factoryId, make(map[string]*ClassDefinition)}
+	return &ClassDefinitionContext{factoryId, make(map[string]ClassDefinition)}
 }
 
-func (c *ClassDefinitionContext) LookUp(classId int32, version int32) *ClassDefinition {
+func (c *ClassDefinitionContext) LookUp(classId int32, version int32) ClassDefinition {
 	return c.classDefs[encodeVersionedClassId(classId, version)]
 }
 
-func (c *ClassDefinitionContext) Register(classDefinition *ClassDefinition) (*ClassDefinition, error) {
+func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (ClassDefinition, error) {
 	if classDefinition == nil {
 		return nil, nil
 	}
-	if classDefinition.factoryId != c.factoryId {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.", c.factoryId, classDefinition.factoryId), nil)
+	if classDefinition.FactoryId() != c.factoryId {
+		return nil, NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.", c.factoryId, classDefinition.FactoryId()), nil)
 	}
-	classDefKey := encodeVersionedClassId(classDefinition.classId, classDefinition.factoryId)
+	classDefKey := encodeVersionedClassId(classDefinition.ClassId(), classDefinition.Version())
 	current := c.classDefs[classDefKey]
 	if current == nil {
 		c.classDefs[classDefKey] = classDefinition
 		return classDefinition, nil
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d", classDefinition.classId), nil)
+		return nil, NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d", classDefinition.ClassId()), nil)
 	}
 	return classDefinition, nil
 }

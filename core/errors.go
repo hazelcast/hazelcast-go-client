@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -145,4 +145,14 @@ func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuth
 // NewHazelcastTimeoutError returns HazelcastTimeoutError.
 func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
 	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastInstanceNotActiveError returns HazelcastInstanceNotActiveError
+func NewHazelcastInstanceNotActiveError(message string, cause error) *HazelcastInstanceNotActiveError {
+	return &HazelcastInstanceNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastTargetNotMemberError returns HazelcastTargetNotMemberError
+func NewHazelcastTargetNotMemberError(message string, cause error) *HazelcastTargetNotMemberError {
+	return &HazelcastTargetNotMemberError{&HazelcastErrorType{message: message, cause: cause}}
 }

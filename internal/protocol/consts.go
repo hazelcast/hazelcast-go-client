@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-const CLIENT_TYPE = "GO"
+const CLIENT_TYPE = "GOO"
 
 func DataCalculateSize(d *Data) int {
 	return len(d.Buffer()) + INT_SIZE_IN_BYTES

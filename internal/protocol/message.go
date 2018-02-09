@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -94,7 +94,11 @@ func (msg *ClientMessage) AddFlags(v uint8) {
 }
 
 func (msg *ClientMessage) HasFlags(flags uint8) uint8 {
-	return msg.Flags() & flags
+	value := msg.Flags() & flags
+	if value == flags {
+		return value
+	}
+	return 0
 }
 
 func (msg *ClientMessage) MessageType() MessageType {

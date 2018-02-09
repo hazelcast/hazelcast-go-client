@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -156,6 +156,9 @@ type SerializationConfig struct {
 
 	// globalSerializer is the serializer that will be used if no other serializer is applicable.
 	globalSerializer Serializer
+
+	// classDefinitions contains ClassDefinitions for portable structs.
+	classDefinitions []ClassDefinition
 }
 
 // NewSerializationConfig creates a SerializationConfig with default values.
@@ -194,6 +197,11 @@ func (serializationConfig *SerializationConfig) GlobalSerializer() Serializer {
 	return serializationConfig.globalSerializer
 }
 
+// ClassDefinitions returns registered class definitions of portable structs.
+func (serializationConfig *SerializationConfig) ClassDefinitions() []ClassDefinition {
+	return serializationConfig.classDefinitions
+}
+
 // SetByteOrder sets the byte order. If true, it means BigEndian, otherwise LittleEndian.
 func (serializationConfig *SerializationConfig) SetByteOrder(isBigEndian bool) {
 	serializationConfig.isBigEndian = isBigEndian
@@ -207,6 +215,11 @@ func (serializationConfig *SerializationConfig) AddDataSerializableFactory(facto
 // AddPortableFactory adds a PortableFactory for a given factory ID.
 func (serializationConfig *SerializationConfig) AddPortableFactory(factoryId int32, pf PortableFactory) {
 	serializationConfig.portableFactories[factoryId] = pf
+}
+
+// AddClassDefinition registers class definitions explicitly.
+func (serializationConfig *SerializationConfig) AddClassDefinition(classDefinition ...ClassDefinition) {
+	serializationConfig.classDefinitions = append(serializationConfig.classDefinitions, classDefinition...)
 }
 
 // SetPortableVersion sets the portable version.
@@ -276,7 +289,6 @@ func (groupConfig *GroupConfig) SetPassword(password string) *GroupConfig {
 
 // ClientNetworkConfig contains network related configuration parameters.
 type ClientNetworkConfig struct {
-
 	// addresses are the candidate addresses slice that client will use to establish initial connection.
 	addresses []string
 
