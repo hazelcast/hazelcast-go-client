@@ -240,3 +240,31 @@ type ILifecycleListener interface {
 	// LifecycleStateChanged is called when instance's state changes. No blocking calls should be made in this method.
 	LifecycleStateChanged(string)
 }
+
+// TopicMessageListener is a listener for ITopic.
+// Provided that a TopicMessageListener is not registered twice, a TopicMessageListener will never be called concurrently. So there
+// is no need to provide thread-safety on internal state in the TopicMessageListener. Also there is no need to enforce safe
+// publication, the ITopic is responsible for the memory consistency effects. In other words, there is no need to make
+// internal fields of the TopicMessageListener volatile or access them using synchronized blocks.
+type TopicMessageListener interface {
+
+	// OnMessage is invoked when a message is received for the added topic. Note that topic guarantees message ordering.
+	// Therefore there is only one thread invoking OnMessage.
+	OnMessage(message TopicMessage)
+}
+
+// TopicMessage is a message for ITopic.
+type TopicMessage interface {
+
+	// MessageObject returns the published message.
+	MessageObject() interface{}
+
+	// PublishTime returns the time in milliseconds when the message is published.
+	PublishTime() int64
+
+	// PublishMember returns the member that published the message.
+	// The member can be nil if:
+	//    - The message was sent by a client and not a member.
+	//    - The member, that sent the message, left the cluster before the message was processed.
+	PublishingMember() IMember
+}
