@@ -65,7 +65,7 @@ func (proxyManager *ProxyManager) createProxy(serviceName *string, name *string)
 	if err != nil {
 		return nil, err
 	}
-	return proxyManager.getProxyByNameSpace(serviceName, name), nil
+	return proxyManager.getProxyByNameSpace(serviceName, name)
 }
 
 func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
@@ -91,9 +91,11 @@ func (proxyManager *ProxyManager) findNextProxyAddress() *Address {
 	return proxyManager.client.LoadBalancer.NextAddress()
 }
 
-func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name *string) core.IDistributedObject {
+func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
 	if common.SERVICE_NAME_MAP == *serviceName {
-		return &MapProxy{&proxy{proxyManager.client, serviceName, name}}
+		return newMapProxy(proxyManager.client, serviceName, name), nil
+	} else if common.SERVICE_NAME_LIST == *serviceName {
+		return newListProxy(proxyManager.client, serviceName, name)
 	}
-	return nil
+	return nil, nil
 }
