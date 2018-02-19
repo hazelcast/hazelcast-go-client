@@ -272,3 +272,13 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 		t.Errorf("[]int type serialization failed")
 	}
 }
+
+func TestSerializeData(t *testing.T) {
+	data := NewData([]byte{10, 20, 0, 30, 5, 7, 6})
+	config := NewSerializationConfig()
+	service := NewSerializationService(config)
+	serializedData, _ := service.ToData(data)
+	if !reflect.DeepEqual(data, serializedData) {
+		t.Errorf("data type should not be serialized")
+	}
+}
