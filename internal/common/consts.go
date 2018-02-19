@@ -200,6 +200,12 @@ const (
 	ENTRYEVENT_EXPIRED      int32 = 128
 	ENTRYEVENT_INVALIDATION int32 = 256
 )
+
+const (
+	ITEM_ADDED   int32 = 1
+	ITEM_REMOVED int32 = 2
+)
+
 const (
 	NIL_KEY_IS_NOT_ALLOWED        string = "nil key is not allowed"
 	NIL_KEYS_ARE_NOT_ALLOWED      string = "nil keys collection is not allowed"

@@ -381,6 +381,38 @@ type MapEvent struct {
 	numberOfAffectedEntries int32
 }
 
+func NewItemEvent(name *string, item interface{}, eventType int32, member *Member) *ItemEvent {
+	return &ItemEvent{
+		name:      name,
+		item:      item,
+		eventType: eventType,
+		member:    member,
+	}
+}
+
+type ItemEvent struct {
+	name      *string
+	item      interface{}
+	eventType int32
+	member    *Member
+}
+
+func (itemEvent *ItemEvent) Name() *string {
+	return itemEvent.name
+}
+
+func (itemEvent *ItemEvent) Item() interface{} {
+	return itemEvent.item
+}
+
+func (itemEvent *ItemEvent) EventType() int32 {
+	return itemEvent.eventType
+}
+
+func (itemEvent *ItemEvent) Member() core.IMember {
+	return itemEvent.member
+}
+
 func (mapEvent *MapEvent) Uuid() *string {
 	return mapEvent.uuid
 }
