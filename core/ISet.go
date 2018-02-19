@@ -29,6 +29,10 @@ type ISet interface {
 	// AddAll returns true if this set has changed, false otherwise.
 	AddAll(items []interface{}) (changed bool, err error)
 
+	// AddItemListener adds an item listener for this set.
+	// AddItemListener returns the registrationID of the listener.
+	AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error)
+
 	// Clear removes all of the elements from this set.
 	Clear() (err error)
 
@@ -55,10 +59,6 @@ type ISet interface {
 
 	// Size returns the size of this set.
 	Size() (size int32, err error)
-
-	// AddItemListener adds an item listener for this set.
-	// AddItemListener returns the registrationID of the listener.
-	AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error)
 
 	// RemoveItemListener removes the listener with the given registrationID.
 	// RemoveItemListener returns true if the listener is removed, false otherwise.
