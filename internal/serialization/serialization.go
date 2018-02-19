@@ -40,6 +40,9 @@ func NewSerializationService(serializationConfig *SerializationConfig) *Serializ
 }
 
 func (service *SerializationService) ToData(object interface{}) (*Data, error) {
+	if _, ok := object.(*Data); ok {
+		return object.(*Data), nil
+	}
 	dataOutput := NewPositionalObjectDataOutput(1, service, service.serializationConfig.IsBigEndian())
 	serializer, err := service.FindSerializerFor(object)
 	if err != nil {
