@@ -73,6 +73,14 @@ func (partitionService *PartitionService) GetPartitionId(keyData *serialization.
 	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
 
+func (partitionService *PartitionService) GetPartitionIdWithKey(key interface{}) (int32, error) {
+	data, err := partitionService.client.SerializationService.ToData(key)
+	if err != nil {
+		return 0, err
+	}
+	return partitionService.GetPartitionId(data), nil
+}
+
 func (partitionService *PartitionService) doRefresh() {
 	connection := partitionService.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {

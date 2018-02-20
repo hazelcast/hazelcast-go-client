@@ -33,6 +33,10 @@ type MapProxy struct {
 	*proxy
 }
 
+func newMapProxy(client *HazelcastClient, serviceName *string, name *string) *MapProxy {
+	return &MapProxy{&proxy{client, serviceName, name}}
+}
+
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	if !CheckNotNil(key) {
 		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)

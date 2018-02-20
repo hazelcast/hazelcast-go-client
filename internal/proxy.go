@@ -57,3 +57,20 @@ func (proxy *proxy) ToObject(data *Data) (interface{}, error) {
 func (proxy *proxy) ToData(object interface{}) (*Data, error) {
 	return proxy.client.SerializationService.ToData(object)
 }
+
+type partitionSpecificProxy struct {
+	*proxy
+	partitionId int32
+}
+
+func newPartitionSpecificProxy(client *HazelcastClient, serviceName *string, name *string) (*partitionSpecificProxy, error) {
+	var err error
+	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
+	parSpecProxy.partitionId, err = parSpecProxy.client.PartitionService.GetPartitionIdWithKey(parSpecProxy.PartitionKey())
+	return parSpecProxy, err
+
+}
+
+func (parSpecProxy *partitionSpecificProxy) Invoke(request *ClientMessage) (*ClientMessage, error) {
+	return parSpecProxy.InvokeOnPartition(request, parSpecProxy.partitionId)
+}
