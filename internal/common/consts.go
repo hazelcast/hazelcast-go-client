@@ -212,7 +212,7 @@ const (
 	NIL_VALUE_IS_NOT_ALLOWED      string = "nil value is not allowed"
 	NIL_PREDICATE_IS_NOT_ALLOWED  string = "predicate should not be nil"
 	NIL_MAP_IS_NOT_ALLOWED        string = "nil map is not allowed"
-	NIL_SLICE_IS_NOT_ALLOWED      string = "nil slice is not alloweed"
+	NIL_SLICE_IS_NOT_ALLOWED      string = "nil slice is not allowed"
 	NIL_LISTENER_IS_NOT_ALLOWED   string = "nil listener is not allowed"
 	NIL_AGGREGATOR_IS_NOT_ALLOWED string = "aggregator should not be nil"
 	NIL_PROJECTION_IS_NOT_ALLOWED string = "projection should not be nil"

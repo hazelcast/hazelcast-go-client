@@ -50,6 +50,15 @@ func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 	return mp.(core.IMap), err
 }
 
+func (client *HazelcastClient) GetList(name string) (core.IList, error) {
+	listService := SERVICE_NAME_LIST
+	list, err := client.GetDistributedObject(listService, name)
+	if err != nil {
+		return nil, err
+	}
+	return list.(core.IList), err
+}
+
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
 	if err != nil {

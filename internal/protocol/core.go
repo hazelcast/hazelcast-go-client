@@ -383,7 +383,7 @@ type MapEvent struct {
 
 func NewItemEvent(name *string, item interface{}, eventType int32, member *Member) *ItemEvent {
 	return &ItemEvent{
-		name:      name,
+		name:      *name,
 		item:      item,
 		eventType: eventType,
 		member:    member,
@@ -391,13 +391,13 @@ func NewItemEvent(name *string, item interface{}, eventType int32, member *Membe
 }
 
 type ItemEvent struct {
-	name      *string
+	name      string
 	item      interface{}
 	eventType int32
 	member    *Member
 }
 
-func (itemEvent *ItemEvent) Name() *string {
+func (itemEvent *ItemEvent) Name() string {
 	return itemEvent.name
 }
 

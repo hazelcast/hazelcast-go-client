@@ -162,7 +162,7 @@ type IEntryEvent interface {
 type IItemEvent interface {
 
 	// Name returns the name of IList, ISet or IQueue
-	Name() *string
+	Name() string
 
 	// Item returns the item of the event.
 	Item() interface{}
@@ -287,10 +287,10 @@ type TopicMessage interface {
 
 // ItemAddedListener is invoked when an item is added.
 type ItemAddedListener interface {
-	ItemAdded(item interface{})
+	ItemAdded(event IItemEvent)
 }
 
 // ItemRemovedListener is invoked when an item is removed.
 type ItemRemovedListener interface {
-	ItemRemoved(item interface{})
+	ItemRemoved(event IItemEvent)
 }

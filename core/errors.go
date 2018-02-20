@@ -82,6 +82,11 @@ type HazelcastIllegalStateError struct {
 	*HazelcastErrorType
 }
 
+// HazelcastNilError is returned when a nil argument has been passed to a method.
+type HazelcastNilPointerError struct {
+	*HazelcastErrorType
+}
+
 // HazelcastTargetDisconnectedError indicates that an operation is about to be sent to a non existing machine.
 type HazelcastTargetDisconnectedError struct {
 	*HazelcastErrorType
@@ -165,4 +170,9 @@ func NewHazelcastInstanceNotActiveError(message string, cause error) *HazelcastI
 // NewHazelcastTargetNotMemberError returns HazelcastTargetNotMemberError
 func NewHazelcastTargetNotMemberError(message string, cause error) *HazelcastTargetNotMemberError {
 	return &HazelcastTargetNotMemberError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastNilPointerError returns HazelcastNilPointerError
+func NewHazelcastNilPointerError(message string, cause error) *HazelcastNilPointerError {
+	return &HazelcastNilPointerError{&HazelcastErrorType{message: message, cause: cause}}
 }

@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"errors"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/common/collection"
@@ -37,7 +36,7 @@ func newListProxy(client *HazelcastClient, serviceName *string, name *string) (*
 
 func (list *ListProxy) Add(element interface{}) (changed bool, err error) {
 	if element == nil {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	valueData, err := list.ToData(element)
 	if err != nil {
@@ -54,7 +53,7 @@ func (list *ListProxy) Add(element interface{}) (changed bool, err error) {
 
 func (list *ListProxy) AddAt(index int32, element interface{}) (err error) {
 	if element == nil {
-		return errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	valueData, err := list.ToData(element)
 	if err != nil {
@@ -67,7 +66,7 @@ func (list *ListProxy) AddAt(index int32, element interface{}) (err error) {
 
 func (list *ListProxy) AddAll(elements []interface{}) (changed bool, err error) {
 	if len(elements) == 0 {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
 	}
 	itemsData := make([]*Data, len(elements))
 	for index, item := range elements {
@@ -89,7 +88,7 @@ func (list *ListProxy) AddAll(elements []interface{}) (changed bool, err error) 
 
 func (list *ListProxy) AddAllAt(index int32, elements []interface{}) (changed bool, err error) {
 	if len(elements) == 0 {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
 	}
 	elementsData := make([]*Data, len(elements))
 	for index, element := range elements {
@@ -149,7 +148,7 @@ func (list *ListProxy) Clear() (err error) {
 
 func (list *ListProxy) Contains(element interface{}) (found bool, err error) {
 	if element == nil {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	valueData, err := list.ToData(element)
 	if err != nil {
@@ -166,7 +165,7 @@ func (list *ListProxy) Contains(element interface{}) (found bool, err error) {
 
 func (list *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err error) {
 	if len(elements) == 0 {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
 	}
 	elementsData, err := collection.ObjectToDataCollection(elements, list.client.SerializationService)
 	if err != nil {
@@ -187,13 +186,13 @@ func (list *ListProxy) Get(index int32) (element interface{}, err error) {
 	if err != nil {
 		return nil, err
 	}
-	element = ListGetDecodeResponse(responseMessage).Response
-	return element, nil
+	elementData := ListGetDecodeResponse(responseMessage).Response
+	return list.ToObject(elementData)
 }
 
 func (list *ListProxy) IndexOf(element interface{}) (index int32, err error) {
 	if element == nil {
-		return 0, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return 0, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	elementData, err := list.ToData(element)
 	if err != nil {
@@ -220,7 +219,7 @@ func (list *ListProxy) IsEmpty() (empty bool, err error) {
 
 func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error) {
 	if element == nil {
-		return 0, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return 0, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	elementData, err := list.ToData(element)
 	if err != nil {
@@ -237,7 +236,7 @@ func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error)
 
 func (list *ListProxy) Remove(element interface{}) (changed bool, err error) {
 	if element == nil {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	elementData, err := list.ToData(element)
 	if err != nil {
@@ -258,13 +257,13 @@ func (list *ListProxy) RemoveAt(index int32) (previousElement interface{}, err e
 	if err != nil {
 		return nil, err
 	}
-	previousElement = ListRemoveWithIndexDecodeResponse(responseMessage).Response
-	return previousElement, nil
+	previousElementData := ListRemoveWithIndexDecodeResponse(responseMessage).Response
+	return list.ToObject(previousElementData)
 }
 
 func (list *ListProxy) RemoveAll(elements []interface{}) (changed bool, err error) {
 	if len(elements) == 0 {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
 	}
 	elementsData, err := collection.ObjectToDataCollection(elements, list.client.SerializationService)
 	if err != nil {
@@ -287,7 +286,7 @@ func (list *ListProxy) RemoveItemListener(registrationID *string) (removed bool,
 
 func (list *ListProxy) RetainAll(elements []interface{}) (changed bool, err error) {
 	if len(elements) == 0 {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
 	}
 	elementsData, err := collection.ObjectToDataCollection(elements, list.client.SerializationService)
 	if err != nil {
@@ -304,7 +303,7 @@ func (list *ListProxy) RetainAll(elements []interface{}) (changed bool, err erro
 
 func (list *ListProxy) Set(index int32, element interface{}) (previousElement interface{}, err error) {
 	if element == nil {
-		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
+		return nil, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
 	}
 	valueData, err := list.ToData(element)
 	if err != nil {
