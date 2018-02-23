@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,36 +14,28 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapIsLockedResponseParameters struct {
-	Response bool
+type mapIsLocked struct {
 }
 
-func MapIsLockedCalculateSize(name *string, key *Data) int {
+func (self *mapIsLocked) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	return
 }
-
-func MapIsLockedEncodeRequest(name *string, key *Data) *ClientMessage {
+func (self *mapIsLocked) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapIsLockedCalculateSize(name, key))
-	clientMessage.SetMessageType(MAP_ISLOCKED)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_ISLOCKED)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapIsLockedDecodeResponse(clientMessage *ClientMessage) *MapIsLockedResponseParameters {
+func (self *mapIsLocked) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapIsLockedResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

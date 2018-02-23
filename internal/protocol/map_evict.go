@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,39 +14,30 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapEvictResponseParameters struct {
-	Response bool
+type mapEvict struct {
 }
 
-func MapEvictCalculateSize(name *string, key *Data, threadId int64) int {
+func (self *mapEvict) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapEvictEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
+func (self *mapEvict) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_EVICT)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_EVICT)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendInt64(args[2].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapEvictDecodeResponse(clientMessage *ClientMessage) *MapEvictResponseParameters {
+func (self *mapEvict) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapEvictResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

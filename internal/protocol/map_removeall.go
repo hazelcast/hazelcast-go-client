@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,30 +14,24 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapRemoveAllResponseParameters struct {
+type mapRemoveAll struct {
 }
 
-func MapRemoveAllCalculateSize(name *string, predicate *Data) int {
+func (self *mapRemoveAll) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(predicate)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	return
 }
-
-func MapRemoveAllEncodeRequest(name *string, predicate *Data) *ClientMessage {
+func (self *mapRemoveAll) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapRemoveAllCalculateSize(name, predicate))
-	clientMessage.SetMessageType(MAP_REMOVEALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_REMOVEALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode

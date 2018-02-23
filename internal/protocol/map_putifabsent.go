@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,46 +14,40 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapPutIfAbsentResponseParameters struct {
-	Response *Data
+type mapPutIfAbsent struct {
 }
 
-func MapPutIfAbsentCalculateSize(name *string, key *Data, value *Data, threadId int64, ttl int64) int {
+func (self *mapPutIfAbsent) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	dataSize += DataCalculateSize(value)
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	dataSize += DataCalculateSize(args[2].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapPutIfAbsentEncodeRequest(name *string, key *Data, value *Data, threadId int64, ttl int64) *ClientMessage {
+func (self *mapPutIfAbsent) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadId, ttl))
-	clientMessage.SetMessageType(MAP_PUTIFABSENT)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(ttl)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_PUTIFABSENT)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendData(args[2].(*Data))
+	request.AppendInt64(args[3].(int64))
+	request.AppendInt64(args[4].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) *MapPutIfAbsentResponseParameters {
+func (self *mapPutIfAbsent) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapPutIfAbsentResponseParameters)
 
 	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		parameters, err = toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 	}
-	return parameters
+	return
 }

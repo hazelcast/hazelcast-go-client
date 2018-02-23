@@ -18,7 +18,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0}

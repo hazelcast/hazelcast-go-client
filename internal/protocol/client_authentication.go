@@ -14,10 +14,6 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-)
-
 type ClientAuthenticationResponseParameters struct {
 	Status                    uint8
 	Address                   *Address

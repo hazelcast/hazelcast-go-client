@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 type SetRemoveListenerResponseParameters struct {
 	Response bool
 }

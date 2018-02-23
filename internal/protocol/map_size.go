@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,30 +14,26 @@
 
 package protocol
 
-type MapSizeResponseParameters struct {
-	Response int32
+type mapSize struct {
 }
 
-func MapSizeCalculateSize(name *string) int {
+func (self *mapSize) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func MapSizeEncodeRequest(name *string) *ClientMessage {
+func (self *mapSize) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapSizeCalculateSize(name))
-	clientMessage.SetMessageType(MAP_SIZE)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_SIZE)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapSizeDecodeResponse(clientMessage *ClientMessage) *MapSizeResponseParameters {
+func (self *mapSize) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapSizeResponseParameters)
-	parameters.Response = clientMessage.ReadInt32()
-	return parameters
+	parameters = clientMessage.ReadInt32()
+	return
 }

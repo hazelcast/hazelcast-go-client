@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 type ListSizeResponseParameters struct {
 	Response int32
 }

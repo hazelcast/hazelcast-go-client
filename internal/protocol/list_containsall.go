@@ -14,12 +14,6 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-)
-
 type ListContainsAllResponseParameters struct {
 	Response bool
 }

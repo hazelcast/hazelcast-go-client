@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,32 +14,28 @@
 
 package protocol
 
-type MapRemoveEntryListenerResponseParameters struct {
-	Response bool
+type mapRemoveEntryListener struct {
 }
 
-func MapRemoveEntryListenerCalculateSize(name *string, registrationId *string) int {
+func (self *mapRemoveEntryListener) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(registrationId)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += StringCalculateSize(args[1].(*string))
+	return
 }
-
-func MapRemoveEntryListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
+func (self *mapRemoveEntryListener) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapRemoveEntryListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(MAP_REMOVEENTRYLISTENER)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_REMOVEENTRYLISTENER)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendString(args[1].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) *MapRemoveEntryListenerResponseParameters {
+func (self *mapRemoveEntryListener) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapRemoveEntryListenerResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,45 +14,36 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapTryLockResponseParameters struct {
-	Response bool
+type mapTryLock struct {
 }
 
-func MapTryLockCalculateSize(name *string, key *Data, threadId int64, lease int64, timeout int64, referenceId int64) int {
+func (self *mapTryLock) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapTryLockEncodeRequest(name *string, key *Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
+func (self *mapTryLock) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
-	clientMessage.SetMessageType(MAP_TRYLOCK)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(lease)
-	clientMessage.AppendInt64(timeout)
-	clientMessage.AppendInt64(referenceId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_TRYLOCK)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendInt64(args[2].(int64))
+	request.AppendInt64(args[3].(int64))
+	request.AppendInt64(args[4].(int64))
+	request.AppendInt64(args[5].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapTryLockDecodeResponse(clientMessage *ClientMessage) *MapTryLockResponseParameters {
+func (self *mapTryLock) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapTryLockResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

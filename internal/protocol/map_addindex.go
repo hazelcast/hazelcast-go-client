@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,32 +14,26 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-)
-
-type MapAddIndexResponseParameters struct {
+type mapAddIndex struct {
 }
 
-func MapAddIndexCalculateSize(name *string, attribute *string, ordered bool) int {
+func (self *mapAddIndex) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(attribute)
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += StringCalculateSize(args[1].(*string))
 	dataSize += BOOL_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapAddIndexEncodeRequest(name *string, attribute *string, ordered bool) *ClientMessage {
+func (self *mapAddIndex) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapAddIndexCalculateSize(name, attribute, ordered))
-	clientMessage.SetMessageType(MAP_ADDINDEX)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(attribute)
-	clientMessage.AppendBool(ordered)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_ADDINDEX)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendString(args[1].(*string))
+	request.AppendBool(args[2].(bool))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode

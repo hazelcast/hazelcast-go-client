@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,43 +14,34 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapTryPutResponseParameters struct {
-	Response bool
+type mapTryPut struct {
 }
 
-func MapTryPutCalculateSize(name *string, key *Data, value *Data, threadId int64, timeout int64) int {
+func (self *mapTryPut) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	dataSize += DataCalculateSize(value)
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	dataSize += DataCalculateSize(args[2].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapTryPutEncodeRequest(name *string, key *Data, value *Data, threadId int64, timeout int64) *ClientMessage {
+func (self *mapTryPut) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapTryPutCalculateSize(name, key, value, threadId, timeout))
-	clientMessage.SetMessageType(MAP_TRYPUT)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(timeout)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_TRYPUT)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendData(args[2].(*Data))
+	request.AppendInt64(args[3].(int64))
+	request.AppendInt64(args[4].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapTryPutDecodeResponse(clientMessage *ClientMessage) *MapTryPutResponseParameters {
+func (self *mapTryPut) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapTryPutResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,55 +14,48 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
-
-type MapGetAllResponseParameters struct {
-	Response *[]Pair
+type mapGetAll struct {
 }
 
-func MapGetAllCalculateSize(name *string, keys *[]Data) int {
+func (self *mapGetAll) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, keysItem := range *keys {
-		dataSize += DataCalculateSize(&keysItem)
+	for _, keysItem := range args[1].([]*Data) {
+		dataSize += DataCalculateSize(keysItem)
 	}
-	return dataSize
+	return
 }
-
-func MapGetAllEncodeRequest(name *string, keys *[]Data) *ClientMessage {
+func (self *mapGetAll) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapGetAllCalculateSize(name, keys))
-	clientMessage.SetMessageType(MAP_GETALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(*keys))
-	for _, keysItem := range *keys {
-		clientMessage.AppendData(&keysItem)
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(MAP_GETALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Data)))
+	for _, keysItem := range args[1].([]*Data) {
+		request.AppendData(keysItem)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-func MapGetAllDecodeResponse(clientMessage *ClientMessage) *MapGetAllResponseParameters {
+func (self *mapGetAll) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(MapGetAllResponseParameters)
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]Pair, responseSize)
+	response := make([]*Pair, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem Pair
+		var responseItem *Pair
 		responseItemKey := clientMessage.ReadData()
+
 		responseItemVal := clientMessage.ReadData()
+
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = &response
+	parameters = response
 
-	return parameters
+	return
 }

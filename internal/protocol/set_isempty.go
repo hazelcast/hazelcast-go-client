@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 type SetIsEmptyResponseParameters struct {
 	Response bool
 }

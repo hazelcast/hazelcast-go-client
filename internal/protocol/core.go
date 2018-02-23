@@ -17,8 +17,6 @@ package protocol
 import (
 	"bytes"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"reflect"
 )
 
@@ -457,3 +455,5 @@ func GetEntryListenerFlags(listener interface{}) int32 {
 	}
 	return flags
 }
+
+type ToObject func(*Data) (interface{}, error)
