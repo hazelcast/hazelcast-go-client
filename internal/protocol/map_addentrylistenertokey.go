@@ -20,11 +20,10 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type mapAddEntryListenerToKey struct {
+type mapAddEntryListenerToKeyCodec struct {
 }
 
-func (self *mapAddEntryListenerToKey) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapAddEntryListenerToKeyCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += BOOL_SIZE_IN_BYTES
@@ -32,9 +31,9 @@ func (self *mapAddEntryListenerToKey) CalculateSize(args ...interface{}) (dataSi
 	dataSize += BOOL_SIZE_IN_BYTES
 	return
 }
-func (self *mapAddEntryListenerToKey) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapAddEntryListenerToKeyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ADDENTRYLISTENERTOKEY)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -46,13 +45,12 @@ func (self *mapAddEntryListenerToKey) EncodeRequest(args ...interface{}) (reques
 	return
 }
 
-func (self *mapAddEntryListenerToKey) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapAddEntryListenerToKeyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadString()
 	return
 }
 
-func (self *mapAddEntryListenerToKey) Handle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
+func (self *mapAddEntryListenerToKeyCodec) Handle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

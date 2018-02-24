@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapGetAll struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapGetAllCodec struct {
 }
 
-func (self *mapGetAll) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapGetAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
 	for _, keysItem := range args[1].([]*Data) {
@@ -26,9 +31,9 @@ func (self *mapGetAll) CalculateSize(args ...interface{}) (dataSize int) {
 	}
 	return
 }
-func (self *mapGetAll) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapGetAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_GETALL)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -40,17 +45,20 @@ func (self *mapGetAll) EncodeRequest(args ...interface{}) (request *ClientMessag
 	return
 }
 
-func (self *mapGetAll) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapGetAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
 	response := make([]*Pair, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem *Pair
-		responseItemKey := clientMessage.ReadData()
-
-		responseItemVal := clientMessage.ReadData()
-
+		var responseItem = &Pair{}
+		responseItemKey, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
+		responseItemVal, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem

@@ -17,7 +17,6 @@ package protocol
 import (
 	"encoding/hex"
 	"testing"
-
 )
 
 var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0}

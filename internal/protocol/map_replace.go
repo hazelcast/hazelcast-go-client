@@ -14,20 +14,25 @@
 
 package protocol
 
-type mapReplace struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapReplaceCodec struct {
 }
 
-func (self *mapReplace) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapReplaceCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += DataCalculateSize(args[2].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapReplace) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapReplaceCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_REPLACE)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -38,8 +43,7 @@ func (self *mapReplace) EncodeRequest(args ...interface{}) (request *ClientMessa
 	return
 }
 
-func (self *mapReplace) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapReplaceCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	if !clientMessage.ReadBool() {
 		parameters, err = toObject(clientMessage.ReadData())

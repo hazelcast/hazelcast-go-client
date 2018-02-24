@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapClear struct {
+import ()
+
+type mapClearCodec struct {
 }
 
-func (self *mapClear) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapClearCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapClear) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapClearCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_CLEAR)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -33,3 +34,6 @@ func (self *mapClear) EncodeRequest(args ...interface{}) (request *ClientMessage
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapClearCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

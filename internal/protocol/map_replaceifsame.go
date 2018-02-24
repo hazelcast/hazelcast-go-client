@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapReplaceIfSame struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapReplaceIfSameCodec struct {
 }
 
-func (self *mapReplaceIfSame) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapReplaceIfSameCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += DataCalculateSize(args[2].(*Data))
@@ -26,9 +31,9 @@ func (self *mapReplaceIfSame) CalculateSize(args ...interface{}) (dataSize int) 
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapReplaceIfSame) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapReplaceIfSameCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_REPLACEIFSAME)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -40,8 +45,7 @@ func (self *mapReplaceIfSame) EncodeRequest(args ...interface{}) (request *Clien
 	return
 }
 
-func (self *mapReplaceIfSame) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapReplaceIfSameCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadBool()
 	return
 }

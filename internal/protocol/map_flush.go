@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapFlush struct {
+import ()
+
+type mapFlushCodec struct {
 }
 
-func (self *mapFlush) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapFlushCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapFlush) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapFlushCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_FLUSH)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -33,3 +34,6 @@ func (self *mapFlush) EncodeRequest(args ...interface{}) (request *ClientMessage
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapFlushCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

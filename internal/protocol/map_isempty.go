@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapIsEmpty struct {
+import ()
+
+type mapIsEmptyCodec struct {
 }
 
-func (self *mapIsEmpty) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapIsEmptyCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapIsEmpty) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapIsEmptyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ISEMPTY)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -32,8 +33,7 @@ func (self *mapIsEmpty) EncodeRequest(args ...interface{}) (request *ClientMessa
 	return
 }
 
-func (self *mapIsEmpty) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapIsEmptyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadBool()
 	return
 }

@@ -14,18 +14,21 @@
 
 package protocol
 
-type mapContainsValue struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type mapContainsValueCodec struct {
 }
 
-func (self *mapContainsValue) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapContainsValueCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	return
 }
-func (self *mapContainsValue) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapContainsValueCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_CONTAINSVALUE)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -34,8 +37,7 @@ func (self *mapContainsValue) EncodeRequest(args ...interface{}) (request *Clien
 	return
 }
 
-func (self *mapContainsValue) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapContainsValueCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadBool()
 	return
 }

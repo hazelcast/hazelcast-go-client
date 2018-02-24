@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapAddEntryListenerWithPredicate struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapAddEntryListenerWithPredicateCodec struct {
 }
 
-func (self *mapAddEntryListenerWithPredicate) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapAddEntryListenerWithPredicateCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += BOOL_SIZE_IN_BYTES
@@ -26,9 +31,9 @@ func (self *mapAddEntryListenerWithPredicate) CalculateSize(args ...interface{})
 	dataSize += BOOL_SIZE_IN_BYTES
 	return
 }
-func (self *mapAddEntryListenerWithPredicate) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapAddEntryListenerWithPredicateCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ADDENTRYLISTENERWITHPREDICATE)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -40,13 +45,12 @@ func (self *mapAddEntryListenerWithPredicate) EncodeRequest(args ...interface{})
 	return
 }
 
-func (self *mapAddEntryListenerWithPredicate) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapAddEntryListenerWithPredicateCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadString()
 	return
 }
 
-func (self *mapAddEntryListenerWithPredicate) Handle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
+func (self *mapAddEntryListenerWithPredicateCodec) Handle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

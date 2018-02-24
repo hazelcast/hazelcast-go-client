@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapEvictAll struct {
+import ()
+
+type mapEvictAllCodec struct {
 }
 
-func (self *mapEvictAll) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapEvictAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapEvictAll) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapEvictAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_EVICTALL)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -33,3 +34,6 @@ func (self *mapEvictAll) EncodeRequest(args ...interface{}) (request *ClientMess
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapEvictAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

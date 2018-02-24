@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapLock struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapLockCodec struct {
 }
 
-func (self *mapLock) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapLockCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
@@ -26,9 +31,9 @@ func (self *mapLock) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapLock) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapLockCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_LOCK)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -41,3 +46,6 @@ func (self *mapLock) EncodeRequest(args ...interface{}) (request *ClientMessage)
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapLockCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

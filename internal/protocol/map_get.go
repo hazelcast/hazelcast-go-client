@@ -14,19 +14,24 @@
 
 package protocol
 
-type mapGet struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapGetCodec struct {
 }
 
-func (self *mapGet) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapGetCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapGet) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapGetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_GET)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -36,8 +41,7 @@ func (self *mapGet) EncodeRequest(args ...interface{}) (request *ClientMessage) 
 	return
 }
 
-func (self *mapGet) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapGetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	if !clientMessage.ReadBool() {
 		parameters, err = toObject(clientMessage.ReadData())

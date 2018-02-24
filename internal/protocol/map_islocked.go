@@ -14,18 +14,21 @@
 
 package protocol
 
-type mapIsLocked struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type mapIsLockedCodec struct {
 }
 
-func (self *mapIsLocked) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapIsLockedCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	return
 }
-func (self *mapIsLocked) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapIsLockedCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ISLOCKED)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -34,8 +37,7 @@ func (self *mapIsLocked) EncodeRequest(args ...interface{}) (request *ClientMess
 	return
 }
 
-func (self *mapIsLocked) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapIsLockedCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadBool()
 	return
 }

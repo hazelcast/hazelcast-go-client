@@ -14,19 +14,22 @@
 
 package protocol
 
-type mapAddIndex struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapAddIndexCodec struct {
 }
 
-func (self *mapAddIndex) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapAddIndexCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += StringCalculateSize(args[1].(*string))
 	dataSize += BOOL_SIZE_IN_BYTES
 	return
 }
-func (self *mapAddIndex) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapAddIndexCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ADDINDEX)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -37,3 +40,6 @@ func (self *mapAddIndex) EncodeRequest(args ...interface{}) (request *ClientMess
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapAddIndexCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

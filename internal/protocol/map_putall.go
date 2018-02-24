@@ -14,11 +14,15 @@
 
 package protocol
 
-type mapPutAll struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type mapPutAllCodec struct {
 }
 
-func (self *mapPutAll) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapPutAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
 	for _, entriesItem := range args[1].([]*Pair) {
@@ -29,9 +33,9 @@ func (self *mapPutAll) CalculateSize(args ...interface{}) (dataSize int) {
 	}
 	return
 }
-func (self *mapPutAll) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapPutAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_PUTALL)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -47,3 +51,6 @@ func (self *mapPutAll) EncodeRequest(args ...interface{}) (request *ClientMessag
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapPutAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

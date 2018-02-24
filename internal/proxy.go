@@ -41,6 +41,33 @@ func (proxy *proxy) ServiceName() string {
 	return *proxy.serviceName
 }
 
+func (proxy *proxy) EncodeInvoke(codec Codec, args ...interface{}) (parameter interface{}, err error) {
+	request := codec.EncodeRequest(args...)
+	responseMessage, err := proxy.InvokeOnRandomTarget(request)
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeResponse(responseMessage, proxy.ToObject)
+}
+
+func (proxy *proxy) EncodeInvokeOnKey(codec Codec, keyData *Data, args ...interface{}) (parameter interface{}, err error) {
+	request := codec.EncodeRequest(args...)
+	responseMessage, err := proxy.InvokeOnKey(request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeResponse(responseMessage, proxy.ToObject)
+}
+
+func (proxy *proxy) EncodeInvokeOnPartition(codec Codec, partitionId int32, args ...interface{}) (parameter interface{}, err error) {
+	request := codec.EncodeRequest(args...)
+	responseMessage, err := proxy.InvokeOnPartition(request, partitionId)
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeResponse(responseMessage, proxy.ToObject)
+}
+
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {
 	return proxy.client.InvocationService.InvokeOnKeyOwner(request, keyData).Result()
 }

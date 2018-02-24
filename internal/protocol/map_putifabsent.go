@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapPutIfAbsent struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapPutIfAbsentCodec struct {
 }
 
-func (self *mapPutIfAbsent) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapPutIfAbsentCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += DataCalculateSize(args[2].(*Data))
@@ -26,9 +31,9 @@ func (self *mapPutIfAbsent) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapPutIfAbsent) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapPutIfAbsentCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_PUTIFABSENT)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -40,8 +45,7 @@ func (self *mapPutIfAbsent) EncodeRequest(args ...interface{}) (request *ClientM
 	return
 }
 
-func (self *mapPutIfAbsent) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapPutIfAbsentCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	if !clientMessage.ReadBool() {
 		parameters, err = toObject(clientMessage.ReadData())

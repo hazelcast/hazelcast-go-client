@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapSet struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapSetCodec struct {
 }
 
-func (self *mapSet) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapSetCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += DataCalculateSize(args[2].(*Data))
@@ -26,9 +31,9 @@ func (self *mapSet) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapSet) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapSetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_SET)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -41,3 +46,6 @@ func (self *mapSet) EncodeRequest(args ...interface{}) (request *ClientMessage) 
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapSetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

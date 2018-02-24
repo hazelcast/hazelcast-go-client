@@ -14,18 +14,21 @@
 
 package protocol
 
-type mapValuesWithPredicate struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type mapValuesWithPredicateCodec struct {
 }
 
-func (self *mapValuesWithPredicate) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapValuesWithPredicateCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	return
 }
-func (self *mapValuesWithPredicate) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapValuesWithPredicateCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_VALUESWITHPREDICATE)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -34,8 +37,7 @@ func (self *mapValuesWithPredicate) EncodeRequest(args ...interface{}) (request 
 	return
 }
 
-func (self *mapValuesWithPredicate) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapValuesWithPredicateCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
 	response := make([]interface{}, responseSize)

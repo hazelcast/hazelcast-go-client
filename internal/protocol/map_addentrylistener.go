@@ -20,20 +20,19 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type mapAddEntryListener struct {
+type mapAddEntryListenerCodec struct {
 }
 
-func (self *mapAddEntryListener) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapAddEntryListenerCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += BOOL_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += BOOL_SIZE_IN_BYTES
 	return
 }
-func (self *mapAddEntryListener) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapAddEntryListenerCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ADDENTRYLISTENER)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -44,13 +43,12 @@ func (self *mapAddEntryListener) EncodeRequest(args ...interface{}) (request *Cl
 	return
 }
 
-func (self *mapAddEntryListener) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapAddEntryListenerCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadString()
 	return
 }
 
-func (self *mapAddEntryListener) Handle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
+func (self *mapAddEntryListenerCodec) Handle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {

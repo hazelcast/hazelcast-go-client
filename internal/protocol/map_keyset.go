@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapKeySet struct {
+import ()
+
+type mapKeySetCodec struct {
 }
 
-func (self *mapKeySet) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapKeySetCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapKeySet) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapKeySetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_KEYSET)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -32,8 +33,7 @@ func (self *mapKeySet) EncodeRequest(args ...interface{}) (request *ClientMessag
 	return
 }
 
-func (self *mapKeySet) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapKeySetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
 	response := make([]interface{}, responseSize)

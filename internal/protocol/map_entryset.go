@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapEntrySet struct {
+import ()
+
+type mapEntrySetCodec struct {
 }
 
-func (self *mapEntrySet) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapEntrySetCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapEntrySet) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapEntrySetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_ENTRYSET)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -32,17 +33,20 @@ func (self *mapEntrySet) EncodeRequest(args ...interface{}) (request *ClientMess
 	return
 }
 
-func (self *mapEntrySet) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapEntrySetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
 	response := make([]*Pair, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem *Pair
-		responseItemKey := clientMessage.ReadData()
-
-		responseItemVal := clientMessage.ReadData()
-
+		var responseItem = &Pair{}
+		responseItemKey, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
+		responseItemVal, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem

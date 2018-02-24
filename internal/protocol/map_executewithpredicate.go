@@ -14,19 +14,22 @@
 
 package protocol
 
-type mapExecuteWithPredicate struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type mapExecuteWithPredicateCodec struct {
 }
 
-func (self *mapExecuteWithPredicate) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapExecuteWithPredicateCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += DataCalculateSize(args[2].(*Data))
 	return
 }
-func (self *mapExecuteWithPredicate) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapExecuteWithPredicateCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_EXECUTEWITHPREDICATE)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -36,17 +39,20 @@ func (self *mapExecuteWithPredicate) EncodeRequest(args ...interface{}) (request
 	return
 }
 
-func (self *mapExecuteWithPredicate) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapExecuteWithPredicateCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
 	response := make([]*Pair, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem *Pair
-		responseItemKey := clientMessage.ReadData()
-
-		responseItemVal := clientMessage.ReadData()
-
+		var responseItem = &Pair{}
+		responseItemKey, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
+		responseItemVal, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem

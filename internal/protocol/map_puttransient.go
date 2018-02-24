@@ -14,11 +14,16 @@
 
 package protocol
 
-type mapPutTransient struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapPutTransientCodec struct {
 }
 
-func (self *mapPutTransient) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapPutTransientCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += DataCalculateSize(args[2].(*Data))
@@ -26,9 +31,9 @@ func (self *mapPutTransient) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapPutTransient) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapPutTransientCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_PUTTRANSIENT)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -41,3 +46,6 @@ func (self *mapPutTransient) EncodeRequest(args ...interface{}) (request *Client
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapPutTransientCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

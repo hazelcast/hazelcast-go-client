@@ -14,19 +14,24 @@
 
 package protocol
 
-type mapDelete struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapDeleteCodec struct {
 }
 
-func (self *mapDelete) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapDeleteCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapDelete) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapDeleteCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_DELETE)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -37,3 +42,6 @@ func (self *mapDelete) EncodeRequest(args ...interface{}) (request *ClientMessag
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapDeleteCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

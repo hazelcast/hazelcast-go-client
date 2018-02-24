@@ -14,17 +14,18 @@
 
 package protocol
 
-type mapEventJournalSubscribe struct {
+import ()
+
+type mapEventJournalSubscribeCodec struct {
 }
 
-func (self *mapEventJournalSubscribe) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapEventJournalSubscribeCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	return
 }
-func (self *mapEventJournalSubscribe) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapEventJournalSubscribeCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_EVENTJOURNALSUBSCRIBE)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -32,8 +33,7 @@ func (self *mapEventJournalSubscribe) EncodeRequest(args ...interface{}) (reques
 	return
 }
 
-func (self *mapEventJournalSubscribe) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapEventJournalSubscribeCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadInt64()
 	parameters = clientMessage.ReadInt64()
 	return

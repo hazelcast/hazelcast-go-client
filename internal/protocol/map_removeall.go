@@ -14,18 +14,21 @@
 
 package protocol
 
-type mapRemoveAll struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type mapRemoveAllCodec struct {
 }
 
-func (self *mapRemoveAll) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapRemoveAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	return
 }
-func (self *mapRemoveAll) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapRemoveAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_REMOVEALL)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -35,3 +38,6 @@ func (self *mapRemoveAll) EncodeRequest(args ...interface{}) (request *ClientMes
 }
 
 // Empty DecodeResponse(), this message has no parameters to decode
+func (*mapRemoveAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

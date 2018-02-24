@@ -14,20 +14,25 @@
 
 package protocol
 
-type mapTryRemove struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type mapTryRemoveCodec struct {
 }
 
-func (self *mapTryRemove) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapTryRemoveCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
 	dataSize += INT64_SIZE_IN_BYTES
 	return
 }
-func (self *mapTryRemove) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapTryRemoveCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_TRYREMOVE)
 	request.IsRetryable = false
 	request.AppendString(args[0].(*string))
@@ -38,8 +43,7 @@ func (self *mapTryRemove) EncodeRequest(args ...interface{}) (request *ClientMes
 	return
 }
 
-func (self *mapTryRemove) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapTryRemoveCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadBool()
 	return
 }

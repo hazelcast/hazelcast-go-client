@@ -14,18 +14,19 @@
 
 package protocol
 
-type mapRemoveEntryListener struct {
+import ()
+
+type mapRemoveEntryListenerCodec struct {
 }
 
-func (self *mapRemoveEntryListener) CalculateSize(args ...interface{}) (dataSize int) {
-	// Calculates the request payload size
+func (self *mapRemoveEntryListenerCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += StringCalculateSize(args[1].(*string))
 	return
 }
-func (self *mapRemoveEntryListener) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapRemoveEntryListenerCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	request = NewClientMessage(nil, self.CalculateSize(args))
+	request = NewClientMessage(nil, self.CalculateSize(args...))
 	request.SetMessageType(MAP_REMOVEENTRYLISTENER)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
@@ -34,8 +35,7 @@ func (self *mapRemoveEntryListener) EncodeRequest(args ...interface{}) (request 
 	return
 }
 
-func (self *mapRemoveEntryListener) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	// Decode response from client message
+func (self *mapRemoveEntryListenerCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	parameters = clientMessage.ReadBool()
 	return
 }
