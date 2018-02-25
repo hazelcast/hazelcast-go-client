@@ -16,6 +16,7 @@ package protocol
 
 import (
 	"encoding/hex"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	"testing"
 )
 

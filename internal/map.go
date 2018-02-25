@@ -73,6 +73,9 @@ func (imap *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err e
 		return false, err
 	}
 	res, err := imap.EncodeInvokeOnKey(MapTryPutCodec, keyData, imap.name, keyData, valueData, THREAD_ID, TTL)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 
 }
@@ -132,6 +135,9 @@ func (imap *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool,
 		return false, err
 	}
 	res, err := imap.EncodeInvokeOnKey(MapRemoveIfSameCodec, keyData, imap.name, keyData, valueData, THREAD_ID)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 
 }
@@ -156,11 +162,17 @@ func (imap *MapProxy) TryRemove(key interface{}, timeout int64, timeoutTimeUnit 
 	}
 	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
 	res, err := imap.EncodeInvokeOnKey(MapTryRemoveCodec, keyData, imap.name, keyData, THREAD_ID, timeout)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 
 }
 func (imap *MapProxy) Size() (size int32, err error) {
 	res, err := imap.EncodeInvoke(MapSizeCodec, imap.name)
+	if err != nil {
+		return 0, err
+	}
 	return res.(int32), err
 }
 
@@ -173,6 +185,9 @@ func (imap *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
 		return false, err
 	}
 	res, err := imap.EncodeInvokeOnKey(MapContainsKeyCodec, keyData, imap.name, keyData, THREAD_ID)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 }
 func (imap *MapProxy) ContainsValue(value interface{}) (found bool, err error) {
@@ -206,6 +221,9 @@ func (imap *MapProxy) Delete(key interface{}) (err error) {
 }
 func (imap *MapProxy) IsEmpty() (empty bool, err error) {
 	res, err := imap.EncodeInvoke(MapIsEmptyCodec, imap.name)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 }
 func (imap *MapProxy) AddIndex(attribute string, ordered bool) (err error) {
@@ -221,6 +239,9 @@ func (imap *MapProxy) Evict(key interface{}) (evicted bool, err error) {
 		return false, err
 	}
 	res, err := imap.EncodeInvokeOnKey(MapEvictCodec, keyData, imap.name, keyData, THREAD_ID)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 }
 func (imap *MapProxy) EvictAll() (err error) {
@@ -263,6 +284,9 @@ func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64,
 	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
 	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
 	res, err := imap.EncodeInvokeOnKey(MapTryLockCodec, keyData, imap.name, keyData, THREAD_ID, lease, timeout, imap.client.ProxyManager.nextReferenceId())
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 }
 func (imap *MapProxy) Unlock(key interface{}) (err error) {
@@ -296,6 +320,9 @@ func (imap *MapProxy) IsLocked(key interface{}) (locked bool, err error) {
 		return false, err
 	}
 	res, err := imap.EncodeInvokeOnKey(MapIsLockedCodec, keyData, imap.name, keyData)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 }
 
@@ -340,6 +367,9 @@ func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newVa
 		return false, err
 	}
 	res, err := imap.EncodeInvokeOnKey(MapReplaceIfSameCodec, keyData, imap.name, keyData, oldValueData, newValueData, THREAD_ID)
+	if err != nil {
+		return false, err
+	}
 	return res.(bool), err
 }
 func (imap *MapProxy) Set(key interface{}, value interface{}) (err error) {
@@ -540,7 +570,7 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 	return imap.client.ListenerService.registerListener(request, eventHandler, func(registrationId *string) *ClientMessage {
 		return MapRemoveEntryListenerCodec.EncodeRequest(imap.name, registrationId)
 	}, func(clientMessage *ClientMessage) *string {
-		res, err := MapAddEntryListenerCodec.DecodeResponse(clientMessage, imap.ToObject)
+		res, err := MapAddEntryListenerCodec.DecodeResponse(clientMessage, nil)
 		if err != nil {
 			return nil
 		}
@@ -563,7 +593,7 @@ func (imap *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predic
 		func(registrationId *string) *ClientMessage {
 			return MapRemoveEntryListenerCodec.EncodeRequest(imap.name, registrationId)
 		}, func(clientMessage *ClientMessage) *string {
-			res, err := MapAddEntryListenerWithPredicateCodec.DecodeResponse(clientMessage, imap.ToObject)
+			res, err := MapAddEntryListenerWithPredicateCodec.DecodeResponse(clientMessage, nil)
 			if err != nil {
 				return nil
 			}
@@ -587,7 +617,7 @@ func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{
 	return imap.client.ListenerService.registerListener(request, eventHandler, func(registrationId *string) *ClientMessage {
 		return MapRemoveEntryListenerCodec.EncodeRequest(imap.name, registrationId)
 	}, func(clientMessage *ClientMessage) *string {
-		res, err := MapAddEntryListenerToKeyCodec.DecodeResponse(clientMessage, imap.ToObject)
+		res, err := MapAddEntryListenerToKeyCodec.DecodeResponse(clientMessage, nil)
 		if err != nil {
 			return nil
 		}
@@ -614,7 +644,7 @@ func (imap *MapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, p
 		func(registrationId *string) *ClientMessage {
 			return MapRemoveEntryListenerCodec.EncodeRequest(imap.name, registrationId)
 		}, func(clientMessage *ClientMessage) *string {
-			res, err := MapAddEntryListenerToKeyWithPredicateCodec.DecodeResponse(clientMessage, imap.ToObject)
+			res, err := MapAddEntryListenerToKeyWithPredicateCodec.DecodeResponse(clientMessage, nil)
 			if err != nil {
 				return nil
 			}

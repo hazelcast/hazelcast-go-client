@@ -60,7 +60,7 @@ func (proxyManager *ProxyManager) GetOrCreateProxy(serviceName string, name stri
 }
 
 func (proxyManager *ProxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
-	message := ClientCreateProxyEncodeRequest(name, serviceName, proxyManager.findNextProxyAddress())
+	message := ClientCreateProxyCodec.EncodeRequest(name, serviceName, proxyManager.findNextProxyAddress())
 	_, err := proxyManager.client.InvocationService.InvokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string
 		proxyManager.mu.Lock()
 		delete(proxyManager.proxies, ns)
 		proxyManager.mu.Unlock()
-		message := ClientDestroyProxyEncodeRequest(name, serviceName)
+		message := ClientDestroyProxyCodec.EncodeRequest(name, serviceName)
 		_, err := proxyManager.client.InvocationService.InvokeOnRandomTarget(message).Result()
 		if err != nil {
 			return false, err

@@ -14,28 +14,35 @@
 
 package protocol
 
-type ListAddWithIndexResponseParameters struct {
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type listAddWithIndexCodec struct {
 }
 
-func ListAddWithIndexCalculateSize(name *string, index int32, value *Data) int {
+func (self *listAddWithIndexCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += DataCalculateSize(value)
-	return dataSize
+	dataSize += DataCalculateSize(args[2].(*Data))
+	return
 }
-
-func ListAddWithIndexEncodeRequest(name *string, index int32, value *Data) *ClientMessage {
+func (self *listAddWithIndexCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListAddWithIndexCalculateSize(name, index, value))
-	clientMessage.SetMessageType(LIST_ADDWITHINDEX)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_ADDWITHINDEX)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt32(args[1].(int32))
+	request.AppendData(args[2].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*listAddWithIndexCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

@@ -14,32 +14,30 @@
 
 package protocol
 
-type SetRemoveListenerResponseParameters struct {
-	Response bool
+import ()
+
+type setRemoveListenerCodec struct {
 }
 
-func SetRemoveListenerCalculateSize(name *string, registrationId *string) int {
+func (self *setRemoveListenerCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(registrationId)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += StringCalculateSize(args[1].(*string))
+	return
 }
-
-func SetRemoveListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
+func (self *setRemoveListenerCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetRemoveListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(SET_REMOVELISTENER)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(SET_REMOVELISTENER)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendString(args[1].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func SetRemoveListenerDecodeResponse(clientMessage *ClientMessage) *SetRemoveListenerResponseParameters {
+func (self *setRemoveListenerCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(SetRemoveListenerResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

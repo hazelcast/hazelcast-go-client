@@ -14,30 +14,28 @@
 
 package protocol
 
-type SetIsEmptyResponseParameters struct {
-	Response bool
+import ()
+
+type setIsEmptyCodec struct {
 }
 
-func SetIsEmptyCalculateSize(name *string) int {
+func (self *setIsEmptyCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func SetIsEmptyEncodeRequest(name *string) *ClientMessage {
+func (self *setIsEmptyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(SET_ISEMPTY)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(SET_ISEMPTY)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func SetIsEmptyDecodeResponse(clientMessage *ClientMessage) *SetIsEmptyResponseParameters {
+func (self *setIsEmptyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(SetIsEmptyResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

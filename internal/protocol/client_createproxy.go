@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,28 +14,30 @@
 
 package protocol
 
-type ClientCreateProxyResponseParameters struct {
+import ()
+
+type clientCreateProxyCodec struct {
 }
 
-func ClientCreateProxyCalculateSize(name *string, serviceName *string, target *Address) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(serviceName)
-	dataSize += AddressCalculateSize(target)
-	return dataSize
+func (self *clientCreateProxyCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += StringCalculateSize(args[1].(*string))
+	dataSize += AddressCalculateSize(args[2].(*Address))
+	return
 }
-
-func ClientCreateProxyEncodeRequest(name *string, serviceName *string, target *Address) *ClientMessage {
+func (self *clientCreateProxyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientCreateProxyCalculateSize(name, serviceName, target))
-	clientMessage.SetMessageType(CLIENT_CREATEPROXY)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(serviceName)
-	AddressCodecEncode(clientMessage, target)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(CLIENT_CREATEPROXY)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendString(args[1].(*string))
+	AddressCodecEncode(request, args[2].(*Address))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*clientCreateProxyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

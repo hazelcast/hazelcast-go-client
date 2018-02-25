@@ -14,40 +14,43 @@
 
 package protocol
 
-type ListListIteratorResponseParameters struct {
-	Response []*Data
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type listListIteratorCodec struct {
 }
 
-func ListListIteratorCalculateSize(name *string, index int32) int {
+func (self *listListIteratorCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT32_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func ListListIteratorEncodeRequest(name *string, index int32) *ClientMessage {
+func (self *listListIteratorCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListListIteratorCalculateSize(name, index))
-	clientMessage.SetMessageType(LIST_LISTITERATOR)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_LISTITERATOR)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendInt32(args[1].(int32))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListListIteratorDecodeResponse(clientMessage *ClientMessage) *ListListIteratorResponseParameters {
+func (self *listListIteratorCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListListIteratorResponseParameters)
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]*Data, responseSize)
+	response := make([]interface{}, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
+		responseItem, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters = response
 
-	return parameters
+	return
 }

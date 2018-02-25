@@ -14,42 +14,45 @@
 
 package protocol
 
-type ListSubResponseParameters struct {
-	Response []*Data
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type listSubCodec struct {
 }
 
-func ListSubCalculateSize(name *string, from int32, to int32) int {
+func (self *listSubCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT32_SIZE_IN_BYTES
 	dataSize += INT32_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func ListSubEncodeRequest(name *string, from int32, to int32) *ClientMessage {
+func (self *listSubCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListSubCalculateSize(name, from, to))
-	clientMessage.SetMessageType(LIST_SUB)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(from)
-	clientMessage.AppendInt32(to)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_SUB)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendInt32(args[1].(int32))
+	request.AppendInt32(args[2].(int32))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListSubDecodeResponse(clientMessage *ClientMessage) *ListSubResponseParameters {
+func (self *listSubCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListSubResponseParameters)
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]*Data, responseSize)
+	response := make([]interface{}, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
+		responseItem, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters = response
 
-	return parameters
+	return
 }

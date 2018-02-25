@@ -14,38 +14,39 @@
 
 package protocol
 
-type SetGetAllResponseParameters struct {
-	Response []*Data
+import ()
+
+type setGetAllCodec struct {
 }
 
-func SetGetAllCalculateSize(name *string) int {
+func (self *setGetAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func SetGetAllEncodeRequest(name *string) *ClientMessage {
+func (self *setGetAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetGetAllCalculateSize(name))
-	clientMessage.SetMessageType(SET_GETALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(SET_GETALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func SetGetAllDecodeResponse(clientMessage *ClientMessage) *SetGetAllResponseParameters {
+func (self *setGetAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(SetGetAllResponseParameters)
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]*Data, responseSize)
+	response := make([]interface{}, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
+		responseItem, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters = response
 
-	return parameters
+	return
 }

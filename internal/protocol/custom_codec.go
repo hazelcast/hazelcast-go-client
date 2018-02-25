@@ -56,8 +56,8 @@ func MemberCodecDecode(msg *ClientMessage) *Member {
 }
 func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
 	entryView := EntryView{}
-	entryView.key = *msg.ReadData()
-	entryView.value = *msg.ReadData()
+	entryView.key = msg.ReadData()
+	entryView.value = msg.ReadData()
 	entryView.cost = msg.ReadInt64()
 	entryView.creationTime = msg.ReadInt64()
 	entryView.expirationTime = msg.ReadInt64()

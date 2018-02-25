@@ -14,32 +14,32 @@
 
 package protocol
 
-type ListAddResponseParameters struct {
-	Response bool
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+)
+
+type listAddCodec struct {
 }
 
-func ListAddCalculateSize(name *string, value *Data) int {
+func (self *listAddCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(value)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	return
 }
-
-func ListAddEncodeRequest(name *string, value *Data) *ClientMessage {
+func (self *listAddCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListAddCalculateSize(name, value))
-	clientMessage.SetMessageType(LIST_ADD)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_ADD)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListAddDecodeResponse(clientMessage *ClientMessage) *ListAddResponseParameters {
+func (self *listAddCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListAddResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

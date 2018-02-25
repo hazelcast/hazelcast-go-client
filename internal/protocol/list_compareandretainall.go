@@ -14,38 +14,40 @@
 
 package protocol
 
-type ListCompareAndRetainAllResponseParameters struct {
-	Response bool
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type listCompareAndRetainAllCodec struct {
 }
 
-func ListCompareAndRetainAllCalculateSize(name *string, values []*Data) int {
+func (self *listCompareAndRetainAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, valuesItem := range values {
+	for _, valuesItem := range args[1].([]*Data) {
 		dataSize += DataCalculateSize(valuesItem)
 	}
-	return dataSize
+	return
 }
-
-func ListCompareAndRetainAllEncodeRequest(name *string, values []*Data) *ClientMessage {
+func (self *listCompareAndRetainAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListCompareAndRetainAllCalculateSize(name, values))
-	clientMessage.SetMessageType(LIST_COMPAREANDRETAINALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(values))
-	for _, valuesItem := range values {
-		clientMessage.AppendData(valuesItem)
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_COMPAREANDRETAINALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Data)))
+	for _, valuesItem := range args[1].([]*Data) {
+		request.AppendData(valuesItem)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-func ListCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) *ListCompareAndRetainAllResponseParameters {
+func (self *listCompareAndRetainAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListCompareAndRetainAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

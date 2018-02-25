@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,22 +14,24 @@
 
 package protocol
 
-type ClientPingResponseParameters struct {
+import ()
+
+type clientPingCodec struct {
 }
 
-func ClientPingCalculateSize() int {
-	// Calculates the request payload size
-	dataSize := 0
-	return dataSize
+func (self *clientPingCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	return
 }
-
-func ClientPingEncodeRequest() *ClientMessage {
+func (self *clientPingCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientPingCalculateSize())
-	clientMessage.SetMessageType(CLIENT_PING)
-	clientMessage.IsRetryable = true
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(CLIENT_PING)
+	request.IsRetryable = true
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*clientPingCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

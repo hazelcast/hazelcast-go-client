@@ -15,6 +15,8 @@
 package protocol
 
 import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"testing"
 )
 

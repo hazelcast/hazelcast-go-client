@@ -14,24 +14,27 @@
 
 package protocol
 
-type SetClearResponseParameters struct {
+import ()
+
+type setClearCodec struct {
 }
 
-func SetClearCalculateSize(name *string) int {
+func (self *setClearCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func SetClearEncodeRequest(name *string) *ClientMessage {
+func (self *setClearCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetClearCalculateSize(name))
-	clientMessage.SetMessageType(SET_CLEAR)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(SET_CLEAR)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*setClearCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

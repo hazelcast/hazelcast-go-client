@@ -31,14 +31,15 @@ func TestNonSmartInvoke(t *testing.T) {
 	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	mp, _ := client.GetMap("myMap")
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
+	defer mp.Clear()
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
 	AssertEqualf(t, err, res, testValue, "get returned a wrong value")
-	mp.Clear()
-	remoteController.ShutdownCluster(cluster.ID)
-	client.Shutdown()
+
 }
 func TestSingleConnectionWithManyMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
@@ -48,6 +49,8 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
 	mp, _ := client.GetMap("testMap")
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)
@@ -59,8 +62,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	mp.Clear()
 	connectionCount := client.(*internal.HazelcastClient).ConnectionManager.ConnectionCount()
 	AssertEqualf(t, nil, int32(1), connectionCount, "Client should open only one connection")
-	remoteController.ShutdownCluster(cluster.ID)
-	client.Shutdown()
+
 }
 func TestInvocationTimeout(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
@@ -69,14 +71,15 @@ func TestInvocationTimeout(t *testing.T) {
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100)
 	config.ClientNetworkConfig().SetInvocationTimeoutInSeconds(5)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
 	mp, _ := client.GetMap("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	_, err := mp.Put("a", "b")
 	if _, ok := err.(*core.HazelcastTimeoutError); !ok {
 		t.Fatal("invocation should have timed out but returned, ", err)
 	}
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
+
 }
 
 func TestInvocationRetry(t *testing.T) {
@@ -107,6 +110,7 @@ func TestInvocationRetry(t *testing.T) {
 func TestInvocationWithShutdown(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
+	defer remoteController.ShutdownCluster(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
@@ -116,7 +120,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 	if _, ok := err.(*core.HazelcastClientNotActiveError); !ok {
 		t.Fatal("HazelcastClientNotActiveError was expected")
 	}
-	remoteController.ShutdownCluster(cluster.ID)
+
 }
 
 func TestInvocationNotSent(t *testing.T) {
@@ -127,6 +131,8 @@ func TestInvocationNotSent(t *testing.T) {
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100).
 		SetInvocationTimeoutInSeconds(10).SetConnectionAttemptPeriod(1)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
 	mp, _ := client.GetMap("testMap")
 	wg.Add(50)
 	// make put ops concurrently so that some of them will not be sent when the server gets shut down.
@@ -147,7 +153,5 @@ func TestInvocationNotSent(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, timeout, false, "invocationNotSent failed")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 
 }

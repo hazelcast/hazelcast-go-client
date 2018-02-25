@@ -66,3 +66,12 @@ var (
 	MapExecuteOnKeysCodec                      = &mapExecuteOnKeysCodec{}
 	MapExecuteOnAllKeysCodec                   = &mapExecuteOnAllKeysCodec{}
 )
+
+var (
+	ClientAddMembershipListenerCodec = &clientAddMembershipListenerCodec{}
+	ClientGetPartitionsCodec         = &clientGetPartitionsCodec{}
+	ClientPingCodec                  = &clientPingCodec{}
+	ClientCreateProxyCodec           = &clientCreateProxyCodec{}
+	ClientDestroyProxyCodec          = &clientDestroyProxyCodec{}
+	ClientAuthenticationCodec        = &clientAuthenticationCodec{}
+)

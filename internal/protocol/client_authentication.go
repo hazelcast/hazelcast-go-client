@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,6 +14,13 @@
 
 package protocol
 
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type clientAuthenticationCodec struct {
+}
+
 type ClientAuthenticationResponseParameters struct {
 	Status                    uint8
 	Address                   *Address
@@ -21,79 +28,78 @@ type ClientAuthenticationResponseParameters struct {
 	OwnerUuid                 *string
 	SerializationVersion      uint8
 	ServerHazelcastVersion    *string
-	ClientUnregisteredMembers *[]Member
+	ClientUnregisteredMembers []*Member
 }
 
-func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(username)
-	dataSize += StringCalculateSize(password)
+func (self *clientAuthenticationCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += StringCalculateSize(args[1].(*string))
 	dataSize += BOOL_SIZE_IN_BYTES
-	if uuid != nil {
-		dataSize += StringCalculateSize(uuid)
+	if args[2].(*string) != nil {
+		dataSize += StringCalculateSize(args[2].(*string))
 	}
 	dataSize += BOOL_SIZE_IN_BYTES
-	if ownerUuid != nil {
-		dataSize += StringCalculateSize(ownerUuid)
+	if args[3].(*string) != nil {
+		dataSize += StringCalculateSize(args[3].(*string))
 	}
 	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += StringCalculateSize(clientType)
+	dataSize += StringCalculateSize(args[5].(*string))
 	dataSize += UINT8_SIZE_IN_BYTES
-	return dataSize
+	dataSize += StringCalculateSize(args[7].(*string))
+	return
 }
-
-func ClientAuthenticationEncodeRequest(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8) *ClientMessage {
+func (self *clientAuthenticationCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion))
-	clientMessage.SetMessageType(CLIENT_AUTHENTICATION)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(username)
-	clientMessage.AppendString(password)
-	clientMessage.AppendBool(uuid == nil)
-	if uuid != nil {
-		clientMessage.AppendString(uuid)
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(CLIENT_AUTHENTICATION)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendString(args[1].(*string))
+	request.AppendBool(args[2].(*string) == nil)
+	if args[2].(*string) != nil {
+		request.AppendString(args[2].(*string))
 	}
-	clientMessage.AppendBool(ownerUuid == nil)
-	if ownerUuid != nil {
-		clientMessage.AppendString(ownerUuid)
+	request.AppendBool(args[3].(*string) == nil)
+	if args[3].(*string) != nil {
+		request.AppendString(args[3].(*string))
 	}
-	clientMessage.AppendBool(isOwnerConnection)
-	clientMessage.AppendString(clientType)
-	clientMessage.AppendUint8(serializationVersion)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.AppendBool(args[4].(bool))
+	request.AppendString(args[5].(*string))
+	request.AppendUint8(args[6].(uint8))
+	request.AppendString(args[7].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) *ClientAuthenticationResponseParameters {
-	// Decode response from client message
-	parameters := new(ClientAuthenticationResponseParameters)
-	parameters.Status = clientMessage.ReadUint8()
+func (self *clientAuthenticationCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	response := new(ClientAuthenticationResponseParameters)
+	response.Status = clientMessage.ReadUint8()
 
 	if !clientMessage.ReadBool() {
-		parameters.Address = AddressCodecDecode(clientMessage)
+		response.Address = AddressCodecDecode(clientMessage)
 	}
 
 	if !clientMessage.ReadBool() {
-		parameters.Uuid = clientMessage.ReadString()
+		response.Uuid = clientMessage.ReadString()
 	}
 
 	if !clientMessage.ReadBool() {
-		parameters.OwnerUuid = clientMessage.ReadString()
+		response.OwnerUuid = clientMessage.ReadString()
 	}
-	parameters.SerializationVersion = clientMessage.ReadUint8()
-	parameters.ServerHazelcastVersion = clientMessage.ReadString()
+	response.SerializationVersion = clientMessage.ReadUint8()
+	response.ServerHazelcastVersion = clientMessage.ReadString()
 
 	if !clientMessage.ReadBool() {
 
 		clientUnregisteredMembersSize := clientMessage.ReadInt32()
-		clientUnregisteredMembers := make([]Member, clientUnregisteredMembersSize)
+		clientUnregisteredMembers := make([]*Member, clientUnregisteredMembersSize)
 		for clientUnregisteredMembersIndex := 0; clientUnregisteredMembersIndex < int(clientUnregisteredMembersSize); clientUnregisteredMembersIndex++ {
 			clientUnregisteredMembersItem := MemberCodecDecode(clientMessage)
-			clientUnregisteredMembers[clientUnregisteredMembersIndex] = *clientUnregisteredMembersItem
+			clientUnregisteredMembers[clientUnregisteredMembersIndex] = clientUnregisteredMembersItem
 		}
-		parameters.ClientUnregisteredMembers = &clientUnregisteredMembers
+		response.ClientUnregisteredMembers = clientUnregisteredMembers
 
 	}
-	return parameters
+	parameters = response
+	return
 }

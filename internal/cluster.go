@@ -169,9 +169,9 @@ func (clusterService *ClusterService) connectToAddress(address *Address) error {
 
 func (clusterService *ClusterService) initMembershipListener(connection *Connection) error {
 	wg.Add(1)
-	request := ClientAddMembershipListenerEncodeRequest(false)
+	request := ClientAddMembershipListenerCodec.EncodeRequest(false)
 	eventHandler := func(message *ClientMessage) {
-		ClientAddMembershipListenerHandle(message, clusterService.handleMember, clusterService.handleMemberList, clusterService.handleMemberAttributeChange)
+		ClientAddMembershipListenerCodec.Handle(message, clusterService.handleMember, clusterService.handleMemberList, clusterService.handleMemberAttributeChange)
 	}
 	invocation := NewInvocation(request, -1, nil, connection, clusterService.client)
 	invocation.eventHandler = eventHandler
@@ -179,7 +179,8 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	if err != nil {
 		return err
 	}
-	registrationId := ClientAddMembershipListenerDecodeResponse(response).Response
+	res, _ := ClientAddMembershipListenerCodec.DecodeResponse(response, nil)
+	registrationId := res.(*string)
 	wg.Wait() //Wait until the inital member list is fetched.
 	log.Println("Registered membership listener with Id ", *registrationId)
 	return nil
@@ -222,15 +223,15 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 	clusterService.client.PartitionService.refresh <- struct{}{}
 }
 
-func (clusterService *ClusterService) handleMemberList(members *[]Member) {
-	if len(*members) == 0 {
+func (clusterService *ClusterService) handleMemberList(members []*Member) {
+	if len(members) == 0 {
 		return
 	}
 	previousMembers := clusterService.members.Load().([]Member)
 	//TODO:: This loop is O(n^2), it is better to store members in a map to speed it up.
 	for _, member := range previousMembers {
 		found := false
-		for _, newMember := range *members {
+		for _, newMember := range members {
 			if *member.Address().(*Address) == *newMember.Address().(*Address) {
 				found = true
 				break
@@ -240,7 +241,7 @@ func (clusterService *ClusterService) handleMemberList(members *[]Member) {
 			clusterService.memberRemoved(&member)
 		}
 	}
-	for _, member := range *members {
+	for _, member := range members {
 		found := false
 		for _, previousMember := range previousMembers {
 			if *member.Address().(*Address) == *previousMember.Address().(*Address) {
@@ -249,7 +250,7 @@ func (clusterService *ClusterService) handleMemberList(members *[]Member) {
 			}
 		}
 		if !found {
-			clusterService.memberAdded(&member)
+			clusterService.memberAdded(member)
 		}
 	}
 	clusterService.client.PartitionService.refresh <- struct{}{}

@@ -14,45 +14,48 @@
 
 package protocol
 
-type ListAddListenerResponseParameters struct {
-	Response *string
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type listAddListenerCodec struct {
 }
 
-func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
+func (self *listAddListenerCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += BOOL_SIZE_IN_BYTES
 	dataSize += BOOL_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func ListAddListenerEncodeRequest(name *string, includeValue bool, localOnly bool) *ClientMessage {
+func (self *listAddListenerCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListAddListenerCalculateSize(name, includeValue, localOnly))
-	clientMessage.SetMessageType(LIST_ADDLISTENER)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendBool(includeValue)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_ADDLISTENER)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendBool(args[1].(bool))
+	request.AppendBool(args[2].(bool))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListAddListenerDecodeResponse(clientMessage *ClientMessage) *ListAddListenerResponseParameters {
+func (self *listAddListenerCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListAddListenerResponseParameters)
-	parameters.Response = clientMessage.ReadString()
-	return parameters
+	parameters = clientMessage.ReadString()
+	return
 }
 
-func ListAddListenerHandle(clientMessage *ClientMessage, handleEventItem func(*Data, *string, int32)) {
+func (self *listAddListenerCodec) Handle(clientMessage *ClientMessage, handleEventItem func(*Data, *string, int32)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ITEM && handleEventItem != nil {
 		var item *Data
 		if !clientMessage.ReadBool() {
 			item = clientMessage.ReadData()
+
 		}
 		uuid := clientMessage.ReadString()
 		eventType := clientMessage.ReadInt32()

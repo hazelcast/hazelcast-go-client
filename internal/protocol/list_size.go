@@ -14,30 +14,28 @@
 
 package protocol
 
-type ListSizeResponseParameters struct {
-	Response int32
+import ()
+
+type listSizeCodec struct {
 }
 
-func ListSizeCalculateSize(name *string) int {
+func (self *listSizeCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func ListSizeEncodeRequest(name *string) *ClientMessage {
+func (self *listSizeCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListSizeCalculateSize(name))
-	clientMessage.SetMessageType(LIST_SIZE)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_SIZE)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListSizeDecodeResponse(clientMessage *ClientMessage) *ListSizeResponseParameters {
+func (self *listSizeCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListSizeResponseParameters)
-	parameters.Response = clientMessage.ReadInt32()
-	return parameters
+	parameters = clientMessage.ReadInt32()
+	return
 }

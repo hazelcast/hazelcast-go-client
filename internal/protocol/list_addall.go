@@ -14,38 +14,40 @@
 
 package protocol
 
-type ListAddAllResponseParameters struct {
-	Response bool
+import (
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
+
+type listAddAllCodec struct {
 }
 
-func ListAddAllCalculateSize(name *string, valueList []*Data) int {
+func (self *listAddAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, valueListItem := range valueList {
+	for _, valueListItem := range args[1].([]*Data) {
 		dataSize += DataCalculateSize(valueListItem)
 	}
-	return dataSize
+	return
 }
-
-func ListAddAllEncodeRequest(name *string, valueList []*Data) *ClientMessage {
+func (self *listAddAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListAddAllCalculateSize(name, valueList))
-	clientMessage.SetMessageType(LIST_ADDALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(valueList))
-	for _, valueListItem := range valueList {
-		clientMessage.AppendData(valueListItem)
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_ADDALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Data)))
+	for _, valueListItem := range args[1].([]*Data) {
+		request.AppendData(valueListItem)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-func ListAddAllDecodeResponse(clientMessage *ClientMessage) *ListAddAllResponseParameters {
+func (self *listAddAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListAddAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

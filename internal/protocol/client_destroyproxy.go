@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,26 +14,28 @@
 
 package protocol
 
-type ClientDestroyProxyResponseParameters struct {
+import ()
+
+type clientDestroyProxyCodec struct {
 }
 
-func ClientDestroyProxyCalculateSize(name *string, serviceName *string) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(serviceName)
-	return dataSize
+func (self *clientDestroyProxyCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += StringCalculateSize(args[1].(*string))
+	return
 }
-
-func ClientDestroyProxyEncodeRequest(name *string, serviceName *string) *ClientMessage {
+func (self *clientDestroyProxyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientDestroyProxyCalculateSize(name, serviceName))
-	clientMessage.SetMessageType(CLIENT_DESTROYPROXY)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(serviceName)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(CLIENT_DESTROYPROXY)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendString(args[1].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*clientDestroyProxyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}
