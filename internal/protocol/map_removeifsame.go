@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,40 +15,35 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type MapRemoveIfSameResponseParameters struct {
-	Response bool
+type mapRemoveIfSameCodec struct {
 }
 
-func MapRemoveIfSameCalculateSize(name *string, key *Data, value *Data, threadId int64) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	dataSize += DataCalculateSize(value)
+func (self *mapRemoveIfSameCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	dataSize += DataCalculateSize(args[2].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapRemoveIfSameEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
+func (self *mapRemoveIfSameCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapRemoveIfSameCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(MAP_REMOVEIFSAME)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_REMOVEIFSAME)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendData(args[2].(*Data))
+	request.AppendInt64(args[3].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) *MapRemoveIfSameResponseParameters {
-	// Decode response from client message
-	parameters := new(MapRemoveIfSameResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+func (self *mapRemoveIfSameCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	parameters = clientMessage.ReadBool()
+	return
 }

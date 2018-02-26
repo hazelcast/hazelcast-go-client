@@ -18,32 +18,28 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type ListIndexOfResponseParameters struct {
-	Response int32
+type listIndexOfCodec struct {
 }
 
-func ListIndexOfCalculateSize(name *string, value *Data) int {
+func (self *listIndexOfCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(value)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	return
 }
-
-func ListIndexOfEncodeRequest(name *string, value *Data) *ClientMessage {
+func (self *listIndexOfCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListIndexOfCalculateSize(name, value))
-	clientMessage.SetMessageType(LIST_INDEXOF)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_INDEXOF)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListIndexOfDecodeResponse(clientMessage *ClientMessage) *ListIndexOfResponseParameters {
+func (self *listIndexOfCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListIndexOfResponseParameters)
-	parameters.Response = clientMessage.ReadInt32()
-	return parameters
+	parameters = clientMessage.ReadInt32()
+	return
 }

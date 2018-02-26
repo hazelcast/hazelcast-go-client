@@ -457,3 +457,5 @@ func GetEntryListenerFlags(listener interface{}) int32 {
 	}
 	return flags
 }
+
+type ToObject func(*Data) (interface{}, error)

@@ -16,24 +16,25 @@ package protocol
 
 import ()
 
-type ListClearResponseParameters struct {
+type listClearCodec struct {
 }
 
-func ListClearCalculateSize(name *string) int {
+func (self *listClearCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func ListClearEncodeRequest(name *string) *ClientMessage {
+func (self *listClearCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListClearCalculateSize(name))
-	clientMessage.SetMessageType(LIST_CLEAR)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_CLEAR)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*listClearCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}

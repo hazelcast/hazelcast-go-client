@@ -27,6 +27,13 @@ const (
 	CREDENTIALS_FAILED             = iota
 	SERIALIZATION_VERSION_MISMATCH = iota
 )
+const (
+	SERIALIZATION_VERSION uint8 = 1
+)
+
+var (
+	SERVER_VERSION = "3.9"
+)
 
 type ConnectionManager struct {
 	client              *HazelcastClient
@@ -165,22 +172,22 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	clientType := CLIENT_TYPE
 	name := connectionManager.client.ClientConfig.GroupConfig().Name()
 	password := connectionManager.client.ClientConfig.GroupConfig().Password()
-	request := ClientAuthenticationEncodeRequest(
+	request := ClientAuthenticationCodec.EncodeRequest(
 		&name,
 		&password,
 		&uuid,
 		&ownerUuid,
 		asOwner,
 		&clientType,
-		1,
-		//"3.9", //TODO::What should this be ?
+		SERIALIZATION_VERSION,
+		&SERVER_VERSION,
 	)
 	result, err := connectionManager.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		return err
 	} else {
-
-		parameters := ClientAuthenticationDecodeResponse(result)
+		res, _ := ClientAuthenticationCodec.DecodeResponse(result, nil)
+		parameters := res.(*ClientAuthenticationResponseParameters)
 		switch parameters.Status {
 		case AUTHENTICATED:
 			connection.serverHazelcastVersion = parameters.ServerHazelcastVersion

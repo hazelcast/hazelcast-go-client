@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,43 +15,41 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type MapExecuteOnKeyResponseParameters struct {
-	Response *Data
+type mapExecuteOnKeyCodec struct {
 }
 
-func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *Data, key *Data, threadId int64) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(entryProcessor)
-	dataSize += DataCalculateSize(key)
+func (self *mapExecuteOnKeyCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	dataSize += DataCalculateSize(args[2].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *Data, key *Data, threadId int64) *ClientMessage {
+func (self *mapExecuteOnKeyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapExecuteOnKeyCalculateSize(name, entryProcessor, key, threadId))
-	clientMessage.SetMessageType(MAP_EXECUTEONKEY)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(entryProcessor)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_EXECUTEONKEY)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendData(args[2].(*Data))
+	request.AppendInt64(args[3].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapExecuteOnKeyDecodeResponse(clientMessage *ClientMessage) *MapExecuteOnKeyResponseParameters {
-	// Decode response from client message
-	parameters := new(MapExecuteOnKeyResponseParameters)
+func (self *mapExecuteOnKeyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		parameters, err = toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 	}
-	return parameters
+	return
 }

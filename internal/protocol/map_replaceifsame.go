@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,42 +15,37 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type MapReplaceIfSameResponseParameters struct {
-	Response bool
+type mapReplaceIfSameCodec struct {
 }
 
-func MapReplaceIfSameCalculateSize(name *string, key *Data, testValue *Data, value *Data, threadId int64) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	dataSize += DataCalculateSize(testValue)
-	dataSize += DataCalculateSize(value)
+func (self *mapReplaceIfSameCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	dataSize += DataCalculateSize(args[2].(*Data))
+	dataSize += DataCalculateSize(args[3].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapReplaceIfSameEncodeRequest(name *string, key *Data, testValue *Data, value *Data, threadId int64) *ClientMessage {
+func (self *mapReplaceIfSameCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapReplaceIfSameCalculateSize(name, key, testValue, value, threadId))
-	clientMessage.SetMessageType(MAP_REPLACEIFSAME)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(testValue)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_REPLACEIFSAME)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendData(args[2].(*Data))
+	request.AppendData(args[3].(*Data))
+	request.AppendInt64(args[4].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapReplaceIfSameDecodeResponse(clientMessage *ClientMessage) *MapReplaceIfSameResponseParameters {
-	// Decode response from client message
-	parameters := new(MapReplaceIfSameResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+func (self *mapReplaceIfSameCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	parameters = clientMessage.ReadBool()
+	return
 }

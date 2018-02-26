@@ -16,38 +16,36 @@ package protocol
 
 import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type ListGetResponseParameters struct {
-	Response *Data
+type listGetCodec struct {
 }
 
-func ListGetCalculateSize(name *string, index int32) int {
+func (self *listGetCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT32_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func ListGetEncodeRequest(name *string, index int32) *ClientMessage {
+func (self *listGetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListGetCalculateSize(name, index))
-	clientMessage.SetMessageType(LIST_GET)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_GET)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendInt32(args[1].(int32))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListGetDecodeResponse(clientMessage *ClientMessage) *ListGetResponseParameters {
+func (self *listGetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListGetResponseParameters)
 
 	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		parameters, err = toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 	}
-	return parameters
+	return
 }

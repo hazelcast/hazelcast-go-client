@@ -44,6 +44,8 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	config.SetHeartbeatIntervalInSeconds(3)
 	config.SetHeartbeatTimeoutInSeconds(5)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
 	wg.Add(1)
 	client.(*internal.HazelcastClient).HeartBeatService.AddHeartbeatListener(heartbeatListener)
 	remoteController.SuspendMember(cluster.ID, member.UUID)
@@ -53,6 +55,5 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	wg.Add(1)
 	timeout = WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "heartbeatRestored listener failed")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
+
 }

@@ -23,8 +23,9 @@ func TestClientGetMapWhenNoMemberUp(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
+	defer client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 	_, err := client.GetMap("map")
 	AssertErrorNotNil(t, err, "getMap should have returned an error when no member is up")
-	client.Shutdown()
+
 }

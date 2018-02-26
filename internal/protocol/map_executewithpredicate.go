@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -18,46 +18,46 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type MapExecuteWithPredicateResponseParameters struct {
-	Response *[]Pair
+type mapExecuteWithPredicateCodec struct {
 }
 
-func MapExecuteWithPredicateCalculateSize(name *string, entryProcessor *Data, predicate *Data) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(entryProcessor)
-	dataSize += DataCalculateSize(predicate)
-	return dataSize
+func (self *mapExecuteWithPredicateCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
+	dataSize += DataCalculateSize(args[2].(*Data))
+	return
 }
-
-func MapExecuteWithPredicateEncodeRequest(name *string, entryProcessor *Data, predicate *Data) *ClientMessage {
+func (self *mapExecuteWithPredicateCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapExecuteWithPredicateCalculateSize(name, entryProcessor, predicate))
-	clientMessage.SetMessageType(MAP_EXECUTEWITHPREDICATE)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(entryProcessor)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_EXECUTEWITHPREDICATE)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendData(args[2].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapExecuteWithPredicateResponseParameters {
-	// Decode response from client message
-	parameters := new(MapExecuteWithPredicateResponseParameters)
+func (self *mapExecuteWithPredicateCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]Pair, responseSize)
+	response := make([]*Pair, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem Pair
-		responseItemKey := clientMessage.ReadData()
-		responseItemVal := clientMessage.ReadData()
+		var responseItem = &Pair{}
+		responseItemKey, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
+		responseItemVal, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = &response
+	parameters = response
 
-	return parameters
+	return
 }

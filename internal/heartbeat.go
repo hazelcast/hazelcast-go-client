@@ -89,7 +89,7 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		}
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
-			request := protocol.ClientPingEncodeRequest()
+			request := protocol.ClientPingCodec.EncodeRequest()
 			sentInvocation := heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
 			copyConnection := connection
 			go func() {

@@ -44,7 +44,11 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 	client, _ := hazelcast.NewHazelcastClient()
 	entryAdded := &mapListener{wg: wg}
 	mp, _ := client.GetMap("testMap")
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
+	defer mp.Clear()
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	defer mp.RemoveEntryListener(registrationId)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(100)
 	for i := 0; i < 100; i++ {
@@ -54,10 +58,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 	}
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "smartListener with multiple members failed")
-	mp.RemoveEntryListener(registrationId)
-	mp.Clear()
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
+
 }
 func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
@@ -68,7 +69,11 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	entryAdded := &mapListener{wg: wg}
 	mp, _ := client.GetMap("testMap")
+	defer remoteController.ShutdownCluster(cluster.ID)
+	defer client.Shutdown()
+	defer mp.Clear()
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	defer mp.RemoveEntryListener(registrationId)
 	AssertEqual(t, err, nil, nil)
 	remoteController.StartMember(cluster.ID)
 	time.Sleep(15 * time.Second) // Wait for partitionTable update
@@ -80,8 +85,5 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	}
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "smartListener adding a member after a while failed to listen.")
-	mp.RemoveEntryListener(registrationId)
-	mp.Clear()
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
+
 }

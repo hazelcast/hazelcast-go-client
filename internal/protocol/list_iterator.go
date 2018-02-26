@@ -14,42 +14,39 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
+import ()
 
-type ListIteratorResponseParameters struct {
-	Response []*Data
+type listIteratorCodec struct {
 }
 
-func ListIteratorCalculateSize(name *string) int {
+func (self *listIteratorCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func ListIteratorEncodeRequest(name *string) *ClientMessage {
+func (self *listIteratorCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListIteratorCalculateSize(name))
-	clientMessage.SetMessageType(LIST_ITERATOR)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_ITERATOR)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListIteratorDecodeResponse(clientMessage *ClientMessage) *ListIteratorResponseParameters {
+func (self *listIteratorCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListIteratorResponseParameters)
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]*Data, responseSize)
+	response := make([]interface{}, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
+		responseItem, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = response
+	parameters = response
 
-	return parameters
+	return
 }

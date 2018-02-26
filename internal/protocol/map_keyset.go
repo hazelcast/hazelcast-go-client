@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,42 +14,37 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
+import ()
 
-type MapKeySetResponseParameters struct {
-	Response *[]Data
+type mapKeySetCodec struct {
 }
 
-func MapKeySetCalculateSize(name *string) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+func (self *mapKeySetCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func MapKeySetEncodeRequest(name *string) *ClientMessage {
+func (self *mapKeySetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapKeySetCalculateSize(name))
-	clientMessage.SetMessageType(MAP_KEYSET)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_KEYSET)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapKeySetDecodeResponse(clientMessage *ClientMessage) *MapKeySetResponseParameters {
-	// Decode response from client message
-	parameters := new(MapKeySetResponseParameters)
+func (self *mapKeySetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]Data, responseSize)
+	response := make([]interface{}, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
-		response[responseIndex] = *responseItem
+		responseItem, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
+		response[responseIndex] = responseItem
 	}
-	parameters.Response = &response
+	parameters = response
 
-	return parameters
+	return
 }

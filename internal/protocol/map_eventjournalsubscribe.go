@@ -14,30 +14,27 @@
 
 package protocol
 
-import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
+import ()
 
-type mapContainsValueCodec struct {
+type mapEventJournalSubscribeCodec struct {
 }
 
-func (self *mapContainsValueCodec) CalculateSize(args ...interface{}) (dataSize int) {
+func (self *mapEventJournalSubscribeCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	dataSize += StringCalculateSize(args[0].(*string))
-	dataSize += DataCalculateSize(args[1].(*Data))
 	return
 }
-func (self *mapContainsValueCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
+func (self *mapEventJournalSubscribeCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
 	request = NewClientMessage(nil, self.CalculateSize(args...))
-	request.SetMessageType(MAP_CONTAINSVALUE)
+	request.SetMessageType(MAP_EVENTJOURNALSUBSCRIBE)
 	request.IsRetryable = true
 	request.AppendString(args[0].(*string))
-	request.AppendData(args[1].(*Data))
 	request.UpdateFrameLength()
 	return
 }
 
-func (self *mapContainsValueCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
-	parameters = clientMessage.ReadBool()
+func (self *mapEventJournalSubscribeCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	parameters = clientMessage.ReadInt64()
+	parameters = clientMessage.ReadInt64()
 	return
 }

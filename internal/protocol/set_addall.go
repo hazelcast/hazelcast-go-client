@@ -20,38 +20,34 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type SetAddAllResponseParameters struct {
-	Response bool
+type setAddAllCodec struct {
 }
 
-func SetAddAllCalculateSize(name *string, valueList []*Data) int {
+func (self *setAddAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, valueListItem := range valueList {
+	for _, valueListItem := range args[1].([]*Data) {
 		dataSize += DataCalculateSize(valueListItem)
 	}
-	return dataSize
+	return
 }
-
-func SetAddAllEncodeRequest(name *string, valueList []*Data) *ClientMessage {
+func (self *setAddAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetAddAllCalculateSize(name, valueList))
-	clientMessage.SetMessageType(SET_ADDALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(valueList))
-	for _, valueListItem := range valueList {
-		clientMessage.AppendData(valueListItem)
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(SET_ADDALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Data)))
+	for _, valueListItem := range args[1].([]*Data) {
+		request.AppendData(valueListItem)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-func SetAddAllDecodeResponse(clientMessage *ClientMessage) *SetAddAllResponseParameters {
+func (self *setAddAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(SetAddAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,30 +14,26 @@
 
 package protocol
 
-type MapIsEmptyResponseParameters struct {
-	Response bool
+import ()
+
+type mapIsEmptyCodec struct {
 }
 
-func MapIsEmptyCalculateSize(name *string) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+func (self *mapIsEmptyCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func MapIsEmptyEncodeRequest(name *string) *ClientMessage {
+func (self *mapIsEmptyCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(MAP_ISEMPTY)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_ISEMPTY)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapIsEmptyDecodeResponse(clientMessage *ClientMessage) *MapIsEmptyResponseParameters {
-	// Decode response from client message
-	parameters := new(MapIsEmptyResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+func (self *mapIsEmptyCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	parameters = clientMessage.ReadBool()
+	return
 }

@@ -20,38 +20,34 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListCompareAndRemoveAllResponseParameters struct {
-	Response bool
+type listCompareAndRemoveAllCodec struct {
 }
 
-func ListCompareAndRemoveAllCalculateSize(name *string, values []*Data) int {
+func (self *listCompareAndRemoveAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, valuesItem := range values {
+	for _, valuesItem := range args[1].([]*Data) {
 		dataSize += DataCalculateSize(valuesItem)
 	}
-	return dataSize
+	return
 }
-
-func ListCompareAndRemoveAllEncodeRequest(name *string, values []*Data) *ClientMessage {
+func (self *listCompareAndRemoveAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListCompareAndRemoveAllCalculateSize(name, values))
-	clientMessage.SetMessageType(LIST_COMPAREANDREMOVEALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(values))
-	for _, valuesItem := range values {
-		clientMessage.AppendData(valuesItem)
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_COMPAREANDREMOVEALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Data)))
+	for _, valuesItem := range args[1].([]*Data) {
+		request.AppendData(valuesItem)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-func ListCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) *ListCompareAndRemoveAllResponseParameters {
+func (self *listCompareAndRemoveAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListCompareAndRemoveAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

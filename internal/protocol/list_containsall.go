@@ -20,38 +20,34 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListContainsAllResponseParameters struct {
-	Response bool
+type listContainsAllCodec struct {
 }
 
-func ListContainsAllCalculateSize(name *string, values []*Data) int {
+func (self *listContainsAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, valuesItem := range values {
+	for _, valuesItem := range args[1].([]*Data) {
 		dataSize += DataCalculateSize(valuesItem)
 	}
-	return dataSize
+	return
 }
-
-func ListContainsAllEncodeRequest(name *string, values []*Data) *ClientMessage {
+func (self *listContainsAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListContainsAllCalculateSize(name, values))
-	clientMessage.SetMessageType(LIST_CONTAINSALL)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(values))
-	for _, valuesItem := range values {
-		clientMessage.AppendData(valuesItem)
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_CONTAINSALL)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Data)))
+	for _, valuesItem := range args[1].([]*Data) {
+		request.AppendData(valuesItem)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-func ListContainsAllDecodeResponse(clientMessage *ClientMessage) *ListContainsAllResponseParameters {
+func (self *listContainsAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListContainsAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	parameters = clientMessage.ReadBool()
+	return
 }

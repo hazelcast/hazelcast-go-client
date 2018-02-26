@@ -20,37 +20,36 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListSetResponseParameters struct {
-	Response *Data
+type listSetCodec struct {
 }
 
-func ListSetCalculateSize(name *string, index int32, value *Data) int {
+func (self *listSetCodec) CalculateSize(args ...interface{}) (dataSize int) {
 	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += DataCalculateSize(value)
-	return dataSize
+	dataSize += DataCalculateSize(args[2].(*Data))
+	return
 }
-
-func ListSetEncodeRequest(name *string, index int32, value *Data) *ClientMessage {
+func (self *listSetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListSetCalculateSize(name, index, value))
-	clientMessage.SetMessageType(LIST_SET)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args))
+	request.SetMessageType(LIST_SET)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt32(args[1].(int32))
+	request.AppendData(args[2].(*Data))
+	request.UpdateFrameLength()
+	return
 }
 
-func ListSetDecodeResponse(clientMessage *ClientMessage) *ListSetResponseParameters {
+func (self *listSetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 	// Decode response from client message
-	parameters := new(ListSetResponseParameters)
 
 	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		parameters, err = toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 	}
-	return parameters
+	return
 }

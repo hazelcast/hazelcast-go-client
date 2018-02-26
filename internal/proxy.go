@@ -41,15 +41,29 @@ func (proxy *proxy) ServiceName() string {
 	return *proxy.serviceName
 }
 
-func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {
-	return proxy.client.InvocationService.InvokeOnKeyOwner(request, keyData).Result()
+func (proxy *proxy) EncodeInvoke(codec Codec, codecArguments ...interface{}) (parameter interface{}, err error) {
+	request := codec.EncodeRequest(codecArguments...)
+	responseMessage, err := proxy.client.InvocationService.InvokeOnRandomTarget(request).Result()
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeResponse(responseMessage, proxy.ToObject)
 }
-func (proxy *proxy) InvokeOnRandomTarget(request *ClientMessage) (*ClientMessage, error) {
-	return proxy.client.InvocationService.InvokeOnRandomTarget(request).Result()
+
+func (proxy *proxy) EncodeInvokeOnKey(codec Codec, keyData *Data, codecArguments ...interface{}) (interface{}, error) {
+	partitionId := proxy.client.PartitionService.GetPartitionId(keyData)
+	return proxy.EncodeInvokeOnPartition(codec, partitionId, codecArguments...)
 }
-func (proxy *proxy) InvokeOnPartition(request *ClientMessage, partitionId int32) (*ClientMessage, error) {
-	return proxy.client.InvocationService.InvokeOnPartitionOwner(request, partitionId).Result()
+
+func (proxy *proxy) EncodeInvokeOnPartition(codec Codec, partitionId int32, codecArguments ...interface{}) (parameter interface{}, err error) {
+	request := codec.EncodeRequest(codecArguments...)
+	responseMessage, err := proxy.client.InvocationService.InvokeOnPartitionOwner(request, partitionId).Result()
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeResponse(responseMessage, proxy.ToObject)
 }
+
 func (proxy *proxy) ToObject(data *Data) (interface{}, error) {
 	return proxy.client.SerializationService.ToObject(data)
 }
@@ -71,6 +85,6 @@ func newPartitionSpecificProxy(client *HazelcastClient, serviceName *string, nam
 
 }
 
-func (parSpecProxy *partitionSpecificProxy) Invoke(request *ClientMessage) (*ClientMessage, error) {
-	return parSpecProxy.InvokeOnPartition(request, parSpecProxy.partitionId)
+func (parSpecProxy *partitionSpecificProxy) EncodeInvoke(request *ClientMessage) (*ClientMessage, error) {
+	return parSpecProxy.client.InvocationService.InvokeOnPartitionOwner(request, parSpecProxy.partitionId).Result()
 }

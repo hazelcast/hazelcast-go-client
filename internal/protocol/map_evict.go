@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,38 +15,33 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type MapEvictResponseParameters struct {
-	Response bool
+type mapEvictCodec struct {
 }
 
-func MapEvictCalculateSize(name *string, key *Data, threadId int64) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
+func (self *mapEvictCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	dataSize += DataCalculateSize(args[1].(*Data))
 	dataSize += INT64_SIZE_IN_BYTES
-	return dataSize
+	return
 }
-
-func MapEvictEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
+func (self *mapEvictCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_EVICT)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_EVICT)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendData(args[1].(*Data))
+	request.AppendInt64(args[2].(int64))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapEvictDecodeResponse(clientMessage *ClientMessage) *MapEvictResponseParameters {
-	// Decode response from client message
-	parameters := new(MapEvictResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+func (self *mapEvictCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	parameters = clientMessage.ReadBool()
+	return
 }

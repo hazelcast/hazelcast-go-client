@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,42 +14,44 @@
 
 package protocol
 
-type MapEntrySetResponseParameters struct {
-	Response *[]Pair
+import ()
+
+type mapEntrySetCodec struct {
 }
 
-func MapEntrySetCalculateSize(name *string) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	return dataSize
+func (self *mapEntrySetCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
+	return
 }
-
-func MapEntrySetEncodeRequest(name *string) *ClientMessage {
+func (self *mapEntrySetCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapEntrySetCalculateSize(name))
-	clientMessage.SetMessageType(MAP_ENTRYSET)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_ENTRYSET)
+	request.IsRetryable = true
+	request.AppendString(args[0].(*string))
+	request.UpdateFrameLength()
+	return
 }
 
-func MapEntrySetDecodeResponse(clientMessage *ClientMessage) *MapEntrySetResponseParameters {
-	// Decode response from client message
-	parameters := new(MapEntrySetResponseParameters)
+func (self *mapEntrySetCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
 
 	responseSize := clientMessage.ReadInt32()
-	response := make([]Pair, responseSize)
+	response := make([]*Pair, responseSize)
 	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem Pair
-		responseItemKey := clientMessage.ReadData()
-		responseItemVal := clientMessage.ReadData()
+		var responseItem = &Pair{}
+		responseItemKey, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
+		responseItemVal, err := toObject(clientMessage.ReadData())
+		if err != nil {
+			return nil, err
+		}
 		responseItem.key = responseItemKey
 		responseItem.value = responseItemVal
 		response[responseIndex] = responseItem
 	}
-	parameters.Response = &response
+	parameters = response
 
-	return parameters
+	return
 }

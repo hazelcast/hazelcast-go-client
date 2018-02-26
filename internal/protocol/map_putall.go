@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -19,38 +19,38 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type MapPutAllResponseParameters struct {
+type mapPutAllCodec struct {
 }
 
-func MapPutAllCalculateSize(name *string, entries *[]Pair) int {
-	// Calculates the request payload size
-	dataSize := 0
-	dataSize += StringCalculateSize(name)
+func (self *mapPutAllCodec) CalculateSize(args ...interface{}) (dataSize int) {
+	dataSize += StringCalculateSize(args[0].(*string))
 	dataSize += INT_SIZE_IN_BYTES
-	for _, entriesItem := range *entries {
+	for _, entriesItem := range args[1].([]*Pair) {
 		key := entriesItem.key.(*Data)
 		val := entriesItem.value.(*Data)
 		dataSize += DataCalculateSize(key)
 		dataSize += DataCalculateSize(val)
 	}
-	return dataSize
+	return
 }
-
-func MapPutAllEncodeRequest(name *string, entries *[]Pair) *ClientMessage {
+func (self *mapPutAllCodec) EncodeRequest(args ...interface{}) (request *ClientMessage) {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapPutAllCalculateSize(name, entries))
-	clientMessage.SetMessageType(MAP_PUTALL)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(*entries))
-	for _, entriesItem := range *entries {
+	request = NewClientMessage(nil, self.CalculateSize(args...))
+	request.SetMessageType(MAP_PUTALL)
+	request.IsRetryable = false
+	request.AppendString(args[0].(*string))
+	request.AppendInt(len(args[1].([]*Pair)))
+	for _, entriesItem := range args[1].([]*Pair) {
 		key := entriesItem.key.(*Data)
 		val := entriesItem.value.(*Data)
-		clientMessage.AppendData(key)
-		clientMessage.AppendData(val)
+		request.AppendData(key)
+		request.AppendData(val)
 	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	request.UpdateFrameLength()
+	return
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// Empty DecodeResponse(), this message has no parameters to decode
+func (*mapPutAllCodec) DecodeResponse(clientMessage *ClientMessage, toObject ToObject) (parameters interface{}, err error) {
+	return nil, nil
+}
