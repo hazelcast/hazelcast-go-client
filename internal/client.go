@@ -50,6 +50,14 @@ func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 	return mp.(core.IMap), err
 }
 
+func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
+	mmp, err := client.GetDistributedObject(SERVICE_NAME_MULTI_MAP, name)
+	if err != nil {
+		return nil, err
+	}
+	return mmp.(core.MultiMap), err
+}
+
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
 	if err != nil {

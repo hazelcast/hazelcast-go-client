@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	THREAD_ID = 1
-	TTL       = 0
+	ThreadId = 1
+	Ttl      = 0
 )
 
 type MapProxy struct {
@@ -41,7 +41,7 @@ func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interfac
 	if err != nil {
 		return nil, err
 	}
-	request := MapPutEncodeRequest(imap.name, keyData, valueData, THREAD_ID, TTL)
+	request := MapPutEncodeRequest(imap.name, keyData, valueData, ThreadId, Ttl)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (imap *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err e
 	if err != nil {
 		return false, err
 	}
-	request := MapTryPutEncodeRequest(imap.name, keyData, valueData, THREAD_ID, TTL)
+	request := MapTryPutEncodeRequest(imap.name, keyData, valueData, ThreadId, Ttl)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -68,7 +68,7 @@ func (imap *MapProxy) PutTransient(key interface{}, value interface{}, ttl int64
 		return err
 	}
 	ttl = GetTimeInMilliSeconds(ttl, ttlTimeUnit)
-	request := MapPutTransientEncodeRequest(imap.name, keyData, valueData, THREAD_ID, ttl)
+	request := MapPutTransientEncodeRequest(imap.name, keyData, valueData, ThreadId, ttl)
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
@@ -77,7 +77,7 @@ func (imap *MapProxy) Get(key interface{}) (value interface{}, err error) {
 	if err != nil {
 		return nil, err
 	}
-	request := MapGetEncodeRequest(imap.name, keyData, THREAD_ID)
+	request := MapGetEncodeRequest(imap.name, keyData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
 	if err != nil {
 		return nil, err
 	}
-	request := MapRemoveEncodeRequest(imap.name, keyData, THREAD_ID)
+	request := MapRemoveEncodeRequest(imap.name, keyData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (imap *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool,
 	if err != nil {
 		return false, err
 	}
-	request := MapRemoveIfSameEncodeRequest(imap.name, keyData, valueData, THREAD_ID)
+	request := MapRemoveIfSameEncodeRequest(imap.name, keyData, valueData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -126,7 +126,7 @@ func (imap *MapProxy) TryRemove(key interface{}, timeout int64, timeoutTimeUnit 
 		return false, err
 	}
 	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
-	request := MapTryRemoveEncodeRequest(imap.name, keyData, THREAD_ID, timeout)
+	request := MapTryRemoveEncodeRequest(imap.name, keyData, ThreadId, timeout)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -149,7 +149,7 @@ func (imap *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := MapContainsKeyEncodeRequest(imap.name, keyData, THREAD_ID)
+	request := MapContainsKeyEncodeRequest(imap.name, keyData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -183,7 +183,7 @@ func (imap *MapProxy) Delete(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := MapDeleteEncodeRequest(imap.name, keyData, THREAD_ID)
+	request := MapDeleteEncodeRequest(imap.name, keyData, ThreadId)
 	_, err = imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return err
@@ -209,7 +209,7 @@ func (imap *MapProxy) Evict(key interface{}) (evicted bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := MapEvictEncodeRequest(imap.name, keyData, THREAD_ID)
+	request := MapEvictEncodeRequest(imap.name, keyData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -242,7 +242,7 @@ func (imap *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeU
 		return err
 	}
 	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
-	request := MapLockEncodeRequest(imap.name, keyData, THREAD_ID, lease, imap.client.ProxyManager.nextReferenceId())
+	request := MapLockEncodeRequest(imap.name, keyData, ThreadId, lease, imap.client.ProxyManager.nextReferenceId())
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
@@ -259,7 +259,7 @@ func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64,
 	}
 	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
 	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
-	request := MapTryLockEncodeRequest(imap.name, keyData, THREAD_ID, lease, timeout, imap.client.ProxyManager.nextReferenceId())
+	request := MapTryLockEncodeRequest(imap.name, keyData, ThreadId, lease, timeout, imap.client.ProxyManager.nextReferenceId())
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -272,7 +272,7 @@ func (imap *MapProxy) Unlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := MapUnlockEncodeRequest(imap.name, keyData, THREAD_ID, imap.client.ProxyManager.nextReferenceId())
+	request := MapUnlockEncodeRequest(imap.name, keyData, ThreadId, imap.client.ProxyManager.nextReferenceId())
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
@@ -303,7 +303,7 @@ func (imap *MapProxy) Replace(key interface{}, value interface{}) (oldValue inte
 	if err != nil {
 		return nil, err
 	}
-	request := MapReplaceEncodeRequest(imap.name, keyData, valueData, THREAD_ID)
+	request := MapReplaceEncodeRequest(imap.name, keyData, valueData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -316,7 +316,7 @@ func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newVa
 	if err != nil {
 		return false, err
 	}
-	request := MapReplaceIfSameEncodeRequest(imap.name, keyData, oldValueData, newValueData, THREAD_ID)
+	request := MapReplaceIfSameEncodeRequest(imap.name, keyData, oldValueData, newValueData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return false, err
@@ -325,7 +325,7 @@ func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newVa
 	return response, nil
 }
 func (imap *MapProxy) Set(key interface{}, value interface{}) (err error) {
-	return imap.SetWithTtl(key, value, TTL, time.Second)
+	return imap.SetWithTtl(key, value, Ttl, time.Second)
 }
 func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
 	keyData, valueData, err := imap.validateAndSerialize2(key, value)
@@ -333,7 +333,7 @@ func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, 
 		return err
 	}
 	ttl = GetTimeInMilliSeconds(ttl, ttlTimeUnit)
-	request := MapSetEncodeRequest(imap.name, keyData, valueData, THREAD_ID, ttl)
+	request := MapSetEncodeRequest(imap.name, keyData, valueData, ThreadId, ttl)
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
@@ -343,7 +343,7 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 	if err != nil {
 		return nil, err
 	}
-	request := MapPutIfAbsentEncodeRequest(imap.name, keyData, valueData, THREAD_ID, TTL)
+	request := MapPutIfAbsentEncodeRequest(imap.name, keyData, valueData, ThreadId, Ttl)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -537,7 +537,7 @@ func (imap *MapProxy) GetEntryView(key interface{}) (entryView IEntryView, err e
 	if err != nil {
 		return nil, err
 	}
-	request := MapGetEntryViewEncodeRequest(imap.name, keyData, THREAD_ID)
+	request := MapGetEntryViewEncodeRequest(imap.name, keyData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
@@ -666,7 +666,7 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) 
 	if err != nil {
 		return nil, err
 	}
-	request := MapExecuteOnKeyEncodeRequest(imap.name, entryProcessorData, keyData, THREAD_ID)
+	request := MapExecuteOnKeyEncodeRequest(imap.name, entryProcessorData, keyData, ThreadId)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
