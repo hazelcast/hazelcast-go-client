@@ -33,7 +33,7 @@ type MapProxy struct {
 	*proxy
 }
 
-func newMapProxy(client *HazelcastClient, serviceName *string, name *string) *MapProxy {
+func newMapProxy(client *HazelcastClient, serviceName *string, name *string)*MapProxy{
 	return &MapProxy{&proxy{client, serviceName, name}}
 }
 

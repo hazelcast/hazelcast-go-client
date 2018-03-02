@@ -18,6 +18,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"reflect"
 )
 
 var Timeout time.Duration = 1 * time.Minute
@@ -35,13 +36,13 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 	if err != nil {
 		t.Fatal(err)
 	}
-	if l != r {
+	if !reflect.DeepEqual(l, r) {
 		t.Fatalf("%v != %v : %v", l, r, message)
 	}
 }
 func AssertNilf(t *testing.T, err error, l interface{}, message string) {
 	if l != nil {
-		t.Fatalf("%v != nil", l)
+		t.Fatalf("%v != nil : %v", l, message)
 	}
 }
 func AssertErrorNotNil(t *testing.T, err error, message string) {
@@ -49,6 +50,13 @@ func AssertErrorNotNil(t *testing.T, err error, message string) {
 		t.Fatal(message)
 	}
 }
+
+func AssertErrorNil(t *testing.T, err error) {
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
+
 func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 	if err != nil {
 		t.Fatal(err)

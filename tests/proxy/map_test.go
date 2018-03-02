@@ -18,10 +18,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	. "github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
+
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
-	"log"
 	"reflect"
 	"sort"
 	"strconv"
@@ -29,26 +28,6 @@ import (
 	"testing"
 	"time"
 )
-
-var mp IMap
-var mp2 IMap
-var client hazelcast.IHazelcastInstance
-
-func TestMain(m *testing.M) {
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
-	if remoteController == nil || err != nil {
-		log.Fatal("create remote controller failed:", err)
-	}
-	cluster, err := remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
-	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
-	mp, _ = client.GetMap("myMap")
-	predicateTestInit()
-	m.Run()
-	mp.Clear()
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
-}
 
 func TestMapProxy_Name(t *testing.T) {
 	name := "myMap"

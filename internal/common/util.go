@@ -22,11 +22,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
 func IsValidIpAddress(addr string) bool {
 	return net.ParseIP(addr) != nil
 }
+
 func GetIpAndPort(addr string) (string, int) {
 	var port int
 	var err error
@@ -46,9 +48,18 @@ func GetIpAndPort(addr string) (string, int) {
 func CheckNotNil(v interface{}) bool {
 	return v != nil
 }
+
+func AssertNotNil(argument interface{}, argName string) error {
+	if argument == nil {
+		return core.NewHazelcastIllegalArgumentError(fmt.Sprintf("argument '%s' can't be nil", argName),nil)
+	}
+	return nil
+}
+
 func CheckNotEmpty(v []interface{}) bool {
 	return len(v) > 0
 }
+
 func GetTimeInMilliSeconds(time int64, duration time.Duration) int64 {
 	var timeInMillis int64 = time * duration.Nanoseconds() / (1000000)
 	if time > 0 && timeInMillis == 0 {
