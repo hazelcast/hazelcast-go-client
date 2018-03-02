@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -39,6 +41,56 @@ func (proxy *proxy) PartitionKey() string {
 }
 func (proxy *proxy) ServiceName() string {
 	return *proxy.serviceName
+}
+
+func (proxy *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *Data, err error) {
+	if arg1 == nil {
+		return nil, core.NewHazelcastNilPointerError(NIL_KEY_IS_NOT_ALLOWED, nil)
+	}
+	arg1Data, err = proxy.ToData(arg1)
+	return
+}
+
+func (proxy *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *Data, arg2Data *Data, err error) {
+	if arg1 == nil {
+		return nil, nil, core.NewHazelcastNilPointerError(NIL_KEY_IS_NOT_ALLOWED, nil)
+	}
+	if arg2 == nil {
+		return nil, nil, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
+	}
+	arg1Data, err = proxy.ToData(arg1)
+	if err != nil {
+		return
+	}
+	arg2Data, err = proxy.ToData(arg2)
+	return
+}
+
+func (proxy *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *Data, arg2Data *Data, arg3Data *Data, err error) {
+	if arg1 == nil {
+		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_KEY_IS_NOT_ALLOWED, nil)
+	}
+	if arg2 == nil || arg3 == nil {
+		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
+	}
+	arg1Data, err = proxy.ToData(arg1)
+	if err != nil {
+		return
+	}
+	arg2Data, err = proxy.ToData(arg2)
+	if err != nil {
+		return
+	}
+	arg3Data, err = proxy.ToData(arg3)
+	return
+}
+
+func (proxy *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *Data, err error) {
+	if arg1 == nil {
+		return nil, core.NewHazelcastSerializationError(NIL_PREDICATE_IS_NOT_ALLOWED, nil)
+	}
+	arg1Data, err = proxy.ToData(arg1)
+	return
 }
 
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {

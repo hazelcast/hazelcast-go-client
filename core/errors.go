@@ -97,6 +97,16 @@ type HazelcastIOError struct {
 	*HazelcastErrorType
 }
 
+// HazelcastNilError is returned when a nil argument has been passed to a method.
+type HazelcastNilPointerError struct {
+	*HazelcastErrorType
+}
+
+// NewHazelcastNilPointerError returns HazelcastNilPointerError
+func NewHazelcastNilPointerError(message string, cause error) *HazelcastNilPointerError {
+	return &HazelcastNilPointerError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
 // HazelcastIllegalStateError returns HazelcastIOError.
 func NewHazelcastIOError(message string, cause error) *HazelcastIOError {
 	return &HazelcastIOError{&HazelcastErrorType{message: message, cause: cause}}
