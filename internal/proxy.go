@@ -17,6 +17,7 @@ package internal
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common/collection"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -45,7 +46,7 @@ func (proxy *proxy) ServiceName() string {
 
 func (proxy *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *Data, err error) {
 	if arg1 == nil {
-		return nil, core.NewHazelcastNilPointerError(NIL_KEY_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
 	}
 	arg1Data, err = proxy.ToData(arg1)
 	return
@@ -53,10 +54,10 @@ func (proxy *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *Data, err 
 
 func (proxy *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *Data, arg2Data *Data, err error) {
 	if arg1 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(NIL_KEY_IS_NOT_ALLOWED, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
 	}
 	if arg2 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
 	}
 	arg1Data, err = proxy.ToData(arg1)
 	if err != nil {
@@ -68,10 +69,10 @@ func (proxy *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (a
 
 func (proxy *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *Data, arg2Data *Data, arg3Data *Data, err error) {
 	if arg1 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_KEY_IS_NOT_ALLOWED, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
 	}
 	if arg2 == nil || arg3 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
 	}
 	arg1Data, err = proxy.ToData(arg1)
 	if err != nil {
@@ -93,6 +94,14 @@ func (proxy *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *D
 	return
 }
 
+func (proxy *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData []*Data, err error) {
+	if elements == nil {
+		return nil, core.NewHazelcastSerializationError(NIL_SLICE_IS_NOT_ALLOWED, nil)
+	}
+	elementsData, err = collection.ObjectToDataCollection(elements, proxy.client.SerializationService)
+	return
+}
+
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {
 	return proxy.client.InvocationService.InvokeOnKeyOwner(request, keyData).Result()
 }
@@ -110,7 +119,7 @@ func (proxy *proxy) ToData(object interface{}) (*Data, error) {
 	return proxy.client.SerializationService.ToData(object)
 }
 
-func (proxy *MapProxy) DecodeToObjectAndError(responseMessage *ClientMessage, inputError error,
+func (proxy *proxy) DecodeToObjectAndError(responseMessage *ClientMessage, inputError error,
 	decodeFunc func(*ClientMessage) func() *Data) (response interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
@@ -118,7 +127,7 @@ func (proxy *MapProxy) DecodeToObjectAndError(responseMessage *ClientMessage, in
 	return proxy.ToObject(decodeFunc(responseMessage)())
 }
 
-func (proxy *MapProxy) DecodeToBoolAndError(responseMessage *ClientMessage, inputError error,
+func (proxy *proxy) DecodeToBoolAndError(responseMessage *ClientMessage, inputError error,
 	decodeFunc func(*ClientMessage) func() bool) (response bool, err error) {
 	if inputError != nil {
 		return false, inputError
@@ -126,7 +135,23 @@ func (proxy *MapProxy) DecodeToBoolAndError(responseMessage *ClientMessage, inpu
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (proxy *MapProxy) DecodeToInt32AndError(responseMessage *ClientMessage, inputError error,
+func (proxy *proxy) DecodeToInterfaceSliceAndError(responseMessage *ClientMessage, inputError error,
+	decodeFunc func(*ClientMessage) func() []*Data) (response []interface{}, err error) {
+	if inputError != nil {
+		return nil, inputError
+	}
+	return collection.DataToObjectCollection(decodeFunc(responseMessage)(), proxy.client.SerializationService)
+}
+
+func (proxy *proxy) DecodeToPairSliceAndError(responseMessage *ClientMessage, inputError error,
+	decodeFunc func(*ClientMessage) func() []*Pair) (response []core.IPair, err error) {
+	if inputError != nil {
+		return nil, inputError
+	}
+	return collection.DataToObjectPairCollection(decodeFunc(responseMessage)(), proxy.client.SerializationService)
+}
+
+func (proxy *proxy) DecodeToInt32AndError(responseMessage *ClientMessage, inputError error,
 	decodeFunc func(*ClientMessage) func() int32) (response int32, err error) {
 	if inputError != nil {
 		return 0, inputError

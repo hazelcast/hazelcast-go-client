@@ -317,10 +317,11 @@ func (clusterService *ClusterService) GetMember(address core.IAddress) core.IMem
 }
 
 func (clusterService *ClusterService) GetMemberByUuid(uuid string) core.IMember {
-	membersList := clusterService.members.Load().([]Member)
+	membersList := clusterService.members.Load().([]*Member)
 	for _, member := range membersList {
 		if member.Uuid() == uuid {
-			return &member
+			copyMember := *member
+			return &copyMember
 		}
 	}
 	return nil

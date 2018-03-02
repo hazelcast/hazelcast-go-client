@@ -17,7 +17,6 @@ package internal
 import (
 	. "github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/common/collection"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
@@ -313,12 +312,7 @@ func (imap *MapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 func (imap *MapProxy) KeySet() (keySet []interface{}, err error) {
 	request := MapKeySetEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	response := MapKeySetDecodeResponse(responseMessage)()
-	keySet, err = collection.DataToObjectCollection(response, imap.client.SerializationService)
-	return
+	return imap.DecodeToInterfaceSliceAndError(responseMessage, err, MapKeySetDecodeResponse)
 }
 func (imap *MapProxy) KeySetWithPredicate(predicate IPredicate) (keySet []interface{}, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
@@ -327,22 +321,12 @@ func (imap *MapProxy) KeySetWithPredicate(predicate IPredicate) (keySet []interf
 	}
 	request := MapKeySetWithPredicateEncodeRequest(imap.name, predicateData)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	response := MapKeySetWithPredicateDecodeResponse(responseMessage)()
-	keySet, err = collection.DataToObjectCollection(response, imap.client.SerializationService)
-	return
+	return imap.DecodeToInterfaceSliceAndError(responseMessage, err, MapKeySetWithPredicateDecodeResponse)
 }
 func (imap *MapProxy) Values() (values []interface{}, err error) {
 	request := MapValuesEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	response := MapValuesDecodeResponse(responseMessage)()
-	values, err = collection.DataToObjectCollection(response, imap.client.SerializationService)
-	return
+	return imap.DecodeToInterfaceSliceAndError(responseMessage, err, MapValuesDecodeResponse)
 }
 func (imap *MapProxy) ValuesWithPredicate(predicate IPredicate) (values []interface{}, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
@@ -351,23 +335,12 @@ func (imap *MapProxy) ValuesWithPredicate(predicate IPredicate) (values []interf
 	}
 	request := MapValuesWithPredicateEncodeRequest(imap.name, predicateData)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	response := MapValuesWithPredicateDecodeResponse(responseMessage)()
-	values, err = collection.DataToObjectCollection(response, imap.client.SerializationService)
-	return
+	return imap.DecodeToInterfaceSliceAndError(responseMessage, err, MapValuesWithPredicateDecodeResponse)
 }
 func (imap *MapProxy) EntrySet() (resultPairs []IPair, err error) {
 	request := MapEntrySetEncodeRequest(imap.name)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-
-	response := MapEntrySetDecodeResponse(responseMessage)()
-	resultPairs, err = collection.DataToObjectPairCollection(response, imap.client.SerializationService)
-	return
+	return imap.DecodeToPairSliceAndError(responseMessage, err, MapEntrySetDecodeResponse)
 }
 func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs []IPair, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
@@ -376,12 +349,7 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs [
 	}
 	request := MapEntriesWithPredicateEncodeRequest(imap.name, predicateData)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	response := MapEntriesWithPredicateDecodeResponse(responseMessage)()
-	resultPairs, err = collection.DataToObjectPairCollection(response, imap.client.SerializationService)
-	return
+	return imap.DecodeToPairSliceAndError(responseMessage, err, MapEntriesWithPredicateDecodeResponse)
 }
 func (imap *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if keys == nil {
@@ -571,12 +539,7 @@ func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface
 	}
 	request := MapExecuteOnKeysEncodeRequest(imap.name, entryProcessorData, keysData)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	responseData := MapExecuteOnKeysDecodeResponse(responseMessage)()
-	keyToResultPairs, err = collection.DataToObjectPairCollection(responseData, imap.client.SerializationService)
-	return
+	return imap.DecodeToPairSliceAndError(responseMessage, err, MapExecuteOnKeysDecodeResponse)
 }
 func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []IPair, err error) {
 	entryProcessorData, err := imap.validateAndSerialize(entryProcessor)
@@ -585,12 +548,7 @@ func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultP
 	}
 	request := MapExecuteOnAllKeysEncodeRequest(imap.name, entryProcessorData)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	responseData := MapExecuteOnAllKeysDecodeResponse(responseMessage)()
-	keyToResultPairs, err = collection.DataToObjectPairCollection(responseData, imap.client.SerializationService)
-	return
+	return imap.DecodeToPairSliceAndError(responseMessage, err, MapExecuteOnAllKeysDecodeResponse)
 }
 
 func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate IPredicate) (keyToResultPairs []IPair, err error) {
@@ -604,10 +562,5 @@ func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, 
 	}
 	request := MapExecuteWithPredicateEncodeRequest(imap.name, entryProcessorData, predicateData)
 	responseMessage, err := imap.InvokeOnRandomTarget(request)
-	if err != nil {
-		return nil, err
-	}
-	responseData := MapExecuteWithPredicateDecodeResponse(responseMessage)()
-	keyToResultPairs, err = collection.DataToObjectPairCollection(responseData, imap.client.SerializationService)
-	return
+	return imap.DecodeToPairSliceAndError(responseMessage, err, MapExecuteWithPredicateDecodeResponse)
 }

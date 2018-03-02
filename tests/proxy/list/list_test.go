@@ -53,8 +53,8 @@ func TestListProxy_Add(t *testing.T) {
 
 func TestListProxy_AddNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.Add("")
-	AssertNilf(t, err, nil, "list Add() should return error for nil element")
+	_, err := list.Add(nil)
+	AssertErrorNotNil(t, err, "list Add() did not return an error for nil element")
 }
 
 func TestListProxy_AddAt(t *testing.T) {
@@ -67,8 +67,8 @@ func TestListProxy_AddAt(t *testing.T) {
 
 func TestListProxy_AddAtNilElement(t *testing.T) {
 	defer list.Clear()
-	err := list.AddAt(0, "")
-	AssertNilf(t, err, nil, "list AddAt() should return error for nil element")
+	err := list.AddAt(0, nil)
+	AssertErrorNotNil(t, err, "list AddAt() should return error for nil element")
 }
 
 func TestListProxy_AddAll(t *testing.T) {
@@ -84,15 +84,15 @@ func TestListProxy_AddAll(t *testing.T) {
 
 func TestListProxy_AddAllWithNilElement(t *testing.T) {
 	defer list.Clear()
-	all := []interface{}{"1", ""}
+	all := []interface{}{"1", nil}
 	_, err := list.AddAll(all)
-	AssertNilf(t, err, nil, "list AddAll() failed")
+	AssertErrorNotNil(t, err, "list AddAll() should return error for nil element")
 }
 
 func TestListProxy_AddAllNilSlice(t *testing.T) {
 	defer list.Clear()
-	_, err := list.AddAll(make([]interface{}, 0))
-	AssertNilf(t, err, nil, "list AddAll() failed")
+	_, err := list.AddAll(nil)
+	AssertErrorNotNil(t, err, "list AddAll() should return error for nil slice")
 }
 
 func TestListProxy_AddAllAt(t *testing.T) {
@@ -110,16 +110,16 @@ func TestListProxy_AddAllAt(t *testing.T) {
 func TestListProxy_AddAllAtWithNilElement(t *testing.T) {
 	defer list.Clear()
 	list.AddAt(0, "0")
-	all := []interface{}{"1", ""}
+	all := []interface{}{"1", nil}
 	_, err := list.AddAllAt(1, all)
-	AssertNilf(t, err, nil, "list AddAllAt() should return error for nil element")
+	AssertErrorNotNil(t, err, "list AddAllAt() should return error for nil element")
 }
 
 func TestListProxy_AddAllAtNilSlice(t *testing.T) {
 	defer list.Clear()
 	list.AddAt(0, "0")
-	_, err := list.AddAllAt(1, make([]interface{}, 0))
-	AssertNilf(t, err, nil, "list AddAllAt() should return error for nil slice")
+	_, err := list.AddAllAt(1, nil)
+	AssertErrorNotNil(t, err, "list AddAllAt() should return error for nil slice")
 }
 
 func TestListProxy_Clear(t *testing.T) {
@@ -140,8 +140,8 @@ func TestListProxy_Contains(t *testing.T) {
 
 func TestListProxy_ContainsWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.Contains("")
-	AssertNilf(t, err, nil, "list Contains() should return error for nil element")
+	_, err := list.Contains(nil)
+	AssertErrorNotNil(t, err, "list Contains() should return error for nil element")
 }
 
 func TestListProxy_ContainsAll(t *testing.T) {
@@ -154,8 +154,8 @@ func TestListProxy_ContainsAll(t *testing.T) {
 
 func TestListProxy_ContainsAllNilSlice(t *testing.T) {
 	defer list.Clear()
-	_, err := list.ContainsAll(make([]interface{}, 0))
-	AssertNilf(t, err, nil, "list ContainsAll() should return error for nil slice")
+	_, err := list.ContainsAll(nil)
+	AssertErrorNotNil(t, err, "list ContainsAll() should return error for nil slice")
 }
 
 func TestListProxy_ToSlice(t *testing.T) {
@@ -177,8 +177,8 @@ func TestListProxy_IndexOf(t *testing.T) {
 
 func TestListProxy_IndexOfWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.IndexOf("")
-	AssertNilf(t, err, nil, "list IndexOf() should return error with nil element")
+	_, err := list.IndexOf(nil)
+	AssertErrorNotNil(t, err, "list IndexOf() should return error with nil element")
 }
 
 func TestListProxy_IsEmpty(t *testing.T) {
@@ -197,8 +197,8 @@ func TestListProxy_LastIndexOf(t *testing.T) {
 
 func TestListProxy_LastIndexOfWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.LastIndexOf("")
-	AssertNilf(t, err, nil, "list LastIndexOf() should return error with nil element")
+	_, err := list.LastIndexOf(nil)
+	AssertErrorNotNil(t, err, "list LastIndexOf() should return error with nil element")
 }
 
 func TestListProxy_Remove(t *testing.T) {
@@ -209,8 +209,8 @@ func TestListProxy_Remove(t *testing.T) {
 }
 func TestListProxy_RemoveWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.Remove("")
-	AssertNilf(t, err, nil, "list Remove() should return error with nil element")
+	_, err := list.Remove(nil)
+	AssertErrorNotNil(t, err, "list Remove() should return error with nil element")
 }
 
 func TestListProxy_RemoveAt(t *testing.T) {
@@ -232,14 +232,14 @@ func TestListProxy_RemoveAll(t *testing.T) {
 
 func TestListProxy_RemoveAllWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.RemoveAll([]interface{}{"", "1", "2"})
-	AssertNilf(t, err, nil, "list RemoveAll() should return error with nil element")
+	_, err := list.RemoveAll([]interface{}{nil, "1", "2"})
+	AssertErrorNotNil(t, err, "list RemoveAll() should return error with nil element")
 }
 
 func TestListProxy_RemoveAllWithNilSlice(t *testing.T) {
 	defer list.Clear()
-	_, err := list.RemoveAll(make([]interface{}, 0))
-	AssertNilf(t, err, nil, "list RemoveAll() should return error with nil slice")
+	_, err := list.RemoveAll(nil)
+	AssertErrorNotNil(t, err, "list RemoveAll() should return error with nil slice")
 }
 
 func TestListProxy_RetainAll(t *testing.T) {
@@ -254,14 +254,14 @@ func TestListProxy_RetainAll(t *testing.T) {
 
 func TestListProxy_RetainAllWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.RetainAll([]interface{}{"", "1", "2"})
-	AssertNilf(t, err, nil, "list RetainAll() should return error with nil element")
+	_, err := list.RetainAll([]interface{}{nil, "1", "2"})
+	AssertErrorNotNil(t, err, "list RetainAll() should return error with nil element")
 }
 
 func TestListProxy_RetainAllWithNilSlice(t *testing.T) {
 	defer list.Clear()
-	_, err := list.RetainAll(make([]interface{}, 0))
-	AssertNilf(t, err, nil, "list RetainAll() should return error with nil slice")
+	_, err := list.RetainAll(nil)
+	AssertErrorNotNil(t, err, "list RetainAll() should return error with nil slice")
 }
 
 func TestListProxy_Size(t *testing.T) {
@@ -283,8 +283,8 @@ func TestListProxy_Set(t *testing.T) {
 
 func TestListProxy_SetWithNilElement(t *testing.T) {
 	defer list.Clear()
-	_, err := list.Set(0, "")
-	AssertNilf(t, err, nil, "list Set() should return error with nil element")
+	_, err := list.Set(0, nil)
+	AssertErrorNotNil(t, err, "list Set() should return error with nil element")
 }
 
 func TestListProxy_SubList(t *testing.T) {
@@ -294,6 +294,12 @@ func TestListProxy_SubList(t *testing.T) {
 	res, err := list.SubList(1, 3)
 	AssertEqualf(t, err, res[0], "2", "list SubList() failed")
 	AssertEqualf(t, err, res[1], "3", "list SubList() failed")
+}
+
+func TestListProxy_SetWithoutItem(t *testing.T) {
+	defer list.Clear()
+	_, err := list.Set(1, "a")
+	AssertErrorNotNil(t, err, "list Set() should return error with index error")
 }
 
 func TestListProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {

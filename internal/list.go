@@ -17,7 +17,6 @@ package internal
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/common/collection"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -35,85 +34,198 @@ func newListProxy(client *HazelcastClient, serviceName *string, name *string) (*
 }
 
 func (list *ListProxy) Add(element interface{}) (changed bool, err error) {
-	if element == nil {
-		return false, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	valueData, err := list.ToData(element)
+	elementData, err := list.validateAndSerialize(element)
 	if err != nil {
 		return false, err
 	}
-	request := ListAddEncodeRequest(list.name, valueData)
+	request := ListAddEncodeRequest(list.name, elementData)
 	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, err
-	}
-	changed = ListAddDecodeResponse(responseMessage).Response
-	return changed, nil
+	return list.DecodeToBoolAndError(responseMessage, err, ListAddDecodeResponse)
 }
 
 func (list *ListProxy) AddAt(index int32, element interface{}) (err error) {
-	if element == nil {
-		return core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	valueData, err := list.ToData(element)
+	elementData, err := list.validateAndSerialize(element)
 	if err != nil {
 		return err
 	}
-	request := ListAddWithIndexEncodeRequest(list.name, index, valueData)
+	request := ListAddWithIndexEncodeRequest(list.name, index, elementData)
 	_, err = list.Invoke(request)
 	return err
 }
 
 func (list *ListProxy) AddAll(elements []interface{}) (changed bool, err error) {
-	if len(elements) == 0 {
-		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
-	}
-	itemsData := make([]*Data, len(elements))
-	for index, item := range elements {
-		itemData, err := list.ToData(item)
-		if err != nil {
-			return false, err
-		}
-		itemsData[index] = itemData
-	}
-	request := ListAddAllEncodeRequest(list.name, itemsData)
-	responseMessage, err := list.Invoke(request)
+	elementsData, err := list.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	changed = ListAddAllDecodeResponse(responseMessage).Response
-	return changed, err
+	request := ListAddAllEncodeRequest(list.name, elementsData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListAddAllDecodeResponse)
 
 }
 
 func (list *ListProxy) AddAllAt(index int32, elements []interface{}) (changed bool, err error) {
-	if len(elements) == 0 {
-		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
-	}
-	elementsData := make([]*Data, len(elements))
-	for index, element := range elements {
-		itemData, err := list.ToData(element)
-		if err != nil {
-			return false, err
-		}
-		elementsData[index] = itemData
-	}
-	request := ListAddAllWithIndexEncodeRequest(list.name, index, elementsData)
-	responseMessage, err := list.Invoke(request)
+	elementsData, err := list.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	changed = ListAddAllWithIndexDecodeResponse(responseMessage).Response
-	return changed, err
+	request := ListAddAllWithIndexEncodeRequest(list.name, index, elementsData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListAddAllWithIndexDecodeResponse)
 }
 
 func (list *ListProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
 	request := ListAddListenerEncodeRequest(list.name, includeValue, false)
-	onItemEvent := func(itemData *Data, uuid *string, eventType int32) {
+	eventHandler := list.createEventHandler(listener)
+	return list.client.ListenerService.registerListener(request, eventHandler,
+		func(registrationId *string) *ClientMessage {
+			return ListRemoveListenerEncodeRequest(list.name, registrationId)
+		}, func(clientMessage *ClientMessage) *string {
+			return ListAddListenerDecodeResponse(clientMessage)()
+		})
+}
+
+func (list *ListProxy) Clear() (err error) {
+	request := ListClearEncodeRequest(list.name)
+	_, err = list.Invoke(request)
+	return err
+}
+
+func (list *ListProxy) Contains(element interface{}) (found bool, err error) {
+	elementData, err := list.validateAndSerialize(element)
+	if err != nil {
+		return false, err
+	}
+	request := ListContainsEncodeRequest(list.name, elementData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListContainsDecodeResponse)
+}
+
+func (list *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err error) {
+	elementsData, err := list.validateAndSerializeSlice(elements)
+	if err != nil {
+		return false, err
+	}
+	request := ListContainsAllEncodeRequest(list.name, elementsData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListContainsAllDecodeResponse)
+}
+
+func (list *ListProxy) Get(index int32) (element interface{}, err error) {
+	request := ListGetEncodeRequest(list.name, index)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToObjectAndError(responseMessage, err, ListGetDecodeResponse)
+}
+
+func (list *ListProxy) IndexOf(element interface{}) (index int32, err error) {
+	elementData, err := list.validateAndSerialize(element)
+	if err != nil {
+		return 0, err
+	}
+	request := ListIndexOfEncodeRequest(list.name, elementData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToInt32AndError(responseMessage, err, ListIndexOfDecodeResponse)
+}
+
+func (list *ListProxy) IsEmpty() (empty bool, err error) {
+	request := ListIsEmptyEncodeRequest(list.name)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListIsEmptyDecodeResponse)
+}
+
+func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error) {
+	elementData, err := list.validateAndSerialize(element)
+	if err != nil {
+		return 0, err
+	}
+	request := ListLastIndexOfEncodeRequest(list.name, elementData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToInt32AndError(responseMessage, err, ListIndexOfDecodeResponse)
+}
+
+func (list *ListProxy) Remove(element interface{}) (changed bool, err error) {
+	elementData, err := list.validateAndSerialize(element)
+	if err != nil {
+		return false, err
+	}
+	request := ListRemoveEncodeRequest(list.name, elementData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListRemoveDecodeResponse)
+}
+
+func (list *ListProxy) RemoveAt(index int32) (previousElement interface{}, err error) {
+	request := ListRemoveWithIndexEncodeRequest(list.name, index)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToObjectAndError(responseMessage, err, ListRemoveWithIndexDecodeResponse)
+}
+
+func (list *ListProxy) RemoveAll(elements []interface{}) (changed bool, err error) {
+	elementsData, err := list.validateAndSerializeSlice(elements)
+	if err != nil {
+		return false, err
+	}
+	request := ListCompareAndRemoveAllEncodeRequest(list.name, elementsData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListCompareAndRemoveAllDecodeResponse)
+}
+
+func (list *ListProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
+	return list.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *ClientMessage {
+		return ListRemoveListenerEncodeRequest(list.name, registrationID)
+	})
+}
+
+func (list *ListProxy) RetainAll(elements []interface{}) (changed bool, err error) {
+	elementsData, err := list.validateAndSerializeSlice(elements)
+	if err != nil {
+		return false, err
+	}
+	request := ListCompareAndRetainAllEncodeRequest(list.name, elementsData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToBoolAndError(responseMessage, err, ListCompareAndRetainAllDecodeResponse)
+}
+
+func (list *ListProxy) Set(index int32, element interface{}) (previousElement interface{}, err error) {
+	elementData, err := list.validateAndSerialize(element)
+	if err != nil {
+		return nil, err
+	}
+	request := ListSetEncodeRequest(list.name, index, elementData)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToObjectAndError(responseMessage, err, ListSetDecodeResponse)
+}
+
+func (list *ListProxy) Size() (size int32, err error) {
+	request := ListSizeEncodeRequest(list.name)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToInt32AndError(responseMessage, err, ListSizeDecodeResponse)
+}
+
+func (list *ListProxy) SubList(start int32, end int32) (elements []interface{}, err error) {
+	request := ListSubEncodeRequest(list.name, start, end)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToInterfaceSliceAndError(responseMessage, err, ListSubDecodeResponse)
+}
+
+func (list *ListProxy) ToSlice() (elements []interface{}, err error) {
+	request := ListGetAllEncodeRequest(list.name)
+	responseMessage, err := list.Invoke(request)
+	return list.DecodeToInterfaceSliceAndError(responseMessage, err, ListGetAllDecodeResponse)
+}
+
+func (list *ListProxy) createEventHandler(listener interface{}) func(clientMessage *ClientMessage) {
+	return func(clientMessage *ClientMessage) {
+		ListAddListenerHandle(clientMessage, func(itemData *Data, uuid *string, eventType int32) {
+			onItemEvent := list.createOnItemEvent(listener)
+			onItemEvent(itemData, uuid, eventType)
+		})
+	}
+}
+
+func (list *ListProxy) createOnItemEvent(listener interface{}) func(itemData *Data, uuid *string, eventType int32) {
+	return func(itemData *Data, uuid *string, eventType int32) {
 		var item interface{}
-		if includeValue {
-			item, _ = list.ToObject(itemData)
-		}
+		item, _ = list.ToObject(itemData)
 		member := list.client.ClusterService.GetMemberByUuid(*uuid)
 		itemEvent := NewItemEvent(list.name, item, eventType, member.(*Member))
 		if eventType == ITEM_ADDED {
@@ -125,228 +237,5 @@ func (list *ListProxy) AddItemListener(listener interface{}, includeValue bool) 
 				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
 			}
 		}
-
 	}
-	eventHandler := func(clientMessage *ClientMessage) {
-		ListAddListenerHandle(clientMessage, func(itemData *Data, uuid *string, eventType int32) {
-			onItemEvent(itemData, uuid, eventType)
-		})
-	}
-	return list.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationId *string) *ClientMessage {
-			return ListRemoveListenerEncodeRequest(list.name, registrationId)
-		}, func(clientMessage *ClientMessage) *string {
-			return ListAddListenerDecodeResponse(clientMessage).Response
-		})
-}
-
-func (list *ListProxy) Clear() (err error) {
-	request := ListClearEncodeRequest(list.name)
-	_, err = list.Invoke(request)
-	return err
-}
-
-func (list *ListProxy) Contains(element interface{}) (found bool, err error) {
-	if element == nil {
-		return false, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	valueData, err := list.ToData(element)
-	if err != nil {
-		return false, err
-	}
-	request := ListContainsEncodeRequest(list.name, valueData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, err
-	}
-	found = ListContainsDecodeResponse(responseMessage).Response
-	return found, nil
-}
-
-func (list *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err error) {
-	if len(elements) == 0 {
-		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
-	}
-	elementsData, err := collection.ObjectToDataCollection(elements, list.client.SerializationService)
-	if err != nil {
-		return false, err
-	}
-	request := ListContainsAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, nil
-	}
-	foundAll = ListContainsAllDecodeResponse(responseMessage).Response
-	return foundAll, nil
-}
-
-func (list *ListProxy) Get(index int32) (element interface{}, err error) {
-	request := ListGetEncodeRequest(list.name, index)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return nil, err
-	}
-	elementData := ListGetDecodeResponse(responseMessage).Response
-	return list.ToObject(elementData)
-}
-
-func (list *ListProxy) IndexOf(element interface{}) (index int32, err error) {
-	if element == nil {
-		return 0, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	elementData, err := list.ToData(element)
-	if err != nil {
-		return 0, err
-	}
-	request := ListIndexOfEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return 0, err
-	}
-	index = ListIndexOfDecodeResponse(responseMessage).Response
-	return index, nil
-}
-
-func (list *ListProxy) IsEmpty() (empty bool, err error) {
-	request := ListIsEmptyEncodeRequest(list.name)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, err
-	}
-	empty = ListIsEmptyDecodeResponse(responseMessage).Response
-	return empty, nil
-}
-
-func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error) {
-	if element == nil {
-		return 0, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	elementData, err := list.ToData(element)
-	if err != nil {
-		return 0, err
-	}
-	request := ListLastIndexOfEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return 0, err
-	}
-	index = ListLastIndexOfDecodeResponse(responseMessage).Response
-	return index, nil
-}
-
-func (list *ListProxy) Remove(element interface{}) (changed bool, err error) {
-	if element == nil {
-		return false, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	elementData, err := list.ToData(element)
-	if err != nil {
-		return false, err
-	}
-	request := ListRemoveEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, err
-	}
-	changed = ListRemoveDecodeResponse(responseMessage).Response
-	return changed, nil
-}
-
-func (list *ListProxy) RemoveAt(index int32) (previousElement interface{}, err error) {
-	request := ListRemoveWithIndexEncodeRequest(list.name, index)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return nil, err
-	}
-	previousElementData := ListRemoveWithIndexDecodeResponse(responseMessage).Response
-	return list.ToObject(previousElementData)
-}
-
-func (list *ListProxy) RemoveAll(elements []interface{}) (changed bool, err error) {
-	if len(elements) == 0 {
-		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
-	}
-	elementsData, err := collection.ObjectToDataCollection(elements, list.client.SerializationService)
-	if err != nil {
-		return false, err
-	}
-	request := ListCompareAndRemoveAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, err
-	}
-	changed = ListCompareAndRemoveAllDecodeResponse(responseMessage).Response
-	return changed, err
-}
-
-func (list *ListProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return list.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *ClientMessage {
-		return ListRemoveListenerEncodeRequest(list.name, registrationID)
-	})
-}
-
-func (list *ListProxy) RetainAll(elements []interface{}) (changed bool, err error) {
-	if len(elements) == 0 {
-		return false, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
-	}
-	elementsData, err := collection.ObjectToDataCollection(elements, list.client.SerializationService)
-	if err != nil {
-		return false, err
-	}
-	request := ListCompareAndRetainAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return false, err
-	}
-	changed = ListCompareAndRetainAllDecodeResponse(responseMessage).Response
-	return changed, err
-}
-
-func (list *ListProxy) Set(index int32, element interface{}) (previousElement interface{}, err error) {
-	if element == nil {
-		return nil, core.NewHazelcastNilPointerError(NIL_VALUE_IS_NOT_ALLOWED, nil)
-	}
-	valueData, err := list.ToData(element)
-	if err != nil {
-		return nil, err
-	}
-	request := ListSetEncodeRequest(list.name, index, valueData)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return nil, err
-	}
-	previousElement = ListSetDecodeResponse(responseMessage).Response
-	return previousElement, nil
-}
-
-func (list *ListProxy) Size() (size int32, err error) {
-	request := ListSizeEncodeRequest(list.name)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return 0, err
-	}
-	size = ListSizeDecodeResponse(responseMessage).Response
-	return size, nil
-
-}
-
-func (list *ListProxy) SubList(start int32, end int32) (elements []interface{}, err error) {
-	request := ListSubEncodeRequest(list.name, start, end)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return nil, err
-	}
-	elementsData := ListSubDecodeResponse(responseMessage).Response
-	return collection.DataToObjectCollection(elementsData, list.client.SerializationService)
-
-}
-
-func (list *ListProxy) ToSlice() (elements []interface{}, err error) {
-	request := ListGetAllEncodeRequest(list.name)
-	responseMessage, err := list.Invoke(request)
-	if err != nil {
-		return nil, err
-	}
-	elementsData := ListGetAllDecodeResponse(responseMessage).Response
-	return collection.DataToObjectCollection(elementsData, list.client.SerializationService)
-
 }

@@ -28,7 +28,7 @@ func ObjectToDataCollection(objects []interface{}, service *SerializationService
 	elementsData := make([]*Data, len(objects))
 	for index, element := range objects {
 		if element == nil {
-			return nil, core.NewHazelcastNilPointerError(common.NIL_KEY_IS_NOT_ALLOWED, nil)
+			return nil, core.NewHazelcastNilPointerError(common.NIL_ARG_IS_NOT_ALLOWED, nil)
 		}
 		elementData, err := service.ToData(element)
 		if err != nil {
