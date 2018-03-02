@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"errors"
 	. "github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
@@ -38,17 +37,7 @@ func newMapProxy(client *HazelcastClient, serviceName *string, name *string) *Ma
 }
 
 func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
-	if !CheckNotNil(key) {
-		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return nil, err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return nil, err
 	}
@@ -61,18 +50,7 @@ func (imap *MapProxy) Put(key interface{}, value interface{}) (oldValue interfac
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return false, err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return false, err
 	}
@@ -85,17 +63,7 @@ func (imap *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err e
 	return ok, nil
 }
 func (imap *MapProxy) PutTransient(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
-	if !CheckNotNil(key) {
-		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return err
 	}
@@ -105,10 +73,7 @@ func (imap *MapProxy) PutTransient(key interface{}, value interface{}, ttl int64
 	return err
 }
 func (imap *MapProxy) Get(key interface{}) (value interface{}, err error) {
-	if !CheckNotNil(key) {
-		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
@@ -121,10 +86,7 @@ func (imap *MapProxy) Get(key interface{}) (value interface{}, err error) {
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
-	if !CheckNotNil(key) {
-		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
@@ -137,17 +99,7 @@ func (imap *MapProxy) Remove(key interface{}) (value interface{}, err error) {
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return false, err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return false, err
 	}
@@ -160,10 +112,7 @@ func (imap *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool,
 	return response, nil
 }
 func (imap *MapProxy) RemoveAll(predicate IPredicate) (err error) {
-	if predicate == nil {
-		return NewHazelcastSerializationError("predicate should not be nil", nil)
-	}
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return err
 	}
@@ -172,10 +121,7 @@ func (imap *MapProxy) RemoveAll(predicate IPredicate) (err error) {
 	return err
 }
 func (imap *MapProxy) TryRemove(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (ok bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
@@ -199,10 +145,7 @@ func (imap *MapProxy) Size() (size int32, err error) {
 	return response, nil
 }
 func (imap *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
@@ -215,10 +158,7 @@ func (imap *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	return response, nil
 }
 func (imap *MapProxy) ContainsValue(value interface{}) (found bool, err error) {
-	if !CheckNotNil(value) {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	valueData, err := imap.ToData(value)
+	valueData, err := imap.validateAndSerialize(value)
 	if err != nil {
 		return false, err
 	}
@@ -239,10 +179,7 @@ func (imap *MapProxy) Clear() (err error) {
 	return nil
 }
 func (imap *MapProxy) Delete(key interface{}) (err error) {
-	if !CheckNotNil(key) {
-		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return err
 	}
@@ -268,10 +205,7 @@ func (imap *MapProxy) AddIndex(attribute string, ordered bool) (err error) {
 	return err
 }
 func (imap *MapProxy) Evict(key interface{}) (evicted bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
@@ -303,14 +237,10 @@ func (imap *MapProxy) Lock(key interface{}) (err error) {
 	return imap.LockWithLeaseTime(key, -1, time.Second)
 }
 func (imap *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) (err error) {
-	if !CheckNotNil(key) {
-		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return err
 	}
-	//TODO :: What should be the reference id ?
 	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
 	request := MapLockEncodeRequest(imap.name, keyData, THREAD_ID, lease, imap.client.ProxyManager.nextReferenceId())
 	_, err = imap.InvokeOnKey(request, keyData)
@@ -323,10 +253,7 @@ func (imap *MapProxy) TryLockWithTimeout(key interface{}, timeout int64, timeout
 	return imap.TryLockWithTimeoutAndLease(key, timeout, timeoutTimeUnit, -1, time.Second)
 }
 func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (locked bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
@@ -341,23 +268,16 @@ func (imap *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64,
 	return response, nil
 }
 func (imap *MapProxy) Unlock(key interface{}) (err error) {
-	if !CheckNotNil(key) {
-		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return err
 	}
-	//TODO :: What should be the reference id ?
 	request := MapUnlockEncodeRequest(imap.name, keyData, THREAD_ID, imap.client.ProxyManager.nextReferenceId())
 	_, err = imap.InvokeOnKey(request, keyData)
 	return err
 }
 func (imap *MapProxy) ForceUnlock(key interface{}) (err error) {
-	if !CheckNotNil(key) {
-		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return err
 	}
@@ -366,14 +286,10 @@ func (imap *MapProxy) ForceUnlock(key interface{}) (err error) {
 	return err
 }
 func (imap *MapProxy) IsLocked(key interface{}) (locked bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
-	//TODO :: What should be the reference id ?
 	request := MapIsLockedEncodeRequest(imap.name, keyData)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
@@ -383,47 +299,20 @@ func (imap *MapProxy) IsLocked(key interface{}) (locked bool, err error) {
 	return response, nil
 }
 func (imap *MapProxy) Replace(key interface{}, value interface{}) (oldValue interface{}, err error) {
-	if !CheckNotNil(key) {
-		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return nil, err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return nil, err
 	}
 	request := MapReplaceEncodeRequest(imap.name, keyData, valueData, THREAD_ID)
 	responseMessage, err := imap.InvokeOnKey(request, keyData)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	responseData := MapReplaceDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
 func (imap *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (replaced bool, err error) {
-	if !CheckNotNil(key) {
-		return false, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(newValue) {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(oldValue) {
-		return false, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return false, err
-	}
-	oldValueData, err := imap.ToData(oldValue)
-	if err != nil {
-		return false, err
-	}
-	newValueData, err := imap.ToData(newValue)
+	keyData, oldValueData, newValueData, err := imap.validateAndSerialize3(key, oldValue, newValue)
 	if err != nil {
 		return false, err
 	}
@@ -439,17 +328,7 @@ func (imap *MapProxy) Set(key interface{}, value interface{}) (err error) {
 	return imap.SetWithTtl(key, value, TTL, time.Second)
 }
 func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
-	if !CheckNotNil(key) {
-		return errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return err
 	}
@@ -460,17 +339,7 @@ func (imap *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, 
 }
 
 func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue interface{}, err error) {
-	if !CheckNotNil(key) {
-		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	if !CheckNotNil(value) {
-		return nil, errors.New(NIL_VALUE_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return nil, err
-	}
-	valueData, err := imap.ToData(value)
+	keyData, valueData, err := imap.validateAndSerialize2(key, value)
 	if err != nil {
 		return nil, err
 	}
@@ -482,17 +351,13 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 	responseData := MapPutIfAbsentDecodeResponse(responseMessage).Response
 	return imap.ToObject(responseData)
 }
-func (imap *MapProxy) PutAll(mp map[interface{}]interface{}) (err error) {
-	if len(mp) == 0 {
-		return errors.New("empty map is not allowed")
+func (imap *MapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
+	if entries == nil {
+		return NewHazelcastNilPointerError(NIL_MAP_IS_NOT_ALLOWED, nil)
 	}
 	partitions := make(map[int32][]Pair)
-	for key, value := range mp {
-		keyData, err := imap.ToData(key)
-		if err != nil {
-			return err
-		}
-		valueData, err := imap.ToData(value)
+	for key, value := range entries {
+		keyData, valueData, err := imap.validateAndSerialize2(key, value)
 		if err != nil {
 			return err
 		}
@@ -527,10 +392,7 @@ func (imap *MapProxy) KeySet() (keySet []interface{}, err error) {
 	return keyList, nil
 }
 func (imap *MapProxy) KeySetWithPredicate(predicate IPredicate) (keySet []interface{}, err error) {
-	if predicate == nil {
-		return nil, NewHazelcastSerializationError("predicate should not be nil", nil)
-	}
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
 	}
@@ -568,10 +430,7 @@ func (imap *MapProxy) Values() (values []interface{}, err error) {
 	return valueList, nil
 }
 func (imap *MapProxy) ValuesWithPredicate(predicate IPredicate) (values []interface{}, err error) {
-	if predicate == nil {
-		return nil, NewHazelcastSerializationError("predicate should not be nil", nil)
-	}
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
 	}
@@ -614,7 +473,7 @@ func (imap *MapProxy) EntrySet() (resultPairs []IPair, err error) {
 	return pairList, nil
 }
 func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs []IPair, err error) {
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
 	}
@@ -639,13 +498,13 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs [
 	return pairList, nil
 }
 func (imap *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
-	if !CheckNotEmpty(keys) {
-		return nil, errors.New(NIL_KEYS_ARE_NOT_ALLOWED)
+	if keys == nil {
+		return nil, NewHazelcastNilPointerError(NIL_KEYS_ARE_NOT_ALLOWED, nil)
 	}
 	partitions := make(map[int32][]serialization.Data)
 	entryMap = make(map[interface{}]interface{}, 0)
 	for _, key := range keys {
-		keyData, err := imap.ToData(key)
+		keyData, err := imap.validateAndSerialize(key)
 		if err != nil {
 			return nil, err
 		}
@@ -674,10 +533,7 @@ func (imap *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]inter
 	return entryMap, nil
 }
 func (imap *MapProxy) GetEntryView(key interface{}) (entryView IEntryView, err error) {
-	if !CheckNotNil(key) {
-		return nil, errors.New(NIL_KEY_IS_NOT_ALLOWED)
-	}
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
@@ -712,7 +568,7 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 func (imap *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate, includeValue bool) (*string, error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
 	}
@@ -732,7 +588,7 @@ func (imap *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predic
 func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
@@ -751,11 +607,11 @@ func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{
 func (imap *MapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}, includeValue bool) (*string, error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
-	keyData, err := imap.ToData(key)
+	keyData, err := imap.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
 	}
@@ -806,11 +662,7 @@ func (imap *MapProxy) RemoveEntryListener(registrationId *string) (bool, error) 
 }
 
 func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (result interface{}, err error) {
-	keyData, err := imap.ToData(key)
-	if err != nil {
-		return nil, err
-	}
-	entryProcessorData, err := imap.ToData(entryProcessor)
+	keyData, entryProcessorData, err := imap.validateAndSerialize2(key, entryProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -825,13 +677,13 @@ func (imap *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) 
 func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []IPair, err error) {
 	keysData := make([]serialization.Data, len(keys))
 	for index, key := range keys {
-		keyData, err := imap.ToData(key)
+		keyData, err := imap.validateAndSerialize(key)
 		if err != nil {
 			return nil, err
 		}
 		keysData[index] = *keyData
 	}
-	entryProcessorData, err := imap.ToData(entryProcessor)
+	entryProcessorData, err := imap.validateAndSerialize(entryProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -856,7 +708,7 @@ func (imap *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface
 	return pairList, nil
 }
 func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []IPair, err error) {
-	entryProcessorData, err := imap.ToData(entryProcessor)
+	entryProcessorData, err := imap.validateAndSerialize(entryProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -882,11 +734,11 @@ func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultP
 }
 
 func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate IPredicate) ([]IPair, error) {
-	predicateData, err := imap.ToData(predicate)
+	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
 	}
-	entryProcessorData, err := imap.ToData(entryProcessor)
+	entryProcessorData, err := imap.validateAndSerialize(entryProcessor)
 	if err != nil {
 		return nil, err
 	}
