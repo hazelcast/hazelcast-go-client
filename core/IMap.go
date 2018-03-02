@@ -224,7 +224,7 @@ type IMap interface {
 
 	// PutAll copies all of the mappings from the specified map to this map. No atomicity guarantees are
 	// given. In the case of a failure, some of the key-value tuples may get written, while others are not.
-	PutAll(mp map[interface{}]interface{}) (err error)
+	PutAll(entries map[interface{}]interface{}) (err error)
 
 	// KeySet returns a slice clone of the keys contained in this map.
 	// Warning:
