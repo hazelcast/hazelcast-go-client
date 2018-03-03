@@ -16,10 +16,6 @@ package protocol
 
 import ()
 
-type SetRemoveListenerResponseParameters struct {
-	Response bool
-}
-
 func SetRemoveListenerCalculateSize(name *string, registrationId *string) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -39,9 +35,10 @@ func SetRemoveListenerEncodeRequest(name *string, registrationId *string) *Clien
 	return clientMessage
 }
 
-func SetRemoveListenerDecodeResponse(clientMessage *ClientMessage) *SetRemoveListenerResponseParameters {
+func SetRemoveListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(SetRemoveListenerResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

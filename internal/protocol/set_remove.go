@@ -18,10 +18,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type SetRemoveResponseParameters struct {
-	Response bool
-}
-
 func SetRemoveCalculateSize(name *string, value *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -41,9 +37,10 @@ func SetRemoveEncodeRequest(name *string, value *Data) *ClientMessage {
 	return clientMessage
 }
 
-func SetRemoveDecodeResponse(clientMessage *ClientMessage) *SetRemoveResponseParameters {
+func SetRemoveDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(SetRemoveResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

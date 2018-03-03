@@ -18,10 +18,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type ListIteratorResponseParameters struct {
-	Response []*Data
-}
-
 func ListIteratorCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -39,17 +35,16 @@ func ListIteratorEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func ListIteratorDecodeResponse(clientMessage *ClientMessage) *ListIteratorResponseParameters {
+func ListIteratorDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
 	// Decode response from client message
-	parameters := new(ListIteratorResponseParameters)
+	return func() (response []*Data) {
 
-	responseSize := clientMessage.ReadInt32()
-	response := make([]*Data, responseSize)
-	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
-		response[responseIndex] = responseItem
+		responseSize := clientMessage.ReadInt32()
+		response = make([]*Data, responseSize)
+		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
+			responseItem := clientMessage.ReadData()
+			response[responseIndex] = responseItem
+		}
+		return
 	}
-	parameters.Response = response
-
-	return parameters
 }

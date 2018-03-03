@@ -20,10 +20,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type SetContainsAllResponseParameters struct {
-	Response bool
-}
-
 func SetContainsAllCalculateSize(name *string, items []*Data) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -49,9 +45,10 @@ func SetContainsAllEncodeRequest(name *string, items []*Data) *ClientMessage {
 	return clientMessage
 }
 
-func SetContainsAllDecodeResponse(clientMessage *ClientMessage) *SetContainsAllResponseParameters {
+func SetContainsAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(SetContainsAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

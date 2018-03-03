@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,13 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
 
-type MapAddEntryListenerResponseParameters struct {
-	Response *string
-}
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
 
 func MapAddEntryListenerCalculateSize(name *string, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
@@ -46,11 +43,12 @@ func MapAddEntryListenerEncodeRequest(name *string, includeValue bool, listenerF
 	return clientMessage
 }
 
-func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) *MapAddEntryListenerResponseParameters {
+func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
 	// Decode response from client message
-	parameters := new(MapAddEntryListenerResponseParameters)
-	parameters.Response = clientMessage.ReadString()
-	return parameters
+	return func() (response *string) {
+		response = clientMessage.ReadString()
+		return
+	}
 }
 
 func MapAddEntryListenerHandle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {

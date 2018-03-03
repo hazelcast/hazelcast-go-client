@@ -20,10 +20,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type SetCompareAndRemoveAllResponseParameters struct {
-	Response bool
-}
-
 func SetCompareAndRemoveAllCalculateSize(name *string, values []*Data) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -49,9 +45,10 @@ func SetCompareAndRemoveAllEncodeRequest(name *string, values []*Data) *ClientMe
 	return clientMessage
 }
 
-func SetCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) *SetCompareAndRemoveAllResponseParameters {
+func SetCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(SetCompareAndRemoveAllResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

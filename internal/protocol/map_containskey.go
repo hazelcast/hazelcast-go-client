@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,13 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
 
-type MapContainsKeyResponseParameters struct {
-	Response bool
-}
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
 
 func MapContainsKeyCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
@@ -44,9 +41,10 @@ func MapContainsKeyEncodeRequest(name *string, key *Data, threadId int64) *Clien
 	return clientMessage
 }
 
-func MapContainsKeyDecodeResponse(clientMessage *ClientMessage) *MapContainsKeyResponseParameters {
+func MapContainsKeyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(MapContainsKeyResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

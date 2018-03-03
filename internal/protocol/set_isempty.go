@@ -16,10 +16,6 @@ package protocol
 
 import ()
 
-type SetIsEmptyResponseParameters struct {
-	Response bool
-}
-
 func SetIsEmptyCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -37,9 +33,10 @@ func SetIsEmptyEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func SetIsEmptyDecodeResponse(clientMessage *ClientMessage) *SetIsEmptyResponseParameters {
+func SetIsEmptyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(SetIsEmptyResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

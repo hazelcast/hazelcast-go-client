@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,13 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
 
-type MapRemoveIfSameResponseParameters struct {
-	Response bool
-}
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
 
 func MapRemoveIfSameCalculateSize(name *string, key *Data, value *Data, threadId int64) int {
 	// Calculates the request payload size
@@ -46,9 +43,10 @@ func MapRemoveIfSameEncodeRequest(name *string, key *Data, value *Data, threadId
 	return clientMessage
 }
 
-func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) *MapRemoveIfSameResponseParameters {
+func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(MapRemoveIfSameResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }
