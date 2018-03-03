@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -17,10 +17,6 @@ package protocol
 import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
-
-type MapValuesWithPredicateResponseParameters struct {
-	Response *[]Data
-}
 
 func MapValuesWithPredicateCalculateSize(name *string, predicate *Data) int {
 	// Calculates the request payload size
@@ -41,17 +37,16 @@ func MapValuesWithPredicateEncodeRequest(name *string, predicate *Data) *ClientM
 	return clientMessage
 }
 
-func MapValuesWithPredicateDecodeResponse(clientMessage *ClientMessage) *MapValuesWithPredicateResponseParameters {
+func MapValuesWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
 	// Decode response from client message
-	parameters := new(MapValuesWithPredicateResponseParameters)
+	return func() (response []*Data) {
 
-	responseSize := clientMessage.ReadInt32()
-	response := make([]Data, responseSize)
-	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
-		response[responseIndex] = *responseItem
+		responseSize := clientMessage.ReadInt32()
+		response = make([]*Data, responseSize)
+		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
+			responseItem := clientMessage.ReadData()
+			response[responseIndex] = responseItem
+		}
+		return
 	}
-	parameters.Response = &response
-
-	return parameters
 }

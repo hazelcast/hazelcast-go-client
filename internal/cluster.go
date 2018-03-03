@@ -49,7 +49,7 @@ type ClusterService struct {
 func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *ClusterService {
 	service := &ClusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
 	service.ownerConnectionAddress.Store(&Address{})
-	service.members.Store(make([]Member, 0))              //Initialize
+	service.members.Store(make([]*Member, 0))             //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
 	service.ownerUuid.Store("")                           //Initialize
 	service.uuid.Store("")                                //Initialize
@@ -63,12 +63,12 @@ func NewClusterService(client *HazelcastClient, config *config.ClientConfig) *Cl
 func (clusterService *ClusterService) start() error {
 	return clusterService.connectToCluster()
 }
-func getPossibleAddresses(addressList []string, memberList []Member) []Address {
+func getPossibleAddresses(addressList []string, memberList []*Member) []Address {
 	if addressList == nil {
 		addressList = make([]string, 0)
 	}
 	if memberList == nil {
-		memberList = make([]Member, 0)
+		memberList = make([]*Member, 0)
 	}
 	allAddresses := make(map[Address]struct{}, len(addressList)+len(memberList))
 	for _, address := range addressList {
@@ -122,7 +122,7 @@ func (clusterService *ClusterService) connectToCluster() error {
 	retryDelay := clusterService.config.ClientNetworkConfig().ConnectionAttemptPeriod()
 	for currentAttempt <= attempLimit {
 		currentAttempt++
-		members := clusterService.members.Load().([]Member)
+		members := clusterService.members.Load().([]*Member)
 		addresses := getPossibleAddresses(clusterService.config.ClientNetworkConfig().Addresses(), members)
 		for _, address := range addresses {
 			if !clusterService.client.LifecycleService.isLive.Load().(bool) {
@@ -179,7 +179,7 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	if err != nil {
 		return err
 	}
-	registrationId := ClientAddMembershipListenerDecodeResponse(response).Response
+	registrationId := ClientAddMembershipListenerDecodeResponse(response)()
 	wg.Wait() //Wait until the inital member list is fetched.
 	log.Println("Registered membership listener with Id ", *registrationId)
 	return nil
@@ -222,25 +222,25 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 	clusterService.client.PartitionService.refresh <- struct{}{}
 }
 
-func (clusterService *ClusterService) handleMemberList(members *[]Member) {
-	if len(*members) == 0 {
+func (clusterService *ClusterService) handleMemberList(members []*Member) {
+	if len(members) == 0 {
 		return
 	}
-	previousMembers := clusterService.members.Load().([]Member)
+	previousMembers := clusterService.members.Load().([]*Member)
 	//TODO:: This loop is O(n^2), it is better to store members in a map to speed it up.
 	for _, member := range previousMembers {
 		found := false
-		for _, newMember := range *members {
+		for _, newMember := range members {
 			if *member.Address().(*Address) == *newMember.Address().(*Address) {
 				found = true
 				break
 			}
 		}
 		if !found {
-			clusterService.memberRemoved(&member)
+			clusterService.memberRemoved(member)
 		}
 	}
-	for _, member := range *members {
+	for _, member := range members {
 		found := false
 		for _, previousMember := range previousMembers {
 			if *member.Address().(*Address) == *previousMember.Address().(*Address) {
@@ -249,7 +249,7 @@ func (clusterService *ClusterService) handleMemberList(members *[]Member) {
 			}
 		}
 		if !found {
-			clusterService.memberAdded(&member)
+			clusterService.memberAdded(member)
 		}
 	}
 	clusterService.client.PartitionService.refresh <- struct{}{}
@@ -259,12 +259,12 @@ func (clusterService *ClusterService) handleMemberAttributeChange(uuid *string, 
 	//TODO :: implement this.
 }
 func (clusterService *ClusterService) memberAdded(member *Member) {
-	members := clusterService.members.Load().([]Member)
-	copyMembers := make([]Member, len(members))
+	members := clusterService.members.Load().([]*Member)
+	copyMembers := make([]*Member, len(members))
 	for index, member := range members {
 		copyMembers[index] = member
 	}
-	copyMembers = append(copyMembers, *member)
+	copyMembers = append(copyMembers, member)
 	clusterService.members.Store(copyMembers)
 	listeners := clusterService.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
@@ -274,8 +274,8 @@ func (clusterService *ClusterService) memberAdded(member *Member) {
 	}
 }
 func (clusterService *ClusterService) memberRemoved(member *Member) {
-	members := clusterService.members.Load().([]Member)
-	copyMembers := make([]Member, len(members)-1)
+	members := clusterService.members.Load().([]*Member)
+	copyMembers := make([]*Member, len(members)-1)
 	index := 0
 	for _, curMember := range members {
 		if !curMember.Equal(*member) {
@@ -297,18 +297,20 @@ func (clusterService *ClusterService) memberRemoved(member *Member) {
 	}
 }
 func (clusterService *ClusterService) GetMemberList() []core.IMember {
-	membersList := clusterService.members.Load().([]Member)
+	membersList := clusterService.members.Load().([]*Member)
 	members := make([]core.IMember, len(membersList))
 	for index := 0; index < len(membersList); index++ {
-		members[index] = core.IMember(&membersList[index])
+		copyMember := *membersList[index]
+		members[index] = core.IMember(&copyMember)
 	}
 	return members
 }
 func (clusterService *ClusterService) GetMember(address core.IAddress) core.IMember {
-	membersList := clusterService.members.Load().([]Member)
+	membersList := clusterService.members.Load().([]*Member)
 	for _, member := range membersList {
 		if *member.Address().(*Address) == *address.(*Address) {
-			return &member
+			copyMember := *member
+			return &copyMember
 		}
 	}
 	return nil

@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -17,10 +17,6 @@ package protocol
 import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
-
-type ClientAddMembershipListenerResponseParameters struct {
-	Response *string
-}
 
 func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
@@ -39,14 +35,15 @@ func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	return clientMessage
 }
 
-func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) *ClientAddMembershipListenerResponseParameters {
+func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
 	// Decode response from client message
-	parameters := new(ClientAddMembershipListenerResponseParameters)
-	parameters.Response = clientMessage.ReadString()
-	return parameters
+	return func() (response *string) {
+		response = clientMessage.ReadString()
+		return
+	}
 }
 
-func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEventMember func(*Member, int32), handleEventMemberList func(*[]Member), handleEventMemberAttributeChange func(*string, *string, int32, *string)) {
+func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEventMember func(*Member, int32), handleEventMemberList func([]*Member), handleEventMemberAttributeChange func(*string, *string, int32, *string)) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_MEMBER && handleEventMember != nil {
@@ -58,13 +55,12 @@ func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEvent
 	if messageType == EVENT_MEMBERLIST && handleEventMemberList != nil {
 
 		membersSize := clientMessage.ReadInt32()
-		members := make([]Member, membersSize)
+		members := make([]*Member, membersSize)
 		for membersIndex := 0; membersIndex < int(membersSize); membersIndex++ {
 			membersItem := MemberCodecDecode(clientMessage)
-			members[membersIndex] = *membersItem
+			members[membersIndex] = membersItem
 		}
-
-		handleEventMemberList(&members)
+		handleEventMemberList(members)
 	}
 
 	if messageType == EVENT_MEMBERATTRIBUTECHANGE && handleEventMemberAttributeChange != nil {

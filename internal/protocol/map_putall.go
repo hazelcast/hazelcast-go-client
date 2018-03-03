@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -19,15 +19,12 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type MapPutAllResponseParameters struct {
-}
-
-func MapPutAllCalculateSize(name *string, entries *[]Pair) int {
+func MapPutAllCalculateSize(name *string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += INT_SIZE_IN_BYTES
-	for _, entriesItem := range *entries {
+	for _, entriesItem := range entries {
 		key := entriesItem.key.(*Data)
 		val := entriesItem.value.(*Data)
 		dataSize += DataCalculateSize(key)
@@ -36,14 +33,14 @@ func MapPutAllCalculateSize(name *string, entries *[]Pair) int {
 	return dataSize
 }
 
-func MapPutAllEncodeRequest(name *string, entries *[]Pair) *ClientMessage {
+func MapPutAllEncodeRequest(name *string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutAllCalculateSize(name, entries))
 	clientMessage.SetMessageType(MAP_PUTALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(*entries))
-	for _, entriesItem := range *entries {
+	clientMessage.AppendInt(len(entries))
+	for _, entriesItem := range entries {
 		key := entriesItem.key.(*Data)
 		val := entriesItem.value.(*Data)
 		clientMessage.AppendData(key)

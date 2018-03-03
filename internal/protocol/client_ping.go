@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,8 +14,7 @@
 
 package protocol
 
-type ClientPingResponseParameters struct {
-}
+import ()
 
 func ClientPingCalculateSize() int {
 	// Calculates the request payload size

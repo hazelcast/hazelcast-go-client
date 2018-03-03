@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,9 +14,7 @@
 
 package protocol
 
-type MapEntrySetResponseParameters struct {
-	Response *[]Pair
-}
+import ()
 
 func MapEntrySetCalculateSize(name *string) int {
 	// Calculates the request payload size
@@ -35,21 +33,19 @@ func MapEntrySetEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func MapEntrySetDecodeResponse(clientMessage *ClientMessage) *MapEntrySetResponseParameters {
+func MapEntrySetDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
-	parameters := new(MapEntrySetResponseParameters)
+	return func() (response []*Pair) {
 
-	responseSize := clientMessage.ReadInt32()
-	response := make([]Pair, responseSize)
-	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		var responseItem Pair
-		responseItemKey := clientMessage.ReadData()
-		responseItemVal := clientMessage.ReadData()
-		responseItem.key = responseItemKey
-		responseItem.value = responseItemVal
-		response[responseIndex] = responseItem
+		responseSize := clientMessage.ReadInt32()
+		response = make([]*Pair, responseSize)
+		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
+			responseItem_key := clientMessage.ReadData()
+			responseItem_val := clientMessage.ReadData()
+			var responseItem = &Pair{key: responseItem_key, value: responseItem_val}
+
+			response[responseIndex] = responseItem
+		}
+		return
 	}
-	parameters.Response = &response
-
-	return parameters
 }

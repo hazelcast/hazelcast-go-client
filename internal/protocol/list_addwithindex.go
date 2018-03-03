@@ -20,9 +20,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListAddWithIndexResponseParameters struct {
-}
-
 func ListAddWithIndexCalculateSize(name *string, index int32, value *Data) int {
 	// Calculates the request payload size
 	dataSize := 0

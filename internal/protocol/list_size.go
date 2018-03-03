@@ -16,10 +16,6 @@ package protocol
 
 import ()
 
-type ListSizeResponseParameters struct {
-	Response int32
-}
-
 func ListSizeCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -37,9 +33,10 @@ func ListSizeEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func ListSizeDecodeResponse(clientMessage *ClientMessage) *ListSizeResponseParameters {
+func ListSizeDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
-	parameters := new(ListSizeResponseParameters)
-	parameters.Response = clientMessage.ReadInt32()
-	return parameters
+	return func() (response int32) {
+		response = clientMessage.ReadInt32()
+		return
+	}
 }

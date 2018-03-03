@@ -19,10 +19,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type ListRemoveWithIndexResponseParameters struct {
-	Response *Data
-}
-
 func ListRemoveWithIndexCalculateSize(name *string, index int32) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -42,12 +38,13 @@ func ListRemoveWithIndexEncodeRequest(name *string, index int32) *ClientMessage 
 	return clientMessage
 }
 
-func ListRemoveWithIndexDecodeResponse(clientMessage *ClientMessage) *ListRemoveWithIndexResponseParameters {
+func ListRemoveWithIndexDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
 	// Decode response from client message
-	parameters := new(ListRemoveWithIndexResponseParameters)
+	return func() (response *Data) {
 
-	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		if !clientMessage.ReadBool() {
+			response = clientMessage.ReadData()
+		}
+		return
 	}
-	return parameters
 }

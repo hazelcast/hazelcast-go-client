@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,9 +14,7 @@
 
 package protocol
 
-type MapRemoveEntryListenerResponseParameters struct {
-	Response bool
-}
+import ()
 
 func MapRemoveEntryListenerCalculateSize(name *string, registrationId *string) int {
 	// Calculates the request payload size
@@ -37,9 +35,10 @@ func MapRemoveEntryListenerEncodeRequest(name *string, registrationId *string) *
 	return clientMessage
 }
 
-func MapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) *MapRemoveEntryListenerResponseParameters {
+func MapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(MapRemoveEntryListenerResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

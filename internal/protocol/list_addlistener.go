@@ -20,10 +20,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListAddListenerResponseParameters struct {
-	Response *string
-}
-
 func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -45,11 +41,12 @@ func ListAddListenerEncodeRequest(name *string, includeValue bool, localOnly boo
 	return clientMessage
 }
 
-func ListAddListenerDecodeResponse(clientMessage *ClientMessage) *ListAddListenerResponseParameters {
+func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
 	// Decode response from client message
-	parameters := new(ListAddListenerResponseParameters)
-	parameters.Response = clientMessage.ReadString()
-	return parameters
+	return func() (response *string) {
+		response = clientMessage.ReadString()
+		return
+	}
 }
 
 func ListAddListenerHandle(clientMessage *ClientMessage, handleEventItem func(*Data, *string, int32)) {

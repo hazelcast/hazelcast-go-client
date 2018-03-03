@@ -95,10 +95,11 @@ func (partitionService *PartitionService) doRefresh() {
 	}
 	partitionService.processPartitionResponse(result)
 }
+
 func (partitionService *PartitionService) processPartitionResponse(result *ClientMessage) {
-	partitions := ClientGetPartitionsDecodeResponse(result).Partitions
-	newPartitions := make(map[int32]*Address, len(*partitions))
-	for _, partitionList := range *partitions {
+	partitions /*partitionStateVersion*/, _ := ClientGetPartitionsDecodeResponse(result)()
+	newPartitions := make(map[int32]*Address, len(partitions))
+	for _, partitionList := range partitions {
 		addr := partitionList.Key().(*Address)
 		for _, partition := range partitionList.Value().([]int32) {
 			newPartitions[int32(partition)] = addr
@@ -106,6 +107,7 @@ func (partitionService *PartitionService) processPartitionResponse(result *Clien
 	}
 	partitionService.mp.Store(newPartitions)
 }
+
 func (partitionService *PartitionService) shutdown() {
 	close(partitionService.cancel)
 }

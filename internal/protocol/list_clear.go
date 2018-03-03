@@ -16,9 +16,6 @@ package protocol
 
 import ()
 
-type ListClearResponseParameters struct {
-}
-
 func ListClearCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0

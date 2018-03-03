@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,13 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
 
-type MapGetEntryViewResponseParameters struct {
-	Response *DataEntryView
-}
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
 
 func MapGetEntryViewCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
@@ -44,12 +41,13 @@ func MapGetEntryViewEncodeRequest(name *string, key *Data, threadId int64) *Clie
 	return clientMessage
 }
 
-func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) *MapGetEntryViewResponseParameters {
+func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) func() (response *DataEntryView) {
 	// Decode response from client message
-	parameters := new(MapGetEntryViewResponseParameters)
+	return func() (response *DataEntryView) {
 
-	if !clientMessage.ReadBool() {
-		parameters.Response = DataEntryViewCodecDecode(clientMessage)
+		if !clientMessage.ReadBool() {
+			response = DataEntryViewCodecDecode(clientMessage)
+		}
+		return
 	}
-	return parameters
 }
