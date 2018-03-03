@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,9 +14,7 @@
 
 package protocol
 
-type MapSizeResponseParameters struct {
-	Response int32
-}
+import ()
 
 func MapSizeCalculateSize(name *string) int {
 	// Calculates the request payload size
@@ -35,9 +33,10 @@ func MapSizeEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func MapSizeDecodeResponse(clientMessage *ClientMessage) *MapSizeResponseParameters {
+func MapSizeDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
-	parameters := new(MapSizeResponseParameters)
-	parameters.Response = clientMessage.ReadInt32()
-	return parameters
+	return func() (response int32) {
+		response = clientMessage.ReadInt32()
+		return
+	}
 }

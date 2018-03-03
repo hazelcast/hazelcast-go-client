@@ -20,10 +20,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListAddAllWithIndexResponseParameters struct {
-	Response bool
-}
-
 func ListAddAllWithIndexCalculateSize(name *string, index int32, valueList []*Data) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -51,9 +47,10 @@ func ListAddAllWithIndexEncodeRequest(name *string, index int32, valueList []*Da
 	return clientMessage
 }
 
-func ListAddAllWithIndexDecodeResponse(clientMessage *ClientMessage) *ListAddAllWithIndexResponseParameters {
+func ListAddAllWithIndexDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	parameters := new(ListAddAllWithIndexResponseParameters)
-	parameters.Response = clientMessage.ReadBool()
-	return parameters
+	return func() (response bool) {
+		response = clientMessage.ReadBool()
+		return
+	}
 }

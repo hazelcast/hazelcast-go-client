@@ -19,10 +19,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type ListSubResponseParameters struct {
-	Response []*Data
-}
-
 func ListSubCalculateSize(name *string, from int32, to int32) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -44,17 +40,16 @@ func ListSubEncodeRequest(name *string, from int32, to int32) *ClientMessage {
 	return clientMessage
 }
 
-func ListSubDecodeResponse(clientMessage *ClientMessage) *ListSubResponseParameters {
+func ListSubDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
 	// Decode response from client message
-	parameters := new(ListSubResponseParameters)
+	return func() (response []*Data) {
 
-	responseSize := clientMessage.ReadInt32()
-	response := make([]*Data, responseSize)
-	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
-		response[responseIndex] = responseItem
+		responseSize := clientMessage.ReadInt32()
+		response = make([]*Data, responseSize)
+		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
+			responseItem := clientMessage.ReadData()
+			response[responseIndex] = responseItem
+		}
+		return
 	}
-	parameters.Response = response
-
-	return parameters
 }

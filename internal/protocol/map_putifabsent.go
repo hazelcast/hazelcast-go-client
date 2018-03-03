@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,13 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
 
-type MapPutIfAbsentResponseParameters struct {
-	Response *Data
-}
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
 
 func MapPutIfAbsentCalculateSize(name *string, key *Data, value *Data, threadId int64, ttl int64) int {
 	// Calculates the request payload size
@@ -48,12 +45,13 @@ func MapPutIfAbsentEncodeRequest(name *string, key *Data, value *Data, threadId 
 	return clientMessage
 }
 
-func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) *MapPutIfAbsentResponseParameters {
+func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
 	// Decode response from client message
-	parameters := new(MapPutIfAbsentResponseParameters)
+	return func() (response *Data) {
 
-	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		if !clientMessage.ReadBool() {
+			response = clientMessage.ReadData()
+		}
+		return
 	}
-	return parameters
 }

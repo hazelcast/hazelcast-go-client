@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -15,13 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-)
 
-type MapRemoveResponseParameters struct {
-	Response *Data
-}
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+)
 
 func MapRemoveCalculateSize(name *string, key *Data, threadId int64) int {
 	// Calculates the request payload size
@@ -44,12 +41,13 @@ func MapRemoveEncodeRequest(name *string, key *Data, threadId int64) *ClientMess
 	return clientMessage
 }
 
-func MapRemoveDecodeResponse(clientMessage *ClientMessage) *MapRemoveResponseParameters {
+func MapRemoveDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
 	// Decode response from client message
-	parameters := new(MapRemoveResponseParameters)
+	return func() (response *Data) {
 
-	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		if !clientMessage.ReadBool() {
+			response = clientMessage.ReadData()
+		}
+		return
 	}
-	return parameters
 }

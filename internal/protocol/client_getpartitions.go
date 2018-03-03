@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -14,9 +14,7 @@
 
 package protocol
 
-type ClientGetPartitionsResponseParameters struct {
-	Partitions *[]Pair
-}
+import ()
 
 func ClientGetPartitionsCalculateSize() int {
 	// Calculates the request payload size
@@ -33,28 +31,26 @@ func ClientGetPartitionsEncodeRequest() *ClientMessage {
 	return clientMessage
 }
 
-func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) *ClientGetPartitionsResponseParameters {
+func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) func() (partitions []*Pair, partitionStateVersion int32) {
 	// Decode response from client message
-	parameters := new(ClientGetPartitionsResponseParameters)
+	return func() (partitions []*Pair, partitionStateVersion int32) {
 
-	partitionsSize := clientMessage.ReadInt32()
-	partitions := make([]Pair, partitionsSize)
-	for partitionsIndex := 0; partitionsIndex < int(partitionsSize); partitionsIndex++ {
-		var partitionsItem Pair
-		partitionsItemKey := AddressCodecDecode(clientMessage)
+		partitionsSize := clientMessage.ReadInt32()
+		partitions = make([]*Pair, partitionsSize)
+		for partitionsIndex := 0; partitionsIndex < int(partitionsSize); partitionsIndex++ {
+			partitionsItem_key := AddressCodecDecode(clientMessage)
 
-		partitionsItemValSize := clientMessage.ReadInt32()
-		partitionsItemVal := make([]int32, partitionsItemValSize)
-		for partitionsItemValIndex := 0; partitionsItemValIndex < int(partitionsItemValSize); partitionsItemValIndex++ {
-			partitionsItemValItem := clientMessage.ReadInt32()
-			partitionsItemVal[partitionsItemValIndex] = partitionsItemValItem
+			partitionsItem_valSize := clientMessage.ReadInt32()
+			partitionsItem_val := make([]int32, partitionsItem_valSize)
+			for partitionsItem_valIndex := 0; partitionsItem_valIndex < int(partitionsItem_valSize); partitionsItem_valIndex++ {
+				partitionsItem_valItem := clientMessage.ReadInt32()
+				partitionsItem_val[partitionsItem_valIndex] = partitionsItem_valItem
+			}
+			var partitionsItem = &Pair{key: partitionsItem_key, value: partitionsItem_val}
+
+			partitions[partitionsIndex] = partitionsItem
 		}
-
-		partitionsItem.key = partitionsItemKey
-		partitionsItem.value = partitionsItemVal
-		partitions[partitionsIndex] = partitionsItem
+		partitionStateVersion = clientMessage.ReadInt32()
+		return
 	}
-	parameters.Partitions = &partitions
-
-	return parameters
 }

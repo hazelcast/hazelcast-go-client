@@ -110,6 +110,30 @@ func (proxy *proxy) ToData(object interface{}) (*Data, error) {
 	return proxy.client.SerializationService.ToData(object)
 }
 
+func (proxy *MapProxy) DecodeToObjectAndError(responseMessage *ClientMessage, inputError error,
+	decodeFunc func(*ClientMessage) func() *Data) (response interface{}, err error) {
+	if inputError != nil {
+		return nil, inputError
+	}
+	return proxy.ToObject(decodeFunc(responseMessage)())
+}
+
+func (proxy *MapProxy) DecodeToBoolAndError(responseMessage *ClientMessage, inputError error,
+	decodeFunc func(*ClientMessage) func() bool) (response bool, err error) {
+	if inputError != nil {
+		return false, inputError
+	}
+	return decodeFunc(responseMessage)(), nil
+}
+
+func (proxy *MapProxy) DecodeToInt32AndError(responseMessage *ClientMessage, inputError error,
+	decodeFunc func(*ClientMessage) func() int32) (response int32, err error) {
+	if inputError != nil {
+		return 0, inputError
+	}
+	return decodeFunc(responseMessage)(), nil
+}
+
 type partitionSpecificProxy struct {
 	*proxy
 	partitionId int32

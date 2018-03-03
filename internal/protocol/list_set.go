@@ -20,10 +20,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-type ListSetResponseParameters struct {
-	Response *Data
-}
-
 func ListSetCalculateSize(name *string, index int32, value *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -45,12 +41,13 @@ func ListSetEncodeRequest(name *string, index int32, value *Data) *ClientMessage
 	return clientMessage
 }
 
-func ListSetDecodeResponse(clientMessage *ClientMessage) *ListSetResponseParameters {
+func ListSetDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
 	// Decode response from client message
-	parameters := new(ListSetResponseParameters)
+	return func() (response *Data) {
 
-	if !clientMessage.ReadBool() {
-		parameters.Response = clientMessage.ReadData()
+		if !clientMessage.ReadBool() {
+			response = clientMessage.ReadData()
+		}
+		return
 	}
-	return parameters
 }

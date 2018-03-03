@@ -151,6 +151,7 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	resp <- con
 	return nil
 }
+
 func (connectionManager *ConnectionManager) getOwnerConnection() *Connection {
 	ownerConnectionAddress := connectionManager.client.ClusterService.ownerConnectionAddress.Load().(*Address)
 	if ownerConnectionAddress.Host() == "" {
@@ -159,12 +160,14 @@ func (connectionManager *ConnectionManager) getOwnerConnection() *Connection {
 	return connectionManager.getActiveConnection(ownerConnectionAddress)
 
 }
+
 func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
 	uuid := connectionManager.client.ClusterService.uuid.Load().(string)
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid.Load().(string)
 	clientType := CLIENT_TYPE
 	name := connectionManager.client.ClientConfig.GroupConfig().Name()
 	password := connectionManager.client.ClientConfig.GroupConfig().Password()
+	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
 	request := ClientAuthenticationEncodeRequest(
 		&name,
 		&password,
@@ -173,25 +176,25 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		asOwner,
 		&clientType,
 		1,
-		//"3.9", //TODO::What should this be ?
+		&clientVersion,
 	)
 	result, err := connectionManager.client.InvocationService.InvokeOnConnection(request, connection).Result()
 	if err != nil {
 		return err
 	} else {
 
-		parameters := ClientAuthenticationDecodeResponse(result)
-		switch parameters.Status {
+		status, address, uuid, ownerUuid /*serializationVersion*/, _, serverHazelcastVersion /*clientUnregisteredMembers*/, _ := ClientAuthenticationDecodeResponse(result)()
+		switch status {
 		case AUTHENTICATED:
-			connection.serverHazelcastVersion = parameters.ServerHazelcastVersion
-			connection.endpoint.Store(parameters.Address)
+			connection.serverHazelcastVersion = serverHazelcastVersion
+			connection.endpoint.Store(address)
 			connection.isOwnerConnection = asOwner
-			connectionManager.connections[parameters.Address.Host()+":"+strconv.Itoa(parameters.Address.Port())] = connection
+			connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
 			connectionManager.fireConnectionAddedEvent(connection)
 			if asOwner {
 				connectionManager.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*Address))
-				connectionManager.client.ClusterService.ownerUuid.Store(*parameters.OwnerUuid)
-				connectionManager.client.ClusterService.uuid.Store(*parameters.Uuid)
+				connectionManager.client.ClusterService.ownerUuid.Store(*ownerUuid)
+				connectionManager.client.ClusterService.uuid.Store(*uuid)
 			}
 		case CREDENTIALS_FAILED:
 			return core.NewHazelcastAuthenticationError("invalid credentials!", nil)

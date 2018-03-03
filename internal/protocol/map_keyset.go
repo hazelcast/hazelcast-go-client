@@ -1,6 +1,6 @@
 // Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License")
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -17,10 +17,6 @@ package protocol
 import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
-
-type MapKeySetResponseParameters struct {
-	Response *[]Data
-}
 
 func MapKeySetCalculateSize(name *string) int {
 	// Calculates the request payload size
@@ -39,17 +35,16 @@ func MapKeySetEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func MapKeySetDecodeResponse(clientMessage *ClientMessage) *MapKeySetResponseParameters {
+func MapKeySetDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
 	// Decode response from client message
-	parameters := new(MapKeySetResponseParameters)
+	return func() (response []*Data) {
 
-	responseSize := clientMessage.ReadInt32()
-	response := make([]Data, responseSize)
-	for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-		responseItem := clientMessage.ReadData()
-		response[responseIndex] = *responseItem
+		responseSize := clientMessage.ReadInt32()
+		response = make([]*Data, responseSize)
+		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
+			responseItem := clientMessage.ReadData()
+			response[responseIndex] = responseItem
+		}
+		return
 	}
-	parameters.Response = &response
-
-	return parameters
 }
