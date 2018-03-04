@@ -37,7 +37,7 @@ func SetContainsAllEncodeRequest(name *string, items []*Data) *ClientMessage {
 	clientMessage.SetMessageType(SET_CONTAINSALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(items))
+	clientMessage.AppendInt32(int32(len(items)))
 	for _, itemsItem := range items {
 		clientMessage.AppendData(itemsItem)
 	}

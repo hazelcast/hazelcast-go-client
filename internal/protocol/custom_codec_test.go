@@ -22,7 +22,7 @@ import (
 
 func TestAddressCodecEncodeDecode(t *testing.T) {
 	host := "test-host"
-	port := 8080
+	var port int32 = 8080
 	address := Address{host, port}
 	msg := NewClientMessage(nil, AddressCalculateSize(&address))
 	AddressCodecEncode(msg, &address)
@@ -130,7 +130,7 @@ func MemberCodecEncode(msg *ClientMessage, member *Member) {
 	AddressCodecEncode(msg, &member.address)
 	msg.AppendString(&member.uuid)
 	msg.AppendBool(member.isLiteMember)
-	msg.AppendInt(len(member.attributes))
+	msg.AppendInt32(int32(len(member.attributes)))
 	for key, value := range member.attributes {
 		msg.AppendString(&key)
 		msg.AppendString(&value)
