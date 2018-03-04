@@ -43,34 +43,48 @@ func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) fun
 	}
 }
 
-func ClientAddMembershipListenerHandle(clientMessage *ClientMessage, handleEventMember func(*Member, int32), handleEventMemberList func([]*Member), handleEventMemberAttributeChange func(*string, *string, int32, *string)) {
+type ClientAddMembershipListenerHandleEventMemberFunc func(*Member, int32)
+type ClientAddMembershipListenerHandleEventMemberListFunc func([]*Member)
+type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(*string, *string, int32, *string)
+
+func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) (member *Member, eventType int32) {
+	member = MemberCodecDecode(clientMessage)
+	eventType = clientMessage.ReadInt32()
+	return
+}
+func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessage) (members []*Member) {
+	membersSize := clientMessage.ReadInt32()
+	members = make([]*Member, membersSize)
+	for membersIndex := 0; membersIndex < int(membersSize); membersIndex++ {
+		membersItem := MemberCodecDecode(clientMessage)
+		members[membersIndex] = membersItem
+	}
+	return
+}
+func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (uuid *string, key *string, operationType int32, value *string) {
+	uuid = clientMessage.ReadString()
+	key = clientMessage.ReadString()
+	operationType = clientMessage.ReadInt32()
+
+	if !clientMessage.ReadBool() {
+		value = clientMessage.ReadString()
+	}
+	return
+}
+
+func ClientAddMembershipListenerHandle(clientMessage *ClientMessage,
+	handleEventMember ClientAddMembershipListenerHandleEventMemberFunc,
+	handleEventMemberList ClientAddMembershipListenerHandleEventMemberListFunc,
+	handleEventMemberAttributeChange ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_MEMBER && handleEventMember != nil {
-		member := MemberCodecDecode(clientMessage)
-		eventType := clientMessage.ReadInt32()
-		handleEventMember(member, eventType)
+		handleEventMember(ClientAddMembershipListenerEventMemberDecode(clientMessage))
 	}
-
 	if messageType == EVENT_MEMBERLIST && handleEventMemberList != nil {
-
-		membersSize := clientMessage.ReadInt32()
-		members := make([]*Member, membersSize)
-		for membersIndex := 0; membersIndex < int(membersSize); membersIndex++ {
-			membersItem := MemberCodecDecode(clientMessage)
-			members[membersIndex] = membersItem
-		}
-		handleEventMemberList(members)
+		handleEventMemberList(ClientAddMembershipListenerEventMemberListDecode(clientMessage))
 	}
-
 	if messageType == EVENT_MEMBERATTRIBUTECHANGE && handleEventMemberAttributeChange != nil {
-		uuid := clientMessage.ReadString()
-		key := clientMessage.ReadString()
-		operationType := clientMessage.ReadInt32()
-		var value *string
-		if !clientMessage.ReadBool() {
-			value = clientMessage.ReadString()
-		}
-		handleEventMemberAttributeChange(uuid, key, operationType, value)
+		handleEventMemberAttributeChange(ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage))
 	}
 }

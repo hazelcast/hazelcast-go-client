@@ -78,10 +78,12 @@ func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (st
 			ownerUuid = clientMessage.ReadString()
 		}
 		serializationVersion = clientMessage.ReadUint8()
+		if clientMessage.IsComplete() {
+			return
+		}
 		serverHazelcastVersion = clientMessage.ReadString()
 
 		if !clientMessage.ReadBool() {
-
 			clientUnregisteredMembersSize := clientMessage.ReadInt32()
 			clientUnregisteredMembers = make([]*Member, clientUnregisteredMembersSize)
 			for clientUnregisteredMembersIndex := 0; clientUnregisteredMembersIndex < int(clientUnregisteredMembersSize); clientUnregisteredMembersIndex++ {

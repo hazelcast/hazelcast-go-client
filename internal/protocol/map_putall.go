@@ -15,8 +15,9 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
+	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func MapPutAllCalculateSize(name *string, entries []*Pair) int {
@@ -39,7 +40,7 @@ func MapPutAllEncodeRequest(name *string, entries []*Pair) *ClientMessage {
 	clientMessage.SetMessageType(MAP_PUTALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(entries))
+	clientMessage.AppendInt32(int32(len(entries)))
 	for _, entriesItem := range entries {
 		key := entriesItem.key.(*Data)
 		val := entriesItem.value.(*Data)

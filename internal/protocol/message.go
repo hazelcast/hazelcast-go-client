@@ -43,8 +43,8 @@ import (
 //	|                                                              ...
 type ClientMessage struct {
 	Buffer      []byte
-	writeIndex  int
-	readIndex   int
+	writeIndex  int32
+	readIndex   int32
 	IsRetryable bool
 }
 
@@ -133,11 +133,11 @@ func (msg *ClientMessage) SetDataOffset(v uint16) {
 	binary.LittleEndian.PutUint16(msg.Buffer[DATA_OFFSET_FIELD_OFFSET:HEADER_SIZE], v)
 }
 
-func (msg *ClientMessage) writeOffset() int {
-	return int(msg.DataOffset()) + msg.writeIndex
+func (msg *ClientMessage) writeOffset() int32 {
+	return int32(msg.DataOffset()) + msg.writeIndex
 }
 
-func (msg *ClientMessage) readOffset() int {
+func (msg *ClientMessage) readOffset() int32 {
 	return msg.readIndex
 }
 
@@ -153,12 +153,8 @@ func (msg *ClientMessage) AppendUint8(v uint8) {
 	msg.Buffer[msg.writeIndex] = byte(v)
 	msg.writeIndex += BYTE_SIZE_IN_BYTES
 }
-func (msg *ClientMessage) AppendInt(v int) {
-	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+INT_SIZE_IN_BYTES], uint32(v))
-	msg.writeIndex += INT_SIZE_IN_BYTES
-}
 func (msg *ClientMessage) AppendInt32(v int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+INT_SIZE_IN_BYTES], uint32(v))
+	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+INT32_SIZE_IN_BYTES], uint32(v))
 	msg.writeIndex += INT32_SIZE_IN_BYTES
 }
 func (msg *ClientMessage) AppendData(v *Data) {
@@ -166,9 +162,9 @@ func (msg *ClientMessage) AppendData(v *Data) {
 }
 
 func (msg *ClientMessage) AppendByteArray(arr []byte) {
-	length := len(arr)
+	length := int32(len(arr))
 	//length
-	msg.AppendInt(length)
+	msg.AppendInt32(length)
 	//copy content
 	copy(msg.Buffer[msg.writeIndex:msg.writeIndex+length], arr)
 	msg.writeIndex += length
@@ -236,8 +232,8 @@ func (msg *ClientMessage) ReadData() *Data {
 }
 func (msg *ClientMessage) ReadByteArray() []byte {
 	length := msg.ReadInt32()
-	result := msg.Buffer[msg.readOffset() : msg.readOffset()+int(length)]
-	msg.readIndex += int(length)
+	result := msg.Buffer[msg.readOffset() : msg.readOffset()+length]
+	msg.readIndex += length
 	return result
 }
 
@@ -252,4 +248,8 @@ func (msg *ClientMessage) Accumulate(newMsg *ClientMessage) {
 	end := newMsg.FrameLength()
 	msg.Buffer = append(msg.Buffer, newMsg.Buffer[start:end]...)
 	msg.SetFrameLength(int32(len(msg.Buffer)))
+}
+
+func (msg *ClientMessage) IsComplete() bool {
+	return (msg.readOffset() >= HEADER_SIZE) && (msg.readOffset() == msg.FrameLength())
 }

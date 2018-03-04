@@ -27,7 +27,7 @@ import (
 func IsValidIpAddress(addr string) bool {
 	return net.ParseIP(addr) != nil
 }
-func GetIpAndPort(addr string) (string, int) {
+func GetIpAndPort(addr string) (string, int32) {
 	var port int
 	var err error
 	parts := strings.Split(addr, ":")
@@ -40,7 +40,7 @@ func GetIpAndPort(addr string) (string, int) {
 		port = -1
 	}
 	addr = parts[0]
-	return addr, port
+	return addr, int32(port)
 }
 
 func CheckNotNil(v interface{}) bool {

@@ -38,7 +38,6 @@ func MapKeySetEncodeRequest(name *string) *ClientMessage {
 func MapKeySetDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
 	// Decode response from client message
 	return func() (response []*Data) {
-
 		responseSize := clientMessage.ReadInt32()
 		response = make([]*Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {

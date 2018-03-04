@@ -24,13 +24,13 @@ import (
 
 type Address struct {
 	host string
-	port int
+	port int32
 }
 
 func NewAddress() *Address {
 	return &Address{"localhost", 5701}
 }
-func NewAddressWithParameters(Host string, Port int) *Address {
+func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
 }
 func (address *Address) Host() string {
@@ -38,7 +38,7 @@ func (address *Address) Host() string {
 }
 
 func (address *Address) Port() int {
-	return address.port
+	return int(address.port)
 }
 
 type Uuid struct {
