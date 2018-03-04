@@ -49,16 +49,23 @@ func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (respons
 	}
 }
 
-func ListAddListenerHandle(clientMessage *ClientMessage, handleEventItem func(*Data, *string, int32)) {
+type ListAddListenerHandleEventItemFunc func(*Data, *string, int32)
+
+func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *Data, uuid *string, eventType int32) {
+
+	if !clientMessage.ReadBool() {
+		item = clientMessage.ReadData()
+	}
+	uuid = clientMessage.ReadString()
+	eventType = clientMessage.ReadInt32()
+	return
+}
+
+func ListAddListenerHandle(clientMessage *ClientMessage,
+	handleEventItem ListAddListenerHandleEventItemFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ITEM && handleEventItem != nil {
-		var item *Data
-		if !clientMessage.ReadBool() {
-			item = clientMessage.ReadData()
-		}
-		uuid := clientMessage.ReadString()
-		eventType := clientMessage.ReadInt32()
-		handleEventItem(item, uuid, eventType)
+		handleEventItem(ListAddListenerEventItemDecode(clientMessage))
 	}
 }

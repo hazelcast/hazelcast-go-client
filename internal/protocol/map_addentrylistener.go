@@ -51,29 +51,36 @@ func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (res
 	}
 }
 
-func MapAddEntryListenerHandle(clientMessage *ClientMessage, handleEventEntry func(*Data, *Data, *Data, *Data, int32, *string, int32)) {
+type MapAddEntryListenerHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+
+func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+
+	if !clientMessage.ReadBool() {
+		key = clientMessage.ReadData()
+	}
+
+	if !clientMessage.ReadBool() {
+		value = clientMessage.ReadData()
+	}
+
+	if !clientMessage.ReadBool() {
+		oldValue = clientMessage.ReadData()
+	}
+
+	if !clientMessage.ReadBool() {
+		mergingValue = clientMessage.ReadData()
+	}
+	eventType = clientMessage.ReadInt32()
+	uuid = clientMessage.ReadString()
+	numberOfAffectedEntries = clientMessage.ReadInt32()
+	return
+}
+
+func MapAddEntryListenerHandle(clientMessage *ClientMessage,
+	handleEventEntry MapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
 	if messageType == EVENT_ENTRY && handleEventEntry != nil {
-		var key *Data
-		if !clientMessage.ReadBool() {
-			key = clientMessage.ReadData()
-		}
-		var value *Data
-		if !clientMessage.ReadBool() {
-			value = clientMessage.ReadData()
-		}
-		var oldValue *Data
-		if !clientMessage.ReadBool() {
-			oldValue = clientMessage.ReadData()
-		}
-		var mergingValue *Data
-		if !clientMessage.ReadBool() {
-			mergingValue = clientMessage.ReadData()
-		}
-		eventType := clientMessage.ReadInt32()
-		uuid := clientMessage.ReadString()
-		numberOfAffectedEntries := clientMessage.ReadInt32()
-		handleEventEntry(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
+		handleEventEntry(MapAddEntryListenerEventEntryDecode(clientMessage))
 	}
 }

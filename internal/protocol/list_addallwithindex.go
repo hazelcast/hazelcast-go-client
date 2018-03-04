@@ -39,7 +39,7 @@ func ListAddAllWithIndexEncodeRequest(name *string, index int32, valueList []*Da
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(index)
-	clientMessage.AppendInt(len(valueList))
+	clientMessage.AppendInt32(int32(len(valueList)))
 	for _, valueListItem := range valueList {
 		clientMessage.AppendData(valueListItem)
 	}

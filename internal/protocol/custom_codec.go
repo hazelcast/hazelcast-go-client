@@ -19,12 +19,12 @@ Address Codec
 */
 func AddressCodecEncode(msg *ClientMessage, address *Address) {
 	msg.AppendString(&address.host)
-	msg.AppendInt(address.port)
+	msg.AppendInt32(address.port)
 }
 func AddressCodecDecode(msg *ClientMessage) *Address {
 	host := msg.ReadString()
 	port := msg.ReadInt32()
-	return &Address{*host, int(port)}
+	return &Address{*host, port}
 }
 
 /*

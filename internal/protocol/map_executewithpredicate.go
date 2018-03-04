@@ -42,14 +42,12 @@ func MapExecuteWithPredicateEncodeRequest(name *string, entryProcessor *Data, pr
 func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
 	return func() (response []*Pair) {
-
 		responseSize := clientMessage.ReadInt32()
 		response = make([]*Pair, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem_key := clientMessage.ReadData()
-			responseItem_val := clientMessage.ReadData()
-			var responseItem = &Pair{key: responseItem_key, value: responseItem_val}
-
+			responseItemKey := clientMessage.ReadData()
+			responseItemValue := clientMessage.ReadData()
+			var responseItem = &Pair{key: responseItemKey, value: responseItemValue}
 			response[responseIndex] = responseItem
 		}
 		return

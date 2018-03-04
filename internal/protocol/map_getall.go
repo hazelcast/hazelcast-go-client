@@ -37,7 +37,7 @@ func MapGetAllEncodeRequest(name *string, keys []*Data) *ClientMessage {
 	clientMessage.SetMessageType(MAP_GETALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(keys))
+	clientMessage.AppendInt32(int32(len(keys)))
 	for _, keysItem := range keys {
 		clientMessage.AppendData(keysItem)
 	}
@@ -48,14 +48,12 @@ func MapGetAllEncodeRequest(name *string, keys []*Data) *ClientMessage {
 func MapGetAllDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
 	return func() (response []*Pair) {
-
 		responseSize := clientMessage.ReadInt32()
 		response = make([]*Pair, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem_key := clientMessage.ReadData()
-			responseItem_val := clientMessage.ReadData()
-			var responseItem = &Pair{key: responseItem_key, value: responseItem_val}
-
+			responseItemKey := clientMessage.ReadData()
+			responseItemValue := clientMessage.ReadData()
+			var responseItem = &Pair{key: responseItemKey, value: responseItemValue}
 			response[responseIndex] = responseItem
 		}
 		return

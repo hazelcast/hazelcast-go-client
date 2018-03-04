@@ -37,7 +37,7 @@ func ListCompareAndRemoveAllEncodeRequest(name *string, values []*Data) *ClientM
 	clientMessage.SetMessageType(LIST_COMPAREANDREMOVEALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(values))
+	clientMessage.AppendInt32(int32(len(values)))
 	for _, valuesItem := range values {
 		clientMessage.AppendData(valuesItem)
 	}

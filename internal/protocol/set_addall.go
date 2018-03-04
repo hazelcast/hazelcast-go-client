@@ -37,7 +37,7 @@ func SetAddAllEncodeRequest(name *string, valueList []*Data) *ClientMessage {
 	clientMessage.SetMessageType(SET_ADDALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(valueList))
+	clientMessage.AppendInt32(int32(len(valueList)))
 	for _, valueListItem := range valueList {
 		clientMessage.AppendData(valueListItem)
 	}

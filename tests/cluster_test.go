@@ -147,7 +147,7 @@ func TestGetMember(t *testing.T) {
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
-	address := protocol.NewAddressWithParameters(member1.GetHost(), int(member1.GetPort()))
+	address := protocol.NewAddressWithParameters(member1.GetHost(), int32(member1.GetPort()))
 	member := client.GetCluster().GetMember(address)
 	AssertEqualf(t, nil, member.Uuid(), member1.GetUUID(), "GetMember returned wrong member")
 	client.Shutdown()

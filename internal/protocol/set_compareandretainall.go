@@ -37,7 +37,7 @@ func SetCompareAndRetainAllEncodeRequest(name *string, values []*Data) *ClientMe
 	clientMessage.SetMessageType(SET_COMPAREANDRETAINALL)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
-	clientMessage.AppendInt(len(values))
+	clientMessage.AppendInt32(int32(len(values)))
 	for _, valuesItem := range values {
 		clientMessage.AppendData(valuesItem)
 	}

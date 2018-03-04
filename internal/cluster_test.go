@@ -47,7 +47,7 @@ func Test_getPossibleAddresses(t *testing.T) {
 		}
 	}
 	for _, member := range members {
-		if _, found := addressesInMap[*protocol.NewAddressWithParameters(member.Address().Host(), member.Address().Port())]; !found {
+		if _, found := addressesInMap[*protocol.NewAddressWithParameters(member.Address().Host(), int32(member.Address().Port()))]; !found {
 			t.Fatal("getPossibleAddresses failed")
 		}
 	}

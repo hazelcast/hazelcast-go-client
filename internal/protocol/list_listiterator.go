@@ -41,7 +41,6 @@ func ListListIteratorEncodeRequest(name *string, index int32) *ClientMessage {
 func ListListIteratorDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
 	// Decode response from client message
 	return func() (response []*Data) {
-
 		responseSize := clientMessage.ReadInt32()
 		response = make([]*Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
