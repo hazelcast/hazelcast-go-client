@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package queue
+package set
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
@@ -20,6 +20,7 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
+	"sync"
 	"testing"
 )
 
@@ -136,4 +137,95 @@ func TestSetProxy_Size(t *testing.T) {
 	AssertEqualf(t, err, changed, true, "set Add() failed")
 	size, err := set.Size()
 	AssertEqualf(t, err, size, int32(1), "set Size() failed")
+}
+
+func TestSetProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
+	defer set.Clear()
+	var wg = new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &itemListener{wg: wg}
+	registrationID, err := set.AddItemListener(listener, true)
+	defer set.RemoveItemListener(registrationID)
+	AssertNilf(t, err, nil, "set AddItemListener() failed when item is added")
+	set.Add(testElement)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "set AddItemListener() failed when item is added")
+	AssertEqualf(t, nil, listener.event.Item(), testElement, "set AddItemListener() failed when item is added")
+	AssertEqualf(t, nil, listener.event.EventType(), int32(1), "set AddItemListener() failed when item is added")
+	AssertEqualf(t, nil, listener.event.Name(), "mySet", "set AddItemListener() failed when item is added")
+}
+
+func TestSetProxy_AddItemItemAddedListener(t *testing.T) {
+	defer set.Clear()
+	var wg = new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &itemListener{wg: wg}
+	registrationID, err := set.AddItemListener(listener, false)
+	defer set.RemoveItemListener(registrationID)
+	AssertNilf(t, err, nil, "set AddItemListener() failed when item is added")
+	set.Add(testElement)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "set AddItemListener() failed when item is added")
+	AssertEqualf(t, nil, listener.event.Item(), nil, "set AddItemListener() failed when item is added")
+}
+
+func TestSetProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
+	defer set.Clear()
+	var wg = new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &itemListener{wg: wg}
+	set.Add(testElement)
+	registrationID, err := set.AddItemListener(listener, true)
+	defer set.RemoveItemListener(registrationID)
+	AssertNilf(t, err, nil, "set AddItemListener() failed when item is removed")
+	set.Remove(testElement)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
+	AssertEqualf(t, nil, listener.event.Item(), testElement, "set AddItemListener() failed when item is removed")
+	AssertEqualf(t, nil, listener.event.EventType(), int32(2), "set AddItemListener() failed when item is removed")
+	AssertEqualf(t, nil, listener.event.Name(), "mySet", "set AddItemListener() failed when item is removed")
+}
+
+func TestSetProxy_AddItemListenerItemRemoved(t *testing.T) {
+	defer set.Clear()
+	var wg = new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &itemListener{wg: wg}
+	set.Add(testElement)
+	registrationID, err := set.AddItemListener(listener, false)
+	defer set.RemoveItemListener(registrationID)
+	AssertNilf(t, err, nil, "set AddItemListener() failed when item is removed")
+	set.Remove(testElement)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
+	AssertEqualf(t, nil, listener.event.Item(), nil, "set AddItemListener() failed when item is removed")
+}
+
+func TestSetProxy_AddItemItemRemovedListener(t *testing.T) {
+	defer set.Clear()
+	var wg = new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &itemListener{wg: wg}
+	registrationID, err := set.AddItemListener(listener, false)
+	defer set.RemoveItemListener(registrationID)
+	AssertNilf(t, err, nil, "set AddItemListener() failed")
+	set.Add(testElement)
+	timeout := WaitTimeout(wg, Timeout)
+	AssertEqualf(t, nil, false, timeout, "set AddItemListener() failed")
+	AssertEqualf(t, nil, listener.event.Item(), nil, "set AddItemListener() failed")
+}
+
+type itemListener struct {
+	wg    *sync.WaitGroup
+	event core.IItemEvent
+}
+
+func (self *itemListener) ItemAdded(event core.IItemEvent) {
+	self.event = event
+	self.wg.Done()
+}
+
+func (self *itemListener) ItemRemoved(event core.IItemEvent) {
+	self.event = event
+	self.wg.Done()
 }
