@@ -40,6 +40,9 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 	}
 }
 func AssertNilf(t *testing.T, err error, l interface{}, message string) {
+	if err != nil {
+		t.Fatal(err)
+	}
 	if l != nil {
 		t.Fatalf("%v != nil", l)
 	}

@@ -315,6 +315,17 @@ func (clusterService *ClusterService) GetMember(address core.IAddress) core.IMem
 	}
 	return nil
 }
+
+func (clusterService *ClusterService) GetMemberByUuid(uuid string) core.IMember {
+	membersList := clusterService.members.Load().([]*Member)
+	for _, member := range membersList {
+		if member.Uuid() == uuid {
+			copyMember := *member
+			return &copyMember
+		}
+	}
+	return nil
+}
 func (clusterService *ClusterService) onConnectionClosed(connection *Connection, cause error) {
 	ownerConnectionAddress := clusterService.ownerConnectionAddress.Load().(*Address)
 	if connection.endpoint.Load().(*Address).Host() != "" && ownerConnectionAddress.Host() != "" &&

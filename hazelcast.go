@@ -54,6 +54,9 @@ type IHazelcastInstance interface {
 	// GetMap returns the distributed map instance with the specified name.
 	GetMap(name string) (core.IMap, error)
 
+	// GetList returns the distributed list instance with the specified name.
+	GetList(name string) (core.IList, error)
+
 	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 

@@ -158,6 +158,22 @@ type IEntryEvent interface {
 	Uuid() *string
 }
 
+// IItemEvent is IList, ISet and IQueue events common contract.
+type IItemEvent interface {
+
+	// Name returns the name of IList, ISet or IQueue
+	Name() string
+
+	// Item returns the item of the event.
+	Item() interface{}
+
+	// EventType returns 1 if an item is added, 2 if an item is removed.
+	EventType() int32
+
+	// Member is the member that sent the event.
+	Member() IMember
+}
+
 // IMapEvent is map events common contract.
 type IMapEvent interface {
 	// EventType returns the event type.
@@ -267,4 +283,14 @@ type TopicMessage interface {
 	//    - The message was sent by a client and not a member.
 	//    - The member, that sent the message, left the cluster before the message was processed.
 	PublishingMember() IMember
+}
+
+// ItemAddedListener is invoked when an item is added.
+type ItemAddedListener interface {
+	ItemAdded(event IItemEvent)
+}
+
+// ItemRemovedListener is invoked when an item is removed.
+type ItemRemovedListener interface {
+	ItemRemoved(event IItemEvent)
 }
