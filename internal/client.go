@@ -68,6 +68,15 @@ func (client *HazelcastClient) GetSet(name string) (core.ISet, error) {
 	return set.(core.ISet), err
 }
 
+func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
+	topicService := SERVICE_NAME_TOPIC
+	topic, err := client.GetDistributedObject(topicService, name)
+	if err != nil {
+		return nil, err
+	}
+	return topic.(core.ITopic), err
+}
+
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
 	if err != nil {

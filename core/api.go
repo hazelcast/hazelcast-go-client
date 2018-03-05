@@ -266,11 +266,11 @@ type TopicMessageListener interface {
 
 	// OnMessage is invoked when a message is received for the added topic. Note that topic guarantees message ordering.
 	// Therefore there is only one thread invoking OnMessage.
-	OnMessage(message TopicMessage)
+	OnMessage(message ITopicMessage)
 }
 
-// TopicMessage is a message for ITopic.
-type TopicMessage interface {
+// ITopicMessage is a message for ITopic.
+type ITopicMessage interface {
 
 	// MessageObject returns the published message.
 	MessageObject() interface{}
