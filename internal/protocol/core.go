@@ -27,9 +27,6 @@ type Address struct {
 	port int32
 }
 
-func NewAddress() *Address {
-	return &Address{"localhost", 5701}
-}
 func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
 }

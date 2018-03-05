@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 }
 func TestInitialMembershipListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
@@ -63,7 +63,7 @@ func TestInitialMembershipListener(t *testing.T) {
 }
 func TestMemberAddedandRemoved(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
@@ -84,7 +84,7 @@ func TestMemberAddedandRemoved(t *testing.T) {
 }
 func TestAddListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
 	wg.Add(1)
@@ -109,7 +109,7 @@ func TestAddListener(t *testing.T) {
 
 func TestAddListeners(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
 	wg.Add(2)
@@ -125,7 +125,7 @@ func TestAddListeners(t *testing.T) {
 }
 
 func TestGetMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	member3, _ := remoteController.StartMember(cluster.ID)
@@ -143,7 +143,7 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestGetMember(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
@@ -156,7 +156,7 @@ func TestGetMember(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestGetInvalidMember(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
 	address := protocol.NewAddressWithParameters(member1.GetHost(), 0)
@@ -167,7 +167,7 @@ func TestGetInvalidMember(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestAuthenticationWithWrongCredentials(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.GroupConfig().SetName("wrongName")
@@ -180,7 +180,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestClientWithoutMember(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	client, err := hazelcast.NewHazelcastClient()
 	if _, ok := err.(*core.HazelcastIllegalStateError); !ok {
 		t.Fatal("client should have returned a hazelcastError")
@@ -190,7 +190,7 @@ func TestClientWithoutMember(t *testing.T) {
 }
 func TestRestartMember(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
@@ -212,7 +212,7 @@ func TestRestartMember(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	oldMember, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(100)
@@ -228,13 +228,13 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	client.Shutdown()
 }
 func TestConnectToClusterWithoutPort(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().AddAddress("127.0.0.1")
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 	members := client.GetCluster().GetMemberList()
-	AssertEqualf(t, nil, members[0].Address().Host(), "localhost", "connectToClusterWithoutPort returned a wrong member address")
+	AssertEqualf(t, nil, members[0].Address().Host(), "127.0.0.1", "connectToClusterWithoutPort returned a wrong member address")
 	AssertEqualf(t, nil, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)

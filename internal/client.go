@@ -77,6 +77,15 @@ func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
 	return topic.(core.ITopic), err
 }
 
+func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
+	queueService := SERVICE_NAME_QUEUE
+	queue, err := client.GetDistributedObject(queueService, name)
+	if err != nil {
+		return nil, err
+	}
+	return queue.(core.IQueue), err
+}
+
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
 	if err != nil {

@@ -22,14 +22,63 @@ import (
 
 var Timeout time.Duration = 1 * time.Minute
 
-const DEFAULT_XML_CONFIG string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd\" xmlns=\"http://www.hazelcast.com/schema/config\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
-	"<serialization>" +
-	"<data-serializable-factories>" +
-	"<data-serializable-factory factory-id=\"66\">com.hazelcast.client.test.IdentifiedFactory" +
-	"</data-serializable-factory>" +
-	"</data-serializable-factories>" +
-	"</serialization>" +
-	"</hazelcast>"
+const DefaultServerConfig = `
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <group>
+        <name>dev</name>
+        <password>dev-pass</password>
+    </group>
+    <management-center enabled="false">http://localhost:8080/mancenter</management-center>
+    <network>
+        <port auto-increment="true" port-count="100">5701</port>
+        <outbound-ports>
+            <!--
+            Allowed port range when connecting to other nodes.
+            0 or * means use system provided port.
+            -->
+            <ports>0</ports>
+        </outbound-ports>
+        <join>
+            <multicast enabled="true">
+                <multicast-group>224.7.7.7</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="false">
+                <interface>127.0.0.1</interface>
+            </tcp-ip>
+        </join>
+        <public-address>127.0.0.1</public-address>
+        <ssl enabled="false"/>
+        <socket-interceptor enabled="false"/>
+    </network>
+    <serialization>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
+            </data-serializable-factory>
+        </data-serializable-factories>
+    </serialization>
+
+    <queue name="ClientQueueTest*">
+        <!--
+            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
+            all put/offer operations will get blocked until the queue size
+            of the JVM goes down below the maximum.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means
+            Integer.MAX_VALUE. Default is 0.
+        -->
+        <max-size>6</max-size>
+    </queue>
+    <ringbuffer name="ClientRingbufferTest*">
+        <capacity>10</capacity>
+    </ringbuffer>
+    <ringbuffer name="ClientRingbufferTestWithTTL*">
+        <capacity>10</capacity>
+        <time-to-live-seconds>180</time-to-live-seconds>
+    </ringbuffer>
+</hazelcast>
+`
 
 func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
 	if err != nil {

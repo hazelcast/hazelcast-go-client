@@ -32,7 +32,7 @@ func (lifecycyleListener *lifecycleListener) LifecycleStateChanged(newState stri
 }
 func TestLifecycleListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	config := hazelcast.NewHazelcastConfig()
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	config.AddLifecycleListener(&lifecycleListener)
@@ -51,7 +51,7 @@ func TestLifecycleListener(t *testing.T) {
 }
 func TestLifecycleListenerForDisconnected(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	wg.Add(1)
@@ -69,7 +69,7 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 
 func TestRemoveListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DEFAULT_XML_CONFIG)
+	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
