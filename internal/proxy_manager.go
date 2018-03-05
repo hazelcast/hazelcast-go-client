@@ -96,6 +96,8 @@ func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name 
 		return newMapProxy(proxyManager.client, serviceName, name), nil
 	} else if common.SERVICE_NAME_LIST == *serviceName {
 		return newListProxy(proxyManager.client, serviceName, name)
+	} else if common.SERVICE_NAME_SET == *serviceName {
+		return newSetProxy(proxyManager.client, serviceName, name)
 	}
 	return nil, nil
 }

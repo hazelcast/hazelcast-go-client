@@ -15,8 +15,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -219,23 +217,5 @@ func (list *ListProxy) createEventHandler(listener interface{}) func(clientMessa
 			onItemEvent := list.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})
-	}
-}
-
-func (list *ListProxy) createOnItemEvent(listener interface{}) func(itemData *Data, uuid *string, eventType int32) {
-	return func(itemData *Data, uuid *string, eventType int32) {
-		var item interface{}
-		item, _ = list.ToObject(itemData)
-		member := list.client.ClusterService.GetMemberByUuid(*uuid)
-		itemEvent := NewItemEvent(list.name, item, eventType, member.(*Member))
-		if eventType == ITEM_ADDED {
-			if _, ok := listener.(core.ItemAddedListener); ok {
-				listener.(core.ItemAddedListener).ItemAdded(itemEvent)
-			}
-		} else if eventType == ITEM_REMOVED {
-			if _, ok := listener.(core.ItemRemovedListener); ok {
-				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
-			}
-		}
 	}
 }
