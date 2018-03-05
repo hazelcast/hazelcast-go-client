@@ -36,7 +36,7 @@ type IList interface {
 
 	// AddAll appends all elements in the specified slice to the end of this list.
 	// AddAll returns true if the list has changed as a result of this operation, false otherwise.
-	AddAll(items []interface{}) (changed bool, err error)
+	AddAll(elements []interface{}) (changed bool, err error)
 
 	// AddAllAt inserts all elements in the specified slice at specified index, keeping the order of the slice.
 	// AddAllAt shifts the subsequent elements to the right.
@@ -45,7 +45,7 @@ type IList interface {
 
 	// AddItemListener adds an item listener for this list.
 	// Listener will be invoked whenever an item is added to or removed from this list.
-	// AddItemListener returns registrationId of the listener.
+	// AddItemListener returns registrationID of the listener.
 	AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error)
 
 	// Clear clears this list.
@@ -83,9 +83,9 @@ type IList interface {
 	// RemoveAll returns true if the list has changed as a result of this operation, false otherwise.
 	RemoveAll(elements []interface{}) (changed bool, err error)
 
-	// RemoveItemListener removes the item listener with the given registrationId.
+	// RemoveItemListener removes the item listener with the given registrationID.
 	// RemoveItemListener returns true if the listener is removed, false otherwise.
-	RemoveItemListener(registrationId *string) (removed bool, err error)
+	RemoveItemListener(registrationID *string) (removed bool, err error)
 
 	// RetainAll removes all elements from this list except the ones contained in the given slice.
 	// RetainAll returns true if the list has changed as a result of this operation, false otherwise.

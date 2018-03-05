@@ -82,6 +82,11 @@ type HazelcastIllegalStateError struct {
 	*HazelcastErrorType
 }
 
+// HazelcastNilError is returned when a nil argument has been passed to a method.
+type HazelcastNilPointerError struct {
+	*HazelcastErrorType
+}
+
 // HazelcastTargetDisconnectedError indicates that an operation is about to be sent to a non existing machine.
 type HazelcastTargetDisconnectedError struct {
 	*HazelcastErrorType
@@ -94,11 +99,6 @@ type HazelcastInstanceNotActiveError struct {
 
 // HazelcastIOError is returned when an IO error occurs.
 type HazelcastIOError struct {
-	*HazelcastErrorType
-}
-
-// HazelcastNilError is returned when a nil argument has been passed to a method.
-type HazelcastNilPointerError struct {
 	*HazelcastErrorType
 }
 

@@ -29,4 +29,7 @@ type ICluster interface {
 
 	// GetMember gets the member with the given address.
 	GetMember(address IAddress) IMember
+
+	// GetMemberByUuid gets the member with the given uuid.
+	GetMemberByUuid(uuid string) IMember
 }

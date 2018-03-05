@@ -200,13 +200,20 @@ const (
 	ENTRYEVENT_EXPIRED      int32 = 128
 	ENTRYEVENT_INVALIDATION int32 = 256
 )
+
+const (
+	ITEM_ADDED   int32 = 1
+	ITEM_REMOVED int32 = 2
+)
+
 const (
 	NIL_KEY_IS_NOT_ALLOWED        string = "nil key is not allowed"
 	NIL_KEYS_ARE_NOT_ALLOWED      string = "nil keys collection is not allowed"
 	NIL_VALUE_IS_NOT_ALLOWED      string = "nil value is not allowed"
 	NIL_PREDICATE_IS_NOT_ALLOWED  string = "predicate should not be nil"
 	NIL_MAP_IS_NOT_ALLOWED        string = "nil map is not allowed"
-	NIL_SLICE_IS_NOT_ALLOWED      string = "nil slice is not alloweed"
+	NIL_ARG_IS_NOT_ALLOWED        string = "nil arg is not allowed"
+	NIL_SLICE_IS_NOT_ALLOWED      string = "nil slice is not allowed"
 	NIL_LISTENER_IS_NOT_ALLOWED   string = "nil listener is not allowed"
 	NIL_AGGREGATOR_IS_NOT_ALLOWED string = "aggregator should not be nil"
 	NIL_PROJECTION_IS_NOT_ALLOWED string = "projection should not be nil"
