@@ -175,3 +175,21 @@ func newPartitionSpecificProxy(client *HazelcastClient, serviceName *string, nam
 func (parSpecProxy *partitionSpecificProxy) Invoke(request *ClientMessage) (*ClientMessage, error) {
 	return parSpecProxy.InvokeOnPartition(request, parSpecProxy.partitionId)
 }
+
+func (proxy *proxy) createOnItemEvent(listener interface{}) func(itemData *Data, uuid *string, eventType int32) {
+	return func(itemData *Data, uuid *string, eventType int32) {
+		var item interface{}
+		item, _ = proxy.ToObject(itemData)
+		member := proxy.client.ClusterService.GetMemberByUuid(*uuid)
+		itemEvent := NewItemEvent(proxy.name, item, eventType, member.(*Member))
+		if eventType == ITEM_ADDED {
+			if _, ok := listener.(core.ItemAddedListener); ok {
+				listener.(core.ItemAddedListener).ItemAdded(itemEvent)
+			}
+		} else if eventType == ITEM_REMOVED {
+			if _, ok := listener.(core.ItemRemovedListener); ok {
+				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
+			}
+		}
+	}
+}
