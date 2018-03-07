@@ -60,6 +60,9 @@ type IHazelcastInstance interface {
 	// GetSet returns the distributed set instance with the specified name.
 	GetSet(name string) (core.ISet, error)
 
+	// GetTopic returns the distributed topic istance with the specified name.
+	GetTopic(name string) (core.ITopic, error)
+
 	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 
