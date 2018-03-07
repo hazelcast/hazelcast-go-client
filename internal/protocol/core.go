@@ -489,3 +489,29 @@ func GetEntryListenerFlags(listener interface{}) int32 {
 	}
 	return flags
 }
+
+type TopicMessage struct {
+	messageObject    interface{}
+	publishTime      int64
+	publishingMember *Member
+}
+
+func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember *Member) *TopicMessage {
+	return &TopicMessage{
+		messageObject:    messageObject,
+		publishTime:      publishTime,
+		publishingMember: publishingMember,
+	}
+}
+
+func (msg *TopicMessage) MessageObject() interface{} {
+	return msg.messageObject
+}
+
+func (msg *TopicMessage) PublishTime() int64 {
+	return msg.publishTime
+}
+
+func (msg *TopicMessage) PublishingMember() core.IMember {
+	return msg.publishingMember
+}
