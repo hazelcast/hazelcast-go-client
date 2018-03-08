@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
@@ -181,9 +182,23 @@ func (clusterService *ClusterService) initMembershipListener(connection *Connect
 	}
 	registrationId := ClientAddMembershipListenerDecodeResponse(response)()
 	wg.Wait() //Wait until the inital member list is fetched.
+	clusterService.logMembers()
 	log.Println("Registered membership listener with Id ", *registrationId)
 	return nil
 }
+
+func (clusterService *ClusterService) logMembers() {
+	members := clusterService.members.Load().([]*Member)
+	membersInfo := fmt.Sprintf("\n\nMembers {size:%d} [\n", len(members))
+	for _, member := range members {
+		memberInfo := fmt.Sprint("\t", member)
+		memberInfo += "\n"
+		membersInfo += memberInfo
+	}
+	membersInfo += "]\n"
+	log.Println(membersInfo)
+}
+
 func (clusterService *ClusterService) AddListener(listener interface{}) *string {
 	registrationId, _ := common.NewUUID()
 	clusterService.mu.Lock()
@@ -219,6 +234,7 @@ func (clusterService *ClusterService) handleMember(member *Member, eventType int
 	} else if eventType == MEMBER_REMOVED {
 		clusterService.memberRemoved(member)
 	}
+	clusterService.logMembers()
 	clusterService.client.PartitionService.refresh <- struct{}{}
 }
 
