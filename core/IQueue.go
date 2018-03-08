@@ -14,6 +14,8 @@
 
 package core
 
+import "time"
+
 // IQueue is a concurrent, blocking, distributed, observable queue. Queue is not a partitioned data-structure.
 // All of the Queue content is stored in a single machine (and in the backup).
 // Queue will not scale by adding more members in the cluster.
@@ -42,7 +44,11 @@ type IQueue interface {
 
 	// DrainTo removes all items in this queue and add them to the end of given slice.
 	// DrainTo returns the number of moved items.
-	DrainTo(slice []interface{}, maxElements int32) (movedAmount int32, err error)
+	DrainTo(slice *[]interface{}) (movedAmount int32, err error)
+
+	// DrainTo removes all items in this queue and add them to the end of given slice.
+	// DrainTo returns the number of moved items.
+	DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error)
 
 	// IsEmpty returns true if this queue is empty, false otherwise.
 	IsEmpty() (empty bool, err error)
@@ -53,9 +59,9 @@ type IQueue interface {
 	Offer(item interface{}) (added bool, err error)
 
 	// OfferWithTimeout inserts the given item to the end of the queue if there is room, otherwise
-	// it waits for timeoutInMilliSeconds milliseconds before returning false.
+	// it waits for timeout with timeoutUnit before returning false.
 	// OfferWithTimeout returns true if the item is added, false otherwise.
-	OfferWithTimeout(item interface{}, timeoutInMilliSeconds int64) (added bool, err error)
+	OfferWithTimeout(item interface{}, timeout int64, timeoutUnit time.Duration) (added bool, err error)
 
 	// Peek retrieves, but does not remove the head of this queue.
 	// Peek returns the head of this queue, nil if the queue is empty.
@@ -66,10 +72,9 @@ type IQueue interface {
 	Poll() (item interface{}, err error)
 
 	// PollWithTimeout retrieves and removes the head of this queue,
-	// if the queue is empty it waits timeoutInMilliSeconds milliseconds before
-	// returning nil.
+	// if the queue is empty it waits timeout with timeoutUnit before returning nil.
 	// PollWithTimeout returns the head of this queue, nil if the queue is empty after timeoutInMilliSeconds milliseconds.
-	PollWithTimeout(timeoutInMilliSeconds int64) (item interface{}, err error)
+	PollWithTimeout(timeout int64, timeoutUnit time.Duration) (item interface{}, err error)
 
 	// Put inserts the item at the end of this queue.
 	// It blocks until there is available room in the queue, if necessary.

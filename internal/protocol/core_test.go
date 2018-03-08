@@ -20,8 +20,8 @@ import (
 )
 
 func TestMember_Equal(t *testing.T) {
-	member1 := NewMember(*NewAddress(), "test", false, nil)
-	member2 := NewMember(*NewAddress(), "test1", false, nil)
+	member1 := NewMember(*NewAddressWithParameters("localhost", 5701), "test", false, nil)
+	member2 := NewMember(*NewAddressWithParameters("localhost", 5701), "test1", false, nil)
 
 	if ok := member1.Equal(*member2); ok {
 		t.Fatal("memberEqual test failed")

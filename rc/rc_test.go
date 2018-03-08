@@ -12,7 +12,7 @@ func TestLangFromString(t *testing.T) {
 }
 
 func TestRemoteControllerClient_Ping(t *testing.T) {
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	remoteController, err := NewRemoteControllerClient("127.0.0.1:9701")
 	if remoteController == nil || err != nil {
 		t.Fatal("create remote controller failed:", err)
 	}
