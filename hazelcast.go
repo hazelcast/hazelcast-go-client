@@ -63,6 +63,9 @@ type IHazelcastInstance interface {
 	// GetTopic returns the distributed topic istance with the specified name.
 	GetTopic(name string) (core.ITopic, error)
 
+	// GetQueue returns the distributed queue instance with the specified name.
+	GetQueue(name string) (core.IQueue, error)
+
 	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 

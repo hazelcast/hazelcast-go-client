@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	DEFAULT_ADDRESS       = "localhost"
+	DEFAULT_ADDRESS       = "127.0.0.1"
 	DEFAULT_PORT          = 5701
 	MEMBER_ADDED    int32 = 1
 	MEMBER_REMOVED  int32 = 2
