@@ -93,13 +93,15 @@ func (proxyManager *ProxyManager) findNextProxyAddress() *Address {
 
 func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
 	if common.SERVICE_NAME_MAP == *serviceName {
-		return newMapProxy(proxyManager.client, serviceName, name), nil
+		return newMapProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_LIST == *serviceName {
 		return newListProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_SET == *serviceName {
 		return newSetProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_TOPIC == *serviceName {
 		return newTopicProxy(proxyManager.client, serviceName, name)
+	} else if common.SERVICE_NAME_MULTI_MAP == *serviceName {
+		return newMultiMapProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_REPLICATED_MAP == *serviceName {
 		return newReplicatedMapProxy(proxyManager.client, serviceName, name), nil
 	} else if common.SERVICE_NAME_QUEUE == *serviceName {

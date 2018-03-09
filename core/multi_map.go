@@ -53,9 +53,6 @@ type MultiMap interface {
 	// Clear removes all entries from this multi-map.
 	Clear() (err error)
 
-	// Delete deletes all the entries with the given key.
-	Delete(key interface{}) (err error)
-
 	// Size returns the total number of values in this multi-map.
 	Size() (size int32, err error)
 
@@ -74,7 +71,7 @@ type MultiMap interface {
 
 	// AddEntryListener adds an entry listener to this multi-map.
 	// It returns registration ID for this entry listener.
-	AddEntryListener(listener interface{}) (registrationID *string, err error)
+	AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds an entry listener to this multi-map.
 	// This entry listener will only be notified of updates related to this key.

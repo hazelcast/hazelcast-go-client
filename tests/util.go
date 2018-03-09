@@ -90,6 +90,7 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 		t.Fatalf("%v != %v : %v", l, r, message)
 	}
 }
+
 func AssertNilf(t *testing.T, err error, l interface{}, message string) {
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +99,7 @@ func AssertNilf(t *testing.T, err error, l interface{}, message string) {
 		t.Fatalf("%v != nil : %v", l, message)
 	}
 }
+
 func AssertErrorNotNil(t *testing.T, err error, message string) {
 	if err == nil {
 		t.Fatal(message)
@@ -157,6 +159,7 @@ func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 	}
 
 }
+
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {

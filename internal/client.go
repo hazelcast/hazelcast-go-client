@@ -72,6 +72,14 @@ func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap
 	return mp.(core.ReplicatedMap), err
 }
 
+func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
+	mmp, err := client.GetDistributedObject(SERVICE_NAME_MULTI_MAP, name)
+	if err != nil {
+		return nil, err
+	}
+	return mmp.(core.MultiMap), err
+}
+
 func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
 	topic, err := client.GetDistributedObject(SERVICE_NAME_TOPIC, name)
 	if err != nil {
