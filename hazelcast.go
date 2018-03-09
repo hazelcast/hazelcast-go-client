@@ -69,6 +69,9 @@ type IHazelcastInstance interface {
 	// GetQueue returns the distributed queue instance with the specified name.
 	GetQueue(name string) (core.IQueue, error)
 
+	// GetMap returns the distributed ringbuffer instance with the specified name.
+	GetRingbuffer(name string) (core.Ringbuffer, error)
+
 	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 
