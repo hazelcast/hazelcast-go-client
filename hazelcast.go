@@ -63,6 +63,9 @@ type IHazelcastInstance interface {
 	// GetTopic returns the distributed topic istance with the specified name.
 	GetTopic(name string) (core.ITopic, error)
 
+	// GetMultiMap returns the distributed multi-map instance with the specified name.
+	GetMultiMap(name string) (core.MultiMap, error)
+
 	// GetReplicatedMap returns the replicated map instance with the specified name.
 	GetReplicatedMap(name string) (core.ReplicatedMap, error)
 
