@@ -46,25 +46,23 @@ func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	return mp.(core.IMap), err
+	return mp.(core.IMap), nil
 }
 
 func (client *HazelcastClient) GetList(name string) (core.IList, error) {
-	listService := SERVICE_NAME_LIST
-	list, err := client.GetDistributedObject(listService, name)
+	list, err := client.GetDistributedObject(SERVICE_NAME_LIST, name)
 	if err != nil {
 		return nil, err
 	}
-	return list.(core.IList), err
+	return list.(core.IList), nil
 }
 
 func (client *HazelcastClient) GetSet(name string) (core.ISet, error) {
-	setService := SERVICE_NAME_SET
-	set, err := client.GetDistributedObject(setService, name)
+	set, err := client.GetDistributedObject(SERVICE_NAME_SET, name)
 	if err != nil {
 		return nil, err
 	}
-	return set.(core.ISet), err
+	return set.(core.ISet), nil
 }
 func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
 	mp, err := client.GetDistributedObject(SERVICE_NAME_REPLICATED_MAP, name)
@@ -75,21 +73,27 @@ func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap
 }
 
 func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
-	topicService := SERVICE_NAME_TOPIC
-	topic, err := client.GetDistributedObject(topicService, name)
+	topic, err := client.GetDistributedObject(SERVICE_NAME_TOPIC, name)
 	if err != nil {
 		return nil, err
 	}
-	return topic.(core.ITopic), err
+	return topic.(core.ITopic), nil
 }
 
 func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
-	queueService := SERVICE_NAME_QUEUE
-	queue, err := client.GetDistributedObject(queueService, name)
+	queue, err := client.GetDistributedObject(SERVICE_NAME_QUEUE, name)
 	if err != nil {
 		return nil, err
 	}
-	return queue.(core.IQueue), err
+	return queue.(core.IQueue), nil
+}
+
+func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, error) {
+	rb, err := client.GetDistributedObject(SERVICE_NAME_RINGBUFFER_SERVICE, name)
+	if err != nil {
+		return nil, err
+	}
+	return rb.(core.Ringbuffer), nil
 }
 
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {

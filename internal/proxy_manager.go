@@ -104,6 +104,8 @@ func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name 
 		return newReplicatedMapProxy(proxyManager.client, serviceName, name), nil
 	} else if common.SERVICE_NAME_QUEUE == *serviceName {
 		return newQueueProxy(proxyManager.client, serviceName, name)
+	} else if common.SERVICE_NAME_RINGBUFFER_SERVICE == *serviceName {
+		return newRingbufferProxy(proxyManager.client, serviceName, name)
 	}
 	return nil, nil
 }
