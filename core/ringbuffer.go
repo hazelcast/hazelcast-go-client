@@ -1,3 +1,17 @@
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package core
 
 // Ringbuffer is a data-structure where the content is stored in a ring like structure. A ringbuffer has a capacity so it
@@ -36,7 +50,7 @@ type Ringbuffer interface {
 	// RemainingCapacity returns the remaining capacity of the ringbuffer.
 	// The returned value could be stale as soon as it is returned.
 	// If ttl is not set, the remaining capacity will always be the capacity.
-	RemainingCapacity() (headSequence int64, err error)
+	RemainingCapacity() (remainingCapacity int64, err error)
 
 	// Add adds an item to the tail of this ringbuffer. Overflow policy determines what will happen,
 	// if there is no space left in this ringbuffer. If OverflowPolicyOverwrite was passed,
@@ -46,7 +60,7 @@ type Ringbuffer interface {
 	// ringbuffer will reach its time-to-live.
 	//
 	// It returns the sequence number of the added item. You can read the added item using this number.
-	Add(item interface{}) (sequence int64, err error)
+	Add(item interface{}, overflowPolicy OverflowPolicy) (sequence int64, err error)
 
 	// AddAll adds all items in the specified slice to the tail of this buffer. The behavior of this method is essentially
 	// the same as the one of the add method.
@@ -70,7 +84,7 @@ type Ringbuffer interface {
 	//
 	// If there are less items available than minCount, then this call will not return a response until
 	// a necessary number of items becomes available.
-	ReadMany(startSequence int64, minCount int32, maxCount int32) (items []interface{}, err error)
+	ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (items []interface{}, readCount int32, itemSequences []int64, err error)
 }
 
 // Using this policy one can control the behavior what should to be done when an item is about to be added to the ringbuffer,
@@ -78,7 +92,7 @@ type Ringbuffer interface {
 //
 // Overflowing happens when a time-to-live is set and the oldest item in the ringbuffer (the head) is not old enough to expire.
 type OverflowPolicy interface {
-	overflowPolicy() policy
+	Policy() policy
 }
 
 const (
@@ -104,6 +118,6 @@ const (
 // This type is not used by user.
 type policy int32
 
-func (op policy) overflowPolicy() policy {
+func (op policy) Policy() policy {
 	return op
 }

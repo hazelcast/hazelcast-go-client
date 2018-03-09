@@ -181,6 +181,14 @@ func (proxy *proxy) DecodeToInt32AndError(responseMessage *ClientMessage, inputE
 	return decodeFunc(responseMessage)(), nil
 }
 
+func (proxy *proxy) DecodeToInt64AndError(responseMessage *ClientMessage, inputError error,
+	decodeFunc func(*ClientMessage) func() int64) (response int64, err error) {
+	if inputError != nil {
+		return 0, inputError
+	}
+	return decodeFunc(responseMessage)(), nil
+}
+
 type partitionSpecificProxy struct {
 	*proxy
 	partitionId int32

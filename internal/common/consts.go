@@ -26,7 +26,7 @@ const (
 	SERVICE_NAME_MAP                             = "hz:impl:mapService"
 	SERVICE_NAME_RELIABLE_TOPIC                  = "hz:impl:reliableTopicService"
 	SERVICE_NAME_REPLICATED_MAP                  = "hz:impl:replicatedMapService"
-	SERVICE_NAME_RINGBUFFER_SERIVCE              = "hz:impl:ringbufferService"
+	SERVICE_NAME_RINGBUFFER_SERVICE              = "hz:impl:ringbufferService"
 	SERVICE_NAME_SEMAPHORE                       = "hz:impl:semaphoreService"
 	SERVICE_NAME_SET                             = "hz:impl:setService"
 	SERVICE_NAME_QUEUE                           = "hz:impl:queueService"
