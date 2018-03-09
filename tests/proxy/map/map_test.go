@@ -798,52 +798,52 @@ func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
 	mp.Clear()
 }
 
-type AddEntry struct {
+type entryListener struct {
 	wg       *sync.WaitGroup
 	event    IEntryEvent
 	mapEvent IMapEvent
 }
 
-func (addEntry *AddEntry) EntryAdded(event IEntryEvent) {
-	addEntry.event = event
-	addEntry.wg.Done()
+func (entryListener *entryListener) EntryAdded(event IEntryEvent) {
+	entryListener.event = event
+	entryListener.wg.Done()
 }
 
-func (addEntry *AddEntry) EntryUpdated(event IEntryEvent) {
-	addEntry.wg.Done()
+func (entryListener *entryListener) EntryUpdated(event IEntryEvent) {
+	entryListener.wg.Done()
 }
 
-func (addEntry *AddEntry) EntryRemoved(event IEntryEvent) {
-	addEntry.wg.Done()
+func (entryListener *entryListener) EntryRemoved(event IEntryEvent) {
+	entryListener.wg.Done()
 }
 
-func (addEntry *AddEntry) EntryEvicted(event IEntryEvent) {
-	addEntry.wg.Done()
+func (entryListener *entryListener) EntryEvicted(event IEntryEvent) {
+	entryListener.wg.Done()
 }
 
-func (addEntry *AddEntry) EntryEvictAll(event IMapEvent) {
-	addEntry.mapEvent = event
-	addEntry.wg.Done()
+func (entryListener *entryListener) EntryEvictAll(event IMapEvent) {
+	entryListener.mapEvent = event
+	entryListener.wg.Done()
 }
 
-func (addEntry *AddEntry) EntryClearAll(event IMapEvent) {
-	addEntry.wg.Done()
+func (entryListener *entryListener) EntryClearAll(event IMapEvent) {
+	entryListener.wg.Done()
 }
 
 func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryListener, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key123", "value")
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryAdded.event.Key(), "key123", "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryAdded.event.Value(), "value", "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryAdded.event.OldValue(), nil, "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryAdded.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryAdded.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryListener.event.Value(), "value", "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
+	AssertEqualf(t, nil, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
 
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
@@ -851,7 +851,7 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 
 func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
+	entryAdded := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(2)
@@ -865,8 +865,8 @@ func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
 
 func TestMapProxy_AddEntryListenerEvicted(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryListener, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
@@ -879,8 +879,8 @@ func TestMapProxy_AddEntryListenerEvicted(t *testing.T) {
 
 func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryListener, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
@@ -894,16 +894,16 @@ func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
 func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryListener, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.EvictAll()
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
-	AssertEqualf(t, nil, entryAdded.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
-	AssertEqualf(t, nil, entryAdded.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
+	AssertEqualf(t, nil, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
+	AssertEqualf(t, nil, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -911,8 +911,8 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListener(entryAdded, true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListener(entryListener, true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
@@ -925,8 +925,8 @@ func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 
 func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListenerWithPredicate(entryAdded, Equal("this", "value"), true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListenerWithPredicate(entryListener, Equal("this", "value"), true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key123", "value")
@@ -938,8 +938,8 @@ func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 
 func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListenerToKey(entryAdded, "key1", true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key1", "value1")
@@ -955,8 +955,8 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 
 func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListenerToKeyWithPredicate(entryAdded, Equal("this", "value1"), "key1", true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListenerToKeyWithPredicate(entryListener, Equal("this", "value1"), "key1", true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key1", "value1")
@@ -972,8 +972,8 @@ func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 
 func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	entryAdded := &AddEntry{wg: wg}
-	registrationId, err := mp.AddEntryListenerToKey(entryAdded, "key1", true)
+	entryListener := &entryListener{wg: wg}
+	registrationId, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
 	AssertEqual(t, err, nil, nil)
 	invalidRegistrationId := "invalid"
 	removed, _ := mp.RemoveEntryListener(&invalidRegistrationId)
