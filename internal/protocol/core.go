@@ -16,6 +16,7 @@ package protocol
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -67,6 +68,16 @@ func (member1 *Member) IsLiteMember() bool {
 
 func (member1 *Member) Attributes() map[string]string {
 	return member1.attributes
+}
+
+func (member1 *Member) String() string {
+	memberInfo := fmt.Sprintf("Member [%s]:%d - %s", member1.Address().Host(), member1.Address().Port(),
+		member1.Uuid(),
+	)
+	if member1.IsLiteMember() {
+		memberInfo += " lite"
+	}
+	return memberInfo
 }
 
 type Pair struct {
