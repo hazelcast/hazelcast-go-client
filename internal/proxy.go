@@ -22,6 +22,11 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
+const (
+	threadId     = 1
+	ttlUnlimited = 0
+)
+
 type proxy struct {
 	client      *HazelcastClient
 	serviceName *string
@@ -100,6 +105,23 @@ func (proxy *proxy) validateAndSerializeSlice(elements []interface{}) (elementsD
 	}
 	elementsData, err = collection.ObjectToDataCollection(elements, proxy.client.SerializationService)
 	return
+}
+
+func (proxy *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*Pair, error) {
+	if entries == nil {
+		return nil, core.NewHazelcastNilPointerError(NIL_MAP_IS_NOT_ALLOWED, nil)
+	}
+	partitions := make(map[int32][]*Pair)
+	for key, value := range entries {
+		keyData, valueData, err := proxy.validateAndSerialize2(key, value)
+		if err != nil {
+			return nil, err
+		}
+		pair := NewPair(keyData, valueData)
+		partitionId := proxy.client.PartitionService.GetPartitionId(keyData)
+		partitions[partitionId] = append(partitions[partitionId], pair)
+	}
+	return partitions, nil
 }
 
 func (proxy *proxy) InvokeOnKey(request *ClientMessage, keyData *Data) (*ClientMessage, error) {

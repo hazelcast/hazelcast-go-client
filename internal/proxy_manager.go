@@ -100,6 +100,8 @@ func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name 
 		return newSetProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_TOPIC == *serviceName {
 		return newTopicProxy(proxyManager.client, serviceName, name)
+	} else if common.SERVICE_NAME_REPLICATED_MAP == *serviceName {
+		return newReplicatedMapProxy(proxyManager.client, serviceName, name), nil
 	} else if common.SERVICE_NAME_QUEUE == *serviceName {
 		return newQueueProxy(proxyManager.client, serviceName, name)
 	}

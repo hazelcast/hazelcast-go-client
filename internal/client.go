@@ -42,8 +42,7 @@ func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
 }
 
 func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
-	mapService := SERVICE_NAME_MAP
-	mp, err := client.GetDistributedObject(mapService, name)
+	mp, err := client.GetDistributedObject(SERVICE_NAME_MAP, name)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +65,13 @@ func (client *HazelcastClient) GetSet(name string) (core.ISet, error) {
 		return nil, err
 	}
 	return set.(core.ISet), err
+}
+func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
+	mp, err := client.GetDistributedObject(SERVICE_NAME_REPLICATED_MAP, name)
+	if err != nil {
+		return nil, err
+	}
+	return mp.(core.ReplicatedMap), err
 }
 
 func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
