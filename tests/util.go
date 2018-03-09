@@ -15,6 +15,8 @@
 package tests
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -84,7 +86,7 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 	if err != nil {
 		t.Fatal(err)
 	}
-	if l != r {
+	if !reflect.DeepEqual(l, r) {
 		t.Fatalf("%v != %v : %v", l, r, message)
 	}
 }
@@ -93,7 +95,7 @@ func AssertNilf(t *testing.T, err error, l interface{}, message string) {
 		t.Fatal(err)
 	}
 	if l != nil {
-		t.Fatalf("%v != nil", l)
+		t.Fatalf("%v != nil : %v", l, message)
 	}
 }
 func AssertErrorNotNil(t *testing.T, err error, message string) {
@@ -101,6 +103,51 @@ func AssertErrorNotNil(t *testing.T, err error, message string) {
 		t.Fatal(message)
 	}
 }
+
+func AssertErrorNil(t *testing.T, err error) {
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
+
+func AssertMapEqualPairSlice(t *testing.T, err error, mp map[interface{}]interface{}, pairSlice []core.IPair, message string) {
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mp) != len(pairSlice) {
+		t.Fatal(message)
+	}
+	for _, pair := range pairSlice {
+		key := pair.Key()
+		value := pair.Value()
+		expectedValue, found := mp[key]
+		if !found || expectedValue != value {
+			t.Fatal(message)
+		}
+	}
+}
+
+func AssertSlicesHaveSameElements(t *testing.T, err error, arg1 []interface{}, arg2 []interface{}, message string) {
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(arg1) != len(arg2) {
+		t.Fatal(message)
+	}
+	for _, elem := range arg1 {
+		found := false
+		for _, elem2 := range arg2 {
+			if elem == elem2 {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatal(message)
+		}
+	}
+
+}
+
 func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 	if err != nil {
 		t.Fatal(err)

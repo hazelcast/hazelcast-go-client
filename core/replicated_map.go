@@ -42,14 +42,14 @@ type ReplicatedMap interface {
 	// one and returned from the call. In addition, you have to specify a ttl and its time unit
 	// to define when the value is outdated and thus should be removed from the
 	// replicated map.
-	PutWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error)
+	PutWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (oldValue interface{}, err error)
 
 	// PutAll copies all of the mappings from the specified map to this map.
 	// The effect of this call is equivalent to that of calling put(k, v)
 	// on this map once for each mapping from key k to value v in the specified
 	// map. The behavior of this operation is undefined if the specified map is modified
 	// while the operation is in progress.
-	PutAll(mp map[interface{}]interface{}) (err error)
+	PutAll(entries map[interface{}]interface{}) (err error)
 
 	// Get returns the value to which the specified key is mapped, or nil if this map
 	// contains no mapping for the key. If this map permits nil values, then a return value of nil does not
@@ -99,17 +99,17 @@ type ReplicatedMap interface {
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate.
 	// It returns registration id of the listener.
-	AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate, includeValue bool) (registrationID *string, err error)
+	AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds the specified entry listener for the specified key. The listener will be
 	// notified for all add/remove/update/evict events of the specified key only.
 	// It returns registration id of the listener.
-	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error)
+	AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate and key.
 	// It returns registration id of the listener.
-	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}, includeValue bool) (registrationID *string, err error)
+	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}) (registrationID *string, err error)
 
 	// RemoveEntryListener removes the specified entry listener and returns silently if there was no such
 	// listener added before.
