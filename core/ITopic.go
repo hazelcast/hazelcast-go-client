@@ -23,6 +23,9 @@ package core
 // published.
 type ITopic interface {
 
+	// IDistributedObject is the base interface for all distributed objects.
+	IDistributedObject
+
 	// AddMessageListener subscribes to this topic. When someone publishes a message on this topic.
 	// OnMessage() function of the given messageListener is called. More than one message listener can be
 	// added on one instance.
