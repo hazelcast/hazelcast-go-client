@@ -84,7 +84,7 @@ type Ringbuffer interface {
 	//
 	// If there are less items available than minCount, then this call will not return a response until
 	// a necessary number of items becomes available.
-	ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (items []interface{}, readCount int32, itemSequences []int64, err error)
+	ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet ReadResultSet, err error)
 }
 
 // Using this policy one can control the behavior what should to be done when an item is about to be added to the ringbuffer,
@@ -120,4 +120,24 @@ type policy int32
 
 func (op policy) Policy() policy {
 	return op
+}
+
+// The result of a Ringbuffer.ReadMany operation
+type ReadResultSet interface {
+
+	// Returns the number of items that have been read before filtering.
+	// If no filter is set, then the readCount will be the same as size. But if a filter is applied, it could be that items
+	// are read, but are filtered out. So if you are trying to make another read based on the ReadResultSet then you should
+	// increment the sequence by readCount and not by size. Otherwise you will be re-reading the same filtered messages.
+	ReadCount() int32
+
+	// Gets the item at the given index.
+	Get(index int32) (interface{}, error)
+
+	// Return the sequence number for the item at the given index.
+	// A return value of -1 means that the information is not available.
+	Sequence(index int32) int64
+
+	// Return the result set size
+	Size() int32
 }
