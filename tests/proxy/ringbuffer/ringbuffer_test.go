@@ -176,17 +176,20 @@ func TestRingbufferProxy_ReadMany(t *testing.T) {
 	for i := int64(0); i < capacity; i++ {
 		items[i] = i
 	}
-	retItems, _, _, err := ringbuffer.ReadMany(0, 0, int32(capacity), nil)
-
-	AssertEqualf(t, err, retItems, items, "ringbuffer ReadMany() failed")
+	readResultSet, err := ringbuffer.ReadMany(0, 0, int32(capacity), nil)
+	AssertEqualf(t, err, int64(readResultSet.Size()), capacity, "ringbuffer ReadMany() failed")
+	for i := int32(0); i < readResultSet.Size(); i++ {
+		read, err := readResultSet.Get(i)
+		AssertEqualf(t, err, read.(int64), int64(i), "ringbuffer ReadMany() failed")
+	}
 }
 
 func TestRingbufferProxy_ReadMany_MinLargerThanMax(t *testing.T) {
-	_, _, _, err := ringbuffer.ReadMany(0, 2, 0, nil)
+	_, err := ringbuffer.ReadMany(0, 2, 0, nil)
 	AssertErrorNotNil(t, err, "ringbuffer ReadMany() failed")
 }
 
 func TestRingbufferProxy_ReadMany_MinNegative(t *testing.T) {
-	_, _, _, err := ringbuffer.ReadMany(0, -1, 3, nil)
+	_, err := ringbuffer.ReadMany(0, -1, 3, nil)
 	AssertErrorNotNil(t, err, "ringbuffer ReadMany() failed")
 }

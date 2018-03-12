@@ -17,8 +17,8 @@ package internal
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common/collection"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 type RingbufferProxy struct {
@@ -99,7 +99,7 @@ func (rp *RingbufferProxy) ReadOne(sequence int64) (item interface{}, err error)
 	return rp.DecodeToObjectAndError(responseMessage, err, RingbufferReadOneDecodeResponse)
 }
 
-func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (items []interface{}, readCount int32, itemSequences []int64, err error) {
+func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet core.ReadResultSet, err error) {
 	filterData, err := rp.ToData(filter)
 	if err != nil {
 		return
@@ -116,11 +116,7 @@ func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCoun
 		return
 	}
 	readCount, itemsData, itemSeqs := RingbufferReadManyDecodeResponse(responseMessage)()
-	items, err = collection.DataToObjectCollection(itemsData, rp.client.SerializationService)
-	if err != nil {
-		return
-	}
-	return items, readCount, itemSeqs, nil
+	return NewLazyReadResultSet(readCount, itemsData, itemSeqs, rp.client.SerializationService), nil
 }
 
 func (rp *RingbufferProxy) validateSequenceNotNegative(value int64, argName string) (err error) {
@@ -138,4 +134,36 @@ func (rp *RingbufferProxy) checkCounts(minCount int32, maxCount int32) (err erro
 		return core.NewHazelcastIllegalArgumentError(fmt.Sprintf("min count %v can't be larger than max count %v", minCount, maxCount), nil)
 	}
 	return
+}
+
+type LazyReadResultSet struct {
+	readCount            int32
+	dataItems            []*Data
+	itemSequences        []int64
+	serializationService *SerializationService
+}
+
+const SEQUENCE_UNAVAILABLE int64 = -1
+
+func NewLazyReadResultSet(readCount int32, items []*Data, itemSeqs []int64, ss *SerializationService) *LazyReadResultSet {
+	return &LazyReadResultSet{readCount: readCount, dataItems: items, itemSequences: itemSeqs, serializationService: ss}
+}
+
+func (rs *LazyReadResultSet) ReadCount() int32 {
+	return rs.readCount
+}
+
+func (rs *LazyReadResultSet) Get(index int32) (result interface{}, err error) {
+	return rs.serializationService.ToObject(rs.dataItems[index])
+}
+
+func (rs *LazyReadResultSet) Sequence(index int32) int64 {
+	if rs.itemSequences == nil {
+		return SEQUENCE_UNAVAILABLE
+	}
+	return rs.itemSequences[index]
+}
+
+func (rs *LazyReadResultSet) Size() int32 {
+	return int32(len(rs.dataItems))
 }
