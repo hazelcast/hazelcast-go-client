@@ -122,22 +122,21 @@ func (op policy) Policy() policy {
 	return op
 }
 
-// The result of a Ringbuffer.ReadMany operation
+// ReadResultSet is the result of a Ringbuffer ReadMany operation.
 type ReadResultSet interface {
-
-	// Returns the number of items that have been read before filtering.
+	// ReadCount returns the number of items that have been read before filtering.
 	// If no filter is set, then the readCount will be the same as size. But if a filter is applied, it could be that items
 	// are read, but are filtered out. So if you are trying to make another read based on the ReadResultSet then you should
 	// increment the sequence by readCount and not by size. Otherwise you will be re-reading the same filtered messages.
-	ReadCount() int32
+	ReadCount() (readCount int32)
 
-	// Gets the item at the given index.
-	Get(index int32) (interface{}, error)
+	// Get returns the item at the given index.
+	Get(index int32) (item interface{}, err error)
 
-	// Return the sequence number for the item at the given index.
+	// Sequence returns the sequence number for the item at the given index.
 	// A return value of -1 means that the information is not available.
-	Sequence(index int32) int64
+	Sequence(index int32) (sequence int64, err error)
 
-	// Return the result set size
-	Size() int32
+	// Size returns the result set size.
+	Size() (size int32)
 }
