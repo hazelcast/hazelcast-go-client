@@ -193,3 +193,64 @@ func TestRingbufferProxy_ReadMany_MinNegative(t *testing.T) {
 	_, err := ringbuffer.ReadMany(0, -1, 3, nil)
 	AssertErrorNotNil(t, err, "ringbuffer ReadMany() failed")
 }
+
+func TestRingbufferProxy_ReadMany_ResulSetWithFilter(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	var expectedValue int64 = 2
+	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	retValue, err := resultSet.Get(2)
+	AssertEqualf(t, err, retValue.(int64), expectedValue, "ringbuffer ReadMany() failed")
+}
+
+func TestRingbufferProxy_ReadMany_ResulSet_Get(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	var expectedValue int64 = 2
+	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	retValue, err := resultSet.Get(2)
+	AssertEqualf(t, err, retValue.(int64), expectedValue, "ringbuffer ReadMany() failed")
+}
+
+func TestRingbufferProxy_ReadMany_ResulSet_GetWithIllegalIndex(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	_, err = resultSet.Get(4)
+	AssertErrorNotNil(t, err, "ringbuffer ReadMany() failed")
+}
+
+func TestRingbufferProxy_ReadMany_ResulSet_Sequence(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	var expectedValue int64 = 4
+	resultSet, err := ringbuffer.ReadMany(0, 5, 5, nil)
+	retValue, err := resultSet.Sequence(4)
+	AssertEqualf(t, err, retValue, expectedValue, "ringbuffer ReadMany() failed")
+}
+
+func TestRingbufferProxy_ReadMany_ResulSet_SequenceWithIllegalIndex(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	_, err = resultSet.Sequence(4)
+	AssertErrorNotNil(t, err, "ringbuffer ReadMany() failed")
+}
+
+func TestRingbufferProxy_ReadMany_ResulSet_Size(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	var expectedValue int32 = 5
+	resultSet, err := ringbuffer.ReadMany(0, 5, 5, nil)
+	retValue := resultSet.Size()
+	AssertEqualf(t, err, retValue, expectedValue, "ringbuffer ReadMany() failed")
+}
+
+func TestRingbufferProxy_ReadMany_ResulSet_ReadCount(t *testing.T) {
+	defer destroyAndCreate()
+	fillRingbuffer(capacity)
+	var expectedValue int32 = 5
+	resultSet, err := ringbuffer.ReadMany(0, 5, 5, nil)
+	retValue := resultSet.ReadCount()
+	AssertEqualf(t, err, retValue, expectedValue, "ringbuffer ReadMany() failed")
+}

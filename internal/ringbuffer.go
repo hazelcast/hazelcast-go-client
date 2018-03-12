@@ -137,16 +137,23 @@ func (rp *RingbufferProxy) checkCounts(minCount int32, maxCount int32) (err erro
 }
 
 type LazyReadResultSet struct {
-	readCount            int32
-	dataItems            []*Data
+	readCount int32
+	// This slice includes both data and de-serialized objects.
+	lazyItems            []interface{}
 	itemSequences        []int64
 	serializationService *SerializationService
 }
 
-const SEQUENCE_UNAVAILABLE int64 = -1
+const sequenceUnavailable int64 = -1
 
-func NewLazyReadResultSet(readCount int32, items []*Data, itemSeqs []int64, ss *SerializationService) *LazyReadResultSet {
-	return &LazyReadResultSet{readCount: readCount, dataItems: items, itemSequences: itemSeqs, serializationService: ss}
+func NewLazyReadResultSet(readCount int32, itemsData []*Data, itemSeqs []int64, ss *SerializationService) (rs *LazyReadResultSet) {
+	rs = &LazyReadResultSet{readCount: readCount, itemSequences: itemSeqs, serializationService: ss}
+	lazyItems := make([]interface{}, len(itemsData))
+	for i, itemData := range itemsData {
+		lazyItems[i] = itemData
+	}
+	rs.lazyItems = lazyItems
+	return
 }
 
 func (rs *LazyReadResultSet) ReadCount() int32 {
@@ -154,16 +161,37 @@ func (rs *LazyReadResultSet) ReadCount() int32 {
 }
 
 func (rs *LazyReadResultSet) Get(index int32) (result interface{}, err error) {
-	return rs.serializationService.ToObject(rs.dataItems[index])
+	if err = rs.rangeCheck(index); err != nil {
+		return
+	}
+	if itemData, ok := rs.lazyItems[index].(*Data); ok {
+		item, err := rs.serializationService.ToObject(itemData)
+		if err != nil {
+			return nil, err
+		}
+		rs.lazyItems[index] = item
+	}
+	return rs.lazyItems[index], nil
 }
 
-func (rs *LazyReadResultSet) Sequence(index int32) int64 {
+func (rs *LazyReadResultSet) Sequence(index int32) (sequence int64, err error) {
 	if rs.itemSequences == nil {
-		return SEQUENCE_UNAVAILABLE
+		return sequenceUnavailable, nil
 	}
-	return rs.itemSequences[index]
+	if err = rs.rangeCheck(index); err != nil {
+		return
+	}
+	return rs.itemSequences[index], nil
 }
 
 func (rs *LazyReadResultSet) Size() int32 {
-	return int32(len(rs.dataItems))
+	return int32(len(rs.lazyItems))
+}
+
+func (rs *LazyReadResultSet) rangeCheck(index int32) (err error) {
+	size := len(rs.lazyItems)
+	if index < 0 || index >= int32(size) {
+		err = core.NewHazelcastIllegalArgumentError(fmt.Sprintf("index=", index, "size=", size), nil)
+	}
+	return
 }
