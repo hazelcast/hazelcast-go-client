@@ -29,11 +29,20 @@ This client works with Hazelcast 3.6 and higher.
 
 Hazelcast Go client supports the following data structures and features:
 
-* Map (including entry processors and `PartitionAware` keys) and MultiMap
-* Smart Client
-* Hazelcast Native Serialization
-* Distributed Object Listener
+* Map (including entry processors and `PartitionAware` keys)
+* MultiMap
+* List
+* Set
+* Queue
+* Topic
+* ReplicatedMap
+* Ringbuffer
+* Query (Predicates)
+* API configuration
+* Event Listeners
 * Lifecycle Service
+* Smart and Unisocket Client operation
+* Hazelcast Serialization (IdentifiedDataSerializable, Portable, Custom Serializers, Global Serializers)
 
 # Installing the Client
 
