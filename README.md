@@ -1,5 +1,10 @@
+# Hazelcast Go Client  
+
 [![GoDoc](https://godoc.org/github.com/hazelcast/hazelcast-go-client?status.svg)](https://godoc.org/github.com/hazelcast/hazelcast-go-client)
-# Table of Contents
+
+![Gopher](assets/hazelcast-golang-logo.png )
+
+## Table of Contents
 
 * [Hazelcast Go Client](#hazelcast-go-client)
 * [Features](#features)
@@ -13,7 +18,6 @@
 * [License](#license)
 * [Copyright](#copyright)
 
-# Hazelcast Go Client
 
 Go client implementation for [Hazelcast](https://github.com/hazelcast/hazelcast), the open source in-memory data grid.
 
@@ -25,7 +29,7 @@ This client works with Hazelcast 3.6 and higher.
 
 > **NOTE: This project is currently in active development.**
 
-# Features
+## Features
 
 Hazelcast Go client supports the following data structures and features:
 
@@ -44,7 +48,7 @@ Hazelcast Go client supports the following data structures and features:
 * Smart and Unisocket Client operation
 * Hazelcast Serialization (IdentifiedDataSerializable, Portable, Custom Serializers, Global Serializers)
 
-# Installing the Client
+## Installing the Client
 
 Following command installs Hazelcast Go client:
 
@@ -53,7 +57,7 @@ go get github.com/hazelcast/hazelcast-go-client
 ```
 [For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/samples/hello-world/README.md)
 
-# Using the Client
+## Using the Client
 
 Following code snippet illustrates a simple usage of Map in Hazelcast Go Client.
 
@@ -85,7 +89,7 @@ Please see Hazelcast Go [code samples](https://github.com/hazelcast/hazelcast-go
 
 You can also refer to Hazelcast Go [API Documentation](https://godoc.org/github.com/hazelcast/hazelcast-go-client).
 
-# Serialization Considerations
+## Serialization Considerations
 
 Hazelcast needs to serialize objects in order to be able to keep them in the server memory. For primitive types, it uses Hazelcast native serialization. For other complex types (e.g. Go objects), it uses Gob serialization.
 
@@ -100,16 +104,16 @@ Regarding arrays in a serializable object, you can use methods like `WriteInt32A
 
 If you have nested objects, these nested objects also need to be serializable. Register the serializers for nested objects and the method `WriteObject` will not have any problem with finding a suitable serializer for and writing/reading the nested object.
 
-# Development
+## Development
 
-## Building And Installing from Sources
+### Building And Installing from Sources
 
 Follow the below steps to build and install Hazelcast Go client from its source:
 
 - Clone the GitHub repository [https://github.com/hazelcast/hazelcast-go-client.git](https://github.com/hazelcast/hazelcast-go-client.git).
 - Run `sh build.sh`.
 
-# Testing
+## Testing
 
 Following command starts the tests:
 
