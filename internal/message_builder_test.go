@@ -23,7 +23,7 @@ import (
 )
 
 func TestClientMessageBuilder_OnMessage(t *testing.T) {
-	builder := &ClientMessageBuilder{
+	builder := &clientMessageBuilder{
 		incompleteMessages: make(map[int64]*ClientMessage),
 	}
 	var mu = sync.Mutex{}
@@ -58,9 +58,9 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	secondMessage.SetFrameLength(int32(len(secondMessage.Buffer)))
 
 	firstMessage.SetFlags(common.BEGIN_FLAG)
-	builder.OnMessage(firstMessage)
+	builder.onMessage(firstMessage)
 	secondMessage.SetFlags(common.END_FLAG)
-	builder.OnMessage(secondMessage)
+	builder.onMessage(secondMessage)
 	mu.Lock()
 	if !reflect.DeepEqual(builtClientMessage.Buffer, expectedClientMessage.Buffer) {
 		t.Fatal("message builder has failed")
@@ -70,7 +70,7 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 }
 
 func TestClientMessageBuilder_OnMessageWithNotFoundCorrelationId(t *testing.T) {
-	builder := &ClientMessageBuilder{
+	builder := &clientMessageBuilder{
 		incompleteMessages: make(map[int64]*ClientMessage),
 	}
 	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
@@ -79,5 +79,5 @@ func TestClientMessageBuilder_OnMessageWithNotFoundCorrelationId(t *testing.T) {
 	msg := NewClientMessage(nil, 40)
 	msg.SetCorrelationId(2)
 	msg.SetFrameLength(int32(len(msg.Buffer)))
-	builder.OnMessage(msg)
+	builder.onMessage(msg)
 }

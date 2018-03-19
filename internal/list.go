@@ -37,8 +37,8 @@ func (list *ListProxy) Add(element interface{}) (changed bool, err error) {
 		return false, err
 	}
 	request := ListAddEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListAddDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListAddDecodeResponse)
 }
 
 func (list *ListProxy) AddAt(index int32, element interface{}) (err error) {
@@ -47,7 +47,7 @@ func (list *ListProxy) AddAt(index int32, element interface{}) (err error) {
 		return err
 	}
 	request := ListAddWithIndexEncodeRequest(list.name, index, elementData)
-	_, err = list.Invoke(request)
+	_, err = list.invoke(request)
 	return err
 }
 
@@ -57,8 +57,8 @@ func (list *ListProxy) AddAll(elements []interface{}) (changed bool, err error) 
 		return false, err
 	}
 	request := ListAddAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListAddAllDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListAddAllDecodeResponse)
 
 }
 
@@ -68,8 +68,8 @@ func (list *ListProxy) AddAllAt(index int32, elements []interface{}) (changed bo
 		return false, err
 	}
 	request := ListAddAllWithIndexEncodeRequest(list.name, index, elementsData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListAddAllWithIndexDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListAddAllWithIndexDecodeResponse)
 }
 
 func (list *ListProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
@@ -85,7 +85,7 @@ func (list *ListProxy) AddItemListener(listener interface{}, includeValue bool) 
 
 func (list *ListProxy) Clear() (err error) {
 	request := ListClearEncodeRequest(list.name)
-	_, err = list.Invoke(request)
+	_, err = list.invoke(request)
 	return err
 }
 
@@ -95,8 +95,8 @@ func (list *ListProxy) Contains(element interface{}) (found bool, err error) {
 		return false, err
 	}
 	request := ListContainsEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListContainsDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListContainsDecodeResponse)
 }
 
 func (list *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err error) {
@@ -105,14 +105,14 @@ func (list *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err e
 		return false, err
 	}
 	request := ListContainsAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListContainsAllDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListContainsAllDecodeResponse)
 }
 
 func (list *ListProxy) Get(index int32) (element interface{}, err error) {
 	request := ListGetEncodeRequest(list.name, index)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToObjectAndError(responseMessage, err, ListGetDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToObjectAndError(responseMessage, err, ListGetDecodeResponse)
 }
 
 func (list *ListProxy) IndexOf(element interface{}) (index int32, err error) {
@@ -121,14 +121,14 @@ func (list *ListProxy) IndexOf(element interface{}) (index int32, err error) {
 		return 0, err
 	}
 	request := ListIndexOfEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToInt32AndError(responseMessage, err, ListIndexOfDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToInt32AndError(responseMessage, err, ListIndexOfDecodeResponse)
 }
 
 func (list *ListProxy) IsEmpty() (empty bool, err error) {
 	request := ListIsEmptyEncodeRequest(list.name)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListIsEmptyDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListIsEmptyDecodeResponse)
 }
 
 func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error) {
@@ -137,8 +137,8 @@ func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error)
 		return 0, err
 	}
 	request := ListLastIndexOfEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToInt32AndError(responseMessage, err, ListIndexOfDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToInt32AndError(responseMessage, err, ListIndexOfDecodeResponse)
 }
 
 func (list *ListProxy) Remove(element interface{}) (changed bool, err error) {
@@ -147,14 +147,14 @@ func (list *ListProxy) Remove(element interface{}) (changed bool, err error) {
 		return false, err
 	}
 	request := ListRemoveEncodeRequest(list.name, elementData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListRemoveDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListRemoveDecodeResponse)
 }
 
 func (list *ListProxy) RemoveAt(index int32) (previousElement interface{}, err error) {
 	request := ListRemoveWithIndexEncodeRequest(list.name, index)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToObjectAndError(responseMessage, err, ListRemoveWithIndexDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToObjectAndError(responseMessage, err, ListRemoveWithIndexDecodeResponse)
 }
 
 func (list *ListProxy) RemoveAll(elements []interface{}) (changed bool, err error) {
@@ -163,8 +163,8 @@ func (list *ListProxy) RemoveAll(elements []interface{}) (changed bool, err erro
 		return false, err
 	}
 	request := ListCompareAndRemoveAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListCompareAndRemoveAllDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListCompareAndRemoveAllDecodeResponse)
 }
 
 func (list *ListProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
@@ -179,8 +179,8 @@ func (list *ListProxy) RetainAll(elements []interface{}) (changed bool, err erro
 		return false, err
 	}
 	request := ListCompareAndRetainAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToBoolAndError(responseMessage, err, ListCompareAndRetainAllDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToBoolAndError(responseMessage, err, ListCompareAndRetainAllDecodeResponse)
 }
 
 func (list *ListProxy) Set(index int32, element interface{}) (previousElement interface{}, err error) {
@@ -189,26 +189,26 @@ func (list *ListProxy) Set(index int32, element interface{}) (previousElement in
 		return nil, err
 	}
 	request := ListSetEncodeRequest(list.name, index, elementData)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToObjectAndError(responseMessage, err, ListSetDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToObjectAndError(responseMessage, err, ListSetDecodeResponse)
 }
 
 func (list *ListProxy) Size() (size int32, err error) {
 	request := ListSizeEncodeRequest(list.name)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToInt32AndError(responseMessage, err, ListSizeDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToInt32AndError(responseMessage, err, ListSizeDecodeResponse)
 }
 
 func (list *ListProxy) SubList(start int32, end int32) (elements []interface{}, err error) {
 	request := ListSubEncodeRequest(list.name, start, end)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToInterfaceSliceAndError(responseMessage, err, ListSubDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToInterfaceSliceAndError(responseMessage, err, ListSubDecodeResponse)
 }
 
 func (list *ListProxy) ToSlice() (elements []interface{}, err error) {
 	request := ListGetAllEncodeRequest(list.name)
-	responseMessage, err := list.Invoke(request)
-	return list.DecodeToInterfaceSliceAndError(responseMessage, err, ListGetAllDecodeResponse)
+	responseMessage, err := list.invoke(request)
+	return list.decodeToInterfaceSliceAndError(responseMessage, err, ListGetAllDecodeResponse)
 }
 
 func (list *ListProxy) createEventHandler(listener interface{}) func(clientMessage *ClientMessage) {
