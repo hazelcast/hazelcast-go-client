@@ -23,16 +23,16 @@ import (
 
 type HazelcastClient struct {
 	ClientConfig         *ClientConfig
-	InvocationService    *InvocationService
-	PartitionService     *PartitionService
+	InvocationService    *invocationService
+	PartitionService     *partitionService
 	SerializationService *SerializationService
-	LifecycleService     *LifecycleService
-	ConnectionManager    *ConnectionManager
-	ListenerService      *ListenerService
-	ClusterService       *ClusterService
-	ProxyManager         *ProxyManager
-	LoadBalancer         *RandomLoadBalancer
-	HeartBeatService     *HeartBeatService
+	LifecycleService     *lifecycleService
+	ConnectionManager    *connectionManager
+	ListenerService      *listenerService
+	ClusterService       *clusterService
+	ProxyManager         *proxyManager
+	LoadBalancer         *randomLoadBalancer
+	HeartBeatService     *heartBeatService
 }
 
 func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
@@ -105,7 +105,7 @@ func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, erro
 }
 
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
-	var clientProxy, err = client.ProxyManager.GetOrCreateProxy(serviceName, name)
+	var clientProxy, err = client.ProxyManager.getOrCreateProxy(serviceName, name)
 	if err != nil {
 		return nil, err
 	}
@@ -122,14 +122,14 @@ func (client *HazelcastClient) GetLifecycle() core.ILifecycle {
 
 func (client *HazelcastClient) init() error {
 	client.LifecycleService = newLifecycleService(client.ClientConfig)
-	client.ConnectionManager = NewConnectionManager(client)
+	client.ConnectionManager = newConnectionManager(client)
 	client.HeartBeatService = newHeartBeatService(client)
-	client.InvocationService = NewInvocationService(client)
-	client.ClusterService = NewClusterService(client, client.ClientConfig)
+	client.InvocationService = newInvocationService(client)
+	client.ClusterService = newClusterService(client, client.ClientConfig)
 	client.ListenerService = newListenerService(client)
-	client.PartitionService = NewPartitionService(client)
+	client.PartitionService = newPartitionService(client)
 	client.ProxyManager = newProxyManager(client)
-	client.LoadBalancer = NewRandomLoadBalancer(client.ClusterService)
+	client.LoadBalancer = newRandomLoadBalancer(client.ClusterService)
 	client.SerializationService = NewSerializationService(client.ClientConfig.SerializationConfig())
 	err := client.ClusterService.start()
 	if err != nil {

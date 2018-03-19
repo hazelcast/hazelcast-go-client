@@ -30,7 +30,7 @@ type ReplicatedMapProxy struct {
 }
 
 func newReplicatedMapProxy(client *HazelcastClient, serviceName *string, name *string) *ReplicatedMapProxy {
-	partitionCount := client.PartitionService.PartitionCount()
+	partitionCount := client.PartitionService.getPartitionCount()
 	targetPartitionId := rand.Int31n(partitionCount)
 	return &ReplicatedMapProxy{proxy: &proxy{client, serviceName, name}, targetPartitionId: targetPartitionId}
 }
@@ -44,8 +44,8 @@ func (rmp *ReplicatedMapProxy) PutWithTtl(key interface{}, value interface{}, tt
 		return nil, err
 	}
 	request := ReplicatedMapPutEncodeRequest(rmp.name, keyData, valueData, ttl)
-	responseMessage, err := rmp.InvokeOnKey(request, keyData)
-	return rmp.DecodeToObjectAndError(responseMessage, err, ReplicatedMapPutDecodeResponse)
+	responseMessage, err := rmp.invokeOnKey(request, keyData)
+	return rmp.decodeToObjectAndError(responseMessage, err, ReplicatedMapPutDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
@@ -63,7 +63,7 @@ func (rmp *ReplicatedMapProxy) PutAll(entries map[interface{}]interface{}) (err 
 		index++
 	}
 	request := ReplicatedMapPutAllEncodeRequest(rmp.name, pairs)
-	_, err = rmp.InvokeOnRandomTarget(request)
+	_, err = rmp.invokeOnRandomTarget(request)
 	return err
 }
 
@@ -73,8 +73,8 @@ func (rmp *ReplicatedMapProxy) Get(key interface{}) (value interface{}, err erro
 		return nil, err
 	}
 	request := ReplicatedMapGetEncodeRequest(rmp.name, keyData)
-	responseMessage, err := rmp.InvokeOnKey(request, keyData)
-	return rmp.DecodeToObjectAndError(responseMessage, err, ReplicatedMapGetDecodeResponse)
+	responseMessage, err := rmp.invokeOnKey(request, keyData)
+	return rmp.decodeToObjectAndError(responseMessage, err, ReplicatedMapGetDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) ContainsKey(key interface{}) (found bool, err error) {
@@ -83,8 +83,8 @@ func (rmp *ReplicatedMapProxy) ContainsKey(key interface{}) (found bool, err err
 		return false, err
 	}
 	request := ReplicatedMapContainsKeyEncodeRequest(rmp.name, keyData)
-	responseMessage, err := rmp.InvokeOnKey(request, keyData)
-	return rmp.DecodeToBoolAndError(responseMessage, err, ReplicatedMapContainsKeyDecodeResponse)
+	responseMessage, err := rmp.invokeOnKey(request, keyData)
+	return rmp.decodeToBoolAndError(responseMessage, err, ReplicatedMapContainsKeyDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) ContainsValue(value interface{}) (found bool, err error) {
@@ -93,13 +93,13 @@ func (rmp *ReplicatedMapProxy) ContainsValue(value interface{}) (found bool, err
 		return false, err
 	}
 	request := ReplicatedMapContainsValueEncodeRequest(rmp.name, valueData)
-	responseMessage, err := rmp.InvokeOnKey(request, valueData)
-	return rmp.DecodeToBoolAndError(responseMessage, err, ReplicatedMapContainsValueDecodeResponse)
+	responseMessage, err := rmp.invokeOnKey(request, valueData)
+	return rmp.decodeToBoolAndError(responseMessage, err, ReplicatedMapContainsValueDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) Clear() (err error) {
 	request := ReplicatedMapClearEncodeRequest(rmp.name)
-	_, err = rmp.InvokeOnRandomTarget(request)
+	_, err = rmp.invokeOnRandomTarget(request)
 	return err
 }
 
@@ -109,39 +109,39 @@ func (rmp *ReplicatedMapProxy) Remove(key interface{}) (value interface{}, err e
 		return nil, err
 	}
 	request := ReplicatedMapRemoveEncodeRequest(rmp.name, keyData)
-	responseMessage, err := rmp.InvokeOnKey(request, keyData)
-	return rmp.DecodeToObjectAndError(responseMessage, err, ReplicatedMapRemoveDecodeResponse)
+	responseMessage, err := rmp.invokeOnKey(request, keyData)
+	return rmp.decodeToObjectAndError(responseMessage, err, ReplicatedMapRemoveDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) IsEmpty() (empty bool, err error) {
 	request := ReplicatedMapIsEmptyEncodeRequest(rmp.name)
-	responseMessage, err := rmp.InvokeOnPartition(request, rmp.targetPartitionId)
-	return rmp.DecodeToBoolAndError(responseMessage, err, ReplicatedMapIsEmptyDecodeResponse)
+	responseMessage, err := rmp.invokeOnPartition(request, rmp.targetPartitionId)
+	return rmp.decodeToBoolAndError(responseMessage, err, ReplicatedMapIsEmptyDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) Size() (size int32, err error) {
 	request := ReplicatedMapSizeEncodeRequest(rmp.name)
-	responseMessage, err := rmp.InvokeOnPartition(request, rmp.targetPartitionId)
-	return rmp.DecodeToInt32AndError(responseMessage, err, ReplicatedMapSizeDecodeResponse)
+	responseMessage, err := rmp.invokeOnPartition(request, rmp.targetPartitionId)
+	return rmp.decodeToInt32AndError(responseMessage, err, ReplicatedMapSizeDecodeResponse)
 
 }
 
 func (rmp *ReplicatedMapProxy) Values() (values []interface{}, err error) {
 	request := ReplicatedMapValuesEncodeRequest(rmp.name)
-	responseMessage, err := rmp.InvokeOnPartition(request, rmp.targetPartitionId)
-	return rmp.DecodeToInterfaceSliceAndError(responseMessage, err, ReplicatedMapValuesDecodeResponse)
+	responseMessage, err := rmp.invokeOnPartition(request, rmp.targetPartitionId)
+	return rmp.decodeToInterfaceSliceAndError(responseMessage, err, ReplicatedMapValuesDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) KeySet() (keySet []interface{}, err error) {
 	request := ReplicatedMapKeySetEncodeRequest(rmp.name)
-	responseMessage, err := rmp.InvokeOnPartition(request, rmp.targetPartitionId)
-	return rmp.DecodeToInterfaceSliceAndError(responseMessage, err, ReplicatedMapKeySetDecodeResponse)
+	responseMessage, err := rmp.invokeOnPartition(request, rmp.targetPartitionId)
+	return rmp.decodeToInterfaceSliceAndError(responseMessage, err, ReplicatedMapKeySetDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) EntrySet() (resultPairs []IPair, err error) {
 	request := ReplicatedMapEntrySetEncodeRequest(rmp.name)
-	responseMessage, err := rmp.InvokeOnPartition(request, rmp.targetPartitionId)
-	return rmp.DecodeToPairSliceAndError(responseMessage, err, ReplicatedMapEntrySetDecodeResponse)
+	responseMessage, err := rmp.invokeOnPartition(request, rmp.targetPartitionId)
+	return rmp.decodeToPairSliceAndError(responseMessage, err, ReplicatedMapEntrySetDecodeResponse)
 }
 
 func (rmp *ReplicatedMapProxy) AddEntryListener(listener interface{}) (registrationID *string, err error) {
@@ -207,10 +207,10 @@ func (rmp *ReplicatedMapProxy) RemoveEntryListener(registrationId *string) (remo
 }
 
 func (rmp *ReplicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data, valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, listener interface{}) {
-	key, _ := rmp.ToObject(keyData)
-	oldValue, _ := rmp.ToObject(oldValueData)
-	value, _ := rmp.ToObject(valueData)
-	mergingValue, _ := rmp.ToObject(mergingValueData)
+	key, _ := rmp.toObject(keyData)
+	oldValue, _ := rmp.toObject(oldValueData)
+	value, _ := rmp.toObject(valueData)
+	mergingValue, _ := rmp.toObject(mergingValueData)
 	entryEvent := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid)
 	mapEvent := NewMapEvent(eventType, Uuid, numberOfAffectedEntries)
 	switch eventType {

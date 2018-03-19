@@ -22,26 +22,26 @@ import (
 	"sync/atomic"
 )
 
-type ProxyManager struct {
+type proxyManager struct {
 	ReferenceId int64
 	client      *HazelcastClient
 	mu          sync.RWMutex // guards proxies
 	proxies     map[string]core.IDistributedObject
 }
 
-func newProxyManager(client *HazelcastClient) *ProxyManager {
-	return &ProxyManager{
+func newProxyManager(client *HazelcastClient) *proxyManager {
+	return &proxyManager{
 		ReferenceId: 0,
 		client:      client,
 		proxies:     make(map[string]core.IDistributedObject),
 	}
 }
 
-func (proxyManager *ProxyManager) nextReferenceId() int64 {
+func (proxyManager *proxyManager) nextReferenceId() int64 {
 	return atomic.AddInt64(&proxyManager.ReferenceId, 1)
 }
 
-func (proxyManager *ProxyManager) GetOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
+func (proxyManager *proxyManager) getOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
 	var ns string = serviceName + name
 	proxyManager.mu.RLock()
 	if _, ok := proxyManager.proxies[ns]; ok {
@@ -59,16 +59,16 @@ func (proxyManager *ProxyManager) GetOrCreateProxy(serviceName string, name stri
 	return proxy, nil
 }
 
-func (proxyManager *ProxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
+func (proxyManager *proxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
 	message := ClientCreateProxyEncodeRequest(name, serviceName, proxyManager.findNextProxyAddress())
-	_, err := proxyManager.client.InvocationService.InvokeOnRandomTarget(message).Result()
+	_, err := proxyManager.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
 	}
 	return proxyManager.getProxyByNameSpace(serviceName, name)
 }
 
-func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
+func (proxyManager *proxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
 	var ns string = *serviceName + *name
 	proxyManager.mu.RLock()
 	if _, ok := proxyManager.proxies[ns]; ok {
@@ -77,7 +77,7 @@ func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string
 		delete(proxyManager.proxies, ns)
 		proxyManager.mu.Unlock()
 		message := ClientDestroyProxyEncodeRequest(name, serviceName)
-		_, err := proxyManager.client.InvocationService.InvokeOnRandomTarget(message).Result()
+		_, err := proxyManager.client.InvocationService.invokeOnRandomTarget(message).Result()
 		if err != nil {
 			return false, err
 		}
@@ -87,11 +87,11 @@ func (proxyManager *ProxyManager) destroyProxy(serviceName *string, name *string
 	return false, nil
 }
 
-func (proxyManager *ProxyManager) findNextProxyAddress() *Address {
-	return proxyManager.client.LoadBalancer.NextAddress()
+func (proxyManager *proxyManager) findNextProxyAddress() *Address {
+	return proxyManager.client.LoadBalancer.nextAddress()
 }
 
-func (proxyManager *ProxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
+func (proxyManager *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
 	if common.SERVICE_NAME_MAP == *serviceName {
 		return newMapProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_LIST == *serviceName {

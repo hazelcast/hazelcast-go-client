@@ -37,8 +37,8 @@ func newRingbufferProxy(client *HazelcastClient, serviceName *string, name *stri
 func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
 	if rp.capacity == -1 {
 		request := RingbufferCapacityEncodeRequest(rp.name)
-		responseMessage, err := rp.Invoke(request)
-		capacity, err := rp.DecodeToInt64AndError(responseMessage, err, RingbufferCapacityDecodeResponse)
+		responseMessage, err := rp.invoke(request)
+		capacity, err := rp.decodeToInt64AndError(responseMessage, err, RingbufferCapacityDecodeResponse)
 		if err != nil {
 			return 0, nil
 		}
@@ -48,26 +48,26 @@ func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
 }
 func (rp *RingbufferProxy) Size() (size int64, err error) {
 	request := RingbufferSizeEncodeRequest(rp.name)
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToInt64AndError(responseMessage, err, RingbufferSizeDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToInt64AndError(responseMessage, err, RingbufferSizeDecodeResponse)
 }
 
 func (rp *RingbufferProxy) TailSequence() (tailSequence int64, err error) {
 	request := RingbufferTailSequenceEncodeRequest(rp.name)
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToInt64AndError(responseMessage, err, RingbufferTailSequenceDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToInt64AndError(responseMessage, err, RingbufferTailSequenceDecodeResponse)
 }
 
 func (rp *RingbufferProxy) HeadSequence() (headSequence int64, err error) {
 	request := RingbufferHeadSequenceEncodeRequest(rp.name)
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToInt64AndError(responseMessage, err, RingbufferHeadSequenceDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToInt64AndError(responseMessage, err, RingbufferHeadSequenceDecodeResponse)
 }
 
 func (rp *RingbufferProxy) RemainingCapacity() (remainingCapacity int64, err error) {
 	request := RingbufferRemainingCapacityEncodeRequest(rp.name)
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToInt64AndError(responseMessage, err, RingbufferRemainingCapacityDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToInt64AndError(responseMessage, err, RingbufferRemainingCapacityDecodeResponse)
 }
 
 func (rp *RingbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPolicy) (sequence int64, err error) {
@@ -76,8 +76,8 @@ func (rp *RingbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPol
 		return
 	}
 	request := RingbufferAddEncodeRequest(rp.name, int32(overflowPolicy.Policy()), itemData)
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToInt64AndError(responseMessage, err, RingbufferAddDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToInt64AndError(responseMessage, err, RingbufferAddDecodeResponse)
 }
 
 func (rp *RingbufferProxy) AddAll(items []interface{}, overflowPolicy core.OverflowPolicy) (lastSequence int64, err error) {
@@ -86,8 +86,8 @@ func (rp *RingbufferProxy) AddAll(items []interface{}, overflowPolicy core.Overf
 		return
 	}
 	request := RingbufferAddAllEncodeRequest(rp.name, itemsData, int32(overflowPolicy.Policy()))
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToInt64AndError(responseMessage, err, RingbufferAddAllDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToInt64AndError(responseMessage, err, RingbufferAddAllDecodeResponse)
 }
 
 func (rp *RingbufferProxy) ReadOne(sequence int64) (item interface{}, err error) {
@@ -95,12 +95,12 @@ func (rp *RingbufferProxy) ReadOne(sequence int64) (item interface{}, err error)
 		return
 	}
 	request := RingbufferReadOneEncodeRequest(rp.name, sequence)
-	responseMessage, err := rp.Invoke(request)
-	return rp.DecodeToObjectAndError(responseMessage, err, RingbufferReadOneDecodeResponse)
+	responseMessage, err := rp.invoke(request)
+	return rp.decodeToObjectAndError(responseMessage, err, RingbufferReadOneDecodeResponse)
 }
 
 func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet core.ReadResultSet, err error) {
-	filterData, err := rp.ToData(filter)
+	filterData, err := rp.toData(filter)
 	if err != nil {
 		return
 	}
@@ -111,7 +111,7 @@ func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCoun
 		return
 	}
 	request := RingbufferReadManyEncodeRequest(rp.name, startSequence, minCount, maxCount, filterData)
-	responseMessage, err := rp.Invoke(request)
+	responseMessage, err := rp.invoke(request)
 	if err != nil {
 		return
 	}
