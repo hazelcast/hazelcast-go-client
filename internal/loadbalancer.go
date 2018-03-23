@@ -20,16 +20,16 @@ import (
 	"time"
 )
 
-type RandomLoadBalancer struct {
-	clusterService *ClusterService
+type randomLoadBalancer struct {
+	clusterService *clusterService
 }
 
-func NewRandomLoadBalancer(clusterService *ClusterService) *RandomLoadBalancer {
+func newRandomLoadBalancer(clusterService *clusterService) *randomLoadBalancer {
 	rand.Seed(time.Now().Unix())
-	return &RandomLoadBalancer{clusterService: clusterService}
+	return &randomLoadBalancer{clusterService: clusterService}
 }
 
-func (randomLoadBalancer *RandomLoadBalancer) NextAddress() *Address {
+func (randomLoadBalancer *randomLoadBalancer) nextAddress() *Address {
 	membersList := randomLoadBalancer.clusterService.GetMemberList()
 	size := len(membersList)
 	if size > 0 {

@@ -19,12 +19,12 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
-type ClientMessageBuilder struct {
+type clientMessageBuilder struct {
 	incompleteMessages map[int64]*ClientMessage
 	responseChannel    chan *ClientMessage
 }
 
-func (cmb *ClientMessageBuilder) OnMessage(msg *ClientMessage) {
+func (cmb *clientMessageBuilder) onMessage(msg *ClientMessage) {
 	if msg.HasFlags(common.BEGIN_END_FLAG) > 0 {
 		cmb.responseChannel <- msg
 	} else if msg.HasFlags(common.BEGIN_FLAG) > 0 {

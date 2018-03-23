@@ -28,7 +28,7 @@ const (
 	SERIALIZATION_VERSION_MISMATCH = iota
 )
 
-type ConnectionManager struct {
+type connectionManager struct {
 	client              *HazelcastClient
 	connections         map[string]*Connection
 	lock                sync.RWMutex
@@ -37,18 +37,18 @@ type ConnectionManager struct {
 	mu                  sync.Mutex
 }
 
-func NewConnectionManager(client *HazelcastClient) *ConnectionManager {
-	cm := ConnectionManager{client: client,
+func newConnectionManager(client *HazelcastClient) *connectionManager {
+	cm := connectionManager{client: client,
 		connections: make(map[string]*Connection),
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
 	return &cm
 }
-func (connectionManager *ConnectionManager) NextConnectionId() int64 {
+func (connectionManager *connectionManager) nextConnectionID() int64 {
 	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
 	return connectionManager.nextConnectionId
 }
-func (connectionManager *ConnectionManager) AddListener(listener connectionListener) {
+func (connectionManager *connectionManager) addListener(listener connectionListener) {
 	connectionManager.mu.Lock()
 	defer connectionManager.mu.Unlock()
 	if listener != nil {
@@ -62,7 +62,7 @@ func (connectionManager *ConnectionManager) AddListener(listener connectionListe
 		connectionManager.connectionListeners.Store(copyListeners)
 	}
 }
-func (connectionManager *ConnectionManager) getActiveConnection(address *Address) *Connection {
+func (connectionManager *connectionManager) getActiveConnection(address *Address) *Connection {
 	if address == nil {
 		return nil
 	}
@@ -74,7 +74,7 @@ func (connectionManager *ConnectionManager) getActiveConnection(address *Address
 	connectionManager.lock.RUnlock()
 	return nil
 }
-func (connectionManager *ConnectionManager) getActiveConnections() map[string]*Connection {
+func (connectionManager *connectionManager) getActiveConnections() map[string]*Connection {
 	connections := make(map[string]*Connection)
 	connectionManager.lock.RLock()
 	defer connectionManager.lock.RUnlock()
@@ -83,8 +83,8 @@ func (connectionManager *ConnectionManager) getActiveConnections() map[string]*C
 	}
 	return connections
 }
-func (connectionManager *ConnectionManager) connectionClosed(connection *Connection, cause error) {
-	//If connection was authenticated fire event
+func (connectionManager *connectionManager) connectionClosed(connection *Connection, cause error) {
+	//If Connection was authenticated fire event
 	if connection.endpoint.Load().(*Address).Host() != "" {
 		connectionManager.lock.Lock()
 		delete(connectionManager.connections, connection.endpoint.Load().(*Address).Host()+":"+strconv.Itoa(connection.endpoint.Load().(*Address).Port()))
@@ -96,11 +96,11 @@ func (connectionManager *ConnectionManager) connectionClosed(connection *Connect
 			}
 		}
 	} else {
-		//Clean up unauthenticated connection
+		//Clean up unauthenticated Connection
 		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
-func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwner bool) (chan *Connection, chan error) {
+func (connectionManager *connectionManager) getOrConnect(address *Address, asOwner bool) (chan *Connection, chan error) {
 
 	ch := make(chan *Connection, 1)
 	err := make(chan error, 1)
@@ -115,12 +115,12 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwn
 		connectionManager.lock.RUnlock()
 		connectionManager.lock.Lock()
 		defer connectionManager.lock.Unlock()
-		//Check if connection is opened
+		//Check if Connection is opened
 		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
 			return
 		}
-		//Open new connection
+		//Open new Connection
 		error := connectionManager.openNewConnection(address, ch, asOwner)
 		if error != nil {
 			err <- error
@@ -128,18 +128,18 @@ func (connectionManager *ConnectionManager) GetOrConnect(address *Address, asOwn
 	}()
 	return ch, err
 }
-func (connectionManager *ConnectionManager) ConnectionCount() int32 {
+func (connectionManager *connectionManager) ConnectionCount() int32 {
 	connectionManager.lock.RLock()
 	defer connectionManager.lock.RUnlock()
 	return int32(len(connectionManager.connections))
 }
-func (connectionManager *ConnectionManager) openNewConnection(address *Address, resp chan *Connection, asOwner bool) error {
+func (connectionManager *connectionManager) openNewConnection(address *Address, resp chan *Connection, asOwner bool) error {
 	if !asOwner && connectionManager.client.ClusterService.ownerConnectionAddress.Load().(*Address).Host() == "" {
 		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
 	invocationService := connectionManager.client.InvocationService
-	connectionId := connectionManager.NextConnectionId()
-	con := NewConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
+	connectionId := connectionManager.nextConnectionID()
+	con := newConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
 	if con == nil {
 		return core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
@@ -152,7 +152,7 @@ func (connectionManager *ConnectionManager) openNewConnection(address *Address, 
 	return nil
 }
 
-func (connectionManager *ConnectionManager) getOwnerConnection() *Connection {
+func (connectionManager *connectionManager) getOwnerConnection() *Connection {
 	ownerConnectionAddress := connectionManager.client.ClusterService.ownerConnectionAddress.Load().(*Address)
 	if ownerConnectionAddress.Host() == "" {
 		return nil
@@ -161,7 +161,7 @@ func (connectionManager *ConnectionManager) getOwnerConnection() *Connection {
 
 }
 
-func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
+func (connectionManager *connectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
 	uuid := connectionManager.client.ClusterService.uuid.Load().(string)
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid.Load().(string)
 	clientType := CLIENT_TYPE
@@ -178,7 +178,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 		1,
 		&clientVersion,
 	)
-	result, err := connectionManager.client.InvocationService.InvokeOnConnection(request, connection).Result()
+	result, err := connectionManager.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		return err
 	} else {
@@ -204,7 +204,7 @@ func (connectionManager *ConnectionManager) clusterAuthenticator(connection *Con
 	}
 	return nil
 }
-func (connectionManager *ConnectionManager) fireConnectionAddedEvent(connection *Connection) {
+func (connectionManager *connectionManager) fireConnectionAddedEvent(connection *Connection) {
 	listeners := connectionManager.connectionListeners.Load().([]connectionListener)
 	for _, listener := range listeners {
 		if _, ok := listener.(connectionListener); ok {

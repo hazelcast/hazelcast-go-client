@@ -32,14 +32,14 @@ const (
 	LIFECYCLE_STATE_SHUTDOWN      = "SHUTDOWN"
 )
 
-type LifecycleService struct {
+type lifecycleService struct {
 	isLive    atomic.Value
 	listeners atomic.Value
 	mu        sync.Mutex
 }
 
-func newLifecycleService(config *config.ClientConfig) *LifecycleService {
-	newLifecycle := &LifecycleService{}
+func newLifecycleService(config *config.ClientConfig) *lifecycleService {
+	newLifecycle := &lifecycleService{}
 	newLifecycle.isLive.Store(true)
 	newLifecycle.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, listener := range config.LifecycleListeners() {
@@ -50,7 +50,7 @@ func newLifecycleService(config *config.ClientConfig) *LifecycleService {
 	newLifecycle.fireLifecycleEvent(LIFECYCLE_STATE_STARTING)
 	return newLifecycle
 }
-func (lifecycleService *LifecycleService) AddListener(listener interface{}) string {
+func (lifecycleService *lifecycleService) AddListener(listener interface{}) string {
 	registrationId, _ := common.NewUUID()
 	lifecycleService.mu.Lock()
 	defer lifecycleService.mu.Unlock()
@@ -63,7 +63,7 @@ func (lifecycleService *LifecycleService) AddListener(listener interface{}) stri
 	lifecycleService.listeners.Store(copyListeners)
 	return registrationId
 }
-func (lifecycleService *LifecycleService) RemoveListener(registrationId *string) bool {
+func (lifecycleService *lifecycleService) RemoveListener(registrationId *string) bool {
 	lifecycleService.mu.Lock()
 	defer lifecycleService.mu.Unlock()
 	listeners := lifecycleService.listeners.Load().(map[string]interface{})
@@ -78,7 +78,7 @@ func (lifecycleService *LifecycleService) RemoveListener(registrationId *string)
 	lifecycleService.listeners.Store(copyListeners)
 	return found
 }
-func (lifecycleService *LifecycleService) fireLifecycleEvent(newState string) {
+func (lifecycleService *lifecycleService) fireLifecycleEvent(newState string) {
 	if newState == LIFECYCLE_STATE_SHUTTING_DOWN {
 		lifecycleService.isLive.Store(false)
 	}
