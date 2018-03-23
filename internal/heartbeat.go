@@ -27,7 +27,7 @@ const (
 	DEFAULT_HEARTBEAT_TIMEOUT  = 60
 )
 
-type HeartBeatService struct {
+type heartBeatService struct {
 	client            *HazelcastClient
 	heartBeatTimeout  time.Duration
 	heartBeatInterval time.Duration
@@ -36,8 +36,8 @@ type HeartBeatService struct {
 	mu                sync.Mutex
 }
 
-func newHeartBeatService(client *HazelcastClient) *HeartBeatService {
-	heartBeat := HeartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
+func newHeartBeatService(client *HazelcastClient) *heartBeatService {
+	heartBeat := heartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
 		heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
 		cancel:           make(chan struct{}),
 	}
@@ -50,7 +50,7 @@ func newHeartBeatService(client *HazelcastClient) *HeartBeatService {
 	heartBeat.listeners.Store(make([]interface{}, 0)) //initialize
 	return &heartBeat
 }
-func (heartBeatService *HeartBeatService) AddHeartbeatListener(listener interface{}) {
+func (heartBeatService *heartBeatService) AddHeartbeatListener(listener interface{}) {
 	heartBeatService.mu.Lock() //To prevent other potential writers
 	defer heartBeatService.mu.Unlock()
 	listeners := heartBeatService.listeners.Load().([]interface{})
@@ -62,7 +62,7 @@ func (heartBeatService *HeartBeatService) AddHeartbeatListener(listener interfac
 	copyListeners[newSize-1] = listener
 	heartBeatService.listeners.Store(copyListeners)
 }
-func (heartBeat *HeartBeatService) start() {
+func (heartBeat *heartBeatService) start() {
 	go func() {
 		ticker := time.NewTicker(heartBeat.heartBeatInterval * time.Second)
 		for {
@@ -79,7 +79,7 @@ func (heartBeat *HeartBeatService) start() {
 		}
 	}()
 }
-func (heartBeat *HeartBeatService) heartBeat() {
+func (heartBeat *heartBeatService) heartBeat() {
 	for _, connection := range heartBeat.client.ConnectionManager.getActiveConnections() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
@@ -90,7 +90,7 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
-			sentInvocation := heartBeat.client.InvocationService.InvokeOnConnection(request, connection)
+			sentInvocation := heartBeat.client.InvocationService.invokeOnConnection(request, connection)
 			copyConnection := connection
 			go func() {
 				_, err := sentInvocation.Result()
@@ -107,7 +107,7 @@ func (heartBeat *HeartBeatService) heartBeat() {
 		}
 	}
 }
-func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
+func (heartBeat *heartBeatService) onHeartBeatRestored(connection *Connection) {
 	log.Println("Heartbeat restored for a connection ", connection)
 	connection.heartBeating = true
 	listeners := heartBeat.listeners.Load().([]interface{})
@@ -117,7 +117,7 @@ func (heartBeat *HeartBeatService) onHeartBeatRestored(connection *Connection) {
 		}
 	}
 }
-func (heartBeat *HeartBeatService) onHeartBeatStopped(connection *Connection) {
+func (heartBeat *heartBeatService) onHeartBeatStopped(connection *Connection) {
 	log.Println("Heartbeat stopped for a connection ", connection)
 	connection.heartBeating = false
 	listeners := heartBeat.listeners.Load().([]interface{})
@@ -127,7 +127,7 @@ func (heartBeat *HeartBeatService) onHeartBeatStopped(connection *Connection) {
 		}
 	}
 }
-func (heartBeat *HeartBeatService) shutdown() {
+func (heartBeat *heartBeatService) shutdown() {
 	close(heartBeat.cancel)
 }
 

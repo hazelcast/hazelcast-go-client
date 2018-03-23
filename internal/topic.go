@@ -57,7 +57,7 @@ func (topic *TopicProxy) Publish(message interface{}) (err error) {
 		return err
 	}
 	request := TopicPublishEncodeRequest(topic.name, messageData)
-	_, err = topic.Invoke(request)
+	_, err = topic.invoke(request)
 	return
 }
 
@@ -65,7 +65,7 @@ func (topic *TopicProxy) createEventHandler(messageListener core.TopicMessageLis
 	return func(message *ClientMessage) {
 		TopicAddMessageListenerHandle(message, func(itemData *Data, publishTime int64, uuid *string) {
 			member := topic.client.ClusterService.GetMemberByUuid(*uuid)
-			item, _ := topic.ToObject(itemData)
+			item, _ := topic.toObject(itemData)
 			itemEvent := NewTopicMessage(item, publishTime, member.(*Member))
 			messageListener.OnMessage(itemEvent)
 		})

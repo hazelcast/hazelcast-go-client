@@ -36,8 +36,8 @@ func (mmp *MultiMapProxy) Put(key interface{}, value interface{}) (increased boo
 		return
 	}
 	request := MultiMapPutEncodeRequest(mmp.name, keyData, valueData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapPutDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapPutDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) Get(key interface{}) (values []interface{}, err error) {
@@ -46,8 +46,8 @@ func (mmp *MultiMapProxy) Get(key interface{}) (values []interface{}, err error)
 		return
 	}
 	request := MultiMapGetEncodeRequest(mmp.name, keyData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToInterfaceSliceAndError(responseMessage, err, MultiMapGetDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToInterfaceSliceAndError(responseMessage, err, MultiMapGetDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) Remove(key interface{}, value interface{}) (removed bool, err error) {
@@ -56,8 +56,8 @@ func (mmp *MultiMapProxy) Remove(key interface{}, value interface{}) (removed bo
 		return
 	}
 	request := MultiMapRemoveEntryEncodeRequest(mmp.name, keyData, valueData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapRemoveEntryDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapRemoveEntryDecodeResponse)
 
 }
 
@@ -67,8 +67,8 @@ func (mmp *MultiMapProxy) RemoveAll(key interface{}) (oldValues []interface{}, e
 		return
 	}
 	request := MultiMapRemoveEncodeRequest(mmp.name, keyData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToInterfaceSliceAndError(responseMessage, err, MultiMapRemoveDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToInterfaceSliceAndError(responseMessage, err, MultiMapRemoveDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) ContainsKey(key interface{}) (found bool, err error) {
@@ -77,8 +77,8 @@ func (mmp *MultiMapProxy) ContainsKey(key interface{}) (found bool, err error) {
 		return
 	}
 	request := MultiMapContainsKeyEncodeRequest(mmp.name, keyData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapContainsKeyDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapContainsKeyDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) ContainsValue(value interface{}) (found bool, err error) {
@@ -87,8 +87,8 @@ func (mmp *MultiMapProxy) ContainsValue(value interface{}) (found bool, err erro
 		return
 	}
 	request := MultiMapContainsValueEncodeRequest(mmp.name, valueData)
-	responseMessage, err := mmp.InvokeOnRandomTarget(request)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapContainsValueDecodeResponse)
+	responseMessage, err := mmp.invokeOnRandomTarget(request)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapContainsValueDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) ContainsEntry(key interface{}, value interface{}) (found bool, err error) {
@@ -97,20 +97,20 @@ func (mmp *MultiMapProxy) ContainsEntry(key interface{}, value interface{}) (fou
 		return
 	}
 	request := MultiMapContainsEntryEncodeRequest(mmp.name, keyData, valueData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapContainsEntryDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapContainsEntryDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) Clear() (err error) {
 	request := MultiMapClearEncodeRequest(mmp.name)
-	_, err = mmp.InvokeOnRandomTarget(request)
+	_, err = mmp.invokeOnRandomTarget(request)
 	return
 }
 
 func (mmp *MultiMapProxy) Size() (size int32, err error) {
 	request := MultiMapSizeEncodeRequest(mmp.name)
-	responseMessage, err := mmp.InvokeOnRandomTarget(request)
-	return mmp.DecodeToInt32AndError(responseMessage, err, MultiMapSizeDecodeResponse)
+	responseMessage, err := mmp.invokeOnRandomTarget(request)
+	return mmp.decodeToInt32AndError(responseMessage, err, MultiMapSizeDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) ValueCount(key interface{}) (valueCount int32, err error) {
@@ -119,26 +119,26 @@ func (mmp *MultiMapProxy) ValueCount(key interface{}) (valueCount int32, err err
 		return
 	}
 	request := MultiMapValueCountEncodeRequest(mmp.name, keyData, threadId)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToInt32AndError(responseMessage, err, MultiMapValueCountDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToInt32AndError(responseMessage, err, MultiMapValueCountDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) Values() (values []interface{}, err error) {
 	request := MultiMapValuesEncodeRequest(mmp.name)
-	responseMessage, err := mmp.InvokeOnRandomTarget(request)
-	return mmp.DecodeToInterfaceSliceAndError(responseMessage, err, MultiMapValuesDecodeResponse)
+	responseMessage, err := mmp.invokeOnRandomTarget(request)
+	return mmp.decodeToInterfaceSliceAndError(responseMessage, err, MultiMapValuesDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) KeySet() (keySet []interface{}, err error) {
 	request := MultiMapKeySetEncodeRequest(mmp.name)
-	responseMessage, err := mmp.InvokeOnRandomTarget(request)
-	return mmp.DecodeToInterfaceSliceAndError(responseMessage, err, MultiMapKeySetDecodeResponse)
+	responseMessage, err := mmp.invokeOnRandomTarget(request)
+	return mmp.decodeToInterfaceSliceAndError(responseMessage, err, MultiMapKeySetDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) EntrySet() (resultPairs []IPair, err error) {
 	request := MultiMapEntrySetEncodeRequest(mmp.name)
-	responseMessage, err := mmp.InvokeOnRandomTarget(request)
-	return mmp.DecodeToPairSliceAndError(responseMessage, err, MultiMapEntrySetDecodeResponse)
+	responseMessage, err := mmp.invokeOnRandomTarget(request)
+	return mmp.decodeToPairSliceAndError(responseMessage, err, MultiMapEntrySetDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
@@ -184,7 +184,7 @@ func (mmp *MultiMapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseT
 	}
 	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
 	request := MultiMapLockEncodeRequest(mmp.name, keyData, threadId, lease, mmp.client.ProxyManager.nextReferenceId())
-	_, err = mmp.InvokeOnKey(request, keyData)
+	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
 
@@ -194,8 +194,8 @@ func (mmp *MultiMapProxy) IsLocked(key interface{}) (locked bool, err error) {
 		return false, err
 	}
 	request := MultiMapIsLockedEncodeRequest(mmp.name, keyData)
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapIsLockedDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapIsLockedDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) TryLock(key interface{}) (locked bool, err error) {
@@ -214,8 +214,8 @@ func (mmp *MultiMapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout in
 	timeout = GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
 	lease = GetTimeInMilliSeconds(lease, leaseTimeUnit)
 	request := MultiMapTryLockEncodeRequest(mmp.name, keyData, threadId, lease, timeout, mmp.client.ProxyManager.nextReferenceId())
-	responseMessage, err := mmp.InvokeOnKey(request, keyData)
-	return mmp.DecodeToBoolAndError(responseMessage, err, MultiMapTryLockDecodeResponse)
+	responseMessage, err := mmp.invokeOnKey(request, keyData)
+	return mmp.decodeToBoolAndError(responseMessage, err, MultiMapTryLockDecodeResponse)
 }
 
 func (mmp *MultiMapProxy) Unlock(key interface{}) (err error) {
@@ -224,7 +224,7 @@ func (mmp *MultiMapProxy) Unlock(key interface{}) (err error) {
 		return err
 	}
 	request := MultiMapUnlockEncodeRequest(mmp.name, keyData, threadId, mmp.client.ProxyManager.nextReferenceId())
-	_, err = mmp.InvokeOnKey(request, keyData)
+	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
 
@@ -234,15 +234,15 @@ func (mmp *MultiMapProxy) ForceUnlock(key interface{}) (err error) {
 		return err
 	}
 	request := MultiMapForceUnlockEncodeRequest(mmp.name, keyData, mmp.client.ProxyManager.nextReferenceId())
-	_, err = mmp.InvokeOnKey(request, keyData)
+	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
 
 func (mmp *MultiMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data, valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, listener interface{}) {
-	key, _ := mmp.ToObject(keyData)
-	oldValue, _ := mmp.ToObject(oldValueData)
-	value, _ := mmp.ToObject(valueData)
-	mergingValue, _ := mmp.ToObject(mergingValueData)
+	key, _ := mmp.toObject(keyData)
+	oldValue, _ := mmp.toObject(oldValueData)
+	value, _ := mmp.toObject(valueData)
+	mergingValue, _ := mmp.toObject(mergingValueData)
 	entryEvent := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid)
 	mapEvent := NewMapEvent(eventType, Uuid, numberOfAffectedEntries)
 	switch eventType {

@@ -31,7 +31,7 @@ type Connection struct {
 	pending                chan *ClientMessage
 	received               chan *ClientMessage
 	socket                 net.Conn
-	clientMessageBuilder   *ClientMessageBuilder
+	clientMessageBuilder   *clientMessageBuilder
 	closed                 chan bool
 	endpoint               atomic.Value
 	sendingError           chan int64
@@ -46,14 +46,14 @@ type Connection struct {
 	heartBeating           bool
 	readBuffer             []byte
 	connectionId           int64
-	connectionManager      *ConnectionManager
+	connectionManager      *connectionManager
 }
 
-func NewConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64, connectionManager *ConnectionManager) *Connection {
+func newConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64, connectionManager *connectionManager) *Connection {
 	connection := Connection{pending: make(chan *ClientMessage, 1),
 		received:             make(chan *ClientMessage, 1),
 		closed:               make(chan bool, 1),
-		clientMessageBuilder: &ClientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
+		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
 		connectionId:      connectionId,
@@ -77,7 +77,7 @@ func NewConnection(address *Address, responseChannel chan *ClientMessage, sendin
 	return &connection
 }
 
-func (connection *Connection) IsAlive() bool {
+func (connection *Connection) isAlive() bool {
 	return atomic.LoadInt32(&connection.status) == 0
 }
 func (connection *Connection) writePool() {
@@ -96,8 +96,8 @@ func (connection *Connection) writePool() {
 	}
 }
 
-func (connection *Connection) Send(clientMessage *ClientMessage) bool {
-	if !connection.IsAlive() {
+func (connection *Connection) send(clientMessage *ClientMessage) bool {
+	if !connection.isAlive() {
 		return false
 	}
 	select {
@@ -130,7 +130,7 @@ func (connection *Connection) read() {
 		n, err := connection.socket.Read(buf)
 		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
 		if err != nil {
-			connection.Close(err)
+			connection.close(err)
 			return
 		}
 		if n == 0 {
@@ -148,10 +148,10 @@ func (connection *Connection) receiveMessage() {
 		}
 		resp := NewClientMessage(connection.readBuffer[:frameLength], 0)
 		connection.readBuffer = connection.readBuffer[frameLength:]
-		connection.clientMessageBuilder.OnMessage(resp)
+		connection.clientMessageBuilder.onMessage(resp)
 	}
 }
-func (connection *Connection) Close(err error) {
+func (connection *Connection) close(err error) {
 	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
 		return
 	}
@@ -170,7 +170,7 @@ func (connection *Connection) String() string {
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
-		", connected server version=%s", connection.IsAlive(), connection.connectionId,
+		", connected server version=%s", connection.isAlive(), connection.connectionId,
 		connection.endpoint.Load().(*Address).Host(), connection.endpoint.Load().(*Address).Port(),
 		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
 		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
