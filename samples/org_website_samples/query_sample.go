@@ -25,7 +25,7 @@ func querySampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	clientConfig := hazelcast.NewHazelcastConfig()
 	clientConfig.SerializationConfig().
-		AddPortableFactory(portableFactoryId, &PortableFactory{})
+		AddPortableFactory(samplePortableFactory2Id, &SamplePortableFactory2{})
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get a Distributed Map called "users"
 	users, _ := hz.GetMap("users")
@@ -52,9 +52,9 @@ func GenerateUsers(users IMap) {
 }
 
 const (
-	userClassId       = 1
-	userFactoryId     = 1
-	portableFactoryId = 1
+	userClassId              = 1
+	userFactoryId            = 1
+	samplePortableFactory2Id = 1
 )
 
 type User struct {
@@ -103,10 +103,10 @@ func (user *User) ReadPortable(reader serialization.PortableReader) error {
 	return nil
 }
 
-type PortableFactory struct {
+type SamplePortableFactory2 struct {
 }
 
-func (portableFactory *PortableFactory) Create(classId int32) serialization.Portable {
+func (portableFactory *SamplePortableFactory2) Create(classId int32) serialization.Portable {
 	if classId == userClassId {
 		return &User{}
 	}
