@@ -73,6 +73,10 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 		return nil, NewHazelcastSerializationError(fmt.Sprintf("there is no IdentifiedDataSerializable factory with id: %d", factoryId), nil)
 	}
 	var object = factory.Create(classId)
+	if object == nil {
+		return nil, NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %v on factory id: %v",
+			reflect.TypeOf(factory), classId, factoryId), nil)
+	}
 	err = object.ReadData(input)
 	if err != nil {
 		return nil, err
