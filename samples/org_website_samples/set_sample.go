@@ -16,25 +16,27 @@ package org_website_samples
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	"time"
+	"log"
 )
 
-func queueSampleRun() {
+func setSampleRun() {
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClient()
-	// Get a Blocking Queue called "my-distributed-queue"
-	queue, _ := hz.GetQueue("my-distributed-queue")
-	// Offer a String into the Distributed Queue
-	queue.Offer("item")
-	// Poll the Distributed Queue and return the String
-	queue.Poll()
-	//Timed blocking Operations
-	queue.OfferWithTimeout("anotheritem", 500, time.Millisecond)
-	queue.PollWithTimeout(5, time.Second)
-	//Indefinitely blocking Operations
-	queue.Put("yetanotheritem")
-	queue.Take()
-	// Shutdown the Hazelcast Cluster Member
+	// Get the distributed set from cluster
+	set, _ := hz.GetSet("my-distributed-set")
+	// Add items to the set with duplicates
+	set.Add("item1")
+	set.Add("item1")
+	set.Add("item2")
+	set.Add("item2")
+	set.Add("item3")
+	set.Add("item3")
+	// Get the items. Note that no duplicates
+	items, _ := set.ToSlice()
+	for _, item := range items {
+		log.Println(item)
+	}
+
 	hz.Shutdown()
 }

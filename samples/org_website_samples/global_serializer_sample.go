@@ -28,10 +28,12 @@ func (*GlobalSerializer) Id() int32 {
 }
 
 func (*GlobalSerializer) Read(input DataInput) (obj interface{}, err error) {
+	// return MyFavoriteSerializer.deserialize(in)
 	return
 }
 
 func (*GlobalSerializer) Write(output DataOutput, object interface{}) (err error) {
+	// output.write(MyFavoriteSerializer.serialize(object))
 	return
 }
 
