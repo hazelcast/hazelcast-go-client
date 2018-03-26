@@ -24,9 +24,15 @@ const CLIENT_TYPE = "GOO"
 func DataCalculateSize(d *Data) int {
 	return len(d.Buffer()) + INT_SIZE_IN_BYTES
 }
+
 func StringCalculateSize(str *string) int {
 	return len(*str) + INT_SIZE_IN_BYTES
 }
+
+func Int64CalculateSize(v int64) int {
+	return INT64_SIZE_IN_BYTES
+}
+
 func AddressCalculateSize(a *Address) int {
 	dataSize := 0
 	dataSize += StringCalculateSize(&a.host)
