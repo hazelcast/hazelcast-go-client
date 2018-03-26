@@ -71,6 +71,31 @@ func (*employee) ClassId() int32 {
 	return 1
 }
 
+type customer struct {
+	age  int32
+	name string
+}
+
+func (c *customer) ReadData(input DataInput) error {
+	c.age, _ = input.ReadInt32()
+	c.name, _ = input.ReadUTF()
+	return nil
+}
+
+func (c *customer) WriteData(output DataOutput) error {
+	output.WriteInt32(c.age)
+	output.WriteUTF(c.name)
+	return nil
+}
+
+func (*customer) FactoryId() int32 {
+	return 4
+}
+
+func (*customer) ClassId() int32 {
+	return 2
+}
+
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 employee = employee{22, "Furkan Şenharputlu"}
 	c := NewSerializationConfig()
@@ -83,6 +108,21 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 
 	if !reflect.DeepEqual(employee1, *ret_employee.(*employee)) {
 		t.Errorf("IdentifiedDataSerializableSerializer failed")
+	}
+}
+
+func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
+	c := &customer{38, "Jack"}
+	config := NewSerializationConfig()
+	config.AddDataSerializableFactory(c.FactoryId(), factory{})
+
+	service := NewSerializationService(config)
+
+	data, _ := service.ToData(c)
+	_, err := service.ToObject(data)
+
+	if _, ok := err.(*core.HazelcastSerializationError); !ok {
+		t.Errorf("err should be 'serialization.factory is not able to create an instance for id: 2 on factory id: 4'")
 	}
 }
 
