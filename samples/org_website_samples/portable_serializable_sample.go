@@ -15,7 +15,6 @@
 package org_website_samples
 
 import (
-	"fmt"
 	. "github.com/hazelcast/hazelcast-go-client"
 	. "github.com/hazelcast/hazelcast-go-client/config"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
@@ -63,10 +62,6 @@ func (customer *Customer) ReadPortable(reader PortableReader) (err error) {
 	}
 	customer.lastOrder = Unix(0, t*int64(Millisecond))
 	return
-}
-
-func (customer *Customer) ToString() string {
-	return fmt.Sprintf("Name: %v, Id: %v, LastOrder: %v", customer.name, customer.id, customer.lastOrder)
 }
 
 type SamplePortableFactory struct {

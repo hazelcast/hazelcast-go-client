@@ -16,25 +16,26 @@ package org_website_samples
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	"time"
+	"log"
 )
 
-func queueSampleRun() {
+func listSampleRun() {
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClient()
-	// Get a Blocking Queue called "my-distributed-queue"
-	queue, _ := hz.GetQueue("my-distributed-queue")
-	// Offer a String into the Distributed Queue
-	queue.Offer("item")
-	// Poll the Distributed Queue and return the String
-	queue.Poll()
-	//Timed blocking Operations
-	queue.OfferWithTimeout("anotheritem", 500, time.Millisecond)
-	queue.PollWithTimeout(5, time.Second)
-	//Indefinitely blocking Operations
-	queue.Put("yetanotheritem")
-	queue.Take()
+	// Get the distributed list from cluster
+	list, _ := hz.GetList("my-distributed-list")
+	// Add elements to the list
+	list.Add("item1")
+	list.Add("item2")
+	// Remove the first element
+	removed, _ := list.RemoveAt(0)
+	log.Println("removed: ", removed)
+	// There is only one element left
+	size, _ := list.Size()
+	log.Println("current size is: ", size)
+	// Clear the list
+	list.Clear()
 	// Shutdown the Hazelcast Cluster Member
 	hz.Shutdown()
 }

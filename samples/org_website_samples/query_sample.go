@@ -21,36 +21,6 @@ import (
 	"log"
 )
 
-func querySampleRun() {
-	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	clientConfig := hazelcast.NewHazelcastConfig()
-	clientConfig.SerializationConfig().
-		AddPortableFactory(samplePortableFactory2Id, &SamplePortableFactory2{})
-	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
-	// Get a Distributed Map called "users"
-	users, _ := hz.GetMap("users")
-	// Add some users to the Distributed Map
-	GenerateUsers(users)
-	// Create a Predicate from a String (a SQL like Where clause)
-	var sqlQuery = Sql("active AND age BETWEEN 18 AND 21)")
-	// Creating the same Predicate as above but with a builder
-	var criteriaQuery = And([]serialization.IPredicate{Equal("active", true), Between("age", 18, 21)})
-	// Get result collections using the two different Predicates
-	result1, _ := users.ValuesWithPredicate(sqlQuery)
-	result2, _ := users.ValuesWithPredicate(criteriaQuery)
-	// Print out the results
-	log.Println(result1)
-	log.Println(result2)
-	// Shutdown the Hazelcast Cluster Member
-	hz.Shutdown()
-}
-
-func GenerateUsers(users IMap) {
-	users.Put("Rod", newUser("Rod", 19, true))
-	users.Put("Jane", newUser("Jane", 20, true))
-	users.Put("Freddy", newUser("Freddy", 23, true))
-}
-
 const (
 	userClassId              = 1
 	userFactoryId            = 1
@@ -103,12 +73,42 @@ func (user *User) ReadPortable(reader serialization.PortableReader) error {
 	return nil
 }
 
-type SamplePortableFactory2 struct {
+type ThePortableFactory struct {
 }
 
-func (portableFactory *SamplePortableFactory2) Create(classId int32) serialization.Portable {
+func (portableFactory *ThePortableFactory) Create(classId int32) serialization.Portable {
 	if classId == userClassId {
 		return &User{}
 	}
 	return nil
+}
+
+func generateUsers(users IMap) {
+	users.Put("Rod", newUser("Rod", 19, true))
+	users.Put("Jane", newUser("Jane", 20, true))
+	users.Put("Freddy", newUser("Freddy", 23, true))
+}
+
+func querySampleRun() {
+	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
+	clientConfig := hazelcast.NewHazelcastConfig()
+	clientConfig.SerializationConfig().
+		AddPortableFactory(samplePortableFactory2Id, &ThePortableFactory{})
+	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
+	// Get a Distributed Map called "users"
+	users, _ := hz.GetMap("users")
+	// Add some users to the Distributed Map
+	generateUsers(users)
+	// Create a Predicate from a String (a SQL like Where clause)
+	var sqlQuery = Sql("active AND age BETWEEN 18 AND 21)")
+	// Creating the same Predicate as above but with a builder
+	var criteriaQuery = And([]serialization.IPredicate{Equal("active", true), Between("age", 18, 21)})
+	// Get result collections using the two different Predicates
+	result1, _ := users.ValuesWithPredicate(sqlQuery)
+	result2, _ := users.ValuesWithPredicate(criteriaQuery)
+	// Print out the results
+	log.Println(result1)
+	log.Println(result2)
+	// Shutdown the Hazelcast Cluster Member
+	hz.Shutdown()
 }
