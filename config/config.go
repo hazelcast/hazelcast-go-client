@@ -50,15 +50,19 @@ type ClientConfig struct {
 
 	// heartbeatIntervalInSeconds is heartbeat internal in seconds.
 	heartbeatIntervalInSeconds int32
+
+	// flakeIdGeneratorConfigMap is mapping of names to flakeIdGeneratorConfigs
+	flakeIdGeneratorConfigMap map[string]*FlakeIdGeneratorConfig
 }
 
 // NewClientConfig creates a new ClientConfig with default configuration.
 func NewClientConfig() *ClientConfig {
 	return &ClientConfig{groupConfig: NewGroupConfig(),
-		clientNetworkConfig: NewClientNetworkConfig(),
-		membershipListeners: make([]interface{}, 0),
-		serializationConfig: NewSerializationConfig(),
-		lifecycleListeners:  make([]interface{}, 0),
+		clientNetworkConfig:       NewClientNetworkConfig(),
+		membershipListeners:       make([]interface{}, 0),
+		serializationConfig:       NewSerializationConfig(),
+		lifecycleListeners:        make([]interface{}, 0),
+		flakeIdGeneratorConfigMap: make(map[string]*FlakeIdGeneratorConfig, 0),
 	}
 }
 
@@ -109,6 +113,31 @@ func (clientConfig *ClientConfig) SetHeartbeatIntervalInSeconds(intervalInSecond
 // HeartbeatInterval returns heartbeat interval in seconds.
 func (clientConfig *ClientConfig) HeartbeatInterval() int32 {
 	return clientConfig.heartbeatIntervalInSeconds
+}
+
+// GetFlakeIdGeneratorConfig returns the FlakeIdGeneratorConfig for the given name, creating one
+// if necessary and adding it to the map of known configurations.
+// If no configuration is found with the given name it will create a new one with the default config.
+func (clientConfig *ClientConfig) GetFlakeIdGeneratorConfig(name string) *FlakeIdGeneratorConfig {
+	//TODO:: add config pattern matcher
+	if config, found := clientConfig.flakeIdGeneratorConfigMap[name]; found {
+		return config
+	}
+	defConfig, found := clientConfig.flakeIdGeneratorConfigMap["default"]
+	if !found {
+		defConfig = NewFlakeIdGeneratorConfig("default")
+		clientConfig.flakeIdGeneratorConfigMap["default"] = defConfig
+	}
+	config := NewFlakeIdGeneratorConfig(name)
+	clientConfig.flakeIdGeneratorConfigMap[name] = config
+	return config
+
+}
+
+// AddFlakeIdGeneratorConfig adds the given config to the configurations map.
+func (clientConfig *ClientConfig) AddFlakeIdGeneratorConfig(config *FlakeIdGeneratorConfig) *ClientConfig {
+	clientConfig.flakeIdGeneratorConfigMap[config.Name()] = config
+	return clientConfig
 }
 
 // AddMembershipListener adds a membership listener.
