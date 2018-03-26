@@ -91,6 +91,15 @@ func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message
 	}
 }
 
+func AssertLessThanf(t *testing.T, err error, l int64, r int64, message string) {
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l >= r {
+		t.Fatalf("%v >= %v : %v", l, r, message)
+	}
+}
+
 func AssertNilf(t *testing.T, err error, l interface{}, message string) {
 	if err != nil {
 		t.Fatal(err)
