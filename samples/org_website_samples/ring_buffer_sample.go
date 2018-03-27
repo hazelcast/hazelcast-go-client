@@ -15,9 +15,9 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"log"
 )
 
 func ringBufferSampleRun() {
@@ -34,9 +34,9 @@ func ringBufferSampleRun() {
 	// we start from the oldest item.
 	// if you want to start from the next item, call rb.tailSequence()+1
 	sequence, _ := rb.HeadSequence()
-	log.Println(rb.ReadOne(sequence))
+	fmt.Println(rb.ReadOne(sequence))
 	sequence += 1
-	log.Println(rb.ReadOne(sequence))
-	// Shutdown the Hazelcast Cluster Member
+	fmt.Println(rb.ReadOne(sequence))
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

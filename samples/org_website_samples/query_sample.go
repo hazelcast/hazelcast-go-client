@@ -15,10 +15,10 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
 	. "github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"log"
 )
 
 const (
@@ -90,10 +90,10 @@ func generateUsers(users IMap) {
 }
 
 func querySampleRun() {
-	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	clientConfig := hazelcast.NewHazelcastConfig()
 	clientConfig.SerializationConfig().
 		AddPortableFactory(samplePortableFactory2Id, &ThePortableFactory{})
+	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get a Distributed Map called "users"
 	users, _ := hz.GetMap("users")
@@ -107,8 +107,8 @@ func querySampleRun() {
 	result1, _ := users.ValuesWithPredicate(sqlQuery)
 	result2, _ := users.ValuesWithPredicate(criteriaQuery)
 	// Print out the results
-	log.Println(result1)
-	log.Println(result2)
-	// Shutdown the Hazelcast Cluster Member
+	fmt.Println(result1)
+	fmt.Println(result2)
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

@@ -15,9 +15,9 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"log"
 )
 
 type IncEntryProcessor struct {
@@ -77,7 +77,7 @@ func entryProcessorSampleRun() {
 	mp.ExecuteOnKey("key", entryProcessor)
 	// Show that the IncEntryProcessor updated the value.
 	newValue, _ := mp.Get("key")
-	log.Println("new value:", newValue)
-	// Shutdown the Hazelcast Cluster Member
+	fmt.Println("new value:", newValue)
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

@@ -15,8 +15,8 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	"log"
 )
 
 func setSampleRun() {
@@ -35,8 +35,8 @@ func setSampleRun() {
 	// Get the items. Note that no duplicates
 	items, _ := set.ToSlice()
 	for _, item := range items {
-		log.Println(item)
+		fmt.Println(item)
 	}
-
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }
