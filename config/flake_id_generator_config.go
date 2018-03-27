@@ -14,10 +14,21 @@
 
 package config
 
+import "fmt"
+
 const (
-	defaultPrefetchCount          = 100
-	defaultPrefetchValidityMillis = 600000
-	maximumPrefetchCount          = 100000
+
+	// DefaultPrefetchCount is the default value for PrefetchCount()
+	DefaultPrefetchCount = 100
+
+	// DefaultPrefetchValidityMillis is the default value for PrefetchValidityMillis()
+	DefaultPrefetchValidityMillis = 600000
+
+	// MaximumPrefetchCount is the maximum value for prefetch count.
+	// The reason to limit the prefetch count is that a single call to 'FlakeIdGenerator.NewId()` might
+	// be blocked if the future allowance is exceeded: we want to avoid a single call for large batch to block
+	// another call for small batch.
+	MaximumPrefetchCount = 100000
 )
 
 // FlakeIdGeneratorConfig contains the configuration for 'FlakeIdGenerator' proxy.
@@ -31,8 +42,8 @@ type FlakeIdGeneratorConfig struct {
 func NewFlakeIdGeneratorConfig(name string) *FlakeIdGeneratorConfig {
 	return &FlakeIdGeneratorConfig{
 		name:                   name,
-		prefetchCount:          defaultPrefetchCount,
-		prefetchValidityMillis: defaultPrefetchValidityMillis,
+		prefetchCount:          DefaultPrefetchCount,
+		prefetchValidityMillis: DefaultPrefetchValidityMillis,
 	}
 }
 
@@ -47,13 +58,14 @@ func NewFlakeIdGeneratorConfigWithParameters(name string, prefetchCount int32, p
 }
 
 // SetPrefetchCount sets prefetchCount as the given value.
-// prefetch count should be between 0 and maximumPrefetchCount, otherwise it
-// will not be changed.
+// prefetch count should be between 0 and MaximumPrefetchCount, otherwise it
+// will panic.
 // SetPrefetchCount returns itself for chaining.
 func (self *FlakeIdGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeIdGeneratorConfig {
-	if prefetchCount > 0 && prefetchCount < maximumPrefetchCount {
-		self.prefetchCount = prefetchCount
+	if prefetchCount < 0 || prefetchCount > MaximumPrefetchCount {
+		panic(fmt.Sprintf("prefectCount should be in the range of 0-%d", MaximumPrefetchCount))
 	}
+	self.prefetchCount = prefetchCount
 	return self
 }
 
@@ -76,12 +88,16 @@ func (self *FlakeIdGeneratorConfig) PrefetchCount() int32 {
 
 // PrefetchValidityMillis returns the prefetchValidityMillis
 func (self *FlakeIdGeneratorConfig) PrefetchValidityMillis() int64 {
+
 	return self.prefetchValidityMillis
 }
 
 // SetPrefetchValidityMillis sets the prefetchValidityMillis as the given value.
 // SetPrefetchValidityMillis returns itself for chaining.
 func (self *FlakeIdGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) *FlakeIdGeneratorConfig {
+	if prefetchValidityMillis < 0 {
+		panic(fmt.Sprintf("prefetchValidityMillis should be positive"))
+	}
 	self.prefetchValidityMillis = prefetchValidityMillis
 	return self
 }

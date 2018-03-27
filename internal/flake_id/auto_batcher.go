@@ -28,7 +28,7 @@ type IdBatchSupplier interface {
 type AutoBatcher struct {
 	batchSize       int32
 	validity        int64
-	block           *Block
+	block           atomic.Value
 	mu              sync.Mutex
 	batchIdSupplier IdBatchSupplier
 }
@@ -38,23 +38,21 @@ func NewAutoBatcher(batchSize int32, validity int64, supplier IdBatchSupplier) *
 		batchSize:       batchSize,
 		validity:        validity,
 		mu:              sync.Mutex{},
-		block:           NewBlock(NewIdBatch(0, 0, 0), 0),
 		batchIdSupplier: supplier,
 	}
+	autoBatcher.block.Store(NewBlock(NewIdBatch(0, 0, 0), 0)) //initialize
 	return &autoBatcher
 }
 
 func (self *AutoBatcher) NewId() (int64, error) {
 	for {
-		self.mu.Lock()
-		block := self.block
-		self.mu.Unlock()
+		block := self.block.Load().(*Block)
 		res := block.next()
 		if res != math.MinInt64 {
 			return res, nil
 		}
 		self.mu.Lock()
-		if block != self.block {
+		if block != self.block.Load().(*Block) {
 			self.mu.Unlock()
 			continue
 		}
@@ -63,7 +61,7 @@ func (self *AutoBatcher) NewId() (int64, error) {
 			self.mu.Unlock()
 			return 0, err
 		}
-		self.block = NewBlock(idBatch, self.validity)
+		self.block.Store(NewBlock(idBatch, self.validity))
 		self.mu.Unlock()
 	}
 }
