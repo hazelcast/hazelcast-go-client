@@ -80,6 +80,14 @@ func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
 	return mmp.(core.MultiMap), err
 }
 
+func (client *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error) {
+	flakeIdGenerator, err := client.GetDistributedObject(SERVICE_NAME_ID_GENERATOR, name)
+	if err != nil {
+		return nil, err
+	}
+	return flakeIdGenerator.(core.FlakeIdGenerator), err
+}
+
 func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
 	topic, err := client.GetDistributedObject(SERVICE_NAME_TOPIC, name)
 	if err != nil {
