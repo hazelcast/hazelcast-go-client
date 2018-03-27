@@ -15,8 +15,8 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	"log"
 )
 
 func replicatedMapSampleRun() {
@@ -26,9 +26,9 @@ func replicatedMapSampleRun() {
 	mp, _ := hz.GetReplicatedMap("my-replicated-map")
 	// Put and Get a value from the Replicated Map
 	replacedValue, _ := mp.Put("key", "value")     // key/value replicated to all members
-	log.Println("replacedValue = ", replacedValue) // Will be null as its first update
+	fmt.Println("replacedValue = ", replacedValue) // Will be null as its first update
 	value, _ := mp.Get("key")                      // the value is retrieved from a random member in the cluster
-	log.Println("value for key = ", value)
-	// Shutdown the Hazelcast Cluster Member
+	fmt.Println("value for key = ", value)
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

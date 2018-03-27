@@ -65,5 +65,8 @@ func (*SampleDataSerializableFactory) Create(classId int32) IdentifiedDataSerial
 func identifiedDataSerializableSampleRun() {
 	clientConfig := NewClientConfig()
 	clientConfig.SerializationConfig().AddDataSerializableFactory(sampleDataSerializableFactoryId, &SampleDataSerializableFactory{})
-	NewHazelcastClientWithConfig(clientConfig)
+	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
+	hz, _ := NewHazelcastClientWithConfig(clientConfig)
+	// Employee can be used here
+	hz.Shutdown()
 }

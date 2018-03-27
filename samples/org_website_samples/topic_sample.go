@@ -20,6 +20,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
+type topicMessageListener struct {
+}
+
+func (self *topicMessageListener) OnMessage(message core.ITopicMessage) {
+	fmt.Println("Got message: ", message.MessageObject())
+}
+
 func topicSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClient()
@@ -29,13 +36,6 @@ func topicSampleRun() {
 	topic.AddMessageListener(&topicMessageListener{})
 	// Publish a message to the Topic
 	topic.Publish("Hello to distributed world")
-	// Shutdown the Hazelcast Cluster Member
+	// Shutdown this hazelcast client
 	hz.Shutdown()
-}
-
-type topicMessageListener struct {
-}
-
-func (self *topicMessageListener) OnMessage(message core.ITopicMessage) {
-	fmt.Println("Got message: ", message.MessageObject())
 }

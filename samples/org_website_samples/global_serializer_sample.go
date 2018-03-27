@@ -40,5 +40,8 @@ func (*GlobalSerializer) Write(output DataOutput, object interface{}) (err error
 func globalSerializerSampleRun() {
 	clientConfig := NewClientConfig()
 	clientConfig.SerializationConfig().SetGlobalSerializer(&GlobalSerializer{})
-	NewHazelcastClientWithConfig(clientConfig)
+	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
+	hz, _ := NewHazelcastClientWithConfig(clientConfig)
+	//GlobalSerializer will serialize/deserialize all non-builtin types
+	hz.Shutdown()
 }
