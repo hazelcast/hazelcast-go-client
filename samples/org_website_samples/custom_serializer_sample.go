@@ -20,7 +20,7 @@ import (
 	"reflect"
 )
 
-type CustomSerializableType struct {
+type CustomSerializable struct {
 	value string
 }
 
@@ -33,18 +33,18 @@ func (s *CustomSerializer) Id() int32 {
 
 func (s *CustomSerializer) Read(input DataInput) (obj interface{}, err error) {
 	array, err := input.ReadByteArray()
-	return &CustomSerializableType{string(array)}, err
+	return &CustomSerializable{string(array)}, err
 }
 
 func (s *CustomSerializer) Write(output DataOutput, obj interface{}) (err error) {
-	array := []byte(obj.(CustomSerializableType).value)
+	array := []byte(obj.(CustomSerializable).value)
 	output.WriteByteArray(array)
 	return
 }
 
 func customSerializerSampleRun() {
 	clientConfig := NewHazelcastConfig()
-	clientConfig.SerializationConfig().AddCustomSerializer(reflect.TypeOf((*CustomSerializableType)(nil)), &CustomSerializer{})
+	clientConfig.SerializationConfig().AddCustomSerializer(reflect.TypeOf((*CustomSerializable)(nil)), &CustomSerializer{})
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := NewHazelcastClientWithConfig(clientConfig)

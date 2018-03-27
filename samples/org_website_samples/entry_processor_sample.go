@@ -20,29 +20,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+const (
+	IncEntryProcessorClassId   = 1
+	IncEntryProcessorFactoryId = 66
+)
+
 type IncEntryProcessor struct {
-	classId                               int32
-	entryProcessorDataSerializableFactory *EntryProcessorDataSerializableFactory
-}
-
-func newIncEntryProcessor() *IncEntryProcessor {
-	processor := &IncEntryProcessor{classId: 1}
-	identifiedFactory := &EntryProcessorDataSerializableFactory{factoryId: 66, simpleEntryProcessor: processor}
-	processor.entryProcessorDataSerializableFactory = identifiedFactory
-	return processor
-}
-
-type EntryProcessorDataSerializableFactory struct {
-	simpleEntryProcessor *IncEntryProcessor
-	factoryId            int32
-}
-
-func (identifiedFactory *EntryProcessorDataSerializableFactory) Create(id int32) serialization.IdentifiedDataSerializable {
-	if id == identifiedFactory.simpleEntryProcessor.classId {
-		return &IncEntryProcessor{classId: 1}
-	} else {
-		return nil
-	}
 }
 
 func (simpleEntryProcessor *IncEntryProcessor) ReadData(input serialization.DataInput) error {
@@ -54,20 +37,17 @@ func (simpleEntryProcessor *IncEntryProcessor) WriteData(output serialization.Da
 }
 
 func (simpleEntryProcessor *IncEntryProcessor) FactoryId() int32 {
-	return simpleEntryProcessor.entryProcessorDataSerializableFactory.factoryId
+	return IncEntryProcessorFactoryId
 }
 
 func (simpleEntryProcessor *IncEntryProcessor) ClassId() int32 {
-	return simpleEntryProcessor.classId
+	return IncEntryProcessorClassId
 }
 
 func entryProcessorSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	clientConfig := hazelcast.NewHazelcastConfig()
-	entryProcessor := newIncEntryProcessor()
-	clientConfig.SerializationConfig().
-		AddDataSerializableFactory(entryProcessor.entryProcessorDataSerializableFactory.factoryId,
-			entryProcessor.entryProcessorDataSerializableFactory)
+	entryProcessor := &IncEntryProcessor{}
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get the Distributed Map from Cluster.
 	mp, _ := hz.GetMap("my-distributed-map")

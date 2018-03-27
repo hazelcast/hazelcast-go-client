@@ -22,9 +22,8 @@ import (
 )
 
 const (
-	userClassId              = 1
-	userFactoryId            = 1
-	samplePortableFactory2Id = 1
+	userClassId   = 1
+	userFactoryId = 1
 )
 
 type User struct {
@@ -92,7 +91,7 @@ func generateUsers(users IMap) {
 func querySampleRun() {
 	clientConfig := hazelcast.NewHazelcastConfig()
 	clientConfig.SerializationConfig().
-		AddPortableFactory(samplePortableFactory2Id, &ThePortableFactory{})
+		AddPortableFactory(userFactoryId, &ThePortableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get a Distributed Map called "users"
@@ -102,7 +101,10 @@ func querySampleRun() {
 	// Create a Predicate from a String (a SQL like Where clause)
 	var sqlQuery = Sql("active AND age BETWEEN 18 AND 21)")
 	// Creating the same Predicate as above but with a builder
-	var criteriaQuery = And([]serialization.IPredicate{Equal("active", true), Between("age", 18, 21)})
+	var criteriaQuery = And(
+		Equal("active", true),
+		Between("age", 18, 21))
+
 	// Get result collections using the two different Predicates
 	result1, _ := users.ValuesWithPredicate(sqlQuery)
 	result2, _ := users.ValuesWithPredicate(criteriaQuery)

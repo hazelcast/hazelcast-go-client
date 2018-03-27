@@ -35,8 +35,7 @@ func queueSampleRun() {
 	queue.PollWithTimeout(5, time.Second)
 	//Indefinitely blocking Operations
 	queue.Put("yetanotheritem")
-	item, _ := queue.Take()
-	fmt.Println(item)
+	fmt.Println(queue.Take())
 	// Shutdown this hazelcast client
 	hz.Shutdown()
 }
