@@ -80,6 +80,7 @@ func portableSerializableSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := NewHazelcastClientWithConfig(clientConfig)
 	// Customer can be used here
-	hz.Shutdown()
 
+	// Shutdown this hazelcast client
+	hz.Shutdown()
 }
