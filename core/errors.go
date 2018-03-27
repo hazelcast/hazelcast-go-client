@@ -102,7 +102,23 @@ type HazelcastIOError struct {
 	*HazelcastErrorType
 }
 
-// NewHazelcastNilPointerError returns HazelcastNilPointerError
+// HazelcastNoDataMemberInClusterError is returned when there is no data member in the cluster to assign partitions.
+type HazelcastNoDataMemberInClusterError struct {
+	*HazelcastErrorType
+}
+
+// HazelcastUnsupportedOperationError is returned to indicate that the requested operation is not supported.
+type HazelcastUnsupportedOperationError struct {
+	*HazelcastErrorType
+}
+
+// HazelcastConsistencyLostError is an error that indicates that the consistency guarantees provided by
+// some service has been lost. The exact guarantees depend on the service.
+type HazelcastConsistencyLostError struct {
+	*HazelcastErrorType
+}
+
+// NewHazelcastNilPointerError returns HazelcastNilPointerError.
 func NewHazelcastNilPointerError(message string, cause error) *HazelcastNilPointerError {
 	return &HazelcastNilPointerError{&HazelcastErrorType{message: message, cause: cause}}
 }
@@ -157,12 +173,27 @@ func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutErro
 	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastInstanceNotActiveError returns HazelcastInstanceNotActiveError
+// NewHazelcastInstanceNotActiveError returns HazelcastInstanceNotActiveError.
 func NewHazelcastInstanceNotActiveError(message string, cause error) *HazelcastInstanceNotActiveError {
 	return &HazelcastInstanceNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastTargetNotMemberError returns HazelcastTargetNotMemberError
+// NewHazelcastTargetNotMemberError returns HazelcastTargetNotMemberError.
 func NewHazelcastTargetNotMemberError(message string, cause error) *HazelcastTargetNotMemberError {
 	return &HazelcastTargetNotMemberError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastNoDataMemberInClusterError returns HazelcastNoDataMemberInClusterError.
+func NewHazelcastNoDataMemberInClusterError(message string, cause error) *HazelcastNoDataMemberInClusterError {
+	return &HazelcastNoDataMemberInClusterError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastUnsupportedOperationError returns HazelcastUnsupportedOperationError.
+func NewHazelcastUnsupportedOperationError(message string, cause error) *HazelcastUnsupportedOperationError {
+	return &HazelcastUnsupportedOperationError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastConsistencyLostError returns HazelcastConsistencyLostError.
+func NewHazelcastConsistencyLostError(message string, cause error) *HazelcastConsistencyLostError {
+	return &HazelcastConsistencyLostError{&HazelcastErrorType{message: message, cause: cause}}
 }
