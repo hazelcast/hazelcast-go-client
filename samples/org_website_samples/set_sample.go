@@ -34,9 +34,7 @@ func setSampleRun() {
 	set.Add("item3")
 	// Get the items. Note that no duplicates
 	items, _ := set.ToSlice()
-	for _, item := range items {
-		fmt.Println(item)
-	}
+	fmt.Println(items)
 	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

@@ -25,7 +25,7 @@ func Sql(sql string) IPredicate {
 }
 
 // And is a helper function for creating AndPredicate.
-func And(predicates []IPredicate) IPredicate {
+func And(predicates ...IPredicate) IPredicate {
 	return NewAndPredicate(predicates)
 }
 
@@ -70,7 +70,7 @@ func ILike(field string, expr string) IPredicate {
 }
 
 // In is a helper function for creating InPredicate.
-func In(field string, values []interface{}) IPredicate {
+func In(field string, values ...interface{}) IPredicate {
 	return NewInPredicate(field, values)
 }
 
@@ -90,7 +90,7 @@ func Not(predicate IPredicate) IPredicate {
 }
 
 // Or is a helper function for creating OrPredicate.
-func Or(predicates []IPredicate) IPredicate {
+func Or(predicates ...IPredicate) IPredicate {
 	return NewOrPredicate(predicates)
 }
 

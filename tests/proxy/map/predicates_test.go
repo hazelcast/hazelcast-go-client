@@ -83,7 +83,7 @@ func TestSql(t *testing.T) {
 
 func TestAnd(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
-	and := And([]serialization.IPredicate{Equal("this", int32(10)), Equal("this", int32(11))})
+	and := And(Equal("this", int32(10)), Equal("this", int32(11)))
 	testSerialization(t, and)
 	testPredicate(t, and, expecteds)
 }
@@ -207,7 +207,7 @@ func TestIn(t *testing.T) {
 	expecteds := make(map[interface{}]interface{}, 0)
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
-	in := In("this", []interface{}{int32(48), int32(49), int32(50), int32(51), int32(52)})
+	in := In("this", int32(48), int32(49), int32(50), int32(51), int32(52))
 	testSerialization(t, in)
 	testPredicate(t, in, expecteds)
 }
@@ -254,7 +254,7 @@ func TestOr(t *testing.T) {
 	expecteds["key0"] = int32(0)
 	expecteds["key35"] = int32(35)
 	expecteds["key49"] = int32(49)
-	or := Or([]serialization.IPredicate{GreaterEqual("this", int32(49)), Equal("this", int32(35)), LessEqual("this", int32(0))})
+	or := Or(GreaterEqual("this", int32(49)), Equal("this", int32(35)), LessEqual("this", int32(0)))
 	testSerialization(t, or)
 	testPredicate(t, or, expecteds)
 }
