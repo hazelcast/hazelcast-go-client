@@ -52,7 +52,7 @@ func TestAutoBatcher_WhenValidButUsedAllThenFetchNew(t *testing.T) {
 	}
 }
 
-func TestAutoBatcher_WhenNotValidThenFetchNew(t *testing.T) {
+func TestAutoBatcher_WhenExpiredThenFetchNew(t *testing.T) {
 	batcher = NewAutoBatcher(3, 10000, &testSupplier{})
 	if id, _ := batcher.NewId(); id != 0 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 0, id)
