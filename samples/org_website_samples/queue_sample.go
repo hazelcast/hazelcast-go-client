@@ -15,6 +15,7 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
 	"time"
 )
@@ -34,7 +35,8 @@ func queueSampleRun() {
 	queue.PollWithTimeout(5, time.Second)
 	//Indefinitely blocking Operations
 	queue.Put("yetanotheritem")
-	queue.Take()
-	// Shutdown the Hazelcast Cluster Member
+	item, _ := queue.Take()
+	fmt.Println(item)
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

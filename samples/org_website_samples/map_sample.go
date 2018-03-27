@@ -27,6 +27,6 @@ func mapSampleRun() {
 	//Concurrent Map methods, optimistic updating
 	mp.PutIfAbsent("somekey", "somevalue")
 	mp.ReplaceIfSame("key", "value", "newvalue")
-	// Shutdown the Hazelcast Cluster Member
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

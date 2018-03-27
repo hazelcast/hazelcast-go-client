@@ -15,8 +15,8 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	"log"
 )
 
 func listSampleRun() {
@@ -30,12 +30,12 @@ func listSampleRun() {
 	list.Add("item2")
 	// Remove the first element
 	removed, _ := list.RemoveAt(0)
-	log.Println("removed: ", removed)
+	fmt.Println("removed: ", removed)
 	// There is only one element left
 	size, _ := list.Size()
-	log.Println("current size is: ", size)
+	fmt.Println("current size is: ", size)
 	// Clear the list
 	list.Clear()
-	// Shutdown the Hazelcast Cluster Member
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }

@@ -15,8 +15,8 @@
 package org_website_samples
 
 import (
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	"log"
 )
 
 func multimapSampleRun() {
@@ -30,9 +30,9 @@ func multimapSampleRun() {
 	multiMap.Put("my-key", "value3")
 	// Print out all the values for associated with key called "my-key"
 	values, _ := multiMap.Get("my-key")
-	log.Println(values)
+	fmt.Println(values)
 	// remove specific key/value pair
 	multiMap.Remove("my-key", "value2")
-	// Shutdown the Hazelcast Cluster Member
+	// Shutdown this hazelcast client
 	hz.Shutdown()
 }
