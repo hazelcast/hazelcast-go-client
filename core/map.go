@@ -70,6 +70,26 @@ type IMap interface {
 	// Size returns the number of entries in this map.
 	Size() (size int32, err error)
 
+	// Aggregate applies the aggregation logic on all map entries and returns the result.
+	// Fast-Aggregations are the successor of the Map-Reduce Aggregators.
+	// They are equivalent to the Map-Reduce Aggregators in most of the use-cases, but instead of running on the Map-Reduce
+	// engine they run on the Query infrastructure. Their performance is tens to hundreds times better due to the fact
+	// that they run in parallel for each partition and are highly optimized for speed and low memory consumption.
+	// The given aggregator must be serializable via hazelcast serialization and have a counterpart on server side.
+	// Aggregate returns the result of the given aggregator.
+	Aggregate(aggregator interface{}) (result interface{}, err error)
+
+	// AggregateWithPredicate applies the aggregation logic on map entries filtered with the Predicated and returns the result
+	//
+	// Fast-Aggregations are the successor of the Map-Reduce Aggregators.
+	// They are equivalent to the Map-Reduce Aggregators in most of the use-cases, but instead of running on the Map-Reduce
+	// engine they run on the Query infrastructure. Their performance is tens to hundreds times better due to the fact
+	// that they run in parallel for each partition and are highly optimized for speed and low memory consumption.
+	// The given aggregator must be serializable via hazelcast serialization and have a counterpart on server side.
+	// The given predicate must be serializable via hazelcast serialization and have a counterpart on server side.
+	// AggregateWithPredicate returns the result of the given aggregator.
+	AggregateWithPredicate(aggregator interface{}, predicate interface{}) (result interface{}, err error)
+
 	// ContainsKey determines whether this map contains an entry with the key.
 	// ContainsKey returns true if this map contains an entry for the specified key.
 	ContainsKey(key interface{}) (found bool, err error)
@@ -224,6 +244,18 @@ type IMap interface {
 	// PutAll copies all of the mappings from the specified map to this map. No atomicity guarantees are
 	// given. In the case of a failure, some of the key-value tuples may get written, while others are not.
 	PutAll(entries map[interface{}]interface{}) (err error)
+
+	// Project applies the projection logic on all map entries and returns the result
+	// The given projection must be serializable via hazelcast serialization and have a counterpart on server side.
+	// Project returns the result of the given projection.
+	Project(projection interface{}) (result []interface{}, err error)
+
+	// ProjectWithPredicate applies the projection logic on all map entries and returns the result
+	// ProjectWithPredicate filters the results by the given predicate.
+	// The given projection must be serializable via hazelcast serialization and have a counterpart on server side.
+	// The given predicate must be serializable via hazelcast serialization and have a counterpart on server side.
+	// ProjectWithPredicate returns the result of the given projection.
+	ProjectWithPredicate(projection interface{}, predicate interface{}) (result []interface{}, err error)
 
 	// KeySet returns a slice clone of the keys contained in this map.
 	// Warning:

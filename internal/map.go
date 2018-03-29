@@ -119,6 +119,22 @@ func (mp *mapProxy) Size() (size int32, err error) {
 	return mp.decodeToInt32AndError(responseMessage, err, protocol.MapSizeDecodeResponse)
 }
 
+func (mp *mapProxy) Aggregate(aggregator interface{}) (result interface{}, err error) {
+	panic("implement me")
+}
+
+func (mp *mapProxy) AggregateWithPredicate(aggregator interface{}, predicate interface{}) (result interface{}, err error) {
+	panic("implement me")
+}
+
+func (mp *mapProxy) Project(projection interface{}) (result []interface{}, err error) {
+	panic("implement me")
+}
+
+func (mp *mapProxy) ProjectWithPredicate(projection interface{}, predicate interface{}) (result []interface{}, err error) {
+	panic("implement me")
+}
+
 func (mp *mapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
