@@ -60,20 +60,16 @@ func NewFlakeIDGeneratorConfigWithParameters(name string, prefetchCount int32,
 // SetPrefetchCount sets prefetchCount as the given value.
 // prefetch count should be between 0 and MaximumPrefetchCount, otherwise it
 // will panic.
-// SetPrefetchCount returns itself for chaining.
-func (igc *FlakeIDGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeIDGeneratorConfig {
+func (igc *FlakeIDGeneratorConfig) SetPrefetchCount(prefetchCount int32) {
 	if prefetchCount < 0 || prefetchCount > MaximumPrefetchCount {
 		panic(fmt.Sprintf("prefectCount should be in the range of 0-%d", MaximumPrefetchCount))
 	}
 	igc.prefetchCount = prefetchCount
-	return igc
 }
 
 // SetName sets the name as the given name.
-// SetName returns itself for chaining.
-func (igc *FlakeIDGeneratorConfig) SetName(name string) *FlakeIDGeneratorConfig {
+func (igc *FlakeIDGeneratorConfig) SetName(name string) {
 	igc.name = name
-	return igc
 }
 
 // Name returns the name.
@@ -92,11 +88,9 @@ func (igc *FlakeIDGeneratorConfig) PrefetchValidityMillis() int64 {
 }
 
 // SetPrefetchValidityMillis sets the prefetchValidityMillis as the given value.
-// SetPrefetchValidityMillis returns itself for chaining.
-func (igc *FlakeIDGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) *FlakeIDGeneratorConfig {
+func (igc *FlakeIDGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) {
 	if prefetchValidityMillis < 0 {
 		panic(fmt.Sprintf("prefetchValidityMillis should be positive"))
 	}
 	igc.prefetchValidityMillis = prefetchValidityMillis
-	return igc
 }

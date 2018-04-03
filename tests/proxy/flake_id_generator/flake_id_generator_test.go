@@ -65,9 +65,11 @@ func TestFlakeIDGeneratorProxy_ConfigTest(t *testing.T) {
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	var myBatchSize int32 = shortTermBatchSize
-	config := hazelcast.NewHazelcastConfig().
-		AddFlakeIDGeneratorConfig(config.NewFlakeIDGeneratorConfig("gen").SetPrefetchCount(myBatchSize).
-			SetPrefetchValidityMillis(shortTermValidityMillis))
+	flakeIDConf := config.NewFlakeIDGeneratorConfig("gen")
+	flakeIDConf.SetPrefetchCount(myBatchSize)
+	flakeIDConf.SetPrefetchValidityMillis(shortTermValidityMillis)
+	config := hazelcast.NewHazelcastConfig()
+	config.AddFlakeIDGeneratorConfig(flakeIDConf)
 	client, _ = hazelcast.NewHazelcastClientWithConfig(config)
 	defer client.Shutdown()
 	flakeIDGenerator, _ = client.GetFlakeIDGenerator("gen")
