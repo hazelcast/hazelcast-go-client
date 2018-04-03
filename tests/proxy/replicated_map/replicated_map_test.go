@@ -17,6 +17,7 @@ package replicated_map
 import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	. "github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
@@ -341,7 +342,7 @@ func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	defer rmp.Clear()
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := rmp.AddEntryListenerWithPredicate(entryListener, core.Equal("this", "value"))
+	registrationId, err := rmp.AddEntryListenerWithPredicate(entryListener, predicates.Equal("this", "value"))
 	defer rmp.RemoveEntryListener(registrationId)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
@@ -380,7 +381,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := rmp.AddEntryListenerToKeyWithPredicate(entryListener, core.Equal("this", "value1"), "key1")
+	registrationId, err := rmp.AddEntryListenerToKeyWithPredicate(entryListener, predicates.Equal("this", "value1"), "key1")
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	rmp.Put("key1", "value1")

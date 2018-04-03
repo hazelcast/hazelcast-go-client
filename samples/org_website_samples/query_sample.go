@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
 	. "github.com/hazelcast/hazelcast-go-client/core"
+	. "github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 

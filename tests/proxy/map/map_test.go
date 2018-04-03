@@ -17,6 +17,7 @@ package _map
 import (
 	"github.com/hazelcast/hazelcast-go-client"
 	. "github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
@@ -188,7 +189,7 @@ func TestMapProxy_RemoveAll(t *testing.T) {
 			testMap["testingKey"+strconv.Itoa(i)] = int32(i)
 		}
 	}
-	mp.RemoveAll(GreaterThan("this", int32(40)))
+	mp.RemoveAll(predicates.GreaterThan("this", int32(40)))
 	entryList, _ := mp.EntrySet()
 	if len(testMap) != len(entryList) {
 		t.Fatalf("map RemoveAll failed")
@@ -635,7 +636,7 @@ func TestMapProxy_KeySetWihPredicate(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		mp.Put(strconv.Itoa(i), int32(i))
 	}
-	keySet, _ := mp.KeySetWithPredicate(Equal("this", "5"))
+	keySet, _ := mp.KeySetWithPredicate(predicates.Equal("this", "5"))
 	if len(keySet) != 1 || keySet[0].(string) != expected {
 		t.Fatalf("map KeySetWithPredicate failed")
 	}
@@ -669,7 +670,7 @@ func TestMapProxy_ValuesWithPredicate(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		mp.Put(strconv.Itoa(i), strconv.Itoa(i))
 	}
-	values, _ := mp.ValuesWithPredicate(Equal("this", "5"))
+	values, _ := mp.ValuesWithPredicate(predicates.Equal("this", "5"))
 	if len(values) != 1 || values[0].(string) != expected {
 		t.Fatalf("map ValuesWithPredicate failed")
 	}
@@ -697,7 +698,7 @@ func TestMapProxy_EntrySetWithPredicate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	} else {
-		entryList, err := mp.EntrySetWithPredicate(Sql("this == wantedValue"))
+		entryList, err := mp.EntrySetWithPredicate(predicates.Sql("this == wantedValue"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -926,7 +927,7 @@ func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := mp.AddEntryListenerWithPredicate(entryListener, Equal("this", "value"), true)
+	registrationId, err := mp.AddEntryListenerWithPredicate(entryListener, predicates.Equal("this", "value"), true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key123", "value")
@@ -956,7 +957,7 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := mp.AddEntryListenerToKeyWithPredicate(entryListener, Equal("this", "value1"), "key1", true)
+	registrationId, err := mp.AddEntryListenerToKeyWithPredicate(entryListener, predicates.Equal("this", "value1"), "key1", true)
 	AssertEqual(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key1", "value1")
@@ -1062,7 +1063,7 @@ func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 		testValue := int32(i)
 		mp2.Put(testKey, testValue)
 	}
-	result, err := mp2.ExecuteOnEntriesWithPredicate(processor, GreaterThan("this", int32(6)))
+	result, err := mp2.ExecuteOnEntriesWithPredicate(processor, predicates.GreaterThan("this", int32(6)))
 	if len(result) != 3 {
 		t.Fatal("ExecuteOnEntriesWithPredicate failed")
 	}
