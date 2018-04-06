@@ -41,36 +41,22 @@ bash ./start-rc.sh
 
 sleep 10
 
-# Run tests (JUnit plugin) with race detection
-#for pkg in $(go list $CLIENT_IMPORT_PATH/...);
-#do
-#    if [[ $pkg != *"vendor"* ]]; then
-#      echo "testing with race detection on ... $pkg"
-#      go test -race -v  $pkg
-#
-#    fi
-#done
 
 # Run vet tools (Compiler warning plugin)
 go vet $CLIENT_IMPORT_PATH > vet.txt
 
-# if --with-coverage flag is not given then dont generate coverage report.
-#if [[ $* != *--with-coverage* ]] ;then
-#    exit 0;
-#fi
-
-
 go get github.com/t-yuki/gocover-cobertura
 go get github.com/tebeka/go2xunit
-# Run tests (JUnit plugin)
 
+
+# Run tests (JUnit plugin)
 echo "mode: atomic" > coverage.out
 
 for pkg in $(go list $CLIENT_IMPORT_PATH/...);
 do
     if [[ $pkg != *"vendor"* ]]; then
       echo "testing... $pkg"
-      go test -race -covermode=atomic  -v -coverprofile=tmp.out ${pkg}
+      go test -race -covermode=atomic  -v -coverprofile=tmp.out ${pkg} | tee -a test.out
       if [ -f tmp.out ]; then
          cat tmp.out | grep -v "mode: atomic" >> coverage.out | echo
       fi
