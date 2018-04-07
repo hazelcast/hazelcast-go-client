@@ -51,6 +51,10 @@ func GetTimeInMilliSeconds(time int64, duration time.Duration) int64 {
 	return timeInMillis
 }
 
+func GetDurationInMilliseconds(duration time.Duration) int64 {
+	return int64(duration / time.Millisecond)
+}
+
 // NewUUID generates a random UUID according to RFC 4122
 func NewUUID() (string, error) {
 	uuid := make([]byte, 16)

@@ -15,11 +15,12 @@
 package internal
 
 import (
+	"sync"
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"sync"
-	"sync/atomic"
 )
 
 type proxyManager struct {
@@ -110,6 +111,8 @@ func (proxyManager *proxyManager) getProxyByNameSpace(serviceName *string, name 
 		return newRingbufferProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_ID_GENERATOR == *serviceName {
 		return newFlakeIdGenerator(proxyManager.client, serviceName, name)
+	} else if common.SERVICE_NAME_LOCK == *serviceName {
+		return newLockProxy(proxyManager.client, serviceName, name)
 	}
 	return nil, nil
 }

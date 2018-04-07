@@ -112,6 +112,14 @@ func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, erro
 	return rb.(core.Ringbuffer), nil
 }
 
+func (client *HazelcastClient) GetLock(name string) (core.ILock, error) {
+	lock, err := client.GetDistributedObject(SERVICE_NAME_LOCK, name)
+	if err != nil {
+		return nil, err
+	}
+	return lock.(core.ILock), err
+}
+
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.getOrCreateProxy(serviceName, name)
 	if err != nil {
