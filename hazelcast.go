@@ -78,6 +78,8 @@ type IHazelcastInstance interface {
 	// GetFlakeIdGenerator returns the distributed flakeIdGenerator instance with the specified name.
 	GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error)
 
+	GetLock(name string) (core.ILock, error)
+
 	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 
