@@ -155,6 +155,11 @@ func (invocationService *invocationService) invokeOnKeyOwner(request *ClientMess
 	return invocationService.invokeOnPartitionOwner(request, partitionId)
 }
 
+func (invocationService *invocationService) invokeOnTarget(request *ClientMessage, target *Address) invocationResult {
+	invocation := newInvocation(request, -1, target, nil, invocationService.client)
+	return invocationService.sendInvocation(invocation)
+}
+
 func (invocationService *invocationService) process() {
 	for {
 		select {
@@ -223,14 +228,14 @@ func (invocationService *invocationService) send(invocation *invocation, connect
 		case connection := <-connectionChannel:
 			invocationService.sendToConnectionChannel <- &invocationConnection{invocation: invocation, connection: connection}
 		case err := <-errorChannel:
-			log.Println("the following error occured while trying to send the invocation ", err)
+			log.Println("the following error occured while trying to send the invocation: ", err)
 			invocationService.handleException(invocation, err)
 		}
 	}()
 }
 func (invocationService *invocationService) sendInvocation(invocation *invocation) invocationResult {
 	if invocationService.isShutdown.Load().(bool) {
-		invocation.err <- NewHazelcastClientNotActiveError("Client is shut down", nil)
+		invocation.err <- NewHazelcastClientNotActiveError("client is shut down", nil)
 		return invocation
 	}
 	invocationService.sending <- invocation

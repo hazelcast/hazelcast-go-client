@@ -72,8 +72,11 @@ type IHazelcastInstance interface {
 	// GetQueue returns the distributed queue instance with the specified name.
 	GetQueue(name string) (core.IQueue, error)
 
-	// GetMap returns the distributed ringbuffer instance with the specified name.
+	// GetRingbuffer returns the distributed ringbuffer instance with the specified name.
 	GetRingbuffer(name string) (core.Ringbuffer, error)
+
+	// GetPNCounter returns the distributed PN (Positive-Negative) CRDT counter instance with the specified name.
+	GetPNCounter(name string) (core.PNCounter, error)
 
 	// GetFlakeIdGenerator returns the distributed flakeIdGenerator instance with the specified name.
 	GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error)

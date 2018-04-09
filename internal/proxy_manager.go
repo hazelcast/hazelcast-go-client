@@ -108,6 +108,8 @@ func (proxyManager *proxyManager) getProxyByNameSpace(serviceName *string, name 
 		return newQueueProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_RINGBUFFER_SERVICE == *serviceName {
 		return newRingbufferProxy(proxyManager.client, serviceName, name)
+	} else if common.SERVICE_NAME_PN_COUNTER == *serviceName {
+		return newPNCounterProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_ID_GENERATOR == *serviceName {
 		return newFlakeIdGenerator(proxyManager.client, serviceName, name)
 	}

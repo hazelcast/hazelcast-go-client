@@ -112,6 +112,14 @@ func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, erro
 	return rb.(core.Ringbuffer), nil
 }
 
+func (client *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
+	counter, err := client.GetDistributedObject(SERVICE_NAME_PN_COUNTER, name)
+	if err != nil {
+		return nil, err
+	}
+	return counter.(core.PNCounter), nil
+}
+
 func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
 	var clientProxy, err = client.ProxyManager.getOrCreateProxy(serviceName, name)
 	if err != nil {

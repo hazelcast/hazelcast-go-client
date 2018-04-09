@@ -16,6 +16,7 @@ package tests
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"io/ioutil"
 	"reflect"
 	"sync"
 	"testing"
@@ -167,6 +168,11 @@ func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
 		t.Fatalf("%v != %v", l, r)
 	}
 
+}
+
+func Read(filename string) (string, error) {
+	bytes, err := ioutil.ReadFile(filename)
+	return string(bytes), err
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
