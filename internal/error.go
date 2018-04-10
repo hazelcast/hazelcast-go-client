@@ -41,6 +41,9 @@ func CreateHazelcastError(err *protocol.Error) core.HazelcastError {
 		return core.NewHazelcastTargetNotMemberError(message, nil)
 	case ERROR_CODE_UNSUPPORTED_OPERATION:
 		return core.NewHazelcastUnsupportedOperationError(message, nil)
+	case ERROR_CODE_CONSISTENCY_LOST_EXCEPTION:
+		return core.NewHazelcastConsistencyLostError(message, nil)
 	}
+
 	return core.NewHazelcastErrorType(message, nil)
 }

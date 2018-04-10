@@ -274,6 +274,7 @@ func (clusterService *clusterService) handleMemberList(members []*Member) {
 func (clusterService *clusterService) handleMemberAttributeChange(uuid *string, key *string, operationType int32, value *string) {
 	//TODO :: implement this.
 }
+
 func (clusterService *clusterService) memberAdded(member *Member) {
 	members := clusterService.members.Load().([]*Member)
 	copyMembers := make([]*Member, len(members))
@@ -289,6 +290,7 @@ func (clusterService *clusterService) memberAdded(member *Member) {
 		}
 	}
 }
+
 func (clusterService *clusterService) memberRemoved(member *Member) {
 	members := clusterService.members.Load().([]*Member)
 	copyMembers := make([]*Member, len(members)-1)
@@ -312,15 +314,29 @@ func (clusterService *clusterService) memberRemoved(member *Member) {
 		}
 	}
 }
+
 func (clusterService *clusterService) GetMemberList() []core.IMember {
 	membersList := clusterService.members.Load().([]*Member)
 	members := make([]core.IMember, len(membersList))
 	for index := 0; index < len(membersList); index++ {
-		copyMember := *membersList[index]
-		members[index] = core.IMember(&copyMember)
+		members[index] = core.IMember(membersList[index])
 	}
 	return members
 }
+
+func (clusterService *clusterService) GetMembersWithSelector(selector core.MemberSelector) (members []core.IMember) {
+	if selector == nil {
+		return clusterService.GetMemberList()
+	}
+	membersList := clusterService.members.Load().([]*Member)
+	for _, member := range membersList {
+		if selector.Select(member) {
+			members = append(members, core.IMember(member))
+		}
+	}
+	return
+}
+
 func (clusterService *clusterService) GetMember(address core.IAddress) core.IMember {
 	membersList := clusterService.members.Load().([]*Member)
 	for _, member := range membersList {

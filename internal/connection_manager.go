@@ -45,8 +45,7 @@ func newConnectionManager(client *HazelcastClient) *connectionManager {
 	return &cm
 }
 func (connectionManager *connectionManager) nextConnectionID() int64 {
-	connectionManager.nextConnectionId = atomic.AddInt64(&connectionManager.nextConnectionId, 1)
-	return connectionManager.nextConnectionId
+	return atomic.AddInt64(&connectionManager.nextConnectionId, 1)
 }
 func (connectionManager *connectionManager) addListener(listener connectionListener) {
 	connectionManager.mu.Lock()
@@ -112,14 +111,13 @@ func (connectionManager *connectionManager) getOrConnect(address *Address, asOwn
 			connectionManager.lock.RUnlock()
 			return
 		}
-		connectionManager.lock.RUnlock()
-		connectionManager.lock.Lock()
-		defer connectionManager.lock.Unlock()
 		//Check if Connection is opened
 		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
+			connectionManager.lock.RUnlock()
 			return
 		}
+		connectionManager.lock.RUnlock()
 		//Open new Connection
 		error := connectionManager.openNewConnection(address, ch, asOwner)
 		if error != nil {
@@ -189,7 +187,9 @@ func (connectionManager *connectionManager) clusterAuthenticator(connection *Con
 			connection.serverHazelcastVersion = serverHazelcastVersion
 			connection.endpoint.Store(address)
 			connection.isOwnerConnection = asOwner
+			connectionManager.lock.Lock()
 			connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
+			connectionManager.lock.Unlock()
 			connectionManager.fireConnectionAddedEvent(connection)
 			if asOwner {
 				connectionManager.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*Address))
