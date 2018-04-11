@@ -15,7 +15,7 @@
 package projection
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/precond"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -26,7 +26,7 @@ type SingleAttribute struct {
 }
 
 func NewSingleAttribute(attributePath string) (*SingleAttribute, error) {
-	err := common.CheckHasText(attributePath, "attributePath must not be empty")
+	err := precond.CheckHasText(attributePath, "attributePath must not be empty")
 	if err != nil {
 		return nil, err
 	}

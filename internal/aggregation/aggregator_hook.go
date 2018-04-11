@@ -12,13 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package aggregation
 
-import "github.com/hazelcast/hazelcast-go-client/core"
-
-func CheckHasText(argument string, errorMessage string) (err error) {
-	if argument == "" {
-		err = core.NewHazelcastIllegalArgumentError(errorMessage, nil)
-	}
-	return
-}
+const (
+	bigDecimalAvg = iota // not applicable to Go
+	bigDecimalSum        // not applicable to Go
+	bigIntAvg            // not applicable to Go
+	bigIntSum            // not applicable to Go
+	count
+	distinct // returns java serializable, not applicable to Go
+	float64Avg
+	float64Sum
+	fixedPointSum
+	floatingPointSum
+	int32Avg
+	int32Sum
+	int64Avg
+	int64Sum
+	max
+	min
+	numberAvg
+	maxBY
+	minBY
+)
