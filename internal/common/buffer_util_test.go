@@ -58,7 +58,7 @@ func TestReadBool(t *testing.T) {
 	buf := []byte{0, 0, 0}
 	WriteBool(buf, 0, true)
 	WriteBool(buf, 2, true)
-	if ReadBool(buf, 0) != true && ReadBool(buf, 2) != true {
+	if ReadBool(buf, 0) != true || ReadBool(buf, 2) != true {
 		t.Errorf("There is a problem in ReadBool() or WriteBool()")
 	}
 }
@@ -67,7 +67,7 @@ func TestReadUInt8(t *testing.T) {
 	buf := []byte{0, 0, 0}
 	WriteUInt8(buf, 1, 5)
 	WriteUInt8(buf, 2, 12)
-	if ReadUInt8(buf, 1) != 5 && ReadUInt8(buf, 2) != 12 {
+	if ReadUInt8(buf, 1) != 5 || ReadUInt8(buf, 2) != 12 {
 		t.Errorf("There is a problem in ReadUInt8() or WriteUInt8()")
 	}
 
