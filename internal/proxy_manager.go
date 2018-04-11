@@ -103,7 +103,7 @@ func (proxyManager *proxyManager) getProxyByNameSpace(serviceName *string, name 
 	} else if common.SERVICE_NAME_MULTI_MAP == *serviceName {
 		return newMultiMapProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_REPLICATED_MAP == *serviceName {
-		return newReplicatedMapProxy(proxyManager.client, serviceName, name), nil
+		return newReplicatedMapProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_QUEUE == *serviceName {
 		return newQueueProxy(proxyManager.client, serviceName, name)
 	} else if common.SERVICE_NAME_RINGBUFFER_SERVICE == *serviceName {

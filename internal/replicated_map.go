@@ -29,10 +29,10 @@ type ReplicatedMapProxy struct {
 	targetPartitionId int32
 }
 
-func newReplicatedMapProxy(client *HazelcastClient, serviceName *string, name *string) *ReplicatedMapProxy {
+func newReplicatedMapProxy(client *HazelcastClient, serviceName *string, name *string) (*ReplicatedMapProxy, error) {
 	partitionCount := client.PartitionService.getPartitionCount()
 	targetPartitionId := rand.Int31n(partitionCount)
-	return &ReplicatedMapProxy{proxy: &proxy{client, serviceName, name}, targetPartitionId: targetPartitionId}
+	return &ReplicatedMapProxy{proxy: &proxy{client, serviceName, name}, targetPartitionId: targetPartitionId}, nil
 }
 func (rmp *ReplicatedMapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	return rmp.PutWithTtl(key, value, ttlUnlimited, time.Second)
