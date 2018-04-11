@@ -19,7 +19,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"math/rand"
 	"time"
 )
@@ -154,7 +153,7 @@ func (rmp *ReplicatedMapProxy) AddEntryListener(listener interface{}) (registrat
 	})
 }
 
-func (rmp *ReplicatedMapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate) (registrationID *string, err error) {
+func (rmp *ReplicatedMapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}) (registrationID *string, err error) {
 	predicateData, err := rmp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -182,7 +181,7 @@ func (rmp *ReplicatedMapProxy) AddEntryListenerToKey(listener interface{}, key i
 	})
 }
 
-func (rmp *ReplicatedMapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}) (registrationID *string, err error) {
+func (rmp *ReplicatedMapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (registrationID *string, err error) {
 	predicateData, err := rmp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err

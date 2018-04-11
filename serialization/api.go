@@ -413,12 +413,6 @@ type PortableReader interface {
 	ReadPortableArray(fieldName string) ([]Portable, error)
 }
 
-// Represents a predicate (boolean-valued function) of one argument.
-type IPredicate interface {
-	// IPredicate implements IdentifiedDataSerializable interface.
-	IdentifiedDataSerializable
-}
-
 // ClassDefinition defines a class schema for Portable structs.
 type ClassDefinition interface {
 	// FactoryId returns factory ID of struct.

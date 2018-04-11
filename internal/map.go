@@ -19,7 +19,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/common"
 	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"time"
 )
 
@@ -89,7 +88,7 @@ func (imap *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool,
 	return imap.decodeToBoolAndError(responseMessage, err, MapRemoveIfSameDecodeResponse)
 
 }
-func (imap *MapProxy) RemoveAll(predicate IPredicate) (err error) {
+func (imap *MapProxy) RemoveAll(predicate interface{}) (err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return err
@@ -303,7 +302,7 @@ func (imap *MapProxy) KeySet() (keySet []interface{}, err error) {
 	responseMessage, err := imap.invokeOnRandomTarget(request)
 	return imap.decodeToInterfaceSliceAndError(responseMessage, err, MapKeySetDecodeResponse)
 }
-func (imap *MapProxy) KeySetWithPredicate(predicate IPredicate) (keySet []interface{}, err error) {
+func (imap *MapProxy) KeySetWithPredicate(predicate interface{}) (keySet []interface{}, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -317,7 +316,7 @@ func (imap *MapProxy) Values() (values []interface{}, err error) {
 	responseMessage, err := imap.invokeOnRandomTarget(request)
 	return imap.decodeToInterfaceSliceAndError(responseMessage, err, MapValuesDecodeResponse)
 }
-func (imap *MapProxy) ValuesWithPredicate(predicate IPredicate) (values []interface{}, err error) {
+func (imap *MapProxy) ValuesWithPredicate(predicate interface{}) (values []interface{}, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -331,7 +330,7 @@ func (imap *MapProxy) EntrySet() (resultPairs []IPair, err error) {
 	responseMessage, err := imap.invokeOnRandomTarget(request)
 	return imap.decodeToPairSliceAndError(responseMessage, err, MapEntrySetDecodeResponse)
 }
-func (imap *MapProxy) EntrySetWithPredicate(predicate IPredicate) (resultPairs []IPair, err error) {
+func (imap *MapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []IPair, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -408,7 +407,7 @@ func (imap *MapProxy) AddEntryListener(listener interface{}, includeValue bool) 
 		return MapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
-func (imap *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate, includeValue bool) (*string, error) {
+func (imap *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (*string, error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
@@ -447,7 +446,7 @@ func (imap *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{
 		return MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
-func (imap *MapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}, includeValue bool) (*string, error) {
+func (imap *MapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (*string, error) {
 	var request *ClientMessage
 	listenerFlags := GetEntryListenerFlags(listener)
 	keyData, err := imap.validateAndSerialize(key)
@@ -540,7 +539,7 @@ func (imap *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultP
 	return imap.decodeToPairSliceAndError(responseMessage, err, MapExecuteOnAllKeysDecodeResponse)
 }
 
-func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate IPredicate) (keyToResultPairs []IPair, err error) {
+func (imap *MapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate interface{}) (keyToResultPairs []IPair, err error) {
 	predicateData, err := imap.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err

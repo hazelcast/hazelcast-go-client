@@ -15,7 +15,6 @@
 package core
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"time"
 )
 
@@ -66,7 +65,7 @@ type IMap interface {
 	// If this map has index, matching entries will be found via index search,
 	// otherwise they will be found by full-scan.
 	// Note that calling this method also removes all entries from caller's Near Cache.
-	RemoveAll(predicate IPredicate) (err error)
+	RemoveAll(predicate interface{}) (err error)
 
 	// Size returns the number of entries in this map.
 	Size() (size int32, err error)
@@ -235,7 +234,7 @@ type IMap interface {
 	// returns the keys of matching entries.
 	// Specified predicate runs on all members in parallel.
 	// The slice is NOT backed by the map, so changes to the map are NOT reflected in the slice, and vice-versa.
-	KeySetWithPredicate(predicate IPredicate) (keySet []interface{}, err error)
+	KeySetWithPredicate(predicate interface{}) (keySet []interface{}, err error)
 
 	// Values returns a slice clone of the values contained in this map.
 	// The slice is NOT backed by the map, so changes to the map are NOT reflected in the slice, and vice-versa.
@@ -244,7 +243,7 @@ type IMap interface {
 	// ValuesWithPredicate queries the map based on the specified predicate and returns the values of matching entries.
 	// Specified predicate runs on all members in parallel.
 	// The slice is NOT backed by the map, so changes to the map are NOT reflected in the slice, and vice-versa.
-	ValuesWithPredicate(predicate IPredicate) (values []interface{}, err error)
+	ValuesWithPredicate(predicate interface{}) (values []interface{}, err error)
 
 	// EntrySet returns a slice of IPairs clone of the mappings contained in this map.
 	// The slice is NOT backed by the map, so changes to the map are NOT reflected in the slice, and vice-versa.
@@ -253,7 +252,7 @@ type IMap interface {
 	// EntrySetWithPredicate queries the map based on the specified predicate and returns the matching entries.
 	// Specified predicate runs on all members in parallel.
 	// The slice is NOT backed by the map, so changes to the map are NOT reflected in the slice, and vice-versa.
-	EntrySetWithPredicate(predicate IPredicate) (resultPairs []IPair, err error)
+	EntrySetWithPredicate(predicate interface{}) (resultPairs []IPair, err error)
 
 	// TryLock tries to acquire the lock for the specified key.
 	// If the lock is not available then the current thread
@@ -317,7 +316,7 @@ type IMap interface {
 	// To receive an event, you should implement a corresponding interface for that event such as
 	// IEntryAddedListener, IEntryRemovedListener, IEntryUpdatedListener etc.
 	// AddEntryListenerWithPredicate returns UUID which is used as a key to remove the listener.
-	AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate, includeValue bool) (registrationID *string, err error)
+	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds a continuous entry listener for this map filtered with the given key.
 	// To receive an event, you should implement a corresponding interface for that event such as
@@ -329,7 +328,7 @@ type IMap interface {
 	// To receive an event, you should implement a corresponding interface for that event such as
 	// IEntryAddedListener, IEntryRemovedListener, IEntryUpdatedListener.
 	// AddEntryListenerToKeyWithPredicate returns UUID which is used as a key to remove the listener.
-	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}, includeValue bool) (registrationID *string, err error)
+	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (registrationID *string, err error)
 
 	// RemoveEntryListener removes the specified entry listener with the given registrationId.
 	// RemoveEntryListener returns silently if there is no such listener added before.
@@ -367,5 +366,5 @@ type IMap interface {
 	// on the server side.
 	// This struct must have a serializable EntryProcessor counter part registered on server side with the actual
 	// org.hazelcast.map.EntryProcessor implementation.
-	ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate IPredicate) (keyToResultPairs []IPair, err error)
+	ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate interface{}) (keyToResultPairs []IPair, err error)
 }

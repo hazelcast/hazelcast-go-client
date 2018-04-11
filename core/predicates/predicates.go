@@ -16,95 +16,94 @@ package predicates
 
 import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/predicates"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // Sql is a helper function for creating SqlPredicate.
-func Sql(sql string) IPredicate {
+func Sql(sql string) interface{} {
 	return NewSqlPredicate(sql)
 }
 
 // And is a helper function for creating AndPredicate.
-func And(predicates ...IPredicate) IPredicate {
+func And(predicates ...interface{}) interface{} {
 	return NewAndPredicate(predicates)
 }
 
 // Between is a helper function for creating BetweenPredicate.
-func Between(field string, from interface{}, to interface{}) IPredicate {
+func Between(field string, from interface{}, to interface{}) interface{} {
 	return NewBetweenPredicate(field, from, to)
 }
 
 // Equal is a helper function for creating EqualPredicate.
-func Equal(field string, value interface{}) IPredicate {
+func Equal(field string, value interface{}) interface{} {
 	return NewEqualPredicate(field, value)
 }
 
 // GreaterThan is a helper function for creating GreaterLessPredicate behaving like greater than.
-func GreaterThan(field string, value interface{}) IPredicate {
+func GreaterThan(field string, value interface{}) interface{} {
 	return NewGreaterLessPredicate(field, value, false, false)
 }
 
 // GreaterEqual is a helper function for creating GreaterLessPredicate behaving like greater equal.
-func GreaterEqual(field string, value interface{}) IPredicate {
+func GreaterEqual(field string, value interface{}) interface{} {
 	return NewGreaterLessPredicate(field, value, true, false)
 }
 
 // LessThan is a helper function for creating GreaterLessPredicate behaving like less than.
-func LessThan(field string, value interface{}) IPredicate {
+func LessThan(field string, value interface{}) interface{} {
 	return NewGreaterLessPredicate(field, value, false, true)
 }
 
 // LessEqual is a helper function for creating GreaterLessPredicate behaving like less equal.
-func LessEqual(field string, value interface{}) IPredicate {
+func LessEqual(field string, value interface{}) interface{} {
 	return NewGreaterLessPredicate(field, value, true, true)
 }
 
 // Like is a helper function for creating LikePredicate.
-func Like(field string, expr string) IPredicate {
+func Like(field string, expr string) interface{} {
 	return NewLikePredicate(field, expr)
 }
 
 // ILike is a helper function for creating ILikePredicate.
-func ILike(field string, expr string) IPredicate {
+func ILike(field string, expr string) interface{} {
 	return NewILikePredicate(field, expr)
 }
 
 // In is a helper function for creating InPredicate.
-func In(field string, values ...interface{}) IPredicate {
+func In(field string, values ...interface{}) interface{} {
 	return NewInPredicate(field, values)
 }
 
 // InstanceOf is a helper function for creating InstanceOfPredicate.
-func InstanceOf(className string) IPredicate {
+func InstanceOf(className string) interface{} {
 	return NewInstanceOfPredicate(className)
 }
 
 // NotEqual is a helper function for creating NotEqualPredicate.
-func NotEqual(field string, value interface{}) IPredicate {
+func NotEqual(field string, value interface{}) interface{} {
 	return NewNotEqualPredicate(field, value)
 }
 
 // Not is a helper function for creating NotPredicate.
-func Not(predicate IPredicate) IPredicate {
+func Not(predicate interface{}) interface{} {
 	return NewNotPredicate(predicate)
 }
 
 // Or is a helper function for creating OrPredicate.
-func Or(predicates ...IPredicate) IPredicate {
+func Or(predicates ...interface{}) interface{} {
 	return NewOrPredicate(predicates)
 }
 
 // Regex is a helper function for creating RegexPredicate.
-func Regex(field string, regex string) IPredicate {
+func Regex(field string, regex string) interface{} {
 	return NewRegexPredicate(field, regex)
 }
 
 // True is a helper function for creating TruePredicate.
-func True() IPredicate {
+func True() interface{} {
 	return NewTruePredicate()
 }
 
 // False is a helper function for creating FalsePredicate.
-func False() IPredicate {
+func False() interface{} {
 	return NewFalsePredicate()
 }
