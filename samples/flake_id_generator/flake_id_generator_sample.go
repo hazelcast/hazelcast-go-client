@@ -31,6 +31,8 @@ func main() {
 	flakeIdGenerator, _ := client.GetFlakeIdGenerator("generator")
 	id, _ := flakeIdGenerator.NewId()
 	fmt.Printf("new id : %d", id)
+
+	flakeIdGenerator.Destroy()
 	client.Shutdown()
 
 }
