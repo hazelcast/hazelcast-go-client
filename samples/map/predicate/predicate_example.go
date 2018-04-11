@@ -17,7 +17,7 @@ package main
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"strconv"
 )
 
@@ -35,7 +35,7 @@ func main() {
 		mp.Put("key"+strconv.Itoa(i), int32(i))
 	}
 
-	betweenPredicate := core.Between("this", int32(5), int32(35))
+	betweenPredicate := predicates.Between("this", int32(5), int32(35))
 
 	set, err := mp.EntrySetWithPredicate(betweenPredicate)
 	if err != nil {

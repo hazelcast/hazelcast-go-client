@@ -18,6 +18,7 @@ import (
 	"flag"
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"math/rand"
@@ -77,7 +78,7 @@ func startMapSoak() {
 						log.Println("error in Put() ", err)
 					}
 				} else if op < 80 {
-					_, err := mp.ValuesWithPredicate(core.Between("this", int32(0), int32(10)))
+					_, err := mp.ValuesWithPredicate(predicates.Between("this", int32(0), int32(10)))
 					if err != nil {
 						log.Println("error in ValuesWithPredicate() ", err)
 					}
