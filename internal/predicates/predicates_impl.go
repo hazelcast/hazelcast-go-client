@@ -67,10 +67,10 @@ func (sp *SqlPredicate) WriteData(output DataOutput) error {
 
 type AndPredicate struct {
 	*predicate
-	predicates []IPredicate
+	predicates []interface{}
 }
 
-func NewAndPredicate(predicates []IPredicate) *AndPredicate {
+func NewAndPredicate(predicates []interface{}) *AndPredicate {
 	return &AndPredicate{newPredicate(AND_PREDICATE), predicates}
 }
 
@@ -80,13 +80,13 @@ func (ap *AndPredicate) ReadData(input DataInput) error {
 	if err != nil {
 		return err
 	}
-	ap.predicates = make([]IPredicate, length)
+	ap.predicates = make([]interface{}, length)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
 		if err != nil {
 			return err
 		}
-		ap.predicates[i] = pred.(IPredicate)
+		ap.predicates[i] = pred
 	}
 	return nil
 }
@@ -339,17 +339,17 @@ func (nep *NotEqualPredicate) ReadData(input DataInput) error {
 
 type NotPredicate struct {
 	*predicate
-	pred IPredicate
+	pred interface{}
 }
 
-func NewNotPredicate(pred IPredicate) *NotPredicate {
+func NewNotPredicate(pred interface{}) *NotPredicate {
 	return &NotPredicate{newPredicate(NOT_PREDICATE), pred}
 }
 
 func (np *NotPredicate) ReadData(input DataInput) error {
 	np.predicate = newPredicate(NOT_PREDICATE)
 	i, err := input.ReadObject()
-	np.pred = i.(IPredicate)
+	np.pred = i.(interface{})
 	return err
 }
 
@@ -359,10 +359,10 @@ func (np *NotPredicate) WriteData(output DataOutput) error {
 
 type OrPredicate struct {
 	*predicate
-	predicates []IPredicate
+	predicates []interface{}
 }
 
-func NewOrPredicate(predicates []IPredicate) *OrPredicate {
+func NewOrPredicate(predicates []interface{}) *OrPredicate {
 	return &OrPredicate{newPredicate(OR_PREDICATE), predicates}
 }
 
@@ -373,13 +373,13 @@ func (or *OrPredicate) ReadData(input DataInput) error {
 	if err != nil {
 		return err
 	}
-	or.predicates = make([]IPredicate, length)
+	or.predicates = make([]interface{}, length)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
 		if err != nil {
 			return err
 		}
-		or.predicates[i] = pred.(IPredicate)
+		or.predicates[i] = pred.(interface{})
 	}
 	return err
 }

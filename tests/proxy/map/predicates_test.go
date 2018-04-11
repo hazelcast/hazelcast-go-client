@@ -18,7 +18,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"reflect"
 	"strconv"
@@ -44,7 +43,7 @@ func fillMapForPredicates() {
 	}
 }
 
-func testSerialization(t *testing.T, predicate serialization.IPredicate) {
+func testSerialization(t *testing.T, predicate interface{}) {
 	predicateData, err := serializationService.ToData(predicate)
 	if err != nil {
 		t.Fatal(err)
@@ -53,12 +52,12 @@ func testSerialization(t *testing.T, predicate serialization.IPredicate) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(predicate, retPredicate.(serialization.IPredicate)) {
+	if !reflect.DeepEqual(predicate, retPredicate.(interface{})) {
 		t.Errorf("%s failed", reflect.TypeOf(predicate))
 	}
 }
 
-func testPredicate(t *testing.T, predicate serialization.IPredicate, expecteds map[interface{}]interface{}) {
+func testPredicate(t *testing.T, predicate interface{}, expecteds map[interface{}]interface{}) {
 	set, err := mp2.EntrySetWithPredicate(predicate)
 	if err != nil {
 		t.Fatal(err)

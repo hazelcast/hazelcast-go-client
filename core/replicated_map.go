@@ -15,7 +15,6 @@
 package core
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"time"
 )
 
@@ -99,7 +98,7 @@ type ReplicatedMap interface {
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate.
 	// It returns registration id of the listener.
-	AddEntryListenerWithPredicate(listener interface{}, predicate IPredicate) (registrationID *string, err error)
+	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds the specified entry listener for the specified key. The listener will be
 	// notified for all add/remove/update/evict events of the specified key only.
@@ -109,7 +108,7 @@ type ReplicatedMap interface {
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate and key.
 	// It returns registration id of the listener.
-	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate IPredicate, key interface{}) (registrationID *string, err error)
+	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (registrationID *string, err error)
 
 	// RemoveEntryListener removes the specified entry listener and returns silently if there was no such
 	// listener added before.
