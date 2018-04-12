@@ -91,24 +91,24 @@ func (fd *FieldDefinitionImpl) Version() int32 {
 }
 
 const (
-	PORTABLE       = 0
-	BYTE           = 1
-	BOOL           = 2
-	UINT16         = 3
-	INT16          = 4
-	INT32          = 5
-	INT64          = 6
-	FLOAT32        = 7
-	FLOAT64        = 8
-	UTF            = 9
-	PORTABLE_ARRAY = 10
-	BYTE_ARRAY     = 11
-	BOOL_ARRAY     = 12
-	UINT16_ARRAY   = 13
-	INT16_ARRAY    = 14
-	INT32_ARRAY    = 15
-	INT64_ARRAY    = 16
-	FLOAT32_ARRAY  = 17
-	FLOAT64_ARRAY  = 18
-	UTF_ARRAY      = 19
+	PORTABLE = iota
+	BYTE
+	BOOL
+	UINT16
+	INT16
+	INT32
+	INT64
+	FLOAT32
+	FLOAT64
+	UTF
+	PORTABLE_ARRAY
+	BYTE_ARRAY
+	BOOL_ARRAY
+	UINT16_ARRAY
+	INT16_ARRAY
+	INT32_ARRAY
+	INT64_ARRAY
+	FLOAT32_ARRAY
+	FLOAT64_ARRAY
+	UTF_ARRAY
 )
