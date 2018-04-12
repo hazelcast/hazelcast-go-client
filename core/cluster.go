@@ -15,7 +15,7 @@
 package core
 
 // ICluster is a cluster service for Hazelcast clients.
-type ICluster interface {
+type Cluster interface {
 	// AddListener registers the given listener.
 	// AddListener returns UUID which will be used to remove the listener.
 	AddListener(listener interface{}) *string
@@ -24,12 +24,12 @@ type ICluster interface {
 	// RemoveListener returns true if successfully removed, false otherwise.
 	RemoveListener(registrationId *string) bool
 
-	// GetMemberList returns a slice of members.
-	GetMemberList() []IMember
+	// MemberList returns a slice of members.
+	MemberList() []Member
 
-	// GetMember gets the member with the given address.
-	GetMember(address IAddress) IMember
+	// Member gets the member with the given address.
+	Member(address Address) Member
 
-	// GetMemberByUuid gets the member with the given uuid.
-	GetMemberByUuid(uuid string) IMember
+	// MemberByUuid gets the member with the given uuid.
+	MemberByUuid(uuid string) Member
 }

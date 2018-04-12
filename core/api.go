@@ -15,7 +15,7 @@
 package core
 
 // IAddress represents an address of a member in the cluster.
-type IAddress interface {
+type Address interface {
 	// Host returns host of the member.
 	Host() string
 
@@ -24,7 +24,7 @@ type IAddress interface {
 }
 
 // IMember represents a member in the cluster with its address, UUID, lite member status and attributes.
-type IMember interface {
+type Member interface {
 	// Address returns the address of this member.
 	Address() IAddress
 
@@ -39,7 +39,7 @@ type IMember interface {
 }
 
 // IPair represents IMap entry pair.
-type IPair interface {
+type Pair interface {
 	// Key returns key of entry.
 	Key() interface{}
 
@@ -48,7 +48,7 @@ type IPair interface {
 }
 
 // IDistributedObjectInfo contains name and service name of distributed objects.
-type IDistributedObjectInfo interface {
+type DistributedObjectInfo interface {
 	// Name returns the name of distributed object.
 	Name() string
 
@@ -57,7 +57,7 @@ type IDistributedObjectInfo interface {
 }
 
 // IError contains error information that occurred in the server.
-type IError interface {
+type Error interface {
 	// ErrorCode returns the error code.
 	ErrorCode() int32
 
@@ -77,7 +77,7 @@ type IError interface {
 	CauseClassName() string
 }
 
-type IStackTraceElement interface {
+type StackTraceElement interface {
 	// DeclaringClass returns the fully qualified name of the class containing
 	// the execution point represented by the stack trace element.
 	DeclaringClass() string
@@ -100,7 +100,7 @@ type IStackTraceElement interface {
 }
 
 // IEntryView represents a readonly view of a map entry.
-type IEntryView interface {
+type EntryView interface {
 	// Key returns the key of the entry.
 	Key() interface{}
 
@@ -138,7 +138,7 @@ type IEntryView interface {
 	Ttl() int64
 }
 
-type IEntryEvent interface {
+type EntryEvent interface {
 	// KeyData returns the key of the entry event.
 	Key() interface{}
 
@@ -159,7 +159,7 @@ type IEntryEvent interface {
 }
 
 // IItemEvent is IList, ISet and IQueue events common contract.
-type IItemEvent interface {
+type temEvent interface {
 
 	// Name returns the name of IList, ISet or IQueue
 	Name() string
@@ -175,7 +175,7 @@ type IItemEvent interface {
 }
 
 // IMapEvent is map events common contract.
-type IMapEvent interface {
+type MapEvent interface {
 	// EventType returns the event type.
 	EventType() int32
 
@@ -188,32 +188,32 @@ type IMapEvent interface {
 }
 
 // IEntryAddedListener is invoked upon addition of an entry.
-type IEntryAddedListener interface {
+type EntryAddedListener interface {
 	// EntryAdded is invoked upon addition of an entry.
 	EntryAdded(IEntryEvent)
 }
 
 // IEntryRemovedListener invoked upon removal of an entry.
-type IEntryRemovedListener interface {
+type EntryRemovedListener interface {
 	// EntryRemoved invoked upon removal of an entry.
 	EntryRemoved(IEntryEvent)
 }
 
 // IEntryUpdatedListener is invoked upon update of an entry.
-type IEntryUpdatedListener interface {
+type EntryUpdatedListener interface {
 	// EntryUpdated is invoked upon update of an entry.
 	EntryUpdated(IEntryEvent)
 }
 
 // IEntryEvictedListener is invoked upon eviction of an entry.
-type IEntryEvictedListener interface {
+type EntryEvictedListener interface {
 	// EntryEvicted is invoked upon eviction of an entry.
 	EntryEvicted(IEntryEvent)
 }
 
 // IEntryEvictAllListener is invoked when all entries are evicted
 // by IMap.EvictAll() method.
-type IEntryEvictAllListener interface {
+type EntryEvictAllListener interface {
 	// EntryEvictAll is invoked when all entries are evicted
 	// by IMap.EvictAll() method.
 	EntryEvictAll(IMapEvent)
@@ -221,38 +221,38 @@ type IEntryEvictAllListener interface {
 
 // IEntryClearAllListener is invoked when all entries are removed
 // by Imap.Clear() method.
-type IEntryClearAllListener interface {
+type EntryClearAllListener interface {
 	// EntryClearAll is invoked when all entries are removed
 	// by Imap.Clear() method.
 	EntryClearAll(IMapEvent)
 }
 
 // IEntryMergedListener is invoked after WAN replicated entry is merged.
-type IEntryMergedListener interface {
+type EntryMergedListener interface {
 	// EntryMerged is invoked after WAN replicated entry is merged.
 	EntryMerged(IEntryEvent)
 }
 
 // IEntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.
-type IEntryExpiredListener interface {
+type EntryExpiredListener interface {
 	// EntryExpired is invoked upon expiration of an entry.
 	EntryExpired(IEntryEvent)
 }
 
 // IMemberAddedListener is invoked when a new member is added to the cluster.
-type IMemberAddedListener interface {
+type MemberAddedListener interface {
 	// MemberAdded is invoked when a new member is added to the cluster.
 	MemberAdded(member IMember)
 }
 
 // IMemberRemovedListener is invoked when an existing member leaves the cluster.
-type IMemberRemovedListener interface {
+type MemberRemovedListener interface {
 	// MemberRemoved is invoked when an existing member leaves the cluster.
 	MemberRemoved(member IMember)
 }
 
 // ILifecycleListener is a listener object for listening to lifecycle events of the Hazelcast instance.
-type ILifecycleListener interface {
+type LifecycleListener interface {
 	// LifecycleStateChanged is called when instance's state changes. No blocking calls should be made in this method.
 	LifecycleStateChanged(string)
 }
@@ -270,7 +270,7 @@ type TopicMessageListener interface {
 }
 
 // ITopicMessage is a message for ITopic.
-type ITopicMessage interface {
+type TopicMessage interface {
 
 	// MessageObject returns the published message.
 	MessageObject() interface{}
@@ -286,11 +286,11 @@ type ITopicMessage interface {
 }
 
 // ItemAddedListener is invoked when an item is added.
-type ItemAddedListener interface {
+type temAddedListener interface {
 	ItemAdded(event IItemEvent)
 }
 
 // ItemRemovedListener is invoked when an item is removed.
-type ItemRemovedListener interface {
+type temRemovedListener interface {
 	ItemRemoved(event IItemEvent)
 }

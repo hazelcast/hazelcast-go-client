@@ -16,7 +16,7 @@ package core
 
 // ISet is the concurrent, distributed implementation of collection that contains no duplicate elements.
 // As implied by its name, this interface models the mathematical 'set' abstraction.
-type ISet interface {
+type Set interface {
 
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject

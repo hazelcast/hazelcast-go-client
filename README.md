@@ -1,4 +1,4 @@
-# Hazelcast Go Client  
+# Go Hazelcast Client  
 
 [![GoDoc](https://godoc.org/github.com/hazelcast/hazelcast-go-client?status.svg)](https://godoc.org/github.com/hazelcast/hazelcast-go-client)
 
@@ -6,10 +6,10 @@
 
 ## Table of Contents
 
-* [Hazelcast Go Client](#hazelcast-go-client)
+* [Go Hazelcast Client](#go-hazelcast-client)
 * [Features](#features)
-* [Installing the Client](#installing-the-client)
-* [Using the Client](#using-the-client)
+* [Install](#install)
+* [Usage](#usage)
 * [Serialization Considerations](#serialization-considerations)
 * [Development](#development)
   * [Building And Installing from Sources](#building-and-installing-from-sources)
@@ -48,24 +48,25 @@ Hazelcast Go client supports the following data structures and features:
 * Smart and Unisocket Client operation
 * Hazelcast Serialization (IdentifiedDataSerializable, Portable, Custom Serializers, Global Serializers)
 
-## Installing the Client
+## Install
 
 Following command installs Hazelcast Go client:
 
 ```
-go get github.com/hazelcast/hazelcast-go-client
+go get github.com/hazelcast/go-hazelcast
 ```
+
 [For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/samples/hello-world/README.md)
 
-## Using the Client
+## Usage
 
 Following code snippet illustrates a simple usage of Map in Hazelcast Go Client.
 
 ```golang
-	config := hazelcast.NewHazelcastConfig()
+	config := hazelcast.NewConfig()
 	config.ClientNetworkConfig().AddAddress("127.0.0.1:5701")
 
-	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
 		fmt.Println(err)
 		return
