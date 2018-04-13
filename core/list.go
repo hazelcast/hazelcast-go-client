@@ -21,7 +21,7 @@ package core
 //
 // The Hazelcast List is not a partitioned data-structure. So all the content of the List is stored in a single
 // machine (and in the backup). So the List will not scale by adding more members in the cluster.
-type IList interface {
+type List interface {
 
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject

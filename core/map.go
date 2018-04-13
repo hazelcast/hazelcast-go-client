@@ -23,7 +23,7 @@ import (
 // This map is sync (blocking). Blocking calls return the value of the call and block
 // the execution until the return value is calculated.
 // This map does not allow nil to be used as a key or value.
-type IMap interface {
+type Map interface {
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject
 

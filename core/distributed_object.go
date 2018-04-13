@@ -15,7 +15,7 @@
 package core
 
 // IDistributedObject is the base interface for all distributed objects.
-type IDistributedObject interface {
+type DistributedObject interface {
 	// Destroy destroys this object cluster-wide.
 	// Destroy clears and releases all resources for this object.
 	Destroy() (bool, error)
