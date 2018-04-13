@@ -71,22 +71,22 @@ func startMapSoak() {
 				if op < 30 {
 					_, err := mp.Get(key)
 					if err != nil {
-						log.Println("error in Get() ", err)
+						log.Println("Error in Get() ", err)
 					}
 				} else if op < 60 {
 					_, err := mp.Put(key, value)
 					if err != nil {
-						log.Println("error in Put() ", err)
+						log.Println("Error in Put() ", err)
 					}
 				} else if op < 80 {
 					_, err := mp.ValuesWithPredicate(predicates.Between("this", int32(0), int32(10)))
 					if err != nil {
-						log.Println("error in ValuesWithPredicate() ", err)
+						log.Println("Error in ValuesWithPredicate() ", err)
 					}
 				} else {
 					_, err := mp.ExecuteOnKey(key, processor)
 					if err != nil {
-						log.Println("error in ExecuteOnKey() ", err)
+						log.Println("Error in ExecuteOnKey() ", err)
 					}
 				}
 			}

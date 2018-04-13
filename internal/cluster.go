@@ -112,8 +112,8 @@ func (cs *clusterService) process() {
 func (cs *clusterService) reconnect() {
 	err := cs.connectToCluster()
 	if err != nil {
-		log.Println("client will shutdown since it could not reconnect.")
 		cs.client.Shutdown()
+		log.Println("Client will shutdown since it could not reconnect.")
 	}
 
 }
@@ -132,7 +132,7 @@ func (cs *clusterService) connectToCluster() error {
 			}
 			err := cs.connectToAddress(&address)
 			if err != nil {
-				log.Println("the following error occured while trying to connect to cluster. attempt ", currentAttempt, " of ", attempLimit, " error: ", err)
+				log.Println("The following error occured while trying to connect to cluster. attempt ", currentAttempt, " of ", attempLimit, " error: ", err)
 				if _, ok := err.(*core.HazelcastAuthenticationError); ok {
 					return err
 				}

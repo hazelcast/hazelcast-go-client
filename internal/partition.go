@@ -85,13 +85,13 @@ func (ps *partitionService) getPartitionIdWithKey(key interface{}) (int32, error
 func (ps *partitionService) doRefresh() {
 	connection := ps.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
-		log.Println("error while fetching cluster partition table!")
+		log.Println("Error while fetching cluster partition table!")
 		return
 	}
 	request := protocol.ClientGetPartitionsEncodeRequest()
 	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
-		log.Println("error while fetching cluster partition table! ", err)
+		log.Println("Error while fetching cluster partition table! ", err)
 		return
 	}
 	ps.processPartitionResponse(result)

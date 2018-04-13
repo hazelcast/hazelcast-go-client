@@ -220,7 +220,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationId string, req
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
-				log.Println("deregistration of listener with ID ", registrationId, " has failed to address ", connection.endpoint.Load().(*protocol.Address).Host(),
+				log.Println("Deregistration of listener with ID ", registrationId, " has failed to address ", connection.endpoint.Load().(*protocol.Address).Host(),
 					":", connection.endpoint.Load().(*protocol.Address).Port())
 				continue
 			}
@@ -246,7 +246,7 @@ func (ls *listenerService) registerListenerFromInternal(registrationId string, c
 		if _, ok := err.(*core.HazelcastIOError); ok {
 			ls.registerListenerInternalHandleErrorChannel <- registrationIdConnection
 		} else {
-			log.Println("listener ", registrationId, " cannot be added to a new Connection ", connection, ", reason :", err)
+			log.Println("Listener ", registrationId, " cannot be added to a new Connection ", connection, ", reason :", err)
 		}
 	}
 
