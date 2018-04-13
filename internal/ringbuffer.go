@@ -193,7 +193,7 @@ func (rs *LazyReadResultSet) Size() int32 {
 func (rs *LazyReadResultSet) rangeCheck(index int32) (err error) {
 	size := len(rs.lazyItems)
 	if index < 0 || index >= int32(size) {
-		err = core.NewHazelcastIllegalArgumentError(fmt.Sprintf("index=", index, "size=", size), nil)
+		err = core.NewHazelcastIllegalArgumentError(fmt.Sprintf("index=%d size=%d", index, size), nil)
 	}
 	return
 }

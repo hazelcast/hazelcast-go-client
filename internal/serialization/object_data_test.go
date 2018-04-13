@@ -29,7 +29,7 @@ func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
 	buf := o.buffer
 	expectedBuf := []byte{0, 0, 0, 0, 0}
 	if bytes.Compare(buf, expectedBuf) != 0 {
-		t.Errorf("EnsureAvailable() makes ", buf, " expected ", expectedBuf)
+		t.Error("EnsureAvailable() makes ", buf, " expected ", expectedBuf)
 	}
 }
 
@@ -41,7 +41,7 @@ func TestObjectDataOutput_ToBuffer(t *testing.T) {
 	o.WriteByte(5)
 	o.WriteByte(6)
 	if !reflect.DeepEqual(o.buffer, o.ToBuffer()) {
-		t.Errorf("ToBuffer() works wrong!")
+		t.Error("ToBuffer() works wrong!")
 	}
 }
 
@@ -55,7 +55,7 @@ func TestObjectDataOutput_WriteData(t *testing.T) {
 	data.Buffer()[2] = 0
 	data.Buffer()[3] = 0
 	if !reflect.DeepEqual(o.buffer, expectedRet) {
-		t.Errorf("WriteData() works wrong!")
+		t.Error("WriteData() works wrong!")
 	}
 }
 
@@ -66,7 +66,7 @@ func TestObjectDataOutput_WriteInt32(t *testing.T) {
 	o.WriteInt32(3)
 
 	if o.buffer[0] != 1 || o.buffer[4] != 2 || o.buffer[8] != 3 {
-		t.Errorf("WriteInt32() writes to wrong position")
+		t.Error("WriteInt32() writes to wrong position")
 	}
 }
 
@@ -275,7 +275,7 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 	if a != ret_a || b != ret_b || c != ret_c || d != ret_d ||
 		e != ret_e || !reflect.DeepEqual(f, ret_f) || !reflect.DeepEqual(g, ret_g) ||
 		!reflect.DeepEqual(h, ret_h) || !reflect.DeepEqual(j, ret_j) || !reflect.DeepEqual(k, ret_k) {
-		t.Errorf("There is a problem in WriteObject() or ReadObject()!")
+		t.Error("There is a problem in WriteObject() or ReadObject()!")
 	}
 
 }
@@ -288,7 +288,7 @@ func TestObjectDataInput_ReadByteArray(t *testing.T) {
 	ret_array, _ := i.ReadByteArray()
 
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteByteArray() or ReadByteArray()!")
+		t.Error("There is a problem in WriteByteArray() or ReadByteArray()!")
 	}
 }
 
@@ -299,7 +299,7 @@ func TestObjectDataInput_ReadBoolArray(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadBoolArray()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteBoolArray() or ReadBoolArray()!")
+		t.Error("There is a problem in WriteBoolArray() or ReadBoolArray()!")
 	}
 }
 
@@ -310,7 +310,7 @@ func TestObjectDataInput_ReadUInt16Array(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadUInt16Array()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteUInt16Array() or ReadUInt16Array()!")
+		t.Error("There is a problem in WriteUInt16Array() or ReadUInt16Array()!")
 	}
 }
 
@@ -322,7 +322,7 @@ func TestObjectDataInput_ReadInt16Array(t *testing.T) {
 	ret_array, _ := i.ReadInt16Array()
 
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteInt16Array() or ReadInt16Array()!")
+		t.Error("There is a problem in WriteInt16Array() or ReadInt16Array()!")
 	}
 }
 
@@ -333,7 +333,7 @@ func TestObjectDataInput_ReadInt32Array(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadInt32Array()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteInt32Array() or ReadInt32Array()!")
+		t.Error("There is a problem in WriteInt32Array() or ReadInt32Array()!")
 	}
 }
 
@@ -344,7 +344,7 @@ func TestObjectDataInput_ReadInt64Array(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadInt64Array()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteInt64Array() or ReadInt64Array()!")
+		t.Error("There is a problem in WriteInt64Array() or ReadInt64Array()!")
 	}
 }
 
@@ -355,7 +355,7 @@ func TestObjectDataInput_ReadFloat32Array(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadFloat32Array()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteFloat32Array() or ReadFloat32Array()!")
+		t.Error("There is a problem in WriteFloat32Array() or ReadFloat32Array()!")
 	}
 }
 
@@ -366,7 +366,7 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadFloat64Array()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteFloat64Array() or ReadFloat64Array()!")
+		t.Error("There is a problem in WriteFloat64Array() or ReadFloat64Array()!")
 
 	}
 }
@@ -378,7 +378,7 @@ func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	ret_array, _ := i.ReadUTFArray()
 	if !reflect.DeepEqual(array, ret_array) {
-		t.Errorf("There is a problem in WriteUTFArray() or ReadUTFArray()!")
+		t.Error("There is a problem in WriteUTFArray() or ReadUTFArray()!")
 	}
 }
 
@@ -394,7 +394,7 @@ func TestObjectDataInput_ReadData(t *testing.T) {
 	i.ReadUTF()
 	ret, _ := i.ReadData()
 	if !reflect.DeepEqual(expectedRet, ret) {
-		t.Errorf("There is a problem in WriteData() or ReadData()!")
+		t.Error("There is a problem in WriteData() or ReadData()!")
 	}
 
 }

@@ -56,21 +56,21 @@ func TestMain(m *testing.M) {
 func TestMapProxy_Name(t *testing.T) {
 	name := "myMap"
 	if name != mp.Name() {
-		t.Errorf("Name() failed")
+		t.Error("Name() failed")
 	}
 }
 
 func TestMapProxy_ServiceName(t *testing.T) {
 	serviceName := common.ServiceNameMap
 	if serviceName != mp.ServiceName() {
-		t.Errorf("ServiceName() failed")
+		t.Error("ServiceName() failed")
 	}
 }
 
 func TestMapProxy_PartitionKey(t *testing.T) {
 	name := "myMap"
 	if name != mp.PartitionKey() {
-		t.Errorf("PartitionKey() failed")
+		t.Error("PartitionKey() failed")
 	}
 }
 

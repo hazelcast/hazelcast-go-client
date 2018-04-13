@@ -59,20 +59,20 @@ func destroyAndCreate() {
 
 func TestPNCounter_Name(t *testing.T) {
 	if counterName != counter.Name() {
-		t.Errorf("PNCounter.Name failed")
+		t.Error("PNCounter.Name failed")
 	}
 }
 
 func TestPNCounter_ServiceName(t *testing.T) {
 	serviceName := common.ServiceNamePNCounter
 	if serviceName != counter.ServiceName() {
-		t.Errorf("PNCounter.ServiceName failed")
+		t.Error("PNCounter.ServiceName failed")
 	}
 }
 
 func TestPNCounter_PartitionKey(t *testing.T) {
 	if counterName != counter.PartitionKey() {
-		t.Errorf("PNCounter.PartitionKey failed")
+		t.Error("PNCounter.PartitionKey failed")
 	}
 }
 
@@ -182,7 +182,7 @@ func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 	var delta int64 = 5
 	_, err = counter.AddAndGet(delta)
 	if _, ok := err.(*core.HazelcastNoDataMemberInClusterError); !ok {
-		t.Errorf("PNCounter.AddAndGet should return HazelcastNoDataMemberInClusterError")
+		t.Error("PNCounter.AddAndGet should return HazelcastNoDataMemberInClusterError")
 	}
 }
 
@@ -202,7 +202,7 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	remoteController.TerminateMember(cluster.ID, target.Uuid())
 	_, err = counter.Get()
 	if _, ok := err.(*core.HazelcastConsistencyLostError); !ok {
-		t.Errorf("PNCounter.Get should return HazelcastConsistencyLostError")
+		t.Error("PNCounter.Get should return HazelcastConsistencyLostError")
 	}
 }
 

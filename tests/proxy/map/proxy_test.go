@@ -14,13 +14,13 @@ func TestProxy_Destroy(t *testing.T) {
 	res, err := testMap.Destroy()
 
 	if res != true || err != nil {
-		t.Errorf("Destroy() works wrong")
+		t.Error("Destroy() works wrong")
 	}
 
 	res, err = testMap.Destroy()
 
 	if res != false || err != nil {
-		t.Errorf("Destroy() works wrong")
+		t.Error("Destroy() works wrong")
 	}
 }
 
@@ -31,6 +31,6 @@ func TestProxy_GetDistributedObject(t *testing.T) {
 	mp2, _ := client.GetDistributedObject(serviceName, name)
 
 	if !reflect.DeepEqual(mp, mp2) {
-		t.Errorf("GetDistributedObject() works wrong")
+		t.Error("GetDistributedObject() works wrong")
 	}
 }

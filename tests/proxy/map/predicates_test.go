@@ -158,7 +158,7 @@ func TestLike(t *testing.T) {
 	testMap["temp3"] = "tempval3"
 
 	if len(set) != len(testMap) {
-		t.Errorf("like predicate failed")
+		t.Error("like predicate failed")
 	}
 
 	for _, pair := range set {
@@ -166,7 +166,7 @@ func TestLike(t *testing.T) {
 		value := pair.Value()
 		expectedValue, found := testMap[key]
 		if !found || expectedValue != value {
-			t.Errorf("like predicate failed")
+			t.Error("like predicate failed")
 		}
 	}
 }
@@ -190,7 +190,7 @@ func TestILike(t *testing.T) {
 	testMap["TEMP1"] = "TEMpVAL1"
 
 	if len(set) != len(testMap) {
-		t.Errorf("ilike predicate failed")
+		t.Error("ilike predicate failed")
 	}
 
 	for _, pair := range set {
@@ -198,7 +198,7 @@ func TestILike(t *testing.T) {
 		value := pair.Value()
 		expectedValue, found := testMap[key]
 		if !found || expectedValue != value {
-			t.Errorf("ilike predicate failed")
+			t.Error("ilike predicate failed")
 		}
 	}
 }

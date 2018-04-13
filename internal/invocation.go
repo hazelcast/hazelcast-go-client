@@ -141,8 +141,7 @@ func (is *invocationService) start() {
 }
 
 func (is *invocationService) nextCorrelationId() int64 {
-	is.nextCorrelation = atomic.AddInt64(&is.nextCorrelation, 1)
-	return is.nextCorrelation
+	return atomic.AddInt64(&is.nextCorrelation, 1)
 }
 
 func (is *invocationService) invokeOnPartitionOwner(request *protocol.ClientMessage, partitionId int32) invocationResult {

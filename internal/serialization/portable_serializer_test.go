@@ -282,7 +282,7 @@ func TestPortableSerializer2(t *testing.T) {
 	ret, _ := service.ToObject(data)
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("ReadObject() failed")
+		t.Error("ReadObject() failed")
 	}
 
 }
@@ -310,7 +310,7 @@ func TestPortableSerializer4(t *testing.T) {
 	err = builder.AddInt32Field("age")
 	err = builder.AddUTFField("name")
 	if err != nil {
-		t.Errorf("ClassDefinitionBuilder works wrong")
+		t.Error("ClassDefinitionBuilder works wrong")
 	}
 	cd := builder.Build()
 	config1.AddClassDefinition(cd)
@@ -346,6 +346,6 @@ func TestPortableSerializer4(t *testing.T) {
 	config2.AddPortableFactory(2, &PortableFactory1{})
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("ReadObject() failed")
+		t.Error("ReadObject() failed")
 	}
 }

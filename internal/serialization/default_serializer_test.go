@@ -108,7 +108,7 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	ret_employee, _ := service.ToObject(data)
 
 	if !reflect.DeepEqual(employee1, *ret_employee.(*employee)) {
-		t.Errorf("IdentifiedDataSerializableSerializer failed")
+		t.Error("IdentifiedDataSerializableSerializer failed")
 	}
 }
 
@@ -123,7 +123,7 @@ func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
 	_, err := service.ToObject(data)
 
 	if _, ok := err.(*core.HazelcastSerializationError); !ok {
-		t.Errorf("err should be 'serialization.factory is not able to create an instance for id: 2 on factory id: 4'")
+		t.Error("err should be 'serialization.factory is not able to create an instance for id: 2 on factory id: 4'")
 	}
 }
 
@@ -135,7 +135,7 @@ func TestIdentifiedDataSerializableSerializer_DataSerializable(t *testing.T) {
 	_, err := serializer.Read(in)
 
 	if _, ok := err.(*core.HazelcastSerializationError); !ok {
-		t.Errorf("IdentifiedDataSerializableSerializer Read() should return 'native clients do not support DataSerializable, please use IdentifiedDataSerializable'")
+		t.Error("IdentifiedDataSerializableSerializer Read() should return 'native clients do not support DataSerializable, please use IdentifiedDataSerializable'")
 	}
 }
 
@@ -181,7 +181,7 @@ func TestUInteger16Serializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if ret != expectedRet {
-		t.Errorf("UInteger16Serializer failed")
+		t.Error("UInteger16Serializer failed")
 	}
 }
 
@@ -196,7 +196,7 @@ func TestInteger16Serializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if ret != expectedRet {
-		t.Errorf("Integer16Serializer failed")
+		t.Error("Integer16Serializer failed")
 	}
 }
 
@@ -211,7 +211,7 @@ func TestInteger32Serializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if ret != expectedRet {
-		t.Errorf("Integer32Serializer failed")
+		t.Error("Integer32Serializer failed")
 	}
 }
 
@@ -226,7 +226,7 @@ func TestInteger64Serializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if ret != expectedRet {
-		t.Errorf("Integer64Serializer failed")
+		t.Error("Integer64Serializer failed")
 	}
 }
 
@@ -241,7 +241,7 @@ func TestFloat32Serializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if ret != expectedRet {
-		t.Errorf("Float32Serializer failed")
+		t.Error("Float32Serializer failed")
 	}
 }
 
@@ -256,7 +256,7 @@ func TestFloat64Serializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if ret != expectedRet {
-		t.Errorf("Float64Serializer failed")
+		t.Error("Float64Serializer failed")
 	}
 }
 
@@ -269,7 +269,7 @@ func TestByteArraySerializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("ByteArraySerializer failed")
+		t.Error("ByteArraySerializer failed")
 	}
 }
 
@@ -282,7 +282,7 @@ func TestBoolArraySerializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("BoolArraySerializer failed")
+		t.Error("BoolArraySerializer failed")
 	}
 }
 
@@ -295,7 +295,7 @@ func TestUInteger16ArraySerializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("UInteger16ArraySerializer failed")
+		t.Error("UInteger16ArraySerializer failed")
 	}
 }
 
@@ -308,6 +308,6 @@ func TestStringArraySerializer_Write(t *testing.T) {
 	ret, _ := serializer.Read(in)
 
 	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Errorf("StringArraySerializer failed")
+		t.Error("StringArraySerializer failed")
 	}
 }
