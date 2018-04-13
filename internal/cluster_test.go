@@ -57,7 +57,7 @@ func Test_getPossibleAddressesWithEmptyParamters(t *testing.T) {
 	if len(addresses) != 1 {
 		t.Fatal("getPossibleAddresses failed")
 	}
-	defaultAddress := protocol.NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT)
+	defaultAddress := protocol.NewAddressWithParameters(DefaultAddress, DefaultPort)
 	for _, address := range addresses {
 		if address != *defaultAddress {
 			t.Fatal("getPossibleAddresses failed")

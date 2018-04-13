@@ -27,7 +27,7 @@ func MapReplaceIfSameCalculateSize(name *string, key *Data, testValue *Data, val
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(testValue)
 	dataSize += DataCalculateSize(value)
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

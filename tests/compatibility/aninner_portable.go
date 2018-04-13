@@ -22,11 +22,11 @@ type AnInnerPortable struct {
 }
 
 func (*AnInnerPortable) FactoryId() int32 {
-	return PORTABLE_FACTORY_ID
+	return portableFactoryId
 }
 
 func (*AnInnerPortable) ClassId() int32 {
-	return INNER_PORTABLE_CLASS_ID
+	return innerPortableClassId
 }
 
 func (ip *AnInnerPortable) WritePortable(writer PortableWriter) error {

@@ -24,9 +24,9 @@ func MapAddEntryListenerCalculateSize(name *string, includeValue bool, listenerF
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += Int32SizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -80,7 +80,7 @@ func MapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerEventEntryDecode(clientMessage))
 	}
 }

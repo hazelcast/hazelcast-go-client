@@ -62,7 +62,7 @@ func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 		return data, nil
 	}
 	var serializer = service.registry[data.GetType()]
-	dataInput := NewObjectDataInput(data.Buffer(), DATA_OFFSET, service, service.serializationConfig.IsBigEndian())
+	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, service, service.serializationConfig.IsBigEndian())
 	return serializer.Read(dataInput)
 }
 
@@ -114,64 +114,64 @@ func (service *SerializationService) FindSerializerFor(obj interface{}) (Seriali
 
 func (service *SerializationService) registerDefaultSerializers() {
 	service.registerSerializer(&ByteSerializer{})
-	service.nameToId["uint8"] = CONSTANT_TYPE_BYTE
+	service.nameToId["uint8"] = ConstantTypeByte
 
 	service.registerSerializer(&BoolSerializer{})
-	service.nameToId["bool"] = CONSTANT_TYPE_BOOL
+	service.nameToId["bool"] = ConstantTypeBool
 
 	service.registerSerializer(&UInteger16Serializer{})
-	service.nameToId["uint16"] = CONSTANT_TYPE_UINTEGER16
+	service.nameToId["uint16"] = ConstantTypeUInteger16
 
 	service.registerSerializer(&Integer16Serializer{})
-	service.nameToId["int16"] = CONSTANT_TYPE_INTEGER16
+	service.nameToId["int16"] = ConstantTypeInteger16
 
 	service.registerSerializer(&Integer32Serializer{})
-	service.nameToId["int32"] = CONSTANT_TYPE_INTEGER32
+	service.nameToId["int32"] = ConstantTypeInteger32
 
 	service.registerSerializer(&Integer64Serializer{})
-	service.nameToId["int64"] = CONSTANT_TYPE_INTEGER64
+	service.nameToId["int64"] = ConstantTypeInteger64
 
 	service.registerSerializer(&Float32Serializer{})
-	service.nameToId["float32"] = CONSTANT_TYPE_FLOAT32
+	service.nameToId["float32"] = ConstantTypeFloat32
 
 	service.registerSerializer(&Float64Serializer{})
-	service.nameToId["float64"] = CONSTANT_TYPE_FLOAT64
+	service.nameToId["float64"] = ConstantTypeFloat64
 
 	service.registerSerializer(&StringSerializer{})
-	service.nameToId["string"] = CONSTANT_TYPE_STRING
+	service.nameToId["string"] = ConstantTypeString
 
 	service.registerSerializer(&NilSerializer{})
-	service.nameToId["nil"] = CONSTANT_TYPE_NULL
+	service.nameToId["nil"] = ConstantTypeNil
 
 	service.registerSerializer(&ByteArraySerializer{})
-	service.nameToId["[]uint8"] = CONSTANT_TYPE_BYTE_ARRAY
+	service.nameToId["[]uint8"] = ConstantTypeByteArray
 
 	service.registerSerializer(&BoolArraySerializer{})
-	service.nameToId["[]bool"] = CONSTANT_TYPE_BOOL_ARRAY
+	service.nameToId["[]bool"] = ConstantTypeBoolArray
 
 	service.registerSerializer(&UInteger16ArraySerializer{})
-	service.nameToId["[]uint16"] = CONSTANT_TYPE_UINTEGER16_ARRAY
+	service.nameToId["[]uint16"] = ConstantTypeUInteger16Array
 
 	service.registerSerializer(&Integer16ArraySerializer{})
-	service.nameToId["[]int16"] = CONSTANT_TYPE_INTEGER16_ARRAY
+	service.nameToId["[]int16"] = ConstantTypeInteger16Array
 
 	service.registerSerializer(&Integer32ArraySerializer{})
-	service.nameToId["[]int32"] = CONSTANT_TYPE_INTEGER32_ARRAY
+	service.nameToId["[]int32"] = ConstantTypeInteger32Array
 
 	service.registerSerializer(&Integer64ArraySerializer{})
-	service.nameToId["[]int64"] = CONSTANT_TYPE_INTEGER64_ARRAY
+	service.nameToId["[]int64"] = ConstantTypeInteger64Array
 
 	service.registerSerializer(&Float32ArraySerializer{})
-	service.nameToId["[]float32"] = CONSTANT_TYPE_FLOAT32_ARRAY
+	service.nameToId["[]float32"] = ConstantTypeFloat32Array
 
 	service.registerSerializer(&Float64ArraySerializer{})
-	service.nameToId["[]float64"] = CONSTANT_TYPE_FLOAT64_ARRAY
+	service.nameToId["[]float64"] = ConstantTypeFloat64Array
 
 	service.registerSerializer(&StringArraySerializer{})
-	service.nameToId["[]string"] = CONSTANT_TYPE_STRING_ARRAY
+	service.nameToId["[]string"] = ConstantTypeStringArray
 
 	service.registerSerializer(&GobSerializer{})
-	service.nameToId["!gob"] = GO_GOB_SERIALIZATION_TYPE
+	service.nameToId["!gob"] = GoGobSerializationType
 
 	service.registerIdentifiedFactories()
 
@@ -179,7 +179,7 @@ func (service *SerializationService) registerDefaultSerializers() {
 
 	service.registerClassDefinitions(portableSerializer, service.serializationConfig.ClassDefinitions())
 	service.registerSerializer(portableSerializer)
-	service.nameToId["!portable"] = CONSTANT_TYPE_PORTABLE
+	service.nameToId["!portable"] = ConstantTypePortable
 
 }
 
@@ -262,12 +262,12 @@ func (service *SerializationService) registerIdentifiedFactories() {
 	for id, _ := range service.serializationConfig.DataSerializableFactories() {
 		factories[id] = service.serializationConfig.DataSerializableFactories()[id]
 	}
-	factories[PREDICATE_FACTORY_ID] = NewPredicateFactory()
+	factories[PredicateFactoryId] = NewPredicateFactory()
 
 	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
 	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
 	service.registerSerializer(NewIdentifiedDataSerializableSerializer(factories))
-	service.nameToId["identified"] = CONSTANT_TYPE_DATA_SERIALIZABLE
+	service.nameToId["identified"] = ConstantTypeDataSerializable
 }
 
 func isIdentifiedDataSerializable(obj interface{}) bool {

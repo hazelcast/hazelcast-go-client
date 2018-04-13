@@ -25,9 +25,9 @@ type clientMessageBuilder struct {
 }
 
 func (cmb *clientMessageBuilder) onMessage(msg *ClientMessage) {
-	if msg.HasFlags(common.BEGIN_END_FLAG) > 0 {
+	if msg.HasFlags(common.BeginEndFlag) > 0 {
 		cmb.responseChannel <- msg
-	} else if msg.HasFlags(common.BEGIN_FLAG) > 0 {
+	} else if msg.HasFlags(common.BeginFlag) > 0 {
 		cmb.incompleteMessages[msg.CorrelationId()] = msg
 	} else {
 		message, found := cmb.incompleteMessages[msg.CorrelationId()]
@@ -35,8 +35,8 @@ func (cmb *clientMessageBuilder) onMessage(msg *ClientMessage) {
 			return
 		}
 		message.Accumulate(msg)
-		if msg.HasFlags(common.END_FLAG) > 0 {
-			message.AddFlags(common.BEGIN_END_FLAG)
+		if msg.HasFlags(common.EndFlag) > 0 {
+			message.AddFlags(common.BeginEndFlag)
 			cmb.responseChannel <- message
 			delete(cmb.incompleteMessages, msg.CorrelationId())
 		}

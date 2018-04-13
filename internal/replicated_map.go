@@ -49,7 +49,7 @@ func (rmp *ReplicatedMapProxy) PutWithTtl(key interface{}, value interface{}, tt
 
 func (rmp *ReplicatedMapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	if entries == nil {
-		return NewHazelcastNilPointerError(NIL_MAP_IS_NOT_ALLOWED, nil)
+		return NewHazelcastNilPointerError(NilMapIsNotAllowed, nil)
 	}
 	pairs := make([]*Pair, len(entries))
 	index := 0
@@ -213,15 +213,15 @@ func (rmp *ReplicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValu
 	entryEvent := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid)
 	mapEvent := NewMapEvent(eventType, Uuid, numberOfAffectedEntries)
 	switch eventType {
-	case ENTRYEVENT_ADDED:
+	case EntryEventAdded:
 		listener.(EntryAddedListener).EntryAdded(entryEvent)
-	case ENTRYEVENT_REMOVED:
+	case EntryEventRemoved:
 		listener.(EntryRemovedListener).EntryRemoved(entryEvent)
-	case ENTRYEVENT_UPDATED:
+	case EntryEventUpdated:
 		listener.(EntryUpdatedListener).EntryUpdated(entryEvent)
-	case ENTRYEVENT_EVICTED:
+	case EntryEventEvicted:
 		listener.(EntryEvictedListener).EntryEvicted(entryEvent)
-	case ENTRYEVENT_CLEAR_ALL:
+	case EntryEventClearAll:
 		listener.(EntryClearAllListener).EntryClearAll(mapEvent)
 	}
 }

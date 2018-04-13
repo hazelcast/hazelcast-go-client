@@ -25,10 +25,10 @@ func MapTryLockCalculateSize(name *string, key *Data, threadId int64, lease int6
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += INT64_SIZE_IN_BYTES
-	dataSize += INT64_SIZE_IN_BYTES
-	dataSize += INT64_SIZE_IN_BYTES
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
+	dataSize += Int64SizeInBytes
+	dataSize += Int64SizeInBytes
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

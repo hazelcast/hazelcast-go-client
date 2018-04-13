@@ -24,8 +24,8 @@ func QueueAddListenerCalculateSize(name *string, includeValue bool, localOnly bo
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -65,7 +65,7 @@ func QueueAddListenerHandle(clientMessage *ClientMessage,
 	handleEventItem QueueAddListenerHandleEventItemFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ITEM && handleEventItem != nil {
+	if messageType == EventItem && handleEventItem != nil {
 		handleEventItem(QueueAddListenerEventItemDecode(clientMessage))
 	}
 }

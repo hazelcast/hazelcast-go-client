@@ -18,17 +18,17 @@ import . "github.com/hazelcast/hazelcast-go-client/serialization"
 
 const (
 	//PORTABLE IDS
-	PORTABLE_FACTORY_ID     = 1
-	PORTABLE_CLASS_ID       = 1
-	INNER_PORTABLE_CLASS_ID = 2
+	portableFactoryId    = 1
+	portableClassId      = 1
+	innerPortableClassId = 2
 
 	//IDENTIFIED DATA SERIALIZABLE IDS
-	IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID = 1
-	DATA_SERIALIZABLE_CLASS_ID              = 1
+	identifiedDataSerializableFactoryID = 1
+	dataSerializableClassId             = 1
 
 	//CUSTOM SERIALIZER IDS
-	CUSTOM_STREAM_SERILAZABLE_ID     = 1
-	CUSTOM_BYTE_ARRAY_SERILAZABLE_ID = 2
+	customStreamSerializableId    = 1
+	customByteArraySerializableId = 2
 )
 
 //OBJECTS

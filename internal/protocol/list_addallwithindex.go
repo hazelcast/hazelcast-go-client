@@ -24,8 +24,8 @@ func ListAddAllWithIndexCalculateSize(name *string, index int32, valueList []*Da
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
+	dataSize += Int32SizeInBytes
 	for _, valueListItem := range valueList {
 		dataSize += DataCalculateSize(valueListItem)
 	}

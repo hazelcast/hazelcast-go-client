@@ -174,62 +174,62 @@ func TestClientMessage_ReadString(t *testing.T) {
 func TestNoFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	if result := message.HasFlags(BEGIN_FLAG); result != 0 {
+	if result := message.HasFlags(BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(END_FLAG); result != 0 {
+	if result := message.HasFlags(EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(LISTENER_FLAG); result != 0 {
+	if result := message.HasFlags(ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
 func TestSetFlagBegin(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(BEGIN_FLAG)
-	if result := message.HasFlags(BEGIN_FLAG); result == 0 {
+	message.AddFlags(BeginFlag)
+	if result := message.HasFlags(BeginFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 128", result)
 	}
-	if result := message.HasFlags(END_FLAG); result != 0 {
+	if result := message.HasFlags(EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(LISTENER_FLAG); result != 0 {
+	if result := message.HasFlags(ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
 func TestSetFlagEnd(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(END_FLAG)
-	if result := message.HasFlags(BEGIN_FLAG); result != 0 {
+	message.AddFlags(EndFlag)
+	if result := message.HasFlags(BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(END_FLAG); result == 0 {
+	if result := message.HasFlags(EndFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 64", result)
 	}
-	if result := message.HasFlags(LISTENER_FLAG); result != 0 {
+	if result := message.HasFlags(ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
 func TestSetListenerFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(LISTENER_FLAG)
-	if result := message.HasFlags(BEGIN_FLAG); result != 0 {
+	message.AddFlags(ListenerFlag)
+	if result := message.HasFlags(BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(END_FLAG); result != 0 {
+	if result := message.HasFlags(EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(LISTENER_FLAG); result == 0 {
+	if result := message.HasFlags(ListenerFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 1", result)
 	}
 }
 func TestCalculateSizeStr(t *testing.T) {
 	testString := "abc"
-	if result := StringCalculateSize(&testString); result != len(testString)+INT_SIZE_IN_BYTES {
-		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+INT_SIZE_IN_BYTES)
+	if result := StringCalculateSize(&testString); result != len(testString)+Int32SizeInBytes {
+		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+Int32SizeInBytes)
 	}
 }
 func TestClientMessage_UpdateFrameLength(t *testing.T) {

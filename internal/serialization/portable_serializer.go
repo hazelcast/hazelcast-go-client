@@ -31,7 +31,7 @@ func NewPortableSerializer(service *SerializationService, portableFactories map[
 }
 
 func (ps *PortableSerializer) Id() int32 {
-	return CONSTANT_TYPE_PORTABLE
+	return ConstantTypePortable
 }
 
 func (ps *PortableSerializer) Read(input DataInput) (interface{}, error) {

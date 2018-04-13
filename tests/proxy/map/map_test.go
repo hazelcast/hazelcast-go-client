@@ -59,7 +59,7 @@ func TestMapProxy_Name(t *testing.T) {
 }
 
 func TestMapProxy_ServiceName(t *testing.T) {
-	serviceName := common.SERVICE_NAME_MAP
+	serviceName := common.ServiceNameMap
 	if serviceName != mp.ServiceName() {
 		t.Errorf("ServiceName() failed")
 	}

@@ -119,7 +119,7 @@ func DataEntryViewCalculateSize(ev *DataEntryView) int {
 	dataSize := 0
 	dataSize += DataCalculateSize(ev.keyData)
 	dataSize += DataCalculateSize(ev.valueData)
-	dataSize += 10 * INT64_SIZE_IN_BYTES
+	dataSize += 10 * Int64SizeInBytes
 	return dataSize
 }
 
@@ -140,8 +140,8 @@ func MemberCalculateSize(member *Member) int {
 	dataSize := 0
 	dataSize += AddressCalculateSize(&member.address)
 	dataSize += StringCalculateSize(&member.uuid)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += INT_SIZE_IN_BYTES //Size of the map(attributes)
+	dataSize += BoolSizeInBytes
+	dataSize += Int32SizeInBytes //Size of the map(attributes)
 	for key, value := range member.attributes {
 		dataSize += StringCalculateSize(&key)
 		dataSize += StringCalculateSize(&value)

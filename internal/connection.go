@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const BUFFER_SIZE = 8192 * 2
+const BufferSize = 8192 * 2
 
 type Connection struct {
 	pending                chan *ClientMessage
@@ -125,7 +125,7 @@ func (connection *Connection) write(clientMessage *ClientMessage) error {
 	return nil
 }
 func (connection *Connection) read() {
-	buf := make([]byte, BUFFER_SIZE)
+	buf := make([]byte, BufferSize)
 	for {
 		n, err := connection.socket.Read(buf)
 		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
@@ -141,7 +141,7 @@ func (connection *Connection) read() {
 }
 func (connection *Connection) receiveMessage() {
 	connection.lastRead.Store(time.Now())
-	for len(connection.readBuffer) > common.INT_SIZE_IN_BYTES {
+	for len(connection.readBuffer) > common.Int32SizeInBytes {
 		frameLength := binary.LittleEndian.Uint32(connection.readBuffer[0:4])
 		if frameLength > uint32(len(connection.readBuffer)) {
 			return

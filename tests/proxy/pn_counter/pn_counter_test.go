@@ -62,7 +62,7 @@ func TestPNCounter_Name(t *testing.T) {
 }
 
 func TestPNCounter_ServiceName(t *testing.T) {
-	serviceName := common.SERVICE_NAME_PN_COUNTER
+	serviceName := common.ServiceNamePNCounter
 	if serviceName != counter.ServiceName() {
 		t.Errorf("PNCounter.ServiceName failed")
 	}

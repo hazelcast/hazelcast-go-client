@@ -25,7 +25,7 @@ func ReplicatedMapAddEntryListenerWithPredicateCalculateSize(name *string, predi
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(predicate)
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -78,7 +78,7 @@ func ReplicatedMapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessa
 	handleEventEntry ReplicatedMapAddEntryListenerWithPredicateHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddEntryListenerWithPredicateEventEntryDecode(clientMessage))
 	}
 }

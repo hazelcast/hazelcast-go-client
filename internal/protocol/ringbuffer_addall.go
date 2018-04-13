@@ -24,11 +24,11 @@ func RingbufferAddAllCalculateSize(name *string, valueList []*Data, overflowPoli
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	for _, valueListItem := range valueList {
 		dataSize += DataCalculateSize(valueListItem)
 	}
-	dataSize += INT32_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	return dataSize
 }
 

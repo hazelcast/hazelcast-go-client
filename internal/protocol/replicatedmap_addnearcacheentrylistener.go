@@ -24,8 +24,8 @@ func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name *string, includeVa
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -78,7 +78,7 @@ func ReplicatedMapAddNearCacheEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage))
 	}
 }

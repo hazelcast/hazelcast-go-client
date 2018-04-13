@@ -23,8 +23,8 @@ func ListSubCalculateSize(name *string, from int32, to int32) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += INT32_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
+	dataSize += Int32SizeInBytes
 	return dataSize
 }
 

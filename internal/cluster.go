@@ -27,10 +27,10 @@ import (
 )
 
 const (
-	DEFAULT_ADDRESS       = "127.0.0.1"
-	DEFAULT_PORT          = 5701
-	MEMBER_ADDED    int32 = 1
-	MEMBER_REMOVED  int32 = 2
+	DefaultAddress       = "127.0.0.1"
+	DefaultPort          = 5701
+	MemberAdded    int32 = 1
+	MemberRemoved  int32 = 2
 )
 
 var wg sync.WaitGroup
@@ -76,9 +76,9 @@ func getPossibleAddresses(addressList []string, memberList []*Member) []Address 
 		ip, port := common.GetIpAndPort(address)
 		if common.IsValidIpAddress(ip) {
 			if port == -1 {
-				allAddresses[*NewAddressWithParameters(ip, DEFAULT_PORT)] = struct{}{}
-				allAddresses[*NewAddressWithParameters(ip, DEFAULT_PORT+1)] = struct{}{}
-				allAddresses[*NewAddressWithParameters(ip, DEFAULT_PORT+2)] = struct{}{}
+				allAddresses[*NewAddressWithParameters(ip, DefaultPort)] = struct{}{}
+				allAddresses[*NewAddressWithParameters(ip, DefaultPort+1)] = struct{}{}
+				allAddresses[*NewAddressWithParameters(ip, DefaultPort+2)] = struct{}{}
 			} else {
 				allAddresses[*NewAddressWithParameters(ip, port)] = struct{}{}
 			}
@@ -95,7 +95,7 @@ func getPossibleAddresses(addressList []string, memberList []*Member) []Address 
 		index++
 	}
 	if len(addresses) == 0 {
-		addresses = append(addresses, *NewAddressWithParameters(DEFAULT_ADDRESS, DEFAULT_PORT))
+		addresses = append(addresses, *NewAddressWithParameters(DefaultAddress, DefaultPort))
 	}
 	return addresses
 }
@@ -164,7 +164,7 @@ func (clusterService *clusterService) connectToAddress(address *Address) error {
 	if err != nil {
 		return err
 	}
-	clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_CONNECTED)
+	clusterService.client.LifecycleService.fireLifecycleEvent(LifecycleStateConnected)
 	return nil
 }
 
@@ -229,9 +229,9 @@ func (clusterService *clusterService) RemoveListener(registrationId *string) boo
 }
 
 func (clusterService *clusterService) handleMember(member *Member, eventType int32) {
-	if eventType == MEMBER_ADDED {
+	if eventType == MemberAdded {
 		clusterService.memberAdded(member)
-	} else if eventType == MEMBER_REMOVED {
+	} else if eventType == MemberRemoved {
 		clusterService.memberRemoved(member)
 	}
 	clusterService.logMembers()
@@ -362,7 +362,7 @@ func (clusterService *clusterService) onConnectionClosed(connection *Connection,
 	ownerConnectionAddress := clusterService.ownerConnectionAddress.Load().(*Address)
 	if connection.endpoint.Load().(*Address).Host() != "" && ownerConnectionAddress.Host() != "" &&
 		*connection.endpoint.Load().(*Address) == *ownerConnectionAddress && clusterService.client.LifecycleService.isLive.Load().(bool) {
-		clusterService.client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_DISCONNECTED)
+		clusterService.client.LifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
 		clusterService.ownerConnectionAddress.Store(&Address{})
 		clusterService.reconnectChan <- struct{}{}
 	}

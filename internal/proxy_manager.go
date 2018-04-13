@@ -92,25 +92,25 @@ func (proxyManager *proxyManager) findNextProxyAddress() *Address {
 }
 
 func (proxyManager *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
-	if common.SERVICE_NAME_MAP == *serviceName {
+	if common.ServiceNameMap == *serviceName {
 		return newMapProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_LIST == *serviceName {
+	} else if common.ServiceNameList == *serviceName {
 		return newListProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_SET == *serviceName {
+	} else if common.ServiceNameSet == *serviceName {
 		return newSetProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_TOPIC == *serviceName {
+	} else if common.ServiceNameTopic == *serviceName {
 		return newTopicProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_MULTI_MAP == *serviceName {
+	} else if common.ServiceNameMultiMap == *serviceName {
 		return newMultiMapProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_REPLICATED_MAP == *serviceName {
+	} else if common.ServiceNameReplicatedMap == *serviceName {
 		return newReplicatedMapProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_QUEUE == *serviceName {
+	} else if common.ServiceNameQueue == *serviceName {
 		return newQueueProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_RINGBUFFER_SERVICE == *serviceName {
+	} else if common.ServiceNameRingbufferService == *serviceName {
 		return newRingbufferProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_PN_COUNTER == *serviceName {
+	} else if common.ServiceNamePNCounter == *serviceName {
 		return newPNCounterProxy(proxyManager.client, serviceName, name)
-	} else if common.SERVICE_NAME_ID_GENERATOR == *serviceName {
+	} else if common.ServiceNameIdGenerator == *serviceName {
 		return newFlakeIdGenerator(proxyManager.client, serviceName, name)
 	}
 	return nil, nil

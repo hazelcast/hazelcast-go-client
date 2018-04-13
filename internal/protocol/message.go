@@ -59,38 +59,38 @@ func NewClientMessage(buffer []byte, payloadSize int) *ClientMessage {
 	if buffer != nil {
 		//Message has a buffer so it will be decoded.
 		clientMessage.Buffer = buffer
-		clientMessage.readIndex = HEADER_SIZE
+		clientMessage.readIndex = HeaderSize
 	} else {
 		//Client message that will be encoded.
-		clientMessage.Buffer = make([]byte, HEADER_SIZE+payloadSize)
-		clientMessage.SetDataOffset(HEADER_SIZE)
-		clientMessage.writeIndex = HEADER_SIZE
+		clientMessage.Buffer = make([]byte, HeaderSize+payloadSize)
+		clientMessage.SetDataOffset(HeaderSize)
+		clientMessage.writeIndex = HeaderSize
 	}
 	clientMessage.IsRetryable = false
 	return clientMessage
 }
 
 func (msg *ClientMessage) FrameLength() int32 {
-	return int32(binary.LittleEndian.Uint32(msg.Buffer[FRAME_LENGTH_FIELD_OFFSET:VERSION_FIELD_OFFSET]))
+	return int32(binary.LittleEndian.Uint32(msg.Buffer[FrameLengthFieldOffset:VersionFieldOffset]))
 }
 
 func (msg *ClientMessage) SetFrameLength(v int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[FRAME_LENGTH_FIELD_OFFSET:VERSION_FIELD_OFFSET], uint32(v))
+	binary.LittleEndian.PutUint32(msg.Buffer[FrameLengthFieldOffset:VersionFieldOffset], uint32(v))
 }
 
 func (msg *ClientMessage) SetVersion(v uint8) {
-	msg.Buffer[VERSION_FIELD_OFFSET] = byte(v)
+	msg.Buffer[VersionFieldOffset] = byte(v)
 }
 
 func (msg *ClientMessage) Flags() uint8 {
-	return msg.Buffer[FLAGS_FIELD_OFFSET]
+	return msg.Buffer[FlagsFieldOffset]
 }
 
 func (msg *ClientMessage) SetFlags(v uint8) {
-	msg.Buffer[FLAGS_FIELD_OFFSET] = byte(v)
+	msg.Buffer[FlagsFieldOffset] = byte(v)
 }
 func (msg *ClientMessage) AddFlags(v uint8) {
-	msg.Buffer[FLAGS_FIELD_OFFSET] = msg.Buffer[FLAGS_FIELD_OFFSET] | byte(v)
+	msg.Buffer[FlagsFieldOffset] = msg.Buffer[FlagsFieldOffset] | byte(v)
 }
 
 func (msg *ClientMessage) HasFlags(flags uint8) uint8 {
@@ -102,35 +102,35 @@ func (msg *ClientMessage) HasFlags(flags uint8) uint8 {
 }
 
 func (msg *ClientMessage) MessageType() MessageType {
-	return MessageType(binary.LittleEndian.Uint16(msg.Buffer[TYPE_FIELD_OFFSET:CORRELATION_ID_FIELD_OFFSET]))
+	return MessageType(binary.LittleEndian.Uint16(msg.Buffer[TypeFieldOffset:CorrelationIdFieldOffset]))
 }
 
 func (msg *ClientMessage) SetMessageType(v MessageType) {
-	binary.LittleEndian.PutUint16(msg.Buffer[TYPE_FIELD_OFFSET:CORRELATION_ID_FIELD_OFFSET], uint16(v))
+	binary.LittleEndian.PutUint16(msg.Buffer[TypeFieldOffset:CorrelationIdFieldOffset], uint16(v))
 }
 
 func (msg *ClientMessage) CorrelationId() int64 {
-	return int64(binary.LittleEndian.Uint64(msg.Buffer[CORRELATION_ID_FIELD_OFFSET:PARTITION_ID_FIELD_OFFSET]))
+	return int64(binary.LittleEndian.Uint64(msg.Buffer[CorrelationIdFieldOffset:PartitionIdFieldOffset]))
 }
 
 func (msg *ClientMessage) SetCorrelationId(val int64) {
-	binary.LittleEndian.PutUint64(msg.Buffer[CORRELATION_ID_FIELD_OFFSET:PARTITION_ID_FIELD_OFFSET], uint64(val))
+	binary.LittleEndian.PutUint64(msg.Buffer[CorrelationIdFieldOffset:PartitionIdFieldOffset], uint64(val))
 }
 
 func (msg *ClientMessage) PartitionId() int32 {
-	return int32(binary.LittleEndian.Uint32(msg.Buffer[PARTITION_ID_FIELD_OFFSET:DATA_OFFSET_FIELD_OFFSET]))
+	return int32(binary.LittleEndian.Uint32(msg.Buffer[PartitionIdFieldOffset:DataOffsetFieldOffset]))
 }
 
 func (msg *ClientMessage) SetPartitionId(val int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[PARTITION_ID_FIELD_OFFSET:DATA_OFFSET_FIELD_OFFSET], uint32(val))
+	binary.LittleEndian.PutUint32(msg.Buffer[PartitionIdFieldOffset:DataOffsetFieldOffset], uint32(val))
 }
 
 func (msg *ClientMessage) DataOffset() uint16 {
-	return binary.LittleEndian.Uint16(msg.Buffer[DATA_OFFSET_FIELD_OFFSET:HEADER_SIZE])
+	return binary.LittleEndian.Uint16(msg.Buffer[DataOffsetFieldOffset:HeaderSize])
 }
 
 func (msg *ClientMessage) SetDataOffset(v uint16) {
-	binary.LittleEndian.PutUint16(msg.Buffer[DATA_OFFSET_FIELD_OFFSET:HEADER_SIZE], v)
+	binary.LittleEndian.PutUint16(msg.Buffer[DataOffsetFieldOffset:HeaderSize], v)
 }
 
 func (msg *ClientMessage) writeOffset() int32 {
@@ -147,15 +147,15 @@ func (msg *ClientMessage) readOffset() int32 {
 
 func (msg *ClientMessage) AppendByte(v uint8) {
 	msg.Buffer[msg.writeIndex] = byte(v)
-	msg.writeIndex += BYTE_SIZE_IN_BYTES
+	msg.writeIndex += ByteSizeInBytes
 }
 func (msg *ClientMessage) AppendUint8(v uint8) {
 	msg.Buffer[msg.writeIndex] = byte(v)
-	msg.writeIndex += BYTE_SIZE_IN_BYTES
+	msg.writeIndex += ByteSizeInBytes
 }
 func (msg *ClientMessage) AppendInt32(v int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+INT32_SIZE_IN_BYTES], uint32(v))
-	msg.writeIndex += INT32_SIZE_IN_BYTES
+	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+Int32SizeInBytes], uint32(v))
+	msg.writeIndex += Int32SizeInBytes
 }
 func (msg *ClientMessage) AppendData(v *Data) {
 	msg.AppendByteArray(v.Buffer())
@@ -170,8 +170,8 @@ func (msg *ClientMessage) AppendByteArray(arr []byte) {
 	msg.writeIndex += length
 }
 func (msg *ClientMessage) AppendInt64(v int64) {
-	binary.LittleEndian.PutUint64(msg.Buffer[msg.writeIndex:msg.writeIndex+INT64_SIZE_IN_BYTES], uint64(v))
-	msg.writeIndex += INT64_SIZE_IN_BYTES
+	binary.LittleEndian.PutUint64(msg.Buffer[msg.writeIndex:msg.writeIndex+Int64SizeInBytes], uint64(v))
+	msg.writeIndex += Int64SizeInBytes
 }
 
 func (msg *ClientMessage) AppendString(str *string) {
@@ -201,18 +201,18 @@ func (msg *ClientMessage) AppendBool(v bool) {
 */
 
 func (msg *ClientMessage) ReadInt32() int32 {
-	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset() : msg.readOffset()+INT_SIZE_IN_BYTES]))
-	msg.readIndex += INT_SIZE_IN_BYTES
+	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset() : msg.readOffset()+Int32SizeInBytes]))
+	msg.readIndex += Int32SizeInBytes
 	return int
 }
 func (msg *ClientMessage) ReadInt64() int64 {
-	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset() : msg.readOffset()+INT64_SIZE_IN_BYTES]))
-	msg.readIndex += INT64_SIZE_IN_BYTES
+	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset() : msg.readOffset()+Int64SizeInBytes]))
+	msg.readIndex += Int64SizeInBytes
 	return int64
 }
 func (msg *ClientMessage) ReadUint8() uint8 {
 	byte := byte(msg.Buffer[msg.readOffset()])
-	msg.readIndex += BYTE_SIZE_IN_BYTES
+	msg.readIndex += ByteSizeInBytes
 	return byte
 }
 
@@ -251,5 +251,5 @@ func (msg *ClientMessage) Accumulate(newMsg *ClientMessage) {
 }
 
 func (msg *ClientMessage) IsComplete() bool {
-	return (msg.readOffset() >= HEADER_SIZE) && (msg.readOffset() == msg.FrameLength())
+	return (msg.readOffset() >= HeaderSize) && (msg.readOffset() == msg.FrameLength())
 }

@@ -24,7 +24,7 @@ func SetContainsAllCalculateSize(name *string, items []*Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	for _, itemsItem := range items {
 		dataSize += DataCalculateSize(itemsItem)
 	}

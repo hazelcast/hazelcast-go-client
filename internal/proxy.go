@@ -51,7 +51,7 @@ func (proxy *proxy) ServiceName() string {
 
 func (proxy *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *Data, err error) {
 	if arg1 == nil {
-		return nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastNilPointerError(NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = proxy.toData(arg1)
 	return
@@ -59,10 +59,10 @@ func (proxy *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *Data, err 
 
 func (proxy *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *Data, arg2Data *Data, err error) {
 	if arg1 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(NilArgIsNotAllowed, nil)
 	}
 	if arg2 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = proxy.toData(arg1)
 	if err != nil {
@@ -74,10 +74,10 @@ func (proxy *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (a
 
 func (proxy *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *Data, arg2Data *Data, arg3Data *Data, err error) {
 	if arg1 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(NilArgIsNotAllowed, nil)
 	}
 	if arg2 == nil || arg3 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(NIL_ARG_IS_NOT_ALLOWED, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = proxy.toData(arg1)
 	if err != nil {
@@ -93,7 +93,7 @@ func (proxy *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, ar
 
 func (proxy *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *Data, err error) {
 	if arg1 == nil {
-		return nil, core.NewHazelcastSerializationError(NIL_PREDICATE_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastSerializationError(NilPredicateIsNotAllowed, nil)
 	}
 	arg1Data, err = proxy.toData(arg1)
 	return
@@ -101,7 +101,7 @@ func (proxy *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *D
 
 func (proxy *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData []*Data, err error) {
 	if elements == nil {
-		return nil, core.NewHazelcastSerializationError(NIL_SLICE_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastSerializationError(NilSliceIsNotAllowed, nil)
 	}
 	elementsData, err = collection.ObjectToDataCollection(elements, proxy.client.SerializationService)
 	return
@@ -109,7 +109,7 @@ func (proxy *proxy) validateAndSerializeSlice(elements []interface{}) (elementsD
 
 func (proxy *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*Pair, error) {
 	if entries == nil {
-		return nil, core.NewHazelcastNilPointerError(NIL_MAP_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastNilPointerError(NilMapIsNotAllowed, nil)
 	}
 	partitions := make(map[int32][]*Pair)
 	for key, value := range entries {
@@ -219,11 +219,11 @@ func (proxy *proxy) createOnItemEvent(listener interface{}) func(itemData *Data,
 		item, _ = proxy.toObject(itemData)
 		member := proxy.client.ClusterService.GetMemberByUuid(*uuid)
 		itemEvent := NewItemEvent(proxy.name, item, eventType, member.(*Member))
-		if eventType == ITEM_ADDED {
+		if eventType == ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {
 				listener.(core.ItemAddedListener).ItemAdded(itemEvent)
 			}
-		} else if eventType == ITEM_REMOVED {
+		} else if eventType == ItemRemoved {
 			if _, ok := listener.(core.ItemRemovedListener); ok {
 				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
 			}

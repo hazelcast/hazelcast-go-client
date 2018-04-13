@@ -23,17 +23,17 @@ func ClientAuthenticationCalculateSize(username *string, password *string, uuid 
 	dataSize := 0
 	dataSize += StringCalculateSize(username)
 	dataSize += StringCalculateSize(password)
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	if uuid != nil {
 		dataSize += StringCalculateSize(uuid)
 	}
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	if ownerUuid != nil {
 		dataSize += StringCalculateSize(ownerUuid)
 	}
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	dataSize += StringCalculateSize(clientType)
-	dataSize += UINT8_SIZE_IN_BYTES
+	dataSize += Uint8SizeInBytes
 	dataSize += StringCalculateSize(clientHazelcastVersion)
 	return dataSize
 }

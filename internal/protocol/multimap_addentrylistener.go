@@ -24,8 +24,8 @@ func MultiMapAddEntryListenerCalculateSize(name *string, includeValue bool, loca
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -78,7 +78,7 @@ func MultiMapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry MultiMapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(MultiMapAddEntryListenerEventEntryDecode(clientMessage))
 	}
 }

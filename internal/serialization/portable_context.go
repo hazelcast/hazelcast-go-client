@@ -45,7 +45,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 	}
 	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
-		pos, err := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*INT_SIZE_IN_BYTES)
+		pos, err := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*Int32SizeInBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 		var fieldFactoryId int32 = 0
 		var fieldClassId int32 = 0
 		var fieldVersion int32 = 0
-		if fieldType == PORTABLE {
+		if fieldType == TypePortable {
 			temp, err := input.ReadBool()
 			if err != nil {
 				return nil, err
@@ -95,7 +95,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 				}
 				c.ReadClassDefinitionFromInput(input, fieldFactoryId, fieldClassId, fieldVersion)
 			}
-		} else if fieldType == PORTABLE_ARRAY {
+		} else if fieldType == TypePortableArray {
 			k, err := input.ReadInt32()
 			if err != nil {
 				return nil, err

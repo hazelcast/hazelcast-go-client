@@ -23,12 +23,12 @@ import (
 
 func ObjectToDataCollection(objects []interface{}, service *SerializationService) ([]*Data, error) {
 	if objects == nil {
-		return nil, core.NewHazelcastNilPointerError(common.NIL_SLICE_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
 	}
 	elementsData := make([]*Data, len(objects))
 	for index, element := range objects {
 		if element == nil {
-			return nil, core.NewHazelcastNilPointerError(common.NIL_ARG_IS_NOT_ALLOWED, nil)
+			return nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
 		}
 		elementData, err := service.ToData(element)
 		if err != nil {
@@ -41,7 +41,7 @@ func ObjectToDataCollection(objects []interface{}, service *SerializationService
 
 func DataToObjectCollection(dataSlice []*Data, service *SerializationService) ([]interface{}, error) {
 	if dataSlice == nil {
-		return nil, core.NewHazelcastNilPointerError(common.NIL_SLICE_IS_NOT_ALLOWED, nil)
+		return nil, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
 	}
 	elements := make([]interface{}, len(dataSlice))
 	for index, data := range dataSlice {

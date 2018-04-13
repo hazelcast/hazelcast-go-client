@@ -19,7 +19,6 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/core"
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
-	"regexp"
 	"strconv"
 )
 
@@ -57,18 +56,4 @@ func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (Clas
 
 func encodeVersionedClassId(classId int32, version int32) string {
 	return strconv.Itoa(int(classId)) + "v" + strconv.Itoa(int(version))
-}
-
-func decodeVersionedClassId(encoded string) (int32, int32, error) {
-	re := regexp.MustCompile("[0-9]+")
-	pair := re.FindAllString(encoded, -1)
-	classId, err := strconv.Atoi(pair[0])
-	if err != nil {
-		return 0, 0, err
-	}
-	version, err := strconv.Atoi(pair[1])
-	if err != nil {
-		return 0, 0, err
-	}
-	return int32(classId), int32(version), nil
 }

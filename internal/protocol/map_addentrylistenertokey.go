@@ -25,9 +25,9 @@ func MapAddEntryListenerToKeyCalculateSize(name *string, key *Data, includeValue
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += Int32SizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -82,7 +82,7 @@ func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerToKeyEventEntryDecode(clientMessage))
 	}
 }

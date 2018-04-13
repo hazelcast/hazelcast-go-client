@@ -18,7 +18,7 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const PREDICATE_FACTORY_ID = -32
+const PredicateFactoryId = -32
 
 type predicate struct {
 	id int32
@@ -37,7 +37,7 @@ func (sp *predicate) WriteData(output DataOutput) error {
 }
 
 func (*predicate) FactoryId() int32 {
-	return PREDICATE_FACTORY_ID
+	return PredicateFactoryId
 }
 
 func (p *predicate) ClassId() int32 {
@@ -50,12 +50,12 @@ type SqlPredicate struct {
 }
 
 func NewSqlPredicate(sql string) *SqlPredicate {
-	return &SqlPredicate{newPredicate(SQL_PREDICATE), sql}
+	return &SqlPredicate{newPredicate(SqlPredicateId), sql}
 }
 
 func (sp *SqlPredicate) ReadData(input DataInput) error {
 	var err error
-	sp.predicate = newPredicate(SQL_PREDICATE)
+	sp.predicate = newPredicate(SqlPredicateId)
 	sp.sql, err = input.ReadUTF()
 	return err
 }
@@ -71,11 +71,11 @@ type AndPredicate struct {
 }
 
 func NewAndPredicate(predicates []interface{}) *AndPredicate {
-	return &AndPredicate{newPredicate(AND_PREDICATE), predicates}
+	return &AndPredicate{newPredicate(AndPredicateId), predicates}
 }
 
 func (ap *AndPredicate) ReadData(input DataInput) error {
-	ap.predicate = newPredicate(AND_PREDICATE)
+	ap.predicate = newPredicate(AndPredicateId)
 	length, err := input.ReadInt32()
 	if err != nil {
 		return err
@@ -110,12 +110,12 @@ type BetweenPredicate struct {
 }
 
 func NewBetweenPredicate(field string, from interface{}, to interface{}) *BetweenPredicate {
-	return &BetweenPredicate{newPredicate(BETWEEN_PREDICATE), field, from, to}
+	return &BetweenPredicate{newPredicate(BetweenPredicateId), field, from, to}
 }
 
 func (bp *BetweenPredicate) ReadData(input DataInput) error {
 	var err error
-	bp.predicate = newPredicate(BETWEEN_PREDICATE)
+	bp.predicate = newPredicate(BetweenPredicateId)
 	bp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -145,12 +145,12 @@ type EqualPredicate struct {
 }
 
 func NewEqualPredicate(field string, value interface{}) *EqualPredicate {
-	return &EqualPredicate{newPredicate(EQUAL_PREDICATE), field, value}
+	return &EqualPredicate{newPredicate(EqualPredicateId), field, value}
 }
 
 func (ep *EqualPredicate) ReadData(input DataInput) error {
 	var err error
-	ep.predicate = newPredicate(EQUAL_PREDICATE)
+	ep.predicate = newPredicate(EqualPredicateId)
 	ep.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -174,12 +174,12 @@ type GreaterLessPredicate struct {
 }
 
 func NewGreaterLessPredicate(field string, value interface{}, equal bool, less bool) *GreaterLessPredicate {
-	return &GreaterLessPredicate{newPredicate(GREATERLESS_PREDICATE), field, value, equal, less}
+	return &GreaterLessPredicate{newPredicate(GreaterlessPredicateId), field, value, equal, less}
 }
 
 func (glp *GreaterLessPredicate) ReadData(input DataInput) error {
 	var err error
-	glp.predicate = newPredicate(GREATERLESS_PREDICATE)
+	glp.predicate = newPredicate(GreaterlessPredicateId)
 	glp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -214,12 +214,12 @@ type LikePredicate struct {
 }
 
 func NewLikePredicate(field string, expr string) *LikePredicate {
-	return &LikePredicate{newPredicate(LIKE_PREDICATE), field, expr}
+	return &LikePredicate{newPredicate(LikePredicateId), field, expr}
 }
 
 func (lp *LikePredicate) ReadData(input DataInput) error {
 	var err error
-	lp.predicate = newPredicate(LIKE_PREDICATE)
+	lp.predicate = newPredicate(LikePredicateId)
 	lp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -239,12 +239,12 @@ type ILikePredicate struct {
 }
 
 func NewILikePredicate(field string, expr string) *ILikePredicate {
-	return &ILikePredicate{&LikePredicate{newPredicate(ILIKE_PREDICATE), field, expr}}
+	return &ILikePredicate{&LikePredicate{newPredicate(ILikePredicateId), field, expr}}
 }
 
 func (ilp *ILikePredicate) ReadData(input DataInput) error {
 	var err error
-	ilp.LikePredicate = &LikePredicate{predicate: newPredicate(ILIKE_PREDICATE)}
+	ilp.LikePredicate = &LikePredicate{predicate: newPredicate(ILikePredicateId)}
 	ilp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -260,12 +260,12 @@ type InPredicate struct {
 }
 
 func NewInPredicate(field string, values []interface{}) *InPredicate {
-	return &InPredicate{newPredicate(IN_PREDICATE), field, values}
+	return &InPredicate{newPredicate(InPredicateId), field, values}
 }
 
 func (ip *InPredicate) ReadData(input DataInput) error {
 	var err error
-	ip.predicate = newPredicate(IN_PREDICATE)
+	ip.predicate = newPredicate(InPredicateId)
 	ip.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -302,12 +302,12 @@ type InstanceOfPredicate struct {
 }
 
 func NewInstanceOfPredicate(className string) *InstanceOfPredicate {
-	return &InstanceOfPredicate{newPredicate(INSTANCEOF_PREDICATE), className}
+	return &InstanceOfPredicate{newPredicate(InstanceOfPredicateId), className}
 }
 
 func (iop *InstanceOfPredicate) ReadData(input DataInput) error {
 	var err error
-	iop.predicate = newPredicate(INSTANCEOF_PREDICATE)
+	iop.predicate = newPredicate(InstanceOfPredicateId)
 	iop.className, err = input.ReadUTF()
 	return err
 }
@@ -322,12 +322,12 @@ type NotEqualPredicate struct {
 }
 
 func NewNotEqualPredicate(field string, value interface{}) *NotEqualPredicate {
-	return &NotEqualPredicate{&EqualPredicate{newPredicate(NOTEQUAL_PREDICATE), field, value}}
+	return &NotEqualPredicate{&EqualPredicate{newPredicate(NotEqualPredicateId), field, value}}
 }
 
 func (nep *NotEqualPredicate) ReadData(input DataInput) error {
 	var err error
-	nep.EqualPredicate = &EqualPredicate{predicate: newPredicate(NOTEQUAL_PREDICATE)}
+	nep.EqualPredicate = &EqualPredicate{predicate: newPredicate(NotEqualPredicateId)}
 	nep.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -343,11 +343,11 @@ type NotPredicate struct {
 }
 
 func NewNotPredicate(pred interface{}) *NotPredicate {
-	return &NotPredicate{newPredicate(NOT_PREDICATE), pred}
+	return &NotPredicate{newPredicate(NotPredicateId), pred}
 }
 
 func (np *NotPredicate) ReadData(input DataInput) error {
-	np.predicate = newPredicate(NOT_PREDICATE)
+	np.predicate = newPredicate(NotPredicateId)
 	i, err := input.ReadObject()
 	np.pred = i.(interface{})
 	return err
@@ -363,12 +363,12 @@ type OrPredicate struct {
 }
 
 func NewOrPredicate(predicates []interface{}) *OrPredicate {
-	return &OrPredicate{newPredicate(OR_PREDICATE), predicates}
+	return &OrPredicate{newPredicate(OrPredicateId), predicates}
 }
 
 func (or *OrPredicate) ReadData(input DataInput) error {
 	var err error
-	or.predicate = newPredicate(OR_PREDICATE)
+	or.predicate = newPredicate(OrPredicateId)
 	length, err := input.ReadInt32()
 	if err != nil {
 		return err
@@ -402,12 +402,12 @@ type RegexPredicate struct {
 }
 
 func NewRegexPredicate(field string, regex string) *RegexPredicate {
-	return &RegexPredicate{newPredicate(REGEX_PREDICATE), field, regex}
+	return &RegexPredicate{newPredicate(RegexPredicateId), field, regex}
 }
 
 func (rp *RegexPredicate) ReadData(input DataInput) error {
 	var err error
-	rp.predicate = newPredicate(REGEX_PREDICATE)
+	rp.predicate = newPredicate(RegexPredicateId)
 	rp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -427,10 +427,10 @@ type FalsePredicate struct {
 }
 
 func NewFalsePredicate() *FalsePredicate {
-	return &FalsePredicate{newPredicate(FALSE_PREDICATE)}
+	return &FalsePredicate{newPredicate(FalsePredicateId)}
 }
 func (fp *FalsePredicate) ReadData(input DataInput) error {
-	fp.predicate = newPredicate(FALSE_PREDICATE)
+	fp.predicate = newPredicate(FalsePredicateId)
 	return nil
 }
 
@@ -444,10 +444,10 @@ type TruePredicate struct {
 }
 
 func NewTruePredicate() *TruePredicate {
-	return &TruePredicate{newPredicate(TRUE_PREDICATE)}
+	return &TruePredicate{newPredicate(TruePredicateId)}
 }
 func (tp *TruePredicate) ReadData(input DataInput) error {
-	tp.predicate = newPredicate(TRUE_PREDICATE)
+	tp.predicate = newPredicate(TruePredicateId)
 	return nil
 }
 

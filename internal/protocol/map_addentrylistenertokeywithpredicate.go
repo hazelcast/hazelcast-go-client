@@ -26,9 +26,9 @@ func MapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, key *Data,
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(predicate)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += Int32SizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -84,7 +84,7 @@ func MapAddEntryListenerToKeyWithPredicateHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage))
 	}
 }

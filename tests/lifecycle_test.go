@@ -42,11 +42,11 @@ func TestLifecycleListener(t *testing.T) {
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Lifecycle listener failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_STARTING, "Lifecycle listener failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[1], internal.LIFECYCLE_STATE_CONNECTED, "Lifecycle listener failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[2], internal.LIFECYCLE_STATE_STARTED, "Lifecycle listener failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[3], internal.LIFECYCLE_STATE_SHUTTING_DOWN, "Lifecycle listener failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[4], internal.LIFECYCLE_STATE_SHUTDOWN, "Lifecycle listener failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LifecycleStateStarting, "Lifecycle listener failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[1], internal.LifecycleStateConnected, "Lifecycle listener failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[2], internal.LifecycleStateStarted, "Lifecycle listener failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[3], internal.LifecycleStateShuttingDown, "Lifecycle listener failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[4], internal.LifecycleStateShutdown, "Lifecycle listener failed")
 	remoteController.ShutdownCluster(cluster.ID)
 }
 func TestLifecycleListenerForDisconnected(t *testing.T) {
@@ -62,7 +62,7 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "Lifecycle listener failed")
-	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LIFECYCLE_STATE_DISCONNECTED, "Lifecycle listener failed")
+	AssertEqualf(t, nil, lifecycleListener.collector[0], internal.LifecycleStateDisconnected, "Lifecycle listener failed")
 	client.GetLifecycle().RemoveListener(&registrationId)
 	client.Shutdown()
 }

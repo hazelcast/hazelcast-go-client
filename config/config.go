@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	DEFAULT_GROUP_NAME         = "dev"
-	DEFAULT_GROUP_PASSWORD     = "dev-pass"
-	DEFAULT_INVOCATION_TIMEOUT = 120 * time.Second //secs
+	DefaultGroupName         = "dev"
+	DefaultGroupPassword     = "dev-pass"
+	DefaultInvocationTimeout = 120 * time.Second //secs
 )
 
 // ClientConfig is the main configuration to setup a Hazelcast client.
@@ -289,7 +289,7 @@ type GroupConfig struct {
 
 // NewGroupConfig creates a new GroupConfig with default group name and password.
 func NewGroupConfig() *GroupConfig {
-	return &GroupConfig{name: DEFAULT_GROUP_NAME, password: DEFAULT_GROUP_PASSWORD}
+	return &GroupConfig{name: DefaultGroupName, password: DefaultGroupPassword}
 }
 
 // Name returns the group name of the group.
@@ -356,7 +356,7 @@ func NewClientNetworkConfig() *ClientNetworkConfig {
 		connectionTimeout:          5,
 		redoOperation:              false,
 		smartRouting:               true,
-		invocationTimeoutInSeconds: DEFAULT_INVOCATION_TIMEOUT,
+		invocationTimeoutInSeconds: DefaultInvocationTimeout,
 	}
 }
 
