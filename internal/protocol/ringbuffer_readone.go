@@ -30,7 +30,7 @@ func RingbufferReadOneCalculateSize(name *string, sequence int64) int {
 func RingbufferReadOneEncodeRequest(name *string, sequence int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferReadOneCalculateSize(name, sequence))
-	clientMessage.SetMessageType(RINGBUFFER_READONE)
+	clientMessage.SetMessageType(ringbufferReadOne)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt64(sequence)

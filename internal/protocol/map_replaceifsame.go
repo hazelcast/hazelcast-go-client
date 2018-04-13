@@ -34,7 +34,7 @@ func MapReplaceIfSameCalculateSize(name *string, key *Data, testValue *Data, val
 func MapReplaceIfSameEncodeRequest(name *string, key *Data, testValue *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapReplaceIfSameCalculateSize(name, key, testValue, value, threadId))
-	clientMessage.SetMessageType(MAP_REPLACEIFSAME)
+	clientMessage.SetMessageType(mapReplaceIfSame)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

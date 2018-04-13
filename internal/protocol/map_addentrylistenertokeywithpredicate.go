@@ -35,7 +35,7 @@ func MapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, key *Data,
 func MapAddEntryListenerToKeyWithPredicateEncodeRequest(name *string, key *Data, predicate *Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, includeValue, listenerFlags, localOnly))
-	clientMessage.SetMessageType(MAP_ADDENTRYLISTENERTOKEYWITHPREDICATE)
+	clientMessage.SetMessageType(mapAddEntryListenerToKeyWithPredicate)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

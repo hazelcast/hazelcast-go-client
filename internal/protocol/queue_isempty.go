@@ -26,7 +26,7 @@ func QueueIsEmptyCalculateSize(name *string) int {
 func QueueIsEmptyEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(QUEUE_ISEMPTY)
+	clientMessage.SetMessageType(queueIsEmpty)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

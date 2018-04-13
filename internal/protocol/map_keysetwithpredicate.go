@@ -29,7 +29,7 @@ func MapKeySetWithPredicateCalculateSize(name *string, predicate *Data) int {
 func MapKeySetWithPredicateEncodeRequest(name *string, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapKeySetWithPredicateCalculateSize(name, predicate))
-	clientMessage.SetMessageType(MAP_KEYSETWITHPREDICATE)
+	clientMessage.SetMessageType(mapKeySetWithPredicate)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(predicate)

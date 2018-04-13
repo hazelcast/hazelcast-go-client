@@ -26,7 +26,7 @@ func RingbufferTailSequenceCalculateSize(name *string) int {
 func RingbufferTailSequenceEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferTailSequenceCalculateSize(name))
-	clientMessage.SetMessageType(RINGBUFFER_TAILSEQUENCE)
+	clientMessage.SetMessageType(ringbufferTailSequence)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

@@ -31,7 +31,7 @@ func ListSubCalculateSize(name *string, from int32, to int32) int {
 func ListSubEncodeRequest(name *string, from int32, to int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListSubCalculateSize(name, from, to))
-	clientMessage.SetMessageType(LIST_SUB)
+	clientMessage.SetMessageType(listSub)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(from)

@@ -33,7 +33,7 @@ func MultiMapContainsEntryCalculateSize(name *string, key *Data, value *Data, th
 func MultiMapContainsEntryEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapContainsEntryCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(MULTIMAP_CONTAINSENTRY)
+	clientMessage.SetMessageType(multimapContainsEntry)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

@@ -30,7 +30,7 @@ func QueuePollCalculateSize(name *string, timeoutMillis int64) int {
 func QueuePollEncodeRequest(name *string, timeoutMillis int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueuePollCalculateSize(name, timeoutMillis))
-	clientMessage.SetMessageType(QUEUE_POLL)
+	clientMessage.SetMessageType(queuePoll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt64(timeoutMillis)

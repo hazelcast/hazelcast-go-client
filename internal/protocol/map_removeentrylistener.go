@@ -27,7 +27,7 @@ func MapRemoveEntryListenerCalculateSize(name *string, registrationId *string) i
 func MapRemoveEntryListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveEntryListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(MAP_REMOVEENTRYLISTENER)
+	clientMessage.SetMessageType(mapRemoveEntryListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(registrationId)

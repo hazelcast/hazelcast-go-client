@@ -33,7 +33,7 @@ func ReplicatedMapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, 
 func ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(name *string, key *Data, predicate *Data, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, localOnly))
-	clientMessage.SetMessageType(REPLICATEDMAP_ADDENTRYLISTENERTOKEYWITHPREDICATE)
+	clientMessage.SetMessageType(replicatedmapAddEntryListenerToKeyWithPredicate)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

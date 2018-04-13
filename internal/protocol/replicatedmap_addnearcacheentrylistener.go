@@ -32,7 +32,7 @@ func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name *string, includeVa
 func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name *string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapAddNearCacheEntryListenerCalculateSize(name, includeValue, localOnly))
-	clientMessage.SetMessageType(REPLICATEDMAP_ADDNEARCACHEENTRYLISTENER)
+	clientMessage.SetMessageType(replicatedmapAddNearCacheEntryListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendBool(includeValue)

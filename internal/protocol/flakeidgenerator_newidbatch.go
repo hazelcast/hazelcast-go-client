@@ -29,7 +29,7 @@ func FlakeIdGeneratorNewIdBatchCalculateSize(name *string, batchSize int32) int 
 func FlakeIdGeneratorNewIdBatchEncodeRequest(name *string, batchSize int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, FlakeIdGeneratorNewIdBatchCalculateSize(name, batchSize))
-	clientMessage.SetMessageType(FLAKEIDGENERATOR_NEWIDBATCH)
+	clientMessage.SetMessageType(flakeidgeneratorNewIdBatch)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(batchSize)

@@ -29,7 +29,7 @@ func SetContainsCalculateSize(name *string, value *Data) int {
 func SetContainsEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, SetContainsCalculateSize(name, value))
-	clientMessage.SetMessageType(SET_CONTAINS)
+	clientMessage.SetMessageType(setContains)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

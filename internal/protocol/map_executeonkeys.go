@@ -35,7 +35,7 @@ func MapExecuteOnKeysCalculateSize(name *string, entryProcessor *Data, keys []*D
 func MapExecuteOnKeysEncodeRequest(name *string, entryProcessor *Data, keys []*Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
-	clientMessage.SetMessageType(MAP_EXECUTEONKEYS)
+	clientMessage.SetMessageType(mapExecuteOnKeys)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(entryProcessor)

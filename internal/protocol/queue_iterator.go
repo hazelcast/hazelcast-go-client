@@ -28,7 +28,7 @@ func QueueIteratorCalculateSize(name *string) int {
 func QueueIteratorEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueIteratorCalculateSize(name))
-	clientMessage.SetMessageType(QUEUE_ITERATOR)
+	clientMessage.SetMessageType(queueIterator)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

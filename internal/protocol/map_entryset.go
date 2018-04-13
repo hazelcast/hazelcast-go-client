@@ -26,7 +26,7 @@ func MapEntrySetCalculateSize(name *string) int {
 func MapEntrySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEntrySetCalculateSize(name))
-	clientMessage.SetMessageType(MAP_ENTRYSET)
+	clientMessage.SetMessageType(mapEntrySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

@@ -29,7 +29,7 @@ func MapIsLockedCalculateSize(name *string, key *Data) int {
 func MapIsLockedEncodeRequest(name *string, key *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapIsLockedCalculateSize(name, key))
-	clientMessage.SetMessageType(MAP_ISLOCKED)
+	clientMessage.SetMessageType(mapIsLocked)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

@@ -33,7 +33,7 @@ func MapReplaceCalculateSize(name *string, key *Data, value *Data, threadId int6
 func MapReplaceEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapReplaceCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(MAP_REPLACE)
+	clientMessage.SetMessageType(mapReplace)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

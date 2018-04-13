@@ -28,7 +28,7 @@ func MultiMapKeySetCalculateSize(name *string) int {
 func MultiMapKeySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapKeySetCalculateSize(name))
-	clientMessage.SetMessageType(MULTIMAP_KEYSET)
+	clientMessage.SetMessageType(multimapKeySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

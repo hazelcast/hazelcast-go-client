@@ -29,7 +29,7 @@ func QueuePutCalculateSize(name *string, value *Data) int {
 func QueuePutEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueuePutCalculateSize(name, value))
-	clientMessage.SetMessageType(QUEUE_PUT)
+	clientMessage.SetMessageType(queuePut)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

@@ -29,7 +29,7 @@ func SetRemoveCalculateSize(name *string, value *Data) int {
 func SetRemoveEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, SetRemoveCalculateSize(name, value))
-	clientMessage.SetMessageType(SET_REMOVE)
+	clientMessage.SetMessageType(setRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

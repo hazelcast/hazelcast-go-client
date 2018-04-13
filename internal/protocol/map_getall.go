@@ -34,7 +34,7 @@ func MapGetAllCalculateSize(name *string, keys []*Data) int {
 func MapGetAllEncodeRequest(name *string, keys []*Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapGetAllCalculateSize(name, keys))
-	clientMessage.SetMessageType(MAP_GETALL)
+	clientMessage.SetMessageType(mapGetAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(keys)))

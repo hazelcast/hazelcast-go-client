@@ -28,7 +28,7 @@ func ClientCreateProxyCalculateSize(name *string, serviceName *string, target *A
 func ClientCreateProxyEncodeRequest(name *string, serviceName *string, target *Address) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientCreateProxyCalculateSize(name, serviceName, target))
-	clientMessage.SetMessageType(CLIENT_CREATEPROXY)
+	clientMessage.SetMessageType(clientCreateProxy)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(serviceName)

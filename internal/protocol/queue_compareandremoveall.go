@@ -34,7 +34,7 @@ func QueueCompareAndRemoveAllCalculateSize(name *string, dataList []*Data) int {
 func QueueCompareAndRemoveAllEncodeRequest(name *string, dataList []*Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueCompareAndRemoveAllCalculateSize(name, dataList))
-	clientMessage.SetMessageType(QUEUE_COMPAREANDREMOVEALL)
+	clientMessage.SetMessageType(queueCompareAndRemoveAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(dataList)))

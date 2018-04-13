@@ -29,7 +29,7 @@ func ReplicatedMapRemoveCalculateSize(name *string, key *Data) int {
 func ReplicatedMapRemoveEncodeRequest(name *string, key *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapRemoveCalculateSize(name, key))
-	clientMessage.SetMessageType(REPLICATEDMAP_REMOVE)
+	clientMessage.SetMessageType(replicatedmapRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

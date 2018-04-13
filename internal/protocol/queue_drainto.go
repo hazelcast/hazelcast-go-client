@@ -28,7 +28,7 @@ func QueueDrainToCalculateSize(name *string) int {
 func QueueDrainToEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueDrainToCalculateSize(name))
-	clientMessage.SetMessageType(QUEUE_DRAINTO)
+	clientMessage.SetMessageType(queueDrainTo)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

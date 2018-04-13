@@ -26,7 +26,7 @@ func MultiMapSizeCalculateSize(name *string) int {
 func MultiMapSizeEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapSizeCalculateSize(name))
-	clientMessage.SetMessageType(MULTIMAP_SIZE)
+	clientMessage.SetMessageType(multimapSize)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

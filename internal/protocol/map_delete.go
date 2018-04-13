@@ -32,7 +32,7 @@ func MapDeleteCalculateSize(name *string, key *Data, threadId int64) int {
 func MapDeleteEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapDeleteCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_DELETE)
+	clientMessage.SetMessageType(mapDelete)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

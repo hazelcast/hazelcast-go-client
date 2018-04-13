@@ -28,7 +28,7 @@ func QueuePeekCalculateSize(name *string) int {
 func QueuePeekEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueuePeekCalculateSize(name))
-	clientMessage.SetMessageType(QUEUE_PEEK)
+	clientMessage.SetMessageType(queuePeek)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

@@ -32,7 +32,7 @@ func ListSetCalculateSize(name *string, index int32, value *Data) int {
 func ListSetEncodeRequest(name *string, index int32, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListSetCalculateSize(name, index, value))
-	clientMessage.SetMessageType(LIST_SET)
+	clientMessage.SetMessageType(listSet)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(index)

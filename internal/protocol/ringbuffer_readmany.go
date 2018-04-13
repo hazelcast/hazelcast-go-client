@@ -37,7 +37,7 @@ func RingbufferReadManyCalculateSize(name *string, startSequence int64, minCount
 func RingbufferReadManyEncodeRequest(name *string, startSequence int64, minCount int32, maxCount int32, filter *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferReadManyCalculateSize(name, startSequence, minCount, maxCount, filter))
-	clientMessage.SetMessageType(RINGBUFFER_READMANY)
+	clientMessage.SetMessageType(ringbufferReadMany)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt64(startSequence)
@@ -51,9 +51,9 @@ func RingbufferReadManyEncodeRequest(name *string, startSequence int64, minCount
 	return clientMessage
 }
 
-func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (readCount int32, items []*Data, itemSeqs []int64) {
+func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (readCount int32, items []*Data, itemSeqs []int64, nextSeq int64) {
 	// Decode response from client message
-	return func() (readCount int32, items []*Data, itemSeqs []int64) {
+	return func() (readCount int32, items []*Data, itemSeqs []int64, nextSeq int64) {
 		readCount = clientMessage.ReadInt32()
 		itemsSize := clientMessage.ReadInt32()
 		items = make([]*Data, itemsSize)
@@ -73,6 +73,10 @@ func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (read
 				itemSeqs[itemSeqsIndex] = itemSeqsItem
 			}
 		}
+		if clientMessage.IsComplete() {
+			return
+		}
+		nextSeq = clientMessage.ReadInt64()
 		return
 	}
 }

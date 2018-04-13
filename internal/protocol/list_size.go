@@ -26,7 +26,7 @@ func ListSizeCalculateSize(name *string) int {
 func ListSizeEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListSizeCalculateSize(name))
-	clientMessage.SetMessageType(LIST_SIZE)
+	clientMessage.SetMessageType(listSize)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

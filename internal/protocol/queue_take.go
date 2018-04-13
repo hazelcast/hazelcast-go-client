@@ -28,7 +28,7 @@ func QueueTakeCalculateSize(name *string) int {
 func QueueTakeEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueTakeCalculateSize(name))
-	clientMessage.SetMessageType(QUEUE_TAKE)
+	clientMessage.SetMessageType(queueTake)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

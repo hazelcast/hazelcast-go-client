@@ -27,7 +27,7 @@ func ListRemoveListenerCalculateSize(name *string, registrationId *string) int {
 func ListRemoveListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListRemoveListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(LIST_REMOVELISTENER)
+	clientMessage.SetMessageType(listRemoveListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(registrationId)

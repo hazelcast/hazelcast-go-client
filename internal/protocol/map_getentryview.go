@@ -32,7 +32,7 @@ func MapGetEntryViewCalculateSize(name *string, key *Data, threadId int64) int {
 func MapGetEntryViewEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapGetEntryViewCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_GETENTRYVIEW)
+	clientMessage.SetMessageType(mapGetEntryView)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

@@ -29,7 +29,7 @@ func QueueRemoveCalculateSize(name *string, value *Data) int {
 func QueueRemoveEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueRemoveCalculateSize(name, value))
-	clientMessage.SetMessageType(QUEUE_REMOVE)
+	clientMessage.SetMessageType(queueRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

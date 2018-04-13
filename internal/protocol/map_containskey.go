@@ -32,7 +32,7 @@ func MapContainsKeyCalculateSize(name *string, key *Data, threadId int64) int {
 func MapContainsKeyEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapContainsKeyCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_CONTAINSKEY)
+	clientMessage.SetMessageType(mapContainsKey)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

@@ -35,7 +35,7 @@ func RingbufferAddAllCalculateSize(name *string, valueList []*Data, overflowPoli
 func RingbufferAddAllEncodeRequest(name *string, valueList []*Data, overflowPolicy int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferAddAllCalculateSize(name, valueList, overflowPolicy))
-	clientMessage.SetMessageType(RINGBUFFER_ADDALL)
+	clientMessage.SetMessageType(ringbufferAddAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(valueList)))

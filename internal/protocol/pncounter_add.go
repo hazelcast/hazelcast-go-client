@@ -38,7 +38,7 @@ func PNCounterAddCalculateSize(name *string, delta int64, getBeforeUpdate bool, 
 func PNCounterAddEncodeRequest(name *string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *Address) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, PNCounterAddCalculateSize(name, delta, getBeforeUpdate, replicaTimestamps, targetReplica))
-	clientMessage.SetMessageType(PNCOUNTER_ADD)
+	clientMessage.SetMessageType(pncounterAdd)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt64(delta)

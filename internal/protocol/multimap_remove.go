@@ -32,7 +32,7 @@ func MultiMapRemoveCalculateSize(name *string, key *Data, threadId int64) int {
 func MultiMapRemoveEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapRemoveCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MULTIMAP_REMOVE)
+	clientMessage.SetMessageType(multimapRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

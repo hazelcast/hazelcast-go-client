@@ -27,7 +27,7 @@ func ClientDestroyProxyCalculateSize(name *string, serviceName *string) int {
 func ClientDestroyProxyEncodeRequest(name *string, serviceName *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientDestroyProxyCalculateSize(name, serviceName))
-	clientMessage.SetMessageType(CLIENT_DESTROYPROXY)
+	clientMessage.SetMessageType(clientDestroyProxy)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(serviceName)

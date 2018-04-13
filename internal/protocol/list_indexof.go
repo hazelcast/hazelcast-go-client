@@ -29,7 +29,7 @@ func ListIndexOfCalculateSize(name *string, value *Data) int {
 func ListIndexOfEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListIndexOfCalculateSize(name, value))
-	clientMessage.SetMessageType(LIST_INDEXOF)
+	clientMessage.SetMessageType(listIndexOf)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

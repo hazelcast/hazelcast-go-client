@@ -29,7 +29,7 @@ func ListRemoveCalculateSize(name *string, value *Data) int {
 func ListRemoveEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListRemoveCalculateSize(name, value))
-	clientMessage.SetMessageType(LIST_REMOVE)
+	clientMessage.SetMessageType(listRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

@@ -27,7 +27,7 @@ func TopicRemoveMessageListenerCalculateSize(name *string, registrationId *strin
 func TopicRemoveMessageListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, TopicRemoveMessageListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(TOPIC_REMOVEMESSAGELISTENER)
+	clientMessage.SetMessageType(topicRemoveMessageListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(registrationId)

@@ -26,7 +26,7 @@ func ListIsEmptyCalculateSize(name *string) int {
 func ListIsEmptyEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(LIST_ISEMPTY)
+	clientMessage.SetMessageType(listIsEmpty)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

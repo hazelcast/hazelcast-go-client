@@ -32,7 +32,7 @@ func MapGetCalculateSize(name *string, key *Data, threadId int64) int {
 func MapGetEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapGetCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_GET)
+	clientMessage.SetMessageType(mapGet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

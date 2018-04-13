@@ -32,7 +32,7 @@ func MultiMapForceUnlockCalculateSize(name *string, key *Data, referenceId int64
 func MultiMapForceUnlockEncodeRequest(name *string, key *Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapForceUnlockCalculateSize(name, key, referenceId))
-	clientMessage.SetMessageType(MULTIMAP_FORCEUNLOCK)
+	clientMessage.SetMessageType(multimapForceUnlock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

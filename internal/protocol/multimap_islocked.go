@@ -29,7 +29,7 @@ func MultiMapIsLockedCalculateSize(name *string, key *Data) int {
 func MultiMapIsLockedEncodeRequest(name *string, key *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapIsLockedCalculateSize(name, key))
-	clientMessage.SetMessageType(MULTIMAP_ISLOCKED)
+	clientMessage.SetMessageType(multimapIsLocked)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

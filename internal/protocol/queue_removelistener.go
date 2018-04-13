@@ -27,7 +27,7 @@ func QueueRemoveListenerCalculateSize(name *string, registrationId *string) int 
 func QueueRemoveListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueRemoveListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(QUEUE_REMOVELISTENER)
+	clientMessage.SetMessageType(queueRemoveListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(registrationId)

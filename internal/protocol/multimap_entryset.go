@@ -26,7 +26,7 @@ func MultiMapEntrySetCalculateSize(name *string) int {
 func MultiMapEntrySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapEntrySetCalculateSize(name))
-	clientMessage.SetMessageType(MULTIMAP_ENTRYSET)
+	clientMessage.SetMessageType(multimapEntrySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()
