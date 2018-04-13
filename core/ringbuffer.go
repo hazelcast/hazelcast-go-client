@@ -59,7 +59,7 @@ type Ringbuffer interface {
 	// In the case when OverflowPolicyFail was specified, the add operation will keep failing until an oldest item in this
 	// ringbuffer will reach its time-to-live.
 	//
-	// It returns the sequence number of the added item. You can read the added item using this number.
+	// Add returns the sequence number of the added item. You can read the added item using this number.
 	Add(item interface{}, overflowPolicy OverflowPolicy) (sequence int64, err error)
 
 	// AddAll adds all items in the specified slice to the tail of this buffer. The behavior of this method is essentially
@@ -87,7 +87,7 @@ type Ringbuffer interface {
 	ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet ReadResultSet, err error)
 }
 
-// Using this policy one can control the behavior what should to be done when an item is about to be added to the ringbuffer,
+// OverflowPolicy is a policy with which one can control the behavior of what should be done when an item is about to be added to the ringbuffer,
 // but there is 0 remaining capacity.
 //
 // Overflowing happens when a time-to-live is set and the oldest item in the ringbuffer (the head) is not old enough to expire.
@@ -96,7 +96,7 @@ type OverflowPolicy interface {
 }
 
 const (
-	// Using this policy the oldest item is overwritten no matter it is not old enough to retire. Using this policy you are
+	// OverflowPolicyOverwrite is the policy where the oldest item is overwritten even if it is not old enough to retire. Using this policy you are
 	// sacrificing the time-to-live in favor of being able to write.
 	//
 	// Example: if there is a time-to-live of 30 seconds, the buffer is full and the oldest item in the ring has been placed a
@@ -104,7 +104,7 @@ const (
 	// what.
 	OverflowPolicyOverwrite policy = 0
 
-	// Using this policy the call will fail immediately and the oldest item will not be overwritten before it is old enough
+	// OverflowPolicyFail is the policy where the call will fail immediately and the oldest item will not be overwritten before it is old enough
 	// to retire. So this policy sacrifices the ability to write in favor of time-to-live.
 	//
 	// The advantage of fail is that the caller can decide what to do since it doesn't trap the thread due to backoff.
@@ -115,9 +115,10 @@ const (
 	OverflowPolicyFail policy = 1
 )
 
-// This type is not used by user.
+// policy type is not used by user.
 type policy int32
 
+// Policy returns the policy type.
 func (p policy) Policy() policy {
 	return p
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package core provides core API interfaces/classes.
 package core
 
 import "time"
@@ -140,6 +141,7 @@ type IEntryView interface {
 	Ttl() time.Duration
 }
 
+// IEntryEvent is map entry event.
 type IEntryEvent interface {
 	// KeyData returns the key of the entry event.
 	Key() interface{}

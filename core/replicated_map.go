@@ -92,26 +92,26 @@ type ReplicatedMap interface {
 
 	// AddEntryListener adds an entry listener for this map. The listener will be notified for all
 	// map add/remove/update/evict events.
-	// It returns registration id of the listener.
+	// AddEntryListener returns registration id of the listener.
 	AddEntryListener(listener interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate.
-	// It returns registration id of the listener.
+	// AddEntryListenerWithPredicate returns registration id of the listener.
 	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds the specified entry listener for the specified key. The listener will be
 	// notified for all add/remove/update/evict events of the specified key only.
-	// It returns registration id of the listener.
+	// AddEntryListenerToKey returns registration id of the listener.
 	AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate and key.
-	// It returns registration id of the listener.
+	// AddEntryListenerToKeyWithPredicate returns registration id of the listener.
 	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (registrationID *string, err error)
 
 	// RemoveEntryListener removes the specified entry listener and returns silently if there was no such
 	// listener added before.
-	// It returns true if remove operation is successful, false if unsuccessful or this listener did not exist.
+	// RemoveEntryListener returns true if remove operation is successful, false if unsuccessful or this listener did not exist.
 	RemoveEntryListener(registrationId *string) (removed bool, err error)
 }

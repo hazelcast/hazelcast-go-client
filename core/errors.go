@@ -82,7 +82,7 @@ type HazelcastIllegalStateError struct {
 	*HazelcastErrorType
 }
 
-// HazelcastNilError is returned when a nil argument has been passed to a method.
+// HazelcastNilPointerError is returned when a nil argument has been passed to a method.
 type HazelcastNilPointerError struct {
 	*HazelcastErrorType
 }
@@ -118,82 +118,82 @@ type HazelcastConsistencyLostError struct {
 	*HazelcastErrorType
 }
 
-// NewHazelcastNilPointerError returns HazelcastNilPointerError.
+// NewHazelcastNilPointerError returns a HazelcastNilPointerError.
 func NewHazelcastNilPointerError(message string, cause error) *HazelcastNilPointerError {
 	return &HazelcastNilPointerError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// HazelcastIllegalStateError returns HazelcastIOError.
+// NewHazelcastIOError returns a HazelcastIOError.
 func NewHazelcastIOError(message string, cause error) *HazelcastIOError {
 	return &HazelcastIOError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastClientNotActiveError returns HazelcastClientNotActiveError.
+// NewHazelcastClientNotActiveError returns a HazelcastClientNotActiveError.
 func NewHazelcastClientNotActiveError(message string, cause error) *HazelcastClientNotActiveError {
 	return &HazelcastClientNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastErrorType returns HazelcastErrorType.
+// NewHazelcastErrorType returns a HazelcastErrorType.
 func NewHazelcastErrorType(message string, cause error) *HazelcastErrorType {
 	return &HazelcastErrorType{message: message, cause: cause}
 }
 
-// NewHazelcastIllegalStateError returns HazelcastIllegalStateError.
+// NewHazelcastIllegalStateError returns a HazelcastIllegalStateError.
 func NewHazelcastIllegalStateError(message string, cause error) *HazelcastIllegalStateError {
 	return &HazelcastIllegalStateError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastTargetDisconnectedError returns HazelcastTargetDisconnectedError.
+// NewHazelcastTargetDisconnectedError returns a HazelcastTargetDisconnectedError.
 func NewHazelcastTargetDisconnectedError(message string, cause error) *HazelcastTargetDisconnectedError {
 	return &HazelcastTargetDisconnectedError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastEOFError returns HazelcastEOFError.
+// NewHazelcastEOFError returns a HazelcastEOFError.
 func NewHazelcastEOFError(message string, cause error) *HazelcastEOFError {
 	return &HazelcastEOFError{&HazelcastErrorType{message, cause}}
 }
 
-// NewHazelcastSerializationError returns HazelcastSerializationError.
+// NewHazelcastSerializationError returns a HazelcastSerializationError.
 func NewHazelcastSerializationError(message string, cause error) *HazelcastSerializationError {
 	return &HazelcastSerializationError{&HazelcastErrorType{message, cause}}
 }
 
-// NewHazelcastIllegalArgumentError returns HazelcastIllegalArgumentError.
+// NewHazelcastIllegalArgumentError returns a HazelcastIllegalArgumentError.
 func NewHazelcastIllegalArgumentError(message string, cause error) *HazelcastIllegalArgumentError {
 	return &HazelcastIllegalArgumentError{&HazelcastErrorType{message, cause}}
 }
 
-// NewHazelcastAuthenticationError returns HazelcastAuthenticationError.
+// NewHazelcastAuthenticationError returns a HazelcastAuthenticationError.
 func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuthenticationError {
 	return &HazelcastAuthenticationError{&HazelcastErrorType{message, cause}}
 }
 
-// NewHazelcastTimeoutError returns HazelcastTimeoutError.
+// NewHazelcastTimeoutError returns a HazelcastTimeoutError.
 func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
 	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastInstanceNotActiveError returns HazelcastInstanceNotActiveError.
+// NewHazelcastInstanceNotActiveError returns a HazelcastInstanceNotActiveError.
 func NewHazelcastInstanceNotActiveError(message string, cause error) *HazelcastInstanceNotActiveError {
 	return &HazelcastInstanceNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastTargetNotMemberError returns HazelcastTargetNotMemberError.
+// NewHazelcastTargetNotMemberError returns a HazelcastTargetNotMemberError.
 func NewHazelcastTargetNotMemberError(message string, cause error) *HazelcastTargetNotMemberError {
 	return &HazelcastTargetNotMemberError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastNoDataMemberInClusterError returns HazelcastNoDataMemberInClusterError.
+// NewHazelcastNoDataMemberInClusterError returns a HazelcastNoDataMemberInClusterError.
 func NewHazelcastNoDataMemberInClusterError(message string, cause error) *HazelcastNoDataMemberInClusterError {
 	return &HazelcastNoDataMemberInClusterError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastUnsupportedOperationError returns HazelcastUnsupportedOperationError.
+// NewHazelcastUnsupportedOperationError returns a HazelcastUnsupportedOperationError.
 func NewHazelcastUnsupportedOperationError(message string, cause error) *HazelcastUnsupportedOperationError {
 	return &HazelcastUnsupportedOperationError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastConsistencyLostError returns HazelcastConsistencyLostError.
+// NewHazelcastConsistencyLostError returns a HazelcastConsistencyLostError.
 func NewHazelcastConsistencyLostError(message string, cause error) *HazelcastConsistencyLostError {
 	return &HazelcastConsistencyLostError{&HazelcastErrorType{message: message, cause: cause}}
 }

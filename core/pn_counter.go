@@ -54,65 +54,65 @@ type PNCounter interface {
 	IDistributedObject
 
 	// Get returns the current value of the counter.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	Get() (currentValue int64, err error)
 
 	// GetAndAdd adds the given value to the current value.
-	// It returns the previous value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the previous value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	GetAndAdd(delta int64) (previousValue int64, err error)
 
 	// AddAndGet adds the given value to the current value.
-	// It returns the updated value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the updated value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	AddAndGet(delta int64) (updatedValue int64, err error)
 
 	// GetAndSubtract subtracts the given value to the current value.
-	// It returns the previous value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the previous value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	GetAndSubtract(delta int64) (previousValue int64, err error)
 
 	// SubtractAndGet subtracts the given value to the current value.
-	// It returns the updated value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the updated value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	SubtractAndGet(delta int64) (updatedValue int64, err error)
 
 	// DecrementAndGet decrements by one the current value.
-	// It returns the updated value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the updated value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	DecrementAndGet() (updatedValue int64, err error)
 
 	// IncrementAndGet increments by one the current value.
-	// It returns the updated value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the updated value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	IncrementAndGet() (updatedValue int64, err error)
 
 	// GetAndDecrement decrements by one the current value.
-	// It returns the previous value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the previous value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	GetAndDecrement() (previousValue int64, err error)
 
 	// GetAndIncrement increments by one the current value.
-	// It returns the previous value.
-	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members.
-	// It returns HazelcastUnsupportedOperationError if the cluster version is less  than 3.10.
-	// It returns HazelcastConsistencyLostError if the session guarantees have been lost.
+	// It returns the previous value,
+	// HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,
+	// HazelcastUnsupportedOperationError if the cluster version is less  than 3.10,
+	// HazelcastConsistencyLostError if the session guarantees have been lost.
 	GetAndIncrement() (previousValue int64, err error)
 
 	// Reset resets the observed state by this PN counter. This method may be used

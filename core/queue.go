@@ -20,7 +20,6 @@ import "time"
 // All of the Queue content is stored in a single machine (and in the backup).
 // Queue will not scale by adding more members in the cluster.
 type IQueue interface {
-
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject
 
@@ -46,8 +45,8 @@ type IQueue interface {
 	// DrainTo returns the number of moved items.
 	DrainTo(slice *[]interface{}) (movedAmount int32, err error)
 
-	// DrainTo removes all items in this queue and add them to the end of given slice.
-	// DrainTo returns the number of moved items.
+	// DrainToWithMaxSize removes all items in this queue and add them to the end of given slice.
+	// DrainToWithMaxSize returns the number of moved items.
 	DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error)
 
 	// IsEmpty returns true if this queue is empty, false otherwise.
@@ -77,7 +76,7 @@ type IQueue interface {
 	PollWithTimeout(timeout time.Duration) (item interface{}, err error)
 
 	// Put inserts the item at the end of this queue.
-	// It blocks until there is available room in the queue, if necessary.
+	// Put blocks until there is available room in the queue, if necessary.
 	Put(item interface{}) (err error)
 
 	// RemainingCapacity returns the number of additional items this queue can contain.

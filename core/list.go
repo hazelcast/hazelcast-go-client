@@ -99,7 +99,7 @@ type IList interface {
 	Size() (size int32, err error)
 
 	// SubList returns a view of this list that contains elements between index numbers
-	// from start (inclusive) to end (exclusive)
+	// from start (inclusive) to end (exclusive).
 	SubList(start int32, end int32) (elements []interface{}, err error)
 
 	// ToSlice returns a slice that contains all elements of this list in proper sequence.

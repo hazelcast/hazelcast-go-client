@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Config package contains all the configuration to start a Hazelcast instance.
+// Package config contains all the configuration to start a Hazelcast instance.
 package config
 
 import (
@@ -52,11 +52,11 @@ type ClientConfig struct {
 	// heartbeatInterval is heartbeat internal.
 	heartbeatInterval time.Duration
 
-	// flakeIdGeneratorConfigMap is mapping of names to flakeIdGeneratorConfigs
+	// flakeIdGeneratorConfigMap is mapping of names to flakeIdGeneratorConfigs.
 	flakeIdGeneratorConfigMap map[string]*FlakeIdGeneratorConfig
 }
 
-// NewClientConfig creates a new ClientConfig with default configuration.
+// NewClientConfig returns a new ClientConfig with default configuration.
 func NewClientConfig() *ClientConfig {
 	return &ClientConfig{groupConfig: NewGroupConfig(),
 		clientNetworkConfig:       NewClientNetworkConfig(),
@@ -175,7 +175,7 @@ type SerializationConfig struct {
 	// portableFactories is a map of factory IDs and corresponding Portable factories.
 	portableFactories map[int32]serialization.PortableFactory
 
-	// Portable version will be used to differentiate two versions of the same struct that have changes on the struct,
+	// portableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
 	// like adding/removing a field or changing a type of a field.
 	portableVersion int32
 
@@ -189,7 +189,7 @@ type SerializationConfig struct {
 	classDefinitions []serialization.ClassDefinition
 }
 
-// NewSerializationConfig creates a SerializationConfig with default values.
+// NewSerializationConfig returns a SerializationConfig with default values.
 func NewSerializationConfig() *SerializationConfig {
 	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]serialization.IdentifiedDataSerializableFactory),
 		portableFactories: make(map[int32]serialization.PortableFactory), portableVersion: 0, customSerializers: make(map[reflect.Type]serialization.Serializer)}
@@ -235,7 +235,7 @@ func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
 	sc.isBigEndian = isBigEndian
 }
 
-// AddDataSerializableFactory adds a IdentifiedDataSerializableFactory for a given factory ID.
+// AddDataSerializableFactory adds an IdentifiedDataSerializableFactory for a given factory ID.
 func (sc *SerializationConfig) AddDataSerializableFactory(factoryId int32, f serialization.IdentifiedDataSerializableFactory) {
 	sc.dataSerializableFactories[factoryId] = f
 }
@@ -286,7 +286,7 @@ type GroupConfig struct {
 	password string
 }
 
-// NewGroupConfig creates a new GroupConfig with default group name and password.
+// NewGroupConfig returns a new GroupConfig with default group name and password.
 func NewGroupConfig() *GroupConfig {
 	return &GroupConfig{name: DefaultGroupName, password: DefaultGroupPassword}
 }
@@ -320,33 +320,37 @@ type ClientNetworkConfig struct {
 	// addresses are the candidate addresses slice that client will use to establish initial connection.
 	addresses []string
 
+	// connectionAttemptLimit is how many times client will retry to connect to the members in the addresses slice.
 	// While client is trying to connect initially to one of the members in the addresses slice, all might not be
-	// available. Instead of giving up, returning Error and stopping client, it will attempt to retry as much as defined
-	// by this parameter.
+	// available. Instead of giving up, returning Error and stopping client, it will attempt to retry as many times as
+	// defined by this parameter.
 	connectionAttemptLimit int32
 
 	// connectionAttemptPeriod is the period for the next attempt to find a member to connect.
 	connectionAttemptPeriod time.Duration
 
-	// Socket connection timeout.
+	// connectionTimeout is a duration for connection timeout.
 	// Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
 	connectionTimeout time.Duration
 
-	// If true, client will redo the operations that were executing on the server when client recovers the connection after a failure.
-	// This can be because of network, or simply because the member died. However it is not clear whether the
-	// application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
-	// retrying can cause to undesirable effects. Note that the redo can perform on any member.
+	// redoOperation determines if client will redo the operations that were executing on the server when client
+	// recovers the connection after a failure. This can be because of network, or simply because the member died.
+	// However it is not clear whether the application is performed or not. For idempotent operations this is harmless,
+	// but for non idempotent ones retrying can cause to undesirable effects.
+	// Note that the redo can perform on any member.
 	redoOperation bool
 
-	// If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a
-	// cached value of partition count and doesn't guarantee that the operation will always be executed on the owner.
+	// smartRouting determines if client will route the key based operations to owner of the key at the best effort.
+	// Note that it uses a cached value of partition count and doesn't guarantee that the operation will always be
+	// executed on the owner.
 	// The cached table is updated every 10 seconds.
 	smartRouting bool
 
-	// The invocation timeout for sending invocation.
+	// invocationTimeout is the invocation timeout for sending invocation.
 	invocationTimeout time.Duration
 }
 
+// NewClientNetworkConfig returns a new ClientNetworkConfig with default configuration.
 func NewClientNetworkConfig() *ClientNetworkConfig {
 	return &ClientNetworkConfig{
 		addresses:               make([]string, 0),
@@ -408,6 +412,7 @@ func (nc *ClientNetworkConfig) SetAddresses(addresses []string) *ClientNetworkCo
 	return nc
 }
 
+// SetConnectionAttemptLimit sets the connection attempt limit.
 // While client is trying to connect initially to one of the members in the addresses slice, all might not be
 // available. Instead of giving up, returning Error and stopping client, it will attempt to retry as much as defined
 // by this parameter.
@@ -424,7 +429,7 @@ func (nc *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPerio
 	return nc
 }
 
-// Socket connection timeout
+// SetConnectionTimeout sets the connection timeout.
 // Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
 // SetConnectionTimeout returns the configured ClientNetworkConfig for chaining.
 func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout time.Duration) *ClientNetworkConfig {
@@ -432,6 +437,7 @@ func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout time.Durat
 	return nc
 }
 
+// SetRedoOperation sets redoOperation.
 // If true, client will redo the operations that were executing on the server when client recovers the connection after a failure.
 // This can be because of network, or simply because the member died. However it is not clear whether the
 // application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
@@ -442,6 +448,7 @@ func (nc *ClientNetworkConfig) SetRedoOperation(redoOperation bool) *ClientNetwo
 	return nc
 }
 
+// SetSmartRouting sets smartRouting.
 // If true, client will route the key based operations to owner of the key at the best effort.
 // Note that it uses a cached version of partitionService and doesn't
 // guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
