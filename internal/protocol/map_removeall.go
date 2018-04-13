@@ -29,7 +29,7 @@ func MapRemoveAllCalculateSize(name *string, predicate *Data) int {
 func MapRemoveAllEncodeRequest(name *string, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveAllCalculateSize(name, predicate))
-	clientMessage.SetMessageType(MAP_REMOVEALL)
+	clientMessage.SetMessageType(mapRemoveAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(predicate)

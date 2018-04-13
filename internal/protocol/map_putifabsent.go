@@ -34,7 +34,7 @@ func MapPutIfAbsentCalculateSize(name *string, key *Data, value *Data, threadId 
 func MapPutIfAbsentEncodeRequest(name *string, key *Data, value *Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadId, ttl))
-	clientMessage.SetMessageType(MAP_PUTIFABSENT)
+	clientMessage.SetMessageType(mapPutIfAbsent)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

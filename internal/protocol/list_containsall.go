@@ -34,7 +34,7 @@ func ListContainsAllCalculateSize(name *string, values []*Data) int {
 func ListContainsAllEncodeRequest(name *string, values []*Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListContainsAllCalculateSize(name, values))
-	clientMessage.SetMessageType(LIST_CONTAINSALL)
+	clientMessage.SetMessageType(listContainsAll)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(values)))

@@ -32,7 +32,7 @@ func MapEvictCalculateSize(name *string, key *Data, threadId int64) int {
 func MapEvictEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MAP_EVICT)
+	clientMessage.SetMessageType(mapEvict)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

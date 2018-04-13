@@ -32,7 +32,7 @@ func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly boo
 func ListAddListenerEncodeRequest(name *string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListAddListenerCalculateSize(name, includeValue, localOnly))
-	clientMessage.SetMessageType(LIST_ADDLISTENER)
+	clientMessage.SetMessageType(listAddListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendBool(includeValue)

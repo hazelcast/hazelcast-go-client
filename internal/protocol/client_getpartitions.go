@@ -25,7 +25,7 @@ func ClientGetPartitionsCalculateSize() int {
 func ClientGetPartitionsEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientGetPartitionsCalculateSize())
-	clientMessage.SetMessageType(CLIENT_GETPARTITIONS)
+	clientMessage.SetMessageType(clientGetPartitions)
 	clientMessage.IsRetryable = false
 	clientMessage.UpdateFrameLength()
 	return clientMessage

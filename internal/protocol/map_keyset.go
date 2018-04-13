@@ -28,7 +28,7 @@ func MapKeySetCalculateSize(name *string) int {
 func MapKeySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapKeySetCalculateSize(name))
-	clientMessage.SetMessageType(MAP_KEYSET)
+	clientMessage.SetMessageType(mapKeySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

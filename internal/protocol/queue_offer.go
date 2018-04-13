@@ -32,7 +32,7 @@ func QueueOfferCalculateSize(name *string, value *Data, timeoutMillis int64) int
 func QueueOfferEncodeRequest(name *string, value *Data, timeoutMillis int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueOfferCalculateSize(name, value, timeoutMillis))
-	clientMessage.SetMessageType(QUEUE_OFFER)
+	clientMessage.SetMessageType(queueOffer)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

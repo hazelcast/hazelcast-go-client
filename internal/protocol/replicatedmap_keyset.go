@@ -28,7 +28,7 @@ func ReplicatedMapKeySetCalculateSize(name *string) int {
 func ReplicatedMapKeySetEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapKeySetCalculateSize(name))
-	clientMessage.SetMessageType(REPLICATEDMAP_KEYSET)
+	clientMessage.SetMessageType(replicatedmapKeySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

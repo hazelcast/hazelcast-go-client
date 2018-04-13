@@ -26,7 +26,7 @@ func MapFlushCalculateSize(name *string) int {
 func MapFlushEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapFlushCalculateSize(name))
-	clientMessage.SetMessageType(MAP_FLUSH)
+	clientMessage.SetMessageType(mapFlush)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

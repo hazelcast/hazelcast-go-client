@@ -37,7 +37,7 @@ func ReplicatedMapPutAllCalculateSize(name *string, entries []*Pair) int {
 func ReplicatedMapPutAllEncodeRequest(name *string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapPutAllCalculateSize(name, entries))
-	clientMessage.SetMessageType(REPLICATEDMAP_PUTALL)
+	clientMessage.SetMessageType(replicatedmapPutAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(entries)))

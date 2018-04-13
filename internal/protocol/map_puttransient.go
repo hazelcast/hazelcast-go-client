@@ -34,7 +34,7 @@ func MapPutTransientCalculateSize(name *string, key *Data, value *Data, threadId
 func MapPutTransientEncodeRequest(name *string, key *Data, value *Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutTransientCalculateSize(name, key, value, threadId, ttl))
-	clientMessage.SetMessageType(MAP_PUTTRANSIENT)
+	clientMessage.SetMessageType(mapPutTransient)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

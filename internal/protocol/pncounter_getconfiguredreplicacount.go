@@ -14,6 +14,8 @@
 
 package protocol
 
+import ()
+
 func PNCounterGetConfiguredReplicaCountCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -24,7 +26,7 @@ func PNCounterGetConfiguredReplicaCountCalculateSize(name *string) int {
 func PNCounterGetConfiguredReplicaCountEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, PNCounterGetConfiguredReplicaCountCalculateSize(name))
-	clientMessage.SetMessageType(PNCOUNTER_GETCONFIGUREDREPLICACOUNT)
+	clientMessage.SetMessageType(pncounterGetConfiguredReplicaCount)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

@@ -32,7 +32,7 @@ func MapForceUnlockCalculateSize(name *string, key *Data, referenceId int64) int
 func MapForceUnlockEncodeRequest(name *string, key *Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapForceUnlockCalculateSize(name, key, referenceId))
-	clientMessage.SetMessageType(MAP_FORCEUNLOCK)
+	clientMessage.SetMessageType(mapForceUnlock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

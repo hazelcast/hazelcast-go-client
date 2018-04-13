@@ -33,7 +33,7 @@ func MapRemoveIfSameCalculateSize(name *string, key *Data, value *Data, threadId
 func MapRemoveIfSameEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveIfSameCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(MAP_REMOVEIFSAME)
+	clientMessage.SetMessageType(mapRemoveIfSame)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

@@ -26,7 +26,7 @@ func ReplicatedMapClearCalculateSize(name *string) int {
 func ReplicatedMapClearEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapClearCalculateSize(name))
-	clientMessage.SetMessageType(REPLICATEDMAP_CLEAR)
+	clientMessage.SetMessageType(replicatedmapClear)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

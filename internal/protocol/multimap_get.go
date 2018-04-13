@@ -32,7 +32,7 @@ func MultiMapGetCalculateSize(name *string, key *Data, threadId int64) int {
 func MultiMapGetEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapGetCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MULTIMAP_GET)
+	clientMessage.SetMessageType(multimapGet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

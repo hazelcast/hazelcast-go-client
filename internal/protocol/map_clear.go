@@ -26,7 +26,7 @@ func MapClearCalculateSize(name *string) int {
 func MapClearEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapClearCalculateSize(name))
-	clientMessage.SetMessageType(MAP_CLEAR)
+	clientMessage.SetMessageType(mapClear)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

@@ -25,7 +25,7 @@ func ClientPingCalculateSize() int {
 func ClientPingEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientPingCalculateSize())
-	clientMessage.SetMessageType(CLIENT_PING)
+	clientMessage.SetMessageType(clientPing)
 	clientMessage.IsRetryable = true
 	clientMessage.UpdateFrameLength()
 	return clientMessage

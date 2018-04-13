@@ -29,7 +29,7 @@ func TopicPublishCalculateSize(name *string, message *Data) int {
 func TopicPublishEncodeRequest(name *string, message *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, TopicPublishCalculateSize(name, message))
-	clientMessage.SetMessageType(TOPIC_PUBLISH)
+	clientMessage.SetMessageType(topicPublish)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(message)

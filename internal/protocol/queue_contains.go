@@ -29,7 +29,7 @@ func QueueContainsCalculateSize(name *string, value *Data) int {
 func QueueContainsEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueContainsCalculateSize(name, value))
-	clientMessage.SetMessageType(QUEUE_CONTAINS)
+	clientMessage.SetMessageType(queueContains)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

@@ -32,7 +32,7 @@ func ListAddWithIndexCalculateSize(name *string, index int32, value *Data) int {
 func ListAddWithIndexEncodeRequest(name *string, index int32, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListAddWithIndexCalculateSize(name, index, value))
-	clientMessage.SetMessageType(LIST_ADDWITHINDEX)
+	clientMessage.SetMessageType(listAddWithIndex)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(index)

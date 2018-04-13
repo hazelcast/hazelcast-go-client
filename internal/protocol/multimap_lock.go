@@ -34,7 +34,7 @@ func MultiMapLockCalculateSize(name *string, key *Data, threadId int64, ttl int6
 func MultiMapLockEncodeRequest(name *string, key *Data, threadId int64, ttl int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapLockCalculateSize(name, key, threadId, ttl, referenceId))
-	clientMessage.SetMessageType(MULTIMAP_LOCK)
+	clientMessage.SetMessageType(multimapLock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

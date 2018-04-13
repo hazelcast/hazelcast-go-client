@@ -33,7 +33,7 @@ func MultiMapPutCalculateSize(name *string, key *Data, value *Data, threadId int
 func MultiMapPutEncodeRequest(name *string, key *Data, value *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapPutCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(MULTIMAP_PUT)
+	clientMessage.SetMessageType(multimapPut)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

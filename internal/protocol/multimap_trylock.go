@@ -35,7 +35,7 @@ func MultiMapTryLockCalculateSize(name *string, key *Data, threadId int64, lease
 func MultiMapTryLockEncodeRequest(name *string, key *Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
-	clientMessage.SetMessageType(MULTIMAP_TRYLOCK)
+	clientMessage.SetMessageType(multimapTryLock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

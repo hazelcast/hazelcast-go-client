@@ -34,7 +34,7 @@ func SetCompareAndRemoveAllCalculateSize(name *string, values []*Data) int {
 func SetCompareAndRemoveAllEncodeRequest(name *string, values []*Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, SetCompareAndRemoveAllCalculateSize(name, values))
-	clientMessage.SetMessageType(SET_COMPAREANDREMOVEALL)
+	clientMessage.SetMessageType(setCompareAndRemoveAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(values)))

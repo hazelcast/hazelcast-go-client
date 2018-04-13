@@ -26,7 +26,7 @@ func MapIsEmptyCalculateSize(name *string) int {
 func MapIsEmptyEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(MAP_ISEMPTY)
+	clientMessage.SetMessageType(mapIsEmpty)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

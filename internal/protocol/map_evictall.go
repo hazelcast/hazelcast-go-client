@@ -26,7 +26,7 @@ func MapEvictAllCalculateSize(name *string) int {
 func MapEvictAllEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEvictAllCalculateSize(name))
-	clientMessage.SetMessageType(MAP_EVICTALL)
+	clientMessage.SetMessageType(mapEvictAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

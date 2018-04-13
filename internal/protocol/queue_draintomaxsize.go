@@ -30,7 +30,7 @@ func QueueDrainToMaxSizeCalculateSize(name *string, maxSize int32) int {
 func QueueDrainToMaxSizeEncodeRequest(name *string, maxSize int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueDrainToMaxSizeCalculateSize(name, maxSize))
-	clientMessage.SetMessageType(QUEUE_DRAINTOMAXSIZE)
+	clientMessage.SetMessageType(queueDrainToMaxSize)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(maxSize)

@@ -28,7 +28,7 @@ func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
 func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientAddMembershipListenerCalculateSize(localOnly))
-	clientMessage.SetMessageType(CLIENT_ADDMEMBERSHIPLISTENER)
+	clientMessage.SetMessageType(clientAddMembershipListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendBool(localOnly)
 	clientMessage.UpdateFrameLength()

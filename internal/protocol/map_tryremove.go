@@ -33,7 +33,7 @@ func MapTryRemoveCalculateSize(name *string, key *Data, threadId int64, timeout 
 func MapTryRemoveEncodeRequest(name *string, key *Data, threadId int64, timeout int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapTryRemoveCalculateSize(name, key, threadId, timeout))
-	clientMessage.SetMessageType(MAP_TRYREMOVE)
+	clientMessage.SetMessageType(mapTryRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

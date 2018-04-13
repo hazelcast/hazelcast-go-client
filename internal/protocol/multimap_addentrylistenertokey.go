@@ -33,7 +33,7 @@ func MultiMapAddEntryListenerToKeyCalculateSize(name *string, key *Data, include
 func MultiMapAddEntryListenerToKeyEncodeRequest(name *string, key *Data, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapAddEntryListenerToKeyCalculateSize(name, key, includeValue, localOnly))
-	clientMessage.SetMessageType(MULTIMAP_ADDENTRYLISTENERTOKEY)
+	clientMessage.SetMessageType(multimapAddEntryListenerToKey)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

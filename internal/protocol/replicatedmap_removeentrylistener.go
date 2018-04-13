@@ -27,7 +27,7 @@ func ReplicatedMapRemoveEntryListenerCalculateSize(name *string, registrationId 
 func ReplicatedMapRemoveEntryListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapRemoveEntryListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(REPLICATEDMAP_REMOVEENTRYLISTENER)
+	clientMessage.SetMessageType(replicatedmapRemoveEntryListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(registrationId)

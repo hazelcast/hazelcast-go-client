@@ -29,7 +29,7 @@ func ReplicatedMapContainsValueCalculateSize(name *string, value *Data) int {
 func ReplicatedMapContainsValueEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapContainsValueCalculateSize(name, value))
-	clientMessage.SetMessageType(REPLICATEDMAP_CONTAINSVALUE)
+	clientMessage.SetMessageType(replicatedmapContainsValue)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

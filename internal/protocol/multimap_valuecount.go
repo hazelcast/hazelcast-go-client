@@ -32,7 +32,7 @@ func MultiMapValueCountCalculateSize(name *string, key *Data, threadId int64) in
 func MultiMapValueCountEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapValueCountCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(MULTIMAP_VALUECOUNT)
+	clientMessage.SetMessageType(multimapValueCount)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

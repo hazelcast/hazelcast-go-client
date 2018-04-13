@@ -30,7 +30,7 @@ func MapAddIndexCalculateSize(name *string, attribute *string, ordered bool) int
 func MapAddIndexEncodeRequest(name *string, attribute *string, ordered bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddIndexCalculateSize(name, attribute, ordered))
-	clientMessage.SetMessageType(MAP_ADDINDEX)
+	clientMessage.SetMessageType(mapAddIndex)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendString(attribute)

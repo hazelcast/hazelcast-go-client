@@ -26,7 +26,7 @@ func QueueRemainingCapacityCalculateSize(name *string) int {
 func QueueRemainingCapacityEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueRemainingCapacityCalculateSize(name))
-	clientMessage.SetMessageType(QUEUE_REMAININGCAPACITY)
+	clientMessage.SetMessageType(queueRemainingCapacity)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

@@ -115,7 +115,7 @@ func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCoun
 	if err != nil {
 		return
 	}
-	readCount, itemsData, itemSeqs := RingbufferReadManyDecodeResponse(responseMessage)()
+	readCount, itemsData, itemSeqs, _ /*nextSeq*/ := RingbufferReadManyDecodeResponse(responseMessage)()
 	return NewLazyReadResultSet(readCount, itemsData, itemSeqs, rp.client.SerializationService), nil
 }
 

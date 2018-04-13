@@ -29,7 +29,7 @@ func MultiMapContainsValueCalculateSize(name *string, value *Data) int {
 func MultiMapContainsValueEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapContainsValueCalculateSize(name, value))
-	clientMessage.SetMessageType(MULTIMAP_CONTAINSVALUE)
+	clientMessage.SetMessageType(multimapContainsValue)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

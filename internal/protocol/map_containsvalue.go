@@ -29,7 +29,7 @@ func MapContainsValueCalculateSize(name *string, value *Data) int {
 func MapContainsValueEncodeRequest(name *string, value *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapContainsValueCalculateSize(name, value))
-	clientMessage.SetMessageType(MAP_CONTAINSVALUE)
+	clientMessage.SetMessageType(mapContainsValue)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(value)

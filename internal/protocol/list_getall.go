@@ -28,7 +28,7 @@ func ListGetAllCalculateSize(name *string) int {
 func ListGetAllEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListGetAllCalculateSize(name))
-	clientMessage.SetMessageType(LIST_GETALL)
+	clientMessage.SetMessageType(listGetAll)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

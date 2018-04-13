@@ -34,7 +34,7 @@ func ListAddAllCalculateSize(name *string, valueList []*Data) int {
 func ListAddAllEncodeRequest(name *string, valueList []*Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListAddAllCalculateSize(name, valueList))
-	clientMessage.SetMessageType(LIST_ADDALL)
+	clientMessage.SetMessageType(listAddAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(valueList)))

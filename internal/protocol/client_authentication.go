@@ -41,7 +41,7 @@ func ClientAuthenticationCalculateSize(username *string, password *string, uuid 
 func ClientAuthenticationEncodeRequest(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
-	clientMessage.SetMessageType(CLIENT_AUTHENTICATION)
+	clientMessage.SetMessageType(clientAuthentication)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(username)
 	clientMessage.AppendString(password)

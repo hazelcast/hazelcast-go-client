@@ -28,7 +28,7 @@ func MapValuesCalculateSize(name *string) int {
 func MapValuesEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapValuesCalculateSize(name))
-	clientMessage.SetMessageType(MAP_VALUES)
+	clientMessage.SetMessageType(mapValues)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

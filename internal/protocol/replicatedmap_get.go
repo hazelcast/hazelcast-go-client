@@ -29,7 +29,7 @@ func ReplicatedMapGetCalculateSize(name *string, key *Data) int {
 func ReplicatedMapGetEncodeRequest(name *string, key *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapGetCalculateSize(name, key))
-	clientMessage.SetMessageType(REPLICATEDMAP_GET)
+	clientMessage.SetMessageType(replicatedmapGet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)

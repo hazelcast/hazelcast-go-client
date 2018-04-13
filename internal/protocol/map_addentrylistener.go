@@ -33,7 +33,7 @@ func MapAddEntryListenerCalculateSize(name *string, includeValue bool, listenerF
 func MapAddEntryListenerEncodeRequest(name *string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerCalculateSize(name, includeValue, listenerFlags, localOnly))
-	clientMessage.SetMessageType(MAP_ADDENTRYLISTENER)
+	clientMessage.SetMessageType(mapAddEntryListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendBool(includeValue)

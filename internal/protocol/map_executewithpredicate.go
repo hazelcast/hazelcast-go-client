@@ -30,7 +30,7 @@ func MapExecuteWithPredicateCalculateSize(name *string, entryProcessor *Data, pr
 func MapExecuteWithPredicateEncodeRequest(name *string, entryProcessor *Data, predicate *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteWithPredicateCalculateSize(name, entryProcessor, predicate))
-	clientMessage.SetMessageType(MAP_EXECUTEWITHPREDICATE)
+	clientMessage.SetMessageType(mapExecuteWithPredicate)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(entryProcessor)

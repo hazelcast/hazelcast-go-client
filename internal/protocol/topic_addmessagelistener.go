@@ -31,7 +31,7 @@ func TopicAddMessageListenerCalculateSize(name *string, localOnly bool) int {
 func TopicAddMessageListenerEncodeRequest(name *string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, TopicAddMessageListenerCalculateSize(name, localOnly))
-	clientMessage.SetMessageType(TOPIC_ADDMESSAGELISTENER)
+	clientMessage.SetMessageType(topicAddMessageListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendBool(localOnly)

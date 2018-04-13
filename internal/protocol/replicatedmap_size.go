@@ -26,7 +26,7 @@ func ReplicatedMapSizeCalculateSize(name *string) int {
 func ReplicatedMapSizeEncodeRequest(name *string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapSizeCalculateSize(name))
-	clientMessage.SetMessageType(REPLICATEDMAP_SIZE)
+	clientMessage.SetMessageType(replicatedmapSize)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.UpdateFrameLength()

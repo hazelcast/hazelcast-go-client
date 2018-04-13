@@ -35,7 +35,7 @@ func MapTryLockCalculateSize(name *string, key *Data, threadId int64, lease int6
 func MapTryLockEncodeRequest(name *string, key *Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
-	clientMessage.SetMessageType(MAP_TRYLOCK)
+	clientMessage.SetMessageType(mapTryLock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
