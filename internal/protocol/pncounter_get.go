@@ -22,7 +22,7 @@ func PNCounterGetCalculateSize(name *string, replicaTimestamps []*Pair, targetRe
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	for _, replicaTimestampsItem := range replicaTimestamps {
 		key := replicaTimestampsItem.key.(*string)
 		val := replicaTimestampsItem.value.(int64)

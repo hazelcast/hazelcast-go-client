@@ -22,9 +22,9 @@ func PNCounterAddCalculateSize(name *string, delta int64, getBeforeUpdate bool, 
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT64_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
+	dataSize += BoolSizeInBytes
+	dataSize += Int32SizeInBytes
 	for _, replicaTimestampsItem := range replicaTimestamps {
 		key := replicaTimestampsItem.key.(*string)
 		val := replicaTimestampsItem.value.(int64)

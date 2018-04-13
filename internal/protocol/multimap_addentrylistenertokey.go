@@ -25,8 +25,8 @@ func MultiMapAddEntryListenerToKeyCalculateSize(name *string, key *Data, include
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += BOOL_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -80,7 +80,7 @@ func MultiMapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MultiMapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage))
 	}
 }

@@ -26,7 +26,7 @@ import (
 type NilSerializer struct{}
 
 func (*NilSerializer) Id() int32 {
-	return CONSTANT_TYPE_NULL
+	return ConstantTypeNil
 }
 
 func (*NilSerializer) Read(input DataInput) (interface{}, error) {
@@ -47,7 +47,7 @@ func NewIdentifiedDataSerializableSerializer(factories map[int32]IdentifiedDataS
 }
 
 func (*IdentifiedDataSerializableSerializer) Id() int32 {
-	return CONSTANT_TYPE_DATA_SERIALIZABLE
+	return ConstantTypeDataSerializable
 }
 
 func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interface{}, error) {
@@ -95,7 +95,7 @@ func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interfac
 type ByteSerializer struct{}
 
 func (*ByteSerializer) Id() int32 {
-	return CONSTANT_TYPE_BYTE
+	return ConstantTypeByte
 }
 
 func (*ByteSerializer) Read(input DataInput) (interface{}, error) {
@@ -110,7 +110,7 @@ func (*ByteSerializer) Write(output DataOutput, i interface{}) error {
 type BoolSerializer struct{}
 
 func (*BoolSerializer) Id() int32 {
-	return CONSTANT_TYPE_BOOL
+	return ConstantTypeBool
 }
 
 func (*BoolSerializer) Read(input DataInput) (interface{}, error) {
@@ -125,7 +125,7 @@ func (*BoolSerializer) Write(output DataOutput, i interface{}) error {
 type UInteger16Serializer struct{}
 
 func (*UInteger16Serializer) Id() int32 {
-	return CONSTANT_TYPE_UINTEGER16
+	return ConstantTypeUInteger16
 }
 
 func (*UInteger16Serializer) Read(input DataInput) (interface{}, error) {
@@ -140,7 +140,7 @@ func (*UInteger16Serializer) Write(output DataOutput, i interface{}) error {
 type Integer16Serializer struct{}
 
 func (*Integer16Serializer) Id() int32 {
-	return CONSTANT_TYPE_INTEGER16
+	return ConstantTypeInteger16
 }
 
 func (*Integer16Serializer) Read(input DataInput) (interface{}, error) {
@@ -155,7 +155,7 @@ func (*Integer16Serializer) Write(output DataOutput, i interface{}) error {
 type Integer32Serializer struct{}
 
 func (*Integer32Serializer) Id() int32 {
-	return CONSTANT_TYPE_INTEGER32
+	return ConstantTypeInteger32
 }
 
 func (*Integer32Serializer) Read(input DataInput) (interface{}, error) {
@@ -170,7 +170,7 @@ func (*Integer32Serializer) Write(output DataOutput, i interface{}) error {
 type Integer64Serializer struct{}
 
 func (*Integer64Serializer) Id() int32 {
-	return CONSTANT_TYPE_INTEGER64
+	return ConstantTypeInteger64
 }
 
 func (*Integer64Serializer) Read(input DataInput) (interface{}, error) {
@@ -189,7 +189,7 @@ func (*Integer64Serializer) Write(output DataOutput, i interface{}) error {
 type Float32Serializer struct{}
 
 func (*Float32Serializer) Id() int32 {
-	return CONSTANT_TYPE_FLOAT32
+	return ConstantTypeFloat32
 }
 
 func (*Float32Serializer) Read(input DataInput) (interface{}, error) {
@@ -204,7 +204,7 @@ func (*Float32Serializer) Write(output DataOutput, i interface{}) error {
 type Float64Serializer struct{}
 
 func (*Float64Serializer) Id() int32 {
-	return CONSTANT_TYPE_FLOAT64
+	return ConstantTypeFloat64
 }
 
 func (*Float64Serializer) Read(input DataInput) (interface{}, error) {
@@ -219,7 +219,7 @@ func (*Float64Serializer) Write(output DataOutput, i interface{}) error {
 type StringSerializer struct{}
 
 func (*StringSerializer) Id() int32 {
-	return CONSTANT_TYPE_STRING
+	return ConstantTypeString
 }
 
 func (*StringSerializer) Read(input DataInput) (interface{}, error) {
@@ -234,7 +234,7 @@ func (*StringSerializer) Write(output DataOutput, i interface{}) error {
 type ByteArraySerializer struct{}
 
 func (*ByteArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_BYTE_ARRAY
+	return ConstantTypeByteArray
 }
 
 func (*ByteArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -249,7 +249,7 @@ func (*ByteArraySerializer) Write(output DataOutput, i interface{}) error {
 type BoolArraySerializer struct{}
 
 func (*BoolArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_BOOL_ARRAY
+	return ConstantTypeBoolArray
 }
 
 func (*BoolArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -264,7 +264,7 @@ func (*BoolArraySerializer) Write(output DataOutput, i interface{}) error {
 type UInteger16ArraySerializer struct{}
 
 func (*UInteger16ArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_UINTEGER16_ARRAY
+	return ConstantTypeUInteger16Array
 }
 
 func (*UInteger16ArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -279,7 +279,7 @@ func (*UInteger16ArraySerializer) Write(output DataOutput, i interface{}) error 
 type Integer16ArraySerializer struct{}
 
 func (*Integer16ArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_INTEGER16_ARRAY
+	return ConstantTypeInteger16Array
 }
 
 func (*Integer16ArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -294,7 +294,7 @@ func (*Integer16ArraySerializer) Write(output DataOutput, i interface{}) error {
 type Integer32ArraySerializer struct{}
 
 func (*Integer32ArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_INTEGER32_ARRAY
+	return ConstantTypeInteger32Array
 }
 
 func (*Integer32ArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -309,7 +309,7 @@ func (*Integer32ArraySerializer) Write(output DataOutput, i interface{}) error {
 type Integer64ArraySerializer struct{}
 
 func (*Integer64ArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_INTEGER64_ARRAY
+	return ConstantTypeInteger64Array
 }
 
 func (*Integer64ArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -333,7 +333,7 @@ func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) error {
 type Float32ArraySerializer struct{}
 
 func (*Float32ArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_FLOAT32_ARRAY
+	return ConstantTypeFloat32Array
 }
 
 func (*Float32ArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -348,7 +348,7 @@ func (*Float32ArraySerializer) Write(output DataOutput, i interface{}) error {
 type Float64ArraySerializer struct{}
 
 func (*Float64ArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_FLOAT64_ARRAY
+	return ConstantTypeFloat64Array
 }
 
 func (*Float64ArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -363,7 +363,7 @@ func (*Float64ArraySerializer) Write(output DataOutput, i interface{}) error {
 type StringArraySerializer struct{}
 
 func (*StringArraySerializer) Id() int32 {
-	return CONSTANT_TYPE_STRING_ARRAY
+	return ConstantTypeStringArray
 }
 
 func (*StringArraySerializer) Read(input DataInput) (interface{}, error) {
@@ -378,7 +378,7 @@ func (*StringArraySerializer) Write(output DataOutput, i interface{}) error {
 type GobSerializer struct{}
 
 func (*GobSerializer) Id() int32 {
-	return GO_GOB_SERIALIZATION_TYPE
+	return GoGobSerializationType
 }
 
 func (*GobSerializer) Read(input DataInput) (interface{}, error) {

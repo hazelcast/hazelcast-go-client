@@ -24,12 +24,12 @@ import (
 )
 
 const (
-	LIFECYCLE_STATE_STARTING      = "STARTING"
-	LIFECYCLE_STATE_STARTED       = "STARTED"
-	LIFECYCLE_STATE_CONNECTED     = "CONNECTED"
-	LIFECYCLE_STATE_DISCONNECTED  = "DISCONNECTED"
-	LIFECYCLE_STATE_SHUTTING_DOWN = "SHUTTING_DOWN"
-	LIFECYCLE_STATE_SHUTDOWN      = "SHUTDOWN"
+	LifecycleStateStarting     = "STARTING"
+	LifecycleStateStarted      = "STARTED"
+	LifecycleStateConnected    = "CONNECTED"
+	LifecycleStateDisconnected = "DISCONNECTED"
+	LifecycleStateShuttingDown = "SHUTTING_DOWN"
+	LifecycleStateShutdown     = "SHUTDOWN"
 )
 
 type lifecycleService struct {
@@ -47,7 +47,7 @@ func newLifecycleService(config *config.ClientConfig) *lifecycleService {
 			newLifecycle.AddListener(listener)
 		}
 	}
-	newLifecycle.fireLifecycleEvent(LIFECYCLE_STATE_STARTING)
+	newLifecycle.fireLifecycleEvent(LifecycleStateStarting)
 	return newLifecycle
 }
 func (lifecycleService *lifecycleService) AddListener(listener interface{}) string {
@@ -79,7 +79,7 @@ func (lifecycleService *lifecycleService) RemoveListener(registrationId *string)
 	return found
 }
 func (lifecycleService *lifecycleService) fireLifecycleEvent(newState string) {
-	if newState == LIFECYCLE_STATE_SHUTTING_DOWN {
+	if newState == LifecycleStateShuttingDown {
 		lifecycleService.isLive.Store(false)
 	}
 	listeners := lifecycleService.listeners.Load().(map[string]interface{})

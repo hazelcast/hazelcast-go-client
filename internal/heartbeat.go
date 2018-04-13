@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	DEFAULT_HEARTBEAT_INTERVAL = 10
-	DEFAULT_HEARTBEAT_TIMEOUT  = 60
+	DefaultHeartBeatInterval = 10
+	DefaultHeartBeatTimeout  = 60
 )
 
 type heartBeatService struct {
@@ -37,8 +37,8 @@ type heartBeatService struct {
 }
 
 func newHeartBeatService(client *HazelcastClient) *heartBeatService {
-	heartBeat := heartBeatService{client: client, heartBeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
-		heartBeatTimeout: DEFAULT_HEARTBEAT_TIMEOUT,
+	heartBeat := heartBeatService{client: client, heartBeatInterval: DefaultHeartBeatInterval,
+		heartBeatTimeout: DefaultHeartBeatTimeout,
 		cancel:           make(chan struct{}),
 	}
 	if client.ClientConfig.HeartbeatTimeout() > 0 {

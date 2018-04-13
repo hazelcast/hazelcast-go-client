@@ -83,7 +83,7 @@ func (queue *QueueProxy) ContainsAll(items []interface{}) (foundAll bool, err er
 
 func (queue *QueueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err error) {
 	if slice == nil {
-		return 0, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
+		return 0, core.NewHazelcastNilPointerError(NilSliceIsNotAllowed, nil)
 	}
 	request := QueueDrainToEncodeRequest(queue.name)
 	responseMessage, err := queue.invoke(request)
@@ -97,7 +97,7 @@ func (queue *QueueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err e
 
 func (queue *QueueProxy) DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error) {
 	if slice == nil {
-		return 0, core.NewHazelcastNilPointerError(NIL_SLICE_IS_NOT_ALLOWED, nil)
+		return 0, core.NewHazelcastNilPointerError(NilSliceIsNotAllowed, nil)
 	}
 	request := QueueDrainToMaxSizeEncodeRequest(queue.name, maxElements)
 	responseMessage, err := queue.invoke(request)

@@ -24,10 +24,10 @@ func RingbufferReadManyCalculateSize(name *string, startSequence int64, minCount
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT64_SIZE_IN_BYTES
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += INT32_SIZE_IN_BYTES
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
+	dataSize += Int32SizeInBytes
+	dataSize += Int32SizeInBytes
+	dataSize += BoolSizeInBytes
 	if filter != nil {
 		dataSize += DataCalculateSize(filter)
 	}

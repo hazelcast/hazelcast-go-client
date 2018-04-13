@@ -23,7 +23,7 @@ func QueuePollCalculateSize(name *string, timeoutMillis int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

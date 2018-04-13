@@ -25,7 +25,7 @@ func ReplicatedMapAddEntryListenerToKeyCalculateSize(name *string, key *Data, lo
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -78,7 +78,7 @@ func ReplicatedMapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddEntryListenerToKeyEventEntryDecode(clientMessage))
 	}
 }

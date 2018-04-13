@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-const PARTITION_UPDATE_INTERVAL time.Duration = 5
+const PartitionUpdateInterval time.Duration = 5
 
 type partitionService struct {
 	client         *HazelcastClient
@@ -40,7 +40,7 @@ func newPartitionService(client *HazelcastClient) *partitionService {
 func (partitionService *partitionService) start() {
 	partitionService.doRefresh()
 	go func() {
-		ticker := time.NewTicker(PARTITION_UPDATE_INTERVAL * time.Second)
+		ticker := time.NewTicker(PartitionUpdateInterval * time.Second)
 		for {
 			select {
 			case <-ticker.C:

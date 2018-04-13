@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	AUTHENTICATED                  = iota
-	CREDENTIALS_FAILED             = iota
-	SERIALIZATION_VERSION_MISMATCH = iota
+	Authenticated                = iota
+	CredentialsFailed            = iota
+	SerializationVersionMismatch = iota
 )
 
 type connectionManager struct {
@@ -162,7 +162,7 @@ func (connectionManager *connectionManager) getOwnerConnection() *Connection {
 func (connectionManager *connectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
 	uuid := connectionManager.client.ClusterService.uuid.Load().(string)
 	ownerUuid := connectionManager.client.ClusterService.ownerUuid.Load().(string)
-	clientType := CLIENT_TYPE
+	clientType := ClientType
 	name := connectionManager.client.ClientConfig.GroupConfig().Name()
 	password := connectionManager.client.ClientConfig.GroupConfig().Password()
 	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
@@ -183,7 +183,7 @@ func (connectionManager *connectionManager) clusterAuthenticator(connection *Con
 
 		status, address, uuid, ownerUuid /*serializationVersion*/, _, serverHazelcastVersion /*clientUnregisteredMembers*/, _ := ClientAuthenticationDecodeResponse(result)()
 		switch status {
-		case AUTHENTICATED:
+		case Authenticated:
 			connection.serverHazelcastVersion = serverHazelcastVersion
 			connection.endpoint.Store(address)
 			connection.isOwnerConnection = asOwner
@@ -196,9 +196,9 @@ func (connectionManager *connectionManager) clusterAuthenticator(connection *Con
 				connectionManager.client.ClusterService.ownerUuid.Store(*ownerUuid)
 				connectionManager.client.ClusterService.uuid.Store(*uuid)
 			}
-		case CREDENTIALS_FAILED:
+		case CredentialsFailed:
 			return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
-		case SERIALIZATION_VERSION_MISMATCH:
+		case SerializationVersionMismatch:
 			return core.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
 		}
 	}

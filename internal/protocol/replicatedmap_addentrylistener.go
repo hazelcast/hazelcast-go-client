@@ -24,7 +24,7 @@ func ReplicatedMapAddEntryListenerCalculateSize(name *string, localOnly bool) in
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -76,7 +76,7 @@ func ReplicatedMapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_ENTRY && handleEventEntry != nil {
+	if messageType == EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddEntryListenerEventEntryDecode(clientMessage))
 	}
 }

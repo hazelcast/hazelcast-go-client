@@ -23,7 +23,7 @@ func MapAddIndexCalculateSize(name *string, attribute *string, ordered bool) int
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += StringCalculateSize(attribute)
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 

@@ -25,7 +25,7 @@ func QueueOfferCalculateSize(name *string, value *Data, timeoutMillis int64) int
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(value)
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const RETRY_WAIT_TIME_IN_SECONDS = 1
+const RetryWaitTimeInSeconds = 1
 
 type invocation struct {
 	boundConnection         *Connection
@@ -267,7 +267,7 @@ func (invocationService *invocationService) registerInvocation(invocation *invoc
 	correlationId := invocationService.nextCorrelationId()
 	message.SetCorrelationId(correlationId)
 	message.SetPartitionId(invocation.partitionId)
-	message.SetFlags(BEGIN_END_FLAG)
+	message.SetFlags(BeginEndFlag)
 	if invocation.eventHandler != nil {
 		invocationService.eventHandlers[correlationId] = invocation
 	}
@@ -303,7 +303,7 @@ func (invocationService *invocationService) removeEventHandlerInternal(correlati
 func (invocationService *invocationService) handleResponse(response *ClientMessage) {
 	correlationId := response.CorrelationId()
 	if invocation, ok := invocationService.unRegisterInvocation(correlationId); ok {
-		if response.HasFlags(LISTENER_FLAG) > 0 {
+		if response.HasFlags(ListenerFlag) > 0 {
 			invocation, found := invocationService.eventHandlers[correlationId]
 			if !found {
 				log.Println("Got an event message with unknown correlation id")
@@ -312,7 +312,7 @@ func (invocationService *invocationService) handleResponse(response *ClientMessa
 			}
 			return
 		}
-		if response.MessageType() == MESSAGE_TYPE_EXCEPTION {
+		if response.MessageType() == MessageTypeException {
 			err := CreateHazelcastError(convertToError(response))
 			invocationService.handleException(invocation, err)
 		} else {
@@ -366,7 +366,7 @@ func (invocationService *invocationService) handleException(invocation *invocati
 				invocation.err <- NewHazelcastClientNotActiveError(err.Error(), err)
 				return
 			}
-			time.Sleep(RETRY_WAIT_TIME_IN_SECONDS * time.Second)
+			time.Sleep(RetryWaitTimeInSeconds * time.Second)
 			invocationService.sending <- invocation
 			return
 		}()

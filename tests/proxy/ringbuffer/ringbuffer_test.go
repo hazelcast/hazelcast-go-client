@@ -51,7 +51,7 @@ func TestRingbufferProxy_Name(t *testing.T) {
 }
 
 func TestRingbufferProxy_ServiceName(t *testing.T) {
-	serviceName := common.SERVICE_NAME_RINGBUFFER_SERVICE
+	serviceName := common.ServiceNameRingbufferService
 	if serviceName != ringbuffer.ServiceName() {
 		t.Errorf("ServiceName() failed")
 	}

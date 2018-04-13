@@ -19,23 +19,23 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-const CLIENT_TYPE = "GOO"
+const ClientType = "GOO"
 
 func DataCalculateSize(d *Data) int {
-	return len(d.Buffer()) + INT_SIZE_IN_BYTES
+	return len(d.Buffer()) + Int32SizeInBytes
 }
 
 func StringCalculateSize(str *string) int {
-	return len(*str) + INT_SIZE_IN_BYTES
+	return len(*str) + Int32SizeInBytes
 }
 
 func Int64CalculateSize(v int64) int {
-	return INT64_SIZE_IN_BYTES
+	return Int64SizeInBytes
 }
 
 func AddressCalculateSize(a *Address) int {
 	dataSize := 0
 	dataSize += StringCalculateSize(&a.host)
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	return dataSize
 }

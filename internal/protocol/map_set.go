@@ -26,8 +26,8 @@ func MapSetCalculateSize(name *string, key *Data, value *Data, threadId int64, t
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(value)
-	dataSize += INT64_SIZE_IN_BYTES
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

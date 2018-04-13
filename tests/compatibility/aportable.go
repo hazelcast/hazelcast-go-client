@@ -53,11 +53,11 @@ type aPortable struct {
 }
 
 func (*aPortable) ClassId() int32 {
-	return PORTABLE_CLASS_ID
+	return portableClassId
 }
 
 func (*aPortable) FactoryId() int32 {
-	return PORTABLE_FACTORY_ID
+	return portableFactoryId
 }
 
 func (p *aPortable) WritePortable(writer PortableWriter) error {
@@ -73,7 +73,7 @@ func (p *aPortable) WritePortable(writer PortableWriter) error {
 	if p != nil {
 		writer.WritePortable("p", p)
 	} else {
-		writer.WriteNilPortable("p", PORTABLE_FACTORY_ID, PORTABLE_CLASS_ID)
+		writer.WriteNilPortable("p", portableFactoryId, portableClassId)
 	}
 	writer.WriteBoolArray("booleans", p.booleans)
 	writer.WriteByteArray("bs", p.bytes)

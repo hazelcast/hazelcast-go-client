@@ -41,45 +41,45 @@ func NewDefaultPortableReader(serializer *PortableSerializer, input DataInput, c
 func getTypeByConst(fieldType int32) string {
 	var ret string
 	switch t := fieldType; t {
-	case PORTABLE:
+	case TypePortable:
 		ret = "Portable"
-	case BYTE:
+	case TypeByte:
 		ret = "byte"
-	case BOOL:
+	case TypeBool:
 		ret = "bool"
-	case UINT16:
+	case TypeUint16:
 		ret = "uint16"
-	case INT16:
+	case TypeInt16:
 		ret = "int16"
-	case INT32:
+	case TypeInt32:
 		ret = "int32"
-	case INT64:
+	case TypeInt64:
 		ret = "int64"
-	case FLOAT32:
+	case TypeFloat32:
 		ret = "float32"
-	case FLOAT64:
+	case TypeFloat64:
 		ret = "float64"
-	case UTF:
+	case TypeUTF:
 		ret = "string"
-	case PORTABLE_ARRAY:
+	case TypePortableArray:
 		ret = "[]Portable"
-	case BYTE_ARRAY:
+	case TypeByteArray:
 		ret = "[]byte"
-	case BOOL_ARRAY:
+	case TypeBoolArray:
 		ret = "[]bool"
-	case UINT16_ARRAY:
+	case TypeUint16Array:
 		ret = "[]uint16"
-	case INT16_ARRAY:
+	case TypeInt16Array:
 		ret = "[]int16"
-	case INT32_ARRAY:
+	case TypeInt32Array:
 		ret = "[]int32"
-	case INT64_ARRAY:
+	case TypeInt64Array:
 		ret = "[]int64"
-	case FLOAT32_ARRAY:
+	case TypeFloat32Array:
 		ret = "[]float32"
-	case FLOAT64_ARRAY:
+	case TypeFloat64Array:
 		ret = "[]float64"
-	case UTF_ARRAY:
+	case TypeUTFArray:
 		ret = "[]string"
 	default:
 	}
@@ -96,7 +96,7 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	if field.Type() != fieldType {
 		return 0, NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", getTypeByConst(fieldType), fieldName), nil)
 	}
-	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*INT_SIZE_IN_BYTES)
+	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*Int32SizeInBytes)
 	if err != nil {
 		return 0, err
 	}
@@ -104,11 +104,11 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	if err != nil {
 		return 0, err
 	}
-	return pos + SHORT_SIZE_IN_BYTES + int32(length) + 1, nil
+	return pos + Int16SizeInBytes + int32(length) + 1, nil
 }
 
 func (pr *DefaultPortableReader) ReadByte(fieldName string) (byte, error) {
-	pos, err := pr.positionByField(fieldName, BYTE)
+	pos, err := pr.positionByField(fieldName, TypeByte)
 	if err != nil {
 		return 0, err
 	}
@@ -116,7 +116,7 @@ func (pr *DefaultPortableReader) ReadByte(fieldName string) (byte, error) {
 }
 
 func (pr *DefaultPortableReader) ReadBool(fieldName string) (bool, error) {
-	pos, err := pr.positionByField(fieldName, BOOL)
+	pos, err := pr.positionByField(fieldName, TypeBool)
 	if err != nil {
 		return false, err
 	}
@@ -124,7 +124,7 @@ func (pr *DefaultPortableReader) ReadBool(fieldName string) (bool, error) {
 }
 
 func (pr *DefaultPortableReader) ReadUInt16(fieldName string) (uint16, error) {
-	pos, err := pr.positionByField(fieldName, UINT16)
+	pos, err := pr.positionByField(fieldName, TypeUint16)
 	if err != nil {
 		return 0, err
 	}
@@ -132,7 +132,7 @@ func (pr *DefaultPortableReader) ReadUInt16(fieldName string) (uint16, error) {
 }
 
 func (pr *DefaultPortableReader) ReadInt16(fieldName string) (int16, error) {
-	pos, err := pr.positionByField(fieldName, INT16)
+	pos, err := pr.positionByField(fieldName, TypeInt16)
 	if err != nil {
 		return 0, err
 	}
@@ -140,7 +140,7 @@ func (pr *DefaultPortableReader) ReadInt16(fieldName string) (int16, error) {
 }
 
 func (pr *DefaultPortableReader) ReadInt32(fieldName string) (int32, error) {
-	pos, err := pr.positionByField(fieldName, INT32)
+	pos, err := pr.positionByField(fieldName, TypeInt32)
 	if err != nil {
 		return 0, err
 	}
@@ -148,7 +148,7 @@ func (pr *DefaultPortableReader) ReadInt32(fieldName string) (int32, error) {
 }
 
 func (pr *DefaultPortableReader) ReadInt64(fieldName string) (int64, error) {
-	pos, err := pr.positionByField(fieldName, INT64)
+	pos, err := pr.positionByField(fieldName, TypeInt64)
 	if err != nil {
 		return 0, err
 	}
@@ -156,7 +156,7 @@ func (pr *DefaultPortableReader) ReadInt64(fieldName string) (int64, error) {
 }
 
 func (pr *DefaultPortableReader) ReadFloat32(fieldName string) (float32, error) {
-	pos, err := pr.positionByField(fieldName, FLOAT32)
+	pos, err := pr.positionByField(fieldName, TypeFloat32)
 	if err != nil {
 		return 0, err
 	}
@@ -164,7 +164,7 @@ func (pr *DefaultPortableReader) ReadFloat32(fieldName string) (float32, error) 
 }
 
 func (pr *DefaultPortableReader) ReadFloat64(fieldName string) (float64, error) {
-	pos, err := pr.positionByField(fieldName, FLOAT64)
+	pos, err := pr.positionByField(fieldName, TypeFloat64)
 	if err != nil {
 		return 0, err
 	}
@@ -172,7 +172,7 @@ func (pr *DefaultPortableReader) ReadFloat64(fieldName string) (float64, error) 
 }
 
 func (pr *DefaultPortableReader) ReadUTF(fieldName string) (string, error) {
-	pos, err := pr.positionByField(fieldName, UTF)
+	pos, err := pr.positionByField(fieldName, TypeUTF)
 	if err != nil {
 		return "", err
 	}
@@ -182,7 +182,7 @@ func (pr *DefaultPortableReader) ReadUTF(fieldName string) (string, error) {
 func (pr *DefaultPortableReader) ReadPortable(fieldName string) (Portable, error) {
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
-	pos, err := pr.positionByField(fieldName, PORTABLE)
+	pos, err := pr.positionByField(fieldName, TypePortable)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) (Portable, error
 }
 
 func (pr *DefaultPortableReader) ReadByteArray(fieldName string) ([]byte, error) {
-	pos, err := pr.positionByField(fieldName, BYTE_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeByteArray)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (pr *DefaultPortableReader) ReadByteArray(fieldName string) ([]byte, error)
 }
 
 func (pr *DefaultPortableReader) ReadBoolArray(fieldName string) ([]bool, error) {
-	pos, err := pr.positionByField(fieldName, BOOL_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeBoolArray)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (pr *DefaultPortableReader) ReadBoolArray(fieldName string) ([]bool, error)
 }
 
 func (pr *DefaultPortableReader) ReadUInt16Array(fieldName string) ([]uint16, error) {
-	pos, err := pr.positionByField(fieldName, UINT16_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeUint16Array)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (pr *DefaultPortableReader) ReadUInt16Array(fieldName string) ([]uint16, er
 }
 
 func (pr *DefaultPortableReader) ReadInt16Array(fieldName string) ([]int16, error) {
-	pos, err := pr.positionByField(fieldName, INT16_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeInt16Array)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func (pr *DefaultPortableReader) ReadInt16Array(fieldName string) ([]int16, erro
 }
 
 func (pr *DefaultPortableReader) ReadInt32Array(fieldName string) ([]int32, error) {
-	pos, err := pr.positionByField(fieldName, INT32_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeInt32Array)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (pr *DefaultPortableReader) ReadInt32Array(fieldName string) ([]int32, erro
 }
 
 func (pr *DefaultPortableReader) ReadInt64Array(fieldName string) ([]int64, error) {
-	pos, err := pr.positionByField(fieldName, INT64_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeInt64Array)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (pr *DefaultPortableReader) ReadInt64Array(fieldName string) ([]int64, erro
 }
 
 func (pr *DefaultPortableReader) ReadFloat32Array(fieldName string) ([]float32, error) {
-	pos, err := pr.positionByField(fieldName, FLOAT32_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeFloat32Array)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (pr *DefaultPortableReader) ReadFloat32Array(fieldName string) ([]float32, 
 }
 
 func (pr *DefaultPortableReader) ReadFloat64Array(fieldName string) ([]float64, error) {
-	pos, err := pr.positionByField(fieldName, FLOAT64_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeFloat64Array)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (pr *DefaultPortableReader) ReadFloat64Array(fieldName string) ([]float64, 
 }
 
 func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) ([]string, error) {
-	pos, err := pr.positionByField(fieldName, UTF_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypeUTFArray)
 	if err != nil {
 		return nil, err
 	}
@@ -281,13 +281,13 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]Portable
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 
-	pos, err := pr.positionByField(fieldName, PORTABLE_ARRAY)
+	pos, err := pr.positionByField(fieldName, TypePortableArray)
 	if err != nil {
 		return nil, err
 	}
 	pr.input.SetPosition(pos)
 	length, err := pr.input.ReadInt32()
-	if err != nil || length == NIL_ARRAY_LENGTH {
+	if err != nil || length == NilArrayLength {
 		return nil, err
 	}
 	factoryId, err := pr.input.ReadInt32()
@@ -302,7 +302,7 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]Portable
 	if length > 0 {
 		offset := pr.input.Position()
 		for i := int32(0); i < length; i++ {
-			start, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*INT_SIZE_IN_BYTES)
+			start, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*Int32SizeInBytes)
 			if err != nil {
 				return nil, err
 			}

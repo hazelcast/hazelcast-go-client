@@ -52,11 +52,11 @@ type anIdentifiedDataSerializable struct {
 }
 
 func (*anIdentifiedDataSerializable) ClassId() int32 {
-	return DATA_SERIALIZABLE_CLASS_ID
+	return dataSerializableClassId
 }
 
 func (*anIdentifiedDataSerializable) FactoryId() int32 {
-	return IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID
+	return identifiedDataSerializableFactoryID
 }
 
 func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) error {

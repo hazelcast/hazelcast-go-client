@@ -24,7 +24,7 @@ func TopicAddMessageListenerCalculateSize(name *string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -60,7 +60,7 @@ func TopicAddMessageListenerHandle(clientMessage *ClientMessage,
 	handleEventTopic TopicAddMessageListenerHandleEventTopicFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_TOPIC && handleEventTopic != nil {
+	if messageType == EventTopic && handleEventTopic != nil {
 		handleEventTopic(TopicAddMessageListenerEventTopicDecode(clientMessage))
 	}
 }

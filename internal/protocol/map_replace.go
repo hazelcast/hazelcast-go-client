@@ -26,7 +26,7 @@ func MapReplaceCalculateSize(name *string, key *Data, value *Data, threadId int6
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(value)
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

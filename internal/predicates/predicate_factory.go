@@ -27,35 +27,35 @@ func NewPredicateFactory() *PredicateFactory {
 
 func (pf *PredicateFactory) Create(id int32) IdentifiedDataSerializable {
 	switch id {
-	case SQL_PREDICATE:
+	case SqlPredicateId:
 		return &SqlPredicate{}
-	case AND_PREDICATE:
+	case AndPredicateId:
 		return &AndPredicate{}
-	case BETWEEN_PREDICATE:
+	case BetweenPredicateId:
 		return &BetweenPredicate{}
-	case EQUAL_PREDICATE:
+	case EqualPredicateId:
 		return &EqualPredicate{}
-	case GREATERLESS_PREDICATE:
+	case GreaterlessPredicateId:
 		return &GreaterLessPredicate{}
-	case LIKE_PREDICATE:
+	case LikePredicateId:
 		return &LikePredicate{}
-	case ILIKE_PREDICATE:
+	case ILikePredicateId:
 		return &ILikePredicate{}
-	case IN_PREDICATE:
+	case InPredicateId:
 		return &InPredicate{}
-	case INSTANCEOF_PREDICATE:
+	case InstanceOfPredicateId:
 		return &InstanceOfPredicate{}
-	case NOTEQUAL_PREDICATE:
+	case NotEqualPredicateId:
 		return &NotEqualPredicate{}
-	case NOT_PREDICATE:
+	case NotPredicateId:
 		return &NotPredicate{}
-	case OR_PREDICATE:
+	case OrPredicateId:
 		return &OrPredicate{}
-	case REGEX_PREDICATE:
+	case RegexPredicateId:
 		return &RegexPredicate{}
-	case FALSE_PREDICATE:
+	case FalsePredicateId:
 		return &FalsePredicate{}
-	case TRUE_PREDICATE:
+	case TruePredicateId:
 		return &TruePredicate{}
 	default:
 		return nil

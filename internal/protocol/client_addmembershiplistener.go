@@ -21,7 +21,7 @@ import (
 func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += BOOL_SIZE_IN_BYTES
+	dataSize += BoolSizeInBytes
 	return dataSize
 }
 
@@ -78,13 +78,13 @@ func ClientAddMembershipListenerHandle(clientMessage *ClientMessage,
 	handleEventMemberAttributeChange ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EVENT_MEMBER && handleEventMember != nil {
+	if messageType == EventMember && handleEventMember != nil {
 		handleEventMember(ClientAddMembershipListenerEventMemberDecode(clientMessage))
 	}
-	if messageType == EVENT_MEMBERLIST && handleEventMemberList != nil {
+	if messageType == EventMemberList && handleEventMemberList != nil {
 		handleEventMemberList(ClientAddMembershipListenerEventMemberListDecode(clientMessage))
 	}
-	if messageType == EVENT_MEMBERATTRIBUTECHANGE && handleEventMemberAttributeChange != nil {
+	if messageType == EventMemberAttributeChange && handleEventMemberAttributeChange != nil {
 		handleEventMemberAttributeChange(ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage))
 	}
 }

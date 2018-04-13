@@ -15,213 +15,211 @@
 package common
 
 const (
-	SERVICE_NAME_ATOMIC_LONG                     = "hz:impl:atomicLongService"
-	SERVICE_NAME_ATOMIC_REFERENCE                = "hz:impl:atomicReferenceService"
-	SERVICE_NAME_COUNT_DOWN_LATCH                = "hz:impl:countDownLatchService"
-	SERVICE_NAME_ID_GENERATOR                    = "hz:impl:idGeneratorService"
-	SERVICE_NAME_EXECUTOR                        = "hz:impl:executorService"
-	SERVICE_NAME_LOCK                            = "hz:impl:lockService"
-	SERVICE_NAME_LIST                            = "hz:impl:listService"
-	SERVICE_NAME_MULTI_MAP                       = "hz:impl:multiMapService"
-	SERVICE_NAME_MAP                             = "hz:impl:mapService"
-	SERVICE_NAME_RELIABLE_TOPIC                  = "hz:impl:reliableTopicService"
-	SERVICE_NAME_REPLICATED_MAP                  = "hz:impl:replicatedMapService"
-	SERVICE_NAME_RINGBUFFER_SERVICE              = "hz:impl:ringbufferService"
-	SERVICE_NAME_SEMAPHORE                       = "hz:impl:semaphoreService"
-	SERVICE_NAME_SET                             = "hz:impl:setService"
-	SERVICE_NAME_QUEUE                           = "hz:impl:queueService"
-	SERVICE_NAME_TOPIC                           = "hz:impl:topicService"
-	SERVICE_NAME_ID_GENERATOR_ATOMIC_LONG_PREFIX = "hz:atomic:idGenerator:"
-	SERVICE_NAME_PN_COUNTER                      = "hz:impl:PNCounterService"
+	ServiceNameAtomicLong                  = "hz:impl:atomicLongService"
+	ServiceNameAtomicReference             = "hz:impl:atomicReferenceService"
+	ServiceNameCountDownLatch              = "hz:impl:countDownLatchService"
+	ServiceNameIdGenerator                 = "hz:impl:idGeneratorService"
+	ServiceNameExecutor                    = "hz:impl:executorService"
+	ServiceNameLock                        = "hz:impl:lockService"
+	ServiceNameList                        = "hz:impl:listService"
+	ServiceNameMultiMap                    = "hz:impl:multiMapService"
+	ServiceNameMap                         = "hz:impl:mapService"
+	ServiceNameReliableTopic               = "hz:impl:reliableTopicService"
+	ServiceNameReplicatedMap               = "hz:impl:replicatedMapService"
+	ServiceNameRingbufferService           = "hz:impl:ringbufferService"
+	ServiceNameSemaphore                   = "hz:impl:semaphoreService"
+	ServiceNameSet                         = "hz:impl:setService"
+	ServiceNameQueue                       = "hz:impl:queueService"
+	ServiceNameTopic                       = "hz:impl:topicService"
+	ServiceNameIdGeneratorAtomicLongPrefix = "hz:atomic:idGenerator:"
+	ServiceNamePNCounter                   = "hz:impl:PNCounterService"
 )
 
 type MessageType uint16
 
 //MESSAGE TYPES
 const (
-	MESSAGE_TYPE_EXCEPTION MessageType = 109
+	MessageTypeException MessageType = 109
 )
 
 type ErrorCode int32
 
 //ERROR CODES
 const (
-	ERROR_CODE_UNDEFINED                               ErrorCode = 0
-	ERROR_CODE_ARRAY_INDEX_OUT_OF_BOUNDS               ErrorCode = 1
-	ERROR_CODE_ARRAY_STORE                             ErrorCode = 2
-	ERROR_CODE_AUTHENTICATION                          ErrorCode = 3
-	ERROR_CODE_CACHE                                   ErrorCode = 4
-	ERROR_CODE_CACHE_LOADER                            ErrorCode = 5
-	ERROR_CODE_CACHE_NOT_EXISTS                        ErrorCode = 6
-	ERROR_CODE_CACHE_WRITER                            ErrorCode = 7
-	ERROR_CODE_CALLER_NOT_MEMBER                       ErrorCode = 8
-	ERROR_CODE_CANCELLATION                            ErrorCode = 9
-	ERROR_CODE_CLASS_CAST                              ErrorCode = 10
-	ERROR_CODE_CLASS_NOT_FOUND                         ErrorCode = 11
-	ERROR_CODE_CONCURRENT_MODIFICATION                 ErrorCode = 12
-	ERROR_CODE_CONFIG_MISMATCH                         ErrorCode = 13
-	ERROR_CODE_CONFIGURATION                           ErrorCode = 14
-	ERROR_CODE_DISTRIBUTED_OBJECT_DESTROYED            ErrorCode = 15
-	ERROR_CODE_DUPLICATE_INSTANCE_NAME                 ErrorCode = 16
-	ERROR_CODE_EOF                                     ErrorCode = 17
-	ERROR_CODE_ENTRY_PROCESSOR                         ErrorCode = 18
-	ERROR_CODE_EXECUTION                               ErrorCode = 19
-	ERROR_CODE_HAZELCAST                               ErrorCode = 20
-	ERROR_CODE_HAZELCAST_INSTANCE_NOT_ACTIVE           ErrorCode = 21
-	ERROR_CODE_HAZELCAST_OVERLOAD                      ErrorCode = 22
-	ERROR_CODE_HAZELCAST_SERIALIZATION                 ErrorCode = 23
-	ERROR_CODE_IO                                      ErrorCode = 24
-	ERROR_CODE_ILLEGAL_ARGUMENT                        ErrorCode = 25
-	ERROR_CODE_ILLEGAL_ACCESS_EXCEPTION                ErrorCode = 26
-	ERROR_CODE_ILLEGAL_ACCESS_ERROR                    ErrorCode = 27
-	ERROR_CODE_ILLEGAL_MONITOR_STATE                   ErrorCode = 28
-	ERROR_CODE_ILLEGAL_STATE                           ErrorCode = 29
-	ERROR_CODE_ILLEGAL_THREAD_STATE                    ErrorCode = 30
-	ERROR_CODE_INDEX_OUT_OF_BOUNDS                     ErrorCode = 31
-	ERROR_CODE_INTERRUPTED                             ErrorCode = 32
-	ERROR_CODE_INVALID_ADDRESS                         ErrorCode = 33
-	ERROR_CODE_INVALID_CONFIGURATION                   ErrorCode = 34
-	ERROR_CODE_MEMBER_LEFT                             ErrorCode = 35
-	ERROR_CODE_NEGATIVE_ARRAY_SIZE                     ErrorCode = 36
-	ERROR_CODE_NO_SUCH_ELEMENT                         ErrorCode = 37
-	ERROR_CODE_NOT_SERIALIZABLE                        ErrorCode = 38
-	ERROR_CODE_NIL_POINTER                             ErrorCode = 39
-	ERROR_CODE_OPERATION_TIMEOUT                       ErrorCode = 40
-	ERROR_CODE_PARTITION_MIGRATING                     ErrorCode = 41
-	ERROR_CODE_QUERY                                   ErrorCode = 42
-	ERROR_CODE_QUERY_RESULT_SIZE_EXCEEDED              ErrorCode = 43
-	ERROR_CODE_QUORUM                                  ErrorCode = 44
-	ERROR_CODE_REACHED_MAX_SIZE                        ErrorCode = 45
-	ERROR_CODE_REJECTED_EXECUTION                      ErrorCode = 46
-	ERROR_CODE_REMOTE_MAP_REDUCE                       ErrorCode = 47
-	ERROR_CODE_RESPONSE_ALREADY_SENT                   ErrorCode = 48
-	ERROR_CODE_RETRYABLE_HAZELCAST                     ErrorCode = 49
-	ERROR_CODE_RETRYABLE_IO                            ErrorCode = 50
-	ERROR_CODE_RUNTIME                                 ErrorCode = 51
-	ERROR_CODE_SECURITY                                ErrorCode = 52
-	ERROR_CODE_SOCKET                                  ErrorCode = 53
-	ERROR_CODE_STALE_SEQUENCE                          ErrorCode = 54
-	ERROR_CODE_TARGET_DISCONNECTED                     ErrorCode = 55
-	ERROR_CODE_TARGET_NOT_MEMBER                       ErrorCode = 56
-	ERROR_CODE_TIMEOUT                                 ErrorCode = 57
-	ERROR_CODE_TOPIC_OVERLOAD                          ErrorCode = 58
-	ERROR_CODE_TOPOLOGY_CHANGED                        ErrorCode = 59
-	ERROR_CODE_TRANSACTION                             ErrorCode = 60
-	ERROR_CODE_TRANSACTION_NOT_ACTIVE                  ErrorCode = 61
-	ERROR_CODE_TRANSACTION_TIMED_OUT                   ErrorCode = 62
-	ERROR_CODE_URI_SYNTAX                              ErrorCode = 63
-	ERROR_CODE_UTF_DATA_FORMAT                         ErrorCode = 64
-	ERROR_CODE_UNSUPPORTED_OPERATION                   ErrorCode = 65
-	ERROR_CODE_WRONG_TARGET                            ErrorCode = 66
-	ERROR_CODE_XA                                      ErrorCode = 67
-	ERROR_CODE_ACCESS_CONTROL                          ErrorCode = 68
-	ERROR_CODE_LOGIN                                   ErrorCode = 69
-	ERROR_CODE_UNSUPPORTED_CALLBACK                    ErrorCode = 70
-	ERROR_CODE_NO_DATA_MEMBER                          ErrorCode = 71
-	ERROR_CODE_REPLICATED_MAP_CANT_BE_CREATED          ErrorCode = 72
-	ERROR_CODE_MAX_MESSAGE_SIZE_EXCEEDED               ErrorCode = 73
-	ERROR_CODE_WAN_REPLICATION_QUEUE_FULL              ErrorCode = 74
-	ERROR_CODE_ASSERTION_ERROR                         ErrorCode = 75
-	ERROR_CODE_OUT_OF_MEMORY_ERROR                     ErrorCode = 76
-	ERROR_CODE_STACK_OVERFLOW_ERROR                    ErrorCode = 77
-	ERROR_CODE_NATIVE_OUT_OF_MEMORY_ERROR              ErrorCode = 78
-	ERROR_CODE_NOT_FOUND                               ErrorCode = 79
-	ERROR_CODE_STALE_TASK_ID                           ErrorCode = 80
-	ERROR_CODE_DUPLICATE_TASK                          ErrorCode = 81
-	ERROR_CODE_STALE_TASK                              ErrorCode = 82
-	ERROR_CODE_LOCAL_MEMBER_RESET                      ErrorCode = 83
-	ERROR_CODE_INDETERMINATE_OPERATION_STATE           ErrorCode = 84
-	ERROR_CODE_FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION ErrorCode = 85
-	ERROR_CODE_TARGET_NOT_REPLICA_EXCEPTION            ErrorCode = 86
-	ERROR_CODE_MUTATION_DISALLOWED_EXCEPTION           ErrorCode = 87
-	ERROR_CODE_CONSISTENCY_LOST_EXCEPTION              ErrorCode = 88
+	ErrorCodeUndefined                        ErrorCode = 0
+	ErrorCodeArrayIndexOutOfBounds            ErrorCode = 1
+	ErrorCodeArrayStore                       ErrorCode = 2
+	ErrorCodeAuthentication                   ErrorCode = 3
+	ErrorCodeCache                            ErrorCode = 4
+	ErrorCodeCacheLoader                      ErrorCode = 5
+	ErrorCodeCacheNotExists                   ErrorCode = 6
+	ErrorCodeCacheWriter                      ErrorCode = 7
+	ErrorCodeCallerNotMember                  ErrorCode = 8
+	ErrorCodeCancellation                     ErrorCode = 9
+	ErrorCodeClassCast                        ErrorCode = 10
+	ErrorCodeClassNotFound                    ErrorCode = 11
+	ErrorCodeConcurrentModification           ErrorCode = 12
+	ErrorCodeConfigMismatch                   ErrorCode = 13
+	ErrorCodeConfiguration                    ErrorCode = 14
+	ErrorCodeDistributedObjectDestroyed       ErrorCode = 15
+	ErrorCodeDuplicateInstanceName            ErrorCode = 16
+	ErrorCodeEOF                              ErrorCode = 17
+	ErrorCodeEntryProcessor                   ErrorCode = 18
+	ErrorCodeExecution                        ErrorCode = 19
+	ErrorCodeHazelcast                        ErrorCode = 20
+	ErrorCodeHazelcastInstanceNotActive       ErrorCode = 21
+	ErrorCodeHazelcastOverLoad                ErrorCode = 22
+	ErrorCodeHazelcastSerialization           ErrorCode = 23
+	ErrorCodeIO                               ErrorCode = 24
+	ErrorCodeIllegalArgument                  ErrorCode = 25
+	ErrorCodeIllegalAccessException           ErrorCode = 26
+	ErrorCodeIllegalAccessError               ErrorCode = 27
+	ErrorCodeIllegalMonitorState              ErrorCode = 28
+	ErrorCodeIllegalState                     ErrorCode = 29
+	ErrorCodeIllegalThreadState               ErrorCode = 30
+	ErrorCodeIndexOutOfBounds                 ErrorCode = 31
+	ErrorCodeInterrupted                      ErrorCode = 32
+	ErrorCodeInvalidAddress                   ErrorCode = 33
+	ErrorCodeInvalidConfiguration             ErrorCode = 34
+	ErrorCodeMemberLeft                       ErrorCode = 35
+	ErrorCodeNegativeArraySize                ErrorCode = 36
+	ErrorCodeNoSuchElement                    ErrorCode = 37
+	ErrorCodeNotSerializable                  ErrorCode = 38
+	ErrorCodeNilPointer                       ErrorCode = 39
+	ErrorCodeOperationTimeout                 ErrorCode = 40
+	ErrorCodePartitionMigrating               ErrorCode = 41
+	ErrorCodeQuery                            ErrorCode = 42
+	ErrorCodeQueryResultSizeExceeded          ErrorCode = 43
+	ErrorCodeQuorum                           ErrorCode = 44
+	ErrorCodeReachedMaxSize                   ErrorCode = 45
+	ErrorCodeRejectedExecution                ErrorCode = 46
+	ErrorCodeRemoteMapReduce                  ErrorCode = 47
+	ErrorCodeResponseAlreadySent              ErrorCode = 48
+	ErrorCodeRetryableHazelcast               ErrorCode = 49
+	ErrorCodeRetryableIO                      ErrorCode = 50
+	ErrorCodeRuntime                          ErrorCode = 51
+	ErrorCodeSecurity                         ErrorCode = 52
+	ErrorCodeSocket                           ErrorCode = 53
+	ErrorCodeStaleSequence                    ErrorCode = 54
+	ErrorCodeTargetDisconnected               ErrorCode = 55
+	ErrorCodeTargetNotMember                  ErrorCode = 56
+	ErrorCodeTimeout                          ErrorCode = 57
+	ErrorCodeTopicOverload                    ErrorCode = 58
+	ErrorCodeTopologyChanged                  ErrorCode = 59
+	ErrorCodeTransaction                      ErrorCode = 60
+	ErrorCodeTransactionNotActive             ErrorCode = 61
+	ErrorCodeTransactionTimedOut              ErrorCode = 62
+	ErrorCodeURISyntax                        ErrorCode = 63
+	ErrorCodeUTFDataFormat                    ErrorCode = 64
+	ErrorCodeUnsupportedOperation             ErrorCode = 65
+	ErrorCodeWrongTarget                      ErrorCode = 66
+	ErrorCodeXA                               ErrorCode = 67
+	ErrorCodeAccessControl                    ErrorCode = 68
+	ErrorCodeLogin                            ErrorCode = 69
+	ErrorCodeUnsupportedCallback              ErrorCode = 70
+	ErrorCodeNoDataMember                     ErrorCode = 71
+	ErrorCodeReplicatedMapCantBeCreated       ErrorCode = 72
+	ErrorCodeMaxMessageSizeExceeded           ErrorCode = 73
+	ErrorCodeWANReplicationQueueFull          ErrorCode = 74
+	ErrorCodeAssertionError                   ErrorCode = 75
+	ErrorCodeOutOfMemoryError                 ErrorCode = 76
+	ErrorCodeStackOverflowError               ErrorCode = 77
+	ErrorCodeNativeOutOfMemoryError           ErrorCode = 78
+	ErrorCodeNotFound                         ErrorCode = 79
+	ErrorCodeStaleTaskId                      ErrorCode = 80
+	ErrorCodeDuplicateTask                    ErrorCode = 81
+	ErrorCodeStaleTask                        ErrorCode = 82
+	ErrorCodeLocalMemberReset                 ErrorCode = 83
+	ErrorCodeIndeterminateOperationState      ErrorCode = 84
+	ErrorCodeFlakeIdNodeIdOutOfRangeException ErrorCode = 85
+	ErrorCodeTargetNotReplicaException        ErrorCode = 86
+	ErrorCodeMutationDisallowedException      ErrorCode = 87
+	ErrorCodeConsistencyLostException         ErrorCode = 88
 )
 
 /*
 Event Response Constants
 */
 const (
-	EVENT_MEMBER                 = 200
-	EVENT_MEMBERLIST             = 201
-	EVENT_MEMBERATTRIBUTECHANGE  = 202
-	EVENT_ENTRY                  = 203
-	EVENT_ITEM                   = 204
-	EVENT_TOPIC                  = 205
-	EVENT_PARTITIONLOST          = 206
-	EVENT_DISTRIBUTEDOBJECT      = 207
-	EVENT_CACHEINVALIDATION      = 208
-	EVENT_MAPPARTITIONLOST       = 209
-	EVENT_CACHE                  = 210
-	EVENT_CACHEBATCHINVALIDATION = 211
+	EventMember                 = 200
+	EventMemberList             = 201
+	EventMemberAttributeChange  = 202
+	EventEntry                  = 203
+	EventItem                   = 204
+	EventTopic                  = 205
+	EventPartitionLost          = 206
+	EventDistributedObject      = 207
+	EventCacheInvalidation      = 208
+	EventMapPartitionLost       = 209
+	EventCache                  = 210
+	EventCacheBatchInvalidation = 211
 	// ENTERPRISE
-	EVENT_QUERYCACHESINGLE = 212
-	EVENT_QUERYCACHEBATCH  = 213
+	EventQueryCacheSingle = 212
+	EventQueryCacheBatch  = 213
 
-	EVENT_CACHEPARTITIONLOST    = 214
-	EVENT_IMAPINVALIDATION      = 215
-	EVENT_IMAPBATCHINVALIDATION = 216
+	EventCachePartitionLost    = 214
+	EventIMapInvalidation      = 215
+	EventIMapBatchInvalidation = 216
 )
 
 const (
-	BYTE_SIZE_IN_BYTES   = 1
-	BOOL_SIZE_IN_BYTES   = 1
-	UINT8_SIZE_IN_BYTES  = 1
-	SHORT_SIZE_IN_BYTES  = 2
-	CHAR_SIZE_IN_BYTES   = 2
-	INT_SIZE_IN_BYTES    = 4
-	INT32_SIZE_IN_BYTES  = 4
-	FLOAT_SIZE_IN_BYTES  = 4
-	INT64_SIZE_IN_BYTES  = 8
-	DOUBLE_SIZE_IN_BYTES = 8
-	LONG_SIZE_IN_BYTES   = 8
+	ByteSizeInBytes    = 1
+	BoolSizeInBytes    = 1
+	Uint8SizeInBytes   = 1
+	Int16SizeInBytes   = 2
+	Uint16SizeInBytes  = 2
+	Int32SizeInBytes   = 4
+	Float32SizeInBytes = 4
+	Float64SizeInBytes = 8
+	Int64SizeInBytes   = 8
 
-	VERSION              = 0
-	BEGIN_FLAG     uint8 = 0x80
-	END_FLAG       uint8 = 0x40
-	BEGIN_END_FLAG uint8 = BEGIN_FLAG | END_FLAG
-	LISTENER_FLAG  uint8 = 0x01
+	Version            = 0
+	BeginFlag    uint8 = 0x80
+	EndFlag      uint8 = 0x40
+	BeginEndFlag uint8 = BeginFlag | EndFlag
+	ListenerFlag uint8 = 0x01
 
-	PAYLOAD_OFFSET = 18
-	SIZE_OFFSET    = 0
+	PayloadOffset = 18
+	SizeOffset    = 0
 
-	FRAME_LENGTH_FIELD_OFFSET   = 0
-	VERSION_FIELD_OFFSET        = FRAME_LENGTH_FIELD_OFFSET + INT_SIZE_IN_BYTES
-	FLAGS_FIELD_OFFSET          = VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES
-	TYPE_FIELD_OFFSET           = FLAGS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES
-	CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + SHORT_SIZE_IN_BYTES
-	PARTITION_ID_FIELD_OFFSET   = CORRELATION_ID_FIELD_OFFSET + INT64_SIZE_IN_BYTES
-	DATA_OFFSET_FIELD_OFFSET    = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES
-	HEADER_SIZE                 = DATA_OFFSET_FIELD_OFFSET + SHORT_SIZE_IN_BYTES
+	FrameLengthFieldOffset   = 0
+	VersionFieldOffset       = FrameLengthFieldOffset + Int32SizeInBytes
+	FlagsFieldOffset         = VersionFieldOffset + ByteSizeInBytes
+	TypeFieldOffset          = FlagsFieldOffset + ByteSizeInBytes
+	CorrelationIdFieldOffset = TypeFieldOffset + Int16SizeInBytes
+	PartitionIdFieldOffset   = CorrelationIdFieldOffset + Int64SizeInBytes
+	DataOffsetFieldOffset    = PartitionIdFieldOffset + Int32SizeInBytes
+	HeaderSize               = DataOffsetFieldOffset + Int16SizeInBytes
 
-	NIL_ARRAY_LENGTH = -1
+	NilArrayLength = -1
 )
 
 const (
-	ENTRYEVENT_ADDED        int32 = 1
-	ENTRYEVENT_REMOVED      int32 = 2
-	ENTRYEVENT_UPDATED      int32 = 4
-	ENTRYEVENT_EVICTED      int32 = 8
-	ENTRYEVENT_EVICT_ALL    int32 = 16
-	ENTRYEVENT_CLEAR_ALL    int32 = 32
-	ENTRYEVENT_MERGED       int32 = 64
-	ENTRYEVENT_EXPIRED      int32 = 128
-	ENTRYEVENT_INVALIDATION int32 = 256
+	EntryEventAdded        int32 = 1
+	EntryEventRemoved      int32 = 2
+	EntryEventUpdated      int32 = 4
+	EntryEventEvicted      int32 = 8
+	EntryEventEvictAll     int32 = 16
+	EntryEventClearAll     int32 = 32
+	EntryEventMerged       int32 = 64
+	EntryEventExpired      int32 = 128
+	EntryEventInvalidation int32 = 256
 )
 
 const (
-	ITEM_ADDED   int32 = 1
-	ITEM_REMOVED int32 = 2
+	ItemAdded   int32 = 1
+	ItemRemoved int32 = 2
 )
 
 const (
-	NIL_KEY_IS_NOT_ALLOWED        string = "nil key is not allowed"
-	NIL_KEYS_ARE_NOT_ALLOWED      string = "nil keys collection is not allowed"
-	NIL_VALUE_IS_NOT_ALLOWED      string = "nil value is not allowed"
-	NIL_PREDICATE_IS_NOT_ALLOWED  string = "predicate should not be nil"
-	NIL_MAP_IS_NOT_ALLOWED        string = "nil map is not allowed"
-	NIL_ARG_IS_NOT_ALLOWED        string = "nil arg is not allowed"
-	NIL_SLICE_IS_NOT_ALLOWED      string = "nil slice is not allowed"
-	NIL_LISTENER_IS_NOT_ALLOWED   string = "nil listener is not allowed"
-	NIL_AGGREGATOR_IS_NOT_ALLOWED string = "aggregator should not be nil"
-	NIL_PROJECTION_IS_NOT_ALLOWED string = "projection should not be nil"
+	NilKeyIsNotAllowed        string = "nil key is not allowed"
+	NilKeysAreNotAllowed      string = "nil keys collection is not allowed"
+	NilValueIsNotAllowed      string = "nil value is not allowed"
+	NilPredicateIsNotAllowed  string = "predicate should not be nil"
+	NilMapIsNotAllowed        string = "nil map is not allowed"
+	NilArgIsNotAllowed        string = "nil arg is not allowed"
+	NilSliceIsNotAllowed      string = "nil slice is not allowed"
+	NilListenerIsNotAllowed   string = "nil listener is not allowed"
+	NilAggregatorIsNotAllowed string = "aggregator should not be nil"
+	NilProjectionIsNotAllowed string = "projection should not be nil"
 )

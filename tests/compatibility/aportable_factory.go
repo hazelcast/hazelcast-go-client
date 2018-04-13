@@ -19,9 +19,9 @@ import . "github.com/hazelcast/hazelcast-go-client/serialization"
 type aPortableFactory struct{}
 
 func (pf *aPortableFactory) Create(classId int32) Portable {
-	if classId == PORTABLE_CLASS_ID {
+	if classId == portableClassId {
 		return &aPortable{}
-	} else if classId == INNER_PORTABLE_CLASS_ID {
+	} else if classId == innerPortableClassId {
 		return &AnInnerPortable{}
 	}
 	return nil

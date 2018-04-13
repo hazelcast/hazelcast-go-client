@@ -22,7 +22,7 @@ func FlakeIdGeneratorNewIdBatchCalculateSize(name *string, batchSize int32) int 
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT32_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	return dataSize
 }
 

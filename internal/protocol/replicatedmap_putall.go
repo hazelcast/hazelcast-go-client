@@ -24,7 +24,7 @@ func ReplicatedMapPutAllCalculateSize(name *string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	for _, entriesItem := range entries {
 		key := entriesItem.key.(*Data)
 		val := entriesItem.value.(*Data)

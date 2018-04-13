@@ -26,7 +26,7 @@ func ReplicatedMapPutCalculateSize(name *string, key *Data, value *Data, ttl int
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(value)
-	dataSize += INT64_SIZE_IN_BYTES
+	dataSize += Int64SizeInBytes
 	return dataSize
 }
 

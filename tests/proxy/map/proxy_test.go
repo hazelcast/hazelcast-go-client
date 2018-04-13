@@ -8,7 +8,7 @@ import (
 
 func TestProxy_Destroy(t *testing.T) {
 	name := "testMap"
-	serviceName := common.SERVICE_NAME_MAP
+	serviceName := common.ServiceNameMap
 	testMap, err := client.GetDistributedObject(serviceName, name)
 	res, err := testMap.Destroy()
 
@@ -25,7 +25,7 @@ func TestProxy_Destroy(t *testing.T) {
 
 func TestProxy_GetDistributedObject(t *testing.T) {
 	name := "testMap"
-	serviceName := common.SERVICE_NAME_MAP
+	serviceName := common.ServiceNameMap
 	mp, _ := client.GetDistributedObject(serviceName, name)
 	mp2, _ := client.GetDistributedObject(serviceName, name)
 

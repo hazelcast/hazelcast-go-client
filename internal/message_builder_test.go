@@ -41,7 +41,7 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	serverVersion := "3.9"
 	expectedClientMessage := ClientAuthenticationEncodeRequest(&testString, &testString, &testString, &testString, false,
 		&testString, 1, &serverVersion)
-	expectedClientMessage.SetFlags(common.BEGIN_END_FLAG)
+	expectedClientMessage.SetFlags(common.BeginEndFlag)
 	expectedClientMessage.SetCorrelationId(1)
 	expectedClientMessage.SetFrameLength(int32(len(expectedClientMessage.Buffer)))
 
@@ -57,9 +57,9 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	firstMessage.SetFrameLength(int32(len(firstMessage.Buffer)))
 	secondMessage.SetFrameLength(int32(len(secondMessage.Buffer)))
 
-	firstMessage.SetFlags(common.BEGIN_FLAG)
+	firstMessage.SetFlags(common.BeginFlag)
 	builder.onMessage(firstMessage)
-	secondMessage.SetFlags(common.END_FLAG)
+	secondMessage.SetFlags(common.EndFlag)
 	builder.onMessage(secondMessage)
 	mu.Lock()
 	if !reflect.DeepEqual(builtClientMessage.Buffer, expectedClientMessage.Buffer) {

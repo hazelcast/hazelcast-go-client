@@ -29,19 +29,19 @@ func CreateHazelcastError(err *protocol.Error) core.HazelcastError {
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), stackTrace)
 	switch ErrorCode(err.ErrorCode()) {
-	case ERROR_CODE_AUTHENTICATION:
+	case ErrorCodeAuthentication:
 		return core.NewHazelcastAuthenticationError(message, nil)
-	case ERROR_CODE_HAZELCAST_INSTANCE_NOT_ACTIVE:
+	case ErrorCodeHazelcastInstanceNotActive:
 		return core.NewHazelcastInstanceNotActiveError(message, nil)
-	case ERROR_CODE_HAZELCAST_SERIALIZATION:
+	case ErrorCodeHazelcastSerialization:
 		return core.NewHazelcastSerializationError(message, nil)
-	case ERROR_CODE_TARGET_DISCONNECTED:
+	case ErrorCodeTargetDisconnected:
 		return core.NewHazelcastTargetDisconnectedError(message, nil)
-	case ERROR_CODE_TARGET_NOT_MEMBER:
+	case ErrorCodeTargetNotMember:
 		return core.NewHazelcastTargetNotMemberError(message, nil)
-	case ERROR_CODE_UNSUPPORTED_OPERATION:
+	case ErrorCodeUnsupportedOperation:
 		return core.NewHazelcastUnsupportedOperationError(message, nil)
-	case ERROR_CODE_CONSISTENCY_LOST_EXCEPTION:
+	case ErrorCodeConsistencyLostException:
 		return core.NewHazelcastConsistencyLostError(message, nil)
 	}
 

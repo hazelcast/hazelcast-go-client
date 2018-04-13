@@ -282,7 +282,7 @@ func (imap *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue 
 }
 func (imap *MapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	if entries == nil {
-		return NewHazelcastNilPointerError(NIL_MAP_IS_NOT_ALLOWED, nil)
+		return NewHazelcastNilPointerError(NilMapIsNotAllowed, nil)
 	}
 	partitions, err := imap.validateAndSerializeMapAndGetPartitions(entries)
 	if err != nil {
@@ -341,7 +341,7 @@ func (imap *MapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs 
 }
 func (imap *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if keys == nil {
-		return nil, NewHazelcastNilPointerError(NIL_KEYS_ARE_NOT_ALLOWED, nil)
+		return nil, NewHazelcastNilPointerError(NilKeysAreNotAllowed, nil)
 	}
 	partitions := make(map[int32][]*serialization.Data)
 	entryMap = make(map[interface{}]interface{}, 0)
@@ -478,21 +478,21 @@ func (imap *MapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *se
 	entryEvent := NewEntryEvent(key, oldValue, value, mergingValue, eventType, Uuid)
 	mapEvent := NewMapEvent(eventType, Uuid, numberOfAffectedEntries)
 	switch eventType {
-	case ENTRYEVENT_ADDED:
+	case EntryEventAdded:
 		listener.(EntryAddedListener).EntryAdded(entryEvent)
-	case ENTRYEVENT_REMOVED:
+	case EntryEventRemoved:
 		listener.(EntryRemovedListener).EntryRemoved(entryEvent)
-	case ENTRYEVENT_UPDATED:
+	case EntryEventUpdated:
 		listener.(EntryUpdatedListener).EntryUpdated(entryEvent)
-	case ENTRYEVENT_EVICTED:
+	case EntryEventEvicted:
 		listener.(EntryEvictedListener).EntryEvicted(entryEvent)
-	case ENTRYEVENT_EVICT_ALL:
+	case EntryEventEvictAll:
 		listener.(EntryEvictAllListener).EntryEvictAll(mapEvent)
-	case ENTRYEVENT_CLEAR_ALL:
+	case EntryEventClearAll:
 		listener.(EntryClearAllListener).EntryClearAll(mapEvent)
-	case ENTRYEVENT_MERGED:
+	case EntryEventMerged:
 		listener.(EntryMergedListener).EntryMerged(entryEvent)
-	case ENTRYEVENT_EXPIRED:
+	case EntryEventExpired:
 		listener.(EntryExpiredListener).EntryExpired(entryEvent)
 	}
 }

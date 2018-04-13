@@ -25,7 +25,7 @@ func MapExecuteOnKeysCalculateSize(name *string, entryProcessor *Data, keys []*D
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(entryProcessor)
-	dataSize += INT_SIZE_IN_BYTES
+	dataSize += Int32SizeInBytes
 	for _, keysItem := range keys {
 		dataSize += DataCalculateSize(keysItem)
 	}

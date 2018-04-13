@@ -472,28 +472,28 @@ type MemberRemovedListener interface {
 func GetEntryListenerFlags(listener interface{}) int32 {
 	flags := int32(0)
 	if _, ok := listener.(EntryAddedListener); ok {
-		flags |= ENTRYEVENT_ADDED
+		flags |= EntryEventAdded
 	}
 	if _, ok := listener.(EntryRemovedListener); ok {
-		flags |= ENTRYEVENT_REMOVED
+		flags |= EntryEventRemoved
 	}
 	if _, ok := listener.(EntryUpdatedListener); ok {
-		flags |= ENTRYEVENT_UPDATED
+		flags |= EntryEventUpdated
 	}
 	if _, ok := listener.(EntryEvictedListener); ok {
-		flags |= ENTRYEVENT_EVICTED
+		flags |= EntryEventEvicted
 	}
 	if _, ok := listener.(EntryEvictAllListener); ok {
-		flags |= ENTRYEVENT_EVICT_ALL
+		flags |= EntryEventEvictAll
 	}
 	if _, ok := listener.(EntryClearAllListener); ok {
-		flags |= ENTRYEVENT_CLEAR_ALL
+		flags |= EntryEventClearAll
 	}
 	if _, ok := listener.(EntryExpiredListener); ok {
-		flags |= ENTRYEVENT_EXPIRED
+		flags |= EntryEventExpired
 	}
 	if _, ok := listener.(EntryMergedListener); ok {
-		flags |= ENTRYEVENT_MERGED
+		flags |= EntryEventMerged
 	}
 	return flags
 }

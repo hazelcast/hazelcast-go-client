@@ -81,7 +81,7 @@ func TestBinaryCompatibility(t *testing.T) {
 	for i.Available() != 0 {
 		objectKey, _ := i.ReadUTF()
 		length, _ := i.ReadInt32()
-		if length != NIL_ARRAY_LENGTH {
+		if length != NilArrayLength {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {
@@ -126,8 +126,8 @@ func createSerializationService(byteOrder bool) *serialization.SerializationServ
 	serConfing := config.NewSerializationConfig()
 	pf := &aPortableFactory{}
 	idf := &aDataSerializableFactory{}
-	serConfing.AddPortableFactory(PORTABLE_FACTORY_ID, pf)
-	serConfing.AddDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, idf)
+	serConfing.AddPortableFactory(portableFactoryId, pf)
+	serConfing.AddDataSerializableFactory(identifiedDataSerializableFactoryID, idf)
 
 	if byteOrder {
 		return serialization.NewSerializationService(serConfing)

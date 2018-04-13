@@ -42,7 +42,7 @@ func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
 }
 
 func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
-	mp, err := client.GetDistributedObject(SERVICE_NAME_MAP, name)
+	mp, err := client.GetDistributedObject(ServiceNameMap, name)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 }
 
 func (client *HazelcastClient) GetList(name string) (core.IList, error) {
-	list, err := client.GetDistributedObject(SERVICE_NAME_LIST, name)
+	list, err := client.GetDistributedObject(ServiceNameList, name)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +58,14 @@ func (client *HazelcastClient) GetList(name string) (core.IList, error) {
 }
 
 func (client *HazelcastClient) GetSet(name string) (core.ISet, error) {
-	set, err := client.GetDistributedObject(SERVICE_NAME_SET, name)
+	set, err := client.GetDistributedObject(ServiceNameSet, name)
 	if err != nil {
 		return nil, err
 	}
 	return set.(core.ISet), nil
 }
 func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
-	mp, err := client.GetDistributedObject(SERVICE_NAME_REPLICATED_MAP, name)
+	mp, err := client.GetDistributedObject(ServiceNameReplicatedMap, name)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap
 }
 
 func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
-	mmp, err := client.GetDistributedObject(SERVICE_NAME_MULTI_MAP, name)
+	mmp, err := client.GetDistributedObject(ServiceNameMultiMap, name)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
 }
 
 func (client *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error) {
-	flakeIdGenerator, err := client.GetDistributedObject(SERVICE_NAME_ID_GENERATOR, name)
+	flakeIdGenerator, err := client.GetDistributedObject(ServiceNameIdGenerator, name)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (client *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGen
 }
 
 func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
-	topic, err := client.GetDistributedObject(SERVICE_NAME_TOPIC, name)
+	topic, err := client.GetDistributedObject(ServiceNameTopic, name)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
 }
 
 func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
-	queue, err := client.GetDistributedObject(SERVICE_NAME_QUEUE, name)
+	queue, err := client.GetDistributedObject(ServiceNameQueue, name)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
 }
 
 func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, error) {
-	rb, err := client.GetDistributedObject(SERVICE_NAME_RINGBUFFER_SERVICE, name)
+	rb, err := client.GetDistributedObject(ServiceNameRingbufferService, name)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, erro
 }
 
 func (client *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
-	counter, err := client.GetDistributedObject(SERVICE_NAME_PN_COUNTER, name)
+	counter, err := client.GetDistributedObject(ServiceNamePNCounter, name)
 	if err != nil {
 		return nil, err
 	}
@@ -153,16 +153,16 @@ func (client *HazelcastClient) init() error {
 	}
 	client.HeartBeatService.start()
 	client.PartitionService.start()
-	client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_STARTED)
+	client.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
 	return nil
 }
 
 func (client *HazelcastClient) Shutdown() {
 	if client.LifecycleService.isLive.Load().(bool) {
-		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTTING_DOWN)
+		client.LifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
 		client.PartitionService.shutdown()
 		client.InvocationService.shutdown()
 		client.HeartBeatService.shutdown()
-		client.LifecycleService.fireLifecycleEvent(LIFECYCLE_STATE_SHUTDOWN)
+		client.LifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
 	}
 }
