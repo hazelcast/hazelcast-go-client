@@ -17,8 +17,8 @@ package internal
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 type RingbufferProxy struct {
@@ -36,9 +36,9 @@ func newRingbufferProxy(client *HazelcastClient, serviceName *string, name *stri
 
 func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
 	if rp.capacity == -1 {
-		request := RingbufferCapacityEncodeRequest(rp.name)
+		request := protocol.RingbufferCapacityEncodeRequest(rp.name)
 		responseMessage, err := rp.invoke(request)
-		capacity, err := rp.decodeToInt64AndError(responseMessage, err, RingbufferCapacityDecodeResponse)
+		capacity, err := rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferCapacityDecodeResponse)
 		if err != nil {
 			return 0, nil
 		}
@@ -47,27 +47,27 @@ func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
 	return rp.capacity, nil
 }
 func (rp *RingbufferProxy) Size() (size int64, err error) {
-	request := RingbufferSizeEncodeRequest(rp.name)
+	request := protocol.RingbufferSizeEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToInt64AndError(responseMessage, err, RingbufferSizeDecodeResponse)
+	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferSizeDecodeResponse)
 }
 
 func (rp *RingbufferProxy) TailSequence() (tailSequence int64, err error) {
-	request := RingbufferTailSequenceEncodeRequest(rp.name)
+	request := protocol.RingbufferTailSequenceEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToInt64AndError(responseMessage, err, RingbufferTailSequenceDecodeResponse)
+	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferTailSequenceDecodeResponse)
 }
 
 func (rp *RingbufferProxy) HeadSequence() (headSequence int64, err error) {
-	request := RingbufferHeadSequenceEncodeRequest(rp.name)
+	request := protocol.RingbufferHeadSequenceEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToInt64AndError(responseMessage, err, RingbufferHeadSequenceDecodeResponse)
+	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferHeadSequenceDecodeResponse)
 }
 
 func (rp *RingbufferProxy) RemainingCapacity() (remainingCapacity int64, err error) {
-	request := RingbufferRemainingCapacityEncodeRequest(rp.name)
+	request := protocol.RingbufferRemainingCapacityEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToInt64AndError(responseMessage, err, RingbufferRemainingCapacityDecodeResponse)
+	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferRemainingCapacityDecodeResponse)
 }
 
 func (rp *RingbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPolicy) (sequence int64, err error) {
@@ -75,9 +75,9 @@ func (rp *RingbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPol
 	if err != nil {
 		return
 	}
-	request := RingbufferAddEncodeRequest(rp.name, int32(overflowPolicy.Policy()), itemData)
+	request := protocol.RingbufferAddEncodeRequest(rp.name, int32(overflowPolicy.Policy()), itemData)
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToInt64AndError(responseMessage, err, RingbufferAddDecodeResponse)
+	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferAddDecodeResponse)
 }
 
 func (rp *RingbufferProxy) AddAll(items []interface{}, overflowPolicy core.OverflowPolicy) (lastSequence int64, err error) {
@@ -85,18 +85,18 @@ func (rp *RingbufferProxy) AddAll(items []interface{}, overflowPolicy core.Overf
 	if err != nil {
 		return
 	}
-	request := RingbufferAddAllEncodeRequest(rp.name, itemsData, int32(overflowPolicy.Policy()))
+	request := protocol.RingbufferAddAllEncodeRequest(rp.name, itemsData, int32(overflowPolicy.Policy()))
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToInt64AndError(responseMessage, err, RingbufferAddAllDecodeResponse)
+	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferAddAllDecodeResponse)
 }
 
 func (rp *RingbufferProxy) ReadOne(sequence int64) (item interface{}, err error) {
 	if err = rp.validateSequenceNotNegative(sequence, "sequence"); err != nil {
 		return
 	}
-	request := RingbufferReadOneEncodeRequest(rp.name, sequence)
+	request := protocol.RingbufferReadOneEncodeRequest(rp.name, sequence)
 	responseMessage, err := rp.invoke(request)
-	return rp.decodeToObjectAndError(responseMessage, err, RingbufferReadOneDecodeResponse)
+	return rp.decodeToObjectAndError(responseMessage, err, protocol.RingbufferReadOneDecodeResponse)
 }
 
 func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet core.ReadResultSet, err error) {
@@ -110,12 +110,12 @@ func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCoun
 	if err = rp.checkCounts(minCount, maxCount); err != nil {
 		return
 	}
-	request := RingbufferReadManyEncodeRequest(rp.name, startSequence, minCount, maxCount, filterData)
+	request := protocol.RingbufferReadManyEncodeRequest(rp.name, startSequence, minCount, maxCount, filterData)
 	responseMessage, err := rp.invoke(request)
 	if err != nil {
 		return
 	}
-	readCount, itemsData, itemSeqs, _ /*nextSeq*/ := RingbufferReadManyDecodeResponse(responseMessage)()
+	readCount, itemsData, itemSeqs, _ /*nextSeq*/ := protocol.RingbufferReadManyDecodeResponse(responseMessage)()
 	return NewLazyReadResultSet(readCount, itemsData, itemSeqs, rp.client.SerializationService), nil
 }
 
@@ -141,12 +141,12 @@ type LazyReadResultSet struct {
 	// This slice includes both data and de-serialized objects.
 	lazyItems            []interface{}
 	itemSequences        []int64
-	serializationService *SerializationService
+	serializationService *serialization.SerializationService
 }
 
 const sequenceUnavailable int64 = -1
 
-func NewLazyReadResultSet(readCount int32, itemsData []*Data, itemSeqs []int64, ss *SerializationService) (rs *LazyReadResultSet) {
+func NewLazyReadResultSet(readCount int32, itemsData []*serialization.Data, itemSeqs []int64, ss *serialization.SerializationService) (rs *LazyReadResultSet) {
 	rs = &LazyReadResultSet{readCount: readCount, itemSequences: itemSeqs, serializationService: ss}
 	lazyItems := make([]interface{}, len(itemsData))
 	for i, itemData := range itemsData {
@@ -164,7 +164,7 @@ func (rs *LazyReadResultSet) Get(index int32) (result interface{}, err error) {
 	if err = rs.rangeCheck(index); err != nil {
 		return
 	}
-	if itemData, ok := rs.lazyItems[index].(*Data); ok {
+	if itemData, ok := rs.lazyItems[index].(*serialization.Data); ok {
 		item, err := rs.serializationService.ToObject(itemData)
 		if err != nil {
 			return nil, err

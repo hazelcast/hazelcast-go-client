@@ -15,22 +15,22 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func ReplicatedMapPutCalculateSize(name *string, key *Data, value *Data, ttl int64) int {
+func ReplicatedMapPutCalculateSize(name *string, key *serialization.Data, value *serialization.Data, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(value)
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
-func ReplicatedMapPutEncodeRequest(name *string, key *Data, value *Data, ttl int64) *ClientMessage {
+func ReplicatedMapPutEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapPutCalculateSize(name, key, value, ttl))
 	clientMessage.SetMessageType(replicatedmapPut)
@@ -43,9 +43,9 @@ func ReplicatedMapPutEncodeRequest(name *string, key *Data, value *Data, ttl int
 	return clientMessage
 }
 
-func ReplicatedMapPutDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
+func ReplicatedMapPutDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
-	return func() (response *Data) {
+	return func() (response *serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

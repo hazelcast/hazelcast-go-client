@@ -15,8 +15,8 @@
 package org_website_samples
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 )
 
@@ -31,23 +31,23 @@ func (s *CustomSerializer) Id() int32 {
 	return 10
 }
 
-func (s *CustomSerializer) Read(input DataInput) (obj interface{}, err error) {
+func (s *CustomSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
 	array, err := input.ReadByteArray()
 	return &CustomSerializable{string(array)}, err
 }
 
-func (s *CustomSerializer) Write(output DataOutput, obj interface{}) (err error) {
+func (s *CustomSerializer) Write(output serialization.DataOutput, obj interface{}) (err error) {
 	array := []byte(obj.(CustomSerializable).value)
 	output.WriteByteArray(array)
 	return
 }
 
 func customSerializerSampleRun() {
-	clientConfig := NewHazelcastConfig()
+	clientConfig := hazelcast.NewHazelcastConfig()
 	clientConfig.SerializationConfig().AddCustomSerializer(reflect.TypeOf((*CustomSerializable)(nil)), &CustomSerializer{})
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := NewHazelcastClientWithConfig(clientConfig)
+	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// CustomSerializer will serialize/deserialize CustomSerializable objects
 
 	// Shutdown this hazelcast client

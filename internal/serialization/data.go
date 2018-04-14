@@ -16,7 +16,7 @@ package serialization
 
 import (
 	"encoding/binary"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"math"
 )
 
@@ -57,5 +57,5 @@ func (d Data) DataSize() int {
 }
 
 func (d Data) GetPartitionHash() int32 {
-	return Murmur3ADefault(d.Payload, DataOffset, d.DataSize())
+	return common.Murmur3ADefault(d.Payload, DataOffset, d.DataSize())
 }

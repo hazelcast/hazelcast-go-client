@@ -15,17 +15,17 @@
 package internal
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 type HazelcastClient struct {
-	ClientConfig         *ClientConfig
+	ClientConfig         *config.ClientConfig
 	InvocationService    *invocationService
 	PartitionService     *partitionService
-	SerializationService *SerializationService
+	SerializationService *serialization.SerializationService
 	LifecycleService     *lifecycleService
 	ConnectionManager    *connectionManager
 	ListenerService      *listenerService
@@ -35,14 +35,14 @@ type HazelcastClient struct {
 	HeartBeatService     *heartBeatService
 }
 
-func NewHazelcastClient(config *ClientConfig) (*HazelcastClient, error) {
+func NewHazelcastClient(config *config.ClientConfig) (*HazelcastClient, error) {
 	client := HazelcastClient{ClientConfig: config}
 	err := client.init()
 	return &client, err
 }
 
 func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
-	mp, err := client.GetDistributedObject(ServiceNameMap, name)
+	mp, err := client.GetDistributedObject(common.ServiceNameMap, name)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
 }
 
 func (client *HazelcastClient) GetList(name string) (core.IList, error) {
-	list, err := client.GetDistributedObject(ServiceNameList, name)
+	list, err := client.GetDistributedObject(common.ServiceNameList, name)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +58,14 @@ func (client *HazelcastClient) GetList(name string) (core.IList, error) {
 }
 
 func (client *HazelcastClient) GetSet(name string) (core.ISet, error) {
-	set, err := client.GetDistributedObject(ServiceNameSet, name)
+	set, err := client.GetDistributedObject(common.ServiceNameSet, name)
 	if err != nil {
 		return nil, err
 	}
 	return set.(core.ISet), nil
 }
 func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
-	mp, err := client.GetDistributedObject(ServiceNameReplicatedMap, name)
+	mp, err := client.GetDistributedObject(common.ServiceNameReplicatedMap, name)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap
 }
 
 func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
-	mmp, err := client.GetDistributedObject(ServiceNameMultiMap, name)
+	mmp, err := client.GetDistributedObject(common.ServiceNameMultiMap, name)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
 }
 
 func (client *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error) {
-	flakeIdGenerator, err := client.GetDistributedObject(ServiceNameIdGenerator, name)
+	flakeIdGenerator, err := client.GetDistributedObject(common.ServiceNameIdGenerator, name)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (client *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGen
 }
 
 func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
-	topic, err := client.GetDistributedObject(ServiceNameTopic, name)
+	topic, err := client.GetDistributedObject(common.ServiceNameTopic, name)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
 }
 
 func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
-	queue, err := client.GetDistributedObject(ServiceNameQueue, name)
+	queue, err := client.GetDistributedObject(common.ServiceNameQueue, name)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
 }
 
 func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, error) {
-	rb, err := client.GetDistributedObject(ServiceNameRingbufferService, name)
+	rb, err := client.GetDistributedObject(common.ServiceNameRingbufferService, name)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, erro
 }
 
 func (client *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
-	counter, err := client.GetDistributedObject(ServiceNamePNCounter, name)
+	counter, err := client.GetDistributedObject(common.ServiceNamePNCounter, name)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (client *HazelcastClient) init() error {
 	client.PartitionService = newPartitionService(client)
 	client.ProxyManager = newProxyManager(client)
 	client.LoadBalancer = newRandomLoadBalancer(client.ClusterService)
-	client.SerializationService = NewSerializationService(client.ClientConfig.SerializationConfig())
+	client.SerializationService = serialization.NewSerializationService(client.ClientConfig.SerializationConfig())
 	err := client.ClusterService.start()
 	if err != nil {
 		return err

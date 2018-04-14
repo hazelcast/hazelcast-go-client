@@ -15,18 +15,18 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func MapAddEntryListenerCalculateSize(name *string, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BoolSizeInBytes
-	dataSize += Int32SizeInBytes
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.Int32SizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
@@ -51,9 +51,9 @@ func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (res
 	}
 }
 
-type MapAddEntryListenerHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+type MapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
 
-func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -80,7 +80,7 @@ func MapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventEntry && handleEventEntry != nil {
+	if messageType == common.EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerEventEntryDecode(clientMessage))
 	}
 }

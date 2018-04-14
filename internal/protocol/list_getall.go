@@ -15,7 +15,7 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func ListGetAllCalculateSize(name *string) int {
@@ -35,11 +35,11 @@ func ListGetAllEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func ListGetAllDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
+func ListGetAllDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
 	// Decode response from client message
-	return func() (response []*Data) {
+	return func() (response []*serialization.Data) {
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*Data, responseSize)
+		response = make([]*serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			responseItem := clientMessage.ReadData()
 			response[responseIndex] = responseItem

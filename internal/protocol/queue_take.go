@@ -15,7 +15,7 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func QueueTakeCalculateSize(name *string) int {
@@ -35,9 +35,9 @@ func QueueTakeEncodeRequest(name *string) *ClientMessage {
 	return clientMessage
 }
 
-func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
+func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
-	return func() (response *Data) {
+	return func() (response *serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

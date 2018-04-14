@@ -15,10 +15,10 @@
 package org_website_samples
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/config"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
-	. "time"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"time"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 type Customer struct {
 	name      string
 	id        int32
-	lastOrder Time
+	lastOrder time.Time
 }
 
 func (customer *Customer) FactoryId() int32 {
@@ -40,14 +40,14 @@ func (customer *Customer) ClassId() int32 {
 	return customerClassId
 }
 
-func (customer *Customer) WritePortable(writer PortableWriter) (err error) {
+func (customer *Customer) WritePortable(writer serialization.PortableWriter) (err error) {
 	writer.WriteInt32("id", customer.id)
 	writer.WriteUTF("name", customer.name)
-	writer.WriteInt64("lastOrder", customer.lastOrder.UnixNano()/int64(Millisecond))
+	writer.WriteInt64("lastOrder", customer.lastOrder.UnixNano()/int64(time.Millisecond))
 	return
 }
 
-func (customer *Customer) ReadPortable(reader PortableReader) (err error) {
+func (customer *Customer) ReadPortable(reader serialization.PortableReader) (err error) {
 	customer.id, err = reader.ReadInt32("id")
 	if err != nil {
 		return
@@ -60,14 +60,14 @@ func (customer *Customer) ReadPortable(reader PortableReader) (err error) {
 	if err != nil {
 		return
 	}
-	customer.lastOrder = Unix(0, t*int64(Millisecond))
+	customer.lastOrder = time.Unix(0, t*int64(time.Millisecond))
 	return
 }
 
 type SamplePortableFactory struct {
 }
 
-func (pf *SamplePortableFactory) Create(classId int32) Portable {
+func (pf *SamplePortableFactory) Create(classId int32) serialization.Portable {
 	if classId == samplePortableFactoryId {
 		return &Customer{}
 	}
@@ -75,10 +75,10 @@ func (pf *SamplePortableFactory) Create(classId int32) Portable {
 }
 
 func portableSerializableSampleRun() {
-	clientConfig := NewClientConfig()
+	clientConfig := config.NewClientConfig()
 	clientConfig.SerializationConfig().AddPortableFactory(samplePortableFactoryId, &SamplePortableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := NewHazelcastClientWithConfig(clientConfig)
+	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Customer can be used here
 
 	// Shutdown this hazelcast client

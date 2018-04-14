@@ -17,7 +17,7 @@ package internal
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
@@ -28,20 +28,20 @@ func CreateHazelcastError(err *protocol.Error) core.HazelcastError {
 			trace.LineNumber())
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), stackTrace)
-	switch ErrorCode(err.ErrorCode()) {
-	case ErrorCodeAuthentication:
+	switch common.ErrorCode(err.ErrorCode()) {
+	case common.ErrorCodeAuthentication:
 		return core.NewHazelcastAuthenticationError(message, nil)
-	case ErrorCodeHazelcastInstanceNotActive:
+	case common.ErrorCodeHazelcastInstanceNotActive:
 		return core.NewHazelcastInstanceNotActiveError(message, nil)
-	case ErrorCodeHazelcastSerialization:
+	case common.ErrorCodeHazelcastSerialization:
 		return core.NewHazelcastSerializationError(message, nil)
-	case ErrorCodeTargetDisconnected:
+	case common.ErrorCodeTargetDisconnected:
 		return core.NewHazelcastTargetDisconnectedError(message, nil)
-	case ErrorCodeTargetNotMember:
+	case common.ErrorCodeTargetNotMember:
 		return core.NewHazelcastTargetNotMemberError(message, nil)
-	case ErrorCodeUnsupportedOperation:
+	case common.ErrorCodeUnsupportedOperation:
 		return core.NewHazelcastUnsupportedOperationError(message, nil)
-	case ErrorCodeConsistencyLostException:
+	case common.ErrorCodeConsistencyLostException:
 		return core.NewHazelcastConsistencyLostError(message, nil)
 	}
 

@@ -15,27 +15,27 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const ClientType = "GOO"
 
-func DataCalculateSize(d *Data) int {
-	return len(d.Buffer()) + Int32SizeInBytes
+func DataCalculateSize(d *serialization.Data) int {
+	return len(d.Buffer()) + common.Int32SizeInBytes
 }
 
 func StringCalculateSize(str *string) int {
-	return len(*str) + Int32SizeInBytes
+	return len(*str) + common.Int32SizeInBytes
 }
 
 func Int64CalculateSize(v int64) int {
-	return Int64SizeInBytes
+	return common.Int64SizeInBytes
 }
 
 func AddressCalculateSize(a *Address) int {
 	dataSize := 0
 	dataSize += StringCalculateSize(&a.host)
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	return dataSize
 }

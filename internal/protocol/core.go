@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"reflect"
 )
 
@@ -125,8 +125,8 @@ func (obj *DistributedObjectInfo) ServiceName() string {
 }
 
 type DataEntryView struct {
-	keyData                *Data
-	valueData              *Data
+	keyData                *serialization.Data
+	valueData              *serialization.Data
 	cost                   int64
 	creationTime           int64
 	expirationTime         int64
@@ -139,11 +139,11 @@ type DataEntryView struct {
 	ttl                    int64
 }
 
-func (ev1 *DataEntryView) KeyData() *Data {
+func (ev1 *DataEntryView) KeyData() *serialization.Data {
 	return ev1.keyData
 }
 
-func (ev1 *DataEntryView) ValueData() *Data {
+func (ev1 *DataEntryView) ValueData() *serialization.Data {
 	return ev1.valueData
 }
 
@@ -472,28 +472,28 @@ type MemberRemovedListener interface {
 func GetEntryListenerFlags(listener interface{}) int32 {
 	flags := int32(0)
 	if _, ok := listener.(EntryAddedListener); ok {
-		flags |= EntryEventAdded
+		flags |= common.EntryEventAdded
 	}
 	if _, ok := listener.(EntryRemovedListener); ok {
-		flags |= EntryEventRemoved
+		flags |= common.EntryEventRemoved
 	}
 	if _, ok := listener.(EntryUpdatedListener); ok {
-		flags |= EntryEventUpdated
+		flags |= common.EntryEventUpdated
 	}
 	if _, ok := listener.(EntryEvictedListener); ok {
-		flags |= EntryEventEvicted
+		flags |= common.EntryEventEvicted
 	}
 	if _, ok := listener.(EntryEvictAllListener); ok {
-		flags |= EntryEventEvictAll
+		flags |= common.EntryEventEvictAll
 	}
 	if _, ok := listener.(EntryClearAllListener); ok {
-		flags |= EntryEventClearAll
+		flags |= common.EntryEventClearAll
 	}
 	if _, ok := listener.(EntryExpiredListener); ok {
-		flags |= EntryEventExpired
+		flags |= common.EntryEventExpired
 	}
 	if _, ok := listener.(EntryMergedListener); ok {
-		flags |= EntryEventMerged
+		flags |= common.EntryEventMerged
 	}
 	return flags
 }

@@ -15,8 +15,8 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"testing"
 )
 
@@ -70,8 +70,8 @@ func TestDataEntryViewCodecEncodeDecode(t *testing.T) {
 	key := "test-key"
 	value := "test-value"
 	entryView := DataEntryView{}
-	entryView.keyData = &Data{[]byte(key)}
-	entryView.valueData = &Data{[]byte(value)}
+	entryView.keyData = &serialization.Data{[]byte(key)}
+	entryView.valueData = &serialization.Data{[]byte(value)}
 	entryView.cost = 123123
 	entryView.creationTime = 1212
 	entryView.expirationTime = 12
@@ -119,7 +119,7 @@ func DataEntryViewCalculateSize(ev *DataEntryView) int {
 	dataSize := 0
 	dataSize += DataCalculateSize(ev.keyData)
 	dataSize += DataCalculateSize(ev.valueData)
-	dataSize += 10 * Int64SizeInBytes
+	dataSize += 10 * common.Int64SizeInBytes
 	return dataSize
 }
 
@@ -140,8 +140,8 @@ func MemberCalculateSize(member *Member) int {
 	dataSize := 0
 	dataSize += AddressCalculateSize(&member.address)
 	dataSize += StringCalculateSize(&member.uuid)
-	dataSize += BoolSizeInBytes
-	dataSize += Int32SizeInBytes //Size of the map(attributes)
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.Int32SizeInBytes //Size of the map(attributes)
 	for key, value := range member.attributes {
 		dataSize += StringCalculateSize(&key)
 		dataSize += StringCalculateSize(&value)

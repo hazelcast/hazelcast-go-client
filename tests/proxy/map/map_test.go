@@ -16,11 +16,11 @@ package _map
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"reflect"
@@ -31,12 +31,12 @@ import (
 	"time"
 )
 
-var mp IMap
-var mp2 IMap
+var mp core.IMap
+var mp2 core.IMap
 var client hazelcast.IHazelcastInstance
 
 func TestMain(m *testing.M) {
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
@@ -801,33 +801,33 @@ func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
 
 type entryListener struct {
 	wg       *sync.WaitGroup
-	event    IEntryEvent
-	mapEvent IMapEvent
+	event    core.IEntryEvent
+	mapEvent core.IMapEvent
 }
 
-func (entryListener *entryListener) EntryAdded(event IEntryEvent) {
+func (entryListener *entryListener) EntryAdded(event core.IEntryEvent) {
 	entryListener.event = event
 	entryListener.wg.Done()
 }
 
-func (entryListener *entryListener) EntryUpdated(event IEntryEvent) {
+func (entryListener *entryListener) EntryUpdated(event core.IEntryEvent) {
 	entryListener.wg.Done()
 }
 
-func (entryListener *entryListener) EntryRemoved(event IEntryEvent) {
+func (entryListener *entryListener) EntryRemoved(event core.IEntryEvent) {
 	entryListener.wg.Done()
 }
 
-func (entryListener *entryListener) EntryEvicted(event IEntryEvent) {
+func (entryListener *entryListener) EntryEvicted(event core.IEntryEvent) {
 	entryListener.wg.Done()
 }
 
-func (entryListener *entryListener) EntryEvictAll(event IMapEvent) {
+func (entryListener *entryListener) EntryEvictAll(event core.IMapEvent) {
 	entryListener.mapEvent = event
 	entryListener.wg.Done()
 }
 
-func (entryListener *entryListener) EntryClearAll(event IMapEvent) {
+func (entryListener *entryListener) EntryClearAll(event core.IMapEvent) {
 	entryListener.wg.Done()
 }
 
@@ -1120,7 +1120,7 @@ type identifiedFactory struct {
 	factoryId            int32
 }
 
-func (identifiedFactory *identifiedFactory) Create(id int32) IdentifiedDataSerializable {
+func (identifiedFactory *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
 	if id == identifiedFactory.simpleEntryProcessor.classId {
 		return &simpleEntryProcessor{classId: 1}
 	} else {
@@ -1128,13 +1128,13 @@ func (identifiedFactory *identifiedFactory) Create(id int32) IdentifiedDataSeria
 	}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input DataInput) error {
+func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
 	var err error
 	simpleEntryProcessor.value, err = input.ReadUTF()
 	return err
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output DataOutput) error {
+func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(simpleEntryProcessor.value)
 	return nil
 }

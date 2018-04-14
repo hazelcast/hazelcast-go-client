@@ -16,17 +16,17 @@ package serialization
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
-	. "github.com/hazelcast/hazelcast-go-client/serialization/classdef"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 )
 
 type ClassDefinitionWriter struct {
 	portableContext        *PortableContext
-	classDefinitionBuilder *ClassDefinitionBuilder
+	classDefinitionBuilder *classdef.ClassDefinitionBuilder
 }
 
 func NewClassDefinitionWriter(portableContext *PortableContext, factoryId int32, classId int32, version int32) *ClassDefinitionWriter {
-	return &ClassDefinitionWriter{portableContext, NewClassDefinitionBuilder(factoryId, classId, version)}
+	return &ClassDefinitionWriter{portableContext, classdef.NewClassDefinitionBuilder(factoryId, classId, version)}
 }
 
 func (cdw *ClassDefinitionWriter) WriteByte(fieldName string, value byte) {
@@ -65,7 +65,7 @@ func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
 	cdw.classDefinitionBuilder.AddUTFField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable Portable) error {
+func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable serialization.Portable) error {
 	if portable == nil {
 		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
@@ -123,7 +123,7 @@ func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string
 	cdw.classDefinitionBuilder.AddUTFArrayField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []Portable) error {
+func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) error {
 	if portables == nil {
 		return core.NewHazelcastSerializationError("non nil value expected", nil)
 	}
@@ -140,7 +140,7 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 	return nil
 }
 
-func (cdw *ClassDefinitionWriter) registerAndGet() (ClassDefinition, error) {
+func (cdw *ClassDefinitionWriter) registerAndGet() (serialization.ClassDefinition, error) {
 	cd := cdw.classDefinitionBuilder.Build()
 	return cdw.portableContext.RegisterClassDefinition(cd)
 }

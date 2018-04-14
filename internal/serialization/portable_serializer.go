@@ -17,16 +17,16 @@ package serialization
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type PortableSerializer struct {
 	service         *SerializationService
 	portableContext *PortableContext
-	factories       map[int32]PortableFactory
+	factories       map[int32]serialization.PortableFactory
 }
 
-func NewPortableSerializer(service *SerializationService, portableFactories map[int32]PortableFactory, portableVersion int32) *PortableSerializer {
+func NewPortableSerializer(service *SerializationService, portableFactories map[int32]serialization.PortableFactory, portableVersion int32) *PortableSerializer {
 	return &PortableSerializer{service, NewPortableContext(service, portableVersion), portableFactories}
 }
 
@@ -34,7 +34,7 @@ func (ps *PortableSerializer) Id() int32 {
 	return ConstantTypePortable
 }
 
-func (ps *PortableSerializer) Read(input DataInput) (interface{}, error) {
+func (ps *PortableSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	factoryId, err := input.ReadInt32()
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (ps *PortableSerializer) Read(input DataInput) (interface{}, error) {
 	return ps.ReadObject(input, factoryId, classId)
 }
 
-func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, classId int32) (Portable, error) {
+func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryId int32, classId int32) (serialization.Portable, error) {
 	version, err := input.ReadInt32()
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 		}
 		input.SetPosition(backupPos)
 	}
-	var reader PortableReader
+	var reader serialization.PortableReader
 	var isMorphing bool
 	if classDefinition.Version() == ps.portableContext.ClassVersion(portable) {
 		reader = NewDefaultPortableReader(ps, input, classDefinition)
@@ -91,21 +91,21 @@ func (ps *PortableSerializer) ReadObject(input DataInput, factoryId int32, class
 	return portable, nil
 }
 
-func (ps *PortableSerializer) Write(output DataOutput, i interface{}) error {
-	output.WriteInt32(i.(Portable).FactoryId())
-	output.WriteInt32(i.(Portable).ClassId())
+func (ps *PortableSerializer) Write(output serialization.DataOutput, i interface{}) error {
+	output.WriteInt32(i.(serialization.Portable).FactoryId())
+	output.WriteInt32(i.(serialization.Portable).ClassId())
 	err := ps.WriteObject(output, i)
 	return err
 }
 
-func (ps *PortableSerializer) WriteObject(output DataOutput, i interface{}) error {
-	classDefinition, err := ps.portableContext.LookUpOrRegisterClassDefiniton(i.(Portable))
+func (ps *PortableSerializer) WriteObject(output serialization.DataOutput, i interface{}) error {
+	classDefinition, err := ps.portableContext.LookUpOrRegisterClassDefiniton(i.(serialization.Portable))
 	if err != nil {
 		return err
 	}
 	output.WriteInt32(classDefinition.Version())
-	writer := NewDefaultPortableWriter(ps, output.(PositionalDataOutput), classDefinition)
-	err = i.(Portable).WritePortable(writer)
+	writer := NewDefaultPortableWriter(ps, output.(serialization.PositionalDataOutput), classDefinition)
+	err = i.(serialization.Portable).WritePortable(writer)
 	if err != nil {
 		return err
 	}

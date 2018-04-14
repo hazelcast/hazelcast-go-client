@@ -15,8 +15,8 @@
 package internal
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 type SetProxy struct {
@@ -36,9 +36,9 @@ func (set *SetProxy) Add(item interface{}) (added bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := SetAddEncodeRequest(set.name, itemData)
+	request := protocol.SetAddEncodeRequest(set.name, itemData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetAddDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetAddDecodeResponse)
 }
 
 func (set *SetProxy) AddAll(items []interface{}) (changed bool, err error) {
@@ -46,25 +46,25 @@ func (set *SetProxy) AddAll(items []interface{}) (changed bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := SetAddAllEncodeRequest(set.name, itemsData)
+	request := protocol.SetAddAllEncodeRequest(set.name, itemsData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetAddAllDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetAddAllDecodeResponse)
 }
 
 func (set *SetProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
-	request := SetAddListenerEncodeRequest(set.name, includeValue, false)
+	request := protocol.SetAddListenerEncodeRequest(set.name, includeValue, false)
 	eventHandler := set.createEventHandler(listener)
 	return set.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationId *string) *ClientMessage {
-			return SetRemoveListenerEncodeRequest(set.name, registrationId)
-		}, func(clientMessage *ClientMessage) *string {
-			return SetAddListenerDecodeResponse(clientMessage)()
+		func(registrationId *string) *protocol.ClientMessage {
+			return protocol.SetRemoveListenerEncodeRequest(set.name, registrationId)
+		}, func(clientMessage *protocol.ClientMessage) *string {
+			return protocol.SetAddListenerDecodeResponse(clientMessage)()
 		})
 
 }
 
 func (set *SetProxy) Clear() (err error) {
-	request := SetClearEncodeRequest(set.name)
+	request := protocol.SetClearEncodeRequest(set.name)
 	_, err = set.invoke(request)
 	return err
 }
@@ -74,9 +74,9 @@ func (set *SetProxy) Contains(item interface{}) (found bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := SetContainsEncodeRequest(set.name, itemData)
+	request := protocol.SetContainsEncodeRequest(set.name, itemData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetContainsDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetContainsDecodeResponse)
 }
 
 func (set *SetProxy) ContainsAll(items []interface{}) (foundAll bool, err error) {
@@ -84,15 +84,15 @@ func (set *SetProxy) ContainsAll(items []interface{}) (foundAll bool, err error)
 	if err != nil {
 		return false, err
 	}
-	request := SetContainsAllEncodeRequest(set.name, itemsData)
+	request := protocol.SetContainsAllEncodeRequest(set.name, itemsData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetContainsAllDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetContainsAllDecodeResponse)
 }
 
 func (set *SetProxy) IsEmpty() (empty bool, err error) {
-	request := SetIsEmptyEncodeRequest(set.name)
+	request := protocol.SetIsEmptyEncodeRequest(set.name)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetIsEmptyDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetIsEmptyDecodeResponse)
 }
 
 func (set *SetProxy) Remove(item interface{}) (removed bool, err error) {
@@ -100,9 +100,9 @@ func (set *SetProxy) Remove(item interface{}) (removed bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := SetRemoveEncodeRequest(set.name, itemData)
+	request := protocol.SetRemoveEncodeRequest(set.name, itemData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetRemoveDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetRemoveDecodeResponse)
 }
 
 func (set *SetProxy) RemoveAll(items []interface{}) (changed bool, err error) {
@@ -110,9 +110,9 @@ func (set *SetProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := SetCompareAndRemoveAllEncodeRequest(set.name, itemsData)
+	request := protocol.SetCompareAndRemoveAllEncodeRequest(set.name, itemsData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetCompareAndRemoveAllDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetCompareAndRemoveAllDecodeResponse)
 }
 
 func (set *SetProxy) RetainAll(items []interface{}) (changed bool, err error) {
@@ -120,32 +120,32 @@ func (set *SetProxy) RetainAll(items []interface{}) (changed bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := SetCompareAndRetainAllEncodeRequest(set.name, itemsData)
+	request := protocol.SetCompareAndRetainAllEncodeRequest(set.name, itemsData)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToBoolAndError(responseMessage, err, SetCompareAndRetainAllDecodeResponse)
+	return set.decodeToBoolAndError(responseMessage, err, protocol.SetCompareAndRetainAllDecodeResponse)
 }
 
 func (set *SetProxy) Size() (size int32, err error) {
-	request := SetSizeEncodeRequest(set.name)
+	request := protocol.SetSizeEncodeRequest(set.name)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToInt32AndError(responseMessage, err, SetSizeDecodeResponse)
+	return set.decodeToInt32AndError(responseMessage, err, protocol.SetSizeDecodeResponse)
 }
 
 func (set *SetProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return set.client.ListenerService.deregisterListener(*registrationID, func(registrationId *string) *ClientMessage {
-		return SetRemoveListenerEncodeRequest(set.name, registrationId)
+	return set.client.ListenerService.deregisterListener(*registrationID, func(registrationId *string) *protocol.ClientMessage {
+		return protocol.SetRemoveListenerEncodeRequest(set.name, registrationId)
 	})
 }
 
 func (set *SetProxy) ToSlice() (items []interface{}, err error) {
-	request := SetGetAllEncodeRequest(set.name)
+	request := protocol.SetGetAllEncodeRequest(set.name)
 	responseMessage, err := set.invoke(request)
-	return set.decodeToInterfaceSliceAndError(responseMessage, err, SetGetAllDecodeResponse)
+	return set.decodeToInterfaceSliceAndError(responseMessage, err, protocol.SetGetAllDecodeResponse)
 }
 
-func (set *SetProxy) createEventHandler(listener interface{}) func(clientMessage *ClientMessage) {
-	return func(clientMessage *ClientMessage) {
-		SetAddListenerHandle(clientMessage, func(itemData *Data, uuid *string, eventType int32) {
+func (set *SetProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
+	return func(clientMessage *protocol.ClientMessage) {
+		protocol.SetAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid *string, eventType int32) {
 			onItemEvent := set.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

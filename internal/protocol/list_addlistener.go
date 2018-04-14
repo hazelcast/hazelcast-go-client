@@ -15,17 +15,17 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BoolSizeInBytes
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
@@ -49,9 +49,9 @@ func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (respons
 	}
 }
 
-type ListAddListenerHandleEventItemFunc func(*Data, *string, int32)
+type ListAddListenerHandleEventItemFunc func(*serialization.Data, *string, int32)
 
-func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *Data, uuid *string, eventType int32) {
+func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *serialization.Data, uuid *string, eventType int32) {
 
 	if !clientMessage.ReadBool() {
 		item = clientMessage.ReadData()
@@ -65,7 +65,7 @@ func ListAddListenerHandle(clientMessage *ClientMessage,
 	handleEventItem ListAddListenerHandleEventItemFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventItem && handleEventItem != nil {
+	if messageType == common.EventItem && handleEventItem != nil {
 		handleEventItem(ListAddListenerEventItemDecode(clientMessage))
 	}
 }

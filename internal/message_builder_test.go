@@ -16,7 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"reflect"
 	"sync"
 	"testing"
@@ -24,13 +24,13 @@ import (
 
 func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	builder := &clientMessageBuilder{
-		incompleteMessages: make(map[int64]*ClientMessage),
+		incompleteMessages: make(map[int64]*protocol.ClientMessage),
 	}
 	var mu = sync.Mutex{}
 	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
-	ch := make(chan *ClientMessage, 0)
+	ch := make(chan *protocol.ClientMessage, 0)
 	builder.responseChannel = ch
-	var builtClientMessage *ClientMessage
+	var builtClientMessage *protocol.ClientMessage
 	go func() {
 		mu.Lock()
 		builtClientMessage = <-ch
@@ -39,7 +39,7 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 
 	testString := "testString"
 	serverVersion := "3.9"
-	expectedClientMessage := ClientAuthenticationEncodeRequest(&testString, &testString, &testString, &testString, false,
+	expectedClientMessage := protocol.ClientAuthenticationEncodeRequest(&testString, &testString, &testString, &testString, false,
 		&testString, 1, &serverVersion)
 	expectedClientMessage.SetFlags(common.BeginEndFlag)
 	expectedClientMessage.SetCorrelationId(1)
@@ -51,8 +51,8 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	firstBuffer := append(buffer[0:expectedClientMessage.DataOffset()], buffer[expectedClientMessage.DataOffset():expectedClientMessage.DataOffset()+payloadSize/2]...)
 	secondBuffer := append(buffer[0:expectedClientMessage.DataOffset()], buffer[expectedClientMessage.DataOffset()+payloadSize/2:]...)
 
-	firstMessage := NewClientMessage(firstBuffer, 0)
-	secondMessage := NewClientMessage(secondBuffer, 0)
+	firstMessage := protocol.NewClientMessage(firstBuffer, 0)
+	secondMessage := protocol.NewClientMessage(secondBuffer, 0)
 
 	firstMessage.SetFrameLength(int32(len(firstMessage.Buffer)))
 	secondMessage.SetFrameLength(int32(len(secondMessage.Buffer)))
@@ -71,12 +71,12 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 
 func TestClientMessageBuilder_OnMessageWithNotFoundCorrelationId(t *testing.T) {
 	builder := &clientMessageBuilder{
-		incompleteMessages: make(map[int64]*ClientMessage),
+		incompleteMessages: make(map[int64]*protocol.ClientMessage),
 	}
 	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
-	ch := make(chan *ClientMessage, 0)
+	ch := make(chan *protocol.ClientMessage, 0)
 	builder.responseChannel = ch
-	msg := NewClientMessage(nil, 40)
+	msg := protocol.NewClientMessage(nil, 40)
 	msg.SetCorrelationId(2)
 	msg.SetFrameLength(int32(len(msg.Buffer)))
 	builder.onMessage(msg)

@@ -16,7 +16,7 @@ package compatibility
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/config"
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"io/ioutil"
 	"reflect"
@@ -81,7 +81,7 @@ func TestBinaryCompatibility(t *testing.T) {
 	for i.Available() != 0 {
 		objectKey, _ := i.ReadUTF()
 		length, _ := i.ReadInt32()
-		if length != NilArrayLength {
+		if length != common.NilArrayLength {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {

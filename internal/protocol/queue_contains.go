@@ -15,10 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func QueueContainsCalculateSize(name *string, value *Data) int {
+func QueueContainsCalculateSize(name *string, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -26,7 +26,7 @@ func QueueContainsCalculateSize(name *string, value *Data) int {
 	return dataSize
 }
 
-func QueueContainsEncodeRequest(name *string, value *Data) *ClientMessage {
+func QueueContainsEncodeRequest(name *string, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueContainsCalculateSize(name, value))
 	clientMessage.SetMessageType(queueContains)

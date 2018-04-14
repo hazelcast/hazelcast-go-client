@@ -15,16 +15,16 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func PNCounterAddCalculateSize(name *string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += Int64SizeInBytes
-	dataSize += BoolSizeInBytes
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int64SizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.Int32SizeInBytes
 	for _, replicaTimestampsItem := range replicaTimestamps {
 		key := replicaTimestampsItem.key.(*string)
 		val := replicaTimestampsItem.value.(int64)

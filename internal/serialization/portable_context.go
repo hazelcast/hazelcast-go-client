@@ -15,27 +15,27 @@
 package serialization
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	internalclassdef "github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 )
 
 type PortableContext struct {
 	service         *SerializationService
 	portableVersion int32
-	classDefContext map[int32]*ClassDefinitionContext
+	classDefContext map[int32]*internalclassdef.ClassDefinitionContext
 }
 
 func NewPortableContext(service *SerializationService, portableVersion int32) *PortableContext {
-	return &PortableContext{service, portableVersion, make(map[int32]*ClassDefinitionContext)}
+	return &PortableContext{service, portableVersion, make(map[int32]*internalclassdef.ClassDefinitionContext)}
 }
 
 func (c *PortableContext) Version() int32 {
 	return c.portableVersion
 }
 
-func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryId int32, classId int32, version int32) (ClassDefinition, error) {
+func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataInput, factoryId int32, classId int32, version int32) (serialization.ClassDefinition, error) {
 	register := true
 	classDefBuilder := classdef.NewClassDefinitionBuilder(factoryId, classId, version)
 	input.ReadInt32()
@@ -45,7 +45,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 	}
 	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
-		pos, err := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*Int32SizeInBytes)
+		pos, err := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*common.Int32SizeInBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 		var fieldFactoryId int32 = 0
 		var fieldClassId int32 = 0
 		var fieldVersion int32 = 0
-		if fieldType == TypePortable {
+		if fieldType == internalclassdef.TypePortable {
 			temp, err := input.ReadBool()
 			if err != nil {
 				return nil, err
@@ -95,7 +95,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 				}
 				c.ReadClassDefinitionFromInput(input, fieldFactoryId, fieldClassId, fieldVersion)
 			}
-		} else if fieldType == TypePortableArray {
+		} else if fieldType == internalclassdef.TypePortableArray {
 			k, err := input.ReadInt32()
 			if err != nil {
 				return nil, err
@@ -123,7 +123,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 				register = false
 			}
 		}
-		classDefBuilder.AddField(NewFieldDefinitionImpl(i, name, int32(fieldType), fieldFactoryId, fieldClassId, fieldVersion))
+		classDefBuilder.AddField(internalclassdef.NewFieldDefinitionImpl(i, name, int32(fieldType), fieldFactoryId, fieldClassId, fieldVersion))
 	}
 
 	classDefinition := classDefBuilder.Build()
@@ -137,7 +137,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input DataInput, factoryI
 	return classDefinition, nil
 }
 
-func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable Portable) (ClassDefinition, error) {
+func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable serialization.Portable) (serialization.ClassDefinition, error) {
 	var err error
 	version := c.ClassVersion(portable)
 	classDef := c.LookUpClassDefinition(portable.FactoryId(), portable.ClassId(), version)
@@ -150,7 +150,7 @@ func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable Portable) (Cla
 
 }
 
-func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, version int32) ClassDefinition {
+func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, version int32) serialization.ClassDefinition {
 	factory := c.classDefContext[factoryId]
 	if factory == nil {
 		return nil
@@ -159,17 +159,17 @@ func (c *PortableContext) LookUpClassDefinition(factoryId int32, classId int32, 
 	}
 }
 
-func (c *PortableContext) RegisterClassDefinition(classDefinition ClassDefinition) (ClassDefinition, error) {
+func (c *PortableContext) RegisterClassDefinition(classDefinition serialization.ClassDefinition) (serialization.ClassDefinition, error) {
 	factoryId := classDefinition.FactoryId()
 	if c.classDefContext[factoryId] == nil {
-		c.classDefContext[factoryId] = NewClassDefinitionContext(factoryId, c.portableVersion)
+		c.classDefContext[factoryId] = internalclassdef.NewClassDefinitionContext(factoryId, c.portableVersion)
 	}
 	return c.classDefContext[factoryId].Register(classDefinition)
 }
 
-func (c *PortableContext) ClassVersion(portable Portable) int32 {
-	if _, ok := portable.(VersionedPortable); ok {
-		return portable.(VersionedPortable).Version()
+func (c *PortableContext) ClassVersion(portable serialization.Portable) int32 {
+	if _, ok := portable.(serialization.VersionedPortable); ok {
+		return portable.(serialization.VersionedPortable).Version()
 	}
 	return c.portableVersion
 }

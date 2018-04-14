@@ -28,11 +28,11 @@ const (
 type IncEntryProcessor struct {
 }
 
-func (simpleEntryProcessor *IncEntryProcessor) ReadData(input serialization.DataInput) error {
+func (simpleEntryProcessor *IncEntryProcessor) ReadData(input *serialization.DataInput) error {
 	return nil
 }
 
-func (simpleEntryProcessor *IncEntryProcessor) WriteData(output serialization.DataOutput) error {
+func (simpleEntryProcessor *IncEntryProcessor) WriteData(output *serialization.DataOutput) error {
 	return nil
 }
 

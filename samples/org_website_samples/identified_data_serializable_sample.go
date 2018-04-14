@@ -15,9 +15,9 @@
 package org_website_samples
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/config"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -38,7 +38,7 @@ func (e *Employee) FactoryId() int32 {
 	return sampleDataSerializableFactoryId
 }
 
-func (e *Employee) ReadData(input DataInput) (err error) {
+func (e *Employee) ReadData(input serialization.DataInput) (err error) {
 	e.id, err = input.ReadInt32()
 	if err != nil {
 		return
@@ -46,7 +46,7 @@ func (e *Employee) ReadData(input DataInput) (err error) {
 	e.name, err = input.ReadUTF()
 	return
 }
-func (e *Employee) WriteData(output DataOutput) (err error) {
+func (e *Employee) WriteData(output serialization.DataOutput) (err error) {
 	output.WriteInt32(e.id)
 	output.WriteUTF(e.name)
 	return
@@ -55,7 +55,7 @@ func (e *Employee) WriteData(output DataOutput) (err error) {
 type SampleDataSerializableFactory struct {
 }
 
-func (*SampleDataSerializableFactory) Create(classId int32) IdentifiedDataSerializable {
+func (*SampleDataSerializableFactory) Create(classId int32) serialization.IdentifiedDataSerializable {
 	if classId == classId {
 		return &Employee{}
 	}
@@ -63,10 +63,10 @@ func (*SampleDataSerializableFactory) Create(classId int32) IdentifiedDataSerial
 }
 
 func identifiedDataSerializableSampleRun() {
-	clientConfig := NewClientConfig()
+	clientConfig := config.NewClientConfig()
 	clientConfig.SerializationConfig().AddDataSerializableFactory(sampleDataSerializableFactoryId, &SampleDataSerializableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := NewHazelcastClientWithConfig(clientConfig)
+	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 
 	// Employee can be used here
 

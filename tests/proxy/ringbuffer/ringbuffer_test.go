@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"testing"
@@ -31,7 +31,7 @@ const capacity int64 = 10
 const ringbufferName = "ClientRingbufferTestWithTTL"
 
 func TestMain(m *testing.M) {
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}

@@ -14,11 +14,11 @@
 
 package compatibility
 
-import . "github.com/hazelcast/hazelcast-go-client/serialization"
+import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type aDataSerializableFactory struct{}
 
-func (*aDataSerializableFactory) Create(classId int32) IdentifiedDataSerializable {
+func (*aDataSerializableFactory) Create(classId int32) serialization.IdentifiedDataSerializable {
 	if classId == dataSerializableClassId {
 		return &anIdentifiedDataSerializable{}
 	}

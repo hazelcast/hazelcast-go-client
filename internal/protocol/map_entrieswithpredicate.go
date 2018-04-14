@@ -15,10 +15,10 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapEntriesWithPredicateCalculateSize(name *string, predicate *Data) int {
+func MapEntriesWithPredicateCalculateSize(name *string, predicate *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -26,7 +26,7 @@ func MapEntriesWithPredicateCalculateSize(name *string, predicate *Data) int {
 	return dataSize
 }
 
-func MapEntriesWithPredicateEncodeRequest(name *string, predicate *Data) *ClientMessage {
+func MapEntriesWithPredicateEncodeRequest(name *string, predicate *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapEntriesWithPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(mapEntriesWithPredicate)

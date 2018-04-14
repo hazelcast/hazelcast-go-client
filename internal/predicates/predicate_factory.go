@@ -15,7 +15,7 @@
 package predicates
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type PredicateFactory struct {
@@ -25,7 +25,7 @@ func NewPredicateFactory() *PredicateFactory {
 	return &PredicateFactory{}
 }
 
-func (pf *PredicateFactory) Create(id int32) IdentifiedDataSerializable {
+func (pf *PredicateFactory) Create(id int32) serialization.IdentifiedDataSerializable {
 	switch id {
 	case SqlPredicateId:
 		return &SqlPredicate{}

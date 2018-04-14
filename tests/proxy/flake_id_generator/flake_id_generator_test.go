@@ -16,9 +16,9 @@ package flake_id_generator
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"strconv"
@@ -38,18 +38,18 @@ const (
 	idsInRoutine            = 100000
 )
 
-var remoteController RemoteController
+var remoteController rc.RemoteController
 
 func TestMain(m *testing.M) {
 	var err error
-	remoteController, err = NewRemoteControllerClient("localhost:9701")
+	remoteController, err = rc.NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
 	m.Run()
 }
 
-func asssignOverFlowId(clusterId string, instanceNum int) (r *Response, err error) {
+func asssignOverFlowId(clusterId string, instanceNum int) (r *rc.Response, err error) {
 	script := "function assignOverflowedNodeId() {" +
 		"   instance_" + strconv.Itoa(instanceNum) + ".getCluster().getLocalMember().setMemberListJoinVersion(100000);" +
 		"   return instance_" + strconv.Itoa(instanceNum) + ".getCluster().getLocalMember().getMemberListJoinVersion();" +
@@ -64,7 +64,7 @@ func TestFlakeIdGeneratorProxy_ConfigTest(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	var myBatchSize int32 = shortTermBatchSize
 	config := hazelcast.NewHazelcastConfig().
-		AddFlakeIdGeneratorConfig(NewFlakeIdGeneratorConfig("gen").SetPrefetchCount(myBatchSize).
+		AddFlakeIdGeneratorConfig(config.NewFlakeIdGeneratorConfig("gen").SetPrefetchCount(myBatchSize).
 			SetPrefetchValidityMillis(shortTermValidityMillis))
 	client, _ = hazelcast.NewHazelcastClientWithConfig(config)
 	defer client.Shutdown()
