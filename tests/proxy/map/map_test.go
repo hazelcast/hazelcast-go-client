@@ -806,30 +806,30 @@ type entryListener struct {
 	mapEvent core.IMapEvent
 }
 
-func (entryListener *entryListener) EntryAdded(event core.IEntryEvent) {
-	entryListener.event = event
-	entryListener.wg.Done()
+func (l *entryListener) EntryAdded(event core.IEntryEvent) {
+	l.event = event
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryUpdated(event core.IEntryEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryUpdated(event core.IEntryEvent) {
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryRemoved(event core.IEntryEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryRemoved(event core.IEntryEvent) {
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryEvicted(event core.IEntryEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryEvicted(event core.IEntryEvent) {
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryEvictAll(event core.IMapEvent) {
-	entryListener.mapEvent = event
-	entryListener.wg.Done()
+func (l *entryListener) EntryEvictAll(event core.IMapEvent) {
+	l.mapEvent = event
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryClearAll(event core.IMapEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryClearAll(event core.IMapEvent) {
+	l.wg.Done()
 }
 
 func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
@@ -1121,31 +1121,31 @@ type identifiedFactory struct {
 	factoryId            int32
 }
 
-func (identifiedFactory *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
-	if id == identifiedFactory.simpleEntryProcessor.classId {
+func (idf *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
+	if id == idf.simpleEntryProcessor.classId {
 		return &simpleEntryProcessor{classId: 1}
 	} else {
 		return nil
 	}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
+func (p *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
 	var err error
-	simpleEntryProcessor.value, err = input.ReadUTF()
+	p.value, err = input.ReadUTF()
 	return err
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(simpleEntryProcessor.value)
+func (p *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {
+	output.WriteUTF(p.value)
 	return nil
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
-	return simpleEntryProcessor.identifiedFactory.factoryId
+func (p *simpleEntryProcessor) FactoryId() int32 {
+	return p.identifiedFactory.factoryId
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ClassId() int32 {
-	return simpleEntryProcessor.classId
+func (p *simpleEntryProcessor) ClassId() int32 {
+	return p.classId
 }
 
 // Serialization error checks

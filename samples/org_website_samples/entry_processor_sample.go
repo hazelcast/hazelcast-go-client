@@ -29,19 +29,19 @@ const (
 type IncEntryProcessor struct {
 }
 
-func (simpleEntryProcessor *IncEntryProcessor) ReadData(input *serialization.DataInput) error {
+func (p *IncEntryProcessor) ReadData(input *serialization.DataInput) error {
 	return nil
 }
 
-func (simpleEntryProcessor *IncEntryProcessor) WriteData(output *serialization.DataOutput) error {
+func (p *IncEntryProcessor) WriteData(output *serialization.DataOutput) error {
 	return nil
 }
 
-func (simpleEntryProcessor *IncEntryProcessor) FactoryId() int32 {
+func (p *IncEntryProcessor) FactoryId() int32 {
 	return IncEntryProcessorFactoryId
 }
 
-func (simpleEntryProcessor *IncEntryProcessor) ClassId() int32 {
+func (p *IncEntryProcessor) ClassId() int32 {
 	return IncEntryProcessorClassId
 }
 

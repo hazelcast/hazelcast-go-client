@@ -42,32 +42,32 @@ func newUser(username string, age int32, active bool) *User {
 	}
 }
 
-func (user *User) FactoryId() int32 {
+func (u *User) FactoryId() int32 {
 	return userFactoryId
 }
 
-func (user *User) ClassId() int32 {
+func (u *User) ClassId() int32 {
 	return userClassId
 }
 
-func (user *User) WritePortable(writer serialization.PortableWriter) error {
-	writer.WriteUTF("username", user.username)
-	writer.WriteInt32("age", user.age)
-	writer.WriteBool("active", user.active)
+func (u *User) WritePortable(writer serialization.PortableWriter) error {
+	writer.WriteUTF("username", u.username)
+	writer.WriteInt32("age", u.age)
+	writer.WriteBool("active", u.active)
 	return nil
 }
 
-func (user *User) ReadPortable(reader serialization.PortableReader) error {
+func (u *User) ReadPortable(reader serialization.PortableReader) error {
 	var err error
-	user.username, err = reader.ReadUTF("username")
+	u.username, err = reader.ReadUTF("username")
 	if err != nil {
 		return err
 	}
-	user.age, err = reader.ReadInt32("age")
+	u.age, err = reader.ReadInt32("age")
 	if err != nil {
 		return err
 	}
-	user.active, err = reader.ReadBool("active")
+	u.active, err = reader.ReadBool("active")
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (user *User) ReadPortable(reader serialization.PortableReader) error {
 type ThePortableFactory struct {
 }
 
-func (portableFactory *ThePortableFactory) Create(classId int32) serialization.Portable {
+func (pf *ThePortableFactory) Create(classId int32) serialization.Portable {
 	if classId == userClassId {
 		return &User{}
 	}

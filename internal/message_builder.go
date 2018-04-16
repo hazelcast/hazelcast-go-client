@@ -24,21 +24,21 @@ type clientMessageBuilder struct {
 	responseChannel    chan *protocol.ClientMessage
 }
 
-func (cmb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
+func (mb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
 	if msg.HasFlags(common.BeginEndFlag) > 0 {
-		cmb.responseChannel <- msg
+		mb.responseChannel <- msg
 	} else if msg.HasFlags(common.BeginFlag) > 0 {
-		cmb.incompleteMessages[msg.CorrelationId()] = msg
+		mb.incompleteMessages[msg.CorrelationId()] = msg
 	} else {
-		message, found := cmb.incompleteMessages[msg.CorrelationId()]
+		message, found := mb.incompleteMessages[msg.CorrelationId()]
 		if !found {
 			return
 		}
 		message.Accumulate(msg)
 		if msg.HasFlags(common.EndFlag) > 0 {
 			message.AddFlags(common.BeginEndFlag)
-			cmb.responseChannel <- message
-			delete(cmb.incompleteMessages, msg.CorrelationId())
+			mb.responseChannel <- message
+			delete(mb.incompleteMessages, msg.CorrelationId())
 		}
 	}
 }

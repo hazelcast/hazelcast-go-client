@@ -24,13 +24,13 @@ type FlakeIdGeneratorProxy struct {
 	batcher *flake_id.AutoBatcher
 }
 
-func (self *FlakeIdGeneratorProxy) NewId() (id int64, err error) {
-	return self.batcher.NewId()
+func (fp *FlakeIdGeneratorProxy) NewId() (id int64, err error) {
+	return fp.batcher.NewId()
 }
 
-func (self *FlakeIdGeneratorProxy) NewIdBatch(batchSize int32) (*flake_id.IdBatch, error) {
-	request := protocol.FlakeIdGeneratorNewIdBatchEncodeRequest(self.name, batchSize)
-	responseMessage, err := self.invokeOnRandomTarget(request)
+func (fp *FlakeIdGeneratorProxy) NewIdBatch(batchSize int32) (*flake_id.IdBatch, error) {
+	request := protocol.FlakeIdGeneratorNewIdBatchEncodeRequest(fp.name, batchSize)
+	responseMessage, err := fp.invokeOnRandomTarget(request)
 	if err != nil {
 		return nil, err
 	}

@@ -23,10 +23,10 @@ type testSupplier struct {
 	base int64
 }
 
-func (self *testSupplier) NewIdBatch(batchSize int32) (*IdBatch, error) {
+func (s *testSupplier) NewIdBatch(batchSize int32) (*IdBatch, error) {
 
-	batch := NewIdBatch(self.base, 1, batchSize)
-	self.base += int64(batchSize)
+	batch := NewIdBatch(s.base, 1, batchSize)
+	s.base += int64(batchSize)
 	return batch, nil
 }
 

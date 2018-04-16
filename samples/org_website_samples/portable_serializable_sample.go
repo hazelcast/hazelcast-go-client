@@ -33,27 +33,27 @@ type Customer struct {
 	lastOrder time.Time
 }
 
-func (customer *Customer) FactoryId() int32 {
+func (c *Customer) FactoryId() int32 {
 	return samplePortableFactoryId
 }
 
-func (customer *Customer) ClassId() int32 {
+func (c *Customer) ClassId() int32 {
 	return customerClassId
 }
 
-func (customer *Customer) WritePortable(writer serialization.PortableWriter) (err error) {
-	writer.WriteInt32("id", customer.id)
-	writer.WriteUTF("name", customer.name)
-	writer.WriteInt64("lastOrder", customer.lastOrder.UnixNano()/int64(time.Millisecond))
+func (c *Customer) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteInt32("id", c.id)
+	writer.WriteUTF("name", c.name)
+	writer.WriteInt64("lastOrder", c.lastOrder.UnixNano()/int64(time.Millisecond))
 	return
 }
 
-func (customer *Customer) ReadPortable(reader serialization.PortableReader) (err error) {
-	customer.id, err = reader.ReadInt32("id")
+func (c *Customer) ReadPortable(reader serialization.PortableReader) (err error) {
+	c.id, err = reader.ReadInt32("id")
 	if err != nil {
 		return
 	}
-	customer.name, err = reader.ReadUTF("name")
+	c.name, err = reader.ReadUTF("name")
 	if err != nil {
 		return
 	}
@@ -61,7 +61,7 @@ func (customer *Customer) ReadPortable(reader serialization.PortableReader) (err
 	if err != nil {
 		return
 	}
-	customer.lastOrder = time.Unix(0, t*int64(time.Millisecond))
+	c.lastOrder = time.Unix(0, t*int64(time.Millisecond))
 	return
 }
 

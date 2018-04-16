@@ -51,47 +51,47 @@ func newHeartBeatService(client *HazelcastClient) *heartBeatService {
 	heartBeat.listeners.Store(make([]interface{}, 0)) //initialize
 	return &heartBeat
 }
-func (heartBeatService *heartBeatService) AddHeartbeatListener(listener interface{}) {
-	heartBeatService.mu.Lock() //To prevent other potential writers
-	defer heartBeatService.mu.Unlock()
-	listeners := heartBeatService.listeners.Load().([]interface{})
+func (hbs *heartBeatService) AddHeartbeatListener(listener interface{}) {
+	hbs.mu.Lock() //To prevent other potential writers
+	defer hbs.mu.Unlock()
+	listeners := hbs.listeners.Load().([]interface{})
 	newSize := len(listeners) + 1
 	copyListeners := make([]interface{}, newSize)
 	for index, listener := range listeners {
 		copyListeners[index] = listener
 	}
 	copyListeners[newSize-1] = listener
-	heartBeatService.listeners.Store(copyListeners)
+	hbs.listeners.Store(copyListeners)
 }
-func (heartBeat *heartBeatService) start() {
+func (hbs *heartBeatService) start() {
 	go func() {
-		ticker := time.NewTicker(heartBeat.heartBeatInterval * time.Second)
+		ticker := time.NewTicker(hbs.heartBeatInterval * time.Second)
 		for {
-			if !heartBeat.client.LifecycleService.isLive.Load().(bool) {
+			if !hbs.client.LifecycleService.isLive.Load().(bool) {
 				return
 			}
 			select {
 			case <-ticker.C:
-				heartBeat.heartBeat()
-			case <-heartBeat.cancel:
+				hbs.heartBeat()
+			case <-hbs.cancel:
 				ticker.Stop()
 				return
 			}
 		}
 	}()
 }
-func (heartBeat *heartBeatService) heartBeat() {
-	for _, connection := range heartBeat.client.ConnectionManager.getActiveConnections() {
+func (hbs *heartBeatService) heartBeat() {
+	for _, connection := range hbs.client.ConnectionManager.getActiveConnections() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
-		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatTimeout {
+		if time.Duration(timeSinceLastRead.Seconds()) > hbs.heartBeatTimeout {
 			if connection.heartBeating {
-				heartBeat.onHeartBeatStopped(connection)
+				hbs.onHeartBeatStopped(connection)
 			}
 		}
-		if time.Duration(timeSinceLastRead.Seconds()) > heartBeat.heartBeatInterval {
+		if time.Duration(timeSinceLastRead.Seconds()) > hbs.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
-			sentInvocation := heartBeat.client.InvocationService.invokeOnConnection(request, connection)
+			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)
 			copyConnection := connection
 			go func() {
 				_, err := sentInvocation.Result()
@@ -103,33 +103,33 @@ func (heartBeat *heartBeatService) heartBeat() {
 			}()
 		} else {
 			if !connection.heartBeating {
-				heartBeat.onHeartBeatRestored(connection)
+				hbs.onHeartBeatRestored(connection)
 			}
 		}
 	}
 }
-func (heartBeat *heartBeatService) onHeartBeatRestored(connection *Connection) {
+func (hbs *heartBeatService) onHeartBeatRestored(connection *Connection) {
 	log.Println("Heartbeat restored for a connection ", connection)
 	connection.heartBeating = true
-	listeners := heartBeat.listeners.Load().([]interface{})
+	listeners := hbs.listeners.Load().([]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(IOnHeartbeatRestored); ok {
 			listener.(IOnHeartbeatRestored).OnHeartbeatRestored(connection)
 		}
 	}
 }
-func (heartBeat *heartBeatService) onHeartBeatStopped(connection *Connection) {
+func (hbs *heartBeatService) onHeartBeatStopped(connection *Connection) {
 	log.Println("Heartbeat stopped for a connection ", connection)
 	connection.heartBeating = false
-	listeners := heartBeat.listeners.Load().([]interface{})
+	listeners := hbs.listeners.Load().([]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(IOnHeartbeatStopped); ok {
 			listener.(IOnHeartbeatStopped).OnHeartbeatStopped(connection)
 		}
 	}
 }
-func (heartBeat *heartBeatService) shutdown() {
-	close(heartBeat.cancel)
+func (hbs *heartBeatService) shutdown() {
+	close(hbs.cancel)
 }
 
 type IOnHeartbeatStopped interface {

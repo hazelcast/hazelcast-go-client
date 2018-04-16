@@ -44,25 +44,25 @@ func NewAutoBatcher(batchSize int32, validity int64, supplier IdBatchSupplier) *
 	return &autoBatcher
 }
 
-func (self *AutoBatcher) NewId() (int64, error) {
+func (b *AutoBatcher) NewId() (int64, error) {
 	for {
-		block := self.block.Load().(*Block)
+		block := b.block.Load().(*Block)
 		res := block.next()
 		if res != math.MinInt64 {
 			return res, nil
 		}
-		self.mu.Lock()
-		if block != self.block.Load().(*Block) {
-			self.mu.Unlock()
+		b.mu.Lock()
+		if block != b.block.Load().(*Block) {
+			b.mu.Unlock()
 			continue
 		}
-		idBatch, err := self.batchIdSupplier.NewIdBatch(self.batchSize)
+		idBatch, err := b.batchIdSupplier.NewIdBatch(b.batchSize)
 		if err != nil {
-			self.mu.Unlock()
+			b.mu.Unlock()
 			return 0, err
 		}
-		self.block.Store(NewBlock(idBatch, self.validity))
-		self.mu.Unlock()
+		b.block.Store(NewBlock(idBatch, b.validity))
+		b.mu.Unlock()
 	}
 }
 
@@ -87,24 +87,24 @@ func NewBlock(idBatch *IdBatch, validityMillis int64) *Block {
 	return block
 }
 
-func (self *Block) next() int64 {
-	if self.invalidSince <= currentTimeInMilliSeconds() {
+func (b *Block) next() int64 {
+	if b.invalidSince <= currentTimeInMilliSeconds() {
 		return math.MinInt64
 	}
 	var index int32
 	canContinue := true
 	for canContinue {
-		index = atomic.LoadInt32(&self.numReturned)
-		if index == self.IdBatch.batchSize {
+		index = atomic.LoadInt32(&b.numReturned)
+		if index == b.IdBatch.batchSize {
 			return math.MinInt64
 		}
-		if atomic.CompareAndSwapInt32(&self.numReturned, index, index+1) {
+		if atomic.CompareAndSwapInt32(&b.numReturned, index, index+1) {
 			canContinue = false
 		}
 
 	}
 
-	return self.IdBatch.Base() + int64(index)*self.IdBatch.Increment()
+	return b.IdBatch.Base() + int64(index)*b.IdBatch.Increment()
 
 }
 
@@ -122,14 +122,14 @@ func NewIdBatch(base int64, increment int64, batchSize int32) *IdBatch {
 	}
 }
 
-func (self *IdBatch) Base() int64 {
-	return self.base
+func (b *IdBatch) Base() int64 {
+	return b.base
 }
 
-func (self *IdBatch) Increment() int64 {
-	return self.increment
+func (b *IdBatch) Increment() int64 {
+	return b.increment
 }
 
-func (self *IdBatch) BatchSize() int32 {
-	return self.batchSize
+func (b *IdBatch) BatchSize() int32 {
+	return b.batchSize
 }

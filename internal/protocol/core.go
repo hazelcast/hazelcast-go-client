@@ -32,12 +32,12 @@ type Address struct {
 func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
 }
-func (address *Address) Host() string {
-	return address.host
+func (a *Address) Host() string {
+	return a.host
 }
 
-func (address *Address) Port() int {
-	return int(address.port)
+func (a *Address) Port() int {
+	return int(a.port)
 }
 
 type Uuid struct {
@@ -55,27 +55,27 @@ func NewMember(address Address, uuid string, isLiteMember bool, attributes map[s
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
 }
 
-func (member1 *Member) Address() core.IAddress {
-	return &member1.address
+func (m *Member) Address() core.IAddress {
+	return &m.address
 }
 
-func (member1 *Member) Uuid() string {
-	return member1.uuid
+func (m *Member) Uuid() string {
+	return m.uuid
 }
 
-func (member1 *Member) IsLiteMember() bool {
-	return member1.isLiteMember
+func (m *Member) IsLiteMember() bool {
+	return m.isLiteMember
 }
 
-func (member1 *Member) Attributes() map[string]string {
-	return member1.attributes
+func (m *Member) Attributes() map[string]string {
+	return m.attributes
 }
 
-func (member1 *Member) String() string {
-	memberInfo := fmt.Sprintf("Member [%s]:%d - %s", member1.Address().Host(), member1.Address().Port(),
-		member1.Uuid(),
+func (m *Member) String() string {
+	memberInfo := fmt.Sprintf("Member [%s]:%d - %s", m.Address().Host(), m.Address().Port(),
+		m.Uuid(),
 	)
-	if member1.IsLiteMember() {
+	if m.IsLiteMember() {
 		memberInfo += " lite"
 	}
 	return memberInfo
@@ -89,24 +89,24 @@ func NewPair(key interface{}, value interface{}) *Pair {
 	return &Pair{key, value}
 }
 
-func (pair *Pair) Key() interface{} {
-	return pair.key
+func (p *Pair) Key() interface{} {
+	return p.key
 }
-func (pair *Pair) Value() interface{} {
-	return pair.value
+func (p *Pair) Value() interface{} {
+	return p.value
 }
 
-func (member1 *Member) Equal(member2 Member) bool {
-	if member1.address != member2.address {
+func (m *Member) Equal(member2 Member) bool {
+	if m.address != member2.address {
 		return false
 	}
-	if member1.uuid != member2.uuid {
+	if m.uuid != member2.uuid {
 		return false
 	}
-	if member1.isLiteMember != member2.isLiteMember {
+	if m.isLiteMember != member2.isLiteMember {
 		return false
 	}
-	if !reflect.DeepEqual(member1.attributes, member2.attributes) {
+	if !reflect.DeepEqual(m.attributes, member2.attributes) {
 		return false
 	}
 	return true
@@ -117,12 +117,12 @@ type DistributedObjectInfo struct {
 	serviceName string
 }
 
-func (obj *DistributedObjectInfo) Name() string {
-	return obj.name
+func (i *DistributedObjectInfo) Name() string {
+	return i.name
 }
 
-func (obj *DistributedObjectInfo) ServiceName() string {
-	return obj.serviceName
+func (i *DistributedObjectInfo) ServiceName() string {
+	return i.serviceName
 }
 
 type DataEntryView struct {
@@ -140,52 +140,52 @@ type DataEntryView struct {
 	ttl                    int64
 }
 
-func (ev1 *DataEntryView) KeyData() *serialization.Data {
-	return ev1.keyData
+func (ev *DataEntryView) KeyData() *serialization.Data {
+	return ev.keyData
 }
 
-func (ev1 *DataEntryView) ValueData() *serialization.Data {
-	return ev1.valueData
+func (ev *DataEntryView) ValueData() *serialization.Data {
+	return ev.valueData
 }
 
-func (ev1 *DataEntryView) Cost() int64 {
-	return ev1.cost
+func (ev *DataEntryView) Cost() int64 {
+	return ev.cost
 }
 
-func (ev1 *DataEntryView) CreationTime() int64 {
-	return ev1.creationTime
+func (ev *DataEntryView) CreationTime() int64 {
+	return ev.creationTime
 }
 
-func (ev1 *DataEntryView) ExpirationTime() int64 {
-	return ev1.expirationTime
+func (ev *DataEntryView) ExpirationTime() int64 {
+	return ev.expirationTime
 }
 
-func (ev1 *DataEntryView) Hits() int64 {
-	return ev1.hits
+func (ev *DataEntryView) Hits() int64 {
+	return ev.hits
 }
 
-func (ev1 *DataEntryView) LastAccessTime() int64 {
-	return ev1.lastAccessTime
+func (ev *DataEntryView) LastAccessTime() int64 {
+	return ev.lastAccessTime
 }
 
-func (ev1 *DataEntryView) LastStoredTime() int64 {
-	return ev1.lastStoredTime
+func (ev *DataEntryView) LastStoredTime() int64 {
+	return ev.lastStoredTime
 }
 
-func (ev1 *DataEntryView) LastUpdateTime() int64 {
-	return ev1.lastUpdateTime
+func (ev *DataEntryView) LastUpdateTime() int64 {
+	return ev.lastUpdateTime
 }
 
-func (ev1 *DataEntryView) Version() int64 {
-	return ev1.version
+func (ev *DataEntryView) Version() int64 {
+	return ev.version
 }
 
-func (ev1 *DataEntryView) EvictionCriteriaNumber() int64 {
-	return ev1.evictionCriteriaNumber
+func (ev *DataEntryView) EvictionCriteriaNumber() int64 {
+	return ev.evictionCriteriaNumber
 }
 
-func (ev1 *DataEntryView) Ttl() int64 {
-	return ev1.ttl
+func (ev *DataEntryView) Ttl() int64 {
+	return ev.ttl
 }
 
 type EntryView struct {
@@ -220,65 +220,65 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		ttl: ttl,
 	}
 }
-func (ev1 *EntryView) Key() interface{} {
-	return ev1.key
+func (ev *EntryView) Key() interface{} {
+	return ev.key
 }
 
-func (ev1 *EntryView) Value() interface{} {
-	return ev1.value
+func (ev *EntryView) Value() interface{} {
+	return ev.value
 }
 
-func (ev1 *EntryView) Cost() int64 {
-	return ev1.cost
+func (ev *EntryView) Cost() int64 {
+	return ev.cost
 }
 
-func (ev1 *EntryView) CreationTime() int64 {
-	return ev1.creationTime
+func (ev *EntryView) CreationTime() int64 {
+	return ev.creationTime
 }
 
-func (ev1 *EntryView) ExpirationTime() int64 {
-	return ev1.expirationTime
+func (ev *EntryView) ExpirationTime() int64 {
+	return ev.expirationTime
 }
 
-func (ev1 *EntryView) Hits() int64 {
-	return ev1.hits
+func (ev *EntryView) Hits() int64 {
+	return ev.hits
 }
 
-func (ev1 *EntryView) LastAccessTime() int64 {
-	return ev1.lastAccessTime
+func (ev *EntryView) LastAccessTime() int64 {
+	return ev.lastAccessTime
 }
 
-func (ev1 *EntryView) LastStoredTime() int64 {
-	return ev1.lastStoredTime
+func (ev *EntryView) LastStoredTime() int64 {
+	return ev.lastStoredTime
 }
 
-func (ev1 *EntryView) LastUpdateTime() int64 {
-	return ev1.lastUpdateTime
+func (ev *EntryView) LastUpdateTime() int64 {
+	return ev.lastUpdateTime
 }
 
-func (ev1 *EntryView) Version() int64 {
-	return ev1.version
+func (ev *EntryView) Version() int64 {
+	return ev.version
 }
 
-func (ev1 *EntryView) EvictionCriteriaNumber() int64 {
-	return ev1.evictionCriteriaNumber
+func (ev *EntryView) EvictionCriteriaNumber() int64 {
+	return ev.evictionCriteriaNumber
 }
 
-func (ev1 *EntryView) Ttl() int64 {
-	return ev1.ttl
+func (ev *EntryView) Ttl() int64 {
+	return ev.ttl
 }
 
-func (ev1 DataEntryView) Equal(ev2 DataEntryView) bool {
-	if !bytes.Equal(ev1.keyData.Buffer(), ev2.keyData.Buffer()) || !bytes.Equal(ev1.valueData.Buffer(), ev2.valueData.Buffer()) {
+func (ev DataEntryView) Equal(ev2 DataEntryView) bool {
+	if !bytes.Equal(ev.keyData.Buffer(), ev2.keyData.Buffer()) || !bytes.Equal(ev.valueData.Buffer(), ev2.valueData.Buffer()) {
 		return false
 	}
-	if ev1.cost != ev2.cost || ev1.creationTime != ev2.creationTime || ev1.expirationTime != ev2.expirationTime || ev1.hits != ev2.hits {
+	if ev.cost != ev2.cost || ev.creationTime != ev2.creationTime || ev.expirationTime != ev2.expirationTime || ev.hits != ev2.hits {
 		return false
 	}
-	if ev1.lastAccessTime != ev2.lastAccessTime || ev1.lastStoredTime != ev2.lastStoredTime || ev1.lastUpdateTime != ev2.lastUpdateTime {
+	if ev.lastAccessTime != ev2.lastAccessTime || ev.lastStoredTime != ev2.lastStoredTime || ev.lastUpdateTime != ev2.lastUpdateTime {
 		return false
 	}
-	if ev1.version != ev2.version || ev1.evictionCriteriaNumber != ev2.evictionCriteriaNumber || ev1.ttl != ev2.ttl {
+	if ev.version != ev2.version || ev.evictionCriteriaNumber != ev2.evictionCriteriaNumber || ev.ttl != ev2.ttl {
 		return false
 	}
 	return true
@@ -293,36 +293,36 @@ type Error struct {
 	causeClassName string
 }
 
-func (err *Error) Error() string {
-	return err.message
+func (e *Error) Error() string {
+	return e.message
 }
 
-func (err *Error) ErrorCode() int32 {
-	return err.errorCode
+func (e *Error) ErrorCode() int32 {
+	return e.errorCode
 }
 
-func (err *Error) ClassName() string {
-	return err.className
+func (e *Error) ClassName() string {
+	return e.className
 }
 
-func (err *Error) Message() string {
-	return err.message
+func (e *Error) Message() string {
+	return e.message
 }
 
-func (err *Error) StackTrace() []core.IStackTraceElement {
-	iStackTrace := make([]core.IStackTraceElement, len(err.stackTrace))
-	for i, v := range err.stackTrace {
+func (e *Error) StackTrace() []core.IStackTraceElement {
+	iStackTrace := make([]core.IStackTraceElement, len(e.stackTrace))
+	for i, v := range e.stackTrace {
 		iStackTrace[i] = core.IStackTraceElement(v)
 	}
 	return iStackTrace
 }
 
-func (err *Error) CauseErrorCode() int32 {
-	return err.causeErrorCode
+func (e *Error) CauseErrorCode() int32 {
+	return e.causeErrorCode
 }
 
-func (err *Error) CauseClassName() string {
-	return err.causeClassName
+func (e *Error) CauseClassName() string {
+	return e.causeClassName
 }
 
 type StackTraceElement struct {
@@ -332,20 +332,20 @@ type StackTraceElement struct {
 	lineNumber     int32
 }
 
-func (st *StackTraceElement) DeclaringClass() string {
-	return st.declaringClass
+func (e *StackTraceElement) DeclaringClass() string {
+	return e.declaringClass
 }
 
-func (st *StackTraceElement) MethodName() string {
-	return st.methodName
+func (e *StackTraceElement) MethodName() string {
+	return e.methodName
 }
 
-func (st *StackTraceElement) FileName() string {
-	return st.fileName
+func (e *StackTraceElement) FileName() string {
+	return e.fileName
 }
 
-func (st *StackTraceElement) LineNumber() int32 {
-	return st.lineNumber
+func (e *StackTraceElement) LineNumber() int32 {
+	return e.lineNumber
 }
 
 type EntryEvent struct {
@@ -357,27 +357,27 @@ type EntryEvent struct {
 	uuid         *string
 }
 
-func (entryEvent *EntryEvent) Key() interface{} {
-	return entryEvent.key
+func (e *EntryEvent) Key() interface{} {
+	return e.key
 }
 
-func (entryEvent *EntryEvent) Value() interface{} {
-	return entryEvent.value
+func (e *EntryEvent) Value() interface{} {
+	return e.value
 }
 
-func (entryEvent *EntryEvent) OldValue() interface{} {
-	return entryEvent.oldValue
+func (e *EntryEvent) OldValue() interface{} {
+	return e.oldValue
 }
 
-func (entryEvent *EntryEvent) MergingValue() interface{} {
-	return entryEvent.mergingValue
+func (e *EntryEvent) MergingValue() interface{} {
+	return e.mergingValue
 }
 
-func (entryEvent *EntryEvent) Uuid() *string {
-	return entryEvent.uuid
+func (e *EntryEvent) Uuid() *string {
+	return e.uuid
 }
-func (entryEvent *EntryEvent) EventType() int32 {
-	return entryEvent.eventType
+func (e *EntryEvent) EventType() int32 {
+	return e.eventType
 }
 
 func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, Uuid *string) *EntryEvent {
@@ -406,31 +406,31 @@ type ItemEvent struct {
 	member    *Member
 }
 
-func (itemEvent *ItemEvent) Name() string {
-	return itemEvent.name
+func (e *ItemEvent) Name() string {
+	return e.name
 }
 
-func (itemEvent *ItemEvent) Item() interface{} {
-	return itemEvent.item
+func (e *ItemEvent) Item() interface{} {
+	return e.item
 }
 
-func (itemEvent *ItemEvent) EventType() int32 {
-	return itemEvent.eventType
+func (e *ItemEvent) EventType() int32 {
+	return e.eventType
 }
 
-func (itemEvent *ItemEvent) Member() core.IMember {
-	return itemEvent.member
+func (e *ItemEvent) Member() core.IMember {
+	return e.member
 }
 
-func (mapEvent *MapEvent) Uuid() *string {
-	return mapEvent.uuid
+func (e *MapEvent) Uuid() *string {
+	return e.uuid
 }
 
-func (mapEvent *MapEvent) NumberOfAffectedEntries() int32 {
-	return mapEvent.numberOfAffectedEntries
+func (e *MapEvent) NumberOfAffectedEntries() int32 {
+	return e.numberOfAffectedEntries
 }
-func (mapEvent *MapEvent) EventType() int32 {
-	return mapEvent.eventType
+func (e *MapEvent) EventType() int32 {
+	return e.eventType
 }
 func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *MapEvent {
 	return &MapEvent{eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
@@ -513,14 +513,14 @@ func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMem
 	}
 }
 
-func (msg *TopicMessage) MessageObject() interface{} {
-	return msg.messageObject
+func (m *TopicMessage) MessageObject() interface{} {
+	return m.messageObject
 }
 
-func (msg *TopicMessage) PublishTime() int64 {
-	return msg.publishTime
+func (m *TopicMessage) PublishTime() int64 {
+	return m.publishTime
 }
 
-func (msg *TopicMessage) PublishingMember() core.IMember {
-	return msg.publishingMember
+func (m *TopicMessage) PublishingMember() core.IMember {
+	return m.publishingMember
 }

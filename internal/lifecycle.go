@@ -51,23 +51,23 @@ func newLifecycleService(config *config.ClientConfig) *lifecycleService {
 	newLifecycle.fireLifecycleEvent(LifecycleStateStarting)
 	return newLifecycle
 }
-func (lifecycleService *lifecycleService) AddListener(listener interface{}) string {
+func (ls *lifecycleService) AddListener(listener interface{}) string {
 	registrationId, _ := common.NewUUID()
-	lifecycleService.mu.Lock()
-	defer lifecycleService.mu.Unlock()
-	listeners := lifecycleService.listeners.Load().(map[string]interface{})
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+	listeners := ls.listeners.Load().(map[string]interface{})
 	copyListeners := make(map[string]interface{}, len(listeners)+1)
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
 	copyListeners[registrationId] = listener
-	lifecycleService.listeners.Store(copyListeners)
+	ls.listeners.Store(copyListeners)
 	return registrationId
 }
-func (lifecycleService *lifecycleService) RemoveListener(registrationId *string) bool {
-	lifecycleService.mu.Lock()
-	defer lifecycleService.mu.Unlock()
-	listeners := lifecycleService.listeners.Load().(map[string]interface{})
+func (ls *lifecycleService) RemoveListener(registrationId *string) bool {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+	listeners := ls.listeners.Load().(map[string]interface{})
 	copyListeners := make(map[string]interface{}, len(listeners)-1)
 	for k, v := range listeners {
 		copyListeners[k] = v
@@ -76,14 +76,14 @@ func (lifecycleService *lifecycleService) RemoveListener(registrationId *string)
 	if found {
 		delete(copyListeners, *registrationId)
 	}
-	lifecycleService.listeners.Store(copyListeners)
+	ls.listeners.Store(copyListeners)
 	return found
 }
-func (lifecycleService *lifecycleService) fireLifecycleEvent(newState string) {
+func (ls *lifecycleService) fireLifecycleEvent(newState string) {
 	if newState == LifecycleStateShuttingDown {
-		lifecycleService.isLive.Store(false)
+		ls.isLive.Store(false)
 	}
-	listeners := lifecycleService.listeners.Load().(map[string]interface{})
+	listeners := ls.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
 		if _, ok := listener.(core.ILifecycleListener); ok {
 			listener.(core.ILifecycleListener).LifecycleStateChanged(newState)

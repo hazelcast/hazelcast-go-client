@@ -27,9 +27,9 @@ type lifecycleListener struct {
 	collector []string
 }
 
-func (lifecycyleListener *lifecycleListener) LifecycleStateChanged(newState string) {
-	lifecycyleListener.collector = append(lifecycyleListener.collector, newState)
-	lifecycyleListener.wg.Done()
+func (l *lifecycleListener) LifecycleStateChanged(newState string) {
+	l.collector = append(l.collector, newState)
+	l.wg.Done()
 }
 func TestLifecycleListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)

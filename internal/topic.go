@@ -32,40 +32,40 @@ func newTopicProxy(client *HazelcastClient, serviceName *string, name *string) (
 	return &TopicProxy{parSpecProxy}, nil
 }
 
-func (topic *TopicProxy) AddMessageListener(messageListener core.TopicMessageListener) (registrationID *string, err error) {
-	request := protocol.TopicAddMessageListenerEncodeRequest(topic.name, false)
-	eventHandler := topic.createEventHandler(messageListener)
+func (tp *TopicProxy) AddMessageListener(messageListener core.TopicMessageListener) (registrationID *string, err error) {
+	request := protocol.TopicAddMessageListenerEncodeRequest(tp.name, false)
+	eventHandler := tp.createEventHandler(messageListener)
 
-	return topic.client.ListenerService.registerListener(request, eventHandler,
+	return tp.client.ListenerService.registerListener(request, eventHandler,
 		func(registrationId *string) *protocol.ClientMessage {
-			return protocol.TopicRemoveMessageListenerEncodeRequest(topic.name, registrationId)
+			return protocol.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationId)
 		}, func(clientMessage *protocol.ClientMessage) *string {
 			return protocol.TopicAddMessageListenerDecodeResponse(clientMessage)()
 		})
 
 }
 
-func (topic *TopicProxy) RemoveMessageListener(registrationID *string) (removed bool, err error) {
-	return topic.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
-		return protocol.TopicRemoveMessageListenerEncodeRequest(topic.name, registrationID)
+func (tp *TopicProxy) RemoveMessageListener(registrationID *string) (removed bool, err error) {
+	return tp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+		return protocol.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
 	})
 }
 
-func (topic *TopicProxy) Publish(message interface{}) (err error) {
-	messageData, err := topic.validateAndSerialize(message)
+func (tp *TopicProxy) Publish(message interface{}) (err error) {
+	messageData, err := tp.validateAndSerialize(message)
 	if err != nil {
 		return err
 	}
-	request := protocol.TopicPublishEncodeRequest(topic.name, messageData)
-	_, err = topic.invoke(request)
+	request := protocol.TopicPublishEncodeRequest(tp.name, messageData)
+	_, err = tp.invoke(request)
 	return
 }
 
-func (topic *TopicProxy) createEventHandler(messageListener core.TopicMessageListener) func(clientMessage *protocol.ClientMessage) {
+func (tp *TopicProxy) createEventHandler(messageListener core.TopicMessageListener) func(clientMessage *protocol.ClientMessage) {
 	return func(message *protocol.ClientMessage) {
 		protocol.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid *string) {
-			member := topic.client.ClusterService.GetMemberByUuid(*uuid)
-			item, _ := topic.toObject(itemData)
+			member := tp.client.ClusterService.GetMemberByUuid(*uuid)
+			item, _ := tp.toObject(itemData)
 			itemEvent := protocol.NewTopicMessage(item, publishTime, member.(*protocol.Member))
 			messageListener.OnMessage(itemEvent)
 		})

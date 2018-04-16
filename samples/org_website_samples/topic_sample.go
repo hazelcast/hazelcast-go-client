@@ -24,7 +24,7 @@ import (
 type topicMessageListener struct {
 }
 
-func (self *topicMessageListener) OnMessage(message core.ITopicMessage) {
+func (*topicMessageListener) OnMessage(message core.ITopicMessage) {
 	fmt.Println("Got message: ", message.MessageObject())
 }
 

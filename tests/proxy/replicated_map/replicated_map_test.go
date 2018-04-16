@@ -408,23 +408,23 @@ type entryListener struct {
 	mapEvent core.IMapEvent
 }
 
-func (entryListener *entryListener) EntryAdded(event core.IEntryEvent) {
-	entryListener.event = event
-	entryListener.wg.Done()
+func (l *entryListener) EntryAdded(event core.IEntryEvent) {
+	l.event = event
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryUpdated(event core.IEntryEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryUpdated(event core.IEntryEvent) {
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryRemoved(event core.IEntryEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryRemoved(event core.IEntryEvent) {
+	l.wg.Done()
 }
 
-func (entryListener *entryListener) EntryEvicted(event core.IEntryEvent) {
-	entryListener.wg.Done()
+func (l *entryListener) EntryEvicted(event core.IEntryEvent) {
+	l.wg.Done()
 }
 
-func (addEntry *entryListener) EntryClearAll(event core.IMapEvent) {
-	addEntry.wg.Done()
+func (l *entryListener) EntryClearAll(event core.IMapEvent) {
+	l.wg.Done()
 }

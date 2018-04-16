@@ -45,51 +45,51 @@ func newConnectionManager(client *HazelcastClient) *connectionManager {
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
 	return &cm
 }
-func (connectionManager *connectionManager) nextConnectionID() int64 {
-	return atomic.AddInt64(&connectionManager.nextConnectionId, 1)
+func (cm *connectionManager) nextConnectionID() int64 {
+	return atomic.AddInt64(&cm.nextConnectionId, 1)
 }
-func (connectionManager *connectionManager) addListener(listener connectionListener) {
-	connectionManager.mu.Lock()
-	defer connectionManager.mu.Unlock()
+func (cm *connectionManager) addListener(listener connectionListener) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
 	if listener != nil {
-		listeners := connectionManager.connectionListeners.Load().([]connectionListener)
+		listeners := cm.connectionListeners.Load().([]connectionListener)
 		size := len(listeners) + 1
 		copyListeners := make([]connectionListener, size)
 		for index, listener := range listeners {
 			copyListeners[index] = listener
 		}
 		copyListeners[size-1] = listener
-		connectionManager.connectionListeners.Store(copyListeners)
+		cm.connectionListeners.Store(copyListeners)
 	}
 }
-func (connectionManager *connectionManager) getActiveConnection(address *protocol.Address) *Connection {
+func (cm *connectionManager) getActiveConnection(address *protocol.Address) *Connection {
 	if address == nil {
 		return nil
 	}
-	connectionManager.lock.RLock()
-	if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
-		connectionManager.lock.RUnlock()
+	cm.lock.RLock()
+	if conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
+		cm.lock.RUnlock()
 		return conn
 	}
-	connectionManager.lock.RUnlock()
+	cm.lock.RUnlock()
 	return nil
 }
-func (connectionManager *connectionManager) getActiveConnections() map[string]*Connection {
+func (cm *connectionManager) getActiveConnections() map[string]*Connection {
 	connections := make(map[string]*Connection)
-	connectionManager.lock.RLock()
-	defer connectionManager.lock.RUnlock()
-	for k, v := range connectionManager.connections {
+	cm.lock.RLock()
+	defer cm.lock.RUnlock()
+	for k, v := range cm.connections {
 		connections[k] = v
 	}
 	return connections
 }
-func (connectionManager *connectionManager) connectionClosed(connection *Connection, cause error) {
+func (cm *connectionManager) connectionClosed(connection *Connection, cause error) {
 	//If Connection was authenticated fire event
 	if connection.endpoint.Load().(*protocol.Address).Host() != "" {
-		connectionManager.lock.Lock()
-		delete(connectionManager.connections, connection.endpoint.Load().(*protocol.Address).Host()+":"+strconv.Itoa(connection.endpoint.Load().(*protocol.Address).Port()))
-		listeners := connectionManager.connectionListeners.Load().([]connectionListener)
-		connectionManager.lock.Unlock()
+		cm.lock.Lock()
+		delete(cm.connections, connection.endpoint.Load().(*protocol.Address).Host()+":"+strconv.Itoa(connection.endpoint.Load().(*protocol.Address).Port()))
+		listeners := cm.connectionListeners.Load().([]connectionListener)
+		cm.lock.Unlock()
 		for _, listener := range listeners {
 			if _, ok := listener.(connectionListener); ok {
 				listener.(connectionListener).onConnectionClosed(connection, cause)
@@ -97,52 +97,52 @@ func (connectionManager *connectionManager) connectionClosed(connection *Connect
 		}
 	} else {
 		//Clean up unauthenticated Connection
-		connectionManager.client.InvocationService.cleanupConnection(connection, cause)
+		cm.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
-func (connectionManager *connectionManager) getOrConnect(address *protocol.Address, asOwner bool) (chan *Connection, chan error) {
+func (cm *connectionManager) getOrConnect(address *protocol.Address, asOwner bool) (chan *Connection, chan error) {
 
 	ch := make(chan *Connection, 1)
 	err := make(chan error, 1)
 	go func() {
 		//First try readLock
-		connectionManager.lock.RLock()
-		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
+		cm.lock.RLock()
+		if conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
-			connectionManager.lock.RUnlock()
+			cm.lock.RUnlock()
 			return
 		}
 		//Check if Connection is opened
-		if conn, found := connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
+		if conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
 			ch <- conn
-			connectionManager.lock.RUnlock()
+			cm.lock.RUnlock()
 			return
 		}
-		connectionManager.lock.RUnlock()
+		cm.lock.RUnlock()
 		//Open new Connection
-		error := connectionManager.openNewConnection(address, ch, asOwner)
+		error := cm.openNewConnection(address, ch, asOwner)
 		if error != nil {
 			err <- error
 		}
 	}()
 	return ch, err
 }
-func (connectionManager *connectionManager) ConnectionCount() int32 {
-	connectionManager.lock.RLock()
-	defer connectionManager.lock.RUnlock()
-	return int32(len(connectionManager.connections))
+func (cm *connectionManager) ConnectionCount() int32 {
+	cm.lock.RLock()
+	defer cm.lock.RUnlock()
+	return int32(len(cm.connections))
 }
-func (connectionManager *connectionManager) openNewConnection(address *protocol.Address, resp chan *Connection, asOwner bool) error {
-	if !asOwner && connectionManager.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address).Host() == "" {
+func (cm *connectionManager) openNewConnection(address *protocol.Address, resp chan *Connection, asOwner bool) error {
+	if !asOwner && cm.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address).Host() == "" {
 		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
-	invocationService := connectionManager.client.InvocationService
-	connectionId := connectionManager.nextConnectionID()
-	con := newConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, connectionManager)
+	invocationService := cm.client.InvocationService
+	connectionId := cm.nextConnectionID()
+	con := newConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, cm)
 	if con == nil {
 		return core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
-	err := connectionManager.clusterAuthenticator(con, asOwner)
+	err := cm.clusterAuthenticator(con, asOwner)
 
 	if err != nil {
 		return err
@@ -151,21 +151,21 @@ func (connectionManager *connectionManager) openNewConnection(address *protocol.
 	return nil
 }
 
-func (connectionManager *connectionManager) getOwnerConnection() *Connection {
-	ownerConnectionAddress := connectionManager.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address)
+func (cm *connectionManager) getOwnerConnection() *Connection {
+	ownerConnectionAddress := cm.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address)
 	if ownerConnectionAddress.Host() == "" {
 		return nil
 	}
-	return connectionManager.getActiveConnection(ownerConnectionAddress)
+	return cm.getActiveConnection(ownerConnectionAddress)
 
 }
 
-func (connectionManager *connectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
-	uuid := connectionManager.client.ClusterService.uuid.Load().(string)
-	ownerUuid := connectionManager.client.ClusterService.ownerUuid.Load().(string)
+func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
+	uuid := cm.client.ClusterService.uuid.Load().(string)
+	ownerUuid := cm.client.ClusterService.ownerUuid.Load().(string)
 	clientType := protocol.ClientType
-	name := connectionManager.client.ClientConfig.GroupConfig().Name()
-	password := connectionManager.client.ClientConfig.GroupConfig().Password()
+	name := cm.client.ClientConfig.GroupConfig().Name()
+	password := cm.client.ClientConfig.GroupConfig().Password()
 	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
 	request := protocol.ClientAuthenticationEncodeRequest(
 		&name,
@@ -177,7 +177,7 @@ func (connectionManager *connectionManager) clusterAuthenticator(connection *Con
 		1,
 		&clientVersion,
 	)
-	result, err := connectionManager.client.InvocationService.invokeOnConnection(request, connection).Result()
+	result, err := cm.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		return err
 	} else {
@@ -188,14 +188,14 @@ func (connectionManager *connectionManager) clusterAuthenticator(connection *Con
 			connection.serverHazelcastVersion = serverHazelcastVersion
 			connection.endpoint.Store(address)
 			connection.isOwnerConnection = asOwner
-			connectionManager.lock.Lock()
-			connectionManager.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
-			connectionManager.lock.Unlock()
-			connectionManager.fireConnectionAddedEvent(connection)
+			cm.lock.Lock()
+			cm.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
+			cm.lock.Unlock()
+			cm.fireConnectionAddedEvent(connection)
 			if asOwner {
-				connectionManager.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*protocol.Address))
-				connectionManager.client.ClusterService.ownerUuid.Store(*ownerUuid)
-				connectionManager.client.ClusterService.uuid.Store(*uuid)
+				cm.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*protocol.Address))
+				cm.client.ClusterService.ownerUuid.Store(*ownerUuid)
+				cm.client.ClusterService.uuid.Store(*uuid)
 			}
 		case CredentialsFailed:
 			return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
@@ -205,8 +205,8 @@ func (connectionManager *connectionManager) clusterAuthenticator(connection *Con
 	}
 	return nil
 }
-func (connectionManager *connectionManager) fireConnectionAddedEvent(connection *Connection) {
-	listeners := connectionManager.connectionListeners.Load().([]connectionListener)
+func (cm *connectionManager) fireConnectionAddedEvent(connection *Connection) {
+	listeners := cm.connectionListeners.Load().([]connectionListener)
 	for _, listener := range listeners {
 		if _, ok := listener.(connectionListener); ok {
 			listener.(connectionListener).onConnectionOpened(connection)
