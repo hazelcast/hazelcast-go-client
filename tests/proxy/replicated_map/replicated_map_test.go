@@ -89,7 +89,7 @@ func TestReplicatedMapProxy_PutWithTtl(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
-	oldValue, err := rmp.PutWithTtl(testKey, "nextValue", 100, time.Second)
+	oldValue, err := rmp.PutWithTtl(testKey, "nextValue", 100*time.Second)
 	AssertEqualf(t, err, oldValue, testValue, "replicatedMap PutWithTtl()  failed")
 	res, err := rmp.Get(testKey)
 	AssertEqualf(t, err, res, "nextValue", "replicatedMap PutWithTtl() failed")
@@ -98,14 +98,14 @@ func TestReplicatedMapProxy_PutWithTtl(t *testing.T) {
 func TestReplicatedMapProxy_PutWithTtlWithNilKey(t *testing.T) {
 	defer rmp.Clear()
 	testValue := "testingValue"
-	_, err := rmp.PutWithTtl(nil, testValue, 100, time.Second)
+	_, err := rmp.PutWithTtl(nil, testValue, 100*time.Second)
 	AssertErrorNotNil(t, err, "replicatedMap PutWithTtl() failed")
 }
 
 func TestReplicatedMapProxy_PutWithTtlWithNilValue(t *testing.T) {
 	defer rmp.Clear()
 	testKey := "testingKey"
-	_, err := rmp.PutWithTtl(testKey, nil, 100, time.Second)
+	_, err := rmp.PutWithTtl(testKey, nil, 100*time.Second)
 	AssertErrorNotNil(t, err, "replicatedMap PutWithTtl() failed")
 }
 
@@ -114,7 +114,7 @@ func TestMapProxy_PutWithTtlWhenExpire(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
-	rmp.PutWithTtl(testKey, "nextValue", 1, time.Millisecond)
+	rmp.PutWithTtl(testKey, "nextValue", 1*time.Millisecond)
 	time.Sleep(2 * time.Second)
 	res, err := rmp.Get(testKey)
 	AssertNilf(t, err, res, "replicatedMap PutWithTtl() failed")

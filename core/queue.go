@@ -61,7 +61,7 @@ type IQueue interface {
 	// OfferWithTimeout inserts the given item to the end of the queue if there is room, otherwise
 	// it waits for timeout with timeoutUnit before returning false.
 	// OfferWithTimeout returns true if the item is added, false otherwise.
-	OfferWithTimeout(item interface{}, timeout int64, timeoutUnit time.Duration) (added bool, err error)
+	OfferWithTimeout(item interface{}, timeout time.Duration) (added bool, err error)
 
 	// Peek retrieves, but does not remove the head of this queue.
 	// Peek returns the head of this queue, nil if the queue is empty.
@@ -74,7 +74,7 @@ type IQueue interface {
 	// PollWithTimeout retrieves and removes the head of this queue,
 	// if the queue is empty it waits timeout with timeoutUnit before returning nil.
 	// PollWithTimeout returns the head of this queue, nil if the queue is empty after timeoutInMilliSeconds milliseconds.
-	PollWithTimeout(timeout int64, timeoutUnit time.Duration) (item interface{}, err error)
+	PollWithTimeout(timeout time.Duration) (item interface{}, err error)
 
 	// Put inserts the item at the end of this queue.
 	// It blocks until there is available room in the queue, if necessary.

@@ -26,7 +26,7 @@ import (
 const (
 	DefaultGroupName         = "dev"
 	DefaultGroupPassword     = "dev-pass"
-	DefaultInvocationTimeout = 120 * time.Second //secs
+	DefaultInvocationTimeout = 120 * time.Second
 )
 
 // ClientConfig is the main configuration to setup a Hazelcast client.
@@ -46,11 +46,11 @@ type ClientConfig struct {
 	// serializationConfig is the serialization configuration of the client.
 	serializationConfig *SerializationConfig
 
-	// heartbeatTimeoutInSeconds is the timeout value for heartbeat in seconds.
-	heartbeatTimeoutInSeconds int32
+	// heartbeatTimeout is the timeout value for heartbeat.
+	heartbeatTimeout time.Duration
 
-	// heartbeatIntervalInSeconds is heartbeat internal in seconds.
-	heartbeatIntervalInSeconds int32
+	// heartbeatInterval is heartbeat internal.
+	heartbeatInterval time.Duration
 
 	// flakeIdGeneratorConfigMap is mapping of names to flakeIdGeneratorConfigs
 	flakeIdGeneratorConfigMap map[string]*FlakeIdGeneratorConfig
@@ -93,27 +93,25 @@ func (cc *ClientConfig) SerializationConfig() *SerializationConfig {
 }
 
 // SetHeartbeatTimeout sets the heartbeat timeout value to given timeout value.
-// timeout value is in seconds.
-func (cc *ClientConfig) SetHeartbeatTimeoutInSeconds(timeoutInSeconds int32) *ClientConfig {
-	cc.heartbeatTimeoutInSeconds = timeoutInSeconds
+func (cc *ClientConfig) SetHeartbeatTimeout(heartbeatTimeout time.Duration) *ClientConfig {
+	cc.heartbeatTimeout = heartbeatTimeout
 	return cc
 }
 
-// HeartbeatTimeout returns heartbeat timeout in seconds.
-func (cc *ClientConfig) HeartbeatTimeout() int32 {
-	return cc.heartbeatTimeoutInSeconds
+// HeartbeatTimeout returns heartbeat timeout
+func (cc *ClientConfig) HeartbeatTimeout() time.Duration {
+	return cc.heartbeatTimeout
 }
 
-// SetHeartbeatIntervalInSeconds sets the heartbeat timeout value to given interval value.
-// interval value is in seconds.
-func (cc *ClientConfig) SetHeartbeatIntervalInSeconds(intervalInSeconds int32) *ClientConfig {
-	cc.heartbeatIntervalInSeconds = intervalInSeconds
+// SetHeartbeatInterval sets the heartbeat timeout value to given interval value.
+func (cc *ClientConfig) SetHeartbeatInterval(heartbeatInterval time.Duration) *ClientConfig {
+	cc.heartbeatInterval = heartbeatInterval
 	return cc
 }
 
-// HeartbeatInterval returns heartbeat interval in seconds.
-func (cc *ClientConfig) HeartbeatInterval() int32 {
-	return cc.heartbeatIntervalInSeconds
+// HeartbeatInterval returns heartbeat interval.
+func (cc *ClientConfig) HeartbeatInterval() time.Duration {
+	return cc.heartbeatInterval
 }
 
 // GetFlakeIdGeneratorConfig returns the FlakeIdGeneratorConfig for the given name, creating one
@@ -328,11 +326,11 @@ type ClientNetworkConfig struct {
 	connectionAttemptLimit int32
 
 	// connectionAttemptPeriod is the period for the next attempt to find a member to connect.
-	connectionAttemptPeriod int32
+	connectionAttemptPeriod time.Duration
 
-	// Socket connection timeout is an int32, given in seconds.
+	// Socket connection timeout.
 	// Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
-	connectionTimeout int32
+	connectionTimeout time.Duration
 
 	// If true, client will redo the operations that were executing on the server when client recovers the connection after a failure.
 	// This can be because of network, or simply because the member died. However it is not clear whether the
@@ -346,18 +344,18 @@ type ClientNetworkConfig struct {
 	smartRouting bool
 
 	// The invocation timeout for sending invocation.
-	invocationTimeoutInSeconds time.Duration
+	invocationTimeout time.Duration
 }
 
 func NewClientNetworkConfig() *ClientNetworkConfig {
 	return &ClientNetworkConfig{
-		addresses:                  make([]string, 0),
-		connectionAttemptLimit:     2,
-		connectionAttemptPeriod:    3,
-		connectionTimeout:          5,
-		redoOperation:              false,
-		smartRouting:               true,
-		invocationTimeoutInSeconds: DefaultInvocationTimeout,
+		addresses:               make([]string, 0),
+		connectionAttemptLimit:  2,
+		connectionAttemptPeriod: 3 * time.Second,
+		connectionTimeout:       5 * time.Second,
+		redoOperation:           false,
+		smartRouting:            true,
+		invocationTimeout:       DefaultInvocationTimeout,
 	}
 }
 
@@ -372,12 +370,12 @@ func (nc *ClientNetworkConfig) ConnectionAttemptLimit() int32 {
 }
 
 // ConnectionAttemptPeriod returns the period for the next attempt to find a member to connect.
-func (nc *ClientNetworkConfig) ConnectionAttemptPeriod() int32 {
+func (nc *ClientNetworkConfig) ConnectionAttemptPeriod() time.Duration {
 	return nc.connectionAttemptPeriod
 }
 
-// ConnectionTimeout returns the timeout value in seconds for nodes to accept client connection requests.
-func (nc *ClientNetworkConfig) ConnectionTimeout() int32 {
+// ConnectionTimeout returns the timeout value for nodes to accept client connection requests.
+func (nc *ClientNetworkConfig) ConnectionTimeout() time.Duration {
 	return nc.connectionTimeout
 }
 
@@ -391,9 +389,9 @@ func (nc *ClientNetworkConfig) IsSmartRouting() bool {
 	return nc.smartRouting
 }
 
-// InvocationTimeout returns the invocation timeout in seconds.
+// InvocationTimeout returns the invocation timeout
 func (nc *ClientNetworkConfig) InvocationTimeout() time.Duration {
-	return nc.invocationTimeoutInSeconds
+	return nc.invocationTimeout
 }
 
 // AddAddress adds given addresses to candidate address list that client will use to establish initial connection.
@@ -419,17 +417,17 @@ func (nc *ClientNetworkConfig) SetConnectionAttemptLimit(connectionAttemptLimit 
 	return nc
 }
 
-// SetConnectionAttemptPeriod sets the period for the next attempt to find a member to connect in seconds.
+// SetConnectionAttemptPeriod sets the period for the next attempt to find a member to connect
 // SetConnectionAttemptPeriod returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod int32) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod time.Duration) *ClientNetworkConfig {
 	nc.connectionAttemptPeriod = connectionAttemptPeriod
 	return nc
 }
 
-// Socket connection timeout is an int32, given in seconds.
+// Socket connection timeout
 // Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
 // SetConnectionTimeout returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout int32) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout time.Duration) *ClientNetworkConfig {
 	nc.connectionTimeout = connectionTimeout
 	return nc
 }
@@ -454,9 +452,9 @@ func (nc *ClientNetworkConfig) SetSmartRouting(smartRouting bool) *ClientNetwork
 	return nc
 }
 
-// SetInvocationTimeoutInSeconds sets the invocation timeout for sending invocation.
-// SetInvocationTimeoutInSeconds returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetInvocationTimeoutInSeconds(invocationTimeoutInSeconds int32) *ClientNetworkConfig {
-	nc.invocationTimeoutInSeconds = time.Duration(invocationTimeoutInSeconds) * time.Second
+// SetInvocationTimeout sets the invocation timeout for sending invocation.
+// SetInvocationTimeout returns the configured ClientNetworkConfig for chaining.
+func (nc *ClientNetworkConfig) SetInvocationTimeout(invocationTimeout time.Duration) *ClientNetworkConfig {
+	nc.invocationTimeout = invocationTimeout
 	return nc
 }

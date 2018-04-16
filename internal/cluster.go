@@ -119,10 +119,10 @@ func (cs *clusterService) reconnect() {
 }
 func (cs *clusterService) connectToCluster() error {
 
-	currentAttempt := int32(1)
+	currentAttempt := int32(0)
 	attempLimit := cs.config.ClientNetworkConfig().ConnectionAttemptLimit()
 	retryDelay := cs.config.ClientNetworkConfig().ConnectionAttemptPeriod()
-	for currentAttempt <= attempLimit {
+	for currentAttempt < attempLimit {
 		currentAttempt++
 		members := cs.members.Load().([]*protocol.Member)
 		addresses := getPossibleAddresses(cs.config.ClientNetworkConfig().Addresses(), members)
@@ -132,7 +132,7 @@ func (cs *clusterService) connectToCluster() error {
 			}
 			err := cs.connectToAddress(&address)
 			if err != nil {
-				log.Println("the following error occured while trying to connect to cluster: ", err)
+				log.Println("the following error occured while trying to connect to cluster. attempt ", currentAttempt, " of ", attempLimit, " error: ", err)
 				if _, ok := err.(*core.HazelcastAuthenticationError); ok {
 					return err
 				}
@@ -141,7 +141,7 @@ func (cs *clusterService) connectToCluster() error {
 			return nil
 		}
 		if currentAttempt <= attempLimit {
-			time.Sleep(time.Duration(retryDelay) * time.Second)
+			time.Sleep(retryDelay)
 		}
 	}
 	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)

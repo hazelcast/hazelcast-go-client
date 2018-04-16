@@ -14,6 +14,8 @@
 
 package core
 
+import "time"
+
 // IAddress represents an address of a member in the cluster.
 type IAddress interface {
 	// Host returns host of the member.
@@ -111,22 +113,22 @@ type IEntryView interface {
 	Cost() int64
 
 	// CreationTime returns the creation time of the entry.
-	CreationTime() int64
+	CreationTime() time.Time
 
 	// ExpirationTime returns the expiration time of the entry.
-	ExpirationTime() int64
+	ExpirationTime() time.Time
 
 	// Hits returns the number of hits of the entry.
 	Hits() int64
 
 	// LastAccessTime returns the last access time for the entry.
-	LastAccessTime() int64
+	LastAccessTime() time.Time
 
 	// LastStoredTime returns the last store time for the value.
-	LastStoredTime() int64
+	LastStoredTime() time.Time
 
 	// LastUpdateTime returns the last time the value was updated.
-	LastUpdateTime() int64
+	LastUpdateTime() time.Time
 
 	// Version returns the version of the entry.
 	Version() int64
@@ -135,7 +137,7 @@ type IEntryView interface {
 	EvictionCriteriaNumber() int64
 
 	// Ttl returns the last set time to live second.
-	Ttl() int64
+	Ttl() time.Duration
 }
 
 type IEntryEvent interface {
@@ -276,7 +278,7 @@ type ITopicMessage interface {
 	MessageObject() interface{}
 
 	// PublishTime returns the time in milliseconds when the message is published.
-	PublishTime() int64
+	PublishTime() time.Time
 
 	// PublishMember returns the member that published the message.
 	// The member can be nil if:

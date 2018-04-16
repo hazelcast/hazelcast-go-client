@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
@@ -192,15 +193,15 @@ type EntryView struct {
 	key                    interface{}
 	value                  interface{}
 	cost                   int64
-	creationTime           int64
-	expirationTime         int64
+	creationTime           time.Time
+	expirationTime         time.Time
 	hits                   int64
-	lastAccessTime         int64
-	lastStoredTime         int64
-	lastUpdateTime         int64
+	lastAccessTime         time.Time
+	lastStoredTime         time.Time
+	lastUpdateTime         time.Time
 	version                int64
 	evictionCriteriaNumber int64
-	ttl                    int64
+	ttl                    time.Duration
 }
 
 func NewEntryView(key interface{}, value interface{}, cost int64, creationTime int64, expirationTime int64, hits int64,
@@ -209,15 +210,15 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		key:                    key,
 		value:                  value,
 		cost:                   cost,
-		creationTime:           creationTime,
-		expirationTime:         expirationTime,
+		creationTime:           common.ConvertMillisToUnixTime(creationTime),
+		expirationTime:         common.ConvertMillisToUnixTime(expirationTime),
 		hits:                   hits,
-		lastAccessTime:         lastAccessTime,
-		lastStoredTime:         lastStoredTime,
-		lastUpdateTime:         lastUpdateTime,
+		lastAccessTime:         common.ConvertMillisToUnixTime(lastAccessTime),
+		lastStoredTime:         common.ConvertMillisToUnixTime(lastStoredTime),
+		lastUpdateTime:         common.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl: ttl,
+		ttl: common.ConvertMillisToDuration(ttl),
 	}
 }
 func (ev *EntryView) Key() interface{} {
@@ -232,11 +233,11 @@ func (ev *EntryView) Cost() int64 {
 	return ev.cost
 }
 
-func (ev *EntryView) CreationTime() int64 {
+func (ev *EntryView) CreationTime() time.Time {
 	return ev.creationTime
 }
 
-func (ev *EntryView) ExpirationTime() int64 {
+func (ev *EntryView) ExpirationTime() time.Time {
 	return ev.expirationTime
 }
 
@@ -244,15 +245,15 @@ func (ev *EntryView) Hits() int64 {
 	return ev.hits
 }
 
-func (ev *EntryView) LastAccessTime() int64 {
+func (ev *EntryView) LastAccessTime() time.Time {
 	return ev.lastAccessTime
 }
 
-func (ev *EntryView) LastStoredTime() int64 {
+func (ev *EntryView) LastStoredTime() time.Time {
 	return ev.lastStoredTime
 }
 
-func (ev *EntryView) LastUpdateTime() int64 {
+func (ev *EntryView) LastUpdateTime() time.Time {
 	return ev.lastUpdateTime
 }
 
@@ -264,7 +265,7 @@ func (ev *EntryView) EvictionCriteriaNumber() int64 {
 	return ev.evictionCriteriaNumber
 }
 
-func (ev *EntryView) Ttl() int64 {
+func (ev *EntryView) Ttl() time.Duration {
 	return ev.ttl
 }
 
@@ -501,14 +502,14 @@ func GetEntryListenerFlags(listener interface{}) int32 {
 
 type TopicMessage struct {
 	messageObject    interface{}
-	publishTime      int64
+	publishTime      time.Time
 	publishingMember *Member
 }
 
 func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember *Member) *TopicMessage {
 	return &TopicMessage{
 		messageObject:    messageObject,
-		publishTime:      publishTime,
+		publishTime:      common.ConvertMillisToUnixTime(publishTime),
 		publishingMember: publishingMember,
 	}
 }
@@ -517,7 +518,7 @@ func (m *TopicMessage) MessageObject() interface{} {
 	return m.messageObject
 }
 
-func (m *TopicMessage) PublishTime() int64 {
+func (m *TopicMessage) PublishTime() time.Time {
 	return m.publishTime
 }
 

@@ -105,7 +105,7 @@ type MultiMap interface {
 	//
 	// Locks are re-entrant, so if the key is locked N times, then
 	// it should be unlocked N times before another thread can acquire it.
-	LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) (err error)
+	LockWithLeaseTime(key interface{}, lease time.Duration) (err error)
 
 	// IsLocked returns true if this key is locked, false otherwise.
 	IsLocked(key interface{}) (locked bool, err error)
@@ -121,7 +121,7 @@ type MultiMap interface {
 	// purposes and lies dormant until one of two things happens:
 	// the lock is acquired by the current thread, or
 	// the specified waiting time elapses.
-	TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (locked bool, err error)
+	TryLockWithTimeout(key interface{}, timeout time.Duration) (locked bool, err error)
 
 	// Tries to acquire the lock for the specified key for the specified lease time.
 	// After lease time, the lock will be released.
@@ -131,7 +131,7 @@ type MultiMap interface {
 	// purposes and lies dormant until one of two things happens:
 	// the lock is acquired by the current thread, or
 	// the specified waiting time elapses.
-	TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (locked bool, err error)
+	TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error)
 
 	// Unlock unlocks the specified key.
 	Unlock(key interface{}) (err error)

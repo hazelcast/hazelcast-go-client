@@ -41,7 +41,7 @@ type ReplicatedMap interface {
 	// one and returned from the call. In addition, you have to specify a ttl and its time unit
 	// to define when the value is outdated and thus should be removed from the
 	// replicated map.
-	PutWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (oldValue interface{}, err error)
+	PutWithTtl(key interface{}, value interface{}, ttl time.Duration) (oldValue interface{}, err error)
 
 	// PutAll copies all of the mappings from the specified map to this map.
 	// The effect of this call is equivalent to that of calling put(k, v)

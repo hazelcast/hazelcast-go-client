@@ -316,7 +316,7 @@ func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {
 func TestMultiMapProxy_LockWithLeaseTime(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	multiMap.LockWithLeaseTime(testKey, 10, time.Millisecond)
+	multiMap.LockWithLeaseTime(testKey, 10*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	locked, err := multiMap.IsLocked(testKey)
 	AssertEqualf(t, err, locked, false, "multiMap LockWithLeaseTime() failed.")
@@ -325,14 +325,14 @@ func TestMultiMapProxy_LockWithLeaseTime(t *testing.T) {
 func TestMultiMapProxy_LockWithLeaseTimeWithNilKey(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	err := multiMap.LockWithLeaseTime(nil, 10, time.Millisecond)
+	err := multiMap.LockWithLeaseTime(nil, 10*time.Millisecond)
 	AssertErrorNotNil(t, err, "multiMap LockWithLeaseTime() failed ")
 }
 
 func TestMultiMapProxy_Lock(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	multiMap.LockWithLeaseTime(testKey, 10, time.Millisecond)
+	multiMap.LockWithLeaseTime(testKey, 10*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	locked, err := multiMap.IsLocked(testKey)
 	AssertEqualf(t, err, locked, false, "multiMap Lock() failed.")
@@ -367,7 +367,7 @@ func TestMultiMapProxy_IsLockedWithNilKey(t *testing.T) {
 func TestMultiMapProxy_TryLock(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	ok, err := multiMap.TryLockWithTimeoutAndLease(testKey, 1, time.Second, 2, time.Second)
+	ok, err := multiMap.TryLockWithTimeoutAndLease(testKey, 1*time.Second, 2*time.Second)
 	AssertEqualf(t, err, ok, true, "multiMap TryLock() failed.")
 	time.Sleep(5 * time.Second)
 	locked, err := multiMap.IsLocked(testKey)
@@ -378,14 +378,14 @@ func TestMultiMapProxy_TryLock(t *testing.T) {
 func TestMultiMapProxy_TryLockWithNilKey(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	_, err := multiMap.TryLockWithTimeoutAndLease(nil, 1, time.Second, 2, time.Second)
+	_, err := multiMap.TryLockWithTimeoutAndLease(nil, 1*time.Second, 2*time.Second)
 	AssertErrorNotNil(t, err, "multiMap TryLock() failed")
 }
 
 func TestMultiMapProxy_ForceUnlock(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	ok, err := multiMap.TryLockWithTimeoutAndLease(testKey, 1, time.Second, 20, time.Second)
+	ok, err := multiMap.TryLockWithTimeoutAndLease(testKey, 1*time.Second, 20*time.Second)
 	AssertEqualf(t, err, ok, true, "multiMap ForceUnLock() failed.")
 	multiMap.ForceUnlock(testKey)
 	locked, err := multiMap.IsLocked(testKey)

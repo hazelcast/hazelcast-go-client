@@ -130,7 +130,7 @@ func TestMapLockWhenMemberDown(t *testing.T) {
 }
 
 func TestMapLockWithLeaseTimeWhenMemberDown(t *testing.T) {
-	err := mp.LockWithLeaseTime("key", 3, time.Second)
+	err := mp.LockWithLeaseTime("key", 3*time.Second)
 	AssertErrorNotNil(t, err, "lockWithLeaseTime should have returned an error when member is down")
 }
 
@@ -160,7 +160,7 @@ func TestMapSetWhenMemberDown(t *testing.T) {
 }
 
 func TestMapSetWithTtlWhenMemberDown(t *testing.T) {
-	err := mp.SetWithTtl("key", "value", 2, time.Second)
+	err := mp.SetWithTtl("key", "value", 2*time.Second)
 	AssertErrorNotNil(t, err, "setWithTtl should have returned an error when member is down")
 }
 
@@ -212,12 +212,12 @@ func TestMapTryLockWhenMemberDown(t *testing.T) {
 }
 
 func TestMapTryLockWithTimeoutWhenMemberDown(t *testing.T) {
-	_, err := mp.TryLockWithTimeout("key", 1, time.Second)
+	_, err := mp.TryLockWithTimeout("key", 1*time.Second)
 	AssertErrorNotNil(t, err, "tryLockWithTimeout should have returned an error when member is down")
 }
 
 func TestMapTryLockWithTimeoutAndLeaseWhenMemberDown(t *testing.T) {
-	_, err := mp.TryLockWithTimeoutAndLease("key", 2, time.Second, 2, time.Second)
+	_, err := mp.TryLockWithTimeoutAndLease("key", 2*time.Second, 2*time.Second)
 	AssertErrorNotNil(t, err, "tryLockWithTimeoutAndLease should have returned an error when member is down")
 }
 
@@ -227,7 +227,7 @@ func TestMapTryPutWhenMemberDown(t *testing.T) {
 }
 
 func TestMapTryRemoveWhenMemberDown(t *testing.T) {
-	_, err := mp.TryRemove("key", 2, time.Second)
+	_, err := mp.TryRemove("key", 2*time.Second)
 	AssertErrorNotNil(t, err, "tryRemove should have returned an error when member is down")
 }
 
@@ -244,7 +244,7 @@ func TestMapGetEntryViewWhenMemberDown(t *testing.T) {
 }
 
 func TestMapPutTransientWhenMemberDown(t *testing.T) {
-	err := mp.PutTransient("key", "value", 2, time.Second)
+	err := mp.PutTransient("key", "value", 2*time.Second)
 	AssertErrorNotNil(t, err, "putTransient should have returned an error when member is down")
 }
 

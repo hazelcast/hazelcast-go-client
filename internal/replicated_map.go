@@ -35,15 +35,16 @@ func newReplicatedMapProxy(client *HazelcastClient, serviceName *string, name *s
 	return &ReplicatedMapProxy{proxy: &proxy{client, serviceName, name}, targetPartitionId: targetPartitionId}, nil
 }
 func (rmp *ReplicatedMapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
-	return rmp.PutWithTtl(key, value, ttlUnlimited, time.Second)
+	return rmp.PutWithTtl(key, value, ttlUnlimited)
 }
 
-func (rmp *ReplicatedMapProxy) PutWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (oldValue interface{}, err error) {
+func (rmp *ReplicatedMapProxy) PutWithTtl(key interface{}, value interface{}, ttl time.Duration) (oldValue interface{}, err error) {
 	keyData, valueData, err := rmp.validateAndSerialize2(key, value)
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.ReplicatedMapPutEncodeRequest(rmp.name, keyData, valueData, ttl)
+	ttlInMillis := common.GetTimeInMilliSeconds(ttl)
+	request := protocol.ReplicatedMapPutEncodeRequest(rmp.name, keyData, valueData, ttlInMillis)
 	responseMessage, err := rmp.invokeOnKey(request, keyData)
 	return rmp.decodeToObjectAndError(responseMessage, err, protocol.ReplicatedMapPutDecodeResponse)
 }

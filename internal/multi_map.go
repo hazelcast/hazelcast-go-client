@@ -175,16 +175,16 @@ func (mmp *MultiMapProxy) RemoveEntryListener(registrationId *string) (removed b
 }
 
 func (mmp *MultiMapProxy) Lock(key interface{}) (err error) {
-	return mmp.LockWithLeaseTime(key, -1, time.Second)
+	return mmp.LockWithLeaseTime(key, -1)
 }
 
-func (mmp *MultiMapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) (err error) {
+func (mmp *MultiMapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err error) {
 	keyData, err := mmp.validateAndSerialize(key)
 	if err != nil {
 		return err
 	}
-	lease = common.GetTimeInMilliSeconds(lease, leaseTimeUnit)
-	request := protocol.MultiMapLockEncodeRequest(mmp.name, keyData, threadId, lease, mmp.client.ProxyManager.nextReferenceId())
+	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	request := protocol.MultiMapLockEncodeRequest(mmp.name, keyData, threadId, leaseInMillis, mmp.client.ProxyManager.nextReferenceId())
 	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
@@ -200,21 +200,21 @@ func (mmp *MultiMapProxy) IsLocked(key interface{}) (locked bool, err error) {
 }
 
 func (mmp *MultiMapProxy) TryLock(key interface{}) (locked bool, err error) {
-	return mmp.TryLockWithTimeout(key, 0, time.Second)
+	return mmp.TryLockWithTimeout(key, 0)
 }
 
-func (mmp *MultiMapProxy) TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (locked bool, err error) {
-	return mmp.TryLockWithTimeoutAndLease(key, timeout, timeoutTimeUnit, -1, time.Second)
+func (mmp *MultiMapProxy) TryLockWithTimeout(key interface{}, timeout time.Duration) (locked bool, err error) {
+	return mmp.TryLockWithTimeoutAndLease(key, timeout, -1)
 }
 
-func (mmp *MultiMapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (locked bool, err error) {
+func (mmp *MultiMapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error) {
 	keyData, err := mmp.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
-	timeout = common.GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
-	lease = common.GetTimeInMilliSeconds(lease, leaseTimeUnit)
-	request := protocol.MultiMapTryLockEncodeRequest(mmp.name, keyData, threadId, lease, timeout, mmp.client.ProxyManager.nextReferenceId())
+	timeoutInMillis := common.GetTimeInMilliSeconds(timeout)
+	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	request := protocol.MultiMapTryLockEncodeRequest(mmp.name, keyData, threadId, leaseInMillis, timeoutInMillis, mmp.client.ProxyManager.nextReferenceId())
 	responseMessage, err := mmp.invokeOnKey(request, keyData)
 	return mmp.decodeToBoolAndError(responseMessage, err, protocol.MultiMapTryLockDecodeResponse)
 }
