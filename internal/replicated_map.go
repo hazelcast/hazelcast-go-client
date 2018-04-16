@@ -15,12 +15,13 @@
 package internal
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"math/rand"
-	"time"
 )
 
 type ReplicatedMapProxy struct {

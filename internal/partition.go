@@ -15,12 +15,13 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"log"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const PartitionUpdateInterval time.Duration = 5

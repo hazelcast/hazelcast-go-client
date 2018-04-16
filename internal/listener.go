@@ -15,11 +15,12 @@
 package internal
 
 import (
+	"log"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"log"
-	"time"
 )
 
 type listenerService struct {

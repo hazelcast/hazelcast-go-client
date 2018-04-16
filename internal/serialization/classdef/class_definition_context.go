@@ -16,10 +16,11 @@ package classdef
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"strconv"
+
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type ClassDefinitionContext struct {

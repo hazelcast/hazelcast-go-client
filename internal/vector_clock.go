@@ -15,9 +15,10 @@
 package internal
 
 import (
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"sync"
 )
 
 const (

@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 func MultiMapRemoveEntryListenerCalculateSize(name *string, registrationId *string) int {
 	// Calculates the request payload size
 	dataSize := 0

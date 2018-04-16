@@ -17,9 +17,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"log"
 )
 
 const (

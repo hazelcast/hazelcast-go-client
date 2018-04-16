@@ -16,14 +16,15 @@ package internal
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 const (

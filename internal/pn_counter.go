@@ -15,8 +15,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"log"
 	"math"
 	"math/rand"
@@ -24,6 +22,9 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
+
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 type PNCounterProxy struct {

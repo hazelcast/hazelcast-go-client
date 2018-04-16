@@ -15,8 +15,9 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func TestMember_Equal(t *testing.T) {

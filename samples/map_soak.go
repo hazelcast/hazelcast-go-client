@@ -16,16 +16,17 @@ package main
 
 import (
 	"flag"
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const subroutineCount = 32

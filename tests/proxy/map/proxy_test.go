@@ -1,9 +1,10 @@
 package _map
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func TestProxy_Destroy(t *testing.T) {

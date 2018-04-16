@@ -15,9 +15,10 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"math/rand"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 type randomLoadBalancer struct {

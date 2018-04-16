@@ -17,12 +17,13 @@ package internal
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"net"
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 const BufferSize = 8192 * 2

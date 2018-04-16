@@ -15,13 +15,14 @@
 package compatibility
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func TestBinaryCompatibility(t *testing.T) {

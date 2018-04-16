@@ -17,10 +17,11 @@ package protocol
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"reflect"
 )
 
 type Address struct {

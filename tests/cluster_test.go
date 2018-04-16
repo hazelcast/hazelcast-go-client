@@ -15,15 +15,16 @@
 package tests
 
 import (
+	"log"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"log"
-	"sync"
-	"testing"
-	"time"
 )
 
 type membershipListener struct {

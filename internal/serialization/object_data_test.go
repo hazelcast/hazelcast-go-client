@@ -16,10 +16,11 @@ package serialization
 
 import (
 	"bytes"
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
 func TestObjectDataOutput_EnsureAvailable(t *testing.T) {

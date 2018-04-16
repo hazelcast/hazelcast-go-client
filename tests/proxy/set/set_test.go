@@ -15,13 +15,14 @@
 package set
 
 import (
+	"log"
+	"sync"
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
-	"log"
-	"sync"
-	"testing"
 )
 
 var set core.ISet

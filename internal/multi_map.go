@@ -15,11 +15,12 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"time"
 )
 
 type MultiMapProxy struct {

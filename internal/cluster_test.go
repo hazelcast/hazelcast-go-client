@@ -15,9 +15,10 @@
 package internal
 
 import (
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"testing"
 )
 
 func Test_getPossibleAddresses(t *testing.T) {

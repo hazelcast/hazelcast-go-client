@@ -15,8 +15,9 @@
 package tests
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func TestClientGetMapWhenNoMemberUp(t *testing.T) {

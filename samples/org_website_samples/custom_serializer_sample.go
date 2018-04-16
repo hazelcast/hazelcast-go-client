@@ -15,9 +15,10 @@
 package org_website_samples
 
 import (
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"reflect"
 )
 
 type CustomSerializable struct {

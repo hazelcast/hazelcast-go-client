@@ -15,10 +15,11 @@
 package org_website_samples
 
 import (
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"time"
 )
 
 const (

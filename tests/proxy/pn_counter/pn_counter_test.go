@@ -15,15 +15,16 @@
 package pn_counter
 
 import (
+	"log"
+	"sync"
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
-	"log"
-	"sync"
-	"testing"
 )
 
 var counter core.PNCounter

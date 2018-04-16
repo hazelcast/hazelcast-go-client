@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 func ClientDestroyProxyCalculateSize(name *string, serviceName *string) int {
 	// Calculates the request payload size
 	dataSize := 0

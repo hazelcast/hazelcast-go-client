@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 func SetIsEmptyCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0

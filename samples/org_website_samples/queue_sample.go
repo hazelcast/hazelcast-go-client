@@ -16,8 +16,9 @@ package org_website_samples
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func queueSampleRun() {

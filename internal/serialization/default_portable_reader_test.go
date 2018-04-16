@@ -15,11 +15,12 @@
 package serialization
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"reflect"
-	"testing"
 )
 
 func TestDefaultPortableReader_ReadByte(t *testing.T) {

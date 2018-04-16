@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"reflect"
 )
 
 type NilSerializer struct{}

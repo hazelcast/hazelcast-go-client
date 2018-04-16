@@ -15,15 +15,16 @@
 package multi_map
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/rc"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/rc"
+	. "github.com/hazelcast/hazelcast-go-client/tests"
 )
 
 var multiMap core.MultiMap
