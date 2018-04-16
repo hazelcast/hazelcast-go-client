@@ -30,8 +30,8 @@ func newRandomLoadBalancer(clusterService *clusterService) *randomLoadBalancer {
 	return &randomLoadBalancer{clusterService: clusterService}
 }
 
-func (randomLoadBalancer *randomLoadBalancer) nextAddress() *protocol.Address {
-	membersList := randomLoadBalancer.clusterService.GetMemberList()
+func (b *randomLoadBalancer) nextAddress() *protocol.Address {
+	membersList := b.clusterService.GetMemberList()
 	size := len(membersList)
 	if size > 0 {
 		randomIndex := rand.Intn(size)

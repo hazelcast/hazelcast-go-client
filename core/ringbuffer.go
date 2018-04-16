@@ -118,8 +118,8 @@ const (
 // This type is not used by user.
 type policy int32
 
-func (op policy) Policy() policy {
-	return op
+func (p policy) Policy() policy {
+	return p
 }
 
 // ReadResultSet is the result of a Ringbuffer ReadMany operation.

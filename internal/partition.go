@@ -38,17 +38,17 @@ func newPartitionService(client *HazelcastClient) *partitionService {
 	return &partitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 1)}
 }
 
-func (partitionService *partitionService) start() {
-	partitionService.doRefresh()
+func (ps *partitionService) start() {
+	ps.doRefresh()
 	go func() {
 		ticker := time.NewTicker(PartitionUpdateInterval * time.Second)
 		for {
 			select {
 			case <-ticker.C:
-				partitionService.doRefresh()
-			case <-partitionService.refresh:
-				partitionService.doRefresh()
-			case <-partitionService.cancel:
+				ps.doRefresh()
+			case <-ps.refresh:
+				ps.doRefresh()
+			case <-ps.cancel:
 				ticker.Stop()
 				return
 			}
@@ -56,48 +56,48 @@ func (partitionService *partitionService) start() {
 	}()
 
 }
-func (partitionService *partitionService) getPartitionCount() int32 {
-	partitions := partitionService.mp.Load().(map[int32]*protocol.Address)
+func (ps *partitionService) getPartitionCount() int32 {
+	partitions := ps.mp.Load().(map[int32]*protocol.Address)
 	return int32(len(partitions))
 }
-func (partitionService *partitionService) partitionOwner(partitionId int32) (*protocol.Address, bool) {
-	partitions := partitionService.mp.Load().(map[int32]*protocol.Address)
+func (ps *partitionService) partitionOwner(partitionId int32) (*protocol.Address, bool) {
+	partitions := ps.mp.Load().(map[int32]*protocol.Address)
 	address, ok := partitions[partitionId]
 	return address, ok
 }
 
-func (partitionService *partitionService) GetPartitionId(keyData *serialization.Data) int32 {
-	count := partitionService.getPartitionCount()
+func (ps *partitionService) GetPartitionId(keyData *serialization.Data) int32 {
+	count := ps.getPartitionCount()
 	if count <= 0 {
 		return 0
 	}
 	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
 
-func (partitionService *partitionService) getPartitionIdWithKey(key interface{}) (int32, error) {
-	data, err := partitionService.client.SerializationService.ToData(key)
+func (ps *partitionService) getPartitionIdWithKey(key interface{}) (int32, error) {
+	data, err := ps.client.SerializationService.ToData(key)
 	if err != nil {
 		return 0, err
 	}
-	return partitionService.GetPartitionId(data), nil
+	return ps.GetPartitionId(data), nil
 }
 
-func (partitionService *partitionService) doRefresh() {
-	connection := partitionService.client.ConnectionManager.getOwnerConnection()
+func (ps *partitionService) doRefresh() {
+	connection := ps.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
 		log.Println("error while fetching cluster partition table!")
 		return
 	}
 	request := protocol.ClientGetPartitionsEncodeRequest()
-	result, err := partitionService.client.InvocationService.invokeOnConnection(request, connection).Result()
+	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		log.Println("error while fetching cluster partition table! ", err)
 		return
 	}
-	partitionService.processPartitionResponse(result)
+	ps.processPartitionResponse(result)
 }
 
-func (partitionService *partitionService) processPartitionResponse(result *protocol.ClientMessage) {
+func (ps *partitionService) processPartitionResponse(result *protocol.ClientMessage) {
 	partitions /*partitionStateVersion*/, _ := protocol.ClientGetPartitionsDecodeResponse(result)()
 	newPartitions := make(map[int32]*protocol.Address, len(partitions))
 	for _, partitionList := range partitions {
@@ -106,9 +106,9 @@ func (partitionService *partitionService) processPartitionResponse(result *proto
 			newPartitions[int32(partition)] = addr
 		}
 	}
-	partitionService.mp.Store(newPartitions)
+	ps.mp.Store(newPartitions)
 }
 
-func (partitionService *partitionService) shutdown() {
-	close(partitionService.cancel)
+func (ps *partitionService) shutdown() {
+	close(ps.cancel)
 }

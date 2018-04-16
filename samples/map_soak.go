@@ -103,17 +103,17 @@ type simpleListener struct {
 	mapEvent core.IMapEvent
 }
 
-func (addEntry *simpleListener) EntryAdded(event core.IEntryEvent) {
+func (l *simpleListener) EntryAdded(event core.IEntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()
 }
-func (addEntry *simpleListener) EntryUpdated(event core.IEntryEvent) {
+func (l *simpleListener) EntryUpdated(event core.IEntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()
 }
-func (addEntry *simpleListener) EntryRemoved(event core.IEntryEvent) {
+func (l *simpleListener) EntryRemoved(event core.IEntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()
@@ -137,29 +137,29 @@ type identifiedFactory struct {
 	factoryId            int32
 }
 
-func (identifiedFactory *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
-	if id == identifiedFactory.simpleEntryProcessor.classId {
+func (idf *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
+	if id == idf.simpleEntryProcessor.classId {
 		return &simpleEntryProcessor{classId: 1}
 	} else {
 		return nil
 	}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
+func (p *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
 	var err error
-	simpleEntryProcessor.value, err = input.ReadUTF()
+	p.value, err = input.ReadUTF()
 	return err
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(simpleEntryProcessor.value)
+func (p *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {
+	output.WriteUTF(p.value)
 	return nil
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) FactoryId() int32 {
-	return simpleEntryProcessor.identifiedFactory.factoryId
+func (p *simpleEntryProcessor) FactoryId() int32 {
+	return p.identifiedFactory.factoryId
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ClassId() int32 {
-	return simpleEntryProcessor.classId
+func (p *simpleEntryProcessor) ClassId() int32 {
+	return p.classId
 }

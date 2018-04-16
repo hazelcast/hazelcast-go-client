@@ -68,102 +68,102 @@ func NewClientConfig() *ClientConfig {
 }
 
 // MembershipListeners returns membership listeners.
-func (clientConfig *ClientConfig) MembershipListeners() []interface{} {
-	return clientConfig.membershipListeners
+func (cc *ClientConfig) MembershipListeners() []interface{} {
+	return cc.membershipListeners
 }
 
 // LifecycleListeners returns lifecycle listeners.
-func (clientConfig *ClientConfig) LifecycleListeners() []interface{} {
-	return clientConfig.lifecycleListeners
+func (cc *ClientConfig) LifecycleListeners() []interface{} {
+	return cc.lifecycleListeners
 }
 
 // GroupConfig returns GroupConfig.
-func (clientConfig *ClientConfig) GroupConfig() *GroupConfig {
-	return clientConfig.groupConfig
+func (cc *ClientConfig) GroupConfig() *GroupConfig {
+	return cc.groupConfig
 }
 
 // ClientNetworkConfig returns ClientNetworkConfig.
-func (clientConfig *ClientConfig) ClientNetworkConfig() *ClientNetworkConfig {
-	return clientConfig.clientNetworkConfig
+func (cc *ClientConfig) ClientNetworkConfig() *ClientNetworkConfig {
+	return cc.clientNetworkConfig
 }
 
 // SerializationConfig returns SerializationConfig.
-func (clientConfig *ClientConfig) SerializationConfig() *SerializationConfig {
-	return clientConfig.serializationConfig
+func (cc *ClientConfig) SerializationConfig() *SerializationConfig {
+	return cc.serializationConfig
 }
 
 // SetHeartbeatTimeout sets the heartbeat timeout value to given timeout value.
 // timeout value is in seconds.
-func (clientConfig *ClientConfig) SetHeartbeatTimeoutInSeconds(timeoutInSeconds int32) *ClientConfig {
-	clientConfig.heartbeatTimeoutInSeconds = timeoutInSeconds
-	return clientConfig
+func (cc *ClientConfig) SetHeartbeatTimeoutInSeconds(timeoutInSeconds int32) *ClientConfig {
+	cc.heartbeatTimeoutInSeconds = timeoutInSeconds
+	return cc
 }
 
 // HeartbeatTimeout returns heartbeat timeout in seconds.
-func (clientConfig *ClientConfig) HeartbeatTimeout() int32 {
-	return clientConfig.heartbeatTimeoutInSeconds
+func (cc *ClientConfig) HeartbeatTimeout() int32 {
+	return cc.heartbeatTimeoutInSeconds
 }
 
 // SetHeartbeatIntervalInSeconds sets the heartbeat timeout value to given interval value.
 // interval value is in seconds.
-func (clientConfig *ClientConfig) SetHeartbeatIntervalInSeconds(intervalInSeconds int32) *ClientConfig {
-	clientConfig.heartbeatIntervalInSeconds = intervalInSeconds
-	return clientConfig
+func (cc *ClientConfig) SetHeartbeatIntervalInSeconds(intervalInSeconds int32) *ClientConfig {
+	cc.heartbeatIntervalInSeconds = intervalInSeconds
+	return cc
 }
 
 // HeartbeatInterval returns heartbeat interval in seconds.
-func (clientConfig *ClientConfig) HeartbeatInterval() int32 {
-	return clientConfig.heartbeatIntervalInSeconds
+func (cc *ClientConfig) HeartbeatInterval() int32 {
+	return cc.heartbeatIntervalInSeconds
 }
 
 // GetFlakeIdGeneratorConfig returns the FlakeIdGeneratorConfig for the given name, creating one
 // if necessary and adding it to the map of known configurations.
 // If no configuration is found with the given name it will create a new one with the default config.
-func (clientConfig *ClientConfig) GetFlakeIdGeneratorConfig(name string) *FlakeIdGeneratorConfig {
+func (cc *ClientConfig) GetFlakeIdGeneratorConfig(name string) *FlakeIdGeneratorConfig {
 	//TODO:: add config pattern matcher
-	if config, found := clientConfig.flakeIdGeneratorConfigMap[name]; found {
+	if config, found := cc.flakeIdGeneratorConfigMap[name]; found {
 		return config
 	}
-	defConfig, found := clientConfig.flakeIdGeneratorConfigMap["default"]
+	defConfig, found := cc.flakeIdGeneratorConfigMap["default"]
 	if !found {
 		defConfig = NewFlakeIdGeneratorConfig("default")
-		clientConfig.flakeIdGeneratorConfigMap["default"] = defConfig
+		cc.flakeIdGeneratorConfigMap["default"] = defConfig
 	}
 	config := NewFlakeIdGeneratorConfig(name)
-	clientConfig.flakeIdGeneratorConfigMap[name] = config
+	cc.flakeIdGeneratorConfigMap[name] = config
 	return config
 
 }
 
 // AddFlakeIdGeneratorConfig adds the given config to the configurations map.
-func (clientConfig *ClientConfig) AddFlakeIdGeneratorConfig(config *FlakeIdGeneratorConfig) *ClientConfig {
-	clientConfig.flakeIdGeneratorConfigMap[config.Name()] = config
-	return clientConfig
+func (cc *ClientConfig) AddFlakeIdGeneratorConfig(config *FlakeIdGeneratorConfig) *ClientConfig {
+	cc.flakeIdGeneratorConfigMap[config.Name()] = config
+	return cc
 }
 
 // AddMembershipListener adds a membership listener.
-func (clientConfig *ClientConfig) AddMembershipListener(listener interface{}) {
-	clientConfig.membershipListeners = append(clientConfig.membershipListeners, listener)
+func (cc *ClientConfig) AddMembershipListener(listener interface{}) {
+	cc.membershipListeners = append(cc.membershipListeners, listener)
 }
 
 // AddLifecycleListener adds a lifecycle listener.
-func (clientConfig *ClientConfig) AddLifecycleListener(listener interface{}) {
-	clientConfig.lifecycleListeners = append(clientConfig.lifecycleListeners, listener)
+func (cc *ClientConfig) AddLifecycleListener(listener interface{}) {
+	cc.lifecycleListeners = append(cc.lifecycleListeners, listener)
 }
 
 // SetGroupConfig sets the GroupConfig.
-func (clientConfig *ClientConfig) SetGroupConfig(groupConfig *GroupConfig) {
-	clientConfig.groupConfig = groupConfig
+func (cc *ClientConfig) SetGroupConfig(groupConfig *GroupConfig) {
+	cc.groupConfig = groupConfig
 }
 
 // SetClientNetworkConfig sets the ClientNetworkConfig.
-func (clientConfig *ClientConfig) SetClientNetworkConfig(clientNetworkConfig *ClientNetworkConfig) {
-	clientConfig.clientNetworkConfig = clientNetworkConfig
+func (cc *ClientConfig) SetClientNetworkConfig(clientNetworkConfig *ClientNetworkConfig) {
+	cc.clientNetworkConfig = clientNetworkConfig
 }
 
 // SetSerializationConfig sets the SerializationConfig.
-func (clientConfig *ClientConfig) SetSerializationConfig(serializationConfig *SerializationConfig) {
-	clientConfig.serializationConfig = serializationConfig
+func (cc *ClientConfig) SetSerializationConfig(serializationConfig *SerializationConfig) {
+	cc.serializationConfig = serializationConfig
 }
 
 // SerializationConfig contains the serialization configuration of a Hazelcast instance.
@@ -198,69 +198,69 @@ func NewSerializationConfig() *SerializationConfig {
 }
 
 // IsBigEndian returns isBigEndian bool value.
-func (serializationConfig *SerializationConfig) IsBigEndian() bool {
-	return serializationConfig.isBigEndian
+func (sc *SerializationConfig) IsBigEndian() bool {
+	return sc.isBigEndian
 }
 
 // DataSerializableFactories returns a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-func (serializationConfig *SerializationConfig) DataSerializableFactories() map[int32]serialization.IdentifiedDataSerializableFactory {
-	return serializationConfig.dataSerializableFactories
+func (sc *SerializationConfig) DataSerializableFactories() map[int32]serialization.IdentifiedDataSerializableFactory {
+	return sc.dataSerializableFactories
 }
 
 // PortableFactories returns a map of factory IDs and corresponding Portable factories.
-func (serializationConfig *SerializationConfig) PortableFactories() map[int32]serialization.PortableFactory {
-	return serializationConfig.portableFactories
+func (sc *SerializationConfig) PortableFactories() map[int32]serialization.PortableFactory {
+	return sc.portableFactories
 }
 
 // PortableVersion returns version of a portable struct.
-func (serializationConfig *SerializationConfig) PortableVersion() int32 {
-	return serializationConfig.portableVersion
+func (sc *SerializationConfig) PortableVersion() int32 {
+	return sc.portableVersion
 }
 
 // CustomSerializers returns a map of object types and corresponding custom serializers.
-func (serializationConfig *SerializationConfig) CustomSerializers() map[reflect.Type]serialization.Serializer {
-	return serializationConfig.customSerializers
+func (sc *SerializationConfig) CustomSerializers() map[reflect.Type]serialization.Serializer {
+	return sc.customSerializers
 }
 
 // GlobalSerializer returns the global serializer.
-func (serializationConfig *SerializationConfig) GlobalSerializer() serialization.Serializer {
-	return serializationConfig.globalSerializer
+func (sc *SerializationConfig) GlobalSerializer() serialization.Serializer {
+	return sc.globalSerializer
 }
 
 // ClassDefinitions returns registered class definitions of portable structs.
-func (serializationConfig *SerializationConfig) ClassDefinitions() []serialization.ClassDefinition {
-	return serializationConfig.classDefinitions
+func (sc *SerializationConfig) ClassDefinitions() []serialization.ClassDefinition {
+	return sc.classDefinitions
 }
 
 // SetByteOrder sets the byte order. If true, it means BigEndian, otherwise LittleEndian.
-func (serializationConfig *SerializationConfig) SetByteOrder(isBigEndian bool) {
-	serializationConfig.isBigEndian = isBigEndian
+func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
+	sc.isBigEndian = isBigEndian
 }
 
 // AddDataSerializableFactory adds a IdentifiedDataSerializableFactory for a given factory ID.
-func (serializationConfig *SerializationConfig) AddDataSerializableFactory(factoryId int32, f serialization.IdentifiedDataSerializableFactory) {
-	serializationConfig.dataSerializableFactories[factoryId] = f
+func (sc *SerializationConfig) AddDataSerializableFactory(factoryId int32, f serialization.IdentifiedDataSerializableFactory) {
+	sc.dataSerializableFactories[factoryId] = f
 }
 
 // AddPortableFactory adds a PortableFactory for a given factory ID.
-func (serializationConfig *SerializationConfig) AddPortableFactory(factoryId int32, pf serialization.PortableFactory) {
-	serializationConfig.portableFactories[factoryId] = pf
+func (sc *SerializationConfig) AddPortableFactory(factoryId int32, pf serialization.PortableFactory) {
+	sc.portableFactories[factoryId] = pf
 }
 
 // AddClassDefinition registers class definitions explicitly.
-func (serializationConfig *SerializationConfig) AddClassDefinition(classDefinition ...serialization.ClassDefinition) {
-	serializationConfig.classDefinitions = append(serializationConfig.classDefinitions, classDefinition...)
+func (sc *SerializationConfig) AddClassDefinition(classDefinition ...serialization.ClassDefinition) {
+	sc.classDefinitions = append(sc.classDefinitions, classDefinition...)
 }
 
 // SetPortableVersion sets the portable version.
-func (serializationConfig *SerializationConfig) SetPortableVersion(version int32) {
-	serializationConfig.portableVersion = version
+func (sc *SerializationConfig) SetPortableVersion(version int32) {
+	sc.portableVersion = version
 }
 
 // AddCustomSerializer adds a custom serializer for a given type. It can be an interface type or a struct type.
-func (serializationConfig *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer serialization.Serializer) error {
+func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer serialization.Serializer) error {
 	if serializer.Id() > 0 {
-		serializationConfig.customSerializers[typ] = serializer
+		sc.customSerializers[typ] = serializer
 	} else {
 		return core.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
 	}
@@ -268,9 +268,9 @@ func (serializationConfig *SerializationConfig) AddCustomSerializer(typ reflect.
 }
 
 // SetGlobalSerializer sets the global serializer.
-func (serializationConfig *SerializationConfig) SetGlobalSerializer(serializer serialization.Serializer) error {
+func (sc *SerializationConfig) SetGlobalSerializer(serializer serialization.Serializer) error {
 	if serializer.Id() > 0 {
-		serializationConfig.globalSerializer = serializer
+		sc.globalSerializer = serializer
 	} else {
 		return core.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
 	}
@@ -294,27 +294,27 @@ func NewGroupConfig() *GroupConfig {
 }
 
 // Name returns the group name of the group.
-func (groupConfig *GroupConfig) Name() string {
-	return groupConfig.name
+func (gc *GroupConfig) Name() string {
+	return gc.name
 }
 
 // Password returns the group password of the group.
-func (groupConfig *GroupConfig) Password() string {
-	return groupConfig.password
+func (gc *GroupConfig) Password() string {
+	return gc.password
 }
 
 // SetName sets the group name of the group.
 // SetName returns the configured GroupConfig for chaining.
-func (groupConfig *GroupConfig) SetName(name string) *GroupConfig {
-	groupConfig.name = name
-	return groupConfig
+func (gc *GroupConfig) SetName(name string) *GroupConfig {
+	gc.name = name
+	return gc
 }
 
 // SetPassword sets the group password of the group.
 // SetPassword returns the configured GroupConfig for chaining.
-func (groupConfig *GroupConfig) SetPassword(password string) *GroupConfig {
-	groupConfig.password = password
-	return groupConfig
+func (gc *GroupConfig) SetPassword(password string) *GroupConfig {
+	gc.password = password
+	return gc
 }
 
 // ClientNetworkConfig contains network related configuration parameters.
@@ -362,76 +362,76 @@ func NewClientNetworkConfig() *ClientNetworkConfig {
 }
 
 // Addresses returns the slice of candidate addresses that client will use to establish initial connection.
-func (clientNetworkConfig *ClientNetworkConfig) Addresses() []string {
-	return clientNetworkConfig.addresses
+func (nc *ClientNetworkConfig) Addresses() []string {
+	return nc.addresses
 }
 
 // ConnectionAttemptLimit returns connection attempt limit.
-func (clientNetworkConfig *ClientNetworkConfig) ConnectionAttemptLimit() int32 {
-	return clientNetworkConfig.connectionAttemptLimit
+func (nc *ClientNetworkConfig) ConnectionAttemptLimit() int32 {
+	return nc.connectionAttemptLimit
 }
 
 // ConnectionAttemptPeriod returns the period for the next attempt to find a member to connect.
-func (clientNetworkConfig *ClientNetworkConfig) ConnectionAttemptPeriod() int32 {
-	return clientNetworkConfig.connectionAttemptPeriod
+func (nc *ClientNetworkConfig) ConnectionAttemptPeriod() int32 {
+	return nc.connectionAttemptPeriod
 }
 
 // ConnectionTimeout returns the timeout value in seconds for nodes to accept client connection requests.
-func (clientNetworkConfig *ClientNetworkConfig) ConnectionTimeout() int32 {
-	return clientNetworkConfig.connectionTimeout
+func (nc *ClientNetworkConfig) ConnectionTimeout() int32 {
+	return nc.connectionTimeout
 }
 
 // IsRedoOperation returns true if redo operations are enabled.
-func (clientNetworkConfig *ClientNetworkConfig) IsRedoOperation() bool {
-	return clientNetworkConfig.redoOperation
+func (nc *ClientNetworkConfig) IsRedoOperation() bool {
+	return nc.redoOperation
 }
 
 // IsSmartRouting returns true if client is smart.
-func (clientNetworkConfig *ClientNetworkConfig) IsSmartRouting() bool {
-	return clientNetworkConfig.smartRouting
+func (nc *ClientNetworkConfig) IsSmartRouting() bool {
+	return nc.smartRouting
 }
 
 // InvocationTimeout returns the invocation timeout in seconds.
-func (clientNetworkConfig *ClientNetworkConfig) InvocationTimeout() time.Duration {
-	return clientNetworkConfig.invocationTimeoutInSeconds
+func (nc *ClientNetworkConfig) InvocationTimeout() time.Duration {
+	return nc.invocationTimeoutInSeconds
 }
 
 // AddAddress adds given addresses to candidate address list that client will use to establish initial connection.
 // AddAddress returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) AddAddress(addresses ...string) *ClientNetworkConfig {
-	clientNetworkConfig.addresses = append(clientNetworkConfig.addresses, addresses...)
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) AddAddress(addresses ...string) *ClientNetworkConfig {
+	nc.addresses = append(nc.addresses, addresses...)
+	return nc
 }
 
 // SetAddresses sets given addresses as candidate address list that client will use to establish initial connection.
 // SetAddresses returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetAddresses(addresses []string) *ClientNetworkConfig {
-	clientNetworkConfig.addresses = addresses
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetAddresses(addresses []string) *ClientNetworkConfig {
+	nc.addresses = addresses
+	return nc
 }
 
 // While client is trying to connect initially to one of the members in the addresses slice, all might not be
 // available. Instead of giving up, returning Error and stopping client, it will attempt to retry as much as defined
 // by this parameter.
 // SetConnectionAttemptLimit returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetConnectionAttemptLimit(connectionAttemptLimit int32) *ClientNetworkConfig {
-	clientNetworkConfig.connectionAttemptLimit = connectionAttemptLimit
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetConnectionAttemptLimit(connectionAttemptLimit int32) *ClientNetworkConfig {
+	nc.connectionAttemptLimit = connectionAttemptLimit
+	return nc
 }
 
 // SetConnectionAttemptPeriod sets the period for the next attempt to find a member to connect in seconds.
 // SetConnectionAttemptPeriod returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod int32) *ClientNetworkConfig {
-	clientNetworkConfig.connectionAttemptPeriod = connectionAttemptPeriod
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod int32) *ClientNetworkConfig {
+	nc.connectionAttemptPeriod = connectionAttemptPeriod
+	return nc
 }
 
 // Socket connection timeout is an int32, given in seconds.
 // Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
 // SetConnectionTimeout returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout int32) *ClientNetworkConfig {
-	clientNetworkConfig.connectionTimeout = connectionTimeout
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout int32) *ClientNetworkConfig {
+	nc.connectionTimeout = connectionTimeout
+	return nc
 }
 
 // If true, client will redo the operations that were executing on the server when client recovers the connection after a failure.
@@ -439,9 +439,9 @@ func (clientNetworkConfig *ClientNetworkConfig) SetConnectionTimeout(connectionT
 // application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
 // retrying can cause to undesirable effects. Note that the redo can perform on any member.
 // SetRedoOperation returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetRedoOperation(redoOperation bool) *ClientNetworkConfig {
-	clientNetworkConfig.redoOperation = redoOperation
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetRedoOperation(redoOperation bool) *ClientNetworkConfig {
+	nc.redoOperation = redoOperation
+	return nc
 }
 
 // If true, client will route the key based operations to owner of the key at the best effort.
@@ -449,14 +449,14 @@ func (clientNetworkConfig *ClientNetworkConfig) SetRedoOperation(redoOperation b
 // guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
 // Default value is true.
 // SetSmartRouting returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetSmartRouting(smartRouting bool) *ClientNetworkConfig {
-	clientNetworkConfig.smartRouting = smartRouting
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetSmartRouting(smartRouting bool) *ClientNetworkConfig {
+	nc.smartRouting = smartRouting
+	return nc
 }
 
 // SetInvocationTimeoutInSeconds sets the invocation timeout for sending invocation.
 // SetInvocationTimeoutInSeconds returns the configured ClientNetworkConfig for chaining.
-func (clientNetworkConfig *ClientNetworkConfig) SetInvocationTimeoutInSeconds(invocationTimeoutInSeconds int32) *ClientNetworkConfig {
-	clientNetworkConfig.invocationTimeoutInSeconds = time.Duration(invocationTimeoutInSeconds) * time.Second
-	return clientNetworkConfig
+func (nc *ClientNetworkConfig) SetInvocationTimeoutInSeconds(invocationTimeoutInSeconds int32) *ClientNetworkConfig {
+	nc.invocationTimeoutInSeconds = time.Duration(invocationTimeoutInSeconds) * time.Second
+	return nc
 }

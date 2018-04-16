@@ -221,12 +221,12 @@ type itemListener struct {
 	event core.IItemEvent
 }
 
-func (self *itemListener) ItemAdded(event core.IItemEvent) {
-	self.event = event
-	self.wg.Done()
+func (l *itemListener) ItemAdded(event core.IItemEvent) {
+	l.event = event
+	l.wg.Done()
 }
 
-func (self *itemListener) ItemRemoved(event core.IItemEvent) {
-	self.event = event
-	self.wg.Done()
+func (l *itemListener) ItemRemoved(event core.IItemEvent) {
+	l.event = event
+	l.wg.Done()
 }

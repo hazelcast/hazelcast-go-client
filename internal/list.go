@@ -31,190 +31,190 @@ func newListProxy(client *HazelcastClient, serviceName *string, name *string) (*
 	return &ListProxy{parSpecProxy}, nil
 }
 
-func (list *ListProxy) Add(element interface{}) (changed bool, err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) Add(element interface{}) (changed bool, err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListAddEncodeRequest(list.name, elementData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListAddDecodeResponse)
+	request := protocol.ListAddEncodeRequest(lp.name, elementData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListAddDecodeResponse)
 }
 
-func (list *ListProxy) AddAt(index int32, element interface{}) (err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) AddAt(index int32, element interface{}) (err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return err
 	}
-	request := protocol.ListAddWithIndexEncodeRequest(list.name, index, elementData)
-	_, err = list.invoke(request)
+	request := protocol.ListAddWithIndexEncodeRequest(lp.name, index, elementData)
+	_, err = lp.invoke(request)
 	return err
 }
 
-func (list *ListProxy) AddAll(elements []interface{}) (changed bool, err error) {
-	elementsData, err := list.validateAndSerializeSlice(elements)
+func (lp *ListProxy) AddAll(elements []interface{}) (changed bool, err error) {
+	elementsData, err := lp.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListAddAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListAddAllDecodeResponse)
+	request := protocol.ListAddAllEncodeRequest(lp.name, elementsData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListAddAllDecodeResponse)
 
 }
 
-func (list *ListProxy) AddAllAt(index int32, elements []interface{}) (changed bool, err error) {
-	elementsData, err := list.validateAndSerializeSlice(elements)
+func (lp *ListProxy) AddAllAt(index int32, elements []interface{}) (changed bool, err error) {
+	elementsData, err := lp.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListAddAllWithIndexEncodeRequest(list.name, index, elementsData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListAddAllWithIndexDecodeResponse)
+	request := protocol.ListAddAllWithIndexEncodeRequest(lp.name, index, elementsData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListAddAllWithIndexDecodeResponse)
 }
 
-func (list *ListProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
-	request := protocol.ListAddListenerEncodeRequest(list.name, includeValue, false)
-	eventHandler := list.createEventHandler(listener)
-	return list.client.ListenerService.registerListener(request, eventHandler,
+func (lp *ListProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+	request := protocol.ListAddListenerEncodeRequest(lp.name, includeValue, false)
+	eventHandler := lp.createEventHandler(listener)
+	return lp.client.ListenerService.registerListener(request, eventHandler,
 		func(registrationId *string) *protocol.ClientMessage {
-			return protocol.ListRemoveListenerEncodeRequest(list.name, registrationId)
+			return protocol.ListRemoveListenerEncodeRequest(lp.name, registrationId)
 		}, func(clientMessage *protocol.ClientMessage) *string {
 			return protocol.ListAddListenerDecodeResponse(clientMessage)()
 		})
 }
 
-func (list *ListProxy) Clear() (err error) {
-	request := protocol.ListClearEncodeRequest(list.name)
-	_, err = list.invoke(request)
+func (lp *ListProxy) Clear() (err error) {
+	request := protocol.ListClearEncodeRequest(lp.name)
+	_, err = lp.invoke(request)
 	return err
 }
 
-func (list *ListProxy) Contains(element interface{}) (found bool, err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) Contains(element interface{}) (found bool, err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListContainsEncodeRequest(list.name, elementData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListContainsDecodeResponse)
+	request := protocol.ListContainsEncodeRequest(lp.name, elementData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListContainsDecodeResponse)
 }
 
-func (list *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err error) {
-	elementsData, err := list.validateAndSerializeSlice(elements)
+func (lp *ListProxy) ContainsAll(elements []interface{}) (foundAll bool, err error) {
+	elementsData, err := lp.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListContainsAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListContainsAllDecodeResponse)
+	request := protocol.ListContainsAllEncodeRequest(lp.name, elementsData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListContainsAllDecodeResponse)
 }
 
-func (list *ListProxy) Get(index int32) (element interface{}, err error) {
-	request := protocol.ListGetEncodeRequest(list.name, index)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToObjectAndError(responseMessage, err, protocol.ListGetDecodeResponse)
+func (lp *ListProxy) Get(index int32) (element interface{}, err error) {
+	request := protocol.ListGetEncodeRequest(lp.name, index)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToObjectAndError(responseMessage, err, protocol.ListGetDecodeResponse)
 }
 
-func (list *ListProxy) IndexOf(element interface{}) (index int32, err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) IndexOf(element interface{}) (index int32, err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return 0, err
 	}
-	request := protocol.ListIndexOfEncodeRequest(list.name, elementData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToInt32AndError(responseMessage, err, protocol.ListIndexOfDecodeResponse)
+	request := protocol.ListIndexOfEncodeRequest(lp.name, elementData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToInt32AndError(responseMessage, err, protocol.ListIndexOfDecodeResponse)
 }
 
-func (list *ListProxy) IsEmpty() (empty bool, err error) {
-	request := protocol.ListIsEmptyEncodeRequest(list.name)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListIsEmptyDecodeResponse)
+func (lp *ListProxy) IsEmpty() (empty bool, err error) {
+	request := protocol.ListIsEmptyEncodeRequest(lp.name)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListIsEmptyDecodeResponse)
 }
 
-func (list *ListProxy) LastIndexOf(element interface{}) (index int32, err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) LastIndexOf(element interface{}) (index int32, err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return 0, err
 	}
-	request := protocol.ListLastIndexOfEncodeRequest(list.name, elementData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToInt32AndError(responseMessage, err, protocol.ListIndexOfDecodeResponse)
+	request := protocol.ListLastIndexOfEncodeRequest(lp.name, elementData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToInt32AndError(responseMessage, err, protocol.ListIndexOfDecodeResponse)
 }
 
-func (list *ListProxy) Remove(element interface{}) (changed bool, err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) Remove(element interface{}) (changed bool, err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListRemoveEncodeRequest(list.name, elementData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListRemoveDecodeResponse)
+	request := protocol.ListRemoveEncodeRequest(lp.name, elementData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListRemoveDecodeResponse)
 }
 
-func (list *ListProxy) RemoveAt(index int32) (previousElement interface{}, err error) {
-	request := protocol.ListRemoveWithIndexEncodeRequest(list.name, index)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToObjectAndError(responseMessage, err, protocol.ListRemoveWithIndexDecodeResponse)
+func (lp *ListProxy) RemoveAt(index int32) (previousElement interface{}, err error) {
+	request := protocol.ListRemoveWithIndexEncodeRequest(lp.name, index)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToObjectAndError(responseMessage, err, protocol.ListRemoveWithIndexDecodeResponse)
 }
 
-func (list *ListProxy) RemoveAll(elements []interface{}) (changed bool, err error) {
-	elementsData, err := list.validateAndSerializeSlice(elements)
+func (lp *ListProxy) RemoveAll(elements []interface{}) (changed bool, err error) {
+	elementsData, err := lp.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListCompareAndRemoveAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListCompareAndRemoveAllDecodeResponse)
+	request := protocol.ListCompareAndRemoveAllEncodeRequest(lp.name, elementsData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListCompareAndRemoveAllDecodeResponse)
 }
 
-func (list *ListProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return list.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
-		return protocol.ListRemoveListenerEncodeRequest(list.name, registrationID)
+func (lp *ListProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
+	return lp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+		return protocol.ListRemoveListenerEncodeRequest(lp.name, registrationID)
 	})
 }
 
-func (list *ListProxy) RetainAll(elements []interface{}) (changed bool, err error) {
-	elementsData, err := list.validateAndSerializeSlice(elements)
+func (lp *ListProxy) RetainAll(elements []interface{}) (changed bool, err error) {
+	elementsData, err := lp.validateAndSerializeSlice(elements)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.ListCompareAndRetainAllEncodeRequest(list.name, elementsData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToBoolAndError(responseMessage, err, protocol.ListCompareAndRetainAllDecodeResponse)
+	request := protocol.ListCompareAndRetainAllEncodeRequest(lp.name, elementsData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListCompareAndRetainAllDecodeResponse)
 }
 
-func (list *ListProxy) Set(index int32, element interface{}) (previousElement interface{}, err error) {
-	elementData, err := list.validateAndSerialize(element)
+func (lp *ListProxy) Set(index int32, element interface{}) (previousElement interface{}, err error) {
+	elementData, err := lp.validateAndSerialize(element)
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.ListSetEncodeRequest(list.name, index, elementData)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToObjectAndError(responseMessage, err, protocol.ListSetDecodeResponse)
+	request := protocol.ListSetEncodeRequest(lp.name, index, elementData)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToObjectAndError(responseMessage, err, protocol.ListSetDecodeResponse)
 }
 
-func (list *ListProxy) Size() (size int32, err error) {
-	request := protocol.ListSizeEncodeRequest(list.name)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToInt32AndError(responseMessage, err, protocol.ListSizeDecodeResponse)
+func (lp *ListProxy) Size() (size int32, err error) {
+	request := protocol.ListSizeEncodeRequest(lp.name)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToInt32AndError(responseMessage, err, protocol.ListSizeDecodeResponse)
 }
 
-func (list *ListProxy) SubList(start int32, end int32) (elements []interface{}, err error) {
-	request := protocol.ListSubEncodeRequest(list.name, start, end)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToInterfaceSliceAndError(responseMessage, err, protocol.ListSubDecodeResponse)
+func (lp *ListProxy) SubList(start int32, end int32) (elements []interface{}, err error) {
+	request := protocol.ListSubEncodeRequest(lp.name, start, end)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.ListSubDecodeResponse)
 }
 
-func (list *ListProxy) ToSlice() (elements []interface{}, err error) {
-	request := protocol.ListGetAllEncodeRequest(list.name)
-	responseMessage, err := list.invoke(request)
-	return list.decodeToInterfaceSliceAndError(responseMessage, err, protocol.ListGetAllDecodeResponse)
+func (lp *ListProxy) ToSlice() (elements []interface{}, err error) {
+	request := protocol.ListGetAllEncodeRequest(lp.name)
+	responseMessage, err := lp.invoke(request)
+	return lp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.ListGetAllDecodeResponse)
 }
 
-func (list *ListProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
+func (lp *ListProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.ListAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid *string, eventType int32) {
-			onItemEvent := list.createOnItemEvent(listener)
+			onItemEvent := lp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})
 	}

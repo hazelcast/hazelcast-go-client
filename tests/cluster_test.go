@@ -31,11 +31,11 @@ type membershipListener struct {
 	wg *sync.WaitGroup
 }
 
-func (membershipListener *membershipListener) MemberAdded(member core.IMember) {
-	membershipListener.wg.Done()
+func (l *membershipListener) MemberAdded(member core.IMember) {
+	l.wg.Done()
 }
-func (membershipListener *membershipListener) MemberRemoved(member core.IMember) {
-	membershipListener.wg.Done()
+func (l *membershipListener) MemberRemoved(member core.IMember) {
+	l.wg.Done()
 }
 
 var remoteController *rc.RemoteControllerClient
@@ -245,6 +245,6 @@ type mapListener struct {
 	wg *sync.WaitGroup
 }
 
-func (ml *mapListener) EntryAdded(event core.IEntryEvent) {
-	ml.wg.Done()
+func (l *mapListener) EntryAdded(event core.IEntryEvent) {
+	l.wg.Done()
 }

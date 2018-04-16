@@ -61,43 +61,43 @@ func NewFlakeIdGeneratorConfigWithParameters(name string, prefetchCount int32, p
 // prefetch count should be between 0 and MaximumPrefetchCount, otherwise it
 // will panic.
 // SetPrefetchCount returns itself for chaining.
-func (self *FlakeIdGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeIdGeneratorConfig {
+func (igc *FlakeIdGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeIdGeneratorConfig {
 	if prefetchCount < 0 || prefetchCount > MaximumPrefetchCount {
 		panic(fmt.Sprintf("prefectCount should be in the range of 0-%d", MaximumPrefetchCount))
 	}
-	self.prefetchCount = prefetchCount
-	return self
+	igc.prefetchCount = prefetchCount
+	return igc
 }
 
 // SetName sets the name as the given name.
 // SetName returns itself for chaining.
-func (self *FlakeIdGeneratorConfig) SetName(name string) *FlakeIdGeneratorConfig {
-	self.name = name
-	return self
+func (igc *FlakeIdGeneratorConfig) SetName(name string) *FlakeIdGeneratorConfig {
+	igc.name = name
+	return igc
 }
 
 // Name returns the name.
-func (self *FlakeIdGeneratorConfig) Name() string {
-	return self.name
+func (igc *FlakeIdGeneratorConfig) Name() string {
+	return igc.name
 }
 
 // PrefetchCount returns the prefetchCount.
-func (self *FlakeIdGeneratorConfig) PrefetchCount() int32 {
-	return self.prefetchCount
+func (igc *FlakeIdGeneratorConfig) PrefetchCount() int32 {
+	return igc.prefetchCount
 }
 
 // PrefetchValidityMillis returns the prefetchValidityMillis
-func (self *FlakeIdGeneratorConfig) PrefetchValidityMillis() int64 {
+func (igc *FlakeIdGeneratorConfig) PrefetchValidityMillis() int64 {
 
-	return self.prefetchValidityMillis
+	return igc.prefetchValidityMillis
 }
 
 // SetPrefetchValidityMillis sets the prefetchValidityMillis as the given value.
 // SetPrefetchValidityMillis returns itself for chaining.
-func (self *FlakeIdGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) *FlakeIdGeneratorConfig {
+func (igc *FlakeIdGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) *FlakeIdGeneratorConfig {
 	if prefetchValidityMillis < 0 {
 		panic(fmt.Sprintf("prefetchValidityMillis should be positive"))
 	}
-	self.prefetchValidityMillis = prefetchValidityMillis
-	return self
+	igc.prefetchValidityMillis = prefetchValidityMillis
+	return igc
 }

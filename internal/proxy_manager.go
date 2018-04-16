@@ -38,81 +38,81 @@ func newProxyManager(client *HazelcastClient) *proxyManager {
 	}
 }
 
-func (proxyManager *proxyManager) nextReferenceId() int64 {
-	return atomic.AddInt64(&proxyManager.ReferenceId, 1)
+func (pm *proxyManager) nextReferenceId() int64 {
+	return atomic.AddInt64(&pm.ReferenceId, 1)
 }
 
-func (proxyManager *proxyManager) getOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
+func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
 	var ns string = serviceName + name
-	proxyManager.mu.RLock()
-	if _, ok := proxyManager.proxies[ns]; ok {
-		defer proxyManager.mu.RUnlock()
-		return proxyManager.proxies[ns], nil
+	pm.mu.RLock()
+	if _, ok := pm.proxies[ns]; ok {
+		defer pm.mu.RUnlock()
+		return pm.proxies[ns], nil
 	}
-	proxyManager.mu.RUnlock()
-	proxy, err := proxyManager.createProxy(&serviceName, &name)
+	pm.mu.RUnlock()
+	proxy, err := pm.createProxy(&serviceName, &name)
 	if err != nil {
 		return nil, err
 	}
-	proxyManager.mu.Lock()
-	proxyManager.proxies[ns] = proxy
-	proxyManager.mu.Unlock()
+	pm.mu.Lock()
+	pm.proxies[ns] = proxy
+	pm.mu.Unlock()
 	return proxy, nil
 }
 
-func (proxyManager *proxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
-	message := protocol.ClientCreateProxyEncodeRequest(name, serviceName, proxyManager.findNextProxyAddress())
-	_, err := proxyManager.client.InvocationService.invokeOnRandomTarget(message).Result()
+func (pm *proxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
+	message := protocol.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress())
+	_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
 	}
-	return proxyManager.getProxyByNameSpace(serviceName, name)
+	return pm.getProxyByNameSpace(serviceName, name)
 }
 
-func (proxyManager *proxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
+func (pm *proxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
 	var ns string = *serviceName + *name
-	proxyManager.mu.RLock()
-	if _, ok := proxyManager.proxies[ns]; ok {
-		proxyManager.mu.RUnlock()
-		proxyManager.mu.Lock()
-		delete(proxyManager.proxies, ns)
-		proxyManager.mu.Unlock()
+	pm.mu.RLock()
+	if _, ok := pm.proxies[ns]; ok {
+		pm.mu.RUnlock()
+		pm.mu.Lock()
+		delete(pm.proxies, ns)
+		pm.mu.Unlock()
 		message := protocol.ClientDestroyProxyEncodeRequest(name, serviceName)
-		_, err := proxyManager.client.InvocationService.invokeOnRandomTarget(message).Result()
+		_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 		if err != nil {
 			return false, err
 		}
 		return true, nil
 	}
-	proxyManager.mu.RUnlock()
+	pm.mu.RUnlock()
 	return false, nil
 }
 
-func (proxyManager *proxyManager) findNextProxyAddress() *protocol.Address {
-	return proxyManager.client.LoadBalancer.nextAddress()
+func (pm *proxyManager) findNextProxyAddress() *protocol.Address {
+	return pm.client.LoadBalancer.nextAddress()
 }
 
-func (proxyManager *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
+func (pm *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
 	if common.ServiceNameMap == *serviceName {
-		return newMapProxy(proxyManager.client, serviceName, name)
+		return newMapProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameList == *serviceName {
-		return newListProxy(proxyManager.client, serviceName, name)
+		return newListProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameSet == *serviceName {
-		return newSetProxy(proxyManager.client, serviceName, name)
+		return newSetProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameTopic == *serviceName {
-		return newTopicProxy(proxyManager.client, serviceName, name)
+		return newTopicProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameMultiMap == *serviceName {
-		return newMultiMapProxy(proxyManager.client, serviceName, name)
+		return newMultiMapProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameReplicatedMap == *serviceName {
-		return newReplicatedMapProxy(proxyManager.client, serviceName, name)
+		return newReplicatedMapProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameQueue == *serviceName {
-		return newQueueProxy(proxyManager.client, serviceName, name)
+		return newQueueProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameRingbufferService == *serviceName {
-		return newRingbufferProxy(proxyManager.client, serviceName, name)
+		return newRingbufferProxy(pm.client, serviceName, name)
 	} else if common.ServiceNamePNCounter == *serviceName {
-		return newPNCounterProxy(proxyManager.client, serviceName, name)
+		return newPNCounterProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameIdGenerator == *serviceName {
-		return newFlakeIdGenerator(proxyManager.client, serviceName, name)
+		return newFlakeIdGenerator(pm.client, serviceName, name)
 	}
 	return nil, nil
 }

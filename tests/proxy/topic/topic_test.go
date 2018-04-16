@@ -77,9 +77,9 @@ type topicMessageListener struct {
 	publishTime int64
 }
 
-func (self *topicMessageListener) OnMessage(message core.ITopicMessage) {
-	self.msg = message.MessageObject()
-	self.publishTime = message.PublishTime()
-	self.wg.Done()
+func (l *topicMessageListener) OnMessage(message core.ITopicMessage) {
+	l.msg = message.MessageObject()
+	l.publishTime = message.PublishTime()
+	l.wg.Done()
 
 }

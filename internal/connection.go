@@ -78,43 +78,43 @@ func newConnection(address *protocol.Address, responseChannel chan *protocol.Cli
 	return &connection
 }
 
-func (connection *Connection) isAlive() bool {
-	return atomic.LoadInt32(&connection.status) == 0
+func (c *Connection) isAlive() bool {
+	return atomic.LoadInt32(&c.status) == 0
 }
-func (connection *Connection) writePool() {
+func (c *Connection) writePool() {
 	//Writer process
 	for {
 		select {
-		case request := <-connection.pending:
-			err := connection.write(request)
+		case request := <-c.pending:
+			err := c.write(request)
 			if err != nil {
-				connection.sendingError <- request.CorrelationId()
+				c.sendingError <- request.CorrelationId()
 			}
-			connection.lastWrite.Store(time.Now())
-		case <-connection.closed:
+			c.lastWrite.Store(time.Now())
+		case <-c.closed:
 			return
 		}
 	}
 }
 
-func (connection *Connection) send(clientMessage *protocol.ClientMessage) bool {
-	if !connection.isAlive() {
+func (c *Connection) send(clientMessage *protocol.ClientMessage) bool {
+	if !c.isAlive() {
 		return false
 	}
 	select {
-	case <-connection.closed:
+	case <-c.closed:
 		return false
-	case connection.pending <- clientMessage:
+	case c.pending <- clientMessage:
 		return true
 
 	}
 }
 
-func (connection *Connection) write(clientMessage *protocol.ClientMessage) error {
+func (c *Connection) write(clientMessage *protocol.ClientMessage) error {
 	remainingLen := len(clientMessage.Buffer)
 	writeIndex := 0
 	for remainingLen > 0 {
-		writtenLen, err := connection.socket.Write(clientMessage.Buffer[writeIndex:])
+		writtenLen, err := c.socket.Write(clientMessage.Buffer[writeIndex:])
 		if err != nil {
 			return err
 		} else {
@@ -125,43 +125,43 @@ func (connection *Connection) write(clientMessage *protocol.ClientMessage) error
 
 	return nil
 }
-func (connection *Connection) read() {
+func (c *Connection) read() {
 	buf := make([]byte, BufferSize)
 	for {
-		n, err := connection.socket.Read(buf)
-		connection.readBuffer = append(connection.readBuffer, buf[:n]...)
+		n, err := c.socket.Read(buf)
+		c.readBuffer = append(c.readBuffer, buf[:n]...)
 		if err != nil {
-			connection.close(err)
+			c.close(err)
 			return
 		}
 		if n == 0 {
 			continue
 		}
-		connection.receiveMessage()
+		c.receiveMessage()
 	}
 }
-func (connection *Connection) receiveMessage() {
-	connection.lastRead.Store(time.Now())
-	for len(connection.readBuffer) > common.Int32SizeInBytes {
-		frameLength := binary.LittleEndian.Uint32(connection.readBuffer[0:4])
-		if frameLength > uint32(len(connection.readBuffer)) {
+func (c *Connection) receiveMessage() {
+	c.lastRead.Store(time.Now())
+	for len(c.readBuffer) > common.Int32SizeInBytes {
+		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:4])
+		if frameLength > uint32(len(c.readBuffer)) {
 			return
 		}
-		resp := protocol.NewClientMessage(connection.readBuffer[:frameLength], 0)
-		connection.readBuffer = connection.readBuffer[frameLength:]
-		connection.clientMessageBuilder.onMessage(resp)
+		resp := protocol.NewClientMessage(c.readBuffer[:frameLength], 0)
+		c.readBuffer = c.readBuffer[frameLength:]
+		c.clientMessageBuilder.onMessage(resp)
 	}
 }
-func (connection *Connection) close(err error) {
-	if !atomic.CompareAndSwapInt32(&connection.status, 0, 1) {
+func (c *Connection) close(err error) {
+	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	close(connection.closed)
-	connection.closedTime.Store(time.Now())
-	connection.connectionManager.connectionClosed(connection, err)
+	close(c.closed)
+	c.closedTime.Store(time.Now())
+	c.connectionManager.connectionClosed(c, err)
 }
 
-func (connection *Connection) String() string {
+func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{"+
 		"isAlive=%t"+
 		", connectionId=%d"+
@@ -171,9 +171,9 @@ func (connection *Connection) String() string {
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
-		", connected server version=%s", connection.isAlive(), connection.connectionId,
-		connection.endpoint.Load().(*protocol.Address).Host(), connection.endpoint.Load().(*protocol.Address).Port(),
-		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
-		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
-		connection.lastHeartbeatReceived.Load().(time.Time).String(), *connection.serverHazelcastVersion)
+		", connected server version=%s", c.isAlive(), c.connectionId,
+		c.endpoint.Load().(*protocol.Address).Host(), c.endpoint.Load().(*protocol.Address).Port(),
+		c.lastRead.Load().(time.Time).String(), c.lastWrite.Load().(time.Time).String(),
+		c.closedTime.Load().(time.Time).String(), c.lastHeartbeatRequested.Load().(time.Time).String(),
+		c.lastHeartbeatReceived.Load().(time.Time).String(), *c.serverHazelcastVersion)
 }

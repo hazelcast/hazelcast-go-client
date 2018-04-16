@@ -89,57 +89,57 @@ func newListenerService(client *HazelcastClient) *listenerService {
 	}
 	return service
 }
-func (listenerService *listenerService) connectToAllMembersInternal() {
-	members := listenerService.client.ClusterService.GetMemberList()
+func (ls *listenerService) connectToAllMembersInternal() {
+	members := ls.client.ClusterService.GetMemberList()
 	for _, member := range members {
-		listenerService.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
+		ls.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
 	}
 }
-func (listenerService *listenerService) connectToAllMembersPeriodically() {
+func (ls *listenerService) connectToAllMembersPeriodically() {
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			listenerService.connectToAllMembersChannel <- struct{}{}
+			ls.connectToAllMembersChannel <- struct{}{}
 		}
 	}
 }
-func (listenerService *listenerService) process() {
+func (ls *listenerService) process() {
 	for {
 		select {
-		case registrationIdConnection := <-listenerService.registerListenerOnConnectionChannel:
-			listenerService.registerListenerOnConnectionErrChannel <- listenerService.registerListenerOnConnection(registrationIdConnection.registrationId, registrationIdConnection.connection)
-		case registrationIdRequestEncoder := <-listenerService.deregisterListenerChannel:
-			removed, err := listenerService.deregisterListenerInternal(registrationIdRequestEncoder.registrationId, registrationIdRequestEncoder.requestEncoder)
+		case registrationIdConnection := <-ls.registerListenerOnConnectionChannel:
+			ls.registerListenerOnConnectionErrChannel <- ls.registerListenerOnConnection(registrationIdConnection.registrationId, registrationIdConnection.connection)
+		case registrationIdRequestEncoder := <-ls.deregisterListenerChannel:
+			removed, err := ls.deregisterListenerInternal(registrationIdRequestEncoder.registrationId, registrationIdRequestEncoder.requestEncoder)
 			removedErr := removedErr{
 				removed: removed,
 				err:     err,
 			}
-			listenerService.deregisterListenerErrChannel <- removedErr
-		case connection := <-listenerService.onConnectionClosedChannel:
-			listenerService.onConnectionClosedInternal(connection)
-		case connection := <-listenerService.onConnectionOpenedChannel:
-			listenerService.onConnectionOpenedInternal(connection)
-		case connection := <-listenerService.onHeartbeatRestoredChannel:
-			listenerService.OnHeartbeatRestoredInternal(connection)
-		case registrationIdConnection := <-listenerService.registerListenerInternalHandleErrorChannel:
-			listenerService.registerListenerFromInternalHandleError(registrationIdConnection.registrationId, registrationIdConnection.connection)
-		case listenerRegistrationKey := <-listenerService.registerListenerInitChannel:
-			listenerService.registerListenerInit(listenerRegistrationKey)
-		case <-listenerService.connectToAllMembersChannel:
-			listenerService.connectToAllMembersInternal()
+			ls.deregisterListenerErrChannel <- removedErr
+		case connection := <-ls.onConnectionClosedChannel:
+			ls.onConnectionClosedInternal(connection)
+		case connection := <-ls.onConnectionOpenedChannel:
+			ls.onConnectionOpenedInternal(connection)
+		case connection := <-ls.onHeartbeatRestoredChannel:
+			ls.OnHeartbeatRestoredInternal(connection)
+		case registrationIdConnection := <-ls.registerListenerInternalHandleErrorChannel:
+			ls.registerListenerFromInternalHandleError(registrationIdConnection.registrationId, registrationIdConnection.connection)
+		case listenerRegistrationKey := <-ls.registerListenerInitChannel:
+			ls.registerListenerInit(listenerRegistrationKey)
+		case <-ls.connectToAllMembersChannel:
+			ls.connectToAllMembersInternal()
 		}
 	}
 
 }
 
-func (listenerService *listenerService) registerListenerInit(key *listenerRegistrationKey) {
-	listenerService.registrationIdToListenerRegistration[key.userRegistrationKey] = key
-	listenerService.registrations[key.userRegistrationKey] = make(map[int64]*eventRegistration)
+func (ls *listenerService) registerListenerInit(key *listenerRegistrationKey) {
+	ls.registrationIdToListenerRegistration[key.userRegistrationKey] = key
+	ls.registrations[key.userRegistrationKey] = make(map[int64]*eventRegistration)
 }
-func (listenerService *listenerService) registerListener(request *protocol.ClientMessage, eventHandler func(clientMessage *protocol.ClientMessage),
+func (ls *listenerService) registerListener(request *protocol.ClientMessage, eventHandler func(clientMessage *protocol.ClientMessage),
 	encodeListenerRemoveRequest protocol.EncodeListenerRemoveRequest, responseDecoder protocol.DecodeListenerResponse) (*string, error) {
-	err := listenerService.trySyncConnectToAllConnections()
+	err := ls.trySyncConnectToAllConnections()
 	if err != nil {
 		return nil, err
 	}
@@ -150,18 +150,18 @@ func (listenerService *listenerService) registerListener(request *protocol.Clien
 		responseDecoder:     responseDecoder,
 		eventHandler:        eventHandler,
 	}
-	listenerService.registerListenerInitChannel <- &registrationKey
-	connections := listenerService.client.ConnectionManager.getActiveConnections()
+	ls.registerListenerInitChannel <- &registrationKey
+	connections := ls.client.ConnectionManager.getActiveConnections()
 	for _, connection := range connections {
 		registrationIdConnection := registrationIdConnection{
 			registrationId: userRegistrationId,
 			connection:     connection,
 		}
-		listenerService.registerListenerOnConnectionChannel <- registrationIdConnection
-		err := <-listenerService.registerListenerOnConnectionErrChannel
+		ls.registerListenerOnConnectionChannel <- registrationIdConnection
+		err := <-ls.registerListenerOnConnectionErrChannel
 		if err != nil {
 			if connection.isAlive() {
-				listenerService.deregisterListener(userRegistrationId, encodeListenerRemoveRequest)
+				ls.deregisterListener(userRegistrationId, encodeListenerRemoveRequest)
 				return nil, core.NewHazelcastErrorType("listener cannot be added", nil)
 			}
 		}
@@ -169,18 +169,18 @@ func (listenerService *listenerService) registerListener(request *protocol.Clien
 
 	return &userRegistrationId, nil
 }
-func (listenerService *listenerService) registerListenerOnConnection(registrationId string, connection *Connection) error {
-	if registrationMap, found := listenerService.registrations[registrationId]; found {
+func (ls *listenerService) registerListenerOnConnection(registrationId string, connection *Connection) error {
+	if registrationMap, found := ls.registrations[registrationId]; found {
 		_, found := registrationMap[connection.connectionId]
 		if found {
 			return nil
 		}
 	}
-	registrationKey := listenerService.registrationIdToListenerRegistration[registrationId]
-	invocation := newInvocation(registrationKey.request, -1, nil, connection, listenerService.client)
+	registrationKey := ls.registrationIdToListenerRegistration[registrationId]
+	invocation := newInvocation(registrationKey.request, -1, nil, connection, ls.client)
 	invocation.eventHandler = registrationKey.eventHandler
 	invocation.listenerResponseDecoder = registrationKey.responseDecoder
-	responseMessage, err := listenerService.client.InvocationService.sendInvocation(invocation).Result()
+	responseMessage, err := ls.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}
@@ -191,22 +191,22 @@ func (listenerService *listenerService) registerListenerOnConnection(registratio
 		correlationId:        correlationId,
 		connection:           connection,
 	}
-	listenerService.registrations[registrationId][connection.connectionId] = registration
+	ls.registrations[registrationId][connection.connectionId] = registration
 	return nil
 }
-func (listenerService *listenerService) deregisterListener(registrationId string, requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
+func (ls *listenerService) deregisterListener(registrationId string, requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
 	registrationIdRequestEncoder := registrationIdRequestEncoder{
 		registrationId: registrationId,
 		requestEncoder: requestEncoder,
 	}
-	listenerService.deregisterListenerChannel <- registrationIdRequestEncoder
-	removedErr := <-listenerService.deregisterListenerErrChannel
+	ls.deregisterListenerChannel <- registrationIdRequestEncoder
+	removedErr := <-ls.deregisterListenerErrChannel
 	return removedErr.removed, removedErr.err
 }
-func (listenerService *listenerService) deregisterListenerInternal(registrationId string, requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
+func (ls *listenerService) deregisterListenerInternal(registrationId string, requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
 	var registrationMap map[int64]*eventRegistration
 	var found bool
-	if registrationMap, found = listenerService.registrations[registrationId]; !found {
+	if registrationMap, found = ls.registrations[registrationId]; !found {
 		return false, nil
 	}
 	var successful bool = true
@@ -215,8 +215,8 @@ func (listenerService *listenerService) deregisterListenerInternal(registrationI
 		connection := registration.connection
 		serverRegistrationId := registration.serverRegistrationId
 		request := requestEncoder(&serverRegistrationId)
-		invocation := newInvocation(request, -1, nil, connection, listenerService.client)
-		_, err = listenerService.client.InvocationService.sendInvocation(invocation).Result()
+		invocation := newInvocation(request, -1, nil, connection, ls.client)
+		_, err = ls.client.InvocationService.sendInvocation(invocation).Result()
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
@@ -225,81 +225,81 @@ func (listenerService *listenerService) deregisterListenerInternal(registrationI
 				continue
 			}
 		}
-		listenerService.client.InvocationService.removeEventHandler(registration.correlationId)
+		ls.client.InvocationService.removeEventHandler(registration.correlationId)
 		delete(registrationMap, connection.connectionId)
 	}
 	if successful {
-		delete(listenerService.registrations, registrationId)
-		delete(listenerService.registrationIdToListenerRegistration, registrationId)
+		delete(ls.registrations, registrationId)
+		delete(ls.registrationIdToListenerRegistration, registrationId)
 	}
 	return successful, err
 }
 
-func (listenerService *listenerService) registerListenerFromInternal(registrationId string, connection *Connection) {
+func (ls *listenerService) registerListenerFromInternal(registrationId string, connection *Connection) {
 	registrationIdConnection := registrationIdConnection{
 		registrationId: registrationId,
 		connection:     connection,
 	}
-	listenerService.registerListenerOnConnectionChannel <- registrationIdConnection
-	err := <-listenerService.registerListenerOnConnectionErrChannel
+	ls.registerListenerOnConnectionChannel <- registrationIdConnection
+	err := <-ls.registerListenerOnConnectionErrChannel
 	if err != nil {
 		if _, ok := err.(*core.HazelcastIOError); ok {
-			listenerService.registerListenerInternalHandleErrorChannel <- registrationIdConnection
+			ls.registerListenerInternalHandleErrorChannel <- registrationIdConnection
 		} else {
 			log.Println("listener ", registrationId, " cannot be added to a new Connection ", connection, ", reason :", err)
 		}
 	}
 
 }
-func (listenerService *listenerService) registerListenerFromInternalHandleError(registrationId string, connection *Connection) {
-	failedRegsToConnection, found := listenerService.failedRegistrations[connection.connectionId]
+func (ls *listenerService) registerListenerFromInternalHandleError(registrationId string, connection *Connection) {
+	failedRegsToConnection, found := ls.failedRegistrations[connection.connectionId]
 	if !found {
-		listenerService.failedRegistrations[connection.connectionId] = make([]*listenerRegistrationKey, 0)
+		ls.failedRegistrations[connection.connectionId] = make([]*listenerRegistrationKey, 0)
 	}
-	registrationKey := listenerService.registrationIdToListenerRegistration[registrationId]
-	listenerService.failedRegistrations[connection.connectionId] = append(failedRegsToConnection, registrationKey)
+	registrationKey := ls.registrationIdToListenerRegistration[registrationId]
+	ls.failedRegistrations[connection.connectionId] = append(failedRegsToConnection, registrationKey)
 }
-func (listenerService *listenerService) onConnectionClosed(connection *Connection, cause error) {
-	listenerService.onConnectionClosedChannel <- connection
+func (ls *listenerService) onConnectionClosed(connection *Connection, cause error) {
+	ls.onConnectionClosedChannel <- connection
 }
-func (listenerService *listenerService) onConnectionClosedInternal(connection *Connection) {
-	delete(listenerService.failedRegistrations, connection.connectionId)
-	for _, registrationMap := range listenerService.registrations {
+func (ls *listenerService) onConnectionClosedInternal(connection *Connection) {
+	delete(ls.failedRegistrations, connection.connectionId)
+	for _, registrationMap := range ls.registrations {
 		registration, found := registrationMap[connection.connectionId]
 		if found {
 			delete(registrationMap, connection.connectionId)
-			listenerService.client.InvocationService.removeEventHandler(registration.correlationId)
+			ls.client.InvocationService.removeEventHandler(registration.correlationId)
 		}
 	}
 }
-func (listenerService *listenerService) onConnectionOpened(connection *Connection) {
-	listenerService.onConnectionOpenedChannel <- connection
+func (ls *listenerService) onConnectionOpened(connection *Connection) {
+	ls.onConnectionOpenedChannel <- connection
 }
-func (listenerService *listenerService) onConnectionOpenedInternal(connection *Connection) {
-	for registrationKey, _ := range listenerService.registrations {
-		go listenerService.registerListenerFromInternal(registrationKey, connection)
+func (ls *listenerService) onConnectionOpenedInternal(connection *Connection) {
+	for registrationKey, _ := range ls.registrations {
+		go ls.registerListenerFromInternal(registrationKey, connection)
 	}
 }
-func (listenerService *listenerService) OnHeartbeatRestored(connection *Connection) {
-	listenerService.onHeartbeatRestoredChannel <- connection
+func (ls *listenerService) OnHeartbeatRestored(connection *Connection) {
+	ls.onHeartbeatRestoredChannel <- connection
 }
-func (listenerService *listenerService) OnHeartbeatRestoredInternal(connection *Connection) {
-	registrationKeys := listenerService.failedRegistrations[connection.connectionId]
+func (ls *listenerService) OnHeartbeatRestoredInternal(connection *Connection) {
+	registrationKeys := ls.failedRegistrations[connection.connectionId]
 	for _, registrationKey := range registrationKeys {
-		go listenerService.registerListenerFromInternal(registrationKey.userRegistrationKey, connection)
+		go ls.registerListenerFromInternal(registrationKey.userRegistrationKey, connection)
 	}
 }
-func (listenerService *listenerService) trySyncConnectToAllConnections() error {
-	if !listenerService.client.ClientConfig.ClientNetworkConfig().IsSmartRouting() {
+func (ls *listenerService) trySyncConnectToAllConnections() error {
+	if !ls.client.ClientConfig.ClientNetworkConfig().IsSmartRouting() {
 		return nil
 	}
-	remainingTime := listenerService.client.ClientConfig.ClientNetworkConfig().InvocationTimeout()
-	for listenerService.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
-		members := listenerService.client.GetCluster().GetMemberList()
+	remainingTime := ls.client.ClientConfig.ClientNetworkConfig().InvocationTimeout()
+	for ls.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
+		members := ls.client.GetCluster().GetMemberList()
 		start := time.Now()
 		successful := true
 		for _, member := range members {
-			connectionChannel, errorChannel := listenerService.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
+			connectionChannel, errorChannel := ls.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
 			select {
 			case <-connectionChannel:
 			case <-errorChannel:

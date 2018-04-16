@@ -35,60 +35,60 @@ func newQueueProxy(client *HazelcastClient, serviceName *string, name *string) (
 	return &QueueProxy{parSpecProxy}, nil
 }
 
-func (queue *QueueProxy) AddAll(items []interface{}) (changed bool, err error) {
-	itemData, err := queue.validateAndSerializeSlice(items)
+func (qp *QueueProxy) AddAll(items []interface{}) (changed bool, err error) {
+	itemData, err := qp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueAddAllEncodeRequest(queue.name, itemData)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueAddAllDecodeResponse)
+	request := protocol.QueueAddAllEncodeRequest(qp.name, itemData)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueAddAllDecodeResponse)
 }
 
-func (queue *QueueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
-	request := protocol.QueueAddListenerEncodeRequest(queue.name, includeValue, false)
-	eventHandler := queue.createEventHandler(listener)
-	return queue.client.ListenerService.registerListener(request, eventHandler,
+func (qp *QueueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+	request := protocol.QueueAddListenerEncodeRequest(qp.name, includeValue, false)
+	eventHandler := qp.createEventHandler(listener)
+	return qp.client.ListenerService.registerListener(request, eventHandler,
 		func(registrationId *string) *protocol.ClientMessage {
-			return protocol.QueueRemoveListenerEncodeRequest(queue.name, registrationId)
+			return protocol.QueueRemoveListenerEncodeRequest(qp.name, registrationId)
 		}, func(clientMessage *protocol.ClientMessage) *string {
 			return protocol.QueueAddListenerDecodeResponse(clientMessage)()
 		})
 }
 
-func (queue *QueueProxy) Clear() (err error) {
-	request := protocol.QueueClearEncodeRequest(queue.name)
-	_, err = queue.invoke(request)
+func (qp *QueueProxy) Clear() (err error) {
+	request := protocol.QueueClearEncodeRequest(qp.name)
+	_, err = qp.invoke(request)
 	return err
 }
 
-func (queue *QueueProxy) Contains(item interface{}) (found bool, err error) {
-	elementData, err := queue.validateAndSerialize(item)
+func (qp *QueueProxy) Contains(item interface{}) (found bool, err error) {
+	elementData, err := qp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueContainsEncodeRequest(queue.name, elementData)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueContainsDecodeResponse)
+	request := protocol.QueueContainsEncodeRequest(qp.name, elementData)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueContainsDecodeResponse)
 }
 
-func (queue *QueueProxy) ContainsAll(items []interface{}) (foundAll bool, err error) {
-	itemData, err := queue.validateAndSerializeSlice(items)
+func (qp *QueueProxy) ContainsAll(items []interface{}) (foundAll bool, err error) {
+	itemData, err := qp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueContainsAllEncodeRequest(queue.name, itemData)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueContainsAllDecodeResponse)
+	request := protocol.QueueContainsAllEncodeRequest(qp.name, itemData)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueContainsAllDecodeResponse)
 }
 
-func (queue *QueueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err error) {
+func (qp *QueueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err error) {
 	if slice == nil {
 		return 0, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
 	}
-	request := protocol.QueueDrainToEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	resultSlice, err := queue.decodeToInterfaceSliceAndError(responseMessage, err, protocol.QueueDrainToDecodeResponse)
+	request := protocol.QueueDrainToEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	resultSlice, err := qp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.QueueDrainToDecodeResponse)
 	if err != nil {
 		return 0, err
 	}
@@ -96,13 +96,13 @@ func (queue *QueueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err e
 	return int32(len(resultSlice)), nil
 }
 
-func (queue *QueueProxy) DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error) {
+func (qp *QueueProxy) DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error) {
 	if slice == nil {
 		return 0, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
 	}
-	request := protocol.QueueDrainToMaxSizeEncodeRequest(queue.name, maxElements)
-	responseMessage, err := queue.invoke(request)
-	resultSlice, err := queue.decodeToInterfaceSliceAndError(responseMessage, err, protocol.QueueDrainToMaxSizeDecodeResponse)
+	request := protocol.QueueDrainToMaxSizeEncodeRequest(qp.name, maxElements)
+	responseMessage, err := qp.invoke(request)
+	resultSlice, err := qp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.QueueDrainToMaxSizeDecodeResponse)
 	if err != nil {
 		return 0, err
 	}
@@ -110,126 +110,126 @@ func (queue *QueueProxy) DrainToWithMaxSize(slice *[]interface{}, maxElements in
 	return int32(len(resultSlice)), nil
 }
 
-func (queue *QueueProxy) IsEmpty() (empty bool, err error) {
-	request := protocol.QueueIsEmptyEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueIsEmptyDecodeResponse)
+func (qp *QueueProxy) IsEmpty() (empty bool, err error) {
+	request := protocol.QueueIsEmptyEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueIsEmptyDecodeResponse)
 }
 
-func (queue *QueueProxy) Offer(item interface{}) (added bool, err error) {
-	itemData, err := queue.validateAndSerialize(item)
+func (qp *QueueProxy) Offer(item interface{}) (added bool, err error) {
+	itemData, err := qp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueOfferEncodeRequest(queue.name, itemData, 0)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
+	request := protocol.QueueOfferEncodeRequest(qp.name, itemData, 0)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
 }
 
-func (queue *QueueProxy) OfferWithTimeout(item interface{}, timeout int64, timeoutUnit time.Duration) (added bool, err error) {
-	itemData, err := queue.validateAndSerialize(item)
+func (qp *QueueProxy) OfferWithTimeout(item interface{}, timeout int64, timeoutUnit time.Duration) (added bool, err error) {
+	itemData, err := qp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
 	}
 	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout, timeoutUnit)
-	request := protocol.QueueOfferEncodeRequest(queue.name, itemData, timeoutInMilliSeconds)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
+	request := protocol.QueueOfferEncodeRequest(qp.name, itemData, timeoutInMilliSeconds)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
 }
 
-func (queue *QueueProxy) Peek() (item interface{}, err error) {
-	request := protocol.QueuePeekEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToObjectAndError(responseMessage, err, protocol.QueuePeekDecodeResponse)
+func (qp *QueueProxy) Peek() (item interface{}, err error) {
+	request := protocol.QueuePeekEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePeekDecodeResponse)
 }
 
-func (queue *QueueProxy) Poll() (item interface{}, err error) {
-	request := protocol.QueuePollEncodeRequest(queue.name, 0)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)
+func (qp *QueueProxy) Poll() (item interface{}, err error) {
+	request := protocol.QueuePollEncodeRequest(qp.name, 0)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)
 }
 
-func (queue *QueueProxy) PollWithTimeout(timeout int64, timeoutUnit time.Duration) (item interface{}, err error) {
+func (qp *QueueProxy) PollWithTimeout(timeout int64, timeoutUnit time.Duration) (item interface{}, err error) {
 	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout, timeoutUnit)
-	request := protocol.QueuePollEncodeRequest(queue.name, timeoutInMilliSeconds)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)
+	request := protocol.QueuePollEncodeRequest(qp.name, timeoutInMilliSeconds)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)
 }
 
-func (queue *QueueProxy) Put(item interface{}) (err error) {
-	itemData, err := queue.validateAndSerialize(item)
+func (qp *QueueProxy) Put(item interface{}) (err error) {
+	itemData, err := qp.validateAndSerialize(item)
 	if err != nil {
 		return err
 	}
-	request := protocol.QueuePutEncodeRequest(queue.name, itemData)
-	_, err = queue.invoke(request)
+	request := protocol.QueuePutEncodeRequest(qp.name, itemData)
+	_, err = qp.invoke(request)
 	return err
 }
 
-func (queue *QueueProxy) RemainingCapacity() (remainingCapacity int32, err error) {
-	request := protocol.QueueRemainingCapacityEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToInt32AndError(responseMessage, err, protocol.QueueRemainingCapacityDecodeResponse)
+func (qp *QueueProxy) RemainingCapacity() (remainingCapacity int32, err error) {
+	request := protocol.QueueRemainingCapacityEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToInt32AndError(responseMessage, err, protocol.QueueRemainingCapacityDecodeResponse)
 }
 
-func (queue *QueueProxy) Remove(item interface{}) (removed bool, err error) {
-	itemData, err := queue.validateAndSerialize(item)
+func (qp *QueueProxy) Remove(item interface{}) (removed bool, err error) {
+	itemData, err := qp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueRemoveEncodeRequest(queue.name, itemData)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueRemoveDecodeResponse)
+	request := protocol.QueueRemoveEncodeRequest(qp.name, itemData)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueRemoveDecodeResponse)
 }
 
-func (queue *QueueProxy) RemoveAll(items []interface{}) (changed bool, err error) {
-	itemData, err := queue.validateAndSerializeSlice(items)
+func (qp *QueueProxy) RemoveAll(items []interface{}) (changed bool, err error) {
+	itemData, err := qp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueCompareAndRemoveAllEncodeRequest(queue.name, itemData)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueCompareAndRemoveAllDecodeResponse)
+	request := protocol.QueueCompareAndRemoveAllEncodeRequest(qp.name, itemData)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueCompareAndRemoveAllDecodeResponse)
 }
 
-func (queue *QueueProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return queue.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
-		return protocol.QueueRemoveListenerEncodeRequest(queue.name, registrationID)
+func (qp *QueueProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
+	return qp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+		return protocol.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
 	})
 }
 
-func (queue *QueueProxy) RetainAll(items []interface{}) (changed bool, err error) {
-	itemData, err := queue.validateAndSerializeSlice(items)
+func (qp *QueueProxy) RetainAll(items []interface{}) (changed bool, err error) {
+	itemData, err := qp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
 	}
-	request := protocol.QueueCompareAndRetainAllEncodeRequest(queue.name, itemData)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToBoolAndError(responseMessage, err, protocol.QueueCompareAndRetainAllDecodeResponse)
+	request := protocol.QueueCompareAndRetainAllEncodeRequest(qp.name, itemData)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueCompareAndRetainAllDecodeResponse)
 }
 
-func (queue *QueueProxy) Size() (size int32, err error) {
-	request := protocol.QueueSizeEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToInt32AndError(responseMessage, err, protocol.QueueSizeDecodeResponse)
+func (qp *QueueProxy) Size() (size int32, err error) {
+	request := protocol.QueueSizeEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToInt32AndError(responseMessage, err, protocol.QueueSizeDecodeResponse)
 }
 
-func (queue *QueueProxy) Take() (item interface{}, err error) {
-	request := protocol.QueueTakeEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToObjectAndError(responseMessage, err, protocol.QueueTakeDecodeResponse)
+func (qp *QueueProxy) Take() (item interface{}, err error) {
+	request := protocol.QueueTakeEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueueTakeDecodeResponse)
 }
 
-func (queue *QueueProxy) ToSlice() (items []interface{}, err error) {
-	request := protocol.QueueIteratorEncodeRequest(queue.name)
-	responseMessage, err := queue.invoke(request)
-	return queue.decodeToInterfaceSliceAndError(responseMessage, err, protocol.QueueIteratorDecodeResponse)
+func (qp *QueueProxy) ToSlice() (items []interface{}, err error) {
+	request := protocol.QueueIteratorEncodeRequest(qp.name)
+	responseMessage, err := qp.invoke(request)
+	return qp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.QueueIteratorDecodeResponse)
 }
 
-func (queue *QueueProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
+func (qp *QueueProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.QueueAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid *string, eventType int32) {
-			onItemEvent := queue.createOnItemEvent(listener)
+			onItemEvent := qp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})
 	}

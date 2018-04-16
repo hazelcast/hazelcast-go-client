@@ -70,113 +70,113 @@ func NewClientMessage(buffer []byte, payloadSize int) *ClientMessage {
 	return clientMessage
 }
 
-func (msg *ClientMessage) FrameLength() int32 {
-	return int32(binary.LittleEndian.Uint32(msg.Buffer[common.FrameLengthFieldOffset:common.VersionFieldOffset]))
+func (m *ClientMessage) FrameLength() int32 {
+	return int32(binary.LittleEndian.Uint32(m.Buffer[common.FrameLengthFieldOffset:common.VersionFieldOffset]))
 }
 
-func (msg *ClientMessage) SetFrameLength(v int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[common.FrameLengthFieldOffset:common.VersionFieldOffset], uint32(v))
+func (m *ClientMessage) SetFrameLength(v int32) {
+	binary.LittleEndian.PutUint32(m.Buffer[common.FrameLengthFieldOffset:common.VersionFieldOffset], uint32(v))
 }
 
-func (msg *ClientMessage) SetVersion(v uint8) {
-	msg.Buffer[common.VersionFieldOffset] = byte(v)
+func (m *ClientMessage) SetVersion(v uint8) {
+	m.Buffer[common.VersionFieldOffset] = byte(v)
 }
 
-func (msg *ClientMessage) Flags() uint8 {
-	return msg.Buffer[common.FlagsFieldOffset]
+func (m *ClientMessage) Flags() uint8 {
+	return m.Buffer[common.FlagsFieldOffset]
 }
 
-func (msg *ClientMessage) SetFlags(v uint8) {
-	msg.Buffer[common.FlagsFieldOffset] = byte(v)
+func (m *ClientMessage) SetFlags(v uint8) {
+	m.Buffer[common.FlagsFieldOffset] = byte(v)
 }
-func (msg *ClientMessage) AddFlags(v uint8) {
-	msg.Buffer[common.FlagsFieldOffset] = msg.Buffer[common.FlagsFieldOffset] | byte(v)
+func (m *ClientMessage) AddFlags(v uint8) {
+	m.Buffer[common.FlagsFieldOffset] = m.Buffer[common.FlagsFieldOffset] | byte(v)
 }
 
-func (msg *ClientMessage) HasFlags(flags uint8) uint8 {
-	value := msg.Flags() & flags
+func (m *ClientMessage) HasFlags(flags uint8) uint8 {
+	value := m.Flags() & flags
 	if value == flags {
 		return value
 	}
 	return 0
 }
 
-func (msg *ClientMessage) MessageType() common.MessageType {
-	return common.MessageType(binary.LittleEndian.Uint16(msg.Buffer[common.TypeFieldOffset:common.CorrelationIdFieldOffset]))
+func (m *ClientMessage) MessageType() common.MessageType {
+	return common.MessageType(binary.LittleEndian.Uint16(m.Buffer[common.TypeFieldOffset:common.CorrelationIdFieldOffset]))
 }
 
-func (msg *ClientMessage) SetMessageType(v common.MessageType) {
-	binary.LittleEndian.PutUint16(msg.Buffer[common.TypeFieldOffset:common.CorrelationIdFieldOffset], uint16(v))
+func (m *ClientMessage) SetMessageType(v common.MessageType) {
+	binary.LittleEndian.PutUint16(m.Buffer[common.TypeFieldOffset:common.CorrelationIdFieldOffset], uint16(v))
 }
 
-func (msg *ClientMessage) CorrelationId() int64 {
-	return int64(binary.LittleEndian.Uint64(msg.Buffer[common.CorrelationIdFieldOffset:common.PartitionIdFieldOffset]))
+func (m *ClientMessage) CorrelationId() int64 {
+	return int64(binary.LittleEndian.Uint64(m.Buffer[common.CorrelationIdFieldOffset:common.PartitionIdFieldOffset]))
 }
 
-func (msg *ClientMessage) SetCorrelationId(val int64) {
-	binary.LittleEndian.PutUint64(msg.Buffer[common.CorrelationIdFieldOffset:common.PartitionIdFieldOffset], uint64(val))
+func (m *ClientMessage) SetCorrelationId(val int64) {
+	binary.LittleEndian.PutUint64(m.Buffer[common.CorrelationIdFieldOffset:common.PartitionIdFieldOffset], uint64(val))
 }
 
-func (msg *ClientMessage) PartitionId() int32 {
-	return int32(binary.LittleEndian.Uint32(msg.Buffer[common.PartitionIdFieldOffset:common.DataOffsetFieldOffset]))
+func (m *ClientMessage) PartitionId() int32 {
+	return int32(binary.LittleEndian.Uint32(m.Buffer[common.PartitionIdFieldOffset:common.DataOffsetFieldOffset]))
 }
 
-func (msg *ClientMessage) SetPartitionId(val int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[common.PartitionIdFieldOffset:common.DataOffsetFieldOffset], uint32(val))
+func (m *ClientMessage) SetPartitionId(val int32) {
+	binary.LittleEndian.PutUint32(m.Buffer[common.PartitionIdFieldOffset:common.DataOffsetFieldOffset], uint32(val))
 }
 
-func (msg *ClientMessage) DataOffset() uint16 {
-	return binary.LittleEndian.Uint16(msg.Buffer[common.DataOffsetFieldOffset:common.HeaderSize])
+func (m *ClientMessage) DataOffset() uint16 {
+	return binary.LittleEndian.Uint16(m.Buffer[common.DataOffsetFieldOffset:common.HeaderSize])
 }
 
-func (msg *ClientMessage) SetDataOffset(v uint16) {
-	binary.LittleEndian.PutUint16(msg.Buffer[common.DataOffsetFieldOffset:common.HeaderSize], v)
+func (m *ClientMessage) SetDataOffset(v uint16) {
+	binary.LittleEndian.PutUint16(m.Buffer[common.DataOffsetFieldOffset:common.HeaderSize], v)
 }
 
-func (msg *ClientMessage) writeOffset() int32 {
-	return int32(msg.DataOffset()) + msg.writeIndex
+func (m *ClientMessage) writeOffset() int32 {
+	return int32(m.DataOffset()) + m.writeIndex
 }
 
-func (msg *ClientMessage) readOffset() int32 {
-	return msg.readIndex
+func (m *ClientMessage) readOffset() int32 {
+	return m.readIndex
 }
 
 /*
 	PAYLOAD
 */
 
-func (msg *ClientMessage) AppendByte(v uint8) {
-	msg.Buffer[msg.writeIndex] = byte(v)
-	msg.writeIndex += common.ByteSizeInBytes
+func (m *ClientMessage) AppendByte(v uint8) {
+	m.Buffer[m.writeIndex] = byte(v)
+	m.writeIndex += common.ByteSizeInBytes
 }
-func (msg *ClientMessage) AppendUint8(v uint8) {
-	msg.Buffer[msg.writeIndex] = byte(v)
-	msg.writeIndex += common.ByteSizeInBytes
+func (m *ClientMessage) AppendUint8(v uint8) {
+	m.Buffer[m.writeIndex] = byte(v)
+	m.writeIndex += common.ByteSizeInBytes
 }
-func (msg *ClientMessage) AppendInt32(v int32) {
-	binary.LittleEndian.PutUint32(msg.Buffer[msg.writeIndex:msg.writeIndex+common.Int32SizeInBytes], uint32(v))
-	msg.writeIndex += common.Int32SizeInBytes
+func (m *ClientMessage) AppendInt32(v int32) {
+	binary.LittleEndian.PutUint32(m.Buffer[m.writeIndex:m.writeIndex+common.Int32SizeInBytes], uint32(v))
+	m.writeIndex += common.Int32SizeInBytes
 }
-func (msg *ClientMessage) AppendData(v *serialization.Data) {
-	msg.AppendByteArray(v.Buffer())
+func (m *ClientMessage) AppendData(v *serialization.Data) {
+	m.AppendByteArray(v.Buffer())
 }
 
-func (msg *ClientMessage) AppendByteArray(arr []byte) {
+func (m *ClientMessage) AppendByteArray(arr []byte) {
 	length := int32(len(arr))
 	//length
-	msg.AppendInt32(length)
+	m.AppendInt32(length)
 	//copy content
-	copy(msg.Buffer[msg.writeIndex:msg.writeIndex+length], arr)
-	msg.writeIndex += length
+	copy(m.Buffer[m.writeIndex:m.writeIndex+length], arr)
+	m.writeIndex += length
 }
-func (msg *ClientMessage) AppendInt64(v int64) {
-	binary.LittleEndian.PutUint64(msg.Buffer[msg.writeIndex:msg.writeIndex+common.Int64SizeInBytes], uint64(v))
-	msg.writeIndex += common.Int64SizeInBytes
+func (m *ClientMessage) AppendInt64(v int64) {
+	binary.LittleEndian.PutUint64(m.Buffer[m.writeIndex:m.writeIndex+common.Int64SizeInBytes], uint64(v))
+	m.writeIndex += common.Int64SizeInBytes
 }
 
-func (msg *ClientMessage) AppendString(str *string) {
+func (m *ClientMessage) AppendString(str *string) {
 	if utf8.ValidString(*str) {
-		msg.AppendByteArray([]byte(*str))
+		m.AppendByteArray([]byte(*str))
 	} else {
 		buff := make([]byte, 0, len(*str)*3)
 		n := 0
@@ -184,15 +184,15 @@ func (msg *ClientMessage) AppendString(str *string) {
 			n += utf8.EncodeRune(buff[n:], rune(b))
 		}
 		//append fixed size slice
-		msg.AppendByteArray(buff[0:n])
+		m.AppendByteArray(buff[0:n])
 	}
 }
 
-func (msg *ClientMessage) AppendBool(v bool) {
+func (m *ClientMessage) AppendBool(v bool) {
 	if v {
-		msg.AppendByte(1)
+		m.AppendByte(1)
 	} else {
-		msg.AppendByte(0)
+		m.AppendByte(0)
 	}
 }
 
@@ -200,56 +200,56 @@ func (msg *ClientMessage) AppendBool(v bool) {
 	PAYLOAD READ
 */
 
-func (msg *ClientMessage) ReadInt32() int32 {
-	int := int32(binary.LittleEndian.Uint32(msg.Buffer[msg.readOffset() : msg.readOffset()+common.Int32SizeInBytes]))
-	msg.readIndex += common.Int32SizeInBytes
+func (m *ClientMessage) ReadInt32() int32 {
+	int := int32(binary.LittleEndian.Uint32(m.Buffer[m.readOffset() : m.readOffset()+common.Int32SizeInBytes]))
+	m.readIndex += common.Int32SizeInBytes
 	return int
 }
-func (msg *ClientMessage) ReadInt64() int64 {
-	int64 := int64(binary.LittleEndian.Uint64(msg.Buffer[msg.readOffset() : msg.readOffset()+common.Int64SizeInBytes]))
-	msg.readIndex += common.Int64SizeInBytes
+func (m *ClientMessage) ReadInt64() int64 {
+	int64 := int64(binary.LittleEndian.Uint64(m.Buffer[m.readOffset() : m.readOffset()+common.Int64SizeInBytes]))
+	m.readIndex += common.Int64SizeInBytes
 	return int64
 }
-func (msg *ClientMessage) ReadUint8() uint8 {
-	byte := byte(msg.Buffer[msg.readOffset()])
-	msg.readIndex += common.ByteSizeInBytes
+func (m *ClientMessage) ReadUint8() uint8 {
+	byte := byte(m.Buffer[m.readOffset()])
+	m.readIndex += common.ByteSizeInBytes
 	return byte
 }
 
-func (msg *ClientMessage) ReadBool() bool {
-	if msg.ReadUint8() == 1 {
+func (m *ClientMessage) ReadBool() bool {
+	if m.ReadUint8() == 1 {
 		return true
 	} else {
 		return false
 	}
 }
-func (msg *ClientMessage) ReadString() *string {
-	str := string(msg.ReadByteArray())
+func (m *ClientMessage) ReadString() *string {
+	str := string(m.ReadByteArray())
 	return &str
 }
-func (msg *ClientMessage) ReadData() *serialization.Data {
-	return &serialization.Data{msg.ReadByteArray()}
+func (m *ClientMessage) ReadData() *serialization.Data {
+	return &serialization.Data{m.ReadByteArray()}
 }
-func (msg *ClientMessage) ReadByteArray() []byte {
-	length := msg.ReadInt32()
-	result := msg.Buffer[msg.readOffset() : msg.readOffset()+length]
-	msg.readIndex += length
+func (m *ClientMessage) ReadByteArray() []byte {
+	length := m.ReadInt32()
+	result := m.Buffer[m.readOffset() : m.readOffset()+length]
+	m.readIndex += length
 	return result
 }
 
 /*
 	Helpers
 */
-func (msg *ClientMessage) UpdateFrameLength() {
-	msg.SetFrameLength(int32(msg.writeIndex))
+func (m *ClientMessage) UpdateFrameLength() {
+	m.SetFrameLength(int32(m.writeIndex))
 }
-func (msg *ClientMessage) Accumulate(newMsg *ClientMessage) {
+func (m *ClientMessage) Accumulate(newMsg *ClientMessage) {
 	start := newMsg.DataOffset()
 	end := newMsg.FrameLength()
-	msg.Buffer = append(msg.Buffer, newMsg.Buffer[start:end]...)
-	msg.SetFrameLength(int32(len(msg.Buffer)))
+	m.Buffer = append(m.Buffer, newMsg.Buffer[start:end]...)
+	m.SetFrameLength(int32(len(m.Buffer)))
 }
 
-func (msg *ClientMessage) IsComplete() bool {
-	return (msg.readOffset() >= common.HeaderSize) && (msg.readOffset() == msg.FrameLength())
+func (m *ClientMessage) IsComplete() bool {
+	return (m.readOffset() >= common.HeaderSize) && (m.readOffset() == m.FrameLength())
 }

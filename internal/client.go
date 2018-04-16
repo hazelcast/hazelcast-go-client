@@ -41,128 +41,128 @@ func NewHazelcastClient(config *config.ClientConfig) (*HazelcastClient, error) {
 	return &client, err
 }
 
-func (client *HazelcastClient) GetMap(name string) (core.IMap, error) {
-	mp, err := client.GetDistributedObject(common.ServiceNameMap, name)
+func (c *HazelcastClient) GetMap(name string) (core.IMap, error) {
+	mp, err := c.GetDistributedObject(common.ServiceNameMap, name)
 	if err != nil {
 		return nil, err
 	}
 	return mp.(core.IMap), nil
 }
 
-func (client *HazelcastClient) GetList(name string) (core.IList, error) {
-	list, err := client.GetDistributedObject(common.ServiceNameList, name)
+func (c *HazelcastClient) GetList(name string) (core.IList, error) {
+	list, err := c.GetDistributedObject(common.ServiceNameList, name)
 	if err != nil {
 		return nil, err
 	}
 	return list.(core.IList), nil
 }
 
-func (client *HazelcastClient) GetSet(name string) (core.ISet, error) {
-	set, err := client.GetDistributedObject(common.ServiceNameSet, name)
+func (c *HazelcastClient) GetSet(name string) (core.ISet, error) {
+	set, err := c.GetDistributedObject(common.ServiceNameSet, name)
 	if err != nil {
 		return nil, err
 	}
 	return set.(core.ISet), nil
 }
-func (client *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
-	mp, err := client.GetDistributedObject(common.ServiceNameReplicatedMap, name)
+func (c *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
+	mp, err := c.GetDistributedObject(common.ServiceNameReplicatedMap, name)
 	if err != nil {
 		return nil, err
 	}
 	return mp.(core.ReplicatedMap), err
 }
 
-func (client *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
-	mmp, err := client.GetDistributedObject(common.ServiceNameMultiMap, name)
+func (c *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
+	mmp, err := c.GetDistributedObject(common.ServiceNameMultiMap, name)
 	if err != nil {
 		return nil, err
 	}
 	return mmp.(core.MultiMap), err
 }
 
-func (client *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error) {
-	flakeIdGenerator, err := client.GetDistributedObject(common.ServiceNameIdGenerator, name)
+func (c *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error) {
+	flakeIdGenerator, err := c.GetDistributedObject(common.ServiceNameIdGenerator, name)
 	if err != nil {
 		return nil, err
 	}
 	return flakeIdGenerator.(core.FlakeIdGenerator), err
 }
 
-func (client *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
-	topic, err := client.GetDistributedObject(common.ServiceNameTopic, name)
+func (c *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
+	topic, err := c.GetDistributedObject(common.ServiceNameTopic, name)
 	if err != nil {
 		return nil, err
 	}
 	return topic.(core.ITopic), nil
 }
 
-func (client *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
-	queue, err := client.GetDistributedObject(common.ServiceNameQueue, name)
+func (c *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
+	queue, err := c.GetDistributedObject(common.ServiceNameQueue, name)
 	if err != nil {
 		return nil, err
 	}
 	return queue.(core.IQueue), nil
 }
 
-func (client *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, error) {
-	rb, err := client.GetDistributedObject(common.ServiceNameRingbufferService, name)
+func (c *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, error) {
+	rb, err := c.GetDistributedObject(common.ServiceNameRingbufferService, name)
 	if err != nil {
 		return nil, err
 	}
 	return rb.(core.Ringbuffer), nil
 }
 
-func (client *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
-	counter, err := client.GetDistributedObject(common.ServiceNamePNCounter, name)
+func (c *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
+	counter, err := c.GetDistributedObject(common.ServiceNamePNCounter, name)
 	if err != nil {
 		return nil, err
 	}
 	return counter.(core.PNCounter), nil
 }
 
-func (client *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
-	var clientProxy, err = client.ProxyManager.getOrCreateProxy(serviceName, name)
+func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
+	var clientProxy, err = c.ProxyManager.getOrCreateProxy(serviceName, name)
 	if err != nil {
 		return nil, err
 	}
 	return clientProxy, nil
 }
 
-func (client *HazelcastClient) GetCluster() core.ICluster {
-	return client.ClusterService
+func (c *HazelcastClient) GetCluster() core.ICluster {
+	return c.ClusterService
 }
 
-func (client *HazelcastClient) GetLifecycle() core.ILifecycle {
-	return client.LifecycleService
+func (c *HazelcastClient) GetLifecycle() core.ILifecycle {
+	return c.LifecycleService
 }
 
-func (client *HazelcastClient) init() error {
-	client.LifecycleService = newLifecycleService(client.ClientConfig)
-	client.ConnectionManager = newConnectionManager(client)
-	client.HeartBeatService = newHeartBeatService(client)
-	client.InvocationService = newInvocationService(client)
-	client.ClusterService = newClusterService(client, client.ClientConfig)
-	client.ListenerService = newListenerService(client)
-	client.PartitionService = newPartitionService(client)
-	client.ProxyManager = newProxyManager(client)
-	client.LoadBalancer = newRandomLoadBalancer(client.ClusterService)
-	client.SerializationService = serialization.NewSerializationService(client.ClientConfig.SerializationConfig())
-	err := client.ClusterService.start()
+func (c *HazelcastClient) init() error {
+	c.LifecycleService = newLifecycleService(c.ClientConfig)
+	c.ConnectionManager = newConnectionManager(c)
+	c.HeartBeatService = newHeartBeatService(c)
+	c.InvocationService = newInvocationService(c)
+	c.ClusterService = newClusterService(c, c.ClientConfig)
+	c.ListenerService = newListenerService(c)
+	c.PartitionService = newPartitionService(c)
+	c.ProxyManager = newProxyManager(c)
+	c.LoadBalancer = newRandomLoadBalancer(c.ClusterService)
+	c.SerializationService = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
+	err := c.ClusterService.start()
 	if err != nil {
 		return err
 	}
-	client.HeartBeatService.start()
-	client.PartitionService.start()
-	client.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
+	c.HeartBeatService.start()
+	c.PartitionService.start()
+	c.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
 	return nil
 }
 
-func (client *HazelcastClient) Shutdown() {
-	if client.LifecycleService.isLive.Load().(bool) {
-		client.LifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
-		client.PartitionService.shutdown()
-		client.InvocationService.shutdown()
-		client.HeartBeatService.shutdown()
-		client.LifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
+func (c *HazelcastClient) Shutdown() {
+	if c.LifecycleService.isLive.Load().(bool) {
+		c.LifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
+		c.PartitionService.shutdown()
+		c.InvocationService.shutdown()
+		c.HeartBeatService.shutdown()
+		c.LifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
 	}
 }

@@ -35,28 +35,28 @@ func NewData(payload []byte) *Data {
 	return &Data{payload}
 }
 
-func (data Data) Buffer() []byte {
-	return data.Payload
+func (d *Data) Buffer() []byte {
+	return d.Payload
 }
 
-func (data Data) GetType() int32 {
-	if data.TotalSize() == 0 {
+func (d *Data) GetType() int32 {
+	if d.TotalSize() == 0 {
 		return 0
 	}
-	return int32(binary.BigEndian.Uint32(data.Payload[TypeOffset:]))
+	return int32(binary.BigEndian.Uint32(d.Payload[TypeOffset:]))
 }
 
-func (data Data) TotalSize() int {
-	if data.Payload == nil {
+func (d *Data) TotalSize() int {
+	if d.Payload == nil {
 		return 0
 	}
-	return len(data.Payload)
+	return len(d.Payload)
 }
 
-func (d Data) DataSize() int {
+func (d *Data) DataSize() int {
 	return int(math.Max(float64(d.TotalSize()-HeapDataOverhead), 0))
 }
 
-func (d Data) GetPartitionHash() int32 {
+func (d *Data) GetPartitionHash() int32 {
 	return common.Murmur3ADefault(d.Payload, DataOffset, d.DataSize())
 }
