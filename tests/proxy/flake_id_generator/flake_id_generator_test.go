@@ -26,6 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 var flakeIdGenerator core.FlakeIdGenerator
@@ -72,15 +73,15 @@ func TestFlakeIdGeneratorProxy_ConfigTest(t *testing.T) {
 	flakeIdGenerator, _ = client.GetFlakeIdGenerator("gen")
 	// this should take a batch of 3 IDs from the member and store it in the auto-batcher
 	id1, err := flakeIdGenerator.NewId()
-	AssertErrorNil(t, err)
+	assert.ErrorNil(t, err)
 	// this should take second ID from auto-created batch. It should be exactly next to id1
 	id2, err := flakeIdGenerator.NewId()
-	AssertEqualf(t, err, id1+flakeIdStep, id2, "FlakeIdGenerator NewId() failed")
+	assert.Equalf(t, err, id1+flakeIdStep, id2, "FlakeIdGenerator NewId() failed")
 
 	time.Sleep(shortTermValidityMillis * time.Millisecond)
 	// this ID should be from a new batch, because the validity elapsed
 	id3, err := flakeIdGenerator.NewId()
-	AssertLessThanf(t, err, id1+flakeIdStep*shortTermBatchSize, id3, "FlakeIdGenerator NewId() failed")
+	assert.LessThanf(t, err, id1+flakeIdStep*shortTermBatchSize, id3, "FlakeIdGenerator NewId() failed")
 
 }
 
@@ -116,7 +117,7 @@ func TestFlakeIdGeneratorProxy_ConcurrentlyGeneratedIds(t *testing.T) {
 		}
 	}
 	// if there were duplicate IDs generated, there will be less items in the map than expected
-	AssertEqualf(t, nil, len(ids), numRoutines*idsInRoutine, "FlakeIdGenerator NewId() returned duplicate ids")
+	assert.Equalf(t, nil, len(ids), numRoutines*idsInRoutine, "FlakeIdGenerator NewId() returned duplicate ids")
 }
 
 func TestFlakeIdGeneratorProxy_WhenAllMembersOutOfRangeThenError(t *testing.T) {
@@ -125,14 +126,14 @@ func TestFlakeIdGeneratorProxy_WhenAllMembersOutOfRangeThenError(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	_, err := asssignOverFlowId(cluster.ID, 0)
-	AssertErrorNil(t, err)
+	assert.ErrorNil(t, err)
 	_, err = asssignOverFlowId(cluster.ID, 1)
-	AssertErrorNil(t, err)
+	assert.ErrorNil(t, err)
 	client, _ := hazelcast.NewHazelcastClient()
 	defer client.Shutdown()
 	flakeIdGenerator, _ := client.GetFlakeIdGenerator("test")
 	_, err = flakeIdGenerator.NewId()
-	AssertErrorNotNil(t, err, "flakeIdGenerator should return an error when there is no server with a join id smaller than 2^16")
+	assert.ErrorNotNil(t, err, "flakeIdGenerator should return an error when there is no server with a join id smaller than 2^16")
 	if _, ok := err.(core.HazelcastError); !ok {
 		t.Fatal("HazelcastError is expected when there is no server with a join id smaller than 2^16")
 	}
@@ -144,10 +145,10 @@ func TestFlakeIdGeneratorProxy_WhenMemberOutOfRangeThenOtherMemberUsed(t *testin
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	_, err := asssignOverFlowId(cluster.ID, 0)
-	AssertErrorNil(t, err)
+	assert.ErrorNil(t, err)
 	client, _ := hazelcast.NewHazelcastClient()
 	defer client.Shutdown()
 	flakeIdGenerator, _ := client.GetFlakeIdGenerator("test")
 	_, err = flakeIdGenerator.NewId()
-	AssertErrorNil(t, err)
+	assert.ErrorNil(t, err)
 }

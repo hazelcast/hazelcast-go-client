@@ -29,7 +29,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 var mp core.IMap
@@ -41,7 +42,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	mp, _ = client.GetMap("myMap")
@@ -78,7 +79,7 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
-	AssertEqualf(t, err, res, testValue, "get returned a wrong value")
+	assert.Equalf(t, err, res, testValue, "get returned a wrong value")
 	mp.Clear()
 }
 
@@ -87,21 +88,21 @@ func TestMapProxy_SinglePutGetInt(t *testing.T) {
 	testValue := 25
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
-	AssertEqualf(t, err, res, int64(testValue), "get returned a wrong value")
+	assert.Equalf(t, err, res, int64(testValue), "get returned a wrong value")
 	mp.Clear()
 }
 
 func TestMapProxy_PutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.Put(nil, testValue)
-	AssertErrorNotNil(t, err, "put did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "put did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutWithNilValue(t *testing.T) {
 	testKey := "testingKey"
 	_, err := mp.Put(testKey, nil)
-	AssertErrorNotNil(t, err, "put did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "put did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -110,7 +111,7 @@ func TestMapProxy_GetWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	_, err := mp.Get(nil)
-	AssertErrorNotNil(t, err, "get did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "get did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -125,7 +126,7 @@ func TestMapProxy_TryRemove(t *testing.T) {
 
 func TestMapProxy_TryRemoveWithNilKey(t *testing.T) {
 	_, err := mp.TryRemove(nil, 1*time.Second)
-	AssertErrorNotNil(t, err, "remove did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -134,21 +135,21 @@ func TestMapProxy_TryPut(t *testing.T) {
 	testValue := "testingValue"
 	mp.TryPut(testKey, testValue)
 	res, err := mp.Get(testKey)
-	AssertEqualf(t, err, res, testValue, "get returned a wrong value")
+	assert.Equalf(t, err, res, testValue, "get returned a wrong value")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.TryPut(nil, testValue)
-	AssertErrorNotNil(t, err, "tryPut did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "tryPut did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNilValue(t *testing.T) {
 	testKey := "testingKey"
 	_, err := mp.TryPut(testKey, nil)
-	AssertErrorNotNil(t, err, "tryPut did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "tryPut did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -158,7 +159,7 @@ func TestMapProxy_ManyPutGet(t *testing.T) {
 		testValue := "testingValue" + strconv.Itoa(i)
 		mp.Put(testKey, testValue)
 		res, err := mp.Get(testKey)
-		AssertEqualf(t, err, res, testValue, "get returned a wrong value")
+		assert.Equalf(t, err, res, testValue, "get returned a wrong value")
 	}
 	mp.Clear()
 }
@@ -168,17 +169,17 @@ func TestMapProxy_Remove(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	removed, err := mp.Remove(testKey)
-	AssertEqualf(t, err, removed, testValue, "remove returned a wrong value")
+	assert.Equalf(t, err, removed, testValue, "remove returned a wrong value")
 	size, err := mp.Size()
-	AssertEqualf(t, err, size, int32(0), "map size should be 0.")
+	assert.Equalf(t, err, size, int32(0), "map size should be 0.")
 	found, err := mp.ContainsKey(testKey)
-	AssertEqualf(t, err, found, false, "containsKey returned a wrong result")
+	assert.Equalf(t, err, found, false, "containsKey returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveWithNilKey(t *testing.T) {
 	_, err := mp.Remove(nil)
-	AssertErrorNotNil(t, err, "remove did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -208,7 +209,7 @@ func TestMapProxy_RemoveAll(t *testing.T) {
 
 func TestMapProxy_RemoveAllWithNilPredicate(t *testing.T) {
 	err := mp.RemoveAll(nil)
-	AssertErrorNotNil(t, err, "removeAll did not return an error for nil predicate")
+	assert.ErrorNotNil(t, err, "removeAll did not return an error for nil predicate")
 	mp.Clear()
 }
 
@@ -217,21 +218,21 @@ func TestMapProxy_RemoveIfSame(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	removed, err := mp.RemoveIfSame(testKey, "testinValue1")
-	AssertEqualf(t, err, removed, false, "removeIfSame returned a wrong value")
+	assert.Equalf(t, err, removed, false, "removeIfSame returned a wrong value")
 	found, err := mp.ContainsKey(testKey)
-	AssertEqualf(t, err, found, true, "containsKey returned a wrong result")
+	assert.Equalf(t, err, found, true, "containsKey returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNilKey(t *testing.T) {
 	_, err := mp.RemoveIfSame(nil, "test")
-	AssertErrorNotNil(t, err, "remove did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNilValue(t *testing.T) {
 	_, err := mp.RemoveIfSame("test", nil)
-	AssertErrorNotNil(t, err, "remove did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -241,7 +242,7 @@ func TestMapProxy_PutTransient(t *testing.T) {
 	mp.Put(testKey, testValue)
 	mp.PutTransient(testKey, "nextValue", 100*time.Second)
 	res, err := mp.Get(testKey)
-	AssertEqualf(t, err, res, "nextValue", "putTransient failed")
+	assert.Equalf(t, err, res, "nextValue", "putTransient failed")
 	mp.Clear()
 
 }
@@ -253,7 +254,7 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 	mp.PutTransient(testKey, "nextValue", 1*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	res, err := mp.Get(testKey)
-	AssertNilf(t, err, res, "putTransient failed")
+	assert.Nilf(t, err, res, "putTransient failed")
 	mp.Clear()
 
 }
@@ -261,14 +262,14 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 func TestMapProxy_PutTransientWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	err := mp.PutTransient(nil, testValue, 1*time.Millisecond)
-	AssertErrorNotNil(t, err, "putTransient did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "putTransient did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNilValue(t *testing.T) {
 	testKey := "testingKey"
 	err := mp.PutTransient(testKey, nil, 1*time.Millisecond)
-	AssertErrorNotNil(t, err, "putTransient did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "putTransient did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -277,15 +278,15 @@ func TestMapProxy_ContainsKey(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	found, err := mp.ContainsKey(testKey)
-	AssertEqualf(t, err, found, true, "containsKey returned a wrong result")
+	assert.Equalf(t, err, found, true, "containsKey returned a wrong result")
 	found, err = mp.ContainsKey("testingKey2")
-	AssertEqualf(t, err, found, false, "containsKey returned a wrong result")
+	assert.Equalf(t, err, found, false, "containsKey returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsKeyWithNilKey(t *testing.T) {
 	_, err := mp.ContainsKey(nil)
-	AssertErrorNotNil(t, err, "containsKey did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "containsKey did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -294,15 +295,15 @@ func TestMapProxy_ContainsValue(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	found, err := mp.ContainsValue(testValue)
-	AssertEqualf(t, err, found, true, "containsValue returned a wrong result")
+	assert.Equalf(t, err, found, true, "containsValue returned a wrong result")
 	found, err = mp.ContainsValue("testingValue2")
-	AssertEqualf(t, err, found, false, "containsValue returned a wrong result")
+	assert.Equalf(t, err, found, false, "containsValue returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsValueWithNilValue(t *testing.T) {
 	_, err := mp.ContainsValue(nil)
-	AssertErrorNotNil(t, err, "containsValue did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "containsValue did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -315,7 +316,7 @@ func TestMapProxy_Clear(t *testing.T) {
 		t.Fatal(err)
 	} else {
 		size, err := mp.Size()
-		AssertEqualf(t, err, size, int32(0), "Map clear failed.")
+		assert.Equalf(t, err, size, int32(0), "Map clear failed.")
 	}
 }
 
@@ -325,13 +326,13 @@ func TestMapProxy_Delete(t *testing.T) {
 	}
 	mp.Delete("testingKey1")
 	size, err := mp.Size()
-	AssertEqualf(t, err, size, int32(9), "Map Delete failed")
+	assert.Equalf(t, err, size, int32(9), "Map Delete failed")
 	mp.Clear()
 }
 
 func TestMapProxy_DeleteWithNilKey(t *testing.T) {
 	err := mp.Delete(nil)
-	AssertErrorNotNil(t, err, "delete did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "delete did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -340,7 +341,7 @@ func TestMapProxy_IsEmpty(t *testing.T) {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
 	empty, err := mp.IsEmpty()
-	AssertEqualf(t, err, empty, false, "Map IsEmpty returned a wrong value")
+	assert.Equalf(t, err, empty, false, "Map IsEmpty returned a wrong value")
 	mp.Clear()
 }
 
@@ -350,14 +351,14 @@ func TestMapProxy_Evict(t *testing.T) {
 	}
 	mp.Evict("testingKey1")
 	size, err := mp.Size()
-	AssertEqualf(t, err, size, int32(9), "Map evict failed.")
+	assert.Equalf(t, err, size, int32(9), "Map evict failed.")
 	found, err := mp.ContainsKey("testingKey1")
-	AssertEqualf(t, err, found, false, "Map evict failed.")
+	assert.Equalf(t, err, found, false, "Map evict failed.")
 }
 
 func TestMapProxy_EvictWithNilKey(t *testing.T) {
 	_, err := mp.Evict(nil)
-	AssertErrorNotNil(t, err, "evict did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "evict did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -367,7 +368,7 @@ func TestMapProxy_EvictAll(t *testing.T) {
 	}
 	mp.EvictAll()
 	size, err := mp.Size()
-	AssertEqualf(t, err, size, int32(0), "Map evict failed.")
+	assert.Equalf(t, err, size, int32(0), "Map evict failed.")
 }
 
 func TestMapProxy_Flush(t *testing.T) {
@@ -384,31 +385,31 @@ func TestMapProxy_Flush(t *testing.T) {
 func TestMapProxy_IsLocked(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	locked, err := mp.IsLocked("testingKey")
-	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	assert.Equalf(t, err, locked, false, "Key should not be locked.")
 	err = mp.Lock("testingKey")
 	if err != nil {
 		t.Fatal(err)
 	}
 	locked, err = mp.IsLocked("testingKey")
-	AssertEqualf(t, err, locked, true, "Key should be locked.")
+	assert.Equalf(t, err, locked, true, "Key should be locked.")
 	err = mp.Unlock("testingKey")
 	if err != nil {
 		t.Error(err)
 	}
 	locked, err = mp.IsLocked("testingKey")
-	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	assert.Equalf(t, err, locked, false, "Key should not be locked.")
 
 }
 
 func TestMapProxy_IsLockedWithNilKey(t *testing.T) {
 	_, err := mp.IsLocked(nil)
-	AssertErrorNotNil(t, err, "isLocked did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "isLocked did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_UnlockWithNilKey(t *testing.T) {
 	err := mp.Unlock(nil)
-	AssertErrorNotNil(t, err, "unlock did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "unlock did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -417,45 +418,45 @@ func TestMapProxy_LockWithLeaseTime(t *testing.T) {
 	mp.LockWithLeaseTime("testingKey", 10*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	locked, err := mp.IsLocked("testingKey")
-	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	assert.Equalf(t, err, locked, false, "Key should not be locked.")
 }
 
 func TestMapProxy_LocktWithNilKey(t *testing.T) {
 	err := mp.Lock(nil)
-	AssertErrorNotNil(t, err, "lock did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "lock did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryLock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Second, 2*time.Second)
-	AssertEqualf(t, err, ok, true, "Try Lock failed")
+	assert.Equalf(t, err, ok, true, "Try Lock failed")
 	time.Sleep(5 * time.Second)
 	locked, err := mp.IsLocked("testingKey")
-	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	assert.Equalf(t, err, locked, false, "Key should not be locked.")
 	mp.ForceUnlock("testingKey")
 	mp.Clear()
 }
 
 func TestMapProxy_ForceUnlockWithNilKey(t *testing.T) {
 	err := mp.ForceUnlock(nil)
-	AssertErrorNotNil(t, err, "forceUnlock did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "forceUnlock did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryLockWithNilKey(t *testing.T) {
 	_, err := mp.TryLock(nil)
-	AssertErrorNotNil(t, err, "tryLock did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "tryLock did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_ForceUnlock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Second, 20*time.Second)
-	AssertEqualf(t, err, ok, true, "Try Lock failed")
+	assert.Equalf(t, err, ok, true, "Try Lock failed")
 	mp.ForceUnlock("testingKey")
 	locked, err := mp.IsLocked("testingKey")
-	AssertEqualf(t, err, locked, false, "Key should not be locked.")
+	assert.Equalf(t, err, locked, false, "Key should not be locked.")
 	mp.Unlock("testingKey")
 	mp.Clear()
 }
@@ -463,21 +464,21 @@ func TestMapProxy_ForceUnlock(t *testing.T) {
 func TestMapProxy_Replace(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.Replace("testingKey1", "testingValue2")
-	AssertEqualf(t, err, replaced, "testingValue1", "Map Replace returned wrong old value.")
+	assert.Equalf(t, err, replaced, "testingValue1", "Map Replace returned wrong old value.")
 	newValue, err := mp.Get("testingKey1")
-	AssertEqualf(t, err, newValue, "testingValue2", "Map Replace failed.")
+	assert.Equalf(t, err, newValue, "testingValue2", "Map Replace failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNilKey(t *testing.T) {
 	_, err := mp.Replace(nil, "test")
-	AssertErrorNotNil(t, err, "replace did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "replace did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNilValue(t *testing.T) {
 	_, err := mp.Replace("test", nil)
-	AssertErrorNotNil(t, err, "replace did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "replace did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -486,43 +487,43 @@ func TestMapProxy_Size(t *testing.T) {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
 	size, err := mp.Size()
-	AssertEqualf(t, err, size, int32(10), "Map size returned a wrong value")
+	assert.Equalf(t, err, size, int32(10), "Map size returned a wrong value")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSame(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue1", "testingValue2")
-	AssertEqualf(t, err, replaced, true, "Map Replace returned wrong old value.")
+	assert.Equalf(t, err, replaced, true, "Map Replace returned wrong old value.")
 	newValue, err := mp.Get("testingKey1")
-	AssertEqualf(t, err, newValue, "testingValue2", "Map ReplaceIfSame failed.")
+	assert.Equalf(t, err, newValue, "testingValue2", "Map ReplaceIfSame failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNilKey(t *testing.T) {
 	_, err := mp.ReplaceIfSame(nil, "test", "test")
-	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNilOldValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", nil, "test")
-	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nil oldValue")
+	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nil oldValue")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNilNewValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", "test", nil)
-	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nil newValue")
+	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nil newValue")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWhenDifferent(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue3", "testingValue2")
-	AssertEqualf(t, err, replaced, false, "Map Replace returned wrong old value.")
+	assert.Equalf(t, err, replaced, false, "Map Replace returned wrong old value.")
 	newValue, err := mp.Get("testingKey1")
-	AssertEqualf(t, err, newValue, "testingValue1", "Map ReplaceIfSame failed.")
+	assert.Equalf(t, err, newValue, "testingValue1", "Map ReplaceIfSame failed.")
 	mp.Clear()
 }
 
@@ -532,19 +533,19 @@ func TestMapProxy_Set(t *testing.T) {
 		t.Error(err)
 	}
 	newValue, err := mp.Get("testingKey1")
-	AssertEqualf(t, err, newValue, "testingValue1", "Map Set failed.")
+	assert.Equalf(t, err, newValue, "testingValue1", "Map Set failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNilKey(t *testing.T) {
 	err := mp.Set(nil, "test")
-	AssertErrorNotNil(t, err, "Set did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "Set did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNilValue(t *testing.T) {
 	err := mp.Set("test", nil)
-	AssertErrorNotNil(t, err, "set did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "set did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -554,11 +555,10 @@ func TestMapProxy_SetWithTtl(t *testing.T) {
 		t.Error(err)
 	}
 	newValue, err := mp.Get("testingKey1")
-	AssertEqualf(t, err, newValue, "testingValue1", "Map SetWithTtl failed.")
 	mp.SetWithTtl("testingKey1", "testingValue2", 1*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	newValue, err = mp.Get("testingKey1")
-	AssertNilf(t, err, newValue, "Map SetWithTtl failed.")
+	assert.Nilf(t, err, newValue, "Map SetWithTtl failed.")
 	mp.Clear()
 }
 
@@ -568,19 +568,19 @@ func TestMapProxy_PutIfAbsent(t *testing.T) {
 		t.Error(err)
 	}
 	newValue, err := mp.Get("testingKey1")
-	AssertEqualf(t, err, newValue, "testingValue1", "Map Set failed.")
+	assert.Equalf(t, err, newValue, "testingValue1", "Map Set failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNilKey(t *testing.T) {
 	_, err := mp.PutIfAbsent(nil, "test")
-	AssertErrorNotNil(t, err, "putIfAbsent did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNilValue(t *testing.T) {
 	_, err := mp.PutIfAbsent("test", nil)
-	AssertErrorNotNil(t, err, "putIfAbsent did not return an error for nil value")
+	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -611,7 +611,7 @@ func TestMapProxy_PutAll(t *testing.T) {
 
 func TestMapProxy_PutAllWithNilMap(t *testing.T) {
 	err := mp.PutAll(nil)
-	AssertErrorNotNil(t, err, "putAll did not return an error for nil map")
+	assert.ErrorNotNil(t, err, "putAll did not return an error for nil map")
 	mp.Clear()
 }
 
@@ -645,7 +645,7 @@ func TestMapProxy_KeySetWihPredicate(t *testing.T) {
 
 func TestMapProxy_KeySetWithPredicateWithNilPredicate(t *testing.T) {
 	_, err := mp.KeySetWithPredicate(nil)
-	AssertErrorNotNil(t, err, "keySetWithPredicate did not return an error for nil predicate")
+	assert.ErrorNotNil(t, err, "keySetWithPredicate did not return an error for nil predicate")
 	mp.Clear()
 }
 
@@ -679,7 +679,7 @@ func TestMapProxy_ValuesWithPredicate(t *testing.T) {
 
 func TestMapProxy_ValuesWithPredicateWithNilPredicate(t *testing.T) {
 	_, err := mp.ValuesWithPredicate(nil)
-	AssertErrorNotNil(t, err, "ValuesWithPredicate did not return an error for nil predicate")
+	assert.ErrorNotNil(t, err, "ValuesWithPredicate did not return an error for nil predicate")
 	mp.Clear()
 }
 
@@ -748,7 +748,7 @@ func TestMapProxy_GetAll(t *testing.T) {
 
 func TestMapProxy_GetAllWithNilKeys(t *testing.T) {
 	_, err := mp.GetAll(nil)
-	AssertErrorNotNil(t, err, "GetAll did not return an error for nil keys")
+	assert.ErrorNotNil(t, err, "GetAll did not return an error for nil keys")
 	mp.Clear()
 }
 
@@ -767,11 +767,11 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	mp.Put("key", "newValue")
 
 	entryView, err := mp.GetEntryView("key")
-	AssertEqualf(t, err, entryView.Key(), "key", "Map GetEntryView returned a wrong view.")
-	AssertEqualf(t, err, entryView.Value(), "newValue", "Map GetEntryView returned a wrong view.")
-	AssertEqualf(t, err, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
-	AssertEqualf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
-	AssertEqualf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, err, entryView.Key(), "key", "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, err, entryView.Value(), "newValue", "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, err, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
 	if cost := entryView.Cost(); cost <= 0 {
 		t.Fatal("entryView cost should be greater than 0.")
 	}
@@ -790,13 +790,13 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	if ttl := entryView.Ttl(); ttl <= 0 {
 		t.Fatal("entryView ttl should be greater than 0.")
 	}
-	AssertEqualf(t, err, entryView.LastStoredTime(), time.Time{}, "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, err, entryView.LastStoredTime(), time.Time{}, "Map GetEntryView returned a wrong view.")
 	mp.Clear()
 }
 
 func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
 	_, err := mp.GetEntryView(nil)
-	AssertErrorNotNil(t, err, "GetEntryView did not return an error for nil key")
+	assert.ErrorNotNil(t, err, "GetEntryView did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -836,16 +836,16 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryListener, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key123", "value")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryListener.event.Value(), "value", "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
-	AssertEqualf(t, nil, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Value(), "value", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
 
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
@@ -855,12 +855,12 @@ func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryAdded := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("key1", "value")
 	mp.Put("key1", "value")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryUpdated failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryUpdated failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -869,12 +869,12 @@ func TestMapProxy_AddEntryListenerEvicted(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryListener, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Evict("test")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryEvicted failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryEvicted failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -883,12 +883,12 @@ func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryListener, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Remove("test")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryRemoved failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryRemoved failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -898,14 +898,14 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryListener, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.EvictAll()
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
-	AssertEqualf(t, nil, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
-	AssertEqualf(t, nil, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, nil, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, nil, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -915,12 +915,12 @@ func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListener(entryListener, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Clear()
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListener entryClear failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryClear failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -929,11 +929,11 @@ func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListenerWithPredicate(entryListener, predicates.Equal("this", "value"), true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key123", "value")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListenerWithPredicate failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListenerWithPredicate failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -942,15 +942,15 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key1", "value1")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListenerToKey failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListenerToKey failed")
 	wg.Add(1)
 	mp.Put("key2", "value1")
-	timeout = WaitTimeout(wg, Timeout/20)
-	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKey failed")
+	timeout = tests.WaitTimeout(wg, tests.Timeout/20)
+	assert.Equalf(t, nil, true, timeout, "AddEntryListenerToKey failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -959,15 +959,15 @@ func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListenerToKeyWithPredicate(entryListener, predicates.Equal("this", "value1"), "key1", true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	mp.Put("key1", "value1")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "AddEntryListenerToKeyWithPredicate failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListenerToKeyWithPredicate failed")
 	wg.Add(1)
 	mp.Put("key1", "value2")
-	timeout = WaitTimeout(wg, Timeout/20)
-	AssertEqualf(t, nil, true, timeout, "AddEntryListenerToKeyWithPredicate failed")
+	timeout = tests.WaitTimeout(wg, tests.Timeout/20)
+	assert.Equalf(t, nil, true, timeout, "AddEntryListenerToKeyWithPredicate failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 }
@@ -976,7 +976,7 @@ func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationId(t *testing.T
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationId, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	invalidRegistrationId := "invalid"
 	removed, _ := mp.RemoveEntryListener(&invalidRegistrationId)
 	if removed {
@@ -997,9 +997,9 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
 	value, err := mp2.ExecuteOnKey(testKey, processor)
-	AssertEqualf(t, err, value, expectedValue, "ExecuteOnKey failed.")
+	assert.Equalf(t, err, value, expectedValue, "ExecuteOnKey failed.")
 	newValue, err := mp2.Get("testingKey1")
-	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
+	assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
 	mp.Clear()
 	client.Shutdown()
 }
@@ -1021,11 +1021,11 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 	keys[0] = "testingKey1"
 	keys[1] = "testingKey2"
 	result, err := mp2.ExecuteOnKeys(keys, processor)
-	AssertEqualf(t, err, len(result), 2, "ExecuteOnKeys failed.")
+	assert.Equalf(t, err, len(result), 2, "ExecuteOnKeys failed.")
 	newValue, err := mp2.Get("testingKey1")
-	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
 	newValue, err = mp2.Get("testingKey2")
-	AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
 	mp2.Clear()
 	client.Shutdown()
 }
@@ -1044,9 +1044,9 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	}
 	result, err := mp2.ExecuteOnEntries(processor)
 	for _, pair := range result {
-		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed")
+		assert.Equalf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed")
 		newValue, err := mp2.Get(pair.Key())
-		AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnEntries failed")
+		assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnEntries failed")
 	}
 	mp.Clear()
 	client.Shutdown()
@@ -1069,9 +1069,9 @@ func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 		t.Fatal("ExecuteOnEntriesWithPredicate failed")
 	}
 	for _, pair := range result {
-		AssertEqualf(t, err, pair.Value(), expectedValue, "ExecuteOnEntriesWithPredicate failed")
+		assert.Equalf(t, err, pair.Value(), expectedValue, "ExecuteOnEntriesWithPredicate failed")
 		newValue, err := mp2.Get(pair.Key())
-		AssertEqualf(t, err, newValue, expectedValue, "ExecuteOnEntriesWithPredicate failed")
+		assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnEntriesWithPredicate failed")
 	}
 	mp.Clear()
 	client.Shutdown()
@@ -1088,7 +1088,7 @@ func TestMapProxy_ExecuteOnKeyWithNonRegisteredProcessor(t *testing.T) {
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
 	_, err := mp2.ExecuteOnKey(testKey, processor)
-	AssertErrorNotNil(t, err, "non registered processor should return an error")
+	assert.ErrorNotNil(t, err, "non registered processor should return an error")
 	mp.Clear()
 	client.Shutdown()
 }
@@ -1100,7 +1100,7 @@ func TestMapProxy_Destroy(t *testing.T) {
 	mp.Destroy()
 	mp, _ := client.GetMap("myMap")
 	res, err := mp.Get(testKey)
-	AssertNilf(t, err, res, "get returned a wrong value")
+	assert.Nilf(t, err, res, "get returned a wrong value")
 }
 
 type simpleEntryProcessor struct {
@@ -1156,169 +1156,169 @@ type student struct {
 
 func TestMapProxy_PutWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Put(student{}, "test")
-	AssertErrorNotNil(t, err, "put did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "put did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutWithNonSerializableValue(t *testing.T) {
 	_, err := mp.Put("test", student{})
-	AssertErrorNotNil(t, err, "put did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "put did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNonSerializableKey(t *testing.T) {
 	_, err := mp.TryPut(student{}, "test")
-	AssertErrorNotNil(t, err, "tryPut did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "tryPut did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNonSerializableValue(t *testing.T) {
 	_, err := mp.TryPut("test", student{})
-	AssertErrorNotNil(t, err, "tryPut did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "tryPut did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNonSerializableKey(t *testing.T) {
 	err := mp.PutTransient(student{}, "test", 1*time.Second)
-	AssertErrorNotNil(t, err, "putTransient did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "putTransient did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNonSerializableValue(t *testing.T) {
 	err := mp.PutTransient("test", student{}, 1*time.Second)
-	AssertErrorNotNil(t, err, "putTransient did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "putTransient did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_GetWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Get(student{})
-	AssertErrorNotNil(t, err, "get did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "get did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNonSerializableKey(t *testing.T) {
 	_, err := mp.RemoveIfSame(student{}, "test")
-	AssertErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNonSerializableValue(t *testing.T) {
 	_, err := mp.RemoveIfSame("test", student{})
-	AssertErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_TryRemoveWithNonSerializableKey(t *testing.T) {
 	_, err := mp.TryRemove(student{}, 1*time.Second)
-	AssertErrorNotNil(t, err, "tryRemove did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "tryRemove did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsKeyWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ContainsKey(student{})
-	AssertErrorNotNil(t, err, "containsKey did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "containsKey did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsValueWithNonSerializableValue(t *testing.T) {
 	_, err := mp.ContainsValue(student{})
-	AssertErrorNotNil(t, err, "containsValue did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "containsValue did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_DeleteWithNonSerializableKey(t *testing.T) {
 	err := mp.Delete(student{})
-	AssertErrorNotNil(t, err, "delete did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "delete did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_EvictWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Evict(student{})
-	AssertErrorNotNil(t, err, "evict did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "evict did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_LockWithNonSerializableKey(t *testing.T) {
 	err := mp.Lock(student{})
-	AssertErrorNotNil(t, err, "lock did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "lock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryLockWithNonSerializableKey(t *testing.T) {
 	_, err := mp.TryLock(student{})
-	AssertErrorNotNil(t, err, "tryLock did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "tryLock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_UnlockWithNonSerializableKey(t *testing.T) {
 	err := mp.Unlock(student{})
-	AssertErrorNotNil(t, err, "unlock did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "unlock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ForceUnlockWithNonSerializableKey(t *testing.T) {
 	err := mp.ForceUnlock(student{})
-	AssertErrorNotNil(t, err, "forceUnlock did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "forceUnlock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_IsLockedWithNonSerializableKey(t *testing.T) {
 	_, err := mp.IsLocked(student{})
-	AssertErrorNotNil(t, err, "isLocked did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "isLocked did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Replace(student{}, "test")
-	AssertErrorNotNil(t, err, "replace did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "replace did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableValue(t *testing.T) {
 	_, err := mp.Replace("test", student{})
-	AssertErrorNotNil(t, err, "replace did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "replace did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ReplaceIfSame(student{}, "test", "test")
-	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableOldValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", student{}, "test")
-	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable oldValue")
+	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable oldValue")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableNewValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", "test", student{})
-	AssertErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable newValue")
+	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable newValue")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNonSerializableKey(t *testing.T) {
 	err := mp.Set(student{}, "test")
-	AssertErrorNotNil(t, err, "set did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "set did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNonSerializableValue(t *testing.T) {
 	err := mp.Set("test", student{})
-	AssertErrorNotNil(t, err, "set did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "set did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNonSerializableKey(t *testing.T) {
 	_, err := mp.PutIfAbsent(student{}, "test")
-	AssertErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNonSerializableValue(t *testing.T) {
 	_, err := mp.PutIfAbsent("test", student{})
-	AssertErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable value")
+	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable value")
 	mp.Clear()
 }
 
@@ -1326,7 +1326,7 @@ func TestMapProxy_PutAllWithNonSerializableMapKey(t *testing.T) {
 	testMap := make(map[interface{}]interface{}, 0)
 	testMap[student{}] = 5
 	err := mp.PutAll(testMap)
-	AssertErrorNotNil(t, err, "putAll did not return an error for nonserializable map key")
+	assert.ErrorNotNil(t, err, "putAll did not return an error for nonserializable map key")
 	mp.Clear()
 }
 
@@ -1334,7 +1334,7 @@ func TestMapProxy_PutAllWithNonSerializableMapValue(t *testing.T) {
 	testMap := make(map[interface{}]interface{}, 0)
 	testMap[5] = student{}
 	err := mp.PutAll(testMap)
-	AssertErrorNotNil(t, err, "putAll did not return an error for nonserializable map value")
+	assert.ErrorNotNil(t, err, "putAll did not return an error for nonserializable map value")
 	mp.Clear()
 }
 
@@ -1342,37 +1342,37 @@ func TestMapProxy_GetAllWithNonSerializableKey(t *testing.T) {
 	testSlice := make([]interface{}, 1)
 	testSlice[0] = student{}
 	_, err := mp.GetAll(testSlice)
-	AssertErrorNotNil(t, err, "getAll did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "getAll did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_GetEntryViewWithNonSerializableKey(t *testing.T) {
 	_, err := mp.GetEntryView(student{})
-	AssertErrorNotNil(t, err, "getEntryView did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "getEntryView did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_AddEntryListenerToKeyWithNonSerializableKey(t *testing.T) {
 	_, err := mp.AddEntryListenerToKey(nil, student{}, false)
-	AssertErrorNotNil(t, err, "addEntryListenerToKey did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "addEntryListenerToKey did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_AddEntryListenerToKeyWithPredicateWithNonSerializableKey(t *testing.T) {
 	_, err := mp.AddEntryListenerToKeyWithPredicate(nil, nil, student{}, false)
-	AssertErrorNotNil(t, err, "addEntryListenerToKeyWithPredicate did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "addEntryListenerToKeyWithPredicate did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ExecuteOnKeyWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ExecuteOnKey(student{}, nil)
-	AssertErrorNotNil(t, err, "executeOnKey did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "executeOnKey did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ExecuteOnEntriesWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ExecuteOnEntries(student{})
-	AssertErrorNotNil(t, err, "executeOnEntries did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "executeOnEntries did not return an error for nonserializable key")
 	mp.Clear()
 }
 
@@ -1380,13 +1380,13 @@ func TestMapProxy_ExecuteOnKeysWithNonSerializableKey(t *testing.T) {
 	testSlice := make([]interface{}, 1)
 	testSlice[0] = student{}
 	_, err := mp.ExecuteOnKeys(testSlice, nil)
-	AssertErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable key")
+	assert.ErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ExecuteOnKeysWithNonSerializableProcessor(t *testing.T) {
 
 	_, err := mp.ExecuteOnKeys(nil, student{})
-	AssertErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable processor")
+	assert.ErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable processor")
 	mp.Clear()
 }

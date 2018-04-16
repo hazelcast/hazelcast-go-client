@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
@@ -19,7 +20,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 	entryAdded := &mapListener{wg: wg}
 	mp, _ := client.GetMap("testMap")
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	time.Sleep(3 * time.Second)
 	remoteController.StartMember(cluster.ID)
@@ -31,7 +32,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 		mp.Put(testKey, testValue)
 	}
 	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "listener reregister failed")
+	assert.Equalf(t, nil, false, timeout, "listener reregister failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 	client.Shutdown()
@@ -46,7 +47,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 	entryAdded := &mapListener{wg: wg}
 	mp, _ := client.GetMap("testMap")
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	wg.Add(100)
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)
@@ -54,7 +55,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 		mp.Put(testKey, testValue)
 	}
 	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "smartListener with multiple members failed")
+	assert.Equalf(t, nil, false, timeout, "smartListener with multiple members failed")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 	client.Shutdown()
@@ -70,7 +71,7 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	entryAdded := &mapListener{wg: wg}
 	mp, _ := client.GetMap("testMap")
 	registrationId, err := mp.AddEntryListener(entryAdded, true)
-	AssertEqual(t, err, nil, nil)
+	assert.Equal(t, err, nil, nil)
 	remoteController.StartMember(cluster.ID)
 	time.Sleep(15 * time.Second) // Wait for partitionTable update
 	wg.Add(100)
@@ -80,7 +81,7 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 		mp.Put(testKey, testValue)
 	}
 	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "smartListener adding a member after a while failed to listen.")
+	assert.Equalf(t, nil, false, timeout, "smartListener adding a member after a while failed to listen.")
 	mp.RemoveEntryListener(registrationId)
 	mp.Clear()
 	client.Shutdown()
