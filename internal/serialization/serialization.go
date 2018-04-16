@@ -16,12 +16,13 @@ package serialization
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/predicates"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"reflect"
-	"strconv"
 )
 
 ////// SerializationService ///////////

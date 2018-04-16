@@ -1,11 +1,12 @@
 package tests
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {

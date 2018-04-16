@@ -15,13 +15,6 @@
 package _map
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"reflect"
 	"sort"
@@ -29,6 +22,14 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	. "github.com/hazelcast/hazelcast-go-client/tests"
 )
 
 var mp core.IMap

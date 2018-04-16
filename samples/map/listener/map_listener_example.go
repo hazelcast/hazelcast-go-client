@@ -16,9 +16,10 @@ package main
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"sync"
 )
 
 type entryListener struct {

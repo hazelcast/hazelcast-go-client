@@ -16,10 +16,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"reflect"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (

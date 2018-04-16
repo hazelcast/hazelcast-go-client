@@ -15,14 +15,15 @@
 package queue
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/rc"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/rc"
+	. "github.com/hazelcast/hazelcast-go-client/tests"
 )
 
 var queue core.IQueue

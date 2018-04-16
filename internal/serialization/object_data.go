@@ -16,10 +16,11 @@ package serialization
 
 import (
 	"fmt"
+	"unicode/utf8"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"unicode/utf8"
 )
 
 type ObjectDataOutput struct {

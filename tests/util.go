@@ -15,12 +15,13 @@
 package tests
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"io/ioutil"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
 var Timeout time.Duration = 1 * time.Minute

@@ -15,16 +15,17 @@
 package flake_id_generator
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/rc"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/rc"
+	. "github.com/hazelcast/hazelcast-go-client/tests"
 )
 
 var flakeIdGenerator core.FlakeIdGenerator

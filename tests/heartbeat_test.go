@@ -15,10 +15,11 @@
 package tests
 
 import (
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"sync"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 type heartbeatListener struct {

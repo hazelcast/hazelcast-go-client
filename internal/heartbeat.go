@@ -15,11 +15,12 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 const (

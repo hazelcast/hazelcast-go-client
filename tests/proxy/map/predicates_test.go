@@ -15,13 +15,14 @@
 package _map
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"log"
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 var serializationService *serialization.SerializationService

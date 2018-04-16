@@ -2,6 +2,7 @@ package classdef
 
 import (
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
 	"github.com/hazelcast/hazelcast-go-client/serialization"

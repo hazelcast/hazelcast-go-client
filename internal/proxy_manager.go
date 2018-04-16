@@ -15,11 +15,12 @@
 package internal
 
 import (
+	"sync"
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"sync"
-	"sync/atomic"
 )
 
 type proxyManager struct {

@@ -17,10 +17,11 @@ package serialization
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (

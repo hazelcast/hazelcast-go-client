@@ -15,11 +15,12 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"reflect"
 	"sync"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 func TestClientMessageBuilder_OnMessage(t *testing.T) {

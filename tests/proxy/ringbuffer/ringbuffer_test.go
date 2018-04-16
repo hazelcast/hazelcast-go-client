@@ -15,13 +15,14 @@
 package ringbuffer
 
 import (
+	"log"
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
-	"log"
-	"testing"
 )
 
 var ringbuffer core.Ringbuffer

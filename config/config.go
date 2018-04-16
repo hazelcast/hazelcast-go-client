@@ -16,10 +16,11 @@
 package config
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (

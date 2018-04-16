@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 func ListRemoveListenerCalculateSize(name *string, registrationId *string) int {
 	// Calculates the request payload size
 	dataSize := 0

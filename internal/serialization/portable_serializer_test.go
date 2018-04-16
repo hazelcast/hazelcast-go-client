@@ -16,12 +16,13 @@ package serialization
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
-	"reflect"
-	"testing"
 )
 
 type PortableFactory1 struct {

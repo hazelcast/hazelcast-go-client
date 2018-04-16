@@ -16,13 +16,14 @@ package internal
 
 import (
 	"fmt"
+	"log"
+	"sync/atomic"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"log"
-	"sync/atomic"
-	"time"
 )
 
 const RetryWaitTimeInSeconds = 1

@@ -14,8 +14,6 @@
 
 package protocol
 
-import ()
-
 func ReplicatedMapEntrySetCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0

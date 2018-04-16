@@ -16,11 +16,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
 func main() {

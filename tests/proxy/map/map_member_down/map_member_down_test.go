@@ -15,14 +15,15 @@
 package map_member_down
 
 import (
+	"log"
+	"testing"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
-	"log"
-	"testing"
-	"time"
 )
 
 var client hazelcast.IHazelcastInstance

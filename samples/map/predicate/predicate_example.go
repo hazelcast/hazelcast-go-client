@@ -16,9 +16,10 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	"strconv"
 )
 
 func main() {

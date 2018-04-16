@@ -16,11 +16,12 @@ package serialization
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"reflect"
-	"testing"
 )
 
 func TestNilSerializer_Write(t *testing.T) {
