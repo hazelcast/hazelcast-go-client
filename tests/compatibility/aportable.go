@@ -15,7 +15,7 @@
 package compatibility
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type aPortable struct {
@@ -28,7 +28,7 @@ type aPortable struct {
 	i    int32
 	l    int64
 	str  string
-	p    Portable
+	p    serialization.Portable
 
 	booleans  []bool
 	bytes     []byte
@@ -39,7 +39,7 @@ type aPortable struct {
 	ints      []int32
 	longs     []int64
 	strings   []string
-	portables []Portable
+	portables []serialization.Portable
 
 	booleansNull []bool
 	bytesNull    []byte
@@ -60,7 +60,7 @@ func (*aPortable) FactoryId() int32 {
 	return portableFactoryId
 }
 
-func (p *aPortable) WritePortable(writer PortableWriter) error {
+func (p *aPortable) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteBool("bool", p.bool)
 	writer.WriteByte("b", p.b)
 	writer.WriteUInt16("c", p.c)
@@ -99,7 +99,7 @@ func (p *aPortable) WritePortable(writer PortableWriter) error {
 	return nil
 }
 
-func (p *aPortable) ReadPortable(reader PortableReader) error {
+func (p *aPortable) ReadPortable(reader serialization.PortableReader) error {
 	p.bool, _ = reader.ReadBool("bool")
 	p.b, _ = reader.ReadByte("b")
 	p.c, _ = reader.ReadUInt16("c")

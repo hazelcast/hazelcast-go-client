@@ -15,15 +15,15 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func RingbufferReadOneCalculateSize(name *string, sequence int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
@@ -38,9 +38,9 @@ func RingbufferReadOneEncodeRequest(name *string, sequence int64) *ClientMessage
 	return clientMessage
 }
 
-func RingbufferReadOneDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
+func RingbufferReadOneDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
-	return func() (response *Data) {
+	return func() (response *serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

@@ -15,22 +15,22 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *Data, key *Data, threadId int64) int {
+func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(entryProcessor)
 	dataSize += DataCalculateSize(key)
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
-func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *Data, key *Data, threadId int64) *ClientMessage {
+func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnKeyCalculateSize(name, entryProcessor, key, threadId))
 	clientMessage.SetMessageType(mapExecuteOnKey)
@@ -43,9 +43,9 @@ func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *Data, key *Data,
 	return clientMessage
 }
 
-func MapExecuteOnKeyDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
+func MapExecuteOnKeyDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
-	return func() (response *Data) {
+	return func() (response *serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

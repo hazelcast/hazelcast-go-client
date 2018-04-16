@@ -15,9 +15,9 @@
 package org_website_samples
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/config"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type GlobalSerializer struct {
@@ -27,21 +27,21 @@ func (*GlobalSerializer) Id() int32 {
 	return 20
 }
 
-func (*GlobalSerializer) Read(input DataInput) (obj interface{}, err error) {
+func (*GlobalSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
 	// return MyFavoriteSerializer.deserialize(in)
 	return
 }
 
-func (*GlobalSerializer) Write(output DataOutput, object interface{}) (err error) {
+func (*GlobalSerializer) Write(output serialization.DataOutput, object interface{}) (err error) {
 	// output.write(MyFavoriteSerializer.serialize(object))
 	return
 }
 
 func globalSerializerSampleRun() {
-	clientConfig := NewClientConfig()
+	clientConfig := config.NewClientConfig()
 	clientConfig.SerializationConfig().SetGlobalSerializer(&GlobalSerializer{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := NewHazelcastClientWithConfig(clientConfig)
+	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 
 	//GlobalSerializer will serialize/deserialize all non-builtin types
 

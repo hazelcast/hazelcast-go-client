@@ -18,7 +18,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"net"
 	"strconv"
 	"sync/atomic"
@@ -28,8 +28,8 @@ import (
 const BufferSize = 8192 * 2
 
 type Connection struct {
-	pending                chan *ClientMessage
-	received               chan *ClientMessage
+	pending                chan *protocol.ClientMessage
+	received               chan *protocol.ClientMessage
 	socket                 net.Conn
 	clientMessageBuilder   *clientMessageBuilder
 	closed                 chan bool
@@ -49,17 +49,17 @@ type Connection struct {
 	connectionManager      *connectionManager
 }
 
-func newConnection(address *Address, responseChannel chan *ClientMessage, sendingError chan int64, connectionId int64, connectionManager *connectionManager) *Connection {
-	connection := Connection{pending: make(chan *ClientMessage, 1),
-		received:             make(chan *ClientMessage, 1),
+func newConnection(address *protocol.Address, responseChannel chan *protocol.ClientMessage, sendingError chan int64, connectionId int64, connectionManager *connectionManager) *Connection {
+	connection := Connection{pending: make(chan *protocol.ClientMessage, 1),
+		received:             make(chan *protocol.ClientMessage, 1),
 		closed:               make(chan bool, 1),
-		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*ClientMessage)}, sendingError: sendingError,
+		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*protocol.ClientMessage)}, sendingError: sendingError,
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
 		connectionId:      connectionId,
 		connectionManager: connectionManager,
 	}
-	connection.endpoint.Store(&Address{})
+	connection.endpoint.Store(&protocol.Address{})
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
 		return nil
@@ -96,7 +96,7 @@ func (connection *Connection) writePool() {
 	}
 }
 
-func (connection *Connection) send(clientMessage *ClientMessage) bool {
+func (connection *Connection) send(clientMessage *protocol.ClientMessage) bool {
 	if !connection.isAlive() {
 		return false
 	}
@@ -109,7 +109,7 @@ func (connection *Connection) send(clientMessage *ClientMessage) bool {
 	}
 }
 
-func (connection *Connection) write(clientMessage *ClientMessage) error {
+func (connection *Connection) write(clientMessage *protocol.ClientMessage) error {
 	remainingLen := len(clientMessage.Buffer)
 	writeIndex := 0
 	for remainingLen > 0 {
@@ -146,7 +146,7 @@ func (connection *Connection) receiveMessage() {
 		if frameLength > uint32(len(connection.readBuffer)) {
 			return
 		}
-		resp := NewClientMessage(connection.readBuffer[:frameLength], 0)
+		resp := protocol.NewClientMessage(connection.readBuffer[:frameLength], 0)
 		connection.readBuffer = connection.readBuffer[frameLength:]
 		connection.clientMessageBuilder.onMessage(resp)
 	}
@@ -171,7 +171,7 @@ func (connection *Connection) String() string {
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
 		", connected server version=%s", connection.isAlive(), connection.connectionId,
-		connection.endpoint.Load().(*Address).Host(), connection.endpoint.Load().(*Address).Port(),
+		connection.endpoint.Load().(*protocol.Address).Host(), connection.endpoint.Load().(*protocol.Address).Port(),
 		connection.lastRead.Load().(time.Time).String(), connection.lastWrite.Load().(time.Time).String(),
 		connection.closedTime.Load().(time.Time).String(), connection.lastHeartbeatRequested.Load().(time.Time).String(),
 		connection.lastHeartbeatReceived.Load().(time.Time).String(), *connection.serverHazelcastVersion)

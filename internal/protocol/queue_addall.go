@@ -15,23 +15,23 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func QueueAddAllCalculateSize(name *string, dataList []*Data) int {
+func QueueAddAllCalculateSize(name *string, dataList []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	for _, dataListItem := range dataList {
 		dataSize += DataCalculateSize(dataListItem)
 	}
 	return dataSize
 }
 
-func QueueAddAllEncodeRequest(name *string, dataList []*Data) *ClientMessage {
+func QueueAddAllEncodeRequest(name *string, dataList []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueAddAllCalculateSize(name, dataList))
 	clientMessage.SetMessageType(queueAddAll)

@@ -15,22 +15,22 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MultiMapAddEntryListenerToKeyCalculateSize(name *string, key *Data, includeValue bool, localOnly bool) int {
+func MultiMapAddEntryListenerToKeyCalculateSize(name *string, key *serialization.Data, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += BoolSizeInBytes
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
-func MultiMapAddEntryListenerToKeyEncodeRequest(name *string, key *Data, includeValue bool, localOnly bool) *ClientMessage {
+func MultiMapAddEntryListenerToKeyEncodeRequest(name *string, key *serialization.Data, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapAddEntryListenerToKeyCalculateSize(name, key, includeValue, localOnly))
 	clientMessage.SetMessageType(multimapAddEntryListenerToKey)
@@ -51,9 +51,9 @@ func MultiMapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) f
 	}
 }
 
-type MultiMapAddEntryListenerToKeyHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+type MultiMapAddEntryListenerToKeyHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
 
-func MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -80,7 +80,7 @@ func MultiMapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MultiMapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventEntry && handleEventEntry != nil {
+	if messageType == common.EventEntry && handleEventEntry != nil {
 		handleEventEntry(MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage))
 	}
 }

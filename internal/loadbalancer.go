@@ -15,7 +15,7 @@
 package internal
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"math/rand"
 	"time"
 )
@@ -29,13 +29,13 @@ func newRandomLoadBalancer(clusterService *clusterService) *randomLoadBalancer {
 	return &randomLoadBalancer{clusterService: clusterService}
 }
 
-func (randomLoadBalancer *randomLoadBalancer) nextAddress() *Address {
+func (randomLoadBalancer *randomLoadBalancer) nextAddress() *protocol.Address {
 	membersList := randomLoadBalancer.clusterService.GetMemberList()
 	size := len(membersList)
 	if size > 0 {
 		randomIndex := rand.Intn(size)
 		member := membersList[randomIndex]
-		return member.Address().(*Address)
+		return member.Address().(*protocol.Address)
 	}
 	return nil
 }

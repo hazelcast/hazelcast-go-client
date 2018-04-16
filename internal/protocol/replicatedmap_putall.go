@@ -15,19 +15,19 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func ReplicatedMapPutAllCalculateSize(name *string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(*Data)
-		val := entriesItem.value.(*Data)
+		key := entriesItem.key.(*serialization.Data)
+		val := entriesItem.value.(*serialization.Data)
 		dataSize += DataCalculateSize(key)
 		dataSize += DataCalculateSize(val)
 	}
@@ -42,8 +42,8 @@ func ReplicatedMapPutAllEncodeRequest(name *string, entries []*Pair) *ClientMess
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(entries)))
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(*Data)
-		val := entriesItem.value.(*Data)
+		key := entriesItem.key.(*serialization.Data)
+		val := entriesItem.value.(*serialization.Data)
 		clientMessage.AppendData(key)
 		clientMessage.AppendData(val)
 	}

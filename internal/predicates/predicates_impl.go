@@ -15,7 +15,7 @@
 package predicates
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const PredicateFactoryId = -32
@@ -28,11 +28,11 @@ func newPredicate(id int32) *predicate {
 	return &predicate{id}
 }
 
-func (sp *predicate) ReadData(input DataInput) error {
+func (sp *predicate) ReadData(input serialization.DataInput) error {
 	return nil
 }
 
-func (sp *predicate) WriteData(output DataOutput) error {
+func (sp *predicate) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
@@ -53,14 +53,14 @@ func NewSqlPredicate(sql string) *SqlPredicate {
 	return &SqlPredicate{newPredicate(SqlPredicateId), sql}
 }
 
-func (sp *SqlPredicate) ReadData(input DataInput) error {
+func (sp *SqlPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	sp.predicate = newPredicate(SqlPredicateId)
 	sp.sql, err = input.ReadUTF()
 	return err
 }
 
-func (sp *SqlPredicate) WriteData(output DataOutput) error {
+func (sp *SqlPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(sp.sql)
 	return nil
 }
@@ -74,7 +74,7 @@ func NewAndPredicate(predicates []interface{}) *AndPredicate {
 	return &AndPredicate{newPredicate(AndPredicateId), predicates}
 }
 
-func (ap *AndPredicate) ReadData(input DataInput) error {
+func (ap *AndPredicate) ReadData(input serialization.DataInput) error {
 	ap.predicate = newPredicate(AndPredicateId)
 	length, err := input.ReadInt32()
 	if err != nil {
@@ -91,7 +91,7 @@ func (ap *AndPredicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (ap *AndPredicate) WriteData(output DataOutput) error {
+func (ap *AndPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(int32(len(ap.predicates)))
 	for _, pred := range ap.predicates {
 		err := output.WriteObject(pred)
@@ -113,7 +113,7 @@ func NewBetweenPredicate(field string, from interface{}, to interface{}) *Betwee
 	return &BetweenPredicate{newPredicate(BetweenPredicateId), field, from, to}
 }
 
-func (bp *BetweenPredicate) ReadData(input DataInput) error {
+func (bp *BetweenPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	bp.predicate = newPredicate(BetweenPredicateId)
 	bp.field, err = input.ReadUTF()
@@ -129,7 +129,7 @@ func (bp *BetweenPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (bp *BetweenPredicate) WriteData(output DataOutput) error {
+func (bp *BetweenPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(bp.field)
 	err := output.WriteObject(bp.to)
 	if err != nil {
@@ -148,7 +148,7 @@ func NewEqualPredicate(field string, value interface{}) *EqualPredicate {
 	return &EqualPredicate{newPredicate(EqualPredicateId), field, value}
 }
 
-func (ep *EqualPredicate) ReadData(input DataInput) error {
+func (ep *EqualPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	ep.predicate = newPredicate(EqualPredicateId)
 	ep.field, err = input.ReadUTF()
@@ -160,7 +160,7 @@ func (ep *EqualPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (ep *EqualPredicate) WriteData(output DataOutput) error {
+func (ep *EqualPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(ep.field)
 	return output.WriteObject(ep.value)
 }
@@ -177,7 +177,7 @@ func NewGreaterLessPredicate(field string, value interface{}, equal bool, less b
 	return &GreaterLessPredicate{newPredicate(GreaterlessPredicateId), field, value, equal, less}
 }
 
-func (glp *GreaterLessPredicate) ReadData(input DataInput) error {
+func (glp *GreaterLessPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	glp.predicate = newPredicate(GreaterlessPredicateId)
 	glp.field, err = input.ReadUTF()
@@ -196,7 +196,7 @@ func (glp *GreaterLessPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (glp *GreaterLessPredicate) WriteData(output DataOutput) error {
+func (glp *GreaterLessPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(glp.field)
 	err := output.WriteObject(glp.value)
 	if err != nil {
@@ -217,7 +217,7 @@ func NewLikePredicate(field string, expr string) *LikePredicate {
 	return &LikePredicate{newPredicate(LikePredicateId), field, expr}
 }
 
-func (lp *LikePredicate) ReadData(input DataInput) error {
+func (lp *LikePredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	lp.predicate = newPredicate(LikePredicateId)
 	lp.field, err = input.ReadUTF()
@@ -228,7 +228,7 @@ func (lp *LikePredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (lp *LikePredicate) WriteData(output DataOutput) error {
+func (lp *LikePredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(lp.field)
 	output.WriteUTF(lp.expr)
 	return nil
@@ -242,7 +242,7 @@ func NewILikePredicate(field string, expr string) *ILikePredicate {
 	return &ILikePredicate{&LikePredicate{newPredicate(ILikePredicateId), field, expr}}
 }
 
-func (ilp *ILikePredicate) ReadData(input DataInput) error {
+func (ilp *ILikePredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	ilp.LikePredicate = &LikePredicate{predicate: newPredicate(ILikePredicateId)}
 	ilp.field, err = input.ReadUTF()
@@ -263,7 +263,7 @@ func NewInPredicate(field string, values []interface{}) *InPredicate {
 	return &InPredicate{newPredicate(InPredicateId), field, values}
 }
 
-func (ip *InPredicate) ReadData(input DataInput) error {
+func (ip *InPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	ip.predicate = newPredicate(InPredicateId)
 	ip.field, err = input.ReadUTF()
@@ -284,7 +284,7 @@ func (ip *InPredicate) ReadData(input DataInput) error {
 	return nil
 }
 
-func (ip *InPredicate) WriteData(output DataOutput) error {
+func (ip *InPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(ip.field)
 	output.WriteInt32(int32(len(ip.values)))
 	for _, value := range ip.values {
@@ -305,14 +305,14 @@ func NewInstanceOfPredicate(className string) *InstanceOfPredicate {
 	return &InstanceOfPredicate{newPredicate(InstanceOfPredicateId), className}
 }
 
-func (iop *InstanceOfPredicate) ReadData(input DataInput) error {
+func (iop *InstanceOfPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	iop.predicate = newPredicate(InstanceOfPredicateId)
 	iop.className, err = input.ReadUTF()
 	return err
 }
 
-func (iop *InstanceOfPredicate) WriteData(output DataOutput) error {
+func (iop *InstanceOfPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(iop.className)
 	return nil
 }
@@ -325,7 +325,7 @@ func NewNotEqualPredicate(field string, value interface{}) *NotEqualPredicate {
 	return &NotEqualPredicate{&EqualPredicate{newPredicate(NotEqualPredicateId), field, value}}
 }
 
-func (nep *NotEqualPredicate) ReadData(input DataInput) error {
+func (nep *NotEqualPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	nep.EqualPredicate = &EqualPredicate{predicate: newPredicate(NotEqualPredicateId)}
 	nep.field, err = input.ReadUTF()
@@ -346,14 +346,14 @@ func NewNotPredicate(pred interface{}) *NotPredicate {
 	return &NotPredicate{newPredicate(NotPredicateId), pred}
 }
 
-func (np *NotPredicate) ReadData(input DataInput) error {
+func (np *NotPredicate) ReadData(input serialization.DataInput) error {
 	np.predicate = newPredicate(NotPredicateId)
 	i, err := input.ReadObject()
 	np.pred = i.(interface{})
 	return err
 }
 
-func (np *NotPredicate) WriteData(output DataOutput) error {
+func (np *NotPredicate) WriteData(output serialization.DataOutput) error {
 	return output.WriteObject(np.pred)
 }
 
@@ -366,7 +366,7 @@ func NewOrPredicate(predicates []interface{}) *OrPredicate {
 	return &OrPredicate{newPredicate(OrPredicateId), predicates}
 }
 
-func (or *OrPredicate) ReadData(input DataInput) error {
+func (or *OrPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	or.predicate = newPredicate(OrPredicateId)
 	length, err := input.ReadInt32()
@@ -384,7 +384,7 @@ func (or *OrPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (or *OrPredicate) WriteData(output DataOutput) error {
+func (or *OrPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(int32(len(or.predicates)))
 	for _, pred := range or.predicates {
 		err := output.WriteObject(pred)
@@ -405,7 +405,7 @@ func NewRegexPredicate(field string, regex string) *RegexPredicate {
 	return &RegexPredicate{newPredicate(RegexPredicateId), field, regex}
 }
 
-func (rp *RegexPredicate) ReadData(input DataInput) error {
+func (rp *RegexPredicate) ReadData(input serialization.DataInput) error {
 	var err error
 	rp.predicate = newPredicate(RegexPredicateId)
 	rp.field, err = input.ReadUTF()
@@ -416,7 +416,7 @@ func (rp *RegexPredicate) ReadData(input DataInput) error {
 	return err
 }
 
-func (rp *RegexPredicate) WriteData(output DataOutput) error {
+func (rp *RegexPredicate) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(rp.field)
 	output.WriteUTF(rp.regex)
 	return nil
@@ -429,12 +429,12 @@ type FalsePredicate struct {
 func NewFalsePredicate() *FalsePredicate {
 	return &FalsePredicate{newPredicate(FalsePredicateId)}
 }
-func (fp *FalsePredicate) ReadData(input DataInput) error {
+func (fp *FalsePredicate) ReadData(input serialization.DataInput) error {
 	fp.predicate = newPredicate(FalsePredicateId)
 	return nil
 }
 
-func (fp *FalsePredicate) WriteData(output DataOutput) error {
+func (fp *FalsePredicate) WriteData(output serialization.DataOutput) error {
 	//Empty method
 	return nil
 }
@@ -446,12 +446,12 @@ type TruePredicate struct {
 func NewTruePredicate() *TruePredicate {
 	return &TruePredicate{newPredicate(TruePredicateId)}
 }
-func (tp *TruePredicate) ReadData(input DataInput) error {
+func (tp *TruePredicate) ReadData(input serialization.DataInput) error {
 	tp.predicate = newPredicate(TruePredicateId)
 	return nil
 }
 
-func (tp *TruePredicate) WriteData(output DataOutput) error {
+func (tp *TruePredicate) WriteData(output serialization.DataOutput) error {
 	//Empty method
 	return nil
 }

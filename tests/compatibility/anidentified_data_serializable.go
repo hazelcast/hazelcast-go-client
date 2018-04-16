@@ -14,7 +14,7 @@
 
 package compatibility
 
-import . "github.com/hazelcast/hazelcast-go-client/serialization"
+import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type anIdentifiedDataSerializable struct {
 	bool bool
@@ -47,8 +47,8 @@ type anIdentifiedDataSerializable struct {
 	longsNull    []int64
 	stringsNull  []string
 
-	portableObject                   Portable
-	identifiedDataSerializableObject IdentifiedDataSerializable
+	portableObject                   serialization.Portable
+	identifiedDataSerializableObject serialization.IdentifiedDataSerializable
 }
 
 func (*anIdentifiedDataSerializable) ClassId() int32 {
@@ -59,7 +59,7 @@ func (*anIdentifiedDataSerializable) FactoryId() int32 {
 	return identifiedDataSerializableFactoryID
 }
 
-func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) error {
+func (i *anIdentifiedDataSerializable) WriteData(output serialization.DataOutput) error {
 	output.WriteBool(i.bool)
 	output.WriteByte(i.b)
 	output.WriteUInt16(i.c)
@@ -96,7 +96,7 @@ func (i *anIdentifiedDataSerializable) WriteData(output DataOutput) error {
 	return nil
 }
 
-func (i *anIdentifiedDataSerializable) ReadData(input DataInput) error {
+func (i *anIdentifiedDataSerializable) ReadData(input serialization.DataInput) error {
 	i.bool, _ = input.ReadBool()
 	i.b, _ = input.ReadByte()
 	i.c, _ = input.ReadUInt16()
@@ -130,14 +130,14 @@ func (i *anIdentifiedDataSerializable) ReadData(input DataInput) error {
 	temp, _ := input.ReadObject()
 
 	if temp != nil {
-		i.portableObject = temp.(Portable)
+		i.portableObject = temp.(serialization.Portable)
 	} else {
 		i.portableObject = nil
 	}
 
 	temp, _ = input.ReadObject()
 	if temp != nil {
-		i.identifiedDataSerializableObject = temp.(IdentifiedDataSerializable)
+		i.identifiedDataSerializableObject = temp.(serialization.IdentifiedDataSerializable)
 	} else {
 		i.identifiedDataSerializableObject = nil
 	}

@@ -16,31 +16,31 @@ package classdef
 
 import (
 	"fmt"
-	. "github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"strconv"
 )
 
 type ClassDefinitionContext struct {
 	factoryId int32
-	classDefs map[string]ClassDefinition
+	classDefs map[string]serialization.ClassDefinition
 }
 
 func NewClassDefinitionContext(factoryId int32, portableVersion int32) *ClassDefinitionContext {
-	return &ClassDefinitionContext{factoryId, make(map[string]ClassDefinition)}
+	return &ClassDefinitionContext{factoryId, make(map[string]serialization.ClassDefinition)}
 }
 
-func (c *ClassDefinitionContext) LookUp(classId int32, version int32) ClassDefinition {
+func (c *ClassDefinitionContext) LookUp(classId int32, version int32) serialization.ClassDefinition {
 	return c.classDefs[encodeVersionedClassId(classId, version)]
 }
 
-func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (ClassDefinition, error) {
+func (c *ClassDefinitionContext) Register(classDefinition serialization.ClassDefinition) (serialization.ClassDefinition, error) {
 	if classDefinition == nil {
 		return nil, nil
 	}
 	if classDefinition.FactoryId() != c.factoryId {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.", c.factoryId, classDefinition.FactoryId()), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.", c.factoryId, classDefinition.FactoryId()), nil)
 	}
 	classDefKey := encodeVersionedClassId(classDefinition.ClassId(), classDefinition.Version())
 	current := c.classDefs[classDefKey]
@@ -49,7 +49,7 @@ func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (Clas
 		return classDefinition, nil
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
-		return nil, NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d", classDefinition.ClassId()), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d", classDefinition.ClassId()), nil)
 	}
 	return classDefinition, nil
 }

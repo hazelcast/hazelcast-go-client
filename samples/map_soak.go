@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"log"
 	"math/rand"
 	"strconv"
@@ -136,7 +136,7 @@ type identifiedFactory struct {
 	factoryId            int32
 }
 
-func (identifiedFactory *identifiedFactory) Create(id int32) IdentifiedDataSerializable {
+func (identifiedFactory *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
 	if id == identifiedFactory.simpleEntryProcessor.classId {
 		return &simpleEntryProcessor{classId: 1}
 	} else {
@@ -144,13 +144,13 @@ func (identifiedFactory *identifiedFactory) Create(id int32) IdentifiedDataSeria
 	}
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input DataInput) error {
+func (simpleEntryProcessor *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
 	var err error
 	simpleEntryProcessor.value, err = input.ReadUTF()
 	return err
 }
 
-func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output DataOutput) error {
+func (simpleEntryProcessor *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(simpleEntryProcessor.value)
 	return nil
 }

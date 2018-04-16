@@ -17,8 +17,8 @@ package org_website_samples
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/core/predicates"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -83,7 +83,7 @@ func (portableFactory *ThePortableFactory) Create(classId int32) serialization.P
 	return nil
 }
 
-func generateUsers(users IMap) {
+func generateUsers(users core.IMap) {
 	users.Put("Rod", newUser("Rod", 19, true))
 	users.Put("Jane", newUser("Jane", 20, true))
 	users.Put("Freddy", newUser("Freddy", 23, true))
@@ -100,11 +100,11 @@ func querySampleRun() {
 	// Add some users to the Distributed Map
 	generateUsers(users)
 	// Create a Predicate from a String (a SQL like Where clause)
-	var sqlQuery = Sql("active AND age BETWEEN 18 AND 21)")
+	var sqlQuery = predicates.Sql("active AND age BETWEEN 18 AND 21)")
 	// Creating the same Predicate as above but with a builder
-	var criteriaQuery = And(
-		Equal("active", true),
-		Between("age", 18, 21))
+	var criteriaQuery = predicates.And(
+		predicates.Equal("active", true),
+		predicates.Between("age", 18, 21))
 
 	// Get result collections using the two different Predicates
 	result1, _ := users.ValuesWithPredicate(sqlQuery)

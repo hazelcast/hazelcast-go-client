@@ -17,8 +17,8 @@ package serialization
 import (
 	"bytes"
 	"encoding/gob"
-	. "github.com/hazelcast/hazelcast-go-client/config"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"testing"
 )
@@ -30,7 +30,7 @@ const (
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	var id int32 = NewSerializationService(NewSerializationConfig()).lookUpDefaultSerializer(a).Id()
+	var id int32 = NewSerializationService(config.NewSerializationConfig()).lookUpDefaultSerializer(a).Id()
 	var expectedId int32 = -7
 	if id != expectedId {
 		t.Errorf("LookUpDefaultSerializer() returns ", id, " expected ", expectedId)
@@ -39,7 +39,7 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
-	c := NewSerializationConfig()
+	c := config.NewSerializationConfig()
 	service := NewSerializationService(c)
 	data, _ := service.ToData(expected)
 	var ret int32
@@ -57,7 +57,7 @@ func (s *CustomArtistSerializer) Id() int32 {
 	return 10
 }
 
-func (s *CustomArtistSerializer) Read(input DataInput) (interface{}, error) {
+func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
 	typ, _ := input.ReadInt32()
 	data, _ := input.ReadData()
@@ -74,7 +74,7 @@ func (s *CustomArtistSerializer) Read(input DataInput) (interface{}, error) {
 	return v, nil
 }
 
-func (s *CustomArtistSerializer) Write(output DataOutput, obj interface{}) error {
+func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) error {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
@@ -99,7 +99,7 @@ func (s *GlobalSerializer) Id() int32 {
 	return 123
 }
 
-func (s *GlobalSerializer) Read(input DataInput) (interface{}, error) {
+func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
 	data, _ := input.ReadData()
 	network.Write(data.Buffer())
@@ -109,7 +109,7 @@ func (s *GlobalSerializer) Read(input DataInput) (interface{}, error) {
 	return v, nil
 }
 
-func (s *GlobalSerializer) Write(output DataOutput, obj interface{}) error {
+func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) error {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
@@ -147,7 +147,7 @@ func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
 	p := &painter{"Leonardo", "da Vinci"}
 	customSerializer := &CustomArtistSerializer{}
-	config := NewSerializationConfig()
+	config := config.NewSerializationConfig()
 
 	config.AddCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
 	service := NewSerializationService(config)
@@ -163,7 +163,7 @@ func TestCustomSerializer(t *testing.T) {
 
 func TestGlobalSerializer(t *testing.T) {
 	obj := &customObject{10, "Furkan Şenharputlu"}
-	config := NewSerializationConfig()
+	config := config.NewSerializationConfig()
 	config.SetGlobalSerializer(&GlobalSerializer{})
 	service := NewSerializationService(config)
 	data, _ := service.ToData(obj)
@@ -234,7 +234,7 @@ func TestGobSerializer(t *testing.T) {
 	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
 		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
 		nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	service := NewSerializationService(NewSerializationConfig())
+	service := NewSerializationService(config.NewSerializationConfig())
 	data, _ := service.ToData(expected)
 	ret, _ := service.ToObject(data)
 
@@ -246,7 +246,7 @@ func TestGobSerializer(t *testing.T) {
 
 func TestInt64SerializerWithInt(t *testing.T) {
 	var id int = 15
-	config := NewSerializationConfig()
+	config := config.NewSerializationConfig()
 	service := NewSerializationService(config)
 	data, _ := service.ToData(id)
 	ret, _ := service.ToObject(data)
@@ -258,7 +258,7 @@ func TestInt64SerializerWithInt(t *testing.T) {
 
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	var ids []int = []int{15, 10, 20, 12, 35}
-	config := NewSerializationConfig()
+	config := config.NewSerializationConfig()
 	service := NewSerializationService(config)
 	data, _ := service.ToData(ids)
 	ret, _ := service.ToObject(data)
@@ -275,7 +275,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 
 func TestSerializeData(t *testing.T) {
 	data := NewData([]byte{10, 20, 0, 30, 5, 7, 6})
-	config := NewSerializationConfig()
+	config := config.NewSerializationConfig()
 	service := NewSerializationService(config)
 	serializedData, _ := service.ToData(data)
 	if !reflect.DeepEqual(data, serializedData) {

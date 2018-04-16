@@ -15,21 +15,21 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func ListSetCalculateSize(name *string, index int32, value *Data) int {
+func ListSetCalculateSize(name *string, index int32, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	dataSize += DataCalculateSize(value)
 	return dataSize
 }
 
-func ListSetEncodeRequest(name *string, index int32, value *Data) *ClientMessage {
+func ListSetEncodeRequest(name *string, index int32, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListSetCalculateSize(name, index, value))
 	clientMessage.SetMessageType(listSet)
@@ -41,9 +41,9 @@ func ListSetEncodeRequest(name *string, index int32, value *Data) *ClientMessage
 	return clientMessage
 }
 
-func ListSetDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
+func ListSetDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
-	return func() (response *Data) {
+	return func() (response *serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

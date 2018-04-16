@@ -15,7 +15,7 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) int {
@@ -23,17 +23,17 @@ func ClientAuthenticationCalculateSize(username *string, password *string, uuid 
 	dataSize := 0
 	dataSize += StringCalculateSize(username)
 	dataSize += StringCalculateSize(password)
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	if uuid != nil {
 		dataSize += StringCalculateSize(uuid)
 	}
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	if ownerUuid != nil {
 		dataSize += StringCalculateSize(ownerUuid)
 	}
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	dataSize += StringCalculateSize(clientType)
-	dataSize += Uint8SizeInBytes
+	dataSize += common.Uint8SizeInBytes
 	dataSize += StringCalculateSize(clientHazelcastVersion)
 	return dataSize
 }

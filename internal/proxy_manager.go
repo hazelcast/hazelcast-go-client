@@ -17,7 +17,7 @@ package internal
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"sync"
 	"sync/atomic"
 )
@@ -60,7 +60,7 @@ func (proxyManager *proxyManager) getOrCreateProxy(serviceName string, name stri
 }
 
 func (proxyManager *proxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
-	message := ClientCreateProxyEncodeRequest(name, serviceName, proxyManager.findNextProxyAddress())
+	message := protocol.ClientCreateProxyEncodeRequest(name, serviceName, proxyManager.findNextProxyAddress())
 	_, err := proxyManager.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (proxyManager *proxyManager) destroyProxy(serviceName *string, name *string
 		proxyManager.mu.Lock()
 		delete(proxyManager.proxies, ns)
 		proxyManager.mu.Unlock()
-		message := ClientDestroyProxyEncodeRequest(name, serviceName)
+		message := protocol.ClientDestroyProxyEncodeRequest(name, serviceName)
 		_, err := proxyManager.client.InvocationService.invokeOnRandomTarget(message).Result()
 		if err != nil {
 			return false, err
@@ -87,7 +87,7 @@ func (proxyManager *proxyManager) destroyProxy(serviceName *string, name *string
 	return false, nil
 }
 
-func (proxyManager *proxyManager) findNextProxyAddress() *Address {
+func (proxyManager *proxyManager) findNextProxyAddress() *protocol.Address {
 	return proxyManager.client.LoadBalancer.nextAddress()
 }
 

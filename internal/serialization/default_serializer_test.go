@@ -16,9 +16,9 @@ package serialization
 
 import (
 	"fmt"
-	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"testing"
 )
@@ -38,7 +38,7 @@ func TestNilSerializer_Write(t *testing.T) {
 
 type factory struct{}
 
-func (factory) Create(classId int32) IdentifiedDataSerializable {
+func (factory) Create(classId int32) serialization.IdentifiedDataSerializable {
 	if classId == 1 {
 		return &employee{}
 	} else {
@@ -51,13 +51,13 @@ type employee struct {
 	name string
 }
 
-func (e *employee) ReadData(input DataInput) error {
+func (e *employee) ReadData(input serialization.DataInput) error {
 	e.age, _ = input.ReadInt32()
 	e.name, _ = input.ReadUTF()
 	return nil
 }
 
-func (e *employee) WriteData(output DataOutput) error {
+func (e *employee) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(e.age)
 	output.WriteUTF(e.name)
 	return nil
@@ -76,13 +76,13 @@ type customer struct {
 	name string
 }
 
-func (c *customer) ReadData(input DataInput) error {
+func (c *customer) ReadData(input serialization.DataInput) error {
 	c.age, _ = input.ReadInt32()
 	c.name, _ = input.ReadUTF()
 	return nil
 }
 
-func (c *customer) WriteData(output DataOutput) error {
+func (c *customer) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(c.age)
 	output.WriteUTF(c.name)
 	return nil
@@ -98,7 +98,7 @@ func (*customer) ClassId() int32 {
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 employee = employee{22, "Furkan Şenharputlu"}
-	c := NewSerializationConfig()
+	c := config.NewSerializationConfig()
 	c.AddDataSerializableFactory(employee1.FactoryId(), factory{})
 
 	service := NewSerializationService(c)
@@ -113,7 +113,7 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 
 func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
 	c := &customer{38, "Jack"}
-	config := NewSerializationConfig()
+	config := config.NewSerializationConfig()
 	config.AddDataSerializableFactory(c.FactoryId(), factory{})
 
 	service := NewSerializationService(config)
@@ -149,11 +149,11 @@ func (*x) ClassId() int32 {
 	return 1
 }
 
-func (*x) WriteData(output DataOutput) error {
+func (*x) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-func (*x) ReadData(input DataInput) error {
+func (*x) ReadData(input serialization.DataInput) error {
 	return nil
 }
 

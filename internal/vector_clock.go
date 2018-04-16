@@ -15,7 +15,7 @@
 package internal
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"sync"
 )
@@ -72,13 +72,13 @@ func (v *VectorClock) ReadData(input serialization.DataInput) error {
 	return nil
 }
 
-func (v *VectorClock) EntrySet() (entrySet []*Pair) {
+func (v *VectorClock) EntrySet() (entrySet []*protocol.Pair) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
-	entrySet = make([]*Pair, len(v.replicaTimestamps))
+	entrySet = make([]*protocol.Pair, len(v.replicaTimestamps))
 	i := 0
 	for key, value := range v.replicaTimestamps {
-		entrySet[i] = NewPair(key, value)
+		entrySet[i] = protocol.NewPair(key, value)
 		i += 1
 	}
 	return entrySet

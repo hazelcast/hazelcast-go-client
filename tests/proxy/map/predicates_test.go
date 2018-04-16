@@ -15,16 +15,16 @@
 package _map
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"log"
 	"reflect"
 	"strconv"
 	"testing"
 )
 
-var serializationService *SerializationService
+var serializationService *serialization.SerializationService
 
 func predicateTestInit() {
 	defineSerializationService()
@@ -32,8 +32,8 @@ func predicateTestInit() {
 }
 
 func defineSerializationService() {
-	config := NewSerializationConfig()
-	serializationService = NewSerializationService(config)
+	config := config.NewSerializationConfig()
+	serializationService = serialization.NewSerializationService(config)
 }
 
 func fillMapForPredicates() {

@@ -16,8 +16,8 @@ package multi_map
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"strconv"
@@ -26,14 +26,14 @@ import (
 	"time"
 )
 
-var multiMap MultiMap
+var multiMap core.MultiMap
 var client hazelcast.IHazelcastInstance
 var testKey = "testKey"
 var testValue = "testValue"
 var testValue2 = "testValue2"
 
 func TestMain(m *testing.M) {
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
@@ -402,32 +402,32 @@ func TestMultiMapProxy_ForceUnlockWithNil(t *testing.T) {
 
 type EntryListener struct {
 	wg       *sync.WaitGroup
-	event    IEntryEvent
-	mapEvent IMapEvent
+	event    core.IEntryEvent
+	mapEvent core.IMapEvent
 }
 
-func (entryListener *EntryListener) EntryAdded(event IEntryEvent) {
+func (entryListener *EntryListener) EntryAdded(event core.IEntryEvent) {
 	entryListener.event = event
 	entryListener.wg.Done()
 }
 
-func (entryListener *EntryListener) EntryUpdated(event IEntryEvent) {
+func (entryListener *EntryListener) EntryUpdated(event core.IEntryEvent) {
 	entryListener.wg.Done()
 }
 
-func (entryListener *EntryListener) EntryRemoved(event IEntryEvent) {
+func (entryListener *EntryListener) EntryRemoved(event core.IEntryEvent) {
 	entryListener.wg.Done()
 }
 
-func (entryListener *EntryListener) EntryEvicted(event IEntryEvent) {
+func (entryListener *EntryListener) EntryEvicted(event core.IEntryEvent) {
 	entryListener.wg.Done()
 }
 
-func (entryListener *EntryListener) EntryEvictAll(event IMapEvent) {
+func (entryListener *EntryListener) EntryEvictAll(event core.IMapEvent) {
 	entryListener.mapEvent = event
 	entryListener.wg.Done()
 }
 
-func (entryListener *EntryListener) EntryClearAll(event IMapEvent) {
+func (entryListener *EntryListener) EntryClearAll(event core.IMapEvent) {
 	entryListener.wg.Done()
 }

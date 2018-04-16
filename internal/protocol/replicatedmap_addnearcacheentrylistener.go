@@ -15,17 +15,17 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += BoolSizeInBytes
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
@@ -49,9 +49,9 @@ func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientM
 	}
 }
 
-type ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+type ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
 
-func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -78,7 +78,7 @@ func ReplicatedMapAddNearCacheEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventEntry && handleEventEntry != nil {
+	if messageType == common.EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage))
 	}
 }

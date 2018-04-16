@@ -15,21 +15,21 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func ReplicatedMapAddEntryListenerWithPredicateCalculateSize(name *string, predicate *Data, localOnly bool) int {
+func ReplicatedMapAddEntryListenerWithPredicateCalculateSize(name *string, predicate *serialization.Data, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(predicate)
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
-func ReplicatedMapAddEntryListenerWithPredicateEncodeRequest(name *string, predicate *Data, localOnly bool) *ClientMessage {
+func ReplicatedMapAddEntryListenerWithPredicateEncodeRequest(name *string, predicate *serialization.Data, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapAddEntryListenerWithPredicateCalculateSize(name, predicate, localOnly))
 	clientMessage.SetMessageType(replicatedmapAddEntryListenerWithPredicate)
@@ -49,9 +49,9 @@ func ReplicatedMapAddEntryListenerWithPredicateDecodeResponse(clientMessage *Cli
 	}
 }
 
-type ReplicatedMapAddEntryListenerWithPredicateHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+type ReplicatedMapAddEntryListenerWithPredicateHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
 
-func ReplicatedMapAddEntryListenerWithPredicateEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func ReplicatedMapAddEntryListenerWithPredicateEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -78,7 +78,7 @@ func ReplicatedMapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessa
 	handleEventEntry ReplicatedMapAddEntryListenerWithPredicateHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventEntry && handleEventEntry != nil {
+	if messageType == common.EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddEntryListenerWithPredicateEventEntryDecode(clientMessage))
 	}
 }

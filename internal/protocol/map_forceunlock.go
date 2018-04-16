@@ -15,21 +15,21 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapForceUnlockCalculateSize(name *string, key *Data, referenceId int64) int {
+func MapForceUnlockCalculateSize(name *string, key *serialization.Data, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
-func MapForceUnlockEncodeRequest(name *string, key *Data, referenceId int64) *ClientMessage {
+func MapForceUnlockEncodeRequest(name *string, key *serialization.Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapForceUnlockCalculateSize(name, key, referenceId))
 	clientMessage.SetMessageType(mapForceUnlock)

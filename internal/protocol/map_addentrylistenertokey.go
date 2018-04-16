@@ -15,23 +15,23 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapAddEntryListenerToKeyCalculateSize(name *string, key *Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerToKeyCalculateSize(name *string, key *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += BoolSizeInBytes
-	dataSize += Int32SizeInBytes
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.Int32SizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
-func MapAddEntryListenerToKeyEncodeRequest(name *string, key *Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerToKeyEncodeRequest(name *string, key *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerToKeyCalculateSize(name, key, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(mapAddEntryListenerToKey)
@@ -53,9 +53,9 @@ func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func()
 	}
 }
 
-type MapAddEntryListenerToKeyHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+type MapAddEntryListenerToKeyHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
 
-func MapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func MapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -82,7 +82,7 @@ func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventEntry && handleEventEntry != nil {
+	if messageType == common.EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerToKeyEventEntryDecode(clientMessage))
 	}
 }

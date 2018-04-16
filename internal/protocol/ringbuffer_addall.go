@@ -15,24 +15,24 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func RingbufferAddAllCalculateSize(name *string, valueList []*Data, overflowPolicy int32) int {
+func RingbufferAddAllCalculateSize(name *string, valueList []*serialization.Data, overflowPolicy int32) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	for _, valueListItem := range valueList {
 		dataSize += DataCalculateSize(valueListItem)
 	}
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	return dataSize
 }
 
-func RingbufferAddAllEncodeRequest(name *string, valueList []*Data, overflowPolicy int32) *ClientMessage {
+func RingbufferAddAllEncodeRequest(name *string, valueList []*serialization.Data, overflowPolicy int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferAddAllCalculateSize(name, valueList, overflowPolicy))
 	clientMessage.SetMessageType(ringbufferAddAll)

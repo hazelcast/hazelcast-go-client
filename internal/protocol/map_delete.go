@@ -15,21 +15,21 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapDeleteCalculateSize(name *string, key *Data, threadId int64) int {
+func MapDeleteCalculateSize(name *string, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
-func MapDeleteEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
+func MapDeleteEncodeRequest(name *string, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapDeleteCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(mapDelete)

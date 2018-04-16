@@ -15,24 +15,24 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, key *Data, predicate *Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, key *serialization.Data, predicate *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
 	dataSize += DataCalculateSize(predicate)
-	dataSize += BoolSizeInBytes
-	dataSize += Int32SizeInBytes
-	dataSize += BoolSizeInBytes
+	dataSize += common.BoolSizeInBytes
+	dataSize += common.Int32SizeInBytes
+	dataSize += common.BoolSizeInBytes
 	return dataSize
 }
 
-func MapAddEntryListenerToKeyWithPredicateEncodeRequest(name *string, key *Data, predicate *Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerToKeyWithPredicateEncodeRequest(name *string, key *serialization.Data, predicate *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(mapAddEntryListenerToKeyWithPredicate)
@@ -55,9 +55,9 @@ func MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage *ClientMe
 	}
 }
 
-type MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(*Data, *Data, *Data, *Data, int32, *string, int32)
+type MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
 
-func MapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage *ClientMessage) (key *Data, value *Data, oldValue *Data, mergingValue *Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func MapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -84,7 +84,7 @@ func MapAddEntryListenerToKeyWithPredicateHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == EventEntry && handleEventEntry != nil {
+	if messageType == common.EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage))
 	}
 }

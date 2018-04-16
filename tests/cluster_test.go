@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/rc"
 	"log"
 	"sync"
 	"testing"
@@ -37,11 +37,11 @@ func (membershipListener *membershipListener) MemberRemoved(member core.IMember)
 	membershipListener.wg.Done()
 }
 
-var remoteController *RemoteControllerClient
-var cluster *Cluster
+var remoteController *rc.RemoteControllerClient
+var cluster *rc.Cluster
 
 func TestMain(m *testing.M) {
-	rc, err := NewRemoteControllerClient("localhost:9701")
+	rc, err := rc.NewRemoteControllerClient("localhost:9701")
 	remoteController = rc
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)

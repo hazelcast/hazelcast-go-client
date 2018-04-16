@@ -15,24 +15,24 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapExecuteOnKeysCalculateSize(name *string, entryProcessor *Data, keys []*Data) int {
+func MapExecuteOnKeysCalculateSize(name *string, entryProcessor *serialization.Data, keys []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(entryProcessor)
-	dataSize += Int32SizeInBytes
+	dataSize += common.Int32SizeInBytes
 	for _, keysItem := range keys {
 		dataSize += DataCalculateSize(keysItem)
 	}
 	return dataSize
 }
 
-func MapExecuteOnKeysEncodeRequest(name *string, entryProcessor *Data, keys []*Data) *ClientMessage {
+func MapExecuteOnKeysEncodeRequest(name *string, entryProcessor *serialization.Data, keys []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
 	clientMessage.SetMessageType(mapExecuteOnKeys)

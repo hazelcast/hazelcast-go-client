@@ -15,21 +15,21 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapRemoveCalculateSize(name *string, key *Data, threadId int64) int {
+func MapRemoveCalculateSize(name *string, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
-func MapRemoveEncodeRequest(name *string, key *Data, threadId int64) *ClientMessage {
+func MapRemoveEncodeRequest(name *string, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapRemoveCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(mapRemove)
@@ -41,9 +41,9 @@ func MapRemoveEncodeRequest(name *string, key *Data, threadId int64) *ClientMess
 	return clientMessage
 }
 
-func MapRemoveDecodeResponse(clientMessage *ClientMessage) func() (response *Data) {
+func MapRemoveDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
-	return func() (response *Data) {
+	return func() (response *serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

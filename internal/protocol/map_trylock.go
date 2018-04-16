@@ -15,24 +15,24 @@
 package protocol
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapTryLockCalculateSize(name *string, key *Data, threadId int64, lease int64, timeout int64, referenceId int64) int {
+func MapTryLockCalculateSize(name *string, key *serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
 	dataSize += DataCalculateSize(key)
-	dataSize += Int64SizeInBytes
-	dataSize += Int64SizeInBytes
-	dataSize += Int64SizeInBytes
-	dataSize += Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
+	dataSize += common.Int64SizeInBytes
 	return dataSize
 }
 
-func MapTryLockEncodeRequest(name *string, key *Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
+func MapTryLockEncodeRequest(name *string, key *serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
 	clientMessage.SetMessageType(mapTryLock)

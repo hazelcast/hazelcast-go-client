@@ -16,7 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"log"
 	"sync/atomic"
@@ -56,11 +56,11 @@ func (partitionService *partitionService) start() {
 
 }
 func (partitionService *partitionService) getPartitionCount() int32 {
-	partitions := partitionService.mp.Load().(map[int32]*Address)
+	partitions := partitionService.mp.Load().(map[int32]*protocol.Address)
 	return int32(len(partitions))
 }
-func (partitionService *partitionService) partitionOwner(partitionId int32) (*Address, bool) {
-	partitions := partitionService.mp.Load().(map[int32]*Address)
+func (partitionService *partitionService) partitionOwner(partitionId int32) (*protocol.Address, bool) {
+	partitions := partitionService.mp.Load().(map[int32]*protocol.Address)
 	address, ok := partitions[partitionId]
 	return address, ok
 }
@@ -87,7 +87,7 @@ func (partitionService *partitionService) doRefresh() {
 		log.Println("error while fetching cluster partition table!")
 		return
 	}
-	request := ClientGetPartitionsEncodeRequest()
+	request := protocol.ClientGetPartitionsEncodeRequest()
 	result, err := partitionService.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		log.Println("error while fetching cluster partition table! ", err)
@@ -96,11 +96,11 @@ func (partitionService *partitionService) doRefresh() {
 	partitionService.processPartitionResponse(result)
 }
 
-func (partitionService *partitionService) processPartitionResponse(result *ClientMessage) {
-	partitions /*partitionStateVersion*/, _ := ClientGetPartitionsDecodeResponse(result)()
-	newPartitions := make(map[int32]*Address, len(partitions))
+func (partitionService *partitionService) processPartitionResponse(result *protocol.ClientMessage) {
+	partitions /*partitionStateVersion*/, _ := protocol.ClientGetPartitionsDecodeResponse(result)()
+	newPartitions := make(map[int32]*protocol.Address, len(partitions))
 	for _, partitionList := range partitions {
-		addr := partitionList.Key().(*Address)
+		addr := partitionList.Key().(*protocol.Address)
 		for _, partition := range partitionList.Value().([]int32) {
 			newPartitions[int32(partition)] = addr
 		}

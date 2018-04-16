@@ -18,7 +18,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	. "github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
 var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0}
@@ -26,7 +26,7 @@ var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 func TestHeaderFields(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	var correlationId int64 = 6474838
-	var messageType MessageType = 987
+	var messageType common.MessageType = 987
 	var flags uint8 = 5
 	var partitionId int32 = 27
 	var frameLength int32 = 100
@@ -174,62 +174,62 @@ func TestClientMessage_ReadString(t *testing.T) {
 func TestNoFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	if result := message.HasFlags(BeginFlag); result != 0 {
+	if result := message.HasFlags(common.BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(EndFlag); result != 0 {
+	if result := message.HasFlags(common.EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(ListenerFlag); result != 0 {
+	if result := message.HasFlags(common.ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
 func TestSetFlagBegin(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(BeginFlag)
-	if result := message.HasFlags(BeginFlag); result == 0 {
+	message.AddFlags(common.BeginFlag)
+	if result := message.HasFlags(common.BeginFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 128", result)
 	}
-	if result := message.HasFlags(EndFlag); result != 0 {
+	if result := message.HasFlags(common.EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(ListenerFlag); result != 0 {
+	if result := message.HasFlags(common.ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
 func TestSetFlagEnd(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(EndFlag)
-	if result := message.HasFlags(BeginFlag); result != 0 {
+	message.AddFlags(common.EndFlag)
+	if result := message.HasFlags(common.BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(EndFlag); result == 0 {
+	if result := message.HasFlags(common.EndFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 64", result)
 	}
-	if result := message.HasFlags(ListenerFlag); result != 0 {
+	if result := message.HasFlags(common.ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
 func TestSetListenerFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(ListenerFlag)
-	if result := message.HasFlags(BeginFlag); result != 0 {
+	message.AddFlags(common.ListenerFlag)
+	if result := message.HasFlags(common.BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(EndFlag); result != 0 {
+	if result := message.HasFlags(common.EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(ListenerFlag); result == 0 {
+	if result := message.HasFlags(common.ListenerFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 1", result)
 	}
 }
 func TestCalculateSizeStr(t *testing.T) {
 	testString := "abc"
-	if result := StringCalculateSize(&testString); result != len(testString)+Int32SizeInBytes {
-		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+Int32SizeInBytes)
+	if result := StringCalculateSize(&testString); result != len(testString)+common.Int32SizeInBytes {
+		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+common.Int32SizeInBytes)
 	}
 }
 func TestClientMessage_UpdateFrameLength(t *testing.T) {

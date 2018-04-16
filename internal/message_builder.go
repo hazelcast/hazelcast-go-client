@@ -16,15 +16,15 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	. "github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
 type clientMessageBuilder struct {
-	incompleteMessages map[int64]*ClientMessage
-	responseChannel    chan *ClientMessage
+	incompleteMessages map[int64]*protocol.ClientMessage
+	responseChannel    chan *protocol.ClientMessage
 }
 
-func (cmb *clientMessageBuilder) onMessage(msg *ClientMessage) {
+func (cmb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
 	if msg.HasFlags(common.BeginEndFlag) > 0 {
 		cmb.responseChannel <- msg
 	} else if msg.HasFlags(common.BeginFlag) > 0 {

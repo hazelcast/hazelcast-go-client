@@ -16,23 +16,23 @@ package serialization
 
 import (
 	"fmt"
-	. "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/internal/predicates"
-	. "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/predicates"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"reflect"
 	"strconv"
 )
 
 ////// SerializationService ///////////
 type SerializationService struct {
-	serializationConfig *SerializationConfig
-	registry            map[int32]Serializer
+	serializationConfig *config.SerializationConfig
+	registry            map[int32]serialization.Serializer
 	nameToId            map[string]int32
 }
 
-func NewSerializationService(serializationConfig *SerializationConfig) *SerializationService {
-	v1 := SerializationService{serializationConfig: serializationConfig, nameToId: make(map[string]int32), registry: make(map[int32]Serializer)}
+func NewSerializationService(serializationConfig *config.SerializationConfig) *SerializationService {
+	v1 := SerializationService{serializationConfig: serializationConfig, nameToId: make(map[string]int32), registry: make(map[int32]serialization.Serializer)}
 	v1.registerDefaultSerializers()
 	v1.registerCustomSerializers(serializationConfig.CustomSerializers())
 	v1.registerGlobalSerializer(serializationConfig.GlobalSerializer())
@@ -66,7 +66,7 @@ func (service *SerializationService) ToObject(data *Data) (interface{}, error) {
 	return serializer.Read(dataInput)
 }
 
-func (service *SerializationService) WriteObject(output DataOutput, object interface{}) error {
+func (service *SerializationService) WriteObject(output serialization.DataOutput, object interface{}) error {
 	var serializer, err = service.FindSerializerFor(object)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (service *SerializationService) WriteObject(output DataOutput, object inter
 	return serializer.Write(output, object)
 }
 
-func (service *SerializationService) ReadObject(input DataInput) (interface{}, error) {
+func (service *SerializationService) ReadObject(input serialization.DataInput) (interface{}, error) {
 	serializerId, err := input.ReadInt32()
 	if err != nil {
 		return nil, err
@@ -84,8 +84,8 @@ func (service *SerializationService) ReadObject(input DataInput) (interface{}, e
 	return serializer.Read(input)
 }
 
-func (service *SerializationService) FindSerializerFor(obj interface{}) (Serializer, error) {
-	var serializer Serializer
+func (service *SerializationService) FindSerializerFor(obj interface{}) (serialization.Serializer, error) {
+	var serializer serialization.Serializer
 	if obj == nil {
 		serializer = service.registry[service.nameToId["nil"]]
 	}
@@ -183,13 +183,13 @@ func (service *SerializationService) registerDefaultSerializers() {
 
 }
 
-func (service *SerializationService) registerCustomSerializers(customSerializers map[reflect.Type]Serializer) {
+func (service *SerializationService) registerCustomSerializers(customSerializers map[reflect.Type]serialization.Serializer) {
 	for _, customSerializer := range customSerializers {
 		service.registerSerializer(customSerializer)
 	}
 }
 
-func (service *SerializationService) registerSerializer(serializer Serializer) error {
+func (service *SerializationService) registerSerializer(serializer serialization.Serializer) error {
 	if service.registry[serializer.Id()] != nil {
 		return core.NewHazelcastSerializationError("this serializer is already in the registry", nil)
 	}
@@ -197,13 +197,13 @@ func (service *SerializationService) registerSerializer(serializer Serializer) e
 	return nil
 }
 
-func (service *SerializationService) registerClassDefinitions(portableSerializer *PortableSerializer, classDefinitions []ClassDefinition) {
+func (service *SerializationService) registerClassDefinitions(portableSerializer *PortableSerializer, classDefinitions []serialization.ClassDefinition) {
 	for _, cd := range classDefinitions {
 		portableSerializer.portableContext.RegisterClassDefinition(cd)
 	}
 }
 
-func (service *SerializationService) registerGlobalSerializer(globalSerializer Serializer) {
+func (service *SerializationService) registerGlobalSerializer(globalSerializer serialization.Serializer) {
 	if globalSerializer != nil {
 		service.registerSerializer(globalSerializer)
 	}
@@ -220,8 +220,8 @@ func (service *SerializationService) getIdByObject(obj interface{}) *int32 {
 	return nil
 }
 
-func (service *SerializationService) lookUpDefaultSerializer(obj interface{}) Serializer {
-	var serializer Serializer
+func (service *SerializationService) lookUpDefaultSerializer(obj interface{}) serialization.Serializer {
+	var serializer serialization.Serializer
 	if isIdentifiedDataSerializable(obj) {
 		return service.registry[service.nameToId["identified"]]
 	}
@@ -238,7 +238,7 @@ func (service *SerializationService) lookUpDefaultSerializer(obj interface{}) Se
 	return serializer
 }
 
-func (service *SerializationService) lookUpCustomSerializer(obj interface{}) Serializer {
+func (service *SerializationService) lookUpCustomSerializer(obj interface{}) serialization.Serializer {
 	for key, val := range service.serializationConfig.CustomSerializers() {
 		if key.Kind() == reflect.Interface {
 			if reflect.TypeOf(obj).Implements(key) {
@@ -253,16 +253,16 @@ func (service *SerializationService) lookUpCustomSerializer(obj interface{}) Ser
 	return nil
 }
 
-func (service *SerializationService) lookUpGlobalSerializer() Serializer {
+func (service *SerializationService) lookUpGlobalSerializer() serialization.Serializer {
 	return service.serializationConfig.GlobalSerializer()
 }
 
 func (service *SerializationService) registerIdentifiedFactories() {
-	factories := make(map[int32]IdentifiedDataSerializableFactory)
+	factories := make(map[int32]serialization.IdentifiedDataSerializableFactory)
 	for id, _ := range service.serializationConfig.DataSerializableFactories() {
 		factories[id] = service.serializationConfig.DataSerializableFactories()[id]
 	}
-	factories[PredicateFactoryId] = NewPredicateFactory()
+	factories[predicates.PredicateFactoryId] = predicates.NewPredicateFactory()
 
 	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
 	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
@@ -271,11 +271,11 @@ func (service *SerializationService) registerIdentifiedFactories() {
 }
 
 func isIdentifiedDataSerializable(obj interface{}) bool {
-	_, ok := obj.(IdentifiedDataSerializable)
+	_, ok := obj.(serialization.IdentifiedDataSerializable)
 	return ok
 }
 
 func isPortableSerializable(obj interface{}) bool {
-	_, ok := obj.(Portable)
+	_, ok := obj.(serialization.Portable)
 	return ok
 }

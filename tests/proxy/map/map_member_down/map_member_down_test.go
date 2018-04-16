@@ -16,9 +16,9 @@ package map_member_down
 
 import (
 	"github.com/hazelcast/hazelcast-go-client"
-	. "github.com/hazelcast/hazelcast-go-client/core"
-	. "github.com/hazelcast/hazelcast-go-client/core/predicates"
-	. "github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/predicates"
+	"github.com/hazelcast/hazelcast-go-client/rc"
 	. "github.com/hazelcast/hazelcast-go-client/tests"
 	"log"
 	"testing"
@@ -26,10 +26,10 @@ import (
 )
 
 var client hazelcast.IHazelcastInstance
-var mp IMap
+var mp core.IMap
 
 func TestMain(m *testing.M) {
-	remoteController, err := NewRemoteControllerClient("localhost:9701")
+	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
@@ -64,7 +64,7 @@ func TestMapRemoveIfSameWhenMemberDown(t *testing.T) {
 }
 
 func TestMapRemoveAllWhenMemberDown(t *testing.T) {
-	err := mp.RemoveAll(GreaterThan("this", int32(40)))
+	err := mp.RemoveAll(predicates.GreaterThan("this", int32(40)))
 	AssertErrorNotNil(t, err, "removeAll should have returned an error when member is down")
 }
 
@@ -181,7 +181,7 @@ func TestMapKeySetWhenMemberDown(t *testing.T) {
 }
 
 func TestMapKeySetWithPredicateWhenMemberDown(t *testing.T) {
-	_, err := mp.KeySetWithPredicate(GreaterThan("this", 5))
+	_, err := mp.KeySetWithPredicate(predicates.GreaterThan("this", 5))
 	AssertErrorNotNil(t, err, "keySetWithPredicate should have returned an error when member is down")
 }
 
@@ -191,7 +191,7 @@ func TestMapValuesWhenMemberDown(t *testing.T) {
 }
 
 func TestMapValuesWithPredicateWhenMemberDown(t *testing.T) {
-	_, err := mp.ValuesWithPredicate(GreaterThan("this", 5))
+	_, err := mp.ValuesWithPredicate(predicates.GreaterThan("this", 5))
 	AssertErrorNotNil(t, err, "valuesWithPredicate should have returned an error when member is down")
 }
 
@@ -201,7 +201,7 @@ func TestMapEntrySetWhenMemberDown(t *testing.T) {
 }
 
 func TestMapEntrySetWithPredicateWhenMemberDown(t *testing.T) {
-	_, err := mp.EntrySetWithPredicate(GreaterThan("this", 5))
+	_, err := mp.EntrySetWithPredicate(predicates.GreaterThan("this", 5))
 	AssertErrorNotNil(t, err, "entrySetWithPredicate should have returned an error when member is down")
 }
 
@@ -258,12 +258,12 @@ func TestMapAddEntryListenerToKeyWhenMemberDown(t *testing.T) {
 }
 
 func TestMapAddEntryListenerToKeyWithPredicateWhenMemberDown(t *testing.T) {
-	_, err := mp.AddEntryListenerToKeyWithPredicate(nil, GreaterThan("this", 5), "key", false)
+	_, err := mp.AddEntryListenerToKeyWithPredicate(nil, predicates.GreaterThan("this", 5), "key", false)
 	AssertErrorNotNil(t, err, "entryListenerToKeyWithPredicate should have returned an error when member is down")
 }
 
 func TestMapAddEntryListenerWithPredicateWhenMemberDown(t *testing.T) {
-	_, err := mp.AddEntryListenerWithPredicate(nil, GreaterThan("this", 5), false)
+	_, err := mp.AddEntryListenerWithPredicate(nil, predicates.GreaterThan("this", 5), false)
 	AssertErrorNotNil(t, err, "entryListenerWithPredicate should have returned an error when member is down")
 }
 
@@ -273,7 +273,7 @@ func TestMapExecuteOnKeyWhenMemberDown(t *testing.T) {
 }
 
 func TestMapExecuteOnEntriesWithPredicateWhenMemberDown(t *testing.T) {
-	_, err := mp.ExecuteOnEntriesWithPredicate(nil, GreaterThan("this", 5))
+	_, err := mp.ExecuteOnEntriesWithPredicate(nil, predicates.GreaterThan("this", 5))
 	AssertErrorNotNil(t, err, "executeOnEntriesWithPredicate should have returned an error when member is down")
 }
 
