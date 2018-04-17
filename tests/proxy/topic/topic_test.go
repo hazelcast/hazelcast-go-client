@@ -23,7 +23,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 var topic core.ITopic
@@ -34,7 +35,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	topic, _ = client.GetTopic("myTopic")
@@ -49,11 +50,11 @@ func TestTopicProxy_AddListener(t *testing.T) {
 	listener := &topicMessageListener{wg: wg}
 	registrationId, err := topic.AddMessageListener(listener)
 	defer topic.RemoveMessageListener(registrationId)
-	AssertNilf(t, err, nil, "topic AddListener() failed")
+	assert.Nilf(t, err, nil, "topic AddListener() failed")
 	topic.Publish("item-value")
-	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, false, timeout, "topic AddListener() failed")
-	AssertEqualf(t, nil, listener.msg, "item-value", "topic AddListener() failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout)
+	assert.Equalf(t, nil, false, timeout, "topic AddListener() failed")
+	assert.Equalf(t, nil, listener.msg, "item-value", "topic AddListener() failed")
 	if !listener.publishTime.After(time.Time{}) {
 		t.Fatal("publishTime should be greater than 0")
 	}
@@ -64,12 +65,12 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	wg.Add(1)
 	listener := &topicMessageListener{wg: wg}
 	registrationId, err := topic.AddMessageListener(listener)
-	AssertNilf(t, err, nil, "topic AddListener() failed")
+	assert.Nilf(t, err, nil, "topic AddListener() failed")
 	removed, err := topic.RemoveMessageListener(registrationId)
-	AssertEqualf(t, err, removed, true, "topic RemoveListener() failed")
+	assert.Equalf(t, err, removed, true, "topic RemoveListener() failed")
 	topic.Publish("item-value")
-	timeout := WaitTimeout(wg, Timeout/10)
-	AssertEqualf(t, nil, true, timeout, "topic RemoveListener() failed")
+	timeout := tests.WaitTimeout(wg, tests.Timeout/10)
+	assert.Equalf(t, nil, true, timeout, "topic RemoveListener() failed")
 }
 
 type topicMessageListener struct {

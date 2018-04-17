@@ -16,12 +16,8 @@ package tests
 
 import (
 	"io/ioutil"
-	"reflect"
 	"sync"
-	"testing"
 	"time"
-
-	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
 var Timeout time.Duration = 1 * time.Minute
@@ -83,93 +79,6 @@ const DefaultServerConfig = `
     </ringbuffer>
 </hazelcast>
 `
-
-func AssertEqualf(t *testing.T, err error, l interface{}, r interface{}, message string) {
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(l, r) {
-		t.Fatalf("%v != %v : %v", l, r, message)
-	}
-}
-
-func AssertLessThanf(t *testing.T, err error, l int64, r int64, message string) {
-	if err != nil {
-		t.Fatal(err)
-	}
-	if l >= r {
-		t.Fatalf("%v >= %v : %v", l, r, message)
-	}
-}
-
-func AssertNilf(t *testing.T, err error, l interface{}, message string) {
-	if err != nil {
-		t.Fatal(err)
-	}
-	if l != nil {
-		t.Fatalf("%v != nil : %v", l, message)
-	}
-}
-
-func AssertErrorNotNil(t *testing.T, err error, message string) {
-	if err == nil {
-		t.Fatal(message)
-	}
-}
-
-func AssertErrorNil(t *testing.T, err error) {
-	if err != nil {
-		t.Error(err.Error())
-	}
-}
-
-func AssertMapEqualPairSlice(t *testing.T, err error, mp map[interface{}]interface{}, pairSlice []core.IPair, message string) {
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(mp) != len(pairSlice) {
-		t.Fatal(message)
-	}
-	for _, pair := range pairSlice {
-		key := pair.Key()
-		value := pair.Value()
-		expectedValue, found := mp[key]
-		if !found || expectedValue != value {
-			t.Fatal(message)
-		}
-	}
-}
-
-func AssertSlicesHaveSameElements(t *testing.T, err error, arg1 []interface{}, arg2 []interface{}, message string) {
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(arg1) != len(arg2) {
-		t.Fatal(message)
-	}
-	for _, elem := range arg1 {
-		found := false
-		for _, elem2 := range arg2 {
-			if elem == elem2 {
-				found = true
-			}
-		}
-		if !found {
-			t.Fatal(message)
-		}
-	}
-
-}
-
-func AssertEqual(t *testing.T, err error, l interface{}, r interface{}) {
-	if err != nil {
-		t.Fatal(err)
-	}
-	if l != r {
-		t.Fatalf("%v != %v", l, r)
-	}
-
-}
 
 func Read(filename string) (string, error) {
 	bytes, err := ioutil.ReadFile(filename)

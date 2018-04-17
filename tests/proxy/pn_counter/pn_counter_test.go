@@ -24,7 +24,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	. "github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 var counter core.PNCounter
@@ -41,7 +42,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, err = remoteController.CreateCluster("", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	counter, _ = client.GetPNCounter(counterName)
@@ -81,7 +82,7 @@ func TestPNCounter_Destroy(t *testing.T) {
 	counter.Destroy()
 	counter, _ = client.GetPNCounter(counterName)
 	res, err := counter.Get()
-	AssertEqualf(t, err, res, int64(0), "PNCounter.Destroy failed")
+	assert.Equalf(t, err, res, int64(0), "PNCounter.Destroy failed")
 }
 
 func TestPNCounter_Get(t *testing.T) {
@@ -89,68 +90,68 @@ func TestPNCounter_Get(t *testing.T) {
 	var delta int64 = 5
 	counter.AddAndGet(delta)
 	currentValue, err := counter.Get()
-	AssertEqualf(t, err, currentValue, delta, "PNCounter.Get failed")
+	assert.Equalf(t, err, currentValue, delta, "PNCounter.Get failed")
 }
 
 func TestPNCounter_GetAndAdd(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	previousValue, err := counter.GetAndAdd(delta)
-	AssertEqualf(t, err, previousValue, int64(0), "PNCounter.GetAndAdd failed")
+	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndAdd failed")
 	currentValue, err := counter.Get()
-	AssertEqualf(t, err, currentValue, delta, "PNCounter.GetAndAdd failed")
+	assert.Equalf(t, err, currentValue, delta, "PNCounter.GetAndAdd failed")
 }
 
 func TestPNCounter_AddAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	updatedValue, err := counter.AddAndGet(delta)
-	AssertEqualf(t, err, updatedValue, delta, "PNCounter.AddAndGet failed")
+	assert.Equalf(t, err, updatedValue, delta, "PNCounter.AddAndGet failed")
 }
 
 func TestPNCounter_GetAndSubtract(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	previousValue, err := counter.GetAndSubtract(delta)
-	AssertEqualf(t, err, previousValue, int64(0), "PNCounter.GetAndSubtract failed")
+	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndSubtract failed")
 	currentValue, err := counter.Get()
-	AssertEqualf(t, err, currentValue, -delta, "PNCounter.GetAndAddSubtract failed")
+	assert.Equalf(t, err, currentValue, -delta, "PNCounter.GetAndAddSubtract failed")
 }
 
 func TestPNCounter_SubtractAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	updatedValue, err := counter.SubtractAndGet(delta)
-	AssertEqualf(t, err, updatedValue, -delta, "PNCounter.SubtractAndGet failed")
+	assert.Equalf(t, err, updatedValue, -delta, "PNCounter.SubtractAndGet failed")
 }
 
 func TestPNCounter_DecrementAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	updatedValue, err := counter.DecrementAndGet()
-	AssertEqualf(t, err, updatedValue, int64(-1), "PNCounter.DecrementAndGet failed")
+	assert.Equalf(t, err, updatedValue, int64(-1), "PNCounter.DecrementAndGet failed")
 }
 
 func TestPNCounter_IncrementAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	updatedValue, err := counter.IncrementAndGet()
-	AssertEqualf(t, err, updatedValue, int64(1), "PNCounter.IncrementAndGet failed")
+	assert.Equalf(t, err, updatedValue, int64(1), "PNCounter.IncrementAndGet failed")
 }
 
 func TestPNCounter_GetAndDecrement(t *testing.T) {
 	defer destroyAndCreate()
 	previousValue, err := counter.GetAndDecrement()
-	AssertEqualf(t, err, previousValue, int64(0), "PNCounter.GetAndDecrement failed")
+	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndDecrement failed")
 	currentValue, err := counter.Get()
-	AssertEqualf(t, err, currentValue, int64(-1), "PNCounter.GetAndDecrement failed")
+	assert.Equalf(t, err, currentValue, int64(-1), "PNCounter.GetAndDecrement failed")
 
 }
 
 func TestPNCounter_GetAndIncrement(t *testing.T) {
 	defer destroyAndCreate()
 	previousValue, err := counter.GetAndIncrement()
-	AssertEqualf(t, err, previousValue, int64(0), "PNCounter.GetAndIncrement failed")
+	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndIncrement failed")
 	currentValue, err := counter.Get()
-	AssertEqualf(t, err, currentValue, int64(1), "PNCounter.GetAndIncrement failed")
+	assert.Equalf(t, err, currentValue, int64(1), "PNCounter.GetAndIncrement failed")
 }
 
 func TestPNCounter_ManyAdd(t *testing.T) {
@@ -166,14 +167,14 @@ func TestPNCounter_ManyAdd(t *testing.T) {
 	}
 	wg.Wait()
 	currentValue, err := counter.Get()
-	AssertEqualf(t, err, currentValue, int64(delta), "PNCounter has race condition")
+	assert.Equalf(t, err, currentValue, int64(delta), "PNCounter has race condition")
 
 }
 
 func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-	liteMemberConfig, _ := Read("lite_member_config.xml")
+	liteMemberConfig, _ := tests.Read("lite_member_config.xml")
 	cluster, err = remoteController.CreateCluster("", liteMemberConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
@@ -189,7 +190,7 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	t.SkipNow()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-	crdtReplicationDelayedConfig, _ := Read("crdt_replication_delayed_config.xml")
+	crdtReplicationDelayedConfig, _ := tests.Read("crdt_replication_delayed_config.xml")
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
@@ -209,7 +210,7 @@ func TestPNCounter_Reset(t *testing.T) {
 	t.SkipNow()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-	crdtReplicationDelayedConfig, _ := Read("crdt_replication_delayed_config.xml")
+	crdtReplicationDelayedConfig, _ := tests.Read("crdt_replication_delayed_config.xml")
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
@@ -221,5 +222,5 @@ func TestPNCounter_Reset(t *testing.T) {
 	remoteController.TerminateMember(cluster.ID, target.Uuid())
 	counter.Reset()
 	currentValue, err := counter.AddAndGet(delta)
-	AssertEqualf(t, err, currentValue, int64(delta), "PNCounter.Reset failed")
+	assert.Equalf(t, err, currentValue, int64(delta), "PNCounter.Reset failed")
 }

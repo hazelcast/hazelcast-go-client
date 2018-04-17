@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 func TestClientGetMapWhenNoMemberUp(t *testing.T) {
@@ -26,6 +27,6 @@ func TestClientGetMapWhenNoMemberUp(t *testing.T) {
 	client, _ := hazelcast.NewHazelcastClient()
 	remoteController.ShutdownCluster(cluster.ID)
 	_, err := client.GetMap("map")
-	AssertErrorNotNil(t, err, "getMap should have returned an error when no member is up")
+	assert.ErrorNotNil(t, err, "getMap should have returned an error when no member is up")
 	client.Shutdown()
 }

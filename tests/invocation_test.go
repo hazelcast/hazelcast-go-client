@@ -6,7 +6,7 @@
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
+// Unless re®quired by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 func TestNonSmartInvoke(t *testing.T) {
@@ -36,7 +37,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
-	AssertEqualf(t, err, res, testValue, "get returned a wrong value")
+	assert.Equalf(t, err, res, testValue, "get returned a wrong value")
 	mp.Clear()
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
@@ -55,11 +56,11 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 		testValue := "testingValue" + strconv.Itoa(i)
 		mp.Put(testKey, testValue)
 		res, err := mp.Get(testKey)
-		AssertEqualf(t, err, res, testValue, "get returned a wrong value")
+		assert.Equalf(t, err, res, testValue, "get returned a wrong value")
 	}
 	mp.Clear()
 	connectionCount := client.(*internal.HazelcastClient).ConnectionManager.ConnectionCount()
-	AssertEqualf(t, nil, int32(1), connectionCount, "Client should open only one connection")
+	assert.Equalf(t, nil, int32(1), connectionCount, "Client should open only one connection")
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
@@ -97,9 +98,9 @@ func TestInvocationRetry(t *testing.T) {
 		mu.Unlock()
 	}()
 	_, err := mp.Put("testKey", "testValue")
-	AssertNilf(t, err, nil, "InvocationRetry failed")
+	assert.Nilf(t, err, nil, "InvocationRetry failed")
 	result, err := mp.Get("testKey")
-	AssertEqualf(t, err, result, "testValue", "invocation retry failed")
+	assert.Equalf(t, err, result, "testValue", "invocation retry failed")
 	client.Shutdown()
 	mu.Lock()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -147,7 +148,7 @@ func TestInvocationNotSent(t *testing.T) {
 	time.Sleep(3 * time.Second)
 	remoteController.StartMember(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
-	AssertEqualf(t, nil, timeout, false, "invocationNotSent failed")
+	assert.Equalf(t, nil, timeout, false, "invocationNotSent failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 
