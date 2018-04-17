@@ -51,6 +51,7 @@ func newHeartBeatService(client *HazelcastClient) *heartBeatService {
 	heartBeat.listeners.Store(make([]interface{}, 0)) //initialize
 	return &heartBeat
 }
+
 func (hbs *heartBeatService) AddHeartbeatListener(listener interface{}) {
 	hbs.mu.Lock() //To prevent other potential writers
 	defer hbs.mu.Unlock()
@@ -63,6 +64,7 @@ func (hbs *heartBeatService) AddHeartbeatListener(listener interface{}) {
 	copyListeners[newSize-1] = listener
 	hbs.listeners.Store(copyListeners)
 }
+
 func (hbs *heartBeatService) start() {
 	go func() {
 		ticker := time.NewTicker(hbs.heartBeatInterval)
@@ -80,6 +82,7 @@ func (hbs *heartBeatService) start() {
 		}
 	}()
 }
+
 func (hbs *heartBeatService) heartBeat() {
 	for _, connection := range hbs.client.ConnectionManager.getActiveConnections() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
@@ -108,6 +111,7 @@ func (hbs *heartBeatService) heartBeat() {
 		}
 	}
 }
+
 func (hbs *heartBeatService) onHeartBeatRestored(connection *Connection) {
 	log.Println("Heartbeat restored for a connection ", connection)
 	connection.heartBeating = true
@@ -118,6 +122,7 @@ func (hbs *heartBeatService) onHeartBeatRestored(connection *Connection) {
 		}
 	}
 }
+
 func (hbs *heartBeatService) onHeartBeatStopped(connection *Connection) {
 	log.Println("Heartbeat stopped for a connection ", connection)
 	connection.heartBeating = false
@@ -128,6 +133,7 @@ func (hbs *heartBeatService) onHeartBeatStopped(connection *Connection) {
 		}
 	}
 }
+
 func (hbs *heartBeatService) shutdown() {
 	close(hbs.cancel)
 }
@@ -135,6 +141,7 @@ func (hbs *heartBeatService) shutdown() {
 type IOnHeartbeatStopped interface {
 	OnHeartbeatStopped(connection *Connection)
 }
+
 type IOnHeartbeatRestored interface {
 	OnHeartbeatRestored(connection *Connection)
 }

@@ -46,6 +46,7 @@ func (e *Employee) ReadData(input serialization.DataInput) (err error) {
 	e.name, err = input.ReadUTF()
 	return
 }
+
 func (e *Employee) WriteData(output serialization.DataOutput) (err error) {
 	output.WriteInt32(e.id)
 	output.WriteUTF(e.name)

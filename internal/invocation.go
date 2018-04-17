@@ -45,10 +45,12 @@ type invocation struct {
 	timedoutTime            atomic.Value
 	listenerResponseDecoder protocol.DecodeListenerResponse
 }
+
 type connectionAndError struct {
 	connection *Connection
 	error      error
 }
+
 type invocationResult interface {
 	Result() (*protocol.ClientMessage, error)
 }
@@ -105,6 +107,7 @@ type invocationService struct {
 	unRegisterInvocationChannel chan int64
 	isShutdown                  atomic.Value
 }
+
 type invocationConnection struct {
 	invocation *invocation
 	connection *Connection
@@ -132,6 +135,7 @@ func newInvocationService(client *HazelcastClient) *invocationService {
 	service.client.ConnectionManager.addListener(service)
 	return service
 }
+
 func (is *invocationService) start() {
 	go is.process()
 }
@@ -185,15 +189,18 @@ func (is *invocationService) process() {
 		}
 	}
 }
+
 func (is *invocationService) quitInternal() {
 	for _, invocation := range is.responseWaitings {
 		invocation.err <- core.NewHazelcastClientNotActiveError("client has been shutdown", nil)
 	}
 }
+
 func (is *invocationService) sendToRandomAddress(invocation *invocation) {
 	var target *protocol.Address = is.client.LoadBalancer.nextAddress()
 	is.sendToAddress(invocation, target)
 }
+
 func (is *invocationService) invokeSmart(invocation *invocation) {
 	if invocation.boundConnection != nil {
 		is.sendToConnectionChannel <- &invocationConnection{invocation: invocation, connection: invocation.boundConnection}
@@ -234,6 +241,7 @@ func (is *invocationService) send(invocation *invocation, connectionChannel chan
 		}
 	}()
 }
+
 func (is *invocationService) sendInvocation(invocation *invocation) invocationResult {
 	if is.isShutdown.Load().(bool) {
 		invocation.err <- core.NewHazelcastClientNotActiveError("client is shut down", nil)
@@ -242,10 +250,12 @@ func (is *invocationService) sendInvocation(invocation *invocation) invocationRe
 	is.sending <- invocation
 	return invocation
 }
+
 func (is *invocationService) invokeOnConnection(request *protocol.ClientMessage, connection *Connection) invocationResult {
 	invocation := newInvocation(request, -1, nil, connection, is.client)
 	return is.sendInvocation(invocation)
 }
+
 func (is *invocationService) sendToConnection(invocation *invocation, connection *Connection) {
 	sent := connection.send(invocation.request)
 	if !sent {
@@ -293,14 +303,17 @@ func (is *invocationService) handleNotSentInvocation(correlationId int64) {
 		log.Println("no invocation has been found with the correlation id: ", correlationId)
 	}
 }
+
 func (is *invocationService) removeEventHandler(correlationId int64) {
 	is.removeEventHandlerChannel <- correlationId
 }
+
 func (is *invocationService) removeEventHandlerInternal(correlationId int64) {
 	if _, ok := is.eventHandlers[correlationId]; ok {
 		delete(is.eventHandlers, correlationId)
 	}
 }
+
 func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 	correlationId := response.CorrelationId()
 	if invocation, ok := is.unRegisterInvocation(correlationId); ok {
@@ -327,11 +340,14 @@ func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 func convertToError(clientMessage *protocol.ClientMessage) *protocol.Error {
 	return protocol.ErrorCodecDecode(clientMessage)
 }
+
 func (is *invocationService) onConnectionClosed(connection *Connection, cause error) {
 	is.cleanupConnection(connection, cause)
 }
+
 func (is *invocationService) onConnectionOpened(connection *Connection) {
 }
+
 func (is *invocationService) cleanupConnection(connection *Connection, cause error) {
 	is.cleanupConnectionChannel <- &connectionAndError{connection: connection, error: cause}
 }
@@ -344,6 +360,7 @@ func (is *invocationService) cleanupConnectionInternal(connection *Connection, c
 	}
 
 }
+
 func (is *invocationService) handleException(invocation *invocation, err error) {
 	is.unRegisterInvocationChannel <- invocation.request.CorrelationId()
 	if !is.client.LifecycleService.isLive.Load().(bool) {
@@ -379,6 +396,7 @@ func (is *invocationService) handleException(invocation *invocation, err error) 
 func (is *invocationService) isRedoOperation() bool {
 	return is.client.ClientConfig.ClientNetworkConfig().IsRedoOperation()
 }
+
 func (is *invocationService) shouldRetryInvocation(clientInvocation *invocation, err error) bool {
 	_, isTargetDisconnectedError := err.(*core.HazelcastTargetDisconnectedError)
 	if (isTargetDisconnectedError && clientInvocation.request.IsRetryable) || is.isRedoOperation() || isRetrySafeError(err) {
@@ -386,6 +404,7 @@ func (is *invocationService) shouldRetryInvocation(clientInvocation *invocation,
 	}
 	return false
 }
+
 func isRetrySafeError(err error) bool {
 	var isRetrySafe bool = false
 	_, ok := err.(*core.HazelcastInstanceNotActiveError)
@@ -396,6 +415,7 @@ func isRetrySafeError(err error) bool {
 	isRetrySafe = isRetrySafe || ok
 	return isRetrySafe
 }
+
 func (is *invocationService) isNotAllowedToRetryOnConnection(invocation *invocation, err error) bool {
 	_, isIOError := err.(*core.HazelcastIOError)
 	if invocation.isBoundToSingleConnection() && isIOError {
@@ -407,9 +427,11 @@ func (is *invocationService) isNotAllowedToRetryOnConnection(invocation *invocat
 	}
 	return false
 }
+
 func (i *invocation) isBoundToSingleConnection() bool {
 	return i.boundConnection != nil
 }
+
 func (is *invocationService) shutdown() {
 	is.isShutdown.Store(true)
 	close(is.quit)

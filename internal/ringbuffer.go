@@ -47,6 +47,7 @@ func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
 	}
 	return rp.capacity, nil
 }
+
 func (rp *RingbufferProxy) Size() (size int64, err error) {
 	request := protocol.RingbufferSizeEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)

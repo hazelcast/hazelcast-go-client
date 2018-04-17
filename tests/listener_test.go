@@ -38,6 +38,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestListenerWithMultipleMembers(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
@@ -61,6 +62,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)

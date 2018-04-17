@@ -30,6 +30,7 @@ func (l *entryListener) EntryAdded(event core.IEntryEvent) {
 	fmt.Println("Got an event, key: ", event.Key(), " value: ", event.Value())
 	l.wg.Done()
 }
+
 func main() {
 
 	client, err := hazelcast.NewHazelcastClient()

@@ -98,6 +98,7 @@ func NewCluster() *Cluster {
 func (p *Cluster) GetID() string {
 	return p.ID
 }
+
 func (p *Cluster) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -203,6 +204,7 @@ func (p *Member) GetHost() string {
 func (p *Member) GetPort() int32 {
 	return p.Port
 }
+
 func (p *Member) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -366,6 +368,7 @@ func (p *Response) GetMessage() string {
 func (p *Response) GetResult_() []byte {
 	return p.Result_
 }
+
 func (p *Response) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -517,6 +520,7 @@ func NewServerException() *ServerException {
 func (p *ServerException) GetMessage() string {
 	return p.Message
 }
+
 func (p *ServerException) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -2603,6 +2607,7 @@ func (p *RemoteControllerPingResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerPingResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -2762,6 +2767,7 @@ func (p *RemoteControllerCleanResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerCleanResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -2921,6 +2927,7 @@ func (p *RemoteControllerExitResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerExitResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -3026,6 +3033,7 @@ func (p *RemoteControllerCreateClusterArgs) GetHzVersion() string {
 func (p *RemoteControllerCreateClusterArgs) GetXmlconfig() string {
 	return p.Xmlconfig
 }
+
 func (p *RemoteControllerCreateClusterArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -3164,6 +3172,7 @@ func (p *RemoteControllerCreateClusterResult) GetServerException() *ServerExcept
 	}
 	return p.ServerException
 }
+
 func (p *RemoteControllerCreateClusterResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -3296,6 +3305,7 @@ func NewRemoteControllerStartMemberArgs() *RemoteControllerStartMemberArgs {
 func (p *RemoteControllerStartMemberArgs) GetClusterId() string {
 	return p.ClusterId
 }
+
 func (p *RemoteControllerStartMemberArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -3405,6 +3415,7 @@ func (p *RemoteControllerStartMemberResult) GetServerException() *ServerExceptio
 	}
 	return p.ServerException
 }
+
 func (p *RemoteControllerStartMemberResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -3543,6 +3554,7 @@ func (p *RemoteControllerShutdownMemberArgs) GetClusterId() string {
 func (p *RemoteControllerShutdownMemberArgs) GetMemberId() string {
 	return p.MemberId
 }
+
 func (p *RemoteControllerShutdownMemberArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -3670,6 +3682,7 @@ func (p *RemoteControllerShutdownMemberResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerShutdownMemberResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -3775,6 +3788,7 @@ func (p *RemoteControllerTerminateMemberArgs) GetClusterId() string {
 func (p *RemoteControllerTerminateMemberArgs) GetMemberId() string {
 	return p.MemberId
 }
+
 func (p *RemoteControllerTerminateMemberArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -3902,6 +3916,7 @@ func (p *RemoteControllerTerminateMemberResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerTerminateMemberResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -4007,6 +4022,7 @@ func (p *RemoteControllerSuspendMemberArgs) GetClusterId() string {
 func (p *RemoteControllerSuspendMemberArgs) GetMemberId() string {
 	return p.MemberId
 }
+
 func (p *RemoteControllerSuspendMemberArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -4134,6 +4150,7 @@ func (p *RemoteControllerSuspendMemberResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerSuspendMemberResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -4239,6 +4256,7 @@ func (p *RemoteControllerResumeMemberArgs) GetClusterId() string {
 func (p *RemoteControllerResumeMemberArgs) GetMemberId() string {
 	return p.MemberId
 }
+
 func (p *RemoteControllerResumeMemberArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -4366,6 +4384,7 @@ func (p *RemoteControllerResumeMemberResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerResumeMemberResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -4465,6 +4484,7 @@ func NewRemoteControllerShutdownClusterArgs() *RemoteControllerShutdownClusterAr
 func (p *RemoteControllerShutdownClusterArgs) GetClusterId() string {
 	return p.ClusterId
 }
+
 func (p *RemoteControllerShutdownClusterArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -4563,6 +4583,7 @@ func (p *RemoteControllerShutdownClusterResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerShutdownClusterResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -4662,6 +4683,7 @@ func NewRemoteControllerTerminateClusterArgs() *RemoteControllerTerminateCluster
 func (p *RemoteControllerTerminateClusterArgs) GetClusterId() string {
 	return p.ClusterId
 }
+
 func (p *RemoteControllerTerminateClusterArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -4760,6 +4782,7 @@ func (p *RemoteControllerTerminateClusterResult) GetSuccess() bool {
 	}
 	return *p.Success
 }
+
 func (p *RemoteControllerTerminateClusterResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -4859,6 +4882,7 @@ func NewRemoteControllerSplitMemberFromClusterArgs() *RemoteControllerSplitMembe
 func (p *RemoteControllerSplitMemberFromClusterArgs) GetMemberId() string {
 	return p.MemberId
 }
+
 func (p *RemoteControllerSplitMemberFromClusterArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -4957,6 +4981,7 @@ func (p *RemoteControllerSplitMemberFromClusterResult) GetSuccess() *Cluster {
 	}
 	return p.Success
 }
+
 func (p *RemoteControllerSplitMemberFromClusterResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -5061,6 +5086,7 @@ func (p *RemoteControllerMergeMemberToClusterArgs) GetClusterId() string {
 func (p *RemoteControllerMergeMemberToClusterArgs) GetMemberId() string {
 	return p.MemberId
 }
+
 func (p *RemoteControllerMergeMemberToClusterArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -5188,6 +5214,7 @@ func (p *RemoteControllerMergeMemberToClusterResult) GetSuccess() *Cluster {
 	}
 	return p.Success
 }
+
 func (p *RemoteControllerMergeMemberToClusterResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
@@ -5298,6 +5325,7 @@ func (p *RemoteControllerExecuteOnControllerArgs) GetScript() string {
 func (p *RemoteControllerExecuteOnControllerArgs) GetLang() Lang {
 	return p.Lang
 }
+
 func (p *RemoteControllerExecuteOnControllerArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -5455,6 +5483,7 @@ func (p *RemoteControllerExecuteOnControllerResult) GetSuccess() *Response {
 	}
 	return p.Success
 }
+
 func (p *RemoteControllerExecuteOnControllerResult) IsSetSuccess() bool {
 	return p.Success != nil
 }

@@ -34,6 +34,7 @@ func newReplicatedMapProxy(client *HazelcastClient, serviceName *string, name *s
 	targetPartitionId := rand.Int31n(partitionCount)
 	return &ReplicatedMapProxy{proxy: &proxy{client, serviceName, name}, targetPartitionId: targetPartitionId}, nil
 }
+
 func (rmp *ReplicatedMapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	return rmp.PutWithTtl(key, value, ttlUnlimited)
 }

@@ -56,6 +56,7 @@ func (s *student) ReadData(input serialization.DataInput) error {
 	}
 	return nil
 }
+
 func (s *student) WriteData(output serialization.DataOutput) error {
 	output.WriteInt16(s.id)
 	output.WriteUTF(s.name)

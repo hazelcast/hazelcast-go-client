@@ -35,6 +35,7 @@ type membershipListener struct {
 func (l *membershipListener) MemberAdded(member core.IMember) {
 	l.wg.Done()
 }
+
 func (l *membershipListener) MemberRemoved(member core.IMember) {
 	l.wg.Done()
 }
@@ -50,6 +51,7 @@ func TestMain(m *testing.M) {
 	}
 	m.Run()
 }
+
 func TestInitialMembershipListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
@@ -63,6 +65,7 @@ func TestInitialMembershipListener(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestMemberAddedandRemoved(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
@@ -84,6 +87,7 @@ func TestMemberAddedandRemoved(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestAddListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
@@ -144,6 +148,7 @@ func TestGetMembers(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member3.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestGetMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
@@ -157,6 +162,7 @@ func TestGetMember(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestGetInvalidMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
@@ -168,6 +174,7 @@ func TestGetInvalidMember(t *testing.T) {
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
@@ -181,6 +188,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestClientWithoutMember(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	client, err := hazelcast.NewHazelcastClient()
@@ -190,6 +198,7 @@ func TestClientWithoutMember(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestRestartMember(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
@@ -213,6 +222,7 @@ func TestRestartMember(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	oldMember, _ := remoteController.StartMember(cluster.ID)
@@ -229,6 +239,7 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
+
 func TestConnectToClusterWithoutPort(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)

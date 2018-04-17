@@ -70,6 +70,7 @@ func TestClientMessage_AppendByte(t *testing.T) {
 		t.Errorf("AppendByte returned %s expected 21f234", hexResult)
 	}
 }
+
 func TestClientMessage_AppendUint8(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendUint8(0x21)
@@ -81,6 +82,7 @@ func TestClientMessage_AppendUint8(t *testing.T) {
 		t.Errorf("AppendUint8 returned %s expected 21f234", hexResult)
 	}
 }
+
 func TestClientMessage_AppendBool(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendBool(true)
@@ -90,6 +92,7 @@ func TestClientMessage_AppendBool(t *testing.T) {
 		t.Errorf("AppendBool returned %s expected 01", hexResult)
 	}
 }
+
 func TestClientMessage_AppendInt(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendInt32(0x1feeddcc)
@@ -99,6 +102,7 @@ func TestClientMessage_AppendInt(t *testing.T) {
 		t.Errorf("AppendInt32 returned %s expected ccddee1f", hexResult)
 	}
 }
+
 func TestClientMessage_AppendInt64(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendInt64(0x1feeddccbbaa8765)
@@ -108,6 +112,7 @@ func TestClientMessage_AppendInt64(t *testing.T) {
 		t.Errorf("AppendInt64 returned %s expected 6587aabbccddee1f", hexResult)
 	}
 }
+
 func TestClientMessage_AppendString(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	testString := "abc"
@@ -123,6 +128,7 @@ func TestClientMessage_AppendString(t *testing.T) {
 	}
 
 }
+
 func TestClientMessage_ReadUint8(t *testing.T) {
 	buf := make([]byte, len(READ_HEADER)+1)
 	buf[len(READ_HEADER)] = 0x78
@@ -131,6 +137,7 @@ func TestClientMessage_ReadUint8(t *testing.T) {
 		t.Errorf("ReadUint returned %d expected 0x78", result)
 	}
 }
+
 func TestClientMessage_ReadInt(t *testing.T) {
 	buf := make([]byte, len(READ_HEADER)+4)
 	buf[len(READ_HEADER)] = 0x12
@@ -142,6 +149,7 @@ func TestClientMessage_ReadInt(t *testing.T) {
 		t.Errorf("ReadInt32 returned %d expected 0x78563412", result)
 	}
 }
+
 func TestClientMessage_ReadInt64(t *testing.T) {
 	buf := make([]byte, len(READ_HEADER)+8)
 	buf[len(READ_HEADER)] = 0x65
@@ -157,6 +165,7 @@ func TestClientMessage_ReadInt64(t *testing.T) {
 		t.Errorf("ReadInt64 returned %d expected 0x1feeddccbbaa8765", result)
 	}
 }
+
 func TestClientMessage_ReadString(t *testing.T) {
 	buf := make([]byte, len(READ_HEADER)+7)
 	buf[len(READ_HEADER)] = 0x03
@@ -171,6 +180,7 @@ func TestClientMessage_ReadString(t *testing.T) {
 		t.Errorf("ReadString returned %s expected abc", *result)
 	}
 }
+
 func TestNoFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
@@ -184,6 +194,7 @@ func TestNoFlag(t *testing.T) {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
+
 func TestSetFlagBegin(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
@@ -198,6 +209,7 @@ func TestSetFlagBegin(t *testing.T) {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
+
 func TestSetFlagEnd(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
@@ -212,6 +224,7 @@ func TestSetFlagEnd(t *testing.T) {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
+
 func TestSetListenerFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
@@ -226,12 +239,14 @@ func TestSetListenerFlag(t *testing.T) {
 		t.Errorf("HasFlag returned %d expected 1", result)
 	}
 }
+
 func TestCalculateSizeStr(t *testing.T) {
 	testString := "abc"
 	if result := StringCalculateSize(&testString); result != len(testString)+common.Int32SizeInBytes {
 		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+common.Int32SizeInBytes)
 	}
 }
+
 func TestClientMessage_UpdateFrameLength(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.AppendBool(true)

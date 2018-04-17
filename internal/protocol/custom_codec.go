@@ -21,6 +21,7 @@ func AddressCodecEncode(msg *ClientMessage, address *Address) {
 	msg.AppendString(&address.host)
 	msg.AppendInt32(address.port)
 }
+
 func AddressCodecDecode(msg *ClientMessage) *Address {
 	host := msg.ReadString()
 	port := msg.ReadInt32()
@@ -105,6 +106,7 @@ func ErrorCodecDecode(msg *ClientMessage) *Error {
 	return &response
 
 }
+
 func DecodeStackTrace(msg *ClientMessage) *StackTraceElement {
 	declaringClass := msg.ReadString()
 	methodName := msg.ReadString()

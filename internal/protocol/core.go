@@ -33,6 +33,7 @@ type Address struct {
 func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
 }
+
 func (a *Address) Host() string {
 	return a.host
 }
@@ -45,6 +46,7 @@ type Uuid struct {
 	Msb int64
 	Lsb int64
 }
+
 type Member struct {
 	address      Address
 	uuid         string
@@ -93,6 +95,7 @@ func NewPair(key interface{}, value interface{}) *Pair {
 func (p *Pair) Key() interface{} {
 	return p.key
 }
+
 func (p *Pair) Value() interface{} {
 	return p.value
 }
@@ -221,6 +224,7 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		ttl: common.ConvertMillisToDuration(ttl),
 	}
 }
+
 func (ev *EntryView) Key() interface{} {
 	return ev.key
 }
@@ -377,6 +381,7 @@ func (e *EntryEvent) MergingValue() interface{} {
 func (e *EntryEvent) Uuid() *string {
 	return e.uuid
 }
+
 func (e *EntryEvent) EventType() int32 {
 	return e.eventType
 }
@@ -430,9 +435,11 @@ func (e *MapEvent) Uuid() *string {
 func (e *MapEvent) NumberOfAffectedEntries() int32 {
 	return e.numberOfAffectedEntries
 }
+
 func (e *MapEvent) EventType() int32 {
 	return e.eventType
 }
+
 func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *MapEvent {
 	return &MapEvent{eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
 }
@@ -440,32 +447,41 @@ func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *
 type EntryAddedListener interface {
 	EntryAdded(core.IEntryEvent)
 }
+
 type EntryRemovedListener interface {
 	EntryRemoved(core.IEntryEvent)
 }
+
 type EntryUpdatedListener interface {
 	EntryUpdated(core.IEntryEvent)
 }
+
 type EntryEvictedListener interface {
 	EntryEvicted(core.IEntryEvent)
 }
+
 type EntryEvictAllListener interface {
 	EntryEvictAll(core.IMapEvent)
 }
+
 type EntryClearAllListener interface {
 	EntryClearAll(core.IMapEvent)
 }
+
 type EntryMergedListener interface {
 	EntryMerged(core.IEntryEvent)
 }
+
 type EntryExpiredListener interface {
 	EntryExpired(core.IEntryEvent)
 }
+
 type DecodeListenerResponse func(message *ClientMessage) *string
 type EncodeListenerRemoveRequest func(registrationId *string) *ClientMessage
 type MemberAddedListener interface {
 	MemberAdded(member core.IMember)
 }
+
 type MemberRemovedListener interface {
 	MemberRemoved(member core.IMember)
 }

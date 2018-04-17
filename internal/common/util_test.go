@@ -29,18 +29,21 @@ func TestIsValidIpAddress(t *testing.T) {
 		t.Fatal("IsValidIpAddress failed")
 	}
 }
+
 func TestGetIpAndPort(t *testing.T) {
 	testAddress := "121.1.23.3:1231"
 	if ip, port := GetIpAndPort(testAddress); ip != "121.1.23.3" || port != 1231 {
 		t.Fatal("GetIPAndPort failed.")
 	}
 }
+
 func TestGetIpWithoutPort(t *testing.T) {
 	testAddress := "121.1.23.3"
 	if ip, port := GetIpAndPort(testAddress); ip != "121.1.23.3" || port != -1 {
 		t.Fatal("GetIPAndPort failed.")
 	}
 }
+
 func TestGetTimeInMilliSeconds(t *testing.T) {
 	var expected int64 = 100
 	if result := GetTimeInMilliSeconds(100 * time.Millisecond); result != expected {

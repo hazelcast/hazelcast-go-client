@@ -209,6 +209,7 @@ func TestListProxy_Remove(t *testing.T) {
 	removed, err := list.Remove("1")
 	assert.Equalf(t, err, removed, true, "list Remove() failed")
 }
+
 func TestListProxy_RemoveWithNilElement(t *testing.T) {
 	defer list.Clear()
 	_, err := list.Remove(nil)

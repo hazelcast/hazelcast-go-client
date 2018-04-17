@@ -36,15 +36,19 @@ type proxy struct {
 func (p *proxy) Destroy() (bool, error) {
 	return p.client.ProxyManager.destroyProxy(p.serviceName, p.name)
 }
+
 func (p *proxy) isSmart() bool {
 	return p.client.ClientConfig.ClientNetworkConfig().IsSmartRouting()
 }
+
 func (p *proxy) Name() string {
 	return *p.name
 }
+
 func (p *proxy) PartitionKey() string {
 	return *p.name
 }
+
 func (p *proxy) ServiceName() string {
 	return *p.serviceName
 }

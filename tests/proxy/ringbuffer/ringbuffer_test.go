@@ -70,6 +70,7 @@ func fillRingbuffer(capacity int64) {
 		ringbuffer.Add(i, core.OverflowPolicyOverwrite)
 	}
 }
+
 func destroyAndCreate() {
 	ringbuffer.Destroy()
 	ringbuffer, _ = client.GetRingbuffer(ringbufferName)

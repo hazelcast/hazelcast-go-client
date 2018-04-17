@@ -64,6 +64,7 @@ func (c *HazelcastClient) GetSet(name string) (core.ISet, error) {
 	}
 	return set.(core.ISet), nil
 }
+
 func (c *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
 	mp, err := c.GetDistributedObject(common.ServiceNameReplicatedMap, name)
 	if err != nil {

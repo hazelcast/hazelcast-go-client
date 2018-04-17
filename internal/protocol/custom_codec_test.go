@@ -35,6 +35,7 @@ func TestAddressCodecEncodeDecode(t *testing.T) {
 		t.Errorf("AddressCodecDecode returned a wrong host or port")
 	}
 }
+
 func TestDistributedObjectInfoCodecEncodeDecode(t *testing.T) {
 	name := "test-name"
 	serviceName := "test-serviceName"
@@ -49,6 +50,7 @@ func TestDistributedObjectInfoCodecEncodeDecode(t *testing.T) {
 		t.Errorf("DistributedObjectInfoCodecDecode returned a wrong name or service name")
 	}
 }
+
 func TestMemberCodecEncodeDecode(t *testing.T) {
 	address := Address{"test-host", 8080}
 	uuid := "test-uuid"
@@ -67,6 +69,7 @@ func TestMemberCodecEncodeDecode(t *testing.T) {
 		t.Errorf("MemberCodecDecode returned a wrong member")
 	}
 }
+
 func TestDataEntryViewCodecEncodeDecode(t *testing.T) {
 	key := "test-key"
 	value := "test-value"
@@ -116,6 +119,7 @@ func DataEntryViewCodecEncode(msg *ClientMessage, entryView *DataEntryView) {
 	msg.AppendInt64(entryView.evictionCriteriaNumber)
 	msg.AppendInt64(entryView.ttl)
 }
+
 func DataEntryViewCalculateSize(ev *DataEntryView) int {
 	dataSize := 0
 	dataSize += DataCalculateSize(ev.keyData)
@@ -137,6 +141,7 @@ func MemberCodecEncode(msg *ClientMessage, member *Member) {
 		msg.AppendString(&value)
 	}
 }
+
 func MemberCalculateSize(member *Member) int {
 	dataSize := 0
 	dataSize += AddressCalculateSize(&member.address)
@@ -157,6 +162,7 @@ func DistributedObjectInfoCodecEncode(msg *ClientMessage, obj *DistributedObject
 	msg.AppendString(&obj.serviceName)
 	msg.AppendString(&obj.name)
 }
+
 func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
 	dataSize := 0
 	dataSize += StringCalculateSize(&obj.name)

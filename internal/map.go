@@ -40,6 +40,7 @@ func (mp *MapProxy) Put(key interface{}, value interface{}) (oldValue interface{
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapPutDecodeResponse)
 }
+
 func (mp *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
@@ -60,6 +61,7 @@ func (mp *MapProxy) PutTransient(key interface{}, value interface{}, ttl time.Du
 	_, err = mp.invokeOnKey(request, keyData)
 	return err
 }
+
 func (mp *MapProxy) Get(key interface{}) (value interface{}, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -70,6 +72,7 @@ func (mp *MapProxy) Get(key interface{}) (value interface{}, err error) {
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapGetDecodeResponse)
 
 }
+
 func (mp *MapProxy) Remove(key interface{}) (value interface{}, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -80,6 +83,7 @@ func (mp *MapProxy) Remove(key interface{}) (value interface{}, err error) {
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapRemoveDecodeResponse)
 
 }
+
 func (mp *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool, err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
@@ -90,6 +94,7 @@ func (mp *MapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool, e
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapRemoveIfSameDecodeResponse)
 
 }
+
 func (mp *MapProxy) RemoveAll(predicate interface{}) (err error) {
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
@@ -110,12 +115,14 @@ func (mp *MapProxy) TryRemove(key interface{}, timeout time.Duration) (ok bool, 
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryRemoveDecodeResponse)
 }
+
 func (mp *MapProxy) Size() (size int32, err error) {
 	request := protocol.MapSizeEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToInt32AndError(responseMessage, err, protocol.MapSizeDecodeResponse)
 
 }
+
 func (mp *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -126,6 +133,7 @@ func (mp *MapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapContainsKeyDecodeResponse)
 
 }
+
 func (mp *MapProxy) ContainsValue(value interface{}) (found bool, err error) {
 	valueData, err := mp.validateAndSerialize(value)
 	if err != nil {
@@ -136,11 +144,13 @@ func (mp *MapProxy) ContainsValue(value interface{}) (found bool, err error) {
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapContainsValueDecodeResponse)
 
 }
+
 func (mp *MapProxy) Clear() (err error) {
 	request := protocol.MapClearEncodeRequest(mp.name)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
+
 func (mp *MapProxy) Delete(key interface{}) (err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -150,17 +160,20 @@ func (mp *MapProxy) Delete(key interface{}) (err error) {
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
+
 func (mp *MapProxy) IsEmpty() (empty bool, err error) {
 	request := protocol.MapIsEmptyEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapIsEmptyDecodeResponse)
 
 }
+
 func (mp *MapProxy) AddIndex(attribute string, ordered bool) (err error) {
 	request := protocol.MapAddIndexEncodeRequest(mp.name, &attribute, ordered)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
+
 func (mp *MapProxy) Evict(key interface{}) (evicted bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -171,11 +184,13 @@ func (mp *MapProxy) Evict(key interface{}) (evicted bool, err error) {
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapEvictDecodeResponse)
 
 }
+
 func (mp *MapProxy) EvictAll() (err error) {
 	request := protocol.MapEvictAllEncodeRequest(mp.name)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
+
 func (mp *MapProxy) Flush() (err error) {
 	request := protocol.MapFlushEncodeRequest(mp.name)
 	_, err = mp.invokeOnRandomTarget(request)
@@ -185,6 +200,7 @@ func (mp *MapProxy) Flush() (err error) {
 func (mp *MapProxy) Lock(key interface{}) (err error) {
 	return mp.LockWithLeaseTime(key, -1)
 }
+
 func (mp *MapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -195,12 +211,15 @@ func (mp *MapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
+
 func (mp *MapProxy) TryLock(key interface{}) (locked bool, err error) {
 	return mp.TryLockWithTimeout(key, 0)
 }
+
 func (mp *MapProxy) TryLockWithTimeout(key interface{}, timeout time.Duration) (locked bool, err error) {
 	return mp.TryLockWithTimeoutAndLease(key, timeout, -1)
 }
+
 func (mp *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -222,6 +241,7 @@ func (mp *MapProxy) Unlock(key interface{}) (err error) {
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
+
 func (mp *MapProxy) ForceUnlock(key interface{}) (err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -231,6 +251,7 @@ func (mp *MapProxy) ForceUnlock(key interface{}) (err error) {
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
+
 func (mp *MapProxy) IsLocked(key interface{}) (locked bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -241,6 +262,7 @@ func (mp *MapProxy) IsLocked(key interface{}) (locked bool, err error) {
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapIsLockedDecodeResponse)
 
 }
+
 func (mp *MapProxy) Replace(key interface{}, value interface{}) (oldValue interface{}, err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
@@ -251,6 +273,7 @@ func (mp *MapProxy) Replace(key interface{}, value interface{}) (oldValue interf
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapReplaceDecodeResponse)
 
 }
+
 func (mp *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (replaced bool, err error) {
 	keyData, oldValueData, newValueData, err := mp.validateAndSerialize3(key, oldValue, newValue)
 	if err != nil {
@@ -265,6 +288,7 @@ func (mp *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValu
 func (mp *MapProxy) Set(key interface{}, value interface{}) (err error) {
 	return mp.SetWithTtl(key, value, ttlUnlimited)
 }
+
 func (mp *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl time.Duration) (err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
@@ -286,6 +310,7 @@ func (mp *MapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue in
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapPutIfAbsentDecodeResponse)
 
 }
+
 func (mp *MapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	if entries == nil {
 		return core.NewHazelcastNilPointerError(common.NilMapIsNotAllowed, nil)
@@ -303,11 +328,13 @@ func (mp *MapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	}
 	return nil
 }
+
 func (mp *MapProxy) KeySet() (keySet []interface{}, err error) {
 	request := protocol.MapKeySetEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapKeySetDecodeResponse)
 }
+
 func (mp *MapProxy) KeySetWithPredicate(predicate interface{}) (keySet []interface{}, err error) {
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
@@ -317,11 +344,13 @@ func (mp *MapProxy) KeySetWithPredicate(predicate interface{}) (keySet []interfa
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapKeySetWithPredicateDecodeResponse)
 }
+
 func (mp *MapProxy) Values() (values []interface{}, err error) {
 	request := protocol.MapValuesEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapValuesDecodeResponse)
 }
+
 func (mp *MapProxy) ValuesWithPredicate(predicate interface{}) (values []interface{}, err error) {
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
@@ -331,11 +360,13 @@ func (mp *MapProxy) ValuesWithPredicate(predicate interface{}) (values []interfa
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapValuesWithPredicateDecodeResponse)
 }
+
 func (mp *MapProxy) EntrySet() (resultPairs []core.IPair, err error) {
 	request := protocol.MapEntrySetEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapEntrySetDecodeResponse)
 }
+
 func (mp *MapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []core.IPair, err error) {
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
@@ -345,6 +376,7 @@ func (mp *MapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapEntriesWithPredicateDecodeResponse)
 }
+
 func (mp *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if keys == nil {
 		return nil, core.NewHazelcastNilPointerError(common.NilKeysAreNotAllowed, nil)
@@ -380,6 +412,7 @@ func (mp *MapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 	}
 	return entryMap, nil
 }
+
 func (mp *MapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -398,6 +431,7 @@ func (mp *MapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, er
 		response.LastUpdateTime(), response.Version(), response.EvictionCriteriaNumber(), response.Ttl())
 	return entryView, nil
 }
+
 func (mp *MapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *protocol.ClientMessage
 	listenerFlags := protocol.GetEntryListenerFlags(listener)
@@ -413,6 +447,7 @@ func (mp *MapProxy) AddEntryListener(listener interface{}, includeValue bool) (r
 		return protocol.MapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
+
 func (mp *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (*string, error) {
 	var request *protocol.ClientMessage
 	listenerFlags := protocol.GetEntryListenerFlags(listener)
@@ -433,6 +468,7 @@ func (mp *MapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 			return protocol.MapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
 		})
 }
+
 func (mp *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *protocol.ClientMessage
 	listenerFlags := protocol.GetEntryListenerFlags(listener)
@@ -452,6 +488,7 @@ func (mp *MapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 		return protocol.MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
+
 func (mp *MapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (*string, error) {
 	var request *protocol.ClientMessage
 	listenerFlags := protocol.GetEntryListenerFlags(listener)
@@ -476,6 +513,7 @@ func (mp *MapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 			return protocol.MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
 		})
 }
+
 func (mp *MapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data, valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, Uuid *string, numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
 	key, _ := mp.toObject(keyData)
 	oldValue, _ := mp.toObject(oldValueData)
@@ -518,6 +556,7 @@ func (mp *MapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (r
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapExecuteOnKeyDecodeResponse)
 }
+
 func (mp *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
 	keysData := make([]*serialization.Data, len(keys))
 	for index, key := range keys {
@@ -535,6 +574,7 @@ func (mp *MapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapExecuteOnKeysDecodeResponse)
 }
+
 func (mp *MapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
 	entryProcessorData, err := mp.validateAndSerialize(entryProcessor)
 	if err != nil {

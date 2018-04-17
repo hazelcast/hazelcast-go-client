@@ -68,9 +68,11 @@ func Murmur3A(key []byte, offset int32, len int, seed uint32) int32 {
 
 	return int32(h1)
 }
+
 func rotl32(x uint32, r uint8) uint32 {
 	return (x << r) | (x >> (32 - r))
 }
+
 func fmix32(h uint32) uint32 {
 	h ^= h >> 16
 	h *= 0x85ebca6b
@@ -80,6 +82,7 @@ func fmix32(h uint32) uint32 {
 
 	return h
 }
+
 func HashToIndex(hash int32, length int32) int32 {
 	if uint32(hash) == 0x80000000 {
 		return 0

@@ -45,9 +45,11 @@ func newConnectionManager(client *HazelcastClient) *connectionManager {
 	cm.connectionListeners.Store(make([]connectionListener, 0)) //Initialize
 	return &cm
 }
+
 func (cm *connectionManager) nextConnectionID() int64 {
 	return atomic.AddInt64(&cm.nextConnectionId, 1)
 }
+
 func (cm *connectionManager) addListener(listener connectionListener) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -62,6 +64,7 @@ func (cm *connectionManager) addListener(listener connectionListener) {
 		cm.connectionListeners.Store(copyListeners)
 	}
 }
+
 func (cm *connectionManager) getActiveConnection(address *protocol.Address) *Connection {
 	if address == nil {
 		return nil
@@ -74,6 +77,7 @@ func (cm *connectionManager) getActiveConnection(address *protocol.Address) *Con
 	cm.lock.RUnlock()
 	return nil
 }
+
 func (cm *connectionManager) getActiveConnections() map[string]*Connection {
 	connections := make(map[string]*Connection)
 	cm.lock.RLock()
@@ -83,6 +87,7 @@ func (cm *connectionManager) getActiveConnections() map[string]*Connection {
 	}
 	return connections
 }
+
 func (cm *connectionManager) connectionClosed(connection *Connection, cause error) {
 	//If Connection was authenticated fire event
 	if connection.endpoint.Load().(*protocol.Address).Host() != "" {
@@ -100,6 +105,7 @@ func (cm *connectionManager) connectionClosed(connection *Connection, cause erro
 		cm.client.InvocationService.cleanupConnection(connection, cause)
 	}
 }
+
 func (cm *connectionManager) getOrConnect(address *protocol.Address, asOwner bool) (chan *Connection, chan error) {
 
 	ch := make(chan *Connection, 1)
@@ -127,11 +133,13 @@ func (cm *connectionManager) getOrConnect(address *protocol.Address, asOwner boo
 	}()
 	return ch, err
 }
+
 func (cm *connectionManager) ConnectionCount() int32 {
 	cm.lock.RLock()
 	defer cm.lock.RUnlock()
 	return int32(len(cm.connections))
 }
+
 func (cm *connectionManager) openNewConnection(address *protocol.Address, resp chan *Connection, asOwner bool) error {
 	if !asOwner && cm.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address).Host() == "" {
 		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
@@ -205,6 +213,7 @@ func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwne
 	}
 	return nil
 }
+
 func (cm *connectionManager) fireConnectionAddedEvent(connection *Connection) {
 	listeners := cm.connectionListeners.Load().([]connectionListener)
 	for _, listener := range listeners {

@@ -429,6 +429,7 @@ type FalsePredicate struct {
 func NewFalsePredicate() *FalsePredicate {
 	return &FalsePredicate{newPredicate(FalsePredicateId)}
 }
+
 func (fp *FalsePredicate) ReadData(input serialization.DataInput) error {
 	fp.predicate = newPredicate(FalsePredicateId)
 	return nil
@@ -446,6 +447,7 @@ type TruePredicate struct {
 func NewTruePredicate() *TruePredicate {
 	return &TruePredicate{newPredicate(TruePredicateId)}
 }
+
 func (tp *TruePredicate) ReadData(input serialization.DataInput) error {
 	tp.predicate = newPredicate(TruePredicateId)
 	return nil
