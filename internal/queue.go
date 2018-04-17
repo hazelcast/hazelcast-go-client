@@ -126,12 +126,12 @@ func (qp *QueueProxy) Offer(item interface{}) (added bool, err error) {
 	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
 }
 
-func (qp *QueueProxy) OfferWithTimeout(item interface{}, timeout int64, timeoutUnit time.Duration) (added bool, err error) {
+func (qp *QueueProxy) OfferWithTimeout(item interface{}, timeout time.Duration) (added bool, err error) {
 	itemData, err := qp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
 	}
-	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout, timeoutUnit)
+	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout)
 	request := protocol.QueueOfferEncodeRequest(qp.name, itemData, timeoutInMilliSeconds)
 	responseMessage, err := qp.invoke(request)
 	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
@@ -149,8 +149,8 @@ func (qp *QueueProxy) Poll() (item interface{}, err error) {
 	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)
 }
 
-func (qp *QueueProxy) PollWithTimeout(timeout int64, timeoutUnit time.Duration) (item interface{}, err error) {
-	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout, timeoutUnit)
+func (qp *QueueProxy) PollWithTimeout(timeout time.Duration) (item interface{}, err error) {
+	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout)
 	request := protocol.QueuePollEncodeRequest(qp.name, timeoutInMilliSeconds)
 	responseMessage, err := qp.invoke(request)
 	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)

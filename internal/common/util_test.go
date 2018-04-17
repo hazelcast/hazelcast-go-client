@@ -43,20 +43,19 @@ func TestGetIpWithoutPort(t *testing.T) {
 }
 func TestGetTimeInMilliSeconds(t *testing.T) {
 	var expected int64 = 100
-	var baseTime int64 = 100
-	if result := GetTimeInMilliSeconds(baseTime, time.Millisecond); result != expected {
+	if result := GetTimeInMilliSeconds(100 * time.Millisecond); result != expected {
 		t.Fatal("An error in GetTimeInMilleSeconds()")
 	}
 	expected = expected * 1000
-	if result := GetTimeInMilliSeconds(baseTime, time.Second); result != expected {
+	if result := GetTimeInMilliSeconds(100 * time.Second); result != expected {
 		t.Fatal("An error in GetTimeInMilleSeconds()")
 	}
 	expected = expected * 60
-	if result := GetTimeInMilliSeconds(baseTime, time.Minute); result != expected {
+	if result := GetTimeInMilliSeconds(100 * time.Minute); result != expected {
 		t.Fatal("An error in GetTimeInMilleSeconds()")
 	}
 	expected = expected * 60
-	if result := GetTimeInMilliSeconds(baseTime, time.Hour); result != expected {
+	if result := GetTimeInMilliSeconds(100 * time.Hour); result != expected {
 		t.Fatal("An error in GetTimeInMilleSeconds()")
 	}
 }

@@ -49,13 +49,14 @@ func (mp *MapProxy) TryPut(key interface{}, value interface{}) (ok bool, err err
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryPutDecodeResponse)
 }
-func (mp *MapProxy) PutTransient(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
+
+func (mp *MapProxy) PutTransient(key interface{}, value interface{}, ttl time.Duration) (err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
 		return err
 	}
-	ttl = common.GetTimeInMilliSeconds(ttl, ttlTimeUnit)
-	request := protocol.MapPutTransientEncodeRequest(mp.name, keyData, valueData, threadId, ttl)
+	ttlInMillis := common.GetTimeInMilliSeconds(ttl)
+	request := protocol.MapPutTransientEncodeRequest(mp.name, keyData, valueData, threadId, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return err
 }
@@ -98,13 +99,14 @@ func (mp *MapProxy) RemoveAll(predicate interface{}) (err error) {
 	_, err = mp.invokeOnRandomTarget(request)
 	return err
 }
-func (mp *MapProxy) TryRemove(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (ok bool, err error) {
+
+func (mp *MapProxy) TryRemove(key interface{}, timeout time.Duration) (ok bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
-	timeout = common.GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
-	request := protocol.MapTryRemoveEncodeRequest(mp.name, keyData, threadId, timeout)
+	timeoutInMillis := common.GetTimeInMilliSeconds(timeout)
+	request := protocol.MapTryRemoveEncodeRequest(mp.name, keyData, threadId, timeoutInMillis)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryRemoveDecodeResponse)
 }
@@ -179,36 +181,38 @@ func (mp *MapProxy) Flush() (err error) {
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
+
 func (mp *MapProxy) Lock(key interface{}) (err error) {
-	return mp.LockWithLeaseTime(key, -1, time.Second)
+	return mp.LockWithLeaseTime(key, -1)
 }
-func (mp *MapProxy) LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) (err error) {
+func (mp *MapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return err
 	}
-	lease = common.GetTimeInMilliSeconds(lease, leaseTimeUnit)
-	request := protocol.MapLockEncodeRequest(mp.name, keyData, threadId, lease, mp.client.ProxyManager.nextReferenceId())
+	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	request := protocol.MapLockEncodeRequest(mp.name, keyData, threadId, leaseInMillis, mp.client.ProxyManager.nextReferenceId())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
 func (mp *MapProxy) TryLock(key interface{}) (locked bool, err error) {
-	return mp.TryLockWithTimeout(key, 0, time.Second)
+	return mp.TryLockWithTimeout(key, 0)
 }
-func (mp *MapProxy) TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (locked bool, err error) {
-	return mp.TryLockWithTimeoutAndLease(key, timeout, timeoutTimeUnit, -1, time.Second)
+func (mp *MapProxy) TryLockWithTimeout(key interface{}, timeout time.Duration) (locked bool, err error) {
+	return mp.TryLockWithTimeoutAndLease(key, timeout, -1)
 }
-func (mp *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (locked bool, err error) {
+func (mp *MapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return false, err
 	}
-	timeout = common.GetTimeInMilliSeconds(timeout, timeoutTimeUnit)
-	lease = common.GetTimeInMilliSeconds(lease, leaseTimeUnit)
-	request := protocol.MapTryLockEncodeRequest(mp.name, keyData, threadId, lease, timeout, mp.client.ProxyManager.nextReferenceId())
+	timeoutInMillis := common.GetTimeInMilliSeconds(timeout)
+	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	request := protocol.MapTryLockEncodeRequest(mp.name, keyData, threadId, leaseInMillis, timeoutInMillis, mp.client.ProxyManager.nextReferenceId())
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryLockDecodeResponse)
 }
+
 func (mp *MapProxy) Unlock(key interface{}) (err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
@@ -257,16 +261,17 @@ func (mp *MapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValu
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapReplaceIfSameDecodeResponse)
 
 }
+
 func (mp *MapProxy) Set(key interface{}, value interface{}) (err error) {
-	return mp.SetWithTtl(key, value, ttlUnlimited, time.Second)
+	return mp.SetWithTtl(key, value, ttlUnlimited)
 }
-func (mp *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error) {
+func (mp *MapProxy) SetWithTtl(key interface{}, value interface{}, ttl time.Duration) (err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
 		return err
 	}
-	ttl = common.GetTimeInMilliSeconds(ttl, ttlTimeUnit)
-	request := protocol.MapSetEncodeRequest(mp.name, keyData, valueData, threadId, ttl)
+	ttlInMillis := common.GetTimeInMilliSeconds(ttl)
+	request := protocol.MapSetEncodeRequest(mp.name, keyData, valueData, threadId, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }

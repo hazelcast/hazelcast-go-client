@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	DefaultHeartBeatInterval = 10
-	DefaultHeartBeatTimeout  = 60
+	DefaultHeartBeatInterval = 10 * time.Second
+	DefaultHeartBeatTimeout  = 60 * time.Second
 )
 
 type heartBeatService struct {
@@ -43,10 +43,10 @@ func newHeartBeatService(client *HazelcastClient) *heartBeatService {
 		cancel:           make(chan struct{}),
 	}
 	if client.ClientConfig.HeartbeatTimeout() > 0 {
-		heartBeat.heartBeatTimeout = time.Duration(client.ClientConfig.HeartbeatTimeout())
+		heartBeat.heartBeatTimeout = client.ClientConfig.HeartbeatTimeout()
 	}
 	if client.ClientConfig.HeartbeatInterval() > 0 {
-		heartBeat.heartBeatInterval = time.Duration(client.ClientConfig.HeartbeatInterval())
+		heartBeat.heartBeatInterval = client.ClientConfig.HeartbeatInterval()
 	}
 	heartBeat.listeners.Store(make([]interface{}, 0)) //initialize
 	return &heartBeat
@@ -65,7 +65,7 @@ func (hbs *heartBeatService) AddHeartbeatListener(listener interface{}) {
 }
 func (hbs *heartBeatService) start() {
 	go func() {
-		ticker := time.NewTicker(hbs.heartBeatInterval * time.Second)
+		ticker := time.NewTicker(hbs.heartBeatInterval)
 		for {
 			if !hbs.client.LifecycleService.isLive.Load().(bool) {
 				return
@@ -83,12 +83,12 @@ func (hbs *heartBeatService) start() {
 func (hbs *heartBeatService) heartBeat() {
 	for _, connection := range hbs.client.ConnectionManager.getActiveConnections() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
-		if time.Duration(timeSinceLastRead.Seconds()) > hbs.heartBeatTimeout {
+		if timeSinceLastRead > hbs.heartBeatTimeout {
 			if connection.heartBeating {
 				hbs.onHeartBeatStopped(connection)
 			}
 		}
-		if time.Duration(timeSinceLastRead.Seconds()) > hbs.heartBeatInterval {
+		if timeSinceLastRead > hbs.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := protocol.ClientPingEncodeRequest()
 			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)

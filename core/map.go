@@ -148,7 +148,7 @@ type IMap interface {
 	// Acquired lock is only for the key in this map.
 	// Locks are re-entrant, so if the key is locked N times then
 	// it should be unlocked N times before another thread can acquire it.
-	LockWithLeaseTime(key interface{}, lease int64, leaseTimeUnit time.Duration) (err error)
+	LockWithLeaseTime(key interface{}, lease time.Duration) (err error)
 
 	// Unlock releases the lock for the specified key. It never blocks and returns immediately.
 	// If the current thread is the holder of this lock,
@@ -199,11 +199,11 @@ type IMap interface {
 	// then the entry lives forever. If the TTL is negative, then the TTL
 	// from the map configuration will be used (default: forever).
 	// For example:
-	// 	mp.SetWithTtl("testingKey1", "testingValue1", 5, time.Second)
+	// 	mp.SetWithTtl("testingKey1", "testingValue1", 5 * time. Second)
 	// will expire and get evicted after 5 seconds whereas
-	// mp.SetWithTtl("testingKey1", "testingValue1", 5, time.Millisecond)
+	// mp.SetWithTtl("testingKey1", "testingValue1", 5 * time. Millisecond)
 	// will expire and get evicted after 5 milliseconds.
-	SetWithTtl(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error)
+	SetWithTtl(key interface{}, value interface{}, ttl time.Duration) (err error)
 
 	// PutIfAbsent associates the specified key with the given value
 	// if it is not already associated.
@@ -267,7 +267,7 @@ type IMap interface {
 	//	the lock is acquired by the current thread, or
 	//	the specified waiting time elapses.
 	// TryLcokWithTimeout returns true if lock is acquired, false otherwise.
-	TryLockWithTimeout(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (locked bool, err error)
+	TryLockWithTimeout(key interface{}, timeout time.Duration) (locked bool, err error)
 
 	// TryLockWithTimeoutAndLease tries to acquire the lock for the specified key for the specified lease time.
 	// After lease time, the lock will be released.
@@ -277,7 +277,7 @@ type IMap interface {
 	//	the lock is acquired by the current thread, or
 	//	the specified waiting time elapses.
 	// TryLcokWithTimeoutAndLease returns true if lock is acquired, false otherwise.
-	TryLockWithTimeoutAndLease(key interface{}, timeout int64, timeoutTimeUnit time.Duration, lease int64, leaseTimeUnit time.Duration) (locked bool, err error)
+	TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error)
 
 	// TryPut tries to put the given key and value into this map and returns immediately.
 	// TryPut returns true if the put is successful, false otherwise.
@@ -288,7 +288,7 @@ type IMap interface {
 	// thread and/or member, then this operation will wait the timeout
 	// amount for acquiring the lock.
 	// TryRemove returns true if the remove is successful, false otherwise.
-	TryRemove(key interface{}, timeout int64, timeoutTimeUnit time.Duration) (ok bool, err error)
+	TryRemove(key interface{}, timeout time.Duration) (ok bool, err error)
 
 	// GetAll returns the entries for the given keys.
 	// The returned map is NOT backed by the original map,
@@ -304,7 +304,7 @@ type IMap interface {
 	// the entry will expire and get evicted after the TTL. If the TTL is 0,
 	// then the entry lives forever. If the TTL is negative, then the TTL
 	// from the configuration will be used (default: forever).
-	PutTransient(key interface{}, value interface{}, ttl int64, ttlTimeUnit time.Duration) (err error)
+	PutTransient(key interface{}, value interface{}, ttl time.Duration) (err error)
 
 	// AddEntryListener adds a continuous entry listener for this map.
 	// To receive an event, you should implement a corresponding interface for that event such as

@@ -18,6 +18,7 @@ import (
 	"log"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -53,7 +54,7 @@ func TestTopicProxy_AddListener(t *testing.T) {
 	timeout := WaitTimeout(wg, Timeout)
 	AssertEqualf(t, nil, false, timeout, "topic AddListener() failed")
 	AssertEqualf(t, nil, listener.msg, "item-value", "topic AddListener() failed")
-	if listener.publishTime == 0 {
+	if !listener.publishTime.After(time.Time{}) {
 		t.Fatal("publishTime should be greater than 0")
 	}
 }
@@ -74,7 +75,7 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 type topicMessageListener struct {
 	wg          *sync.WaitGroup
 	msg         interface{}
-	publishTime int64
+	publishTime time.Time
 }
 
 func (l *topicMessageListener) OnMessage(message core.ITopicMessage) {

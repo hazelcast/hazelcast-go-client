@@ -18,6 +18,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -43,12 +44,30 @@ func GetIpAndPort(addr string) (string, int32) {
 	return addr, int32(port)
 }
 
-func GetTimeInMilliSeconds(time int64, duration time.Duration) int64 {
-	var timeInMillis int64 = time * duration.Nanoseconds() / (1000000)
-	if time > 0 && timeInMillis == 0 {
-		timeInMillis = 1
+func GetTimeInMilliSeconds(duration time.Duration) int64 {
+	if duration == -1 {
+		return -1
 	}
-	return timeInMillis
+	if duration > 0 && duration < time.Millisecond {
+		return int64(time.Millisecond)
+	}
+	return duration.Nanoseconds() / int64(time.Millisecond)
+}
+
+func ConvertMillisToDuration(timeInMillis int64) time.Duration {
+	if timeInMillis == math.MaxInt64 {
+		return time.Duration(timeInMillis)
+	}
+	return time.Duration(timeInMillis) * time.Millisecond
+}
+
+func ConvertMillisToUnixTime(timeInMillis int64) time.Time {
+	if timeInMillis == 0 {
+		return time.Time{}
+	} else if timeInMillis == math.MaxInt64 {
+		return time.Unix(0, timeInMillis)
+	}
+	return time.Unix(0, timeInMillis*int64(time.Millisecond))
 }
 
 // NewUUID generates a random UUID according to RFC 4122

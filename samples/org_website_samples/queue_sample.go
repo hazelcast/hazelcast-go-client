@@ -32,8 +32,8 @@ func queueSampleRun() {
 	// Poll the Distributed Queue and return the String
 	queue.Poll()
 	//Timed blocking Operations
-	queue.OfferWithTimeout("anotheritem", 500, time.Millisecond)
-	queue.PollWithTimeout(5, time.Second)
+	queue.OfferWithTimeout("anotheritem", 500*time.Millisecond)
+	queue.PollWithTimeout(5 * time.Second)
 	//Indefinitely blocking Operations
 	queue.Put("yetanotheritem")
 	fmt.Println(queue.Take())

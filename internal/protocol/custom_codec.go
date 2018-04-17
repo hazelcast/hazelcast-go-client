@@ -54,22 +54,7 @@ func MemberCodecDecode(msg *ClientMessage) *Member {
 	}
 	return &Member{*address, *uuid, liteMember, attributes}
 }
-func EntryViewCodecDecode(msg *ClientMessage) *EntryView {
-	entryView := EntryView{}
-	entryView.key = *msg.ReadData()
-	entryView.value = *msg.ReadData()
-	entryView.cost = msg.ReadInt64()
-	entryView.creationTime = msg.ReadInt64()
-	entryView.expirationTime = msg.ReadInt64()
-	entryView.hits = msg.ReadInt64()
-	entryView.lastAccessTime = msg.ReadInt64()
-	entryView.lastStoredTime = msg.ReadInt64()
-	entryView.lastUpdateTime = msg.ReadInt64()
-	entryView.version = msg.ReadInt64()
-	entryView.evictionCriteriaNumber = msg.ReadInt64()
-	entryView.ttl = msg.ReadInt64()
-	return &entryView
-}
+
 func DataEntryViewCodecDecode(msg *ClientMessage) *DataEntryView {
 	dataEntryView := DataEntryView{}
 	dataEntryView.keyData = msg.ReadData()

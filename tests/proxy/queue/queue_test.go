@@ -165,7 +165,7 @@ func TestQueueProxy_OfferWithNilElement(t *testing.T) {
 
 func TestQueueProxy_OfferWithTimeout(t *testing.T) {
 	defer queue.Clear()
-	changed, err := queue.OfferWithTimeout(testElement, 0, time.Millisecond)
+	changed, err := queue.OfferWithTimeout(testElement, 0)
 	AssertEqualf(t, err, changed, true, "queue Offer() failed")
 	result, err := queue.Peek()
 	AssertEqualf(t, err, result, testElement, "queue Offer() failed")
@@ -175,13 +175,13 @@ func TestQueueProxy_OfferWithTimeoutWithFullCapacity(t *testing.T) {
 	defer queue.Clear()
 	all := []interface{}{"1", "2", "3", "4", "5", "6"}
 	queue.AddAll(all)
-	changed, err := queue.OfferWithTimeout(testElement, 1000, time.Millisecond)
+	changed, err := queue.OfferWithTimeout(testElement, 100*time.Millisecond)
 	AssertEqualf(t, err, changed, false, "queue Offer() failed with full capacity")
 }
 
 func TestQueueProxy_OfferWithTimeoutWithNilElement(t *testing.T) {
 	defer queue.Clear()
-	_, err := queue.OfferWithTimeout(nil, 0, time.Millisecond)
+	_, err := queue.OfferWithTimeout(nil, 0)
 	AssertErrorNotNil(t, err, "queue OfferWithTimeout() should return error for nil element")
 }
 
@@ -214,13 +214,13 @@ func TestQueueProxy_PollEmpty(t *testing.T) {
 func TestQueueProxy_PollWithTimeout(t *testing.T) {
 	defer queue.Clear()
 	queue.Put(testElement)
-	item, err := queue.PollWithTimeout(1000, time.Millisecond)
+	item, err := queue.PollWithTimeout(1000 * time.Millisecond)
 	AssertEqualf(t, err, item, testElement, "queue PollWithTimeout() failed")
 }
 
 func TestQueueProxy_PollWithTimeoutEmpty(t *testing.T) {
 	defer queue.Clear()
-	item, err := queue.PollWithTimeout(1000, time.Millisecond)
+	item, err := queue.PollWithTimeout(1000 * time.Millisecond)
 	AssertEqualf(t, err, item, nil, "queue PollWithTimeout() failed")
 }
 

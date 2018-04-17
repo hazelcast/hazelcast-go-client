@@ -24,7 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-const PartitionUpdateInterval time.Duration = 5
+const PartitionUpdateInterval = 5 * time.Second
 
 type partitionService struct {
 	client         *HazelcastClient
@@ -41,7 +41,7 @@ func newPartitionService(client *HazelcastClient) *partitionService {
 func (ps *partitionService) start() {
 	ps.doRefresh()
 	go func() {
-		ticker := time.NewTicker(PartitionUpdateInterval * time.Second)
+		ticker := time.NewTicker(PartitionUpdateInterval)
 		for {
 			select {
 			case <-ticker.C:

@@ -116,7 +116,7 @@ func TestMapProxy_GetWithNilKey(t *testing.T) {
 
 func TestMapProxy_TryRemove(t *testing.T) {
 	mp.Put("testKey", "testValue")
-	_, err := mp.TryRemove("testKey", 5, time.Second)
+	_, err := mp.TryRemove("testKey", 5*time.Second)
 	if err != nil {
 		t.Fatal("tryRemove failed ", err)
 	}
@@ -124,7 +124,7 @@ func TestMapProxy_TryRemove(t *testing.T) {
 }
 
 func TestMapProxy_TryRemoveWithNilKey(t *testing.T) {
-	_, err := mp.TryRemove(nil, 1, time.Second)
+	_, err := mp.TryRemove(nil, 1*time.Second)
 	AssertErrorNotNil(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
@@ -239,7 +239,7 @@ func TestMapProxy_PutTransient(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
-	mp.PutTransient(testKey, "nextValue", 100, time.Second)
+	mp.PutTransient(testKey, "nextValue", 100*time.Second)
 	res, err := mp.Get(testKey)
 	AssertEqualf(t, err, res, "nextValue", "putTransient failed")
 	mp.Clear()
@@ -250,7 +250,7 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
-	mp.PutTransient(testKey, "nextValue", 1, time.Millisecond)
+	mp.PutTransient(testKey, "nextValue", 1*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	res, err := mp.Get(testKey)
 	AssertNilf(t, err, res, "putTransient failed")
@@ -260,14 +260,14 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 
 func TestMapProxy_PutTransientWithNilKey(t *testing.T) {
 	testValue := "testingValue"
-	err := mp.PutTransient(nil, testValue, 1, time.Millisecond)
+	err := mp.PutTransient(nil, testValue, 1*time.Millisecond)
 	AssertErrorNotNil(t, err, "putTransient did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNilValue(t *testing.T) {
 	testKey := "testingKey"
-	err := mp.PutTransient(testKey, nil, 1, time.Millisecond)
+	err := mp.PutTransient(testKey, nil, 1*time.Millisecond)
 	AssertErrorNotNil(t, err, "putTransient did not return an error for nil value")
 	mp.Clear()
 }
@@ -414,7 +414,7 @@ func TestMapProxy_UnlockWithNilKey(t *testing.T) {
 
 func TestMapProxy_LockWithLeaseTime(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
-	mp.LockWithLeaseTime("testingKey", 10, time.Millisecond)
+	mp.LockWithLeaseTime("testingKey", 10*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	locked, err := mp.IsLocked("testingKey")
 	AssertEqualf(t, err, locked, false, "Key should not be locked.")
@@ -428,7 +428,7 @@ func TestMapProxy_LocktWithNilKey(t *testing.T) {
 
 func TestMapProxy_TryLock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
-	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1, time.Second, 2, time.Second)
+	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Second, 2*time.Second)
 	AssertEqualf(t, err, ok, true, "Try Lock failed")
 	time.Sleep(5 * time.Second)
 	locked, err := mp.IsLocked("testingKey")
@@ -451,7 +451,7 @@ func TestMapProxy_TryLockWithNilKey(t *testing.T) {
 
 func TestMapProxy_ForceUnlock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
-	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1, time.Second, 20, time.Second)
+	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Second, 20*time.Second)
 	AssertEqualf(t, err, ok, true, "Try Lock failed")
 	mp.ForceUnlock("testingKey")
 	locked, err := mp.IsLocked("testingKey")
@@ -549,13 +549,13 @@ func TestMapProxy_SetWithNilValue(t *testing.T) {
 }
 
 func TestMapProxy_SetWithTtl(t *testing.T) {
-	err := mp.SetWithTtl("testingKey1", "testingValue1", 0, time.Second)
+	err := mp.SetWithTtl("testingKey1", "testingValue1", 0*time.Second)
 	if err != nil {
 		t.Error(err)
 	}
 	newValue, err := mp.Get("testingKey1")
 	AssertEqualf(t, err, newValue, "testingValue1", "Map SetWithTtl failed.")
-	mp.SetWithTtl("testingKey1", "testingValue2", 1, time.Millisecond)
+	mp.SetWithTtl("testingKey1", "testingValue2", 1*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	newValue, err = mp.Get("testingKey1")
 	AssertNilf(t, err, newValue, "Map SetWithTtl failed.")
@@ -775,22 +775,22 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	if cost := entryView.Cost(); cost <= 0 {
 		t.Fatal("entryView cost should be greater than 0.")
 	}
-	if creationTime := entryView.CreationTime(); creationTime <= 0 {
+	if creationTime := entryView.CreationTime(); !creationTime.After(time.Time{}) {
 		t.Fatal("entryView creationTime should be greater than 0.")
 	}
-	if expirationTime := entryView.ExpirationTime(); expirationTime <= 0 {
+	if expirationTime := entryView.ExpirationTime(); !expirationTime.After(time.Time{}) {
 		t.Fatal("entryView expirationTime should be greater than 0.")
 	}
-	if lastAccessTime := entryView.LastAccessTime(); lastAccessTime <= 0 {
+	if lastAccessTime := entryView.LastAccessTime(); !lastAccessTime.After(time.Time{}) {
 		t.Fatal("entryView lastAccessTime should be greater than 0.")
 	}
-	if lastUpdateTime := entryView.LastUpdateTime(); lastUpdateTime <= 0 {
+	if lastUpdateTime := entryView.LastUpdateTime(); !lastUpdateTime.After(time.Time{}) {
 		t.Fatal("entryView lastUpdateTime should be greater than 0.")
 	}
 	if ttl := entryView.Ttl(); ttl <= 0 {
 		t.Fatal("entryView ttl should be greater than 0.")
 	}
-	AssertEqualf(t, err, entryView.LastStoredTime(), int64(0), "Map GetEntryView returned a wrong view.")
+	AssertEqualf(t, err, entryView.LastStoredTime(), time.Time{}, "Map GetEntryView returned a wrong view.")
 	mp.Clear()
 }
 
@@ -1179,13 +1179,13 @@ func TestMapProxy_TryPutWithNonSerializableValue(t *testing.T) {
 }
 
 func TestMapProxy_PutTransientWithNonSerializableKey(t *testing.T) {
-	err := mp.PutTransient(student{}, "test", 1, time.Second)
+	err := mp.PutTransient(student{}, "test", 1*time.Second)
 	AssertErrorNotNil(t, err, "putTransient did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNonSerializableValue(t *testing.T) {
-	err := mp.PutTransient("test", student{}, 1, time.Second)
+	err := mp.PutTransient("test", student{}, 1*time.Second)
 	AssertErrorNotNil(t, err, "putTransient did not return an error for nonserializable value")
 	mp.Clear()
 }
@@ -1209,7 +1209,7 @@ func TestMapProxy_RemoveIfSameWithNonSerializableValue(t *testing.T) {
 }
 
 func TestMapProxy_TryRemoveWithNonSerializableKey(t *testing.T) {
-	_, err := mp.TryRemove(student{}, 1, time.Second)
+	_, err := mp.TryRemove(student{}, 1*time.Second)
 	AssertErrorNotNil(t, err, "tryRemove did not return an error for nonserializable key")
 	mp.Clear()
 }
