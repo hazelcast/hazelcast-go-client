@@ -40,23 +40,28 @@ type listenerService struct {
 	registerListenerInitChannel                chan *listenerRegistrationKey
 	connectToAllMembersChannel                 chan struct{}
 }
+
 type removedErr struct {
 	removed bool
 	err     error
 }
+
 type registrationIdRequestEncoder struct {
 	registrationId string
 	requestEncoder protocol.EncodeListenerRemoveRequest
 }
+
 type registrationIdConnection struct {
 	registrationId string
 	connection     *Connection
 }
+
 type eventRegistration struct {
 	serverRegistrationId string
 	correlationId        int64
 	connection           *Connection
 }
+
 type listenerRegistrationKey struct {
 	userRegistrationKey string
 	request             *protocol.ClientMessage
@@ -89,12 +94,14 @@ func newListenerService(client *HazelcastClient) *listenerService {
 	}
 	return service
 }
+
 func (ls *listenerService) connectToAllMembersInternal() {
 	members := ls.client.ClusterService.GetMemberList()
 	for _, member := range members {
 		ls.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
 	}
 }
+
 func (ls *listenerService) connectToAllMembersPeriodically() {
 	ticker := time.NewTicker(1 * time.Second)
 	for {
@@ -104,6 +111,7 @@ func (ls *listenerService) connectToAllMembersPeriodically() {
 		}
 	}
 }
+
 func (ls *listenerService) process() {
 	for {
 		select {
@@ -137,6 +145,7 @@ func (ls *listenerService) registerListenerInit(key *listenerRegistrationKey) {
 	ls.registrationIdToListenerRegistration[key.userRegistrationKey] = key
 	ls.registrations[key.userRegistrationKey] = make(map[int64]*eventRegistration)
 }
+
 func (ls *listenerService) registerListener(request *protocol.ClientMessage, eventHandler func(clientMessage *protocol.ClientMessage),
 	encodeListenerRemoveRequest protocol.EncodeListenerRemoveRequest, responseDecoder protocol.DecodeListenerResponse) (*string, error) {
 	err := ls.trySyncConnectToAllConnections()
@@ -169,6 +178,7 @@ func (ls *listenerService) registerListener(request *protocol.ClientMessage, eve
 
 	return &userRegistrationId, nil
 }
+
 func (ls *listenerService) registerListenerOnConnection(registrationId string, connection *Connection) error {
 	if registrationMap, found := ls.registrations[registrationId]; found {
 		_, found := registrationMap[connection.connectionId]
@@ -194,6 +204,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationId string, c
 	ls.registrations[registrationId][connection.connectionId] = registration
 	return nil
 }
+
 func (ls *listenerService) deregisterListener(registrationId string, requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
 	registrationIdRequestEncoder := registrationIdRequestEncoder{
 		registrationId: registrationId,
@@ -203,6 +214,7 @@ func (ls *listenerService) deregisterListener(registrationId string, requestEnco
 	removedErr := <-ls.deregisterListenerErrChannel
 	return removedErr.removed, removedErr.err
 }
+
 func (ls *listenerService) deregisterListenerInternal(registrationId string, requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
 	var registrationMap map[int64]*eventRegistration
 	var found bool
@@ -251,6 +263,7 @@ func (ls *listenerService) registerListenerFromInternal(registrationId string, c
 	}
 
 }
+
 func (ls *listenerService) registerListenerFromInternalHandleError(registrationId string, connection *Connection) {
 	failedRegsToConnection, found := ls.failedRegistrations[connection.connectionId]
 	if !found {
@@ -259,9 +272,11 @@ func (ls *listenerService) registerListenerFromInternalHandleError(registrationI
 	registrationKey := ls.registrationIdToListenerRegistration[registrationId]
 	ls.failedRegistrations[connection.connectionId] = append(failedRegsToConnection, registrationKey)
 }
+
 func (ls *listenerService) onConnectionClosed(connection *Connection, cause error) {
 	ls.onConnectionClosedChannel <- connection
 }
+
 func (ls *listenerService) onConnectionClosedInternal(connection *Connection) {
 	delete(ls.failedRegistrations, connection.connectionId)
 	for _, registrationMap := range ls.registrations {
@@ -272,23 +287,28 @@ func (ls *listenerService) onConnectionClosedInternal(connection *Connection) {
 		}
 	}
 }
+
 func (ls *listenerService) onConnectionOpened(connection *Connection) {
 	ls.onConnectionOpenedChannel <- connection
 }
+
 func (ls *listenerService) onConnectionOpenedInternal(connection *Connection) {
 	for registrationKey, _ := range ls.registrations {
 		go ls.registerListenerFromInternal(registrationKey, connection)
 	}
 }
+
 func (ls *listenerService) OnHeartbeatRestored(connection *Connection) {
 	ls.onHeartbeatRestoredChannel <- connection
 }
+
 func (ls *listenerService) OnHeartbeatRestoredInternal(connection *Connection) {
 	registrationKeys := ls.failedRegistrations[connection.connectionId]
 	for _, registrationKey := range registrationKeys {
 		go ls.registerListenerFromInternal(registrationKey.userRegistrationKey, connection)
 	}
 }
+
 func (ls *listenerService) trySyncConnectToAllConnections() error {
 	if !ls.client.ClientConfig.ClientNetworkConfig().IsSmartRouting() {
 		return nil

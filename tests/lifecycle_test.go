@@ -32,6 +32,7 @@ func (l *lifecycleListener) LifecycleStateChanged(newState string) {
 	l.collector = append(l.collector, newState)
 	l.wg.Done()
 }
+
 func TestLifecycleListener(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
@@ -51,6 +52,7 @@ func TestLifecycleListener(t *testing.T) {
 	assert.Equalf(t, nil, lifecycleListener.collector[4], internal.LifecycleStateShutdown, "Lifecycle listener failed")
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
 func TestLifecycleListenerForDisconnected(t *testing.T) {
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)

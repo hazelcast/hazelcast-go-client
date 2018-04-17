@@ -52,6 +52,7 @@ func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) 
 	eventType = clientMessage.ReadInt32()
 	return
 }
+
 func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessage) (members []*Member) {
 	membersSize := clientMessage.ReadInt32()
 	members = make([]*Member, membersSize)
@@ -61,6 +62,7 @@ func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessa
 	}
 	return
 }
+
 func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (uuid *string, key *string, operationType int32, value *string) {
 	uuid = clientMessage.ReadString()
 	key = clientMessage.ReadString()

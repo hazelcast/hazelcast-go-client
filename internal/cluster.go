@@ -62,9 +62,11 @@ func newClusterService(client *HazelcastClient, config *config.ClientConfig) *cl
 	go service.process()
 	return service
 }
+
 func (cs *clusterService) start() error {
 	return cs.connectToCluster()
 }
+
 func getPossibleAddresses(addressList []string, memberList []*protocol.Member) []protocol.Address {
 	if addressList == nil {
 		addressList = make([]string, 0)
@@ -100,6 +102,7 @@ func getPossibleAddresses(addressList []string, memberList []*protocol.Member) [
 	}
 	return addresses
 }
+
 func (cs *clusterService) process() {
 	for {
 		_, alive := <-cs.reconnectChan
@@ -109,6 +112,7 @@ func (cs *clusterService) process() {
 		cs.reconnect()
 	}
 }
+
 func (cs *clusterService) reconnect() {
 	err := cs.connectToCluster()
 	if err != nil {
@@ -117,6 +121,7 @@ func (cs *clusterService) reconnect() {
 	}
 
 }
+
 func (cs *clusterService) connectToCluster() error {
 
 	currentAttempt := int32(0)
@@ -146,6 +151,7 @@ func (cs *clusterService) connectToCluster() error {
 	}
 	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
+
 func (cs *clusterService) connectToAddress(address *protocol.Address) error {
 	connectionChannel, errChannel := cs.client.ConnectionManager.getOrConnect(address, true)
 	var con *Connection
@@ -213,6 +219,7 @@ func (cs *clusterService) AddListener(listener interface{}) *string {
 	cs.listeners.Store(copyListeners)
 	return &registrationId
 }
+
 func (cs *clusterService) RemoveListener(registrationId *string) bool {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
@@ -272,6 +279,7 @@ func (cs *clusterService) handleMemberList(members []*protocol.Member) {
 	cs.client.PartitionService.refresh <- struct{}{}
 	wg.Done() //initial member list is fetched
 }
+
 func (cs *clusterService) handleMemberAttributeChange(uuid *string, key *string, operationType int32, value *string) {
 	//TODO :: implement this.
 }
@@ -359,6 +367,7 @@ func (cs *clusterService) GetMemberByUuid(uuid string) core.IMember {
 	}
 	return nil
 }
+
 func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
 	ownerConnectionAddress := cs.ownerConnectionAddress.Load().(*protocol.Address)
 	if connection.endpoint.Load().(*protocol.Address).Host() != "" && ownerConnectionAddress.Host() != "" &&
@@ -368,6 +377,7 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 		cs.reconnectChan <- struct{}{}
 	}
 }
+
 func (cs *clusterService) onConnectionOpened(connection *Connection) {
 
 }

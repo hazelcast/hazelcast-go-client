@@ -108,11 +108,13 @@ func (l *simpleListener) EntryAdded(event core.IEntryEvent) {
 	event.Value()
 	event.OldValue()
 }
+
 func (l *simpleListener) EntryUpdated(event core.IEntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()
 }
+
 func (l *simpleListener) EntryRemoved(event core.IEntryEvent) {
 	event.Key()
 	event.Value()

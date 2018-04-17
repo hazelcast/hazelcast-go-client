@@ -51,6 +51,7 @@ func newLifecycleService(config *config.ClientConfig) *lifecycleService {
 	newLifecycle.fireLifecycleEvent(LifecycleStateStarting)
 	return newLifecycle
 }
+
 func (ls *lifecycleService) AddListener(listener interface{}) string {
 	registrationId, _ := common.NewUUID()
 	ls.mu.Lock()
@@ -64,6 +65,7 @@ func (ls *lifecycleService) AddListener(listener interface{}) string {
 	ls.listeners.Store(copyListeners)
 	return registrationId
 }
+
 func (ls *lifecycleService) RemoveListener(registrationId *string) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
@@ -79,6 +81,7 @@ func (ls *lifecycleService) RemoveListener(registrationId *string) bool {
 	ls.listeners.Store(copyListeners)
 	return found
 }
+
 func (ls *lifecycleService) fireLifecycleEvent(newState string) {
 	if newState == LifecycleStateShuttingDown {
 		ls.isLive.Store(false)

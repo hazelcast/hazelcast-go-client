@@ -56,10 +56,12 @@ func (ps *partitionService) start() {
 	}()
 
 }
+
 func (ps *partitionService) getPartitionCount() int32 {
 	partitions := ps.mp.Load().(map[int32]*protocol.Address)
 	return int32(len(partitions))
 }
+
 func (ps *partitionService) partitionOwner(partitionId int32) (*protocol.Address, bool) {
 	partitions := ps.mp.Load().(map[int32]*protocol.Address)
 	address, ok := partitions[partitionId]

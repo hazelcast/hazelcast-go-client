@@ -42,6 +42,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
+
 func TestSingleConnectionWithManyMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
@@ -64,6 +65,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
 }
+
 func TestInvocationTimeout(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
@@ -106,6 +108,7 @@ func TestInvocationRetry(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	mu.Unlock()
 }
+
 func TestInvocationWithShutdown(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)

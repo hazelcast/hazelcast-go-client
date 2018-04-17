@@ -89,6 +89,7 @@ func (m *ClientMessage) Flags() uint8 {
 func (m *ClientMessage) SetFlags(v uint8) {
 	m.Buffer[common.FlagsFieldOffset] = byte(v)
 }
+
 func (m *ClientMessage) AddFlags(v uint8) {
 	m.Buffer[common.FlagsFieldOffset] = m.Buffer[common.FlagsFieldOffset] | byte(v)
 }
@@ -149,14 +150,17 @@ func (m *ClientMessage) AppendByte(v uint8) {
 	m.Buffer[m.writeIndex] = byte(v)
 	m.writeIndex += common.ByteSizeInBytes
 }
+
 func (m *ClientMessage) AppendUint8(v uint8) {
 	m.Buffer[m.writeIndex] = byte(v)
 	m.writeIndex += common.ByteSizeInBytes
 }
+
 func (m *ClientMessage) AppendInt32(v int32) {
 	binary.LittleEndian.PutUint32(m.Buffer[m.writeIndex:m.writeIndex+common.Int32SizeInBytes], uint32(v))
 	m.writeIndex += common.Int32SizeInBytes
 }
+
 func (m *ClientMessage) AppendData(v *serialization.Data) {
 	m.AppendByteArray(v.Buffer())
 }
@@ -169,6 +173,7 @@ func (m *ClientMessage) AppendByteArray(arr []byte) {
 	copy(m.Buffer[m.writeIndex:m.writeIndex+length], arr)
 	m.writeIndex += length
 }
+
 func (m *ClientMessage) AppendInt64(v int64) {
 	binary.LittleEndian.PutUint64(m.Buffer[m.writeIndex:m.writeIndex+common.Int64SizeInBytes], uint64(v))
 	m.writeIndex += common.Int64SizeInBytes
@@ -205,11 +210,13 @@ func (m *ClientMessage) ReadInt32() int32 {
 	m.readIndex += common.Int32SizeInBytes
 	return int
 }
+
 func (m *ClientMessage) ReadInt64() int64 {
 	int64 := int64(binary.LittleEndian.Uint64(m.Buffer[m.readOffset() : m.readOffset()+common.Int64SizeInBytes]))
 	m.readIndex += common.Int64SizeInBytes
 	return int64
 }
+
 func (m *ClientMessage) ReadUint8() uint8 {
 	byte := byte(m.Buffer[m.readOffset()])
 	m.readIndex += common.ByteSizeInBytes
@@ -223,13 +230,16 @@ func (m *ClientMessage) ReadBool() bool {
 		return false
 	}
 }
+
 func (m *ClientMessage) ReadString() *string {
 	str := string(m.ReadByteArray())
 	return &str
 }
+
 func (m *ClientMessage) ReadData() *serialization.Data {
 	return &serialization.Data{m.ReadByteArray()}
 }
+
 func (m *ClientMessage) ReadByteArray() []byte {
 	length := m.ReadInt32()
 	result := m.Buffer[m.readOffset() : m.readOffset()+length]
@@ -243,6 +253,7 @@ func (m *ClientMessage) ReadByteArray() []byte {
 func (m *ClientMessage) UpdateFrameLength() {
 	m.SetFrameLength(int32(m.writeIndex))
 }
+
 func (m *ClientMessage) Accumulate(newMsg *ClientMessage) {
 	start := newMsg.DataOffset()
 	end := newMsg.FrameLength()

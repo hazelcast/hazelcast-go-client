@@ -81,6 +81,7 @@ func newConnection(address *protocol.Address, responseChannel chan *protocol.Cli
 func (c *Connection) isAlive() bool {
 	return atomic.LoadInt32(&c.status) == 0
 }
+
 func (c *Connection) writePool() {
 	//Writer process
 	for {
@@ -125,6 +126,7 @@ func (c *Connection) write(clientMessage *protocol.ClientMessage) error {
 
 	return nil
 }
+
 func (c *Connection) read() {
 	buf := make([]byte, BufferSize)
 	for {
@@ -140,6 +142,7 @@ func (c *Connection) read() {
 		c.receiveMessage()
 	}
 }
+
 func (c *Connection) receiveMessage() {
 	c.lastRead.Store(time.Now())
 	for len(c.readBuffer) > common.Int32SizeInBytes {
@@ -152,6 +155,7 @@ func (c *Connection) receiveMessage() {
 		c.clientMessageBuilder.onMessage(resp)
 	}
 }
+
 func (c *Connection) close(err error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return

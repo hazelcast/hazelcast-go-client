@@ -56,6 +56,7 @@ func (e *engineer) ReadPortable(reader serialization.PortableReader) error {
 	}
 	return nil
 }
+
 func (e *engineer) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteUTF("name", e.name)
 	writer.WriteUTF("surname", e.surname)

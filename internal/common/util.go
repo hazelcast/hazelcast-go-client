@@ -28,6 +28,7 @@ import (
 func IsValidIpAddress(addr string) bool {
 	return net.ParseIP(addr) != nil
 }
+
 func GetIpAndPort(addr string) (string, int32) {
 	var port int
 	var err error

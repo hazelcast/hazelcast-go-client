@@ -53,6 +53,7 @@ func Test_getPossibleAddresses(t *testing.T) {
 		}
 	}
 }
+
 func Test_getPossibleAddressesWithEmptyParamters(t *testing.T) {
 	addresses := getPossibleAddresses(nil, nil)
 	if len(addresses) != 1 {
