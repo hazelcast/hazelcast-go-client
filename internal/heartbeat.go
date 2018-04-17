@@ -99,7 +99,7 @@ func (hbs *heartBeatService) heartBeat() {
 			go func() {
 				_, err := sentInvocation.Result()
 				if err != nil {
-					log.Println("error receiving heartbeat for connection, ", copyConnection)
+					log.Println("Error when receiving heartbeat for connection, ", copyConnection)
 				} else {
 					copyConnection.lastHeartbeatReceived.Store(time.Now())
 				}

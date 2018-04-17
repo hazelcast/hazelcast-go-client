@@ -209,7 +209,7 @@ func (is *invocationService) invokeSmart(invocation *invocation) {
 			is.sendToAddress(invocation, target)
 		} else {
 			is.handleException(invocation,
-				core.NewHazelcastIOError(fmt.Sprintf("Partition does not have an owner. partitionId: %d", invocation.partitionId), nil))
+				core.NewHazelcastIOError(fmt.Sprintf("partition does not have an owner. partitionId: %d", invocation.partitionId), nil))
 
 		}
 	} else if invocation.address != nil {
@@ -236,7 +236,7 @@ func (is *invocationService) send(invocation *invocation, connectionChannel chan
 		case connection := <-connectionChannel:
 			is.sendToConnectionChannel <- &invocationConnection{invocation: invocation, connection: connection}
 		case err := <-errorChannel:
-			log.Println("the following error occured while trying to send the invocation: ", err)
+			log.Println("The following error occured while trying to send the invocation: ", err)
 			is.handleException(invocation, err)
 		}
 	}()
@@ -300,7 +300,7 @@ func (is *invocationService) handleNotSentInvocation(correlationId int64) {
 	if invocation, ok := is.unRegisterInvocation(correlationId); ok {
 		is.handleException(invocation, core.NewHazelcastIOError("packet is not sent", nil))
 	} else {
-		log.Println("no invocation has been found with the correlation id: ", correlationId)
+		log.Println("No invocation has been found with the correlation id: ", correlationId)
 	}
 }
 
@@ -320,7 +320,7 @@ func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 		if response.HasFlags(common.ListenerFlag) > 0 {
 			invocation, found := is.eventHandlers[correlationId]
 			if !found {
-				log.Println("Got an event message with unknown correlation id")
+				log.Println("Got an event message with unknown correlation id.")
 			} else {
 				invocation.eventHandler(response)
 			}
@@ -333,7 +333,7 @@ func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 			invocation.response <- response
 		}
 	} else {
-		log.Println("no invocation has been found with the correlation id: ", correlationId)
+		log.Println("No invocation has been found with the correlation id: ", correlationId)
 	}
 }
 
@@ -374,7 +374,7 @@ func (is *invocationService) handleException(invocation *invocation, err error) 
 
 	if invocation.isTimedout.Load().(bool) {
 		timeSinceDeadline := time.Since(invocation.timedoutTime.Load().(time.Time))
-		log.Println("invocation will not be retried because it timed out by ", timeSinceDeadline.String())
+		log.Println("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
 		invocation.err <- core.NewHazelcastTimeoutError("invocation timed out by"+timeSinceDeadline.String(), nil)
 		return
 	}
