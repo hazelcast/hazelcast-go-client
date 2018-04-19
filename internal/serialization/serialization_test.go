@@ -34,7 +34,7 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var id int32 = NewSerializationService(config.NewSerializationConfig()).lookUpDefaultSerializer(a).Id()
 	var expectedId int32 = -7
 	if id != expectedId {
-		t.Errorf("LookUpDefaultSerializer() returns ", id, " expected ", expectedId)
+		t.Error("LookUpDefaultSerializer() returns ", id, " expected ", expectedId)
 	}
 }
 
@@ -47,7 +47,7 @@ func TestSerializationService_ToData(t *testing.T) {
 	temp, _ := service.ToObject(data)
 	ret = temp.(int32)
 	if expected != ret {
-		t.Errorf("ToData() returns ", ret, " expected ", expected)
+		t.Error("ToData() returns ", ret, " expected ", expected)
 	}
 }
 
@@ -158,7 +158,7 @@ func TestCustomSerializer(t *testing.T) {
 	ret2, _ := service.ToObject(data2)
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
-		t.Errorf("custom serialization failed")
+		t.Error("custom serialization failed")
 	}
 }
 
@@ -171,7 +171,7 @@ func TestGlobalSerializer(t *testing.T) {
 	ret, _ := service.ToObject(data)
 
 	if !reflect.DeepEqual(obj, ret) {
-		t.Errorf("global serialization failed")
+		t.Error("global serialization failed")
 	}
 }
 
@@ -240,7 +240,7 @@ func TestGobSerializer(t *testing.T) {
 	ret, _ := service.ToObject(data)
 
 	if !reflect.DeepEqual(expected, ret) {
-		t.Errorf("Gob Serializer failed")
+		t.Error("Gob Serializer failed")
 	}
 
 }
@@ -253,7 +253,7 @@ func TestInt64SerializerWithInt(t *testing.T) {
 	ret, _ := service.ToObject(data)
 
 	if !reflect.DeepEqual(int64(id), ret) {
-		t.Errorf("int type serialization failed")
+		t.Error("int type serialization failed")
 	}
 }
 
@@ -270,7 +270,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(ids64, ret) {
-		t.Errorf("[]int type serialization failed")
+		t.Error("[]int type serialization failed")
 	}
 }
 
@@ -280,6 +280,6 @@ func TestSerializeData(t *testing.T) {
 	service := NewSerializationService(config)
 	serializedData, _ := service.ToData(data)
 	if !reflect.DeepEqual(data, serializedData) {
-		t.Errorf("data type should not be serialized")
+		t.Error("data type should not be serialized")
 	}
 }

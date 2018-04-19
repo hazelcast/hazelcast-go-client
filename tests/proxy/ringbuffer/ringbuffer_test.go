@@ -48,20 +48,20 @@ func TestMain(m *testing.M) {
 
 func TestRingbufferProxy_Name(t *testing.T) {
 	if ringbufferName != ringbuffer.Name() {
-		t.Errorf("Name() failed")
+		t.Error("Name() failed")
 	}
 }
 
 func TestRingbufferProxy_ServiceName(t *testing.T) {
 	serviceName := common.ServiceNameRingbufferService
 	if serviceName != ringbuffer.ServiceName() {
-		t.Errorf("ServiceName() failed")
+		t.Error("ServiceName() failed")
 	}
 }
 
 func TestRingbufferProxy_PartitionKey(t *testing.T) {
 	if ringbufferName != ringbuffer.PartitionKey() {
-		t.Errorf("PartitionKey() failed")
+		t.Error("PartitionKey() failed")
 	}
 }
 

@@ -237,7 +237,7 @@ func (m *ClientMessage) ReadString() *string {
 }
 
 func (m *ClientMessage) ReadData() *serialization.Data {
-	return &serialization.Data{m.ReadByteArray()}
+	return &serialization.Data{Payload: m.ReadByteArray()}
 }
 
 func (m *ClientMessage) ReadByteArray() []byte {

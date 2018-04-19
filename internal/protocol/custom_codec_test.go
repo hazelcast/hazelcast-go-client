@@ -32,7 +32,7 @@ func TestAddressCodecEncodeDecode(t *testing.T) {
 		msg.ReadUint8()
 	}
 	if result := AddressCodecDecode(msg); *result != address {
-		t.Errorf("AddressCodecDecode returned a wrong host or port")
+		t.Error("AddressCodecDecode returned a wrong host or port")
 	}
 }
 
@@ -47,7 +47,7 @@ func TestDistributedObjectInfoCodecEncodeDecode(t *testing.T) {
 		msg.ReadUint8()
 	}
 	if result := DistributedObjectInfoCodecDecode(msg); *result != distributedObjectInfo {
-		t.Errorf("DistributedObjectInfoCodecDecode returned a wrong name or service name")
+		t.Error("DistributedObjectInfoCodecDecode returned a wrong name or service name")
 	}
 }
 
@@ -66,7 +66,7 @@ func TestMemberCodecEncodeDecode(t *testing.T) {
 		msg.ReadUint8()
 	}
 	if result := MemberCodecDecode(msg); !result.Equal(member) {
-		t.Errorf("MemberCodecDecode returned a wrong member")
+		t.Error("MemberCodecDecode returned a wrong member")
 	}
 }
 
@@ -74,8 +74,8 @@ func TestDataEntryViewCodecEncodeDecode(t *testing.T) {
 	key := "test-key"
 	value := "test-value"
 	entryView := DataEntryView{}
-	entryView.keyData = &serialization.Data{[]byte(key)}
-	entryView.valueData = &serialization.Data{[]byte(value)}
+	entryView.keyData = &serialization.Data{Payload: []byte(key)}
+	entryView.valueData = &serialization.Data{Payload: []byte(value)}
 	entryView.cost = 123123
 	entryView.creationTime = 1212
 	entryView.expirationTime = 12
@@ -93,7 +93,7 @@ func TestDataEntryViewCodecEncodeDecode(t *testing.T) {
 		msg.ReadUint8()
 	}
 	if result := DataEntryViewCodecDecode(msg); !result.Equal(entryView) {
-		t.Errorf("EntryViewCodecDecode returned a wrong member")
+		t.Error("EntryViewCodecDecode returned a wrong member")
 	}
 
 }
