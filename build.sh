@@ -4,14 +4,18 @@
 # gocov: go get github.com/axw/gocov/gocov
 # go2xunit: go get github.com/tebeka/go2xunit
 # gocover-cobertura: go get github.com/t-yuki/gocover-cobertura
+# goimports: go get golang.org/x/tools/cmd/goimports
 
+# get goimports
+go get golang.org/x/tools/cmd/goimports
 
-gofmt -d . 2>&1 | read; [ $? == 1 ]
+goimports -d $(find . -type f -name '*.go' -not -path "./vendor/*") ./ 2>&1 | read; [ $? == 1 ]
 
 
 if [ "$?" = "1" ]; then
-    echo "gofmt -d .  detected formatting problems"
-    gofmt -d .
+    echo "goimports  detected formatting problems"
+    # format the code so that the same error will not occur in local
+    goimports -w ./
     exit 1
 fi
 
