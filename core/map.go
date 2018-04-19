@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-// Hazelcast Map client proxy to access the map on the cluster.
+// IMap is Hazelcast Map client proxy to access the map on the cluster.
 // Concurrent, distributed, observable and queryable map.
 // This map is sync (blocking). Blocking calls return the value of the call and block
 // the execution until the return value is calculated.
@@ -257,7 +257,7 @@ type IMap interface {
 	// TryLock tries to acquire the lock for the specified key.
 	// If the lock is not available then the current thread
 	// does not wait and returns false immediately.
-	// TryLcok returns true if lock is acquired, false otherwise.
+	// TryLock returns true if lock is acquired, false otherwise.
 	TryLock(key interface{}) (locked bool, err error)
 
 	// TryLockWithTimeout tries to acquire the lock for the specified key.
@@ -266,7 +266,7 @@ type IMap interface {
 	// purposes and lies dormant until one of two things happens:
 	//	the lock is acquired by the current thread, or
 	//	the specified waiting time elapses.
-	// TryLcokWithTimeout returns true if lock is acquired, false otherwise.
+	// TryLockWithTimeout returns true if lock is acquired, false otherwise.
 	TryLockWithTimeout(key interface{}, timeout time.Duration) (locked bool, err error)
 
 	// TryLockWithTimeoutAndLease tries to acquire the lock for the specified key for the specified lease time.
@@ -276,14 +276,14 @@ type IMap interface {
 	// purposes and lies dormant until one of two things happens:
 	//	the lock is acquired by the current thread, or
 	//	the specified waiting time elapses.
-	// TryLcokWithTimeoutAndLease returns true if lock is acquired, false otherwise.
+	// TryLockWithTimeoutAndLease returns true if lock is acquired, false otherwise.
 	TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error)
 
 	// TryPut tries to put the given key and value into this map and returns immediately.
 	// TryPut returns true if the put is successful, false otherwise.
 	TryPut(key interface{}, value interface{}) (ok bool, err error)
 
-	// Tryremove tries to remove the entry with the given key from this map
+	// TryRemove tries to remove the entry with the given key from this map
 	// within the specified timeout value. If the key is already locked by another
 	// thread and/or member, then this operation will wait the timeout
 	// amount for acquiring the lock.
@@ -300,7 +300,7 @@ type IMap interface {
 	// the actual value in the map. One should put modified value back to make changes visible to all nodes.
 	GetEntryView(key interface{}) (entryView IEntryView, err error)
 
-	// PutTransients operates same as Put(), but
+	// PutTransient operates same as Put(), but
 	// the entry will expire and get evicted after the TTL. If the TTL is 0,
 	// then the entry lives forever. If the TTL is negative, then the TTL
 	// from the configuration will be used (default: forever).

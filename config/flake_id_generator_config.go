@@ -18,10 +18,10 @@ import "fmt"
 
 const (
 
-	// DefaultPrefetchCount is the default value for PrefetchCount()
+	// DefaultPrefetchCount is the default value for PrefetchCount().
 	DefaultPrefetchCount = 100
 
-	// DefaultPrefetchValidityMillis is the default value for PrefetchValidityMillis()
+	// DefaultPrefetchValidityMillis is the default value for PrefetchValidityMillis().
 	DefaultPrefetchValidityMillis = 600000
 
 	// MaximumPrefetchCount is the maximum value for prefetch count.
@@ -88,7 +88,6 @@ func (igc *FlakeIdGeneratorConfig) PrefetchCount() int32 {
 
 // PrefetchValidityMillis returns the prefetchValidityMillis
 func (igc *FlakeIdGeneratorConfig) PrefetchValidityMillis() int64 {
-
 	return igc.prefetchValidityMillis
 }
 

@@ -21,7 +21,7 @@ package core
 // if the member is going to be used or not.
 type MemberSelector interface {
 	// Select decides if the given member will be part of an operation or not.
-	// It returns true if the member should take part in the operation, false otherwise.
+	// Select returns true if the member should take part in the operation, false otherwise.
 	Select(member IMember) (selected bool)
 }
 

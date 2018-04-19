@@ -21,7 +21,7 @@ type MultiMap interface {
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject
 
-	// Stores a key-value pair in the multi-map.
+	// Put stores a key-value pair in the multi-map.
 	// It returns true if size of the multi-map is increased, false if the multi-map
 	// already contains the key-value pair.
 	Put(key interface{}, value interface{}) (increased bool, err error)

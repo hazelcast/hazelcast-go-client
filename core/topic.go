@@ -22,7 +22,6 @@ package core
 // Messages are ordered, meaning that listeners(subscribers) will process the messages in the order they are actually
 // published.
 type ITopic interface {
-
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject
 

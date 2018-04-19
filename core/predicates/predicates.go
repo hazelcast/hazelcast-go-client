@@ -12,98 +12,103 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package predicates is a utility package to create predicates.
 package predicates
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/predicates"
 )
 
-// Sql is a helper function for creating SqlPredicate.
+// Sql returns a SqlPredicateSql with the given sql.
 func Sql(sql string) interface{} {
 	return predicates.NewSqlPredicate(sql)
 }
 
-// And is a helper function for creating AndPredicate.
+// And returns an AndPredicate with the given predicates.
 func And(predicate ...interface{}) interface{} {
 	return predicates.NewAndPredicate(predicate)
 }
 
-// Between is a helper function for creating BetweenPredicate.
+// Between returns a BetweenPredicate with the given parameters.
 func Between(field string, from interface{}, to interface{}) interface{} {
 	return predicates.NewBetweenPredicate(field, from, to)
 }
 
-// Equal is a helper function for creating EqualPredicate.
+// Equal returns an EqualPredicate with the given field and value.
 func Equal(field string, value interface{}) interface{} {
 	return predicates.NewEqualPredicate(field, value)
 }
 
-// GreaterThan is a helper function for creating GreaterLessPredicate behaving like greater than.
+// GreaterThan returns a GreaterLessPredicate with the given field and value.
+// The returned GreaterLessPredicate behaves like greater than.
 func GreaterThan(field string, value interface{}) interface{} {
 	return predicates.NewGreaterLessPredicate(field, value, false, false)
 }
 
-// GreaterEqual is a helper function for creating GreaterLessPredicate behaving like greater equal.
+// GreaterEqual returns a GreaterLessPredicate with the given field and value.
+// The returned GreaterLessPredicate behaves like greater equal.
 func GreaterEqual(field string, value interface{}) interface{} {
 	return predicates.NewGreaterLessPredicate(field, value, true, false)
 }
 
-// LessThan is a helper function for creating GreaterLessPredicate behaving like less than.
+// LessThan returns a GreaterLessPredicate with the given field and value.
+// The returned GreaterLessPredicate behaves like less than.
 func LessThan(field string, value interface{}) interface{} {
 	return predicates.NewGreaterLessPredicate(field, value, false, true)
 }
 
-// LessEqual is a helper function for creating GreaterLessPredicate behaving like less equal.
+// LessEqual returns a GreaterLessPredicate with the given field and value.
+// The returned GreaterLessPredicate behaves like less equal.
 func LessEqual(field string, value interface{}) interface{} {
 	return predicates.NewGreaterLessPredicate(field, value, true, true)
 }
 
-// Like is a helper function for creating LikePredicate.
+// Like returns a LikePredicate with the given field and expr.
 func Like(field string, expr string) interface{} {
 	return predicates.NewLikePredicate(field, expr)
 }
 
-// ILike is a helper function for creating ILikePredicate.
+// ILike returns an ILikePredicate with the given field and expr.
 func ILike(field string, expr string) interface{} {
 	return predicates.NewILikePredicate(field, expr)
 }
 
-// In is a helper function for creating InPredicate.
+// In returns an InPredicate with the given field and values.
 func In(field string, values ...interface{}) interface{} {
 	return predicates.NewInPredicate(field, values)
 }
 
-// InstanceOf is a helper function for creating InstanceOfPredicate.
+// InstanceOf returns an InstanceOfPredicate with the given className.
 func InstanceOf(className string) interface{} {
 	return predicates.NewInstanceOfPredicate(className)
 }
 
-// NotEqual is a helper function for creating NotEqualPredicate.
+// NotEqual returns a NotEqualPredicate with the given field and value.
 func NotEqual(field string, value interface{}) interface{} {
 	return predicates.NewNotEqualPredicate(field, value)
 }
 
-// Not is a helper function for creating NotPredicate.
+// Not returns a NotPredicate with the given predicate.
 func Not(predicate interface{}) interface{} {
 	return predicates.NewNotPredicate(predicate)
 }
 
-// Or is a helper function for creating OrPredicate.
+// Or returns an OrPredicate with the given predicates.
 func Or(predicate ...interface{}) interface{} {
 	return predicates.NewOrPredicate(predicate)
 }
 
-// Regex is a helper function for creating RegexPredicate.
+// Regex returns a RegexPredicate with the given field and regex.
 func Regex(field string, regex string) interface{} {
 	return predicates.NewRegexPredicate(field, regex)
 }
 
-// True is a helper function for creating TruePredicate.
+// True returns a TruePredicate.
 func True() interface{} {
 	return predicates.NewTruePredicate()
 }
 
-// False is a helper function for creating FalsePredicate.
+// False returns a FalsePredicate.
 func False() interface{} {
 	return predicates.NewFalsePredicate()
 }

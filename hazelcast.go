@@ -41,7 +41,7 @@ func NewHazelcastClientWithConfig(config *config.ClientConfig) (IHazelcastInstan
 	return internal.NewHazelcastClient(config)
 }
 
-// NewHazelcsatConfig creates and returns a new ClientConfig.
+// NewHazelcastConfig creates and returns a new ClientConfig.
 func NewHazelcastConfig() *config.ClientConfig {
 	return config.NewClientConfig()
 }
@@ -60,7 +60,7 @@ type IHazelcastInstance interface {
 	// GetSet returns the distributed set instance with the specified name.
 	GetSet(name string) (core.ISet, error)
 
-	// GetTopic returns the distributed topic istance with the specified name.
+	// GetTopic returns the distributed topic instance with the specified name.
 	GetTopic(name string) (core.ITopic, error)
 
 	// GetMultiMap returns the distributed multi-map instance with the specified name.
