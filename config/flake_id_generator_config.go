@@ -17,7 +17,6 @@ package config
 import "fmt"
 
 const (
-
 	// DefaultPrefetchCount is the default value for PrefetchCount().
 	DefaultPrefetchCount = 100
 
@@ -25,32 +24,33 @@ const (
 	DefaultPrefetchValidityMillis = 600000
 
 	// MaximumPrefetchCount is the maximum value for prefetch count.
-	// The reason to limit the prefetch count is that a single call to 'FlakeIdGenerator.NewId()` might
+	// The reason to limit the prefetch count is that a single call to 'FlakeIDGenerator.NewID()` might
 	// be blocked if the future allowance is exceeded: we want to avoid a single call for large batch to block
 	// another call for small batch.
 	MaximumPrefetchCount = 100000
 )
 
-// FlakeIdGeneratorConfig contains the configuration for 'FlakeIdGenerator' proxy.
-type FlakeIdGeneratorConfig struct {
+// FlakeIDGeneratorConfig contains the configuration for 'FlakeIDGenerator' proxy.
+type FlakeIDGeneratorConfig struct {
 	name                   string
 	prefetchCount          int32
 	prefetchValidityMillis int64
 }
 
-// NewFlakeIdGeneratorConfig returns a new FlakeIdGeneratorConfig with the given name and default parameters.
-func NewFlakeIdGeneratorConfig(name string) *FlakeIdGeneratorConfig {
-	return &FlakeIdGeneratorConfig{
+// NewFlakeIDGeneratorConfig returns a new FlakeIDGeneratorConfig with the given name and default parameters.
+func NewFlakeIDGeneratorConfig(name string) *FlakeIDGeneratorConfig {
+	return &FlakeIDGeneratorConfig{
 		name:                   name,
 		prefetchCount:          DefaultPrefetchCount,
 		prefetchValidityMillis: DefaultPrefetchValidityMillis,
 	}
 }
 
-// NewFlakeIdGeneratorConfigWithParameters returns a new FlakeIdGeneratorConfig with the given name, prefetchCount and
+// NewFlakeIDGeneratorConfigWithParameters returns a new FlakeIDGeneratorConfig with the given name, prefetchCount and
 // prefetchValidityMillis.
-func NewFlakeIdGeneratorConfigWithParameters(name string, prefetchCount int32, prefetchValidityMillis int64) *FlakeIdGeneratorConfig {
-	return &FlakeIdGeneratorConfig{
+func NewFlakeIDGeneratorConfigWithParameters(name string, prefetchCount int32,
+	prefetchValidityMillis int64) *FlakeIDGeneratorConfig {
+	return &FlakeIDGeneratorConfig{
 		name:                   name,
 		prefetchCount:          prefetchCount,
 		prefetchValidityMillis: prefetchValidityMillis,
@@ -61,7 +61,7 @@ func NewFlakeIdGeneratorConfigWithParameters(name string, prefetchCount int32, p
 // prefetch count should be between 0 and MaximumPrefetchCount, otherwise it
 // will panic.
 // SetPrefetchCount returns itself for chaining.
-func (igc *FlakeIdGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeIdGeneratorConfig {
+func (igc *FlakeIDGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeIDGeneratorConfig {
 	if prefetchCount < 0 || prefetchCount > MaximumPrefetchCount {
 		panic(fmt.Sprintf("prefectCount should be in the range of 0-%d", MaximumPrefetchCount))
 	}
@@ -71,29 +71,29 @@ func (igc *FlakeIdGeneratorConfig) SetPrefetchCount(prefetchCount int32) *FlakeI
 
 // SetName sets the name as the given name.
 // SetName returns itself for chaining.
-func (igc *FlakeIdGeneratorConfig) SetName(name string) *FlakeIdGeneratorConfig {
+func (igc *FlakeIDGeneratorConfig) SetName(name string) *FlakeIDGeneratorConfig {
 	igc.name = name
 	return igc
 }
 
 // Name returns the name.
-func (igc *FlakeIdGeneratorConfig) Name() string {
+func (igc *FlakeIDGeneratorConfig) Name() string {
 	return igc.name
 }
 
 // PrefetchCount returns the prefetchCount.
-func (igc *FlakeIdGeneratorConfig) PrefetchCount() int32 {
+func (igc *FlakeIDGeneratorConfig) PrefetchCount() int32 {
 	return igc.prefetchCount
 }
 
 // PrefetchValidityMillis returns the prefetchValidityMillis
-func (igc *FlakeIdGeneratorConfig) PrefetchValidityMillis() int64 {
+func (igc *FlakeIDGeneratorConfig) PrefetchValidityMillis() int64 {
 	return igc.prefetchValidityMillis
 }
 
 // SetPrefetchValidityMillis sets the prefetchValidityMillis as the given value.
 // SetPrefetchValidityMillis returns itself for chaining.
-func (igc *FlakeIdGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) *FlakeIdGeneratorConfig {
+func (igc *FlakeIDGeneratorConfig) SetPrefetchValidityMillis(prefetchValidityMillis int64) *FlakeIDGeneratorConfig {
 	if prefetchValidityMillis < 0 {
 		panic(fmt.Sprintf("prefetchValidityMillis should be positive"))
 	}

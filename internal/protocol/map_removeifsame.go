@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapRemoveIfSameCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadId int64) int {
+func MapRemoveIfSameCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -30,15 +30,15 @@ func MapRemoveIfSameCalculateSize(name *string, key *serialization.Data, value *
 	return dataSize
 }
 
-func MapRemoveIfSameEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadId int64) *ClientMessage {
+func MapRemoveIfSameEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapRemoveIfSameCalculateSize(name, key, value, threadId))
+	clientMessage := NewClientMessage(nil, MapRemoveIfSameCalculateSize(name, key, value, threadID))
 	clientMessage.SetMessageType(mapRemoveIfSame)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
 	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

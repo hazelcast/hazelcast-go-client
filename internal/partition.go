@@ -24,14 +24,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-const PartitionUpdateInterval = 5 * time.Second
+const partitionUpdateInterval = 5 * time.Second
 
 type partitionService struct {
-	client         *HazelcastClient
-	mp             atomic.Value
-	partitionCount int32
-	cancel         chan struct{}
-	refresh        chan struct{}
+	client  *HazelcastClient
+	mp      atomic.Value
+	cancel  chan struct{}
+	refresh chan struct{}
 }
 
 func newPartitionService(client *HazelcastClient) *partitionService {
@@ -41,7 +40,7 @@ func newPartitionService(client *HazelcastClient) *partitionService {
 func (ps *partitionService) start() {
 	ps.doRefresh()
 	go func() {
-		ticker := time.NewTicker(PartitionUpdateInterval)
+		ticker := time.NewTicker(partitionUpdateInterval)
 		for {
 			select {
 			case <-ticker.C:
@@ -62,13 +61,13 @@ func (ps *partitionService) getPartitionCount() int32 {
 	return int32(len(partitions))
 }
 
-func (ps *partitionService) partitionOwner(partitionId int32) (*protocol.Address, bool) {
+func (ps *partitionService) partitionOwner(partitionID int32) (*protocol.Address, bool) {
 	partitions := ps.mp.Load().(map[int32]*protocol.Address)
-	address, ok := partitions[partitionId]
+	address, ok := partitions[partitionID]
 	return address, ok
 }
 
-func (ps *partitionService) GetPartitionId(keyData *serialization.Data) int32 {
+func (ps *partitionService) GetPartitionID(keyData *serialization.Data) int32 {
 	count := ps.getPartitionCount()
 	if count <= 0 {
 		return 0
@@ -76,12 +75,12 @@ func (ps *partitionService) GetPartitionId(keyData *serialization.Data) int32 {
 	return common.HashToIndex(keyData.GetPartitionHash(), count)
 }
 
-func (ps *partitionService) getPartitionIdWithKey(key interface{}) (int32, error) {
+func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error) {
 	data, err := ps.client.SerializationService.ToData(key)
 	if err != nil {
 		return 0, err
 	}
-	return ps.GetPartitionId(data), nil
+	return ps.GetPartitionID(data), nil
 }
 
 func (ps *partitionService) doRefresh() {
@@ -105,7 +104,7 @@ func (ps *partitionService) processPartitionResponse(result *protocol.ClientMess
 	for _, partitionList := range partitions {
 		addr := partitionList.Key().(*protocol.Address)
 		for _, partition := range partitionList.Value().([]int32) {
-			newPartitions[int32(partition)] = addr
+			newPartitions[partition] = addr
 		}
 	}
 	ps.mp.Store(newPartitions)

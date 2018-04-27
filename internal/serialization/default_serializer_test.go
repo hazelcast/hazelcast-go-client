@@ -25,7 +25,7 @@ import (
 )
 
 func TestNilSerializer_Write(t *testing.T) {
-	service := &SerializationService{}
+	service := &Service{}
 	serializer := &NilSerializer{}
 	o := NewObjectDataOutput(0, service, false)
 	serializer.Write(o, nil)
@@ -39,12 +39,11 @@ func TestNilSerializer_Write(t *testing.T) {
 
 type factory struct{}
 
-func (factory) Create(classId int32) serialization.IdentifiedDataSerializable {
-	if classId == 1 {
+func (factory) Create(classID int32) serialization.IdentifiedDataSerializable {
+	if classID == 1 {
 		return &employee{}
-	} else {
-		return nil
 	}
+	return nil
 }
 
 type employee struct {
@@ -64,11 +63,11 @@ func (e *employee) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-func (*employee) FactoryId() int32 {
+func (*employee) FactoryID() int32 {
 	return 4
 }
 
-func (*employee) ClassId() int32 {
+func (*employee) ClassID() int32 {
 	return 1
 }
 
@@ -89,25 +88,25 @@ func (c *customer) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-func (*customer) FactoryId() int32 {
+func (*customer) FactoryID() int32 {
 	return 4
 }
 
-func (*customer) ClassId() int32 {
+func (*customer) ClassID() int32 {
 	return 2
 }
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
-	var employee1 employee = employee{22, "Furkan Şenharputlu"}
+	var employee1 = employee{22, "Furkan Şenharputlu"}
 	c := config.NewSerializationConfig()
-	c.AddDataSerializableFactory(employee1.FactoryId(), factory{})
+	c.AddDataSerializableFactory(employee1.FactoryID(), factory{})
 
-	service := NewSerializationService(c)
+	service, _ := NewSerializationService(c)
 
 	data, _ := service.ToData(&employee1)
-	ret_employee, _ := service.ToObject(data)
+	retEmployee, _ := service.ToObject(data)
 
-	if !reflect.DeepEqual(employee1, *ret_employee.(*employee)) {
+	if !reflect.DeepEqual(employee1, *retEmployee.(*employee)) {
 		t.Error("IdentifiedDataSerializableSerializer failed")
 	}
 }
@@ -115,9 +114,9 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
 	c := &customer{38, "Jack"}
 	config := config.NewSerializationConfig()
-	config.AddDataSerializableFactory(c.FactoryId(), factory{})
+	config.AddDataSerializableFactory(c.FactoryID(), factory{})
 
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 
 	data, _ := service.ToData(c)
 	_, err := service.ToObject(data)
@@ -135,18 +134,19 @@ func TestIdentifiedDataSerializableSerializer_DataSerializable(t *testing.T) {
 	_, err := serializer.Read(in)
 
 	if _, ok := err.(*core.HazelcastSerializationError); !ok {
-		t.Error("IdentifiedDataSerializableSerializer Read() should return 'native clients do not support DataSerializable, please use IdentifiedDataSerializable'")
+		t.Error("IdentifiedDataSerializableSerializer Read() should return" +
+			" 'native clients do not support DataSerializable, please use IdentifiedDataSerializable'")
 	}
 }
 
 type x struct {
 }
 
-func (*x) FactoryId() int32 {
+func (*x) FactoryID() int32 {
 	return 1
 }
 
-func (*x) ClassId() int32 {
+func (*x) ClassID() int32 {
 	return 1
 }
 
@@ -166,7 +166,8 @@ func TestIdentifiedDataSerializableSerializer_NoFactory(t *testing.T) {
 	_, err := serializer.Read(in)
 
 	if _, ok := err.(*core.HazelcastSerializationError); !ok {
-		t.Errorf("IdentifiedDataSerializableSerializer Read() should return '%v'", fmt.Sprintf("there is no IdentifiedDataSerializable factory with id: %d", 1))
+		t.Errorf("IdentifiedDataSerializableSerializer Read() should return '%v'",
+			fmt.Sprintf("there is no IdentifiedDataSerializable factory with id: %d", 1))
 	}
 }
 
@@ -248,8 +249,8 @@ func TestFloat32Serializer_Write(t *testing.T) {
 func TestFloat64Serializer_Write(t *testing.T) {
 	serializer := Float64Serializer{}
 	o := NewObjectDataOutput(9, nil, false)
-	var a float64 = 5.234234
-	var expectedRet float64 = 7.123234
+	var a = 5.234234
+	var expectedRet = 7.123234
 	serializer.Write(o, a)
 	serializer.Write(o, expectedRet)
 	in := NewObjectDataInput(o.buffer, 8, nil, false)

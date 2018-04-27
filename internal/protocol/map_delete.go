@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapDeleteCalculateSize(name *string, key *serialization.Data, threadId int64) int {
+func MapDeleteCalculateSize(name *string, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -29,14 +29,14 @@ func MapDeleteCalculateSize(name *string, key *serialization.Data, threadId int6
 	return dataSize
 }
 
-func MapDeleteEncodeRequest(name *string, key *serialization.Data, threadId int64) *ClientMessage {
+func MapDeleteEncodeRequest(name *string, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapDeleteCalculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MapDeleteCalculateSize(name, key, threadID))
 	clientMessage.SetMessageType(mapDelete)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

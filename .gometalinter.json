@@ -1,0 +1,45 @@
+{
+  "Vendor": true,
+  "Deadline": "2m",
+  "Sort": [
+    "linter",
+    "severity",
+    "path",
+    "line"
+  ],
+  "Exclude": [
+    "should have signature WriteByte\\(byte\\) error \\(vet\\)",
+    "should have signature ReadByte\\(\\) \\(byte, error\\) \\(vet\\)",
+    "should have comment or be unexported \\(golint\\)",
+    "consts.go.*should have comment",
+    "rc",
+    "tests/compatibility",
+    "internal/protocol",
+    "samples/org_website_samples",
+    "don't use an underscore in package name \\(golint\\)",
+    "internal/common/murmur.go",
+    ".*DataOffset should have comment.*",
+    ".*TypePortable should have comment.*",
+    ".*LifecycleStateStarting should have comment.*",
+    ".*includedValue is unused.*"
+  ],
+  "EnableGC": true,
+  "WarnUnmatchedDirective": true,
+  "DisableAll": true,
+  "Enable": [
+    "deadcode",
+    "gofmt",
+    "goimports",
+    "golint",
+    "gosimple",
+    "ineffassign",
+    "interfacer",
+    "lll",
+    "misspell",
+    "unconvert",
+    "unparam",
+    "unused",
+    "vet"
+  ],
+  "LineLength": 130
+}

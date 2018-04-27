@@ -32,10 +32,10 @@ import (
 //	|  Version    |B|E|  Flags    |               Type              |
 //	+-------------+---------------+---------------------------------+
 //	|                                                               |
-//	+                       CorrelationId                           +
+//	+                       CorrelationID                           +
 //	|                                                               |
 //	+---------------------------------------------------------------+
-//	|                        PartitionId                            |
+//	|                        PartitionID                            |
 //	+-----------------------------+---------------------------------+
 //	|        Data Offset          |                                 |
 //	+-----------------------------+                                 |
@@ -103,27 +103,27 @@ func (m *ClientMessage) HasFlags(flags uint8) uint8 {
 }
 
 func (m *ClientMessage) MessageType() common.MessageType {
-	return common.MessageType(binary.LittleEndian.Uint16(m.Buffer[common.TypeFieldOffset:common.CorrelationIdFieldOffset]))
+	return common.MessageType(binary.LittleEndian.Uint16(m.Buffer[common.TypeFieldOffset:common.CorrelationIDFieldOffset]))
 }
 
 func (m *ClientMessage) SetMessageType(v common.MessageType) {
-	binary.LittleEndian.PutUint16(m.Buffer[common.TypeFieldOffset:common.CorrelationIdFieldOffset], uint16(v))
+	binary.LittleEndian.PutUint16(m.Buffer[common.TypeFieldOffset:common.CorrelationIDFieldOffset], uint16(v))
 }
 
-func (m *ClientMessage) CorrelationId() int64 {
-	return int64(binary.LittleEndian.Uint64(m.Buffer[common.CorrelationIdFieldOffset:common.PartitionIdFieldOffset]))
+func (m *ClientMessage) CorrelationID() int64 {
+	return int64(binary.LittleEndian.Uint64(m.Buffer[common.CorrelationIDFieldOffset:common.PartitionIDFieldOffset]))
 }
 
-func (m *ClientMessage) SetCorrelationId(val int64) {
-	binary.LittleEndian.PutUint64(m.Buffer[common.CorrelationIdFieldOffset:common.PartitionIdFieldOffset], uint64(val))
+func (m *ClientMessage) SetCorrelationID(val int64) {
+	binary.LittleEndian.PutUint64(m.Buffer[common.CorrelationIDFieldOffset:common.PartitionIDFieldOffset], uint64(val))
 }
 
-func (m *ClientMessage) PartitionId() int32 {
-	return int32(binary.LittleEndian.Uint32(m.Buffer[common.PartitionIdFieldOffset:common.DataOffsetFieldOffset]))
+func (m *ClientMessage) PartitionID() int32 {
+	return int32(binary.LittleEndian.Uint32(m.Buffer[common.PartitionIDFieldOffset:common.DataOffsetFieldOffset]))
 }
 
-func (m *ClientMessage) SetPartitionId(val int32) {
-	binary.LittleEndian.PutUint32(m.Buffer[common.PartitionIdFieldOffset:common.DataOffsetFieldOffset], uint32(val))
+func (m *ClientMessage) SetPartitionID(val int32) {
+	binary.LittleEndian.PutUint32(m.Buffer[common.PartitionIDFieldOffset:common.DataOffsetFieldOffset], uint32(val))
 }
 
 func (m *ClientMessage) DataOffset() uint16 {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package Hazelcast provides methods for creating Hazelcast clients and client configurations.
+// Package hazelcast provides methods for creating Hazelcast clients and client configurations.
 package hazelcast
 
 import (
@@ -31,7 +31,7 @@ func NewHazelcastClient() (IHazelcastInstance, error) {
 	return NewHazelcastClientWithConfig(config.NewClientConfig())
 }
 
-// NewHazelcastClient creates and returns a new IHazelcastInstance with the given config.
+// NewHazelcastClientWithConfig creates and returns a new IHazelcastInstance with the given config.
 // IHazelcast instance enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
@@ -78,8 +78,8 @@ type IHazelcastInstance interface {
 	// GetPNCounter returns the distributed PN (Positive-Negative) CRDT counter instance with the specified name.
 	GetPNCounter(name string) (core.PNCounter, error)
 
-	// GetFlakeIdGenerator returns the distributed flakeIdGenerator instance with the specified name.
-	GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error)
+	// GetFlakeIDGenerator returns the distributed flakeIDGenerator instance with the specified name.
+	GetFlakeIDGenerator(name string) (core.FlakeIDGenerator, error)
 
 	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)

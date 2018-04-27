@@ -42,13 +42,14 @@ func Test_getPossibleAddresses(t *testing.T) {
 		addressesInMap[address] = struct{}{}
 	}
 	for _, address := range configAddresses {
-		ip, port := common.GetIpAndPort(address)
+		ip, port := common.GetIPAndPort(address)
 		if _, found := addressesInMap[*protocol.NewAddressWithParameters(ip, port)]; !found {
 			t.Fatal("getPossibleAddresses failed")
 		}
 	}
 	for _, member := range members {
-		if _, found := addressesInMap[*protocol.NewAddressWithParameters(member.Address().Host(), int32(member.Address().Port()))]; !found {
+		if _, found := addressesInMap[*protocol.NewAddressWithParameters(member.Address().Host(),
+			int32(member.Address().Port()))]; !found {
 			t.Fatal("getPossibleAddresses failed")
 		}
 	}
@@ -59,7 +60,7 @@ func Test_getPossibleAddressesWithEmptyParamters(t *testing.T) {
 	if len(addresses) != 1 {
 		t.Fatal("getPossibleAddresses failed")
 	}
-	defaultAddress := protocol.NewAddressWithParameters(DefaultAddress, DefaultPort)
+	defaultAddress := protocol.NewAddressWithParameters(defaultAddress, defaultPort)
 	for _, address := range addresses {
 		if address != *defaultAddress {
 			t.Fatal("getPossibleAddresses failed")

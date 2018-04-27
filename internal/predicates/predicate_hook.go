@@ -15,22 +15,22 @@
 package predicates
 
 const (
-	SqlPredicateId = iota
-	AndPredicateId
-	BetweenPredicateId
-	EqualPredicateId
-	GreaterlessPredicateId
-	LikePredicateId
-	ILikePredicateId
-	InPredicateId
-	InstanceOfPredicateId
-	NotEqualPredicateId
-	NotPredicateId
-	OrPredicateId
-	RegexPredicateId
-	FalsePredicateId
-	TruePredicateId
-	PagingPredicateId
-	PartitionPredicateId
-	NilObjectId
+	sqlPredicateID = iota
+	andPredicateID
+	betweenPredicateID
+	equalPredicateID
+	greaterlessPredicateID
+	likePredicateID
+	ilikePredicateID
+	inPredicateID
+	instanceOfPredicateID
+	notEqualPredicateID
+	notPredicateID
+	orPredicateID
+	regexPredicateID
+	falsePredicateID
+	truePredicateID
+	// pagingPredicateID
+	// partitionPredicateID
+	// nilObjectID
 )

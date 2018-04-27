@@ -19,29 +19,29 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
-type FlakeIdGeneratorProxy struct {
+type flakeIDGeneratorProxy struct {
 	*proxy
 	batcher *flake_id.AutoBatcher
 }
 
-func (fp *FlakeIdGeneratorProxy) NewId() (id int64, err error) {
-	return fp.batcher.NewId()
+func (fp *flakeIDGeneratorProxy) NewID() (id int64, err error) {
+	return fp.batcher.NewID()
 }
 
-func (fp *FlakeIdGeneratorProxy) NewIdBatch(batchSize int32) (*flake_id.IdBatch, error) {
-	request := protocol.FlakeIdGeneratorNewIdBatchEncodeRequest(fp.name, batchSize)
+func (fp *flakeIDGeneratorProxy) NewIDBatch(batchSize int32) (*flake_id.IDBatch, error) {
+	request := protocol.FlakeIDGeneratorNewIDBatchEncodeRequest(fp.name, batchSize)
 	responseMessage, err := fp.invokeOnRandomTarget(request)
 	if err != nil {
 		return nil, err
 	}
-	base, increment, newBatchSize := protocol.FlakeIdGeneratorNewIdBatchDecodeResponse(responseMessage)()
-	return flake_id.NewIdBatch(base, increment, newBatchSize), nil
+	base, increment, newBatchSize := protocol.FlakeIDGeneratorNewIDBatchDecodeResponse(responseMessage)()
+	return flake_id.NewIDBatch(base, increment, newBatchSize), nil
 }
 
-func newFlakeIdGenerator(client *HazelcastClient, serviceName *string, name *string) (*FlakeIdGeneratorProxy, error) {
-	config := client.ClientConfig.GetFlakeIdGeneratorConfig(*name)
-	flakeIdGenerator := &FlakeIdGeneratorProxy{}
-	flakeIdGenerator.proxy = &proxy{client: client, serviceName: serviceName, name: name}
-	flakeIdGenerator.batcher = flake_id.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIdGenerator)
-	return flakeIdGenerator, nil
+func newFlakeIDGenerator(client *HazelcastClient, serviceName *string, name *string) (*flakeIDGeneratorProxy, error) {
+	config := client.ClientConfig.GetFlakeIDGeneratorConfig(*name)
+	flakeIDGenerator := &flakeIDGeneratorProxy{}
+	flakeIDGenerator.proxy = &proxy{client: client, serviceName: serviceName, name: name}
+	flakeIDGenerator.batcher = flake_id.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIDGenerator)
+	return flakeIDGenerator, nil
 }

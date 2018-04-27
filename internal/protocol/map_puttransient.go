@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapPutTransientCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadId int64, ttl int64) int {
+func MapPutTransientCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -31,15 +31,15 @@ func MapPutTransientCalculateSize(name *string, key *serialization.Data, value *
 	return dataSize
 }
 
-func MapPutTransientEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutTransientEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapPutTransientCalculateSize(name, key, value, threadId, ttl))
+	clientMessage := NewClientMessage(nil, MapPutTransientCalculateSize(name, key, value, threadID, ttl))
 	clientMessage.SetMessageType(mapPutTransient)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
 	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.AppendInt64(ttl)
 	clientMessage.UpdateFrameLength()
 	return clientMessage

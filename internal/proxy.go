@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	threadId     = 1
+	threadID     = 1
 	ttlUnlimited = 0
 )
 
@@ -61,7 +61,8 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *serialization.
 	return
 }
 
-func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *serialization.Data, arg2Data *serialization.Data, err error) {
+func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *serialization.Data,
+	arg2Data *serialization.Data, err error) {
 	if arg1 == nil {
 		return nil, nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
 	}
@@ -76,7 +77,8 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 	return
 }
 
-func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *serialization.Data, arg2Data *serialization.Data, arg3Data *serialization.Data, err error) {
+func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *serialization.Data,
+	arg2Data *serialization.Data, arg3Data *serialization.Data, err error) {
 	if arg1 == nil {
 		return nil, nil, nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
 	}
@@ -122,8 +124,8 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 			return nil, err
 		}
 		pair := protocol.NewPair(keyData, valueData)
-		partitionId := p.client.PartitionService.GetPartitionId(keyData)
-		partitions[partitionId] = append(partitions[partitionId], pair)
+		partitionID := p.client.PartitionService.GetPartitionID(keyData)
+		partitions[partitionID] = append(partitions[partitionID], pair)
 	}
 	return partitions, nil
 }
@@ -136,8 +138,8 @@ func (p *proxy) invokeOnRandomTarget(request *protocol.ClientMessage) (*protocol
 	return p.client.InvocationService.invokeOnRandomTarget(request).Result()
 }
 
-func (p *proxy) invokeOnPartition(request *protocol.ClientMessage, partitionId int32) (*protocol.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionId).Result()
+func (p *proxy) invokeOnPartition(request *protocol.ClientMessage, partitionID int32) (*protocol.ClientMessage, error) {
+	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionID).Result()
 }
 
 func (p *proxy) invokeOnAddress(request *protocol.ClientMessage, address *protocol.Address) (*protocol.ClientMessage, error) {
@@ -202,26 +204,26 @@ func (p *proxy) decodeToInt64AndError(responseMessage *protocol.ClientMessage, i
 
 type partitionSpecificProxy struct {
 	*proxy
-	partitionId int32
+	partitionID int32
 }
 
 func newPartitionSpecificProxy(client *HazelcastClient, serviceName *string, name *string) (*partitionSpecificProxy, error) {
 	var err error
 	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
-	parSpecProxy.partitionId, err = parSpecProxy.client.PartitionService.getPartitionIdWithKey(parSpecProxy.PartitionKey())
+	parSpecProxy.partitionID, err = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
 	return parSpecProxy, err
 
 }
 
 func (parSpecProxy *partitionSpecificProxy) invoke(request *protocol.ClientMessage) (*protocol.ClientMessage, error) {
-	return parSpecProxy.invokeOnPartition(request, parSpecProxy.partitionId)
+	return parSpecProxy.invokeOnPartition(request, parSpecProxy.partitionID)
 }
 
 func (p *proxy) createOnItemEvent(listener interface{}) func(itemData *serialization.Data, uuid *string, eventType int32) {
 	return func(itemData *serialization.Data, uuid *string, eventType int32) {
 		var item interface{}
 		item, _ = p.toObject(itemData)
-		member := p.client.ClusterService.GetMemberByUuid(*uuid)
+		member := p.client.ClusterService.GetMemberByUUID(*uuid)
 		itemEvent := protocol.NewItemEvent(p.name, item, eventType, member.(*protocol.Member))
 		if eventType == common.ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {

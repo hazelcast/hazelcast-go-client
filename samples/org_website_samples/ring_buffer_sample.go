@@ -36,7 +36,7 @@ func ringBufferSampleRun() {
 	// if you want to start from the next item, call rb.tailSequence()+1
 	sequence, _ := rb.HeadSequence()
 	fmt.Println(rb.ReadOne(sequence))
-	sequence += 1
+	sequence++
 	fmt.Println(rb.ReadOne(sequence))
 	// Shutdown this hazelcast client
 	hz.Shutdown()

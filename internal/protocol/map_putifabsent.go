@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapPutIfAbsentCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadId int64, ttl int64) int {
+func MapPutIfAbsentCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -31,15 +31,15 @@ func MapPutIfAbsentCalculateSize(name *string, key *serialization.Data, value *s
 	return dataSize
 }
 
-func MapPutIfAbsentEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadId int64, ttl int64) *ClientMessage {
+func MapPutIfAbsentEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadId, ttl))
+	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadID, ttl))
 	clientMessage.SetMessageType(mapPutIfAbsent)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
 	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.AppendInt64(ttl)
 	clientMessage.UpdateFrameLength()
 	return clientMessage

@@ -51,11 +51,11 @@ type anIdentifiedDataSerializable struct {
 	identifiedDataSerializableObject serialization.IdentifiedDataSerializable
 }
 
-func (*anIdentifiedDataSerializable) ClassId() int32 {
-	return dataSerializableClassId
+func (*anIdentifiedDataSerializable) ClassID() int32 {
+	return dataSerializableClassID
 }
 
-func (*anIdentifiedDataSerializable) FactoryId() int32 {
+func (*anIdentifiedDataSerializable) FactoryID() int32 {
 	return identifiedDataSerializableFactoryID
 }
 

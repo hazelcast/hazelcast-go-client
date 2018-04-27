@@ -25,23 +25,24 @@ import (
 )
 
 const (
-	MUSICIAN_TYPE = 1
-	PAINTER_TYPE  = 2
+	musicianType = 1
+	painterType  = 2
 )
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	var id int32 = NewSerializationService(config.NewSerializationConfig()).lookUpDefaultSerializer(a).Id()
-	var expectedId int32 = -7
-	if id != expectedId {
-		t.Error("LookUpDefaultSerializer() returns ", id, " expected ", expectedId)
+	service, _ := NewSerializationService(config.NewSerializationConfig())
+	id := service.lookUpDefaultSerializer(a).ID()
+	var expectedID int32 = -7
+	if id != expectedID {
+		t.Error("LookUpDefaultSerializer() returns ", id, " expected ", expectedID)
 	}
 }
 
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
 	c := config.NewSerializationConfig()
-	service := NewSerializationService(c)
+	service, _ := NewSerializationService(c)
 	data, _ := service.ToData(expected)
 	var ret int32
 	temp, _ := service.ToObject(data)
@@ -54,7 +55,7 @@ func TestSerializationService_ToData(t *testing.T) {
 type CustomArtistSerializer struct {
 }
 
-func (s *CustomArtistSerializer) Id() int32 {
+func (*CustomArtistSerializer) ID() int32 {
 	return 10
 }
 
@@ -65,9 +66,9 @@ func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{
 	network.Write(data.Buffer())
 	dec := gob.NewDecoder(&network)
 	var v artist
-	if typ == MUSICIAN_TYPE {
+	if typ == musicianType {
 		v = &musician{}
-	} else if typ == PAINTER_TYPE {
+	} else if typ == painterType {
 		v = &painter{}
 	}
 
@@ -89,14 +90,14 @@ func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj inte
 }
 
 type customObject struct {
-	Id     int
+	ID     int
 	Person string
 }
 
 type GlobalSerializer struct {
 }
 
-func (s *GlobalSerializer) Id() int32 {
+func (s *GlobalSerializer) ID() int32 {
 	return 123
 }
 
@@ -132,7 +133,7 @@ type musician struct {
 }
 
 func (*musician) Type() int32 {
-	return MUSICIAN_TYPE
+	return musicianType
 }
 
 type painter struct {
@@ -141,7 +142,7 @@ type painter struct {
 }
 
 func (*painter) Type() int32 {
-	return PAINTER_TYPE
+	return painterType
 }
 
 func TestCustomSerializer(t *testing.T) {
@@ -151,7 +152,7 @@ func TestCustomSerializer(t *testing.T) {
 	config := config.NewSerializationConfig()
 
 	config.AddCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	data, _ := service.ToData(m)
 	ret, _ := service.ToObject(data)
 	data2, _ := service.ToData(p)
@@ -166,7 +167,7 @@ func TestGlobalSerializer(t *testing.T) {
 	obj := &customObject{10, "Furkan Şenharputlu"}
 	config := config.NewSerializationConfig()
 	config.SetGlobalSerializer(&GlobalSerializer{})
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	data, _ := service.ToData(obj)
 	ret, _ := service.ToObject(data)
 
@@ -208,34 +209,35 @@ type fake2 struct {
 }
 
 func TestGobSerializer(t *testing.T) {
-	var aBoolean bool = true
+	var aBoolean = true
 	var aByte byte = 113
 	var aChar uint16 = 'x'
-	var aDouble float64 = -897543.3678909
+	var aDouble = -897543.3678909
 	var aShort int16 = -500
 	var aFloat float32 = 900.5678
 	var anInt int32 = 56789
 	var aLong int64 = -50992225
-	var aString string = "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラムThe quick brown fox jumps over the lazy dog"
+	var aString = "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム" +
+		"The quick brown fox jumps over the lazy dog"
 
-	var bools []bool = []bool{true, false, true}
+	var bools = []bool{true, false, true}
 
 	// byte is signed in Java but unsigned in Go!
-	var bytes []byte = []byte{112, 4, 255, 4, 112, 221, 43}
-	var chars []uint16 = []uint16{'a', 'b', 'c'}
-	var doubles []float64 = []float64{-897543.3678909, 11.1, 22.2, 33.3}
-	var shorts []int16 = []int16{-500, 2, 3}
-	var floats []float32 = []float32{900.5678, 1.0, 2.1, 3.4}
-	var ints []int32 = []int32{56789, 2, 3}
-	var longs []int64 = []int64{-50992225, 1231232141, 2, 3}
+	var bytes = []byte{112, 4, 255, 4, 112, 221, 43}
+	var chars = []uint16{'a', 'b', 'c'}
+	var doubles = []float64{-897543.3678909, 11.1, 22.2, 33.3}
+	var shorts = []int16{-500, 2, 3}
+	var floats = []float32{900.5678, 1.0, 2.1, 3.4}
+	var ints = []int32{56789, 2, 3}
+	var longs = []int64{-50992225, 1231232141, 2, 3}
 	w1 := "Pijamalı hasta, yağız şoföre çabucak güvendi."
 	w2 := "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム"
 	w3 := "The quick brown fox jumps over the lazy dog"
-	var strings []string = []string{w1, w2, w3}
+	var strings = []string{w1, w2, w3}
 	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
 		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
 		nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	service := NewSerializationService(config.NewSerializationConfig())
+	service, _ := NewSerializationService(config.NewSerializationConfig())
 	data, _ := service.ToData(expected)
 	ret, _ := service.ToObject(data)
 
@@ -246,9 +248,9 @@ func TestGobSerializer(t *testing.T) {
 }
 
 func TestInt64SerializerWithInt(t *testing.T) {
-	var id int = 15
+	var id = 15
 	config := config.NewSerializationConfig()
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	data, _ := service.ToData(id)
 	ret, _ := service.ToObject(data)
 
@@ -258,13 +260,13 @@ func TestInt64SerializerWithInt(t *testing.T) {
 }
 
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
-	var ids []int = []int{15, 10, 20, 12, 35}
+	var ids = []int{15, 10, 20, 12, 35}
 	config := config.NewSerializationConfig()
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	data, _ := service.ToData(ids)
 	ret, _ := service.ToObject(data)
 
-	var ids64 []int64 = make([]int64, 5)
+	var ids64 = make([]int64, 5)
 	for k := 0; k < 5; k++ {
 		ids64[k] = int64(ids[k])
 	}
@@ -277,7 +279,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 func TestSerializeData(t *testing.T) {
 	data := NewData([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := config.NewSerializationConfig()
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	serializedData, _ := service.ToData(data)
 	if !reflect.DeepEqual(data, serializedData) {
 		t.Error("data type should not be serialized")

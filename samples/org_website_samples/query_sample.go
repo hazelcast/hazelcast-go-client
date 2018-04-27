@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	userClassId   = 1
-	userFactoryId = 1
+	userClassID   = 1
+	userFactoryID = 1
 )
 
 type User struct {
@@ -42,12 +42,12 @@ func newUser(username string, age int32, active bool) *User {
 	}
 }
 
-func (u *User) FactoryId() int32 {
-	return userFactoryId
+func (u *User) FactoryID() int32 {
+	return userFactoryID
 }
 
-func (u *User) ClassId() int32 {
-	return userClassId
+func (u *User) ClassID() int32 {
+	return userClassID
 }
 
 func (u *User) WritePortable(writer serialization.PortableWriter) error {
@@ -68,17 +68,14 @@ func (u *User) ReadPortable(reader serialization.PortableReader) error {
 		return err
 	}
 	u.active, err = reader.ReadBool("active")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 type ThePortableFactory struct {
 }
 
-func (pf *ThePortableFactory) Create(classId int32) serialization.Portable {
-	if classId == userClassId {
+func (pf *ThePortableFactory) Create(classID int32) serialization.Portable {
+	if classID == userClassID {
 		return &User{}
 	}
 	return nil
@@ -93,7 +90,7 @@ func generateUsers(users core.IMap) {
 func querySampleRun() {
 	clientConfig := hazelcast.NewHazelcastConfig()
 	clientConfig.SerializationConfig().
-		AddPortableFactory(userFactoryId, &ThePortableFactory{})
+		AddPortableFactory(userFactoryID, &ThePortableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get a Distributed Map called "users"
@@ -101,7 +98,7 @@ func querySampleRun() {
 	// Add some users to the Distributed Map
 	generateUsers(users)
 	// Create a Predicate from a String (a SQL like Where clause)
-	var sqlQuery = predicates.Sql("active AND age BETWEEN 18 AND 21)")
+	var sqlQuery = predicates.SQL("active AND age BETWEEN 18 AND 21)")
 	// Creating the same Predicate as above but with a builder
 	var criteriaQuery = predicates.And(
 		predicates.Equal("active", true),

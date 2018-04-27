@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapEvictCalculateSize(name *string, key *serialization.Data, threadId int64) int {
+func MapEvictCalculateSize(name *string, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -29,14 +29,14 @@ func MapEvictCalculateSize(name *string, key *serialization.Data, threadId int64
 	return dataSize
 }
 
-func MapEvictEncodeRequest(name *string, key *serialization.Data, threadId int64) *ClientMessage {
+func MapEvictEncodeRequest(name *string, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MapEvictCalculateSize(name, key, threadID))
 	clientMessage.SetMessageType(mapEvict)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

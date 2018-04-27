@@ -19,8 +19,10 @@ package core
 // item in the ringbuffer is overwritten.
 //
 // The ringbuffer has 2 always incrementing sequences:
-//  * tailSequence: This is the side where the youngest item is found. So the tail is the side of the ringbuffer where items are added to.
-//  * headSequence: This is the side where the oldest items are found. So the head is the side where items gets discarded.
+//  * tailSequence: This is the side where the youngest item is found.
+// 					So the tail is the side of the ringbuffer where items are added to.
+//  * headSequence: This is the side where the oldest items are found.
+// 					So the head is the side where items gets discarded.
 //
 // The items in the ringbuffer can be found by a sequence that is in between (inclusive) the head and tail sequence.
 // If data is read from a ringbuffer with a sequence that is smaller than the headSequence, it means that the data
@@ -87,7 +89,8 @@ type Ringbuffer interface {
 	ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet ReadResultSet, err error)
 }
 
-// OverflowPolicy is a policy with which one can control the behavior of what should be done when an item is about to be added to the ringbuffer,
+// OverflowPolicy is a policy with which one can control the behavior of what should be done
+// when an item is about to be added to the ringbuffer,
 // but there is 0 remaining capacity.
 //
 // Overflowing happens when a time-to-live is set and the oldest item in the ringbuffer (the head) is not old enough to expire.
@@ -96,16 +99,16 @@ type OverflowPolicy interface {
 }
 
 const (
-	// OverflowPolicyOverwrite is the policy where the oldest item is overwritten even if it is not old enough to retire. Using this policy you are
-	// sacrificing the time-to-live in favor of being able to write.
+	// OverflowPolicyOverwrite is the policy where the oldest item is overwritten even if it is not old enough to retire.
+	// Using this policy you are sacrificing the time-to-live in favor of being able to write.
 	//
 	// Example: if there is a time-to-live of 30 seconds, the buffer is full and the oldest item in the ring has been placed a
 	// second ago, then there are 29 seconds remaining for that item. Using this policy you are going to overwrite no matter
 	// what.
 	OverflowPolicyOverwrite policy = 0
 
-	// OverflowPolicyFail is the policy where the call will fail immediately and the oldest item will not be overwritten before it is old enough
-	// to retire. So this policy sacrifices the ability to write in favor of time-to-live.
+	// OverflowPolicyFail is the policy where the call will fail immediately and the oldest item will not be overwritten
+	// before it is old enough to retire. So this policy sacrifices the ability to write in favor of time-to-live.
 	//
 	// The advantage of fail is that the caller can decide what to do since it doesn't trap the thread due to backoff.
 	//

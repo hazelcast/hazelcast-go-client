@@ -26,13 +26,13 @@ type IAddress interface {
 	Port() int
 }
 
-// IMember represents a member in the cluster with its address, UUID, lite member status and attributes.
+// IMember represents a member in the cluster with its address, uuid, lite member status and attributes.
 type IMember interface {
 	// Address returns the address of this member.
 	Address() IAddress
 
-	// Uuid returns the UUID of this member.
-	Uuid() string
+	// UUID returns the uuid of this member.
+	UUID() string
 
 	// IsLiteMember returns true if this member is a lite member.
 	IsLiteMember() bool
@@ -137,8 +137,8 @@ type IEntryView interface {
 	// EvictionCriteriaNumber returns the criteria number for eviction.
 	EvictionCriteriaNumber() int64
 
-	// Ttl returns the last set time to live second.
-	Ttl() time.Duration
+	// TTL returns the last set time to live second.
+	TTL() time.Duration
 }
 
 // IEntryEvent is map entry event.
@@ -158,13 +158,12 @@ type IEntryEvent interface {
 	// EventType returns the type of entry event.
 	EventType() int32
 
-	// Uuid returns the Uuid of the member.
-	Uuid() *string
+	// UUID returns the uuid of the member.
+	UUID() *string
 }
 
 // IItemEvent is IList, ISet and IQueue events common contract.
 type IItemEvent interface {
-
 	// Name returns the name of IList, ISet or IQueue
 	Name() string
 
@@ -183,8 +182,8 @@ type IMapEvent interface {
 	// EventType returns the event type.
 	EventType() int32
 
-	// Uuid returns the Uuid of the member.
-	Uuid() *string
+	// UUID returns the uuid of the member.
+	UUID() *string
 
 	// NumberOfAffectedEntries returns the number of affected
 	// entries by this event.
@@ -262,12 +261,11 @@ type ILifecycleListener interface {
 }
 
 // TopicMessageListener is a listener for ITopic.
-// Provided that a TopicMessageListener is not registered twice, a TopicMessageListener will never be called concurrently. So there
-// is no need to provide thread-safety on internal state in the TopicMessageListener. Also there is no need to enforce safe
-// publication, the ITopic is responsible for the memory consistency effects. In other words, there is no need to make
+// Provided that a TopicMessageListener is not registered twice, a TopicMessageListener will never be called concurrently.
+// So there is no need to provide thread-safety on internal state in the TopicMessageListener. Also there is no need to enforce
+// safe publication, the ITopic is responsible for the memory consistency effects. In other words, there is no need to make
 // internal fields of the TopicMessageListener volatile or access them using synchronized blocks.
 type TopicMessageListener interface {
-
 	// OnMessage is invoked when a message is received for the added topic. Note that topic guarantees message ordering.
 	// Therefore there is only one thread invoking OnMessage.
 	OnMessage(message ITopicMessage)
@@ -275,7 +273,6 @@ type TopicMessageListener interface {
 
 // ITopicMessage is a message for ITopic.
 type ITopicMessage interface {
-
 	// MessageObject returns the published message.
 	MessageObject() interface{}
 

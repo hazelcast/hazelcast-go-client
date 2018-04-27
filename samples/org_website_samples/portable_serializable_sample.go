@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	customerClassId         = 1
-	samplePortableFactoryId = 1
+	customerClassID         = 1
+	samplePortableFactoryID = 1
 )
 
 type Customer struct {
@@ -33,12 +33,12 @@ type Customer struct {
 	lastOrder time.Time
 }
 
-func (c *Customer) FactoryId() int32 {
-	return samplePortableFactoryId
+func (c *Customer) FactoryID() int32 {
+	return samplePortableFactoryID
 }
 
-func (c *Customer) ClassId() int32 {
-	return customerClassId
+func (c *Customer) ClassID() int32 {
+	return customerClassID
 }
 
 func (c *Customer) WritePortable(writer serialization.PortableWriter) (err error) {
@@ -68,8 +68,8 @@ func (c *Customer) ReadPortable(reader serialization.PortableReader) (err error)
 type SamplePortableFactory struct {
 }
 
-func (pf *SamplePortableFactory) Create(classId int32) serialization.Portable {
-	if classId == samplePortableFactoryId {
+func (pf *SamplePortableFactory) Create(classID int32) serialization.Portable {
+	if classID == samplePortableFactoryID {
 		return &Customer{}
 	}
 	return nil
@@ -77,7 +77,7 @@ func (pf *SamplePortableFactory) Create(classId int32) serialization.Portable {
 
 func portableSerializableSampleRun() {
 	clientConfig := config.NewClientConfig()
-	clientConfig.SerializationConfig().AddPortableFactory(samplePortableFactoryId, &SamplePortableFactory{})
+	clientConfig.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &SamplePortableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Customer can be used here

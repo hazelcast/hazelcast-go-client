@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MultiMapValueCountCalculateSize(name *string, key *serialization.Data, threadId int64) int {
+func MultiMapValueCountCalculateSize(name *string, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -29,14 +29,14 @@ func MultiMapValueCountCalculateSize(name *string, key *serialization.Data, thre
 	return dataSize
 }
 
-func MultiMapValueCountEncodeRequest(name *string, key *serialization.Data, threadId int64) *ClientMessage {
+func MultiMapValueCountEncodeRequest(name *string, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapValueCountCalculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MultiMapValueCountCalculateSize(name, key, threadID))
 	clientMessage.SetMessageType(multimapValueCount)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

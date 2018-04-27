@@ -25,7 +25,7 @@ type HazelcastClient struct {
 	ClientConfig         *config.ClientConfig
 	InvocationService    *invocationService
 	PartitionService     *partitionService
-	SerializationService *serialization.SerializationService
+	SerializationService *serialization.Service
 	LifecycleService     *lifecycleService
 	ConnectionManager    *connectionManager
 	ListenerService      *listenerService
@@ -81,12 +81,12 @@ func (c *HazelcastClient) GetMultiMap(name string) (core.MultiMap, error) {
 	return mmp.(core.MultiMap), err
 }
 
-func (c *HazelcastClient) GetFlakeIdGenerator(name string) (core.FlakeIdGenerator, error) {
-	flakeIdGenerator, err := c.GetDistributedObject(common.ServiceNameIdGenerator, name)
+func (c *HazelcastClient) GetFlakeIDGenerator(name string) (core.FlakeIDGenerator, error) {
+	flakeIDGenerator, err := c.GetDistributedObject(common.ServiceNameIDGenerator, name)
 	if err != nil {
 		return nil, err
 	}
-	return flakeIdGenerator.(core.FlakeIdGenerator), err
+	return flakeIDGenerator.(core.FlakeIDGenerator), err
 }
 
 func (c *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
@@ -147,8 +147,12 @@ func (c *HazelcastClient) init() error {
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
 	c.LoadBalancer = newRandomLoadBalancer(c.ClusterService)
-	c.SerializationService = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
-	err := c.ClusterService.start()
+	var err error
+	c.SerializationService, err = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
+	if err != nil {
+		return err
+	}
+	err = c.ClusterService.start()
 	if err != nil {
 		return err
 	}

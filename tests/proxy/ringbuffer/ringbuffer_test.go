@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	ringbuffer, _ = client.GetRingbuffer(ringbufferName)
@@ -97,6 +97,7 @@ func TestRingbufferProxy_Size(t *testing.T) {
 		items[i] = i
 	}
 	_, err := ringbuffer.AddAll(items, core.OverflowPolicyFail)
+	assert.ErrorNil(t, err)
 	size, err := ringbuffer.Size()
 	assert.Equalf(t, err, size, capacity, "ringbuffer Size-w() failed")
 }
@@ -155,6 +156,7 @@ func TestRingbufferProxy_AddAllWhenFull(t *testing.T) {
 func TestRingbufferProxy_RemainingCapacity2(t *testing.T) {
 	defer destroyAndCreate()
 	_, err := ringbuffer.Add("value", core.OverflowPolicyOverwrite)
+	assert.ErrorNil(t, err)
 	remainingCapacity, err := ringbuffer.RemainingCapacity()
 	assert.Equalf(t, err, capacity-1, remainingCapacity, "ringbuffer RemainingCapacity() failed")
 }
@@ -202,6 +204,7 @@ func TestRingbufferProxy_ReadMany_ResulSetWithFilter(t *testing.T) {
 	fillRingbuffer(capacity)
 	var expectedValue int64 = 2
 	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	assert.ErrorNil(t, err)
 	retValue, err := resultSet.Get(2)
 	assert.Equalf(t, err, retValue.(int64), expectedValue, "ringbuffer ReadMany() failed")
 }
@@ -211,6 +214,7 @@ func TestRingbufferProxy_ReadMany_ResulSet_Get(t *testing.T) {
 	fillRingbuffer(capacity)
 	var expectedValue int64 = 2
 	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	assert.ErrorNil(t, err)
 	retValue, err := resultSet.Get(2)
 	assert.Equalf(t, err, retValue.(int64), expectedValue, "ringbuffer ReadMany() failed")
 }
@@ -219,6 +223,7 @@ func TestRingbufferProxy_ReadMany_ResulSet_GetWithIllegalIndex(t *testing.T) {
 	defer destroyAndCreate()
 	fillRingbuffer(capacity)
 	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	assert.ErrorNil(t, err)
 	_, err = resultSet.Get(4)
 	assert.ErrorNotNil(t, err, "ringbuffer ReadMany() failed")
 }
@@ -228,6 +233,7 @@ func TestRingbufferProxy_ReadMany_ResulSet_Sequence(t *testing.T) {
 	fillRingbuffer(capacity)
 	var expectedValue int64 = 4
 	resultSet, err := ringbuffer.ReadMany(0, 5, 5, nil)
+	assert.ErrorNil(t, err)
 	retValue, err := resultSet.Sequence(4)
 	assert.Equalf(t, err, retValue, expectedValue, "ringbuffer ReadMany() failed")
 }
@@ -236,6 +242,7 @@ func TestRingbufferProxy_ReadMany_ResulSet_SequenceWithIllegalIndex(t *testing.T
 	defer destroyAndCreate()
 	fillRingbuffer(capacity)
 	resultSet, err := ringbuffer.ReadMany(0, 3, 3, nil)
+	assert.ErrorNil(t, err)
 	_, err = resultSet.Sequence(4)
 	assert.ErrorNotNil(t, err, "ringbuffer ReadMany() failed")
 }

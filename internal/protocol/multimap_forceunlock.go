@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MultiMapForceUnlockCalculateSize(name *string, key *serialization.Data, referenceId int64) int {
+func MultiMapForceUnlockCalculateSize(name *string, key *serialization.Data, referenceID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -29,14 +29,14 @@ func MultiMapForceUnlockCalculateSize(name *string, key *serialization.Data, ref
 	return dataSize
 }
 
-func MultiMapForceUnlockEncodeRequest(name *string, key *serialization.Data, referenceId int64) *ClientMessage {
+func MultiMapForceUnlockEncodeRequest(name *string, key *serialization.Data, referenceID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapForceUnlockCalculateSize(name, key, referenceId))
+	clientMessage := NewClientMessage(nil, MultiMapForceUnlockCalculateSize(name, key, referenceID))
 	clientMessage.SetMessageType(multimapForceUnlock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(referenceId)
+	clientMessage.AppendInt64(referenceID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

@@ -53,9 +53,7 @@ func main() {
 }
 
 type topicMessageListener struct {
-	wg          *sync.WaitGroup
-	msg         interface{}
-	publishTime int64
+	wg *sync.WaitGroup
 }
 
 func (l *topicMessageListener) OnMessage(message core.ITopicMessage) {

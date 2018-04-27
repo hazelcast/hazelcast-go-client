@@ -25,28 +25,28 @@ var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 func TestHeaderFields(t *testing.T) {
 	message := NewClientMessage(nil, 30)
-	var correlationId int64 = 6474838
+	var correlationID int64 = 6474838
 	var messageType common.MessageType = 987
 	var flags uint8 = 5
-	var partitionId int32 = 27
+	var partitionID int32 = 27
 	var frameLength int32 = 100
 	var dataOffset uint16 = 17
 
 	message.SetFrameLength(frameLength)
 	message.SetFlags(flags)
 	message.SetMessageType(messageType)
-	message.SetPartitionId(partitionId)
+	message.SetPartitionID(partitionID)
 	message.SetDataOffset(dataOffset)
-	message.SetCorrelationId(correlationId)
+	message.SetCorrelationID(correlationID)
 
-	if result := message.CorrelationId(); result != correlationId {
-		t.Errorf("CorrelationId returned %d expected %d \n", result, correlationId)
+	if result := message.CorrelationID(); result != correlationID {
+		t.Errorf("CorrelationID returned %d expected %d \n", result, correlationID)
 	}
 	if result := message.MessageType(); result != messageType {
 		t.Errorf("MessageType returned %d expected %d \n", result, messageType)
 	}
-	if result := message.PartitionId(); result != partitionId {
-		t.Errorf("PartitionId returned %d expected %d \n", result, partitionId)
+	if result := message.PartitionID(); result != partitionID {
+		t.Errorf("PartitionID returned %d expected %d \n", result, partitionID)
 	}
 	if result := message.Flags(); result != flags {
 		t.Errorf("Flags returned %d expected %d \n", result, flags)

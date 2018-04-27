@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
@@ -46,27 +47,28 @@ type Connection struct {
 	serverHazelcastVersion *string
 	heartBeating           bool
 	readBuffer             []byte
-	connectionId           int64
+	connectionID           int64
 	connectionManager      *connectionManager
 }
 
-func newConnection(address *protocol.Address, responseChannel chan *protocol.ClientMessage, sendingError chan int64, connectionId int64, connectionManager *connectionManager) *Connection {
+func newConnection(address core.IAddress, responseChannel chan *protocol.ClientMessage, sendingError chan int64,
+	connectionID int64, connectionManager *connectionManager) *Connection {
 	connection := Connection{pending: make(chan *protocol.ClientMessage, 1),
-		received:             make(chan *protocol.ClientMessage, 1),
-		closed:               make(chan bool, 1),
-		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel, incompleteMessages: make(map[int64]*protocol.ClientMessage)}, sendingError: sendingError,
+		received: make(chan *protocol.ClientMessage, 1),
+		closed:   make(chan bool, 1),
+		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel,
+			incompleteMessages: make(map[int64]*protocol.ClientMessage)}, sendingError: sendingError,
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
-		connectionId:      connectionId,
+		connectionID:      connectionID,
 		connectionManager: connectionManager,
 	}
 	connection.endpoint.Store(&protocol.Address{})
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
 		return nil
-	} else {
-		connection.socket = socket
 	}
+	connection.socket = socket
 	connection.lastRead.Store(time.Now())
 	connection.lastWrite.Store(time.Time{})             //initialization
 	connection.lastHeartbeatReceived.Store(time.Time{}) //initialization
@@ -89,7 +91,7 @@ func (c *Connection) writePool() {
 		case request := <-c.pending:
 			err := c.write(request)
 			if err != nil {
-				c.sendingError <- request.CorrelationId()
+				c.sendingError <- request.CorrelationID()
 			}
 			c.lastWrite.Store(time.Now())
 		case <-c.closed:
@@ -118,10 +120,9 @@ func (c *Connection) write(clientMessage *protocol.ClientMessage) error {
 		writtenLen, err := c.socket.Write(clientMessage.Buffer[writeIndex:])
 		if err != nil {
 			return err
-		} else {
-			remainingLen -= writtenLen
-			writeIndex += writtenLen
 		}
+		remainingLen -= writtenLen
+		writeIndex += writtenLen
 	}
 
 	return nil
@@ -168,14 +169,14 @@ func (c *Connection) close(err error) {
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{"+
 		"isAlive=%t"+
-		", connectionId=%d"+
+		", connectionID=%d"+
 		", endpoint=%s:%d"+
 		", lastReadTime=%s"+
 		", lastWriteTime=%s"+
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
-		", connected server version=%s", c.isAlive(), c.connectionId,
+		", connected server version=%s", c.isAlive(), c.connectionID,
 		c.endpoint.Load().(*protocol.Address).Host(), c.endpoint.Load().(*protocol.Address).Port(),
 		c.lastRead.Load().(time.Time).String(), c.lastWrite.Load().(time.Time).String(),
 		c.closedTime.Load().(time.Time).String(), c.lastHeartbeatRequested.Load().(time.Time).String(),

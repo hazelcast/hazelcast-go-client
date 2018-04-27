@@ -32,14 +32,15 @@ type DefaultPortableReader struct {
 	raw             bool
 }
 
-func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput, classdefinition serialization.ClassDefinition) *DefaultPortableReader {
+func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
+	classdefinition serialization.ClassDefinition) *DefaultPortableReader {
 	finalPos, _ := input.ReadInt32()
 	input.ReadInt32()
 	offset := input.Position()
 	return &DefaultPortableReader{serializer, input, classdefinition, offset, finalPos, false}
 }
 
-func getTypeByConst(fieldType int32) string {
+func TypeByID(fieldType int32) string {
 	var ret string
 	switch t := fieldType; t {
 	case classdef.TypePortable:
@@ -95,7 +96,7 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	}
 
 	if field.Type() != fieldType {
-		return 0, core.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", getTypeByConst(fieldType), fieldName), nil)
+		return 0, core.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil)
 	}
 	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*common.Int32SizeInBytes)
 	if err != nil {
@@ -192,18 +193,18 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) (serialization.P
 	if err != nil {
 		return nil, err
 	}
-	factoryId, err := pr.input.ReadInt32()
+	factoryID, err := pr.input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
-	classId, err := pr.input.ReadInt32()
+	classID, err := pr.input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
 	if isNil {
 		return nil, nil
 	}
-	return pr.serializer.ReadObject(pr.input, factoryId, classId)
+	return pr.serializer.ReadObject(pr.input, factoryID, classID)
 }
 
 func (pr *DefaultPortableReader) ReadByteArray(fieldName string) ([]byte, error) {
@@ -291,15 +292,15 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]serializ
 	if err != nil || length == common.NilArrayLength {
 		return nil, err
 	}
-	factoryId, err := pr.input.ReadInt32()
+	factoryID, err := pr.input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
-	classId, err := pr.input.ReadInt32()
+	classID, err := pr.input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
-	var portables []serialization.Portable = make([]serialization.Portable, length)
+	var portables = make([]serialization.Portable, length)
 	if length > 0 {
 		offset := pr.input.Position()
 		for i := int32(0); i < length; i++ {
@@ -308,7 +309,7 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]serializ
 				return nil, err
 			}
 			pr.input.SetPosition(start)
-			portables[i], err = pr.serializer.ReadObject(pr.input, factoryId, classId)
+			portables[i], err = pr.serializer.ReadObject(pr.input, factoryID, classID)
 			if err != nil {
 				return nil, err
 			}

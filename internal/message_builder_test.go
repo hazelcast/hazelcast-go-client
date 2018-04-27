@@ -29,7 +29,7 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	}
 	var mu = sync.Mutex{}
 	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
-	ch := make(chan *protocol.ClientMessage, 0)
+	ch := make(chan *protocol.ClientMessage)
 	builder.responseChannel = ch
 	var builtClientMessage *protocol.ClientMessage
 	go func() {
@@ -43,14 +43,16 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	expectedClientMessage := protocol.ClientAuthenticationEncodeRequest(&testString, &testString, &testString, &testString, false,
 		&testString, 1, &serverVersion)
 	expectedClientMessage.SetFlags(common.BeginEndFlag)
-	expectedClientMessage.SetCorrelationId(1)
+	expectedClientMessage.SetCorrelationID(1)
 	expectedClientMessage.SetFrameLength(int32(len(expectedClientMessage.Buffer)))
 
 	buffer := expectedClientMessage.Buffer
 	payloadSize := uint16(len(buffer)) - expectedClientMessage.DataOffset()
 
-	firstBuffer := append(buffer[0:expectedClientMessage.DataOffset()], buffer[expectedClientMessage.DataOffset():expectedClientMessage.DataOffset()+payloadSize/2]...)
-	secondBuffer := append(buffer[0:expectedClientMessage.DataOffset()], buffer[expectedClientMessage.DataOffset()+payloadSize/2:]...)
+	firstBuffer := append(buffer[0:expectedClientMessage.DataOffset()],
+		buffer[expectedClientMessage.DataOffset():expectedClientMessage.DataOffset()+payloadSize/2]...)
+	secondBuffer := append(buffer[0:expectedClientMessage.DataOffset()],
+		buffer[expectedClientMessage.DataOffset()+payloadSize/2:]...)
 
 	firstMessage := protocol.NewClientMessage(firstBuffer, 0)
 	secondMessage := protocol.NewClientMessage(secondBuffer, 0)
@@ -70,15 +72,15 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 
 }
 
-func TestClientMessageBuilder_OnMessageWithNotFoundCorrelationId(t *testing.T) {
+func TestClientMessageBuilder_OnMessageWithNotFoundCorrelationID(t *testing.T) {
 	builder := &clientMessageBuilder{
 		incompleteMessages: make(map[int64]*protocol.ClientMessage),
 	}
 	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
-	ch := make(chan *protocol.ClientMessage, 0)
+	ch := make(chan *protocol.ClientMessage)
 	builder.responseChannel = ch
 	msg := protocol.NewClientMessage(nil, 40)
-	msg.SetCorrelationId(2)
+	msg.SetCorrelationID(2)
 	msg.SetFrameLength(int32(len(msg.Buffer)))
 	builder.onMessage(msg)
 }

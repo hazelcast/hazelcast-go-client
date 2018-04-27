@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) int {
+func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUUID *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(username)
@@ -28,8 +28,8 @@ func ClientAuthenticationCalculateSize(username *string, password *string, uuid 
 		dataSize += StringCalculateSize(uuid)
 	}
 	dataSize += common.BoolSizeInBytes
-	if ownerUuid != nil {
-		dataSize += StringCalculateSize(ownerUuid)
+	if ownerUUID != nil {
+		dataSize += StringCalculateSize(ownerUUID)
 	}
 	dataSize += common.BoolSizeInBytes
 	dataSize += StringCalculateSize(clientType)
@@ -38,9 +38,9 @@ func ClientAuthenticationCalculateSize(username *string, password *string, uuid 
 	return dataSize
 }
 
-func ClientAuthenticationEncodeRequest(username *string, password *string, uuid *string, ownerUuid *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) *ClientMessage {
+func ClientAuthenticationEncodeRequest(username *string, password *string, uuid *string, ownerUUID *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
+	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUUID, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
 	clientMessage.SetMessageType(clientAuthentication)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(username)
@@ -49,9 +49,9 @@ func ClientAuthenticationEncodeRequest(username *string, password *string, uuid 
 	if uuid != nil {
 		clientMessage.AppendString(uuid)
 	}
-	clientMessage.AppendBool(ownerUuid == nil)
-	if ownerUuid != nil {
-		clientMessage.AppendString(ownerUuid)
+	clientMessage.AppendBool(ownerUUID == nil)
+	if ownerUUID != nil {
+		clientMessage.AppendString(ownerUUID)
 	}
 	clientMessage.AppendBool(isOwnerConnection)
 	clientMessage.AppendString(clientType)
@@ -61,9 +61,9 @@ func ClientAuthenticationEncodeRequest(username *string, password *string, uuid 
 	return clientMessage
 }
 
-func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid *string, ownerUuid *string, serializationVersion uint8, serverHazelcastVersion *string, clientUnregisteredMembers []*Member) {
+func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid *string, ownerUUID *string, serializationVersion uint8, serverHazelcastVersion *string, clientUnregisteredMembers []*Member) {
 	// Decode response from client message
-	return func() (status uint8, address *Address, uuid *string, ownerUuid *string, serializationVersion uint8, serverHazelcastVersion *string, clientUnregisteredMembers []*Member) {
+	return func() (status uint8, address *Address, uuid *string, ownerUUID *string, serializationVersion uint8, serverHazelcastVersion *string, clientUnregisteredMembers []*Member) {
 		status = clientMessage.ReadUint8()
 
 		if !clientMessage.ReadBool() {
@@ -75,7 +75,7 @@ func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (st
 		}
 
 		if !clientMessage.ReadBool() {
-			ownerUuid = clientMessage.ReadString()
+			ownerUUID = clientMessage.ReadString()
 		}
 		serializationVersion = clientMessage.ReadUint8()
 		if clientMessage.IsComplete() {

@@ -21,8 +21,8 @@ import (
 	"time"
 )
 
-type IdBatchSupplier interface {
-	NewIdBatch(batchSize int32) (*IdBatch, error)
+type IDBatchSupplier interface {
+	NewIDBatch(batchSize int32) (*IDBatch, error)
 }
 
 type AutoBatcher struct {
@@ -30,21 +30,21 @@ type AutoBatcher struct {
 	validity        int64
 	block           atomic.Value
 	mu              sync.Mutex
-	batchIdSupplier IdBatchSupplier
+	batchIDSupplier IDBatchSupplier
 }
 
-func NewAutoBatcher(batchSize int32, validity int64, supplier IdBatchSupplier) *AutoBatcher {
+func NewAutoBatcher(batchSize int32, validity int64, supplier IDBatchSupplier) *AutoBatcher {
 	autoBatcher := AutoBatcher{
 		batchSize:       batchSize,
 		validity:        validity,
 		mu:              sync.Mutex{},
-		batchIdSupplier: supplier,
+		batchIDSupplier: supplier,
 	}
-	autoBatcher.block.Store(NewBlock(NewIdBatch(0, 0, 0), 0)) //initialize
+	autoBatcher.block.Store(NewBlock(NewIDBatch(0, 0, 0), 0)) //initialize
 	return &autoBatcher
 }
 
-func (b *AutoBatcher) NewId() (int64, error) {
+func (b *AutoBatcher) NewID() (int64, error) {
 	for {
 		block := b.block.Load().(*Block)
 		res := block.next()
@@ -56,7 +56,7 @@ func (b *AutoBatcher) NewId() (int64, error) {
 			b.mu.Unlock()
 			continue
 		}
-		idBatch, err := b.batchIdSupplier.NewIdBatch(b.batchSize)
+		idBatch, err := b.batchIDSupplier.NewIDBatch(b.batchSize)
 		if err != nil {
 			b.mu.Unlock()
 			return 0, err
@@ -71,14 +71,14 @@ func currentTimeInMilliSeconds() int64 {
 }
 
 type Block struct {
-	IdBatch      *IdBatch
+	IDBatch      *IDBatch
 	invalidSince int64
 	numReturned  int32
 }
 
-func NewBlock(idBatch *IdBatch, validityMillis int64) *Block {
+func NewBlock(idBatch *IDBatch, validityMillis int64) *Block {
 	block := &Block{}
-	block.IdBatch = idBatch
+	block.IDBatch = idBatch
 	if validityMillis > 0 {
 		block.invalidSince = validityMillis + currentTimeInMilliSeconds()
 	} else {
@@ -95,7 +95,7 @@ func (b *Block) next() int64 {
 	canContinue := true
 	for canContinue {
 		index = atomic.LoadInt32(&b.numReturned)
-		if index == b.IdBatch.batchSize {
+		if index == b.IDBatch.batchSize {
 			return math.MinInt64
 		}
 		if atomic.CompareAndSwapInt32(&b.numReturned, index, index+1) {
@@ -104,32 +104,32 @@ func (b *Block) next() int64 {
 
 	}
 
-	return b.IdBatch.Base() + int64(index)*b.IdBatch.Increment()
+	return b.IDBatch.Base() + int64(index)*b.IDBatch.Increment()
 
 }
 
-type IdBatch struct {
+type IDBatch struct {
 	base      int64
 	increment int64
 	batchSize int32
 }
 
-func NewIdBatch(base int64, increment int64, batchSize int32) *IdBatch {
-	return &IdBatch{
+func NewIDBatch(base int64, increment int64, batchSize int32) *IDBatch {
+	return &IDBatch{
 		base:      base,
 		increment: increment,
 		batchSize: batchSize,
 	}
 }
 
-func (b *IdBatch) Base() int64 {
+func (b *IDBatch) Base() int64 {
 	return b.base
 }
 
-func (b *IdBatch) Increment() int64 {
+func (b *IDBatch) Increment() int64 {
 	return b.increment
 }
 
-func (b *IdBatch) BatchSize() int32 {
+func (b *IDBatch) BatchSize() int32 {
 	return b.batchSize
 }

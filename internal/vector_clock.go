@@ -22,28 +22,28 @@ import (
 )
 
 const (
-	FId                = 0
-	VectorClockClassId = 43
+	fID                = 0
+	vectorClockClassID = 43
 )
 
-type VectorClock struct {
+type vectorClock struct {
 	mutex             sync.RWMutex //guards replicaTimestamps
 	replicaTimestamps map[*string]int64
 }
 
-func NewVectorClock() *VectorClock {
-	return &VectorClock{replicaTimestamps: make(map[*string]int64)}
+func newVectorClock() *vectorClock {
+	return &vectorClock{replicaTimestamps: make(map[*string]int64)}
 }
 
-func (*VectorClock) FactoryId() int32 {
-	return FId
+func (*vectorClock) FactoryID() int32 {
+	return fID
 }
 
-func (*VectorClock) ClassId() int32 {
-	return VectorClockClassId
+func (*vectorClock) ClassID() int32 {
+	return vectorClockClassID
 }
 
-func (v *VectorClock) WriteData(output serialization.DataOutput) (err error) {
+func (v *vectorClock) WriteData(output serialization.DataOutput) (err error) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	output.WriteInt32(int32(len(v.replicaTimestamps)))
@@ -54,13 +54,13 @@ func (v *VectorClock) WriteData(output serialization.DataOutput) (err error) {
 	return
 }
 
-func (v *VectorClock) ReadData(input serialization.DataInput) error {
+func (v *vectorClock) ReadData(input serialization.DataInput) error {
 	stateSize, err := input.ReadInt32()
 	if err != nil {
 		return err
 	}
 	for i := int32(0); i < stateSize; i++ {
-		replicaId, err := input.ReadUTF()
+		replicaID, err := input.ReadUTF()
 		if err != nil {
 			return err
 		}
@@ -68,27 +68,27 @@ func (v *VectorClock) ReadData(input serialization.DataInput) error {
 		if err != nil {
 			return err
 		}
-		v.replicaTimestamps[&replicaId] = timestamp
+		v.replicaTimestamps[&replicaID] = timestamp
 	}
 	return nil
 }
 
-func (v *VectorClock) EntrySet() (entrySet []*protocol.Pair) {
+func (v *vectorClock) EntrySet() (entrySet []*protocol.Pair) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	entrySet = make([]*protocol.Pair, len(v.replicaTimestamps))
 	i := 0
 	for key, value := range v.replicaTimestamps {
 		entrySet[i] = protocol.NewPair(key, value)
-		i += 1
+		i++
 	}
 	return entrySet
 }
 
-func (v *VectorClock) IsAfter(other *VectorClock) (isAfter bool) {
+func (v *vectorClock) IsAfter(other *vectorClock) (isAfter bool) {
 	anyTimestampGreater := false
-	for replicaId, otherReplicaTimestamp := range other.replicaTimestamps {
-		localReplicaTimestamp, initialized := v.TimestampForReplica(replicaId)
+	for replicaID, otherReplicaTimestamp := range other.replicaTimestamps {
+		localReplicaTimestamp, initialized := v.TimestampForReplica(replicaID)
 		if !initialized || localReplicaTimestamp < otherReplicaTimestamp {
 			return false
 		} else if localReplicaTimestamp > otherReplicaTimestamp {
@@ -100,15 +100,15 @@ func (v *VectorClock) IsAfter(other *VectorClock) (isAfter bool) {
 	return anyTimestampGreater || (len(v.replicaTimestamps) > len(other.replicaTimestamps))
 }
 
-func (v *VectorClock) SetReplicaTimestamp(replicaId *string, timestamp int64) {
+func (v *vectorClock) SetReplicaTimestamp(replicaID *string, timestamp int64) {
 	v.mutex.Lock()
-	v.replicaTimestamps[replicaId] = timestamp
+	v.replicaTimestamps[replicaID] = timestamp
 	v.mutex.Unlock()
 }
 
-func (v *VectorClock) TimestampForReplica(replicaId *string) (int64, bool) {
+func (v *vectorClock) TimestampForReplica(replicaID *string) (int64, bool) {
 	v.mutex.RLock()
-	val, ok := v.replicaTimestamps[replicaId]
+	val, ok := v.replicaTimestamps[replicaID]
 	v.mutex.RUnlock()
 	return val, ok
 }

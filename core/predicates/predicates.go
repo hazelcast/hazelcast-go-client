@@ -19,9 +19,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/predicates"
 )
 
-// Sql returns a SqlPredicateSql with the given sql.
-func Sql(sql string) interface{} {
-	return predicates.NewSqlPredicate(sql)
+// SQL returns a SQLPredicate with the given sql.
+func SQL(sql string) interface{} {
+	return predicates.NewSQLPredicate(sql)
 }
 
 // And returns an AndPredicate with the given predicates.

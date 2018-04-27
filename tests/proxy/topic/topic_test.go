@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	topic, _ = client.GetTopic("myTopic")
@@ -48,8 +48,8 @@ func TestTopicProxy_AddListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)
 	listener := &topicMessageListener{wg: wg}
-	registrationId, err := topic.AddMessageListener(listener)
-	defer topic.RemoveMessageListener(registrationId)
+	registrationID, err := topic.AddMessageListener(listener)
+	defer topic.RemoveMessageListener(registrationID)
 	assert.Nilf(t, err, nil, "topic AddListener() failed")
 	topic.Publish("item-value")
 	timeout := tests.WaitTimeout(wg, tests.Timeout)
@@ -64,9 +64,9 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)
 	listener := &topicMessageListener{wg: wg}
-	registrationId, err := topic.AddMessageListener(listener)
+	registrationID, err := topic.AddMessageListener(listener)
 	assert.Nilf(t, err, nil, "topic AddListener() failed")
-	removed, err := topic.RemoveMessageListener(registrationId)
+	removed, err := topic.RemoveMessageListener(registrationID)
 	assert.Equalf(t, err, removed, true, "topic RemoveListener() failed")
 	topic.Publish("item-value")
 	timeout := tests.WaitTimeout(wg, tests.Timeout/10)

@@ -31,9 +31,9 @@ func WriteInt32(buf []byte, pos int32, v int32, isBigEndian bool) {
 func ReadInt32(buf []byte, pos int32, isBigEndian bool) int32 {
 	if isBigEndian {
 		return int32(binary.BigEndian.Uint32(buf[pos:]))
-	} else {
-		return int32(binary.LittleEndian.Uint32(buf[pos:]))
 	}
+	return int32(binary.LittleEndian.Uint32(buf[pos:]))
+
 }
 
 func WriteFloat32(buf []byte, pos int32, v float32, isBigEndian bool) {
@@ -48,9 +48,8 @@ func WriteFloat32(buf []byte, pos int32, v float32, isBigEndian bool) {
 func ReadFloat32(buf []byte, pos int32, isBigEndian bool) float32 {
 	if isBigEndian {
 		return math.Float32frombits(binary.BigEndian.Uint32(buf[pos:]))
-	} else {
-		return math.Float32frombits(binary.LittleEndian.Uint32(buf[pos:]))
 	}
+	return math.Float32frombits(binary.LittleEndian.Uint32(buf[pos:]))
 }
 
 func WriteFloat64(buf []byte, pos int32, v float64, isBigEndian bool) {
@@ -65,9 +64,8 @@ func WriteFloat64(buf []byte, pos int32, v float64, isBigEndian bool) {
 func ReadFloat64(buf []byte, pos int32, isBigEndian bool) float64 {
 	if isBigEndian {
 		return math.Float64frombits(binary.BigEndian.Uint64(buf[pos:]))
-	} else {
-		return math.Float64frombits(binary.LittleEndian.Uint64(buf[pos:]))
 	}
+	return math.Float64frombits(binary.LittleEndian.Uint64(buf[pos:]))
 }
 
 func WriteBool(buf []byte, pos int32, v bool) {
@@ -81,11 +79,7 @@ func WriteBool(buf []byte, pos int32, v bool) {
 }
 
 func ReadBool(buf []byte, pos int32) bool {
-	if buf[pos] == 1 {
-		return true
-	} else {
-		return false
-	}
+	return buf[pos] == 1
 }
 
 func WriteUInt8(buf []byte, pos int32, v uint8) {
@@ -108,9 +102,8 @@ func WriteUInt16(buf []byte, pos int32, v uint16, isBigEndian bool) {
 func ReadUInt16(buf []byte, pos int32, isBigEndian bool) uint16 {
 	if isBigEndian {
 		return binary.BigEndian.Uint16(buf[pos:])
-	} else {
-		return binary.LittleEndian.Uint16(buf[pos:])
 	}
+	return binary.LittleEndian.Uint16(buf[pos:])
 }
 
 func WriteInt16(buf []byte, pos int32, v int16, isBigEndian bool) {
@@ -125,9 +118,8 @@ func WriteInt16(buf []byte, pos int32, v int16, isBigEndian bool) {
 func ReadInt16(buf []byte, pos int32, isBigEndian bool) int16 {
 	if isBigEndian {
 		return int16(binary.BigEndian.Uint16(buf[pos:]))
-	} else {
-		return int16(binary.LittleEndian.Uint16(buf[pos:]))
 	}
+	return int16(binary.LittleEndian.Uint16(buf[pos:]))
 }
 
 func WriteInt64(buf []byte, pos int32, v int64, isBigEndian bool) {
@@ -142,7 +134,6 @@ func WriteInt64(buf []byte, pos int32, v int64, isBigEndian bool) {
 func ReadInt64(buf []byte, pos int32, isBigEndian bool) int64 {
 	if isBigEndian {
 		return int64(binary.BigEndian.Uint64(buf[pos:]))
-	} else {
-		return int64(binary.LittleEndian.Uint64(buf[pos:]))
 	}
+	return int64(binary.LittleEndian.Uint64(buf[pos:]))
 }

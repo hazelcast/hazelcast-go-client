@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MultiMapDeleteCalculateSize(name *string, key *serialization.Data, threadId int64) int {
+func MultiMapDeleteCalculateSize(name *string, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -29,14 +29,14 @@ func MultiMapDeleteCalculateSize(name *string, key *serialization.Data, threadId
 	return dataSize
 }
 
-func MultiMapDeleteEncodeRequest(name *string, key *serialization.Data, threadId int64) *ClientMessage {
+func MultiMapDeleteEncodeRequest(name *string, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapDeleteCalculateSize(name, key, threadId))
+	clientMessage := NewClientMessage(nil, MultiMapDeleteCalculateSize(name, key, threadID))
 	clientMessage.SetMessageType(multimapDelete)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

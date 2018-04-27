@@ -24,7 +24,7 @@ import (
 )
 
 type proxyManager struct {
-	ReferenceId int64
+	ReferenceID int64
 	client      *HazelcastClient
 	mu          sync.RWMutex // guards proxies
 	proxies     map[string]core.IDistributedObject
@@ -32,18 +32,18 @@ type proxyManager struct {
 
 func newProxyManager(client *HazelcastClient) *proxyManager {
 	return &proxyManager{
-		ReferenceId: 0,
+		ReferenceID: 0,
 		client:      client,
 		proxies:     make(map[string]core.IDistributedObject),
 	}
 }
 
-func (pm *proxyManager) nextReferenceId() int64 {
-	return atomic.AddInt64(&pm.ReferenceId, 1)
+func (pm *proxyManager) nextReferenceID() int64 {
+	return atomic.AddInt64(&pm.ReferenceID, 1)
 }
 
 func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
-	var ns string = serviceName + name
+	var ns = serviceName + name
 	pm.mu.RLock()
 	if _, ok := pm.proxies[ns]; ok {
 		defer pm.mu.RUnlock()
@@ -70,7 +70,7 @@ func (pm *proxyManager) createProxy(serviceName *string, name *string) (core.IDi
 }
 
 func (pm *proxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
-	var ns string = *serviceName + *name
+	var ns = *serviceName + *name
 	pm.mu.RLock()
 	if _, ok := pm.proxies[ns]; ok {
 		pm.mu.RUnlock()
@@ -111,8 +111,8 @@ func (pm *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (
 		return newRingbufferProxy(pm.client, serviceName, name)
 	} else if common.ServiceNamePNCounter == *serviceName {
 		return newPNCounterProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameIdGenerator == *serviceName {
-		return newFlakeIdGenerator(pm.client, serviceName, name)
+	} else if common.ServiceNameIDGenerator == *serviceName {
+		return newFlakeIDGenerator(pm.client, serviceName, name)
 	}
 	return nil, nil
 }

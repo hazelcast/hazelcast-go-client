@@ -199,11 +199,11 @@ type IMap interface {
 	// then the entry lives forever. If the TTL is negative, then the TTL
 	// from the map configuration will be used (default: forever).
 	// For example:
-	// 	mp.SetWithTtl("testingKey1", "testingValue1", 5 * time. Second)
+	// 	mp.SetWithTTL("testingKey1", "testingValue1", 5 * time. Second)
 	// will expire and get evicted after 5 seconds whereas
-	// mp.SetWithTtl("testingKey1", "testingValue1", 5 * time. Millisecond)
+	// mp.SetWithTTL("testingKey1", "testingValue1", 5 * time. Millisecond)
 	// will expire and get evicted after 5 milliseconds.
-	SetWithTtl(key interface{}, value interface{}, ttl time.Duration) (err error)
+	SetWithTTL(key interface{}, value interface{}, ttl time.Duration) (err error)
 
 	// PutIfAbsent associates the specified key with the given value
 	// if it is not already associated.
@@ -309,31 +309,32 @@ type IMap interface {
 	// AddEntryListener adds a continuous entry listener for this map.
 	// To receive an event, you should implement a corresponding interface for that event such as
 	// IEntryAddedListener, IEntryRemovedListener, IEntryUpdatedListener.
-	// AddEntryListener returns UUID which is used as a key to remove the listener.
+	// AddEntryListener returns uuid which is used as a key to remove the listener.
 	AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error)
 
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map filtered with the given predicate.
 	// To receive an event, you should implement a corresponding interface for that event such as
 	// IEntryAddedListener, IEntryRemovedListener, IEntryUpdatedListener etc.
-	// AddEntryListenerWithPredicate returns UUID which is used as a key to remove the listener.
+	// AddEntryListenerWithPredicate returns uuid which is used as a key to remove the listener.
 	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds a continuous entry listener for this map filtered with the given key.
 	// To receive an event, you should implement a corresponding interface for that event such as
 	// IEntryAddedListener, IEntryRemovedListener, IEntryUpdatedListener.
-	// AddEntryListenerToKey returns UUID which is used as a key to remove the listener.
+	// AddEntryListenerToKey returns uuid which is used as a key to remove the listener.
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map filtered with the given key and predicate.
 	// To receive an event, you should implement a corresponding interface for that event such as
 	// IEntryAddedListener, IEntryRemovedListener, IEntryUpdatedListener.
-	// AddEntryListenerToKeyWithPredicate returns UUID which is used as a key to remove the listener.
-	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (registrationID *string, err error)
+	// AddEntryListenerToKeyWithPredicate returns uuid which is used as a key to remove the listener.
+	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (
+		registrationID *string, err error)
 
-	// RemoveEntryListener removes the specified entry listener with the given registrationId.
+	// RemoveEntryListener removes the specified entry listener with the given registrationID.
 	// RemoveEntryListener returns silently if there is no such listener added before.
 	// RemoveEntryListener true if registration is removed, false otherwise.
-	RemoveEntryListener(registrationId *string) (removed bool, err error)
+	RemoveEntryListener(registrationID *string) (removed bool, err error)
 
 	// ExecuteOnKey applies the user defined EntryProcessor to the entry mapped by the key.
 	// ExecuteOnKey returns the result of EntryProcessor's process method.

@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	sampleClassId   = 1
-	sampleFactoryId = 1
+	sampleClassID   = 1
+	sampleFactoryID = 1
 )
 
 // engineer implements IdentifiedDataSerializable interface.
@@ -51,10 +51,7 @@ func (e *engineer) ReadPortable(reader serialization.PortableReader) error {
 		return err
 	}
 	e.languages, err = reader.ReadUTFArray("languages")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (e *engineer) WritePortable(writer serialization.PortableWriter) error {
@@ -65,19 +62,19 @@ func (e *engineer) WritePortable(writer serialization.PortableWriter) error {
 	return nil
 }
 
-func (e *engineer) FactoryId() int32 {
-	return sampleFactoryId
+func (e *engineer) FactoryID() int32 {
+	return sampleFactoryID
 }
 
-func (e *engineer) ClassId() int32 {
-	return sampleClassId
+func (e *engineer) ClassID() int32 {
+	return sampleClassID
 }
 
 type engineerFactory struct {
 }
 
-func (*engineerFactory) Create(classId int32) serialization.Portable {
-	if classId == sampleClassId {
+func (*engineerFactory) Create(classID int32) serialization.Portable {
+	if classID == sampleClassID {
 		return &engineer{}
 	}
 	return nil
@@ -90,7 +87,7 @@ func main() {
 	en := &engineer{"Furkan", "Şenharputlu", 22, []string{"Turkish", "English", "Arabic"}}
 	enFactory := &engineerFactory{}
 
-	config.SerializationConfig().AddPortableFactory(en.FactoryId(), enFactory)
+	config.SerializationConfig().AddPortableFactory(en.FactoryID(), enFactory)
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
 	if err != nil {
 		log.Println(err)

@@ -15,9 +15,10 @@
 package assert
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/core"
 )
 
 func Equalf(t *testing.T, err error, l interface{}, r interface{}, message string) {

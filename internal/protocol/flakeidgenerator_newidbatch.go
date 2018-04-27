@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func FlakeIdGeneratorNewIdBatchCalculateSize(name *string, batchSize int32) int {
+func FlakeIDGeneratorNewIDBatchCalculateSize(name *string, batchSize int32) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -26,10 +26,10 @@ func FlakeIdGeneratorNewIdBatchCalculateSize(name *string, batchSize int32) int 
 	return dataSize
 }
 
-func FlakeIdGeneratorNewIdBatchEncodeRequest(name *string, batchSize int32) *ClientMessage {
+func FlakeIDGeneratorNewIDBatchEncodeRequest(name *string, batchSize int32) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, FlakeIdGeneratorNewIdBatchCalculateSize(name, batchSize))
-	clientMessage.SetMessageType(flakeidgeneratorNewIdBatch)
+	clientMessage := NewClientMessage(nil, FlakeIDGeneratorNewIDBatchCalculateSize(name, batchSize))
+	clientMessage.SetMessageType(flakeidgeneratorNewIDBatch)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(batchSize)
@@ -37,7 +37,7 @@ func FlakeIdGeneratorNewIdBatchEncodeRequest(name *string, batchSize int32) *Cli
 	return clientMessage
 }
 
-func FlakeIdGeneratorNewIdBatchDecodeResponse(clientMessage *ClientMessage) func() (base int64, increment int64, batchSize int32) {
+func FlakeIDGeneratorNewIDBatchDecodeResponse(clientMessage *ClientMessage) func() (base int64, increment int64, batchSize int32) {
 	// Decode response from client message
 	return func() (base int64, increment int64, batchSize int32) {
 		if clientMessage.IsComplete() {

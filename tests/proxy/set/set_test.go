@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	set, _ = client.GetSet("mySet")
@@ -59,8 +59,8 @@ func TestSetProxy_AddAll(t *testing.T) {
 	added, err := set.AddAll(all)
 	assert.Equalf(t, err, added, true, "set AddAll() failed")
 	res1, err := set.Contains("1")
-	res2, err := set.Contains("2")
 	assert.Equalf(t, err, res1, true, "set AddAll() failed")
+	res2, err := set.Contains("2")
 	assert.Equalf(t, err, res2, true, "set AddAll() failed")
 }
 

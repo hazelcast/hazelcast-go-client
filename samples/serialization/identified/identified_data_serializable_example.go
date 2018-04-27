@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	sampleClassId   = 1
-	sampleFactoryId = 1
+	sampleClassID   = 1
+	sampleFactoryID = 1
 )
 
 // student implements IdentifiedDataSerializable interface.
@@ -51,10 +51,7 @@ func (s *student) ReadData(input serialization.DataInput) error {
 		return err
 	}
 	s.gpa, err = input.ReadFloat32()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (s *student) WriteData(output serialization.DataOutput) error {
@@ -65,19 +62,19 @@ func (s *student) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-func (s *student) FactoryId() int32 {
-	return sampleFactoryId
+func (s *student) FactoryID() int32 {
+	return sampleFactoryID
 }
 
-func (s *student) ClassId() int32 {
-	return sampleClassId
+func (s *student) ClassID() int32 {
+	return sampleClassID
 }
 
 type studentFactory struct {
 }
 
-func (*studentFactory) Create(classId int32) serialization.IdentifiedDataSerializable {
-	if classId == sampleClassId {
+func (*studentFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
+	if classID == sampleClassID {
 		return &student{}
 	}
 	return nil
@@ -90,7 +87,7 @@ func main() {
 	st := &student{10, "Furkan", "Şenharputlu", 3.5}
 	stFactory := &studentFactory{}
 
-	config.SerializationConfig().AddDataSerializableFactory(st.FactoryId(), stFactory)
+	config.SerializationConfig().AddDataSerializableFactory(st.FactoryID(), stFactory)
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
 	if err != nil {
 		log.Println(err)

@@ -5,21 +5,23 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 func TestProxy_Destroy(t *testing.T) {
 	name := "testMap"
 	serviceName := common.ServiceNameMap
 	testMap, err := client.GetDistributedObject(serviceName, name)
+	assert.ErrorNil(t, err)
 	res, err := testMap.Destroy()
 
-	if res != true || err != nil {
+	if !res || err != nil {
 		t.Error("Destroy() works wrong")
 	}
 
 	res, err = testMap.Destroy()
 
-	if res != false || err != nil {
+	if res || err != nil {
 		t.Error("Destroy() works wrong")
 	}
 }

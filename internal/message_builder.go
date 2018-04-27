@@ -28,9 +28,9 @@ func (mb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
 	if msg.HasFlags(common.BeginEndFlag) > 0 {
 		mb.responseChannel <- msg
 	} else if msg.HasFlags(common.BeginFlag) > 0 {
-		mb.incompleteMessages[msg.CorrelationId()] = msg
+		mb.incompleteMessages[msg.CorrelationID()] = msg
 	} else {
-		message, found := mb.incompleteMessages[msg.CorrelationId()]
+		message, found := mb.incompleteMessages[msg.CorrelationID()]
 		if !found {
 			return
 		}
@@ -38,7 +38,7 @@ func (mb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
 		if msg.HasFlags(common.EndFlag) > 0 {
 			message.AddFlags(common.BeginEndFlag)
 			mb.responseChannel <- message
-			delete(mb.incompleteMessages, msg.CorrelationId())
+			delete(mb.incompleteMessages, msg.CorrelationID())
 		}
 	}
 }

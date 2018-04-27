@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	DefaultAddress       = "127.0.0.1"
-	DefaultPort          = 5701
-	MemberAdded    int32 = 1
-	MemberRemoved  int32 = 2
+	defaultAddress       = "127.0.0.1"
+	defaultPort          = 5701
+	memberAdded    int32 = 1
+	memberRemoved  int32 = 2
 )
 
 var wg sync.WaitGroup
@@ -40,7 +40,7 @@ type clusterService struct {
 	client                 *HazelcastClient
 	config                 *config.ClientConfig
 	members                atomic.Value
-	ownerUuid              atomic.Value
+	ownerUUID              atomic.Value
 	uuid                   atomic.Value
 	ownerConnectionAddress atomic.Value
 	listeners              atomic.Value
@@ -53,8 +53,10 @@ func newClusterService(client *HazelcastClient, config *config.ClientConfig) *cl
 	service.ownerConnectionAddress.Store(&protocol.Address{})
 	service.members.Store(make([]*protocol.Member, 0))    //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
-	service.ownerUuid.Store("")                           //Initialize
-	service.uuid.Store("")                                //Initialize
+	ownerUUID := ""
+	service.ownerUUID.Store(&ownerUUID) //Initialize
+	uuid := ""
+	service.uuid.Store(&uuid) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
 		service.AddListener(membershipListener)
 	}
@@ -76,12 +78,12 @@ func getPossibleAddresses(addressList []string, memberList []*protocol.Member) [
 	}
 	allAddresses := make(map[protocol.Address]struct{}, len(addressList)+len(memberList))
 	for _, address := range addressList {
-		ip, port := common.GetIpAndPort(address)
-		if common.IsValidIpAddress(ip) {
+		ip, port := common.GetIPAndPort(address)
+		if common.IsValidIPAddress(ip) {
 			if port == -1 {
-				allAddresses[*protocol.NewAddressWithParameters(ip, DefaultPort)] = struct{}{}
-				allAddresses[*protocol.NewAddressWithParameters(ip, DefaultPort+1)] = struct{}{}
-				allAddresses[*protocol.NewAddressWithParameters(ip, DefaultPort+2)] = struct{}{}
+				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
+				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
+				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
 			} else {
 				allAddresses[*protocol.NewAddressWithParameters(ip, port)] = struct{}{}
 			}
@@ -93,12 +95,12 @@ func getPossibleAddresses(addressList []string, memberList []*protocol.Member) [
 	}
 	addresses := make([]protocol.Address, len(allAddresses))
 	index := 0
-	for k, _ := range allAddresses {
+	for k := range allAddresses {
 		addresses[index] = k
 		index++
 	}
 	if len(addresses) == 0 {
-		addresses = append(addresses, *protocol.NewAddressWithParameters(DefaultAddress, DefaultPort))
+		addresses = append(addresses, *protocol.NewAddressWithParameters(defaultAddress, defaultPort))
 	}
 	return addresses
 }
@@ -137,7 +139,8 @@ func (cs *clusterService) connectToCluster() error {
 			}
 			err := cs.connectToAddress(&address)
 			if err != nil {
-				log.Println("The following error occured while trying to connect to cluster. attempt ", currentAttempt, " of ", attempLimit, " error: ", err)
+				log.Println("The following error occurred while trying to connect to cluster. attempt ",
+					currentAttempt, " of ", attempLimit, " error: ", err)
 				if _, ok := err.(*core.HazelcastAuthenticationError); ok {
 					return err
 				}
@@ -187,10 +190,10 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	if err != nil {
 		return err
 	}
-	registrationId := protocol.ClientAddMembershipListenerDecodeResponse(response)()
-	wg.Wait() //Wait until the inital member list is fetched.
+	registrationID := protocol.ClientAddMembershipListenerDecodeResponse(response)()
+	wg.Wait() // Wait until the initial member list is fetched.
 	cs.logMembers()
-	log.Println("Registered membership listener with Id ", *registrationId)
+	log.Println("Registered membership listener with ID ", *registrationID)
 	return nil
 }
 
@@ -207,7 +210,7 @@ func (cs *clusterService) logMembers() {
 }
 
 func (cs *clusterService) AddListener(listener interface{}) *string {
-	registrationId, _ := common.NewUUID()
+	registrationID, _ := common.NewUUID()
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	listeners := cs.listeners.Load().(map[string]interface{})
@@ -215,12 +218,12 @@ func (cs *clusterService) AddListener(listener interface{}) *string {
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
-	copyListeners[registrationId] = listener
+	copyListeners[registrationID] = listener
 	cs.listeners.Store(copyListeners)
-	return &registrationId
+	return &registrationID
 }
 
-func (cs *clusterService) RemoveListener(registrationId *string) bool {
+func (cs *clusterService) RemoveListener(registrationID *string) bool {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	listeners := cs.listeners.Load().(map[string]interface{})
@@ -228,18 +231,18 @@ func (cs *clusterService) RemoveListener(registrationId *string) bool {
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
-	_, found := copyListeners[*registrationId]
+	_, found := copyListeners[*registrationID]
 	if found {
-		delete(copyListeners, *registrationId)
+		delete(copyListeners, *registrationID)
 	}
 	cs.listeners.Store(copyListeners)
 	return found
 }
 
 func (cs *clusterService) handleMember(member *protocol.Member, eventType int32) {
-	if eventType == MemberAdded {
+	if eventType == memberAdded {
 		cs.memberAdded(member)
-	} else if eventType == MemberRemoved {
+	} else if eventType == memberRemoved {
 		cs.memberRemoved(member)
 	}
 	cs.logMembers()
@@ -287,9 +290,7 @@ func (cs *clusterService) handleMemberAttributeChange(uuid *string, key *string,
 func (cs *clusterService) memberAdded(member *protocol.Member) {
 	members := cs.members.Load().([]*protocol.Member)
 	copyMembers := make([]*protocol.Member, len(members))
-	for index, member := range members {
-		copyMembers[index] = member
-	}
+	copy(copyMembers, members)
 	copyMembers = append(copyMembers, member)
 	cs.members.Store(copyMembers)
 	listeners := cs.listeners.Load().(map[string]interface{})
@@ -357,10 +358,10 @@ func (cs *clusterService) GetMember(address core.IAddress) core.IMember {
 	return nil
 }
 
-func (cs *clusterService) GetMemberByUuid(uuid string) core.IMember {
+func (cs *clusterService) GetMemberByUUID(uuid string) core.IMember {
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
-		if member.Uuid() == uuid {
+		if member.UUID() == uuid {
 			copyMember := *member
 			return &copyMember
 		}

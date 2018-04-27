@@ -24,16 +24,16 @@ import (
 )
 
 const (
-	Authenticated                = iota
-	CredentialsFailed            = iota
-	SerializationVersionMismatch = iota
+	authenticated = iota
+	credentialsFailed
+	serializationVersionMismatch
 )
 
 type connectionManager struct {
 	client              *HazelcastClient
 	connections         map[string]*Connection
 	lock                sync.RWMutex
-	nextConnectionId    int64
+	nextConnID          int64
 	connectionListeners atomic.Value
 	mu                  sync.Mutex
 }
@@ -47,7 +47,7 @@ func newConnectionManager(client *HazelcastClient) *connectionManager {
 }
 
 func (cm *connectionManager) nextConnectionID() int64 {
-	return atomic.AddInt64(&cm.nextConnectionId, 1)
+	return atomic.AddInt64(&cm.nextConnID, 1)
 }
 
 func (cm *connectionManager) addListener(listener connectionListener) {
@@ -57,15 +57,13 @@ func (cm *connectionManager) addListener(listener connectionListener) {
 		listeners := cm.connectionListeners.Load().([]connectionListener)
 		size := len(listeners) + 1
 		copyListeners := make([]connectionListener, size)
-		for index, listener := range listeners {
-			copyListeners[index] = listener
-		}
+		copy(copyListeners, listeners)
 		copyListeners[size-1] = listener
 		cm.connectionListeners.Store(copyListeners)
 	}
 }
 
-func (cm *connectionManager) getActiveConnection(address *protocol.Address) *Connection {
+func (cm *connectionManager) getActiveConnection(address core.IAddress) *Connection {
 	if address == nil {
 		return nil
 	}
@@ -92,7 +90,8 @@ func (cm *connectionManager) connectionClosed(connection *Connection, cause erro
 	//If Connection was authenticated fire event
 	if connection.endpoint.Load().(*protocol.Address).Host() != "" {
 		cm.lock.Lock()
-		delete(cm.connections, connection.endpoint.Load().(*protocol.Address).Host()+":"+strconv.Itoa(connection.endpoint.Load().(*protocol.Address).Port()))
+		delete(cm.connections, connection.endpoint.Load().(*protocol.Address).Host()+":"+
+			strconv.Itoa(connection.endpoint.Load().(*protocol.Address).Port()))
 		listeners := cm.connectionListeners.Load().([]connectionListener)
 		cm.lock.Unlock()
 		for _, listener := range listeners {
@@ -106,8 +105,7 @@ func (cm *connectionManager) connectionClosed(connection *Connection, cause erro
 	}
 }
 
-func (cm *connectionManager) getOrConnect(address *protocol.Address, asOwner bool) (chan *Connection, chan error) {
-
+func (cm *connectionManager) getOrConnect(address core.IAddress, asOwner bool) (chan *Connection, chan error) {
 	ch := make(chan *Connection, 1)
 	err := make(chan error, 1)
 	go func() {
@@ -126,9 +124,9 @@ func (cm *connectionManager) getOrConnect(address *protocol.Address, asOwner boo
 		}
 		cm.lock.RUnlock()
 		//Open new Connection
-		error := cm.openNewConnection(address, ch, asOwner)
-		if error != nil {
-			err <- error
+		connErr := cm.openNewConnection(address, ch, asOwner)
+		if connErr != nil {
+			err <- connErr
 		}
 	}()
 	return ch, err
@@ -140,13 +138,13 @@ func (cm *connectionManager) ConnectionCount() int32 {
 	return int32(len(cm.connections))
 }
 
-func (cm *connectionManager) openNewConnection(address *protocol.Address, resp chan *Connection, asOwner bool) error {
+func (cm *connectionManager) openNewConnection(address core.IAddress, resp chan *Connection, asOwner bool) error {
 	if !asOwner && cm.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address).Host() == "" {
 		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
 	invocationService := cm.client.InvocationService
-	connectionId := cm.nextConnectionID()
-	con := newConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionId, cm)
+	connectionID := cm.nextConnectionID()
+	con := newConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionID, cm)
 	if con == nil {
 		return core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
@@ -169,8 +167,8 @@ func (cm *connectionManager) getOwnerConnection() *Connection {
 }
 
 func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
-	uuid := cm.client.ClusterService.uuid.Load().(string)
-	ownerUuid := cm.client.ClusterService.ownerUuid.Load().(string)
+	uuid := cm.client.ClusterService.uuid.Load().(*string)
+	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*string)
 	clientType := protocol.ClientType
 	name := cm.client.ClientConfig.GroupConfig().Name()
 	password := cm.client.ClientConfig.GroupConfig().Password()
@@ -178,8 +176,8 @@ func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwne
 	request := protocol.ClientAuthenticationEncodeRequest(
 		&name,
 		&password,
-		&uuid,
-		&ownerUuid,
+		uuid,
+		ownerUUID,
 		asOwner,
 		&clientType,
 		1,
@@ -188,29 +186,29 @@ func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwne
 	result, err := cm.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		return err
-	} else {
-
-		status, address, uuid, ownerUuid /*serializationVersion*/, _, serverHazelcastVersion /*clientUnregisteredMembers*/, _ := protocol.ClientAuthenticationDecodeResponse(result)()
-		switch status {
-		case Authenticated:
-			connection.serverHazelcastVersion = serverHazelcastVersion
-			connection.endpoint.Store(address)
-			connection.isOwnerConnection = asOwner
-			cm.lock.Lock()
-			cm.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
-			cm.lock.Unlock()
-			cm.fireConnectionAddedEvent(connection)
-			if asOwner {
-				cm.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*protocol.Address))
-				cm.client.ClusterService.ownerUuid.Store(*ownerUuid)
-				cm.client.ClusterService.uuid.Store(*uuid)
-			}
-		case CredentialsFailed:
-			return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
-		case SerializationVersionMismatch:
-			return core.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
-		}
 	}
+	/*serializationVersion, clientUnregisteredMembers*/
+	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := protocol.ClientAuthenticationDecodeResponse(result)()
+	switch status {
+	case authenticated:
+		connection.serverHazelcastVersion = serverHazelcastVersion
+		connection.endpoint.Store(address)
+		connection.isOwnerConnection = asOwner
+		cm.lock.Lock()
+		cm.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
+		cm.lock.Unlock()
+		cm.fireConnectionAddedEvent(connection)
+		if asOwner {
+			cm.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*protocol.Address))
+			cm.client.ClusterService.ownerUUID.Store(ownerUUID)
+			cm.client.ClusterService.uuid.Store(uuid)
+		}
+	case credentialsFailed:
+		return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
+	case serializationVersionMismatch:
+		return core.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
+	}
+
 	return nil
 }
 

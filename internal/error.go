@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
-func CreateHazelcastError(err *protocol.Error) core.HazelcastError {
+func createHazelcastError(err *protocol.Error) core.HazelcastError {
 	stackTrace := ""
 	for _, trace := range err.StackTrace() {
 		stackTrace += fmt.Sprintf("\n %s.%s(%s:%d)", trace.DeclaringClass(), trace.MethodName(), trace.FileName(),
