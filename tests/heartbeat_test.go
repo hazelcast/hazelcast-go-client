@@ -39,7 +39,7 @@ func (l *heartbeatListener) OnHeartbeatStopped(connection *internal.Connection) 
 
 func TestHeartbeatStoppedForConnection(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	heartbeatListener := &heartbeatListener{wg: wg}
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()

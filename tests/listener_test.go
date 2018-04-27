@@ -12,7 +12,7 @@ import (
 
 func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)
@@ -41,7 +41,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 
 func TestListenerWithMultipleMembers(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
@@ -65,7 +65,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 
 func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(10)

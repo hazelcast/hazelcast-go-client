@@ -27,7 +27,7 @@ import (
 )
 
 func TestNonSmartInvoke(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetSmartRouting(false)
@@ -44,7 +44,7 @@ func TestNonSmartInvoke(t *testing.T) {
 }
 
 func TestSingleConnectionWithManyMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
@@ -67,7 +67,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 }
 
 func TestInvocationTimeout(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100)
@@ -84,7 +84,7 @@ func TestInvocationTimeout(t *testing.T) {
 }
 
 func TestInvocationRetry(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
@@ -110,7 +110,7 @@ func TestInvocationRetry(t *testing.T) {
 }
 
 func TestInvocationWithShutdown(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
@@ -126,7 +126,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 
 func TestInvocationNotSent(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100).
