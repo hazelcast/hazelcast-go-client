@@ -34,7 +34,7 @@ type Connection struct {
 	received               chan *protocol.ClientMessage
 	socket                 net.Conn
 	clientMessageBuilder   *clientMessageBuilder
-	closed                 chan bool
+	closed                 chan struct{}
 	endpoint               atomic.Value
 	sendingError           chan int64
 	status                 int32
@@ -54,10 +54,10 @@ type Connection struct {
 func newConnection(address core.IAddress, responseChannel chan *protocol.ClientMessage, sendingError chan int64,
 	connectionID int64, connectionManager *connectionManager) *Connection {
 	connection := Connection{pending: make(chan *protocol.ClientMessage, 1),
-		received: make(chan *protocol.ClientMessage, 1),
-		closed:   make(chan bool, 1),
 		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel,
 			incompleteMessages: make(map[int64]*protocol.ClientMessage)}, sendingError: sendingError,
+		received:          make(chan *protocol.ClientMessage, 1),
+		closed:            make(chan struct{}),
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
 		connectionID:      connectionID,
@@ -131,15 +131,30 @@ func (c *Connection) write(clientMessage *protocol.ClientMessage) error {
 func (c *Connection) read() {
 	buf := make([]byte, BufferSize)
 	for {
+		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
 		n, err := c.socket.Read(buf)
-		c.readBuffer = append(c.readBuffer, buf[:n]...)
+
+		select {
+		// Check if the connection is closed
+		case <-c.closed:
+			return
+		default:
+			// If the connection is still open continue as normal
+		}
+
 		if err != nil {
+			netErr, ok := err.(net.Error)
+			// Check if we got a timeout error, if so we will try again instead of closing the connection
+			if ok && netErr.Timeout() {
+				continue
+			}
 			c.close(err)
 			return
 		}
 		if n == 0 {
 			continue
 		}
+		c.readBuffer = append(c.readBuffer, buf[:n]...)
 		c.receiveMessage()
 	}
 }

@@ -221,6 +221,13 @@ func (cm *connectionManager) fireConnectionAddedEvent(connection *Connection) {
 	}
 }
 
+func (cm *connectionManager) shutdown() {
+	activeCons := cm.getActiveConnections()
+	for _, con := range activeCons {
+		con.close(core.NewHazelcastClientNotActiveError("client is shutting down", nil))
+	}
+}
+
 type connectionListener interface {
 	onConnectionClosed(connection *Connection, cause error)
 	onConnectionOpened(connection *Connection)

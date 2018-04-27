@@ -165,9 +165,12 @@ func (c *HazelcastClient) init() error {
 func (c *HazelcastClient) Shutdown() {
 	if c.LifecycleService.isLive.Load().(bool) {
 		c.LifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
+		c.ConnectionManager.shutdown()
 		c.PartitionService.shutdown()
+		c.ClusterService.shutdown()
 		c.InvocationService.shutdown()
 		c.HeartBeatService.shutdown()
+		c.ListenerService.shutdown()
 		c.LifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
 	}
 }

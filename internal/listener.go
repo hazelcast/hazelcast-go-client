@@ -39,6 +39,7 @@ type listenerService struct {
 	registerListenerInternalHandleErrorChannel chan registrationIDConnection
 	registerListenerInitChannel                chan *listenerRegistrationKey
 	connectToAllMembersChannel                 chan struct{}
+	cancel                                     chan struct{}
 }
 
 type removedErr struct {
@@ -84,6 +85,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 		registerListenerInternalHandleErrorChannel: make(chan registrationIDConnection, 1),
 		registerListenerInitChannel:                make(chan *listenerRegistrationKey),
 		connectToAllMembersChannel:                 make(chan struct{}, 1),
+		cancel: make(chan struct{}),
 	}
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
@@ -103,20 +105,28 @@ func (ls *listenerService) connectToAllMembersInternal() {
 
 func (ls *listenerService) connectToAllMembersPeriodically() {
 	ticker := time.NewTicker(1 * time.Second)
-	for range ticker.C {
-		ls.connectToAllMembersChannel <- struct{}{}
+	for {
+		select {
+		case <-ls.cancel:
+			return
+		case <-ticker.C:
+			ls.connectToAllMembersChannel <- struct{}{}
+		}
 	}
 }
 
 func (ls *listenerService) process() {
 	for {
 		select {
+		case <-ls.cancel:
+			return
 		case registrationIDConnection := <-ls.registerListenerOnConnectionChannel:
 			ls.registerListenerOnConnectionErrChannel <- ls.registerListenerOnConnection(registrationIDConnection.registrationID,
 				registrationIDConnection.connection)
 		case registrationIDRequestEncoder := <-ls.deregisterListenerChannel:
 			removed, err := ls.deregisterListenerInternal(registrationIDRequestEncoder.registrationID,
 				registrationIDRequestEncoder.requestEncoder)
+
 			removedErr := removedErr{
 				removed: removed,
 				err:     err,
@@ -337,4 +347,8 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 	}
 	return core.NewHazelcastTimeoutError("registering listeners timed out.", nil)
 
+}
+
+func (ls *listenerService) shutdown() {
+	close(ls.cancel)
 }

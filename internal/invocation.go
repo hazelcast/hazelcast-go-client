@@ -35,7 +35,6 @@ type invocation struct {
 	request                 *protocol.ClientMessage
 	partitionID             int32
 	response                chan *protocol.ClientMessage
-	closed                  chan bool
 	err                     chan error
 	done                    chan bool
 	eventHandler            func(clientMessage *protocol.ClientMessage)
@@ -63,7 +62,6 @@ func newInvocation(request *protocol.ClientMessage, partitionID int32, address *
 		boundConnection: connection,
 		response:        make(chan *protocol.ClientMessage, 10),
 		err:             make(chan error, 1),
-		closed:          make(chan bool, 1),
 		done:            make(chan bool, 1),
 		timeout:         time.After(client.ClientConfig.ClientNetworkConfig().InvocationTimeout()),
 	}
@@ -263,7 +261,6 @@ func (is *invocationService) sendToConnection(invocation *invocation, connection
 		is.notSentMessages <- invocation.request.CorrelationID()
 	} else {
 		invocation.sentConnection = connection
-		invocation.closed = connection.closed
 	}
 
 }
