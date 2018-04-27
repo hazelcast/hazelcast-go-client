@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	DefaultGroupName         = "dev"
-	DefaultGroupPassword     = "dev-pass"
-	DefaultInvocationTimeout = 120 * time.Second
+	defaultGroupName         = "dev"
+	defaultGroupPassword     = "dev-pass"
+	defaultInvocationTimeout = 120 * time.Second
 )
 
 // ClientConfig is the main configuration to setup a Hazelcast client.
@@ -52,8 +52,8 @@ type ClientConfig struct {
 	// heartbeatInterval is heartbeat internal.
 	heartbeatInterval time.Duration
 
-	// flakeIdGeneratorConfigMap is mapping of names to flakeIdGeneratorConfigs.
-	flakeIdGeneratorConfigMap map[string]*FlakeIdGeneratorConfig
+	// flakeIDGeneratorConfigMap is mapping of names to flakeIDGeneratorConfigs.
+	flakeIDGeneratorConfigMap map[string]*FlakeIDGeneratorConfig
 }
 
 // NewClientConfig returns a new ClientConfig with default configuration.
@@ -63,7 +63,7 @@ func NewClientConfig() *ClientConfig {
 		membershipListeners:       make([]interface{}, 0),
 		serializationConfig:       NewSerializationConfig(),
 		lifecycleListeners:        make([]interface{}, 0),
-		flakeIdGeneratorConfigMap: make(map[string]*FlakeIdGeneratorConfig, 0),
+		flakeIDGeneratorConfigMap: make(map[string]*FlakeIDGeneratorConfig),
 	}
 }
 
@@ -114,28 +114,28 @@ func (cc *ClientConfig) HeartbeatInterval() time.Duration {
 	return cc.heartbeatInterval
 }
 
-// GetFlakeIdGeneratorConfig returns the FlakeIdGeneratorConfig for the given name, creating one
+// GetFlakeIDGeneratorConfig returns the FlakeIDGeneratorConfig for the given name, creating one
 // if necessary and adding it to the map of known configurations.
 // If no configuration is found with the given name it will create a new one with the default config.
-func (cc *ClientConfig) GetFlakeIdGeneratorConfig(name string) *FlakeIdGeneratorConfig {
+func (cc *ClientConfig) GetFlakeIDGeneratorConfig(name string) *FlakeIDGeneratorConfig {
 	//TODO:: add config pattern matcher
-	if config, found := cc.flakeIdGeneratorConfigMap[name]; found {
+	if config, found := cc.flakeIDGeneratorConfigMap[name]; found {
 		return config
 	}
-	defConfig, found := cc.flakeIdGeneratorConfigMap["default"]
+	_, found := cc.flakeIDGeneratorConfigMap["default"]
 	if !found {
-		defConfig = NewFlakeIdGeneratorConfig("default")
-		cc.flakeIdGeneratorConfigMap["default"] = defConfig
+		defConfig := NewFlakeIDGeneratorConfig("default")
+		cc.flakeIDGeneratorConfigMap["default"] = defConfig
 	}
-	config := NewFlakeIdGeneratorConfig(name)
-	cc.flakeIdGeneratorConfigMap[name] = config
+	config := NewFlakeIDGeneratorConfig(name)
+	cc.flakeIDGeneratorConfigMap[name] = config
 	return config
 
 }
 
-// AddFlakeIdGeneratorConfig adds the given config to the configurations map.
-func (cc *ClientConfig) AddFlakeIdGeneratorConfig(config *FlakeIdGeneratorConfig) *ClientConfig {
-	cc.flakeIdGeneratorConfigMap[config.Name()] = config
+// AddFlakeIDGeneratorConfig adds the given config to the configurations map.
+func (cc *ClientConfig) AddFlakeIDGeneratorConfig(config *FlakeIDGeneratorConfig) *ClientConfig {
+	cc.flakeIDGeneratorConfigMap[config.Name()] = config
 	return cc
 }
 
@@ -191,8 +191,13 @@ type SerializationConfig struct {
 
 // NewSerializationConfig returns a SerializationConfig with default values.
 func NewSerializationConfig() *SerializationConfig {
-	return &SerializationConfig{isBigEndian: true, dataSerializableFactories: make(map[int32]serialization.IdentifiedDataSerializableFactory),
-		portableFactories: make(map[int32]serialization.PortableFactory), portableVersion: 0, customSerializers: make(map[reflect.Type]serialization.Serializer)}
+	return &SerializationConfig{
+		isBigEndian:               true,
+		dataSerializableFactories: make(map[int32]serialization.IdentifiedDataSerializableFactory),
+		portableFactories:         make(map[int32]serialization.PortableFactory),
+		portableVersion:           0,
+		customSerializers:         make(map[reflect.Type]serialization.Serializer),
+	}
 }
 
 // IsBigEndian returns isBigEndian bool value.
@@ -236,13 +241,13 @@ func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
 }
 
 // AddDataSerializableFactory adds an IdentifiedDataSerializableFactory for a given factory ID.
-func (sc *SerializationConfig) AddDataSerializableFactory(factoryId int32, f serialization.IdentifiedDataSerializableFactory) {
-	sc.dataSerializableFactories[factoryId] = f
+func (sc *SerializationConfig) AddDataSerializableFactory(factoryID int32, f serialization.IdentifiedDataSerializableFactory) {
+	sc.dataSerializableFactories[factoryID] = f
 }
 
 // AddPortableFactory adds a PortableFactory for a given factory ID.
-func (sc *SerializationConfig) AddPortableFactory(factoryId int32, pf serialization.PortableFactory) {
-	sc.portableFactories[factoryId] = pf
+func (sc *SerializationConfig) AddPortableFactory(factoryID int32, pf serialization.PortableFactory) {
+	sc.portableFactories[factoryID] = pf
 }
 
 // AddClassDefinition registers class definitions explicitly.
@@ -257,7 +262,7 @@ func (sc *SerializationConfig) SetPortableVersion(version int32) {
 
 // AddCustomSerializer adds a custom serializer for a given type. It can be an interface type or a struct type.
 func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer serialization.Serializer) error {
-	if serializer.Id() > 0 {
+	if serializer.ID() > 0 {
 		sc.customSerializers[typ] = serializer
 	} else {
 		return core.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
@@ -267,7 +272,7 @@ func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer 
 
 // SetGlobalSerializer sets the global serializer.
 func (sc *SerializationConfig) SetGlobalSerializer(serializer serialization.Serializer) error {
-	if serializer.Id() > 0 {
+	if serializer.ID() > 0 {
 		sc.globalSerializer = serializer
 	} else {
 		return core.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
@@ -288,7 +293,7 @@ type GroupConfig struct {
 
 // NewGroupConfig returns a new GroupConfig with default group name and password.
 func NewGroupConfig() *GroupConfig {
-	return &GroupConfig{name: DefaultGroupName, password: DefaultGroupPassword}
+	return &GroupConfig{name: defaultGroupName, password: defaultGroupPassword}
 }
 
 // Name returns the group name of the group.
@@ -359,7 +364,7 @@ func NewClientNetworkConfig() *ClientNetworkConfig {
 		connectionTimeout:       5 * time.Second,
 		redoOperation:           false,
 		smartRouting:            true,
-		invocationTimeout:       DefaultInvocationTimeout,
+		invocationTimeout:       defaultInvocationTimeout,
 	}
 }
 

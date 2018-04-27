@@ -22,47 +22,49 @@ import (
 )
 
 type PortableSerializer struct {
-	service         *SerializationService
+	service         *Service
 	portableContext *PortableContext
 	factories       map[int32]serialization.PortableFactory
 }
 
-func NewPortableSerializer(service *SerializationService, portableFactories map[int32]serialization.PortableFactory, portableVersion int32) *PortableSerializer {
+func NewPortableSerializer(service *Service, portableFactories map[int32]serialization.PortableFactory,
+	portableVersion int32) *PortableSerializer {
 	return &PortableSerializer{service, NewPortableContext(service, portableVersion), portableFactories}
 }
 
-func (ps *PortableSerializer) Id() int32 {
+func (ps *PortableSerializer) ID() int32 {
 	return ConstantTypePortable
 }
 
 func (ps *PortableSerializer) Read(input serialization.DataInput) (interface{}, error) {
-	factoryId, err := input.ReadInt32()
+	factoryID, err := input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
-	classId, err := input.ReadInt32()
+	classID, err := input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
-	return ps.ReadObject(input, factoryId, classId)
+	return ps.ReadObject(input, factoryID, classID)
 }
 
-func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryId int32, classId int32) (serialization.Portable, error) {
+func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryID int32, classID int32) (
+	serialization.Portable, error) {
 	version, err := input.ReadInt32()
 	if err != nil {
 		return nil, err
 	}
 
-	factory := ps.factories[factoryId]
+	factory := ps.factories[factoryID]
 	if factory == nil {
-		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryId), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryID), nil)
 	}
 
-	portable := factory.Create(classId)
-	classDefinition := ps.portableContext.LookUpClassDefinition(factoryId, classId, version)
+	portable := factory.Create(classID)
+	classDefinition := ps.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if classDefinition == nil {
 		var backupPos = input.Position()
-		classDefinition, err = ps.portableContext.ReadClassDefinitionFromInput(input, factoryId, classId, version)
+		classDefinition, err = ps.portableContext.ReadClassDefinitionFromInput(input, factoryID, classID, version)
 		if err != nil {
 			input.SetPosition(backupPos)
 			return nil, err
@@ -93,8 +95,8 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 }
 
 func (ps *PortableSerializer) Write(output serialization.DataOutput, i interface{}) error {
-	output.WriteInt32(i.(serialization.Portable).FactoryId())
-	output.WriteInt32(i.(serialization.Portable).ClassId())
+	output.WriteInt32(i.(serialization.Portable).FactoryID())
+	output.WriteInt32(i.(serialization.Portable).ClassID())
 	err := ps.WriteObject(output, i)
 	return err
 }

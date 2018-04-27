@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
 )
 
-func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadId int64) int {
+func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
@@ -30,15 +30,15 @@ func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *serialization.Da
 	return dataSize
 }
 
-func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadId int64) *ClientMessage {
+func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapExecuteOnKeyCalculateSize(name, entryProcessor, key, threadId))
+	clientMessage := NewClientMessage(nil, MapExecuteOnKeyCalculateSize(name, entryProcessor, key, threadID))
 	clientMessage.SetMessageType(mapExecuteOnKey)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(entryProcessor)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
+	clientMessage.AppendInt64(threadID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

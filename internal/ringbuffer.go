@@ -22,20 +22,20 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type RingbufferProxy struct {
+type ringbufferProxy struct {
 	*partitionSpecificProxy
 	capacity int64
 }
 
-func newRingbufferProxy(client *HazelcastClient, serviceName *string, name *string) (*RingbufferProxy, error) {
+func newRingbufferProxy(client *HazelcastClient, serviceName *string, name *string) (*ringbufferProxy, error) {
 	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
 	if err != nil {
 		return nil, err
 	}
-	return &RingbufferProxy{parSpecProxy, -1}, nil
+	return &ringbufferProxy{parSpecProxy, -1}, nil
 }
 
-func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
+func (rp *ringbufferProxy) Capacity() (capacity int64, err error) {
 	if rp.capacity == -1 {
 		request := protocol.RingbufferCapacityEncodeRequest(rp.name)
 		responseMessage, err := rp.invoke(request)
@@ -48,31 +48,31 @@ func (rp *RingbufferProxy) Capacity() (capacity int64, err error) {
 	return rp.capacity, nil
 }
 
-func (rp *RingbufferProxy) Size() (size int64, err error) {
+func (rp *ringbufferProxy) Size() (size int64, err error) {
 	request := protocol.RingbufferSizeEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
 	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferSizeDecodeResponse)
 }
 
-func (rp *RingbufferProxy) TailSequence() (tailSequence int64, err error) {
+func (rp *ringbufferProxy) TailSequence() (tailSequence int64, err error) {
 	request := protocol.RingbufferTailSequenceEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
 	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferTailSequenceDecodeResponse)
 }
 
-func (rp *RingbufferProxy) HeadSequence() (headSequence int64, err error) {
+func (rp *ringbufferProxy) HeadSequence() (headSequence int64, err error) {
 	request := protocol.RingbufferHeadSequenceEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
 	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferHeadSequenceDecodeResponse)
 }
 
-func (rp *RingbufferProxy) RemainingCapacity() (remainingCapacity int64, err error) {
+func (rp *ringbufferProxy) RemainingCapacity() (remainingCapacity int64, err error) {
 	request := protocol.RingbufferRemainingCapacityEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
 	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferRemainingCapacityDecodeResponse)
 }
 
-func (rp *RingbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPolicy) (sequence int64, err error) {
+func (rp *ringbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPolicy) (sequence int64, err error) {
 	itemData, err := rp.validateAndSerialize(item)
 	if err != nil {
 		return
@@ -82,7 +82,7 @@ func (rp *RingbufferProxy) Add(item interface{}, overflowPolicy core.OverflowPol
 	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferAddDecodeResponse)
 }
 
-func (rp *RingbufferProxy) AddAll(items []interface{}, overflowPolicy core.OverflowPolicy) (lastSequence int64, err error) {
+func (rp *ringbufferProxy) AddAll(items []interface{}, overflowPolicy core.OverflowPolicy) (lastSequence int64, err error) {
 	itemsData, err := rp.validateAndSerializeSlice(items)
 	if err != nil {
 		return
@@ -92,7 +92,7 @@ func (rp *RingbufferProxy) AddAll(items []interface{}, overflowPolicy core.Overf
 	return rp.decodeToInt64AndError(responseMessage, err, protocol.RingbufferAddAllDecodeResponse)
 }
 
-func (rp *RingbufferProxy) ReadOne(sequence int64) (item interface{}, err error) {
+func (rp *ringbufferProxy) ReadOne(sequence int64) (item interface{}, err error) {
 	if err = rp.validateSequenceNotNegative(sequence, "sequence"); err != nil {
 		return
 	}
@@ -101,7 +101,8 @@ func (rp *RingbufferProxy) ReadOne(sequence int64) (item interface{}, err error)
 	return rp.decodeToObjectAndError(responseMessage, err, protocol.RingbufferReadOneDecodeResponse)
 }
 
-func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCount int32, filter interface{}) (readResultSet core.ReadResultSet, err error) {
+func (rp *ringbufferProxy) ReadMany(startSequence int64, minCount int32, maxCount int32,
+	filter interface{}) (readResultSet core.ReadResultSet, err error) {
 	filterData, err := rp.toData(filter)
 	if err != nil {
 		return
@@ -121,19 +122,20 @@ func (rp *RingbufferProxy) ReadMany(startSequence int64, minCount int32, maxCoun
 	return NewLazyReadResultSet(readCount, itemsData, itemSeqs, rp.client.SerializationService), nil
 }
 
-func (rp *RingbufferProxy) validateSequenceNotNegative(value int64, argName string) (err error) {
+func (rp *ringbufferProxy) validateSequenceNotNegative(value int64, argName string) (err error) {
 	if value < 0 {
 		err = core.NewHazelcastIllegalArgumentError(fmt.Sprintf("%v %v can't be smaller than 0", argName, value), nil)
 	}
 	return
 }
 
-func (rp *RingbufferProxy) checkCounts(minCount int32, maxCount int32) (err error) {
+func (rp *ringbufferProxy) checkCounts(minCount int32, maxCount int32) (err error) {
 	if minCount < 0 {
 		return core.NewHazelcastIllegalArgumentError(fmt.Sprintf("min count %v can't be smaller than 0", minCount), nil)
 	}
 	if minCount > maxCount {
-		return core.NewHazelcastIllegalArgumentError(fmt.Sprintf("min count %v can't be larger than max count %v", minCount, maxCount), nil)
+		return core.NewHazelcastIllegalArgumentError(fmt.Sprintf("min count %v can't be larger than max count %v",
+			minCount, maxCount), nil)
 	}
 	return
 }
@@ -143,12 +145,13 @@ type LazyReadResultSet struct {
 	// This slice includes both data and de-serialized objects.
 	lazyItems            []interface{}
 	itemSequences        []int64
-	serializationService *serialization.SerializationService
+	serializationService *serialization.Service
 }
 
 const sequenceUnavailable int64 = -1
 
-func NewLazyReadResultSet(readCount int32, itemsData []*serialization.Data, itemSeqs []int64, ss *serialization.SerializationService) (rs *LazyReadResultSet) {
+func NewLazyReadResultSet(readCount int32, itemsData []*serialization.Data, itemSeqs []int64,
+	ss *serialization.Service) (rs *LazyReadResultSet) {
 	rs = &LazyReadResultSet{readCount: readCount, itemSequences: itemSeqs, serializationService: ss}
 	lazyItems := make([]interface{}, len(itemsData))
 	for i, itemData := range itemsData {
@@ -193,7 +196,7 @@ func (rs *LazyReadResultSet) Size() int32 {
 func (rs *LazyReadResultSet) rangeCheck(index int32) (err error) {
 	size := len(rs.lazyItems)
 	if index < 0 || index >= int32(size) {
-		err = core.NewHazelcastIllegalArgumentError(fmt.Sprintf("index=%d size=%d", index, size), nil)
+		err = core.NewHazelcastIllegalArgumentError(fmt.Sprintf("index = %d, size = %d", index, size), nil)
 	}
 	return
 }

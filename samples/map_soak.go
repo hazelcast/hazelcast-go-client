@@ -29,8 +29,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const subroutineCount = 32
-const entryCount = 10000
+const (
+	subroutineCount = 32
+	entryCount      = 10000
+	factoryID       = 66
+	testValue       = "test"
+)
 
 func main() {
 	startMapSoak()
@@ -41,8 +45,8 @@ func startMapSoak() {
 	addresses := flag.String("addresses", "", "addresses")
 	flag.Parse()
 	config := hazelcast.NewHazelcastConfig()
-	processor := newSimpleEntryProcessor("test", 66)
-	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryId, processor.identifiedFactory)
+	processor := newSimpleEntryProcessor()
+	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryID, processor.identifiedFactory)
 	addressSlice := strings.Split(*addresses, "-")
 	for _, address := range addressSlice {
 		config.ClientNetworkConfig().AddAddress(address)
@@ -64,7 +68,7 @@ func startMapSoak() {
 		wg.Add(1)
 		go func() {
 			startTime := time.Now()
-			for time.Duration(time.Since(startTime)).Hours() < *numbPtr {
+			for time.Since(startTime).Hours() < *numbPtr {
 				key := strconv.Itoa(rand.Intn(entryCount))
 				value := strconv.Itoa(rand.Intn(entryCount))
 				op := rand.Intn(100)
@@ -99,8 +103,6 @@ func startMapSoak() {
 }
 
 type simpleListener struct {
-	event    core.IEntryEvent
-	mapEvent core.IMapEvent
 }
 
 func (l *simpleListener) EntryAdded(event core.IEntryEvent) {
@@ -122,29 +124,28 @@ func (l *simpleListener) EntryRemoved(event core.IEntryEvent) {
 }
 
 type simpleEntryProcessor struct {
-	classId           int32
+	classID           int32
 	value             string
 	identifiedFactory *identifiedFactory
 }
 
-func newSimpleEntryProcessor(value string, factoryId int32) *simpleEntryProcessor {
-	processor := &simpleEntryProcessor{classId: 1, value: value}
-	identifiedFactory := &identifiedFactory{factoryId: factoryId, simpleEntryProcessor: processor}
+func newSimpleEntryProcessor() *simpleEntryProcessor {
+	processor := &simpleEntryProcessor{classID: 1, value: testValue}
+	identifiedFactory := &identifiedFactory{factoryID: factoryID, simpleEntryProcessor: processor}
 	processor.identifiedFactory = identifiedFactory
 	return processor
 }
 
 type identifiedFactory struct {
 	simpleEntryProcessor *simpleEntryProcessor
-	factoryId            int32
+	factoryID            int32
 }
 
 func (idf *identifiedFactory) Create(id int32) serialization.IdentifiedDataSerializable {
-	if id == idf.simpleEntryProcessor.classId {
-		return &simpleEntryProcessor{classId: 1}
-	} else {
-		return nil
+	if id == idf.simpleEntryProcessor.classID {
+		return &simpleEntryProcessor{classID: 1}
 	}
+	return nil
 }
 
 func (p *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
@@ -158,10 +159,10 @@ func (p *simpleEntryProcessor) WriteData(output serialization.DataOutput) error 
 	return nil
 }
 
-func (p *simpleEntryProcessor) FactoryId() int32 {
-	return p.identifiedFactory.factoryId
+func (p *simpleEntryProcessor) FactoryID() int32 {
+	return p.identifiedFactory.factoryID
 }
 
-func (p *simpleEntryProcessor) ClassId() int32 {
-	return p.classId
+func (p *simpleEntryProcessor) ClassID() int32 {
+	return p.classID
 }

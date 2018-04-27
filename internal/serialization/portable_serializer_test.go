@@ -28,10 +28,10 @@ import (
 type PortableFactory1 struct {
 }
 
-func (*PortableFactory1) Create(classId int32) serialization.Portable {
-	if classId == 1 {
+func (*PortableFactory1) Create(classID int32) serialization.Portable {
+	if classID == 1 {
 		return &student{}
-	} else if classId == 2 {
+	} else if classID == 2 {
 		return &fake{}
 	}
 	return nil
@@ -40,8 +40,8 @@ func (*PortableFactory1) Create(classId int32) serialization.Portable {
 type PortableFactory2 struct {
 }
 
-func (*PortableFactory2) Create(classId int32) serialization.Portable {
-	if classId == 1 {
+func (*PortableFactory2) Create(classID int32) serialization.Portable {
+	if classID == 1 {
 		return &student2{}
 	}
 	return nil
@@ -53,11 +53,11 @@ type student struct {
 	name string
 }
 
-func (*student) FactoryId() int32 {
+func (*student) FactoryID() int32 {
 	return 2
 }
 
-func (*student) ClassId() int32 {
+func (*student) ClassID() int32 {
 	return 1
 }
 
@@ -81,11 +81,11 @@ type student2 struct {
 	name string
 }
 
-func (*student2) FactoryId() int32 {
+func (*student2) FactoryID() int32 {
 	return 2
 }
 
-func (*student2) ClassId() int32 {
+func (*student2) ClassID() int32 {
 	return 1
 }
 
@@ -110,11 +110,11 @@ func (s *student2) ReadPortable(reader serialization.PortableReader) error {
 type student3 struct {
 }
 
-func (*student3) FactoryId() int32 {
+func (*student3) FactoryID() int32 {
 	return 1
 }
 
-func (*student3) ClassId() int32 {
+func (*student3) ClassID() int32 {
 	return 1
 }
 
@@ -133,7 +133,7 @@ func (s *student3) ReadPortable(reader serialization.PortableReader) error {
 func TestPortableSerializer(t *testing.T) {
 	config := config.NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
@@ -145,7 +145,7 @@ func TestPortableSerializer(t *testing.T) {
 
 func TestPortableSerializer_NoFactory(t *testing.T) {
 	config := config.NewSerializationConfig()
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	expectedRet := &student3{}
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
@@ -157,7 +157,7 @@ func TestPortableSerializer_NoFactory(t *testing.T) {
 
 func TestPortableSerializer_NilPortable(t *testing.T) {
 	config := config.NewSerializationConfig()
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 	expectedRet := &student2{}
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
@@ -168,33 +168,33 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 }
 
 type fake struct {
-	byt          byte
-	boo          bool
-	ui16         uint16
-	i16          int16
-	i32          int32
-	i64          int64
-	f32          float32
-	f64          float64
-	utf          string
-	portable     serialization.Portable
-	byt_arr      []byte
-	boo_arr      []bool
-	ui16_arr     []uint16
-	i16_arr      []int16
-	i32_arr      []int32
-	i64_arr      []int64
-	f32_arr      []float32
-	f64_arr      []float64
-	utf_arr      []string
-	portable_arr []serialization.Portable
+	byt         byte
+	boo         bool
+	ui16        uint16
+	i16         int16
+	i32         int32
+	i64         int64
+	f32         float32
+	f64         float64
+	utf         string
+	portable    serialization.Portable
+	bytArr      []byte
+	boolArr     []bool
+	ui16Arr     []uint16
+	i16Arr      []int16
+	i32Arr      []int32
+	i64Arr      []int64
+	f32Arr      []float32
+	f64Arr      []float64
+	utfArr      []string
+	portableArr []serialization.Portable
 }
 
-func (*fake) FactoryId() int32 {
+func (*fake) FactoryID() int32 {
 	return 2
 }
 
-func (*fake) ClassId() int32 {
+func (*fake) ClassID() int32 {
 	return 2
 }
 
@@ -213,16 +213,16 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) error {
 	} else {
 		writer.WriteNilPortable("portable", 2, 1)
 	}
-	writer.WriteByteArray("byt_arr", f.byt_arr)
-	writer.WriteBoolArray("boo_arr", f.boo_arr)
-	writer.WriteUInt16Array("ui16_arr", f.ui16_arr)
-	writer.WriteInt16Array("i16_arr", f.i16_arr)
-	writer.WriteInt32Array("i32_arr", f.i32_arr)
-	writer.WriteInt64Array("i64_arr", f.i64_arr)
-	writer.WriteFloat32Array("f32_arr", f.f32_arr)
-	writer.WriteFloat64Array("f64_arr", f.f64_arr)
-	writer.WriteUTFArray("utf_arr", f.utf_arr)
-	writer.WritePortableArray("portable_arr", f.portable_arr)
+	writer.WriteByteArray("bytArr", f.bytArr)
+	writer.WriteBoolArray("boolArr", f.boolArr)
+	writer.WriteUInt16Array("ui16Arr", f.ui16Arr)
+	writer.WriteInt16Array("i16Arr", f.i16Arr)
+	writer.WriteInt32Array("i32Arr", f.i32Arr)
+	writer.WriteInt64Array("i64Arr", f.i64Arr)
+	writer.WriteFloat32Array("f32Arr", f.f32Arr)
+	writer.WriteFloat64Array("f64Arr", f.f64Arr)
+	writer.WriteUTFArray("utfArr", f.utfArr)
+	writer.WritePortableArray("portableArr", f.portableArr)
 	return nil
 }
 
@@ -237,47 +237,47 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) error {
 	f.f64, _ = reader.ReadFloat64("f64")
 	f.utf, _ = reader.ReadUTF("utf")
 	f.portable, _ = reader.ReadPortable("portable")
-	f.byt_arr, _ = reader.ReadByteArray("byt_arr")
-	f.boo_arr, _ = reader.ReadBoolArray("boo_arr")
-	f.ui16_arr, _ = reader.ReadUInt16Array("ui16_arr")
-	f.i16_arr, _ = reader.ReadInt16Array("i16_arr")
-	f.i32_arr, _ = reader.ReadInt32Array("i32_arr")
-	f.i64_arr, _ = reader.ReadInt64Array("i64_arr")
-	f.f32_arr, _ = reader.ReadFloat32Array("f32_arr")
-	f.f64_arr, _ = reader.ReadFloat64Array("f64_arr")
-	f.utf_arr, _ = reader.ReadUTFArray("utf_arr")
-	f.portable_arr, _ = reader.ReadPortableArray("portable_arr")
+	f.bytArr, _ = reader.ReadByteArray("bytArr")
+	f.boolArr, _ = reader.ReadBoolArray("boolArr")
+	f.ui16Arr, _ = reader.ReadUInt16Array("ui16Arr")
+	f.i16Arr, _ = reader.ReadInt16Array("i16Arr")
+	f.i32Arr, _ = reader.ReadInt32Array("i32Arr")
+	f.i64Arr, _ = reader.ReadInt64Array("i64Arr")
+	f.f32Arr, _ = reader.ReadFloat32Array("f32Arr")
+	f.f64Arr, _ = reader.ReadFloat64Array("f64Arr")
+	f.utfArr, _ = reader.ReadUTFArray("utfArr")
+	f.portableArr, _ = reader.ReadPortableArray("portableArr")
 	return nil
 }
 
 func TestPortableSerializer2(t *testing.T) {
 	config := config.NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
-	service := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
 
 	var byt byte = 255
-	var boo bool = true
+	var boo = true
 	var ui16 uint16 = 65535
 	var i16 int16 = -32768
 	var i32 int32 = -2147483648
 	var i64 int64 = -9223372036854775808
 	var f32 float32 = -3.4E+38
-	var f64 float64 = -1.7E+308
-	var utf string = "Günaydın, こんにちは"
+	var f64 = -1.7E+308
+	var utf = "Günaydın, こんにちは"
 	var portable serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
-	var byt_arr []byte = []byte{127, 128, 255, 0, 4, 6, 8, 121}
-	var boo_arr []bool = []bool{true, true, false, true, false, false, false, true, false, true}
-	var ui16_arr []uint16 = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
-	var i16_arr []int16 = []int16{-32768, -2222, 32767, 0}
-	var i32_arr []int32 = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
-	var i64_arr []int64 = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
-	var f32_arr []float32 = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
-	var f64_arr []float64 = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
-	var utf_arr []string = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
-	var portable_arr []serialization.Portable = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+	var bytArr = []byte{127, 128, 255, 0, 4, 6, 8, 121}
+	var boolArr = []bool{true, true, false, true, false, false, false, true, false, true}
+	var ui16Arr = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
+	var i16Arr = []int16{-32768, -2222, 32767, 0}
+	var i32Arr = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
+	var i64Arr = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
+	var f32Arr = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
+	var f64Arr = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
+	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
+	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
 
 	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, portable,
-		byt_arr, boo_arr, ui16_arr, i16_arr, i32_arr, i64_arr, f32_arr, f64_arr, utf_arr, portable_arr}
+		bytArr, boolArr, ui16Arr, i16Arr, i32Arr, i64Arr, f32Arr, f64Arr, utfArr, portableArr}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
 
@@ -290,8 +290,8 @@ func TestPortableSerializer2(t *testing.T) {
 func TestPortableSerializer3(t *testing.T) {
 	config := config.NewSerializationConfig()
 	config.AddPortableFactory(2, &PortableFactory1{})
-	service := NewSerializationService(config)
-	service2 := NewSerializationService(config)
+	service, _ := NewSerializationService(config)
+	service2, _ := NewSerializationService(config)
 	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service2.ToObject(data)
@@ -307,7 +307,13 @@ func TestPortableSerializer4(t *testing.T) {
 	config1.AddPortableFactory(2, &PortableFactory1{})
 	builder := classdef.NewClassDefinitionBuilder(2, 1, 0)
 	err := builder.AddInt16Field("id")
+	if err != nil {
+		t.Errorf("ClassDefinitionBuilder works wrong")
+	}
 	err = builder.AddInt32Field("age")
+	if err != nil {
+		t.Errorf("ClassDefinitionBuilder works wrong")
+	}
 	err = builder.AddUTFField("name")
 	if err != nil {
 		t.Error("ClassDefinitionBuilder works wrong")
@@ -315,30 +321,30 @@ func TestPortableSerializer4(t *testing.T) {
 	cd := builder.Build()
 	config1.AddClassDefinition(cd)
 
-	service := NewSerializationService(config1)
+	service, _ := NewSerializationService(config1)
 
 	var byt byte = 255
-	var boo bool = true
+	var boo = true
 	var ui16 uint16 = 65535
 	var i16 int16 = -32768
 	var i32 int32 = -2147483648
 	var i64 int64 = -9223372036854775808
 	var f32 float32 = -3.4E+38
-	var f64 float64 = -1.7E+308
-	var utf string = "Günaydın, こんにちは"
-	var byt_arr []byte = []byte{127, 128, 255, 0, 4, 6, 8, 121}
-	var boo_arr []bool = []bool{true, true, false, true, false, false, false, true, false, true}
-	var ui16_arr []uint16 = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
-	var i16_arr []int16 = []int16{-32768, -2222, 32767, 0}
-	var i32_arr []int32 = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
-	var i64_arr []int64 = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
-	var f32_arr []float32 = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
-	var f64_arr []float64 = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
-	var utf_arr []string = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
-	var portable_arr []serialization.Portable = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+	var f64 = -1.7E+308
+	var utf = "Günaydın, こんにちは"
+	var bytArr = []byte{127, 128, 255, 0, 4, 6, 8, 121}
+	var boolArr = []bool{true, true, false, true, false, false, false, true, false, true}
+	var ui16Arr = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
+	var i16Arr = []int16{-32768, -2222, 32767, 0}
+	var i32Arr = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
+	var i64Arr = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
+	var f32Arr = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
+	var f64Arr = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
+	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
+	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
 
 	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, nil,
-		byt_arr, boo_arr, ui16_arr, i16_arr, i32_arr, i64_arr, f32_arr, f64_arr, utf_arr, portable_arr}
+		bytArr, boolArr, ui16Arr, i16Arr, i32Arr, i64Arr, f32Arr, f64Arr, utfArr, portableArr}
 
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)

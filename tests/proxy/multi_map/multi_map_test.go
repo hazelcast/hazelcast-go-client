@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	multiMap, _ = client.GetMultiMap("myMultiMap")
@@ -275,10 +275,10 @@ func TestMultiMapProxy_EntrySet(t *testing.T) {
 
 func TestMultiMapProxy_AddEntryListenerAdded(t *testing.T) {
 	defer multiMap.Clear()
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &EntryListener{wg: wg}
-	registrationId, err := multiMap.AddEntryListener(entryListener, true)
-	defer multiMap.RemoveEntryListener(registrationId)
+	registrationID, err := multiMap.AddEntryListener(entryListener, true)
+	defer multiMap.RemoveEntryListener(registrationID)
 	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	multiMap.Put(testKey, testValue)
@@ -294,10 +294,10 @@ func TestMultiMapProxy_AddEntryListenerAdded(t *testing.T) {
 
 func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {
 	defer multiMap.Clear()
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &EntryListener{wg: wg}
-	registrationId, err := multiMap.AddEntryListenerToKey(entryListener, "key1", true)
-	defer multiMap.RemoveEntryListener(registrationId)
+	registrationID, err := multiMap.AddEntryListenerToKey(entryListener, "key1", true)
+	defer multiMap.RemoveEntryListener(registrationID)
 	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	multiMap.Put("key1", "value1")

@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	mp, _ = client.GetMap("myMap")
@@ -160,9 +160,9 @@ func TestMapSetWhenMemberDown(t *testing.T) {
 	assert.ErrorNotNil(t, err, "set should have returned an error when member is down")
 }
 
-func TestMapSetWithTtlWhenMemberDown(t *testing.T) {
-	err := mp.SetWithTtl("key", "value", 2*time.Second)
-	assert.ErrorNotNil(t, err, "setWithTtl should have returned an error when member is down")
+func TestMapSetWithTTLWhenMemberDown(t *testing.T) {
+	err := mp.SetWithTTL("key", "value", 2*time.Second)
+	assert.ErrorNotNil(t, err, "setWithTTL should have returned an error when member is down")
 }
 
 func TestMapPutIfAbsentWhenMemberDown(t *testing.T) {

@@ -667,7 +667,7 @@ Members {size:2, ver:4} [
 *NOTE* As mentioned a few times now, the default port for _Hazelcast_ is 5701.
 This port is available, so this port is selected for this new server. It's
 not the first server revived, it's an entirely new server that is utlising the
-same port (the UUID _b1536a80-78c6-401e-b870-8515acbbabe7_ is different).
+same port (the uuid _b1536a80-78c6-401e-b870-8515acbbabe7_ is different).
 
 ### Try again to read some data from _Go_
 

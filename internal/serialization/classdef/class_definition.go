@@ -19,22 +19,22 @@ import (
 )
 
 type ClassDefinitionImpl struct {
-	factoryId int32
-	classId   int32
+	factoryID int32
+	classID   int32
 	version   int32
 	fields    map[string]serialization.FieldDefinition
 }
 
-func NewClassDefinitionImpl(factoryId int32, classId int32, version int32) *ClassDefinitionImpl {
-	return &ClassDefinitionImpl{factoryId, classId, version, make(map[string]serialization.FieldDefinition)}
+func NewClassDefinitionImpl(factoryID int32, classID int32, version int32) *ClassDefinitionImpl {
+	return &ClassDefinitionImpl{factoryID, classID, version, make(map[string]serialization.FieldDefinition)}
 }
 
-func (cd *ClassDefinitionImpl) FactoryId() int32 {
-	return cd.factoryId
+func (cd *ClassDefinitionImpl) FactoryID() int32 {
+	return cd.factoryID
 }
 
-func (cd *ClassDefinitionImpl) ClassId() int32 {
-	return cd.classId
+func (cd *ClassDefinitionImpl) ClassID() int32 {
+	return cd.classID
 }
 
 func (cd *ClassDefinitionImpl) Version() int32 {
@@ -57,13 +57,14 @@ type FieldDefinitionImpl struct {
 	index     int32
 	fieldName string
 	fieldType int32
-	factoryId int32
-	classId   int32
+	factoryID int32
+	classID   int32
 	version   int32
 }
 
-func NewFieldDefinitionImpl(index int32, fieldName string, fieldType int32, factoryId int32, classId int32, version int32) *FieldDefinitionImpl {
-	return &FieldDefinitionImpl{index, fieldName, fieldType, factoryId, classId, version}
+func NewFieldDefinitionImpl(index int32, fieldName string, fieldType int32, factoryID int32,
+	classID int32, version int32) *FieldDefinitionImpl {
+	return &FieldDefinitionImpl{index, fieldName, fieldType, factoryID, classID, version}
 }
 
 func (fd *FieldDefinitionImpl) Type() int32 {
@@ -78,12 +79,12 @@ func (fd *FieldDefinitionImpl) Index() int32 {
 	return fd.index
 }
 
-func (fd *FieldDefinitionImpl) ClassId() int32 {
-	return fd.classId
+func (fd *FieldDefinitionImpl) ClassID() int32 {
+	return fd.classID
 }
 
-func (fd *FieldDefinitionImpl) FactoryId() int32 {
-	return fd.factoryId
+func (fd *FieldDefinitionImpl) FactoryID() int32 {
+	return fd.factoryID
 }
 
 func (fd *FieldDefinitionImpl) Version() int32 {

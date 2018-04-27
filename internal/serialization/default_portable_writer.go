@@ -28,13 +28,14 @@ type DefaultPortableWriter struct {
 	offset          int32
 }
 
-func NewDefaultPortableWriter(serializer *PortableSerializer, output serialization.PositionalDataOutput, classDefinition serialization.ClassDefinition) *DefaultPortableWriter {
+func NewDefaultPortableWriter(serializer *PortableSerializer, output serialization.PositionalDataOutput,
+	classDefinition serialization.ClassDefinition) *DefaultPortableWriter {
 	begin := output.Position()
 	output.WriteZeroBytes(4)
 	output.WriteInt32(int32(classDefinition.FieldCount()))
 	offset := output.Position()
 	fieldIndexesLength := (classDefinition.FieldCount() + 1) * common.Int32SizeInBytes
-	output.WriteZeroBytes(int(fieldIndexesLength))
+	output.WriteZeroBytes(fieldIndexesLength)
 	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset}
 }
 
@@ -87,8 +88,8 @@ func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serial
 	fieldDefinition := pw.setPosition(fieldName, classdef.TypePortable)
 	isNullPortable := portable == nil
 	pw.output.WriteBool(isNullPortable)
-	pw.output.WriteInt32(fieldDefinition.FactoryId())
-	pw.output.WriteInt32(fieldDefinition.ClassId())
+	pw.output.WriteInt32(fieldDefinition.FactoryID())
+	pw.output.WriteInt32(fieldDefinition.ClassID())
 	if !isNullPortable {
 		err := pw.serializer.WriteObject(pw.output, portable)
 		if err != nil {
@@ -98,11 +99,11 @@ func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serial
 	return nil
 }
 
-func (pw *DefaultPortableWriter) WriteNilPortable(fieldName string, factoryId int32, classId int32) error {
+func (pw *DefaultPortableWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) error {
 	pw.setPosition(fieldName, classdef.TypePortable)
 	pw.output.WriteBool(true)
-	pw.output.WriteInt32(factoryId)
-	pw.output.WriteInt32(classId)
+	pw.output.WriteInt32(factoryID)
+	pw.output.WriteInt32(classID)
 	return nil
 }
 
@@ -162,8 +163,8 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 		length = common.NilArrayLength
 	}
 	pw.output.WriteInt32(length)
-	pw.output.WriteInt32(fieldDefinition.FactoryId())
-	pw.output.WriteInt32(fieldDefinition.ClassId())
+	pw.output.WriteInt32(fieldDefinition.FactoryID())
+	pw.output.WriteInt32(fieldDefinition.ClassID())
 
 	if length > 0 {
 		innerOffset = pw.output.Position()

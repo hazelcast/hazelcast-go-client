@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	employeeClassId                 = 100
-	sampleDataSerializableFactoryId = 1000
+	employeeClassID                 = 100
+	sampleDataSerializableFactoryID = 1000
 )
 
 type Employee struct {
@@ -30,12 +30,12 @@ type Employee struct {
 	name string
 }
 
-func (e *Employee) ClassId() int32 {
-	return employeeClassId
+func (e *Employee) ClassID() int32 {
+	return employeeClassID
 }
 
-func (e *Employee) FactoryId() int32 {
-	return sampleDataSerializableFactoryId
+func (e *Employee) FactoryID() int32 {
+	return sampleDataSerializableFactoryID
 }
 
 func (e *Employee) ReadData(input serialization.DataInput) (err error) {
@@ -56,8 +56,8 @@ func (e *Employee) WriteData(output serialization.DataOutput) (err error) {
 type SampleDataSerializableFactory struct {
 }
 
-func (*SampleDataSerializableFactory) Create(classId int32) serialization.IdentifiedDataSerializable {
-	if classId == classId {
+func (*SampleDataSerializableFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
+	if classID == classID {
 		return &Employee{}
 	}
 	return nil
@@ -65,7 +65,7 @@ func (*SampleDataSerializableFactory) Create(classId int32) serialization.Identi
 
 func identifiedDataSerializableSampleRun() {
 	clientConfig := config.NewClientConfig()
-	clientConfig.SerializationConfig().AddDataSerializableFactory(sampleDataSerializableFactoryId, &SampleDataSerializableFactory{})
+	clientConfig.SerializationConfig().AddDataSerializableFactory(sampleDataSerializableFactoryID, &SampleDataSerializableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 

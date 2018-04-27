@@ -14,21 +14,21 @@
 
 package protocol
 
-func SetRemoveListenerCalculateSize(name *string, registrationId *string) int {
+func SetRemoveListenerCalculateSize(name *string, registrationID *string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(registrationId)
+	dataSize += StringCalculateSize(registrationID)
 	return dataSize
 }
 
-func SetRemoveListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
+func SetRemoveListenerEncodeRequest(name *string, registrationID *string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetRemoveListenerCalculateSize(name, registrationId))
+	clientMessage := NewClientMessage(nil, SetRemoveListenerCalculateSize(name, registrationID))
 	clientMessage.SetMessageType(setRemoveListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
+	clientMessage.AppendString(registrationID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

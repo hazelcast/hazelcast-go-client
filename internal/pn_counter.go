@@ -27,7 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 )
 
-type PNCounterProxy struct {
+type pnCounterProxy struct {
 	*proxy
 	targetSelectionMutex        sync.RWMutex // guards currentTargetReplicaAddress
 	currentTargetReplicaAddress core.IAddress
@@ -37,23 +37,24 @@ type PNCounterProxy struct {
 	random                      *rand.Rand
 }
 
-func newPNCounterProxy(client *HazelcastClient, serviceName *string, name *string) (*PNCounterProxy, error) {
-	pn := &PNCounterProxy{
+func newPNCounterProxy(client *HazelcastClient, serviceName *string, name *string) (*pnCounterProxy, error) {
+	pn := &pnCounterProxy{
 		proxy:          &proxy{client, serviceName, name},
 		emptyAddresses: make(map[core.IAddress]struct{}),
 	}
-	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(NewVectorClock()))
+	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 	pn.random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	return pn, nil
 }
 
-func (pn *PNCounterProxy) Get() (currentValue int64, err error) {
+func (pn *pnCounterProxy) Get() (currentValue int64, err error) {
 	target, err := pn.getCRDTOperationTarget(pn.emptyAddresses)
 	if err != nil {
 		return
 	}
 	if target == nil {
-		err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT because the cluster does not contain any data members", nil)
+		err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT"+
+			" because the cluster does not contain any data members", nil)
 		return
 	}
 	response, err := pn.invokeGetInternal(pn.emptyAddresses, nil, target)
@@ -65,13 +66,14 @@ func (pn *PNCounterProxy) Get() (currentValue int64, err error) {
 	return value, nil
 }
 
-func (pn *PNCounterProxy) operation(delta int64, getBeforeUpdate bool) (value int64, err error) {
+func (pn *pnCounterProxy) operation(delta int64, getBeforeUpdate bool) (value int64, err error) {
 	target, err := pn.getCRDTOperationTarget(pn.emptyAddresses)
 	if err != nil {
 		return
 	}
 	if target == nil {
-		err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT because the cluster does not contain any data members", nil)
+		err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT"+
+			" because the cluster does not contain any data members", nil)
 		return
 	}
 	response, err := pn.invokeAddInternal(delta, getBeforeUpdate, pn.emptyAddresses, nil, target)
@@ -83,43 +85,43 @@ func (pn *PNCounterProxy) operation(delta int64, getBeforeUpdate bool) (value in
 	return value, nil
 }
 
-func (pn *PNCounterProxy) GetAndAdd(delta int64) (previousValue int64, err error) {
+func (pn *pnCounterProxy) GetAndAdd(delta int64) (previousValue int64, err error) {
 	return pn.operation(delta, true)
 }
 
-func (pn *PNCounterProxy) AddAndGet(delta int64) (updatedValue int64, err error) {
+func (pn *pnCounterProxy) AddAndGet(delta int64) (updatedValue int64, err error) {
 	return pn.operation(delta, false)
 }
 
-func (pn *PNCounterProxy) GetAndSubtract(delta int64) (previousValue int64, err error) {
+func (pn *pnCounterProxy) GetAndSubtract(delta int64) (previousValue int64, err error) {
 	return pn.operation(-delta, true)
 }
 
-func (pn *PNCounterProxy) SubtractAndGet(delta int64) (updatedValue int64, err error) {
+func (pn *pnCounterProxy) SubtractAndGet(delta int64) (updatedValue int64, err error) {
 	return pn.operation(-delta, false)
 }
 
-func (pn *PNCounterProxy) DecrementAndGet() (updatedValue int64, err error) {
+func (pn *pnCounterProxy) DecrementAndGet() (updatedValue int64, err error) {
 	return pn.operation(-1, false)
 }
 
-func (pn *PNCounterProxy) IncrementAndGet() (updatedValue int64, err error) {
+func (pn *pnCounterProxy) IncrementAndGet() (updatedValue int64, err error) {
 	return pn.operation(1, false)
 }
 
-func (pn *PNCounterProxy) GetAndDecrement() (previousValue int64, err error) {
+func (pn *pnCounterProxy) GetAndDecrement() (previousValue int64, err error) {
 	return pn.operation(-1, true)
 }
 
-func (pn *PNCounterProxy) GetAndIncrement() (previousValue int64, err error) {
+func (pn *pnCounterProxy) GetAndIncrement() (previousValue int64, err error) {
 	return pn.operation(1, true)
 }
 
-func (pn *PNCounterProxy) Reset() {
-	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(NewVectorClock()))
+func (pn *pnCounterProxy) Reset() {
+	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 }
 
-func (pn *PNCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.IAddress]struct{}) (core.IAddress, error) {
+func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.IAddress]struct{}) (core.IAddress, error) {
 	pn.targetSelectionMutex.RLock()
 	localCurrentTargetReplicaAddress := pn.currentTargetReplicaAddress
 	pn.targetSelectionMutex.RUnlock()
@@ -141,17 +143,19 @@ func (pn *PNCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.IAdd
 	return localCurrentTargetReplicaAddress, nil
 }
 
-func (pn *PNCounterProxy) invokeGetInternal(excludedAddresses map[core.IAddress]struct{}, lastError error,
+func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.IAddress]struct{}, lastError error,
 	target core.IAddress) (response *protocol.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
 		} else {
-			err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT because the cluster does not contain any data members", nil)
+			err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT"+
+				" because the cluster does not contain any data members", nil)
 		}
 		return
 	}
-	request := protocol.PNCounterGetEncodeRequest(pn.name, (*VectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*protocol.Address))
+	request := protocol.PNCounterGetEncodeRequest(pn.name,
+		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*protocol.Address))
 	response, lastError = pn.invokeOnAddress(request, target.(*protocol.Address))
 	if lastError != nil {
 		log.Printf("error occurred while invoking operation on target %v, choosing different target", target)
@@ -166,17 +170,20 @@ func (pn *PNCounterProxy) invokeGetInternal(excludedAddresses map[core.IAddress]
 
 }
 
-func (pn *PNCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool, excludedAddresses map[core.IAddress]struct{}, lastError error,
+func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
+	excludedAddresses map[core.IAddress]struct{}, lastError error,
 	target core.IAddress) (response *protocol.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
 		} else {
-			err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT because the cluster does not contain any data members", nil)
+			err = core.NewHazelcastNoDataMemberInClusterError("cannot invoke operations on a CRDT"+
+				" because the cluster does not contain any data members", nil)
 		}
 		return
 	}
-	request := protocol.PNCounterAddEncodeRequest(pn.name, delta, getBeforeUpdate, (*VectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*protocol.Address))
+	request := protocol.PNCounterAddEncodeRequest(pn.name, delta, getBeforeUpdate,
+		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*protocol.Address))
 	response, lastError = pn.invokeOnAddress(request, target.(*protocol.Address))
 	if lastError != nil {
 		log.Printf("unable to provide session guarantees when sending operations to %v, choosing different target", target)
@@ -190,7 +197,7 @@ func (pn *PNCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool, e
 	return response, nil
 }
 
-func (pn *PNCounterProxy) chooseTargetReplica(excludedAddresses map[core.IAddress]struct{}) (core.IAddress, error) {
+func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.IAddress]struct{}) (core.IAddress, error) {
 	replicaAddresses, err := pn.getReplicaAddresses(excludedAddresses)
 	if err != nil || len(replicaAddresses) == 0 {
 		return nil, err
@@ -198,7 +205,7 @@ func (pn *PNCounterProxy) chooseTargetReplica(excludedAddresses map[core.IAddres
 	return replicaAddresses[pn.random.Intn(len(replicaAddresses))], nil
 }
 
-func (pn *PNCounterProxy) getReplicaAddresses(excludedAddresses map[core.IAddress]struct{}) ([]core.IAddress, error) {
+func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.IAddress]struct{}) ([]core.IAddress, error) {
 	dataMembers := pn.client.ClusterService.GetMembersWithSelector(core.MemberSelectors.DataMemberSelector)
 	maxConfiguredReplicaCount, err := pn.getMaxConfiguredReplicaCount()
 	if err != nil {
@@ -216,16 +223,14 @@ func (pn *PNCounterProxy) getReplicaAddresses(excludedAddresses map[core.IAddres
 	return replicaAdresses, nil
 }
 
-/**
-* Returns the current target replica address to which this proxy is
-* sending invocations.
-* It is public for testing purposes.
- */
-func (pn *PNCounterProxy) GetCurrentTargetReplicaAddress() core.IAddress {
-	return pn.currentTargetReplicaAddress
+// GetCurrentTargetReplicaAddress returns the current target replica address to which this proxy is
+// sending invocations.
+// It is public for testing purposes.
+func GetCurrentTargetReplicaAddress(pn core.PNCounter) core.IAddress {
+	return pn.(*pnCounterProxy).currentTargetReplicaAddress
 }
 
-func (pn *PNCounterProxy) getMaxConfiguredReplicaCount() (int32, error) {
+func (pn *pnCounterProxy) getMaxConfiguredReplicaCount() (int32, error) {
 	if pn.maxConfiguredReplicaCount > 0 {
 		return pn.maxConfiguredReplicaCount, nil
 	}
@@ -234,22 +239,23 @@ func (pn *PNCounterProxy) getMaxConfiguredReplicaCount() (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	pn.maxConfiguredReplicaCount, err = pn.decodeToInt32AndError(response, err, protocol.PNCounterGetConfiguredReplicaCountDecodeResponse)
+	pn.maxConfiguredReplicaCount, err = pn.decodeToInt32AndError(response, err,
+		protocol.PNCounterGetConfiguredReplicaCountDecodeResponse)
 	return pn.maxConfiguredReplicaCount, err
 }
 
-func (pn *PNCounterProxy) ToVectorClock(replicaLogicalTimestamps []*protocol.Pair) (timestamps *VectorClock) {
-	timestamps = NewVectorClock()
+func (pn *pnCounterProxy) ToVectorClock(replicaLogicalTimestamps []*protocol.Pair) (timestamps *vectorClock) {
+	timestamps = newVectorClock()
 	for _, pair := range replicaLogicalTimestamps {
 		timestamps.SetReplicaTimestamp(pair.Key().(*string), pair.Value().(int64))
 	}
 	return
 }
 
-func (pn *PNCounterProxy) updateObservedReplicaTimestamps(receivedLogicalTimestamps []*protocol.Pair) {
+func (pn *pnCounterProxy) updateObservedReplicaTimestamps(receivedLogicalTimestamps []*protocol.Pair) {
 	received := pn.ToVectorClock(receivedLogicalTimestamps)
 	for {
-		if (*VectorClock)(atomic.LoadPointer(&pn.observedClock)).IsAfter(received) {
+		if (*vectorClock)(atomic.LoadPointer(&pn.observedClock)).IsAfter(received) {
 			break
 		}
 		if atomic.CompareAndSwapPointer(&pn.observedClock, atomic.LoadPointer(&pn.observedClock), unsafe.Pointer(received)) {

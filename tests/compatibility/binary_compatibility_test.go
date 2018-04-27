@@ -26,7 +26,7 @@ import (
 )
 
 func TestBinaryCompatibility(t *testing.T) {
-	var supporteds []string = []string{
+	var supporteds = []string{
 		"1-NULL-BIG_ENDIAN",
 		"1-NULL-LITTLE_ENDIAN",
 		"1-Boolean-BIG_ENDIAN",
@@ -73,7 +73,7 @@ func TestBinaryCompatibility(t *testing.T) {
 		"1-APortable-LITTLE_ENDIAN",
 	}
 
-	var dataMap map[string]*serialization.Data = make(map[string]*serialization.Data)
+	var dataMap = make(map[string]*serialization.Data)
 
 	dat, _ := ioutil.ReadFile("1.serialization.compatibility.binary")
 
@@ -95,12 +95,12 @@ func TestBinaryCompatibility(t *testing.T) {
 		}
 	}
 
-	serviceLE := createSerializationService(false)
-	serviceBE := createSerializationService(true)
+	serviceLE, _ := createSerializationService(false)
+	serviceBE, _ := createSerializationService(true)
 
-	objects := allTestObjects{}.getAllTestObjects()
+	objects := getAllTestObjects()
 
-	var retObjects []interface{} = make([]interface{}, len(supporteds)/2)
+	var retObjects = make([]interface{}, len(supporteds)/2)
 
 	var temp interface{}
 	var temp2 interface{}
@@ -123,11 +123,11 @@ func TestBinaryCompatibility(t *testing.T) {
 
 }
 
-func createSerializationService(byteOrder bool) *serialization.SerializationService {
+func createSerializationService(byteOrder bool) (*serialization.Service, error) {
 	serConfing := config.NewSerializationConfig()
 	pf := &aPortableFactory{}
 	idf := &aDataSerializableFactory{}
-	serConfing.AddPortableFactory(portableFactoryId, pf)
+	serConfing.AddPortableFactory(portableFactoryID, pf)
 	serConfing.AddDataSerializableFactory(identifiedDataSerializableFactoryID, idf)
 
 	if byteOrder {

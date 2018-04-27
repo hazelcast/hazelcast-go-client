@@ -18,7 +18,7 @@ const (
 	ServiceNameAtomicLong                  = "hz:impl:atomicLongService"
 	ServiceNameAtomicReference             = "hz:impl:atomicReferenceService"
 	ServiceNameCountDownLatch              = "hz:impl:countDownLatchService"
-	ServiceNameIdGenerator                 = "hz:impl:idGeneratorService"
+	ServiceNameIDGenerator                 = "hz:impl:idGeneratorService"
 	ServiceNameExecutor                    = "hz:impl:executorService"
 	ServiceNameLock                        = "hz:impl:lockService"
 	ServiceNameList                        = "hz:impl:listService"
@@ -31,7 +31,7 @@ const (
 	ServiceNameSet                         = "hz:impl:setService"
 	ServiceNameQueue                       = "hz:impl:queueService"
 	ServiceNameTopic                       = "hz:impl:topicService"
-	ServiceNameIdGeneratorAtomicLongPrefix = "hz:atomic:idGenerator:"
+	ServiceNameIDGeneratorAtomicLongPrefix = "hz:atomic:idGenerator:"
 	ServiceNamePNCounter                   = "hz:impl:PNCounterService"
 )
 
@@ -126,12 +126,12 @@ const (
 	ErrorCodeStackOverflowError               ErrorCode = 77
 	ErrorCodeNativeOutOfMemoryError           ErrorCode = 78
 	ErrorCodeNotFound                         ErrorCode = 79
-	ErrorCodeStaleTaskId                      ErrorCode = 80
+	ErrorCodeStaleTaskID                      ErrorCode = 80
 	ErrorCodeDuplicateTask                    ErrorCode = 81
 	ErrorCodeStaleTask                        ErrorCode = 82
 	ErrorCodeLocalMemberReset                 ErrorCode = 83
 	ErrorCodeIndeterminateOperationState      ErrorCode = 84
-	ErrorCodeFlakeIdNodeIdOutOfRangeException ErrorCode = 85
+	ErrorCodeFlakeIDNodeIDOutOfRangeException ErrorCode = 85
 	ErrorCodeTargetNotReplicaException        ErrorCode = 86
 	ErrorCodeMutationDisallowedException      ErrorCode = 87
 	ErrorCodeConsistencyLostException         ErrorCode = 88
@@ -186,9 +186,9 @@ const (
 	VersionFieldOffset       = FrameLengthFieldOffset + Int32SizeInBytes
 	FlagsFieldOffset         = VersionFieldOffset + ByteSizeInBytes
 	TypeFieldOffset          = FlagsFieldOffset + ByteSizeInBytes
-	CorrelationIdFieldOffset = TypeFieldOffset + Int16SizeInBytes
-	PartitionIdFieldOffset   = CorrelationIdFieldOffset + Int64SizeInBytes
-	DataOffsetFieldOffset    = PartitionIdFieldOffset + Int32SizeInBytes
+	CorrelationIDFieldOffset = TypeFieldOffset + Int16SizeInBytes
+	PartitionIDFieldOffset   = CorrelationIDFieldOffset + Int64SizeInBytes
+	DataOffsetFieldOffset    = PartitionIDFieldOffset + Int32SizeInBytes
 	HeaderSize               = DataOffsetFieldOffset + Int16SizeInBytes
 
 	NilArrayLength = -1

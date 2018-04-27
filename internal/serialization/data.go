@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	TypeOffset       = 4
+	typeOffset       = 4
 	DataOffset       = 8
-	HeapDataOverhead = 8
+	heapDataOverhead = 8
 )
 
 type Data struct {
@@ -43,7 +43,7 @@ func (d *Data) GetType() int32 {
 	if d.TotalSize() == 0 {
 		return 0
 	}
-	return int32(binary.BigEndian.Uint32(d.Payload[TypeOffset:]))
+	return int32(binary.BigEndian.Uint32(d.Payload[typeOffset:]))
 }
 
 func (d *Data) TotalSize() int {
@@ -54,7 +54,7 @@ func (d *Data) TotalSize() int {
 }
 
 func (d *Data) DataSize() int {
-	return int(math.Max(float64(d.TotalSize()-HeapDataOverhead), 0))
+	return int(math.Max(float64(d.TotalSize()-heapDataOverhead), 0))
 }
 
 func (d *Data) GetPartitionHash() int32 {

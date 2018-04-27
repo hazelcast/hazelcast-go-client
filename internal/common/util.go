@@ -25,11 +25,11 @@ import (
 	"time"
 )
 
-func IsValidIpAddress(addr string) bool {
+func IsValidIPAddress(addr string) bool {
 	return net.ParseIP(addr) != nil
 }
 
-func GetIpAndPort(addr string) (string, int32) {
+func GetIPAndPort(addr string) (string, int32) {
 	var port int
 	var err error
 	parts := strings.Split(addr, ":")
@@ -71,7 +71,7 @@ func ConvertMillisToUnixTime(timeInMillis int64) time.Time {
 	return time.Unix(0, timeInMillis*int64(time.Millisecond))
 }
 
-// NewUUID generates a random UUID according to RFC 4122
+// NewUUID generates a random uuid according to RFC 4122
 func NewUUID() (string, error) {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(rand.Reader, uuid)

@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	rmp, _ = client.GetReplicatedMap("myReplicatedMap")
@@ -65,6 +65,7 @@ func TestReplicatedMapProxy_Put(t *testing.T) {
 	testValue := "testingValue"
 	newValue := "newValue"
 	_, err := rmp.Put(testKey, testValue)
+	assert.ErrorNil(t, err)
 	res, err := rmp.Get(testKey)
 	assert.Equalf(t, err, res, testValue, "replicatedMap Put() failed")
 	oldValue, err := rmp.Put(testKey, newValue)
@@ -85,40 +86,40 @@ func TestReplicatedMapProxy_PutWithNilValue(t *testing.T) {
 	assert.ErrorNotNil(t, err, "replicatedMap Put() failed")
 }
 
-func TestReplicatedMapProxy_PutWithTtl(t *testing.T) {
+func TestReplicatedMapProxy_PutWithTTL(t *testing.T) {
 	defer rmp.Clear()
 	testKey := "testingKey"
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
-	oldValue, err := rmp.PutWithTtl(testKey, "nextValue", 100*time.Second)
-	assert.Equalf(t, err, oldValue, testValue, "replicatedMap PutWithTtl()  failed")
+	oldValue, err := rmp.PutWithTTL(testKey, "nextValue", 100*time.Second)
+	assert.Equalf(t, err, oldValue, testValue, "replicatedMap PutWithTTL()  failed")
 	res, err := rmp.Get(testKey)
-	assert.Equalf(t, err, res, "nextValue", "replicatedMap PutWithTtl() failed")
+	assert.Equalf(t, err, res, "nextValue", "replicatedMap PutWithTTL() failed")
 }
 
-func TestReplicatedMapProxy_PutWithTtlWithNilKey(t *testing.T) {
+func TestReplicatedMapProxy_PutWithTTLWithNilKey(t *testing.T) {
 	defer rmp.Clear()
 	testValue := "testingValue"
-	_, err := rmp.PutWithTtl(nil, testValue, 100*time.Second)
-	assert.ErrorNotNil(t, err, "replicatedMap PutWithTtl() failed")
+	_, err := rmp.PutWithTTL(nil, testValue, 100*time.Second)
+	assert.ErrorNotNil(t, err, "replicatedMap PutWithTTL() failed")
 }
 
-func TestReplicatedMapProxy_PutWithTtlWithNilValue(t *testing.T) {
+func TestReplicatedMapProxy_PutWithTTLWithNilValue(t *testing.T) {
 	defer rmp.Clear()
 	testKey := "testingKey"
-	_, err := rmp.PutWithTtl(testKey, nil, 100*time.Second)
-	assert.ErrorNotNil(t, err, "replicatedMap PutWithTtl() failed")
+	_, err := rmp.PutWithTTL(testKey, nil, 100*time.Second)
+	assert.ErrorNotNil(t, err, "replicatedMap PutWithTTL() failed")
 }
 
-func TestMapProxy_PutWithTtlWhenExpire(t *testing.T) {
+func TestMapProxy_PutWithTTLWhenExpire(t *testing.T) {
 	defer rmp.Clear()
 	testKey := "testingKey"
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
-	rmp.PutWithTtl(testKey, "nextValue", 1*time.Millisecond)
+	rmp.PutWithTTL(testKey, "nextValue", 1*time.Millisecond)
 	time.Sleep(2 * time.Second)
 	res, err := rmp.Get(testKey)
-	assert.Nilf(t, err, res, "replicatedMap PutWithTtl() failed")
+	assert.Nilf(t, err, res, "replicatedMap PutWithTTL() failed")
 }
 
 func TestReplicatedMapProxy_PutAll(t *testing.T) {
@@ -144,6 +145,7 @@ func TestReplicatedMapProxy_Get(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	_, err := rmp.Put(testKey, testValue)
+	assert.ErrorNil(t, err)
 	res, err := rmp.Get(testKey)
 	assert.Equalf(t, err, res, testValue, "replicatedMap Get() failed")
 }
@@ -162,6 +164,7 @@ func TestReplicatedMapProxy_GetWithNonExistKey(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	_, err := rmp.Put("key", testValue)
+	assert.ErrorNil(t, err)
 	res, err := rmp.Get(testKey)
 	assert.Nilf(t, err, res, "replicatedMap Get() failed")
 }
@@ -324,10 +327,10 @@ func TestReplicatedMapProxy_EntrySet(t *testing.T) {
 
 func TestReplicatedMapProxy_AddEntryListener(t *testing.T) {
 	defer rmp.Clear()
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := rmp.AddEntryListener(entryListener)
-	defer rmp.RemoveEntryListener(registrationId)
+	registrationID, err := rmp.AddEntryListener(entryListener)
+	defer rmp.RemoveEntryListener(registrationID)
 	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	rmp.Put("key123", "value")
@@ -342,10 +345,10 @@ func TestReplicatedMapProxy_AddEntryListener(t *testing.T) {
 
 func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	defer rmp.Clear()
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := rmp.AddEntryListenerWithPredicate(entryListener, predicates.Equal("this", "value"))
-	defer rmp.RemoveEntryListener(registrationId)
+	registrationID, err := rmp.AddEntryListenerWithPredicate(entryListener, predicates.Equal("this", "value"))
+	defer rmp.RemoveEntryListener(registrationID)
 	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	rmp.Put("key123", "value")
@@ -359,9 +362,9 @@ func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 }
 
 func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := rmp.AddEntryListenerToKey(entryListener, "key1")
+	registrationID, err := rmp.AddEntryListenerToKey(entryListener, "key1")
 	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	rmp.Put("key1", "value")
@@ -376,37 +379,39 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 	rmp.Put("key2", "value1")
 	timeout = tests.WaitTimeout(wg, tests.Timeout/20)
 	assert.Equalf(t, nil, true, timeout, "replicatedMap AddEntryListenerToKey failed")
-	rmp.RemoveEntryListener(registrationId)
+	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
 }
 
 func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
-	registrationId, err := rmp.AddEntryListenerToKeyWithPredicate(entryListener, predicates.Equal("this", "value1"), "key1")
+	registrationID, err := rmp.AddEntryListenerToKeyWithPredicate(entryListener, predicates.Equal("this", "value1"), "key1")
 	assert.Equal(t, err, nil, nil)
 	wg.Add(1)
 	rmp.Put("key1", "value1")
 	timeout := tests.WaitTimeout(wg, tests.Timeout)
 	assert.Equalf(t, nil, false, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
 	assert.Equalf(t, nil, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), "value1", "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Value(), "value1",
+		"replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil,
+		"replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1),
+		"replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
 
 	wg.Add(1)
 	rmp.Put("key1", "value2")
 	timeout = tests.WaitTimeout(wg, tests.Timeout/20)
 	assert.Equalf(t, nil, true, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
-	rmp.RemoveEntryListener(registrationId)
+	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
 }
 
 type entryListener struct {
-	wg       *sync.WaitGroup
-	event    core.IEntryEvent
-	mapEvent core.IMapEvent
+	wg    *sync.WaitGroup
+	event core.IEntryEvent
 }
 
 func (l *entryListener) EntryAdded(event core.IEntryEvent) {

@@ -53,7 +53,7 @@ func newLifecycleService(config *config.ClientConfig) *lifecycleService {
 }
 
 func (ls *lifecycleService) AddListener(listener interface{}) string {
-	registrationId, _ := common.NewUUID()
+	registrationID, _ := common.NewUUID()
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	listeners := ls.listeners.Load().(map[string]interface{})
@@ -61,12 +61,12 @@ func (ls *lifecycleService) AddListener(listener interface{}) string {
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
-	copyListeners[registrationId] = listener
+	copyListeners[registrationID] = listener
 	ls.listeners.Store(copyListeners)
-	return registrationId
+	return registrationID
 }
 
-func (ls *lifecycleService) RemoveListener(registrationId *string) bool {
+func (ls *lifecycleService) RemoveListener(registrationID *string) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	listeners := ls.listeners.Load().(map[string]interface{})
@@ -74,9 +74,9 @@ func (ls *lifecycleService) RemoveListener(registrationId *string) bool {
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
-	_, found := copyListeners[*registrationId]
+	_, found := copyListeners[*registrationID]
 	if found {
-		delete(copyListeners, *registrationId)
+		delete(copyListeners, *registrationID)
 	}
 	ls.listeners.Store(copyListeners)
 	return found

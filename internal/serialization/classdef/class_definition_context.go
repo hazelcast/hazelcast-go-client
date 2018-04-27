@@ -24,37 +24,39 @@ import (
 )
 
 type ClassDefinitionContext struct {
-	factoryId int32
+	factoryID int32
 	classDefs map[string]serialization.ClassDefinition
 }
 
-func NewClassDefinitionContext(factoryId int32, portableVersion int32) *ClassDefinitionContext {
-	return &ClassDefinitionContext{factoryId, make(map[string]serialization.ClassDefinition)}
+func NewClassDefinitionContext(factoryID int32) *ClassDefinitionContext {
+	return &ClassDefinitionContext{factoryID, make(map[string]serialization.ClassDefinition)}
 }
 
-func (c *ClassDefinitionContext) LookUp(classId int32, version int32) serialization.ClassDefinition {
-	return c.classDefs[encodeVersionedClassId(classId, version)]
+func (c *ClassDefinitionContext) LookUp(classID int32, version int32) serialization.ClassDefinition {
+	return c.classDefs[encodeVersionedClassID(classID, version)]
 }
 
 func (c *ClassDefinitionContext) Register(classDefinition serialization.ClassDefinition) (serialization.ClassDefinition, error) {
 	if classDefinition == nil {
 		return nil, nil
 	}
-	if classDefinition.FactoryId() != c.factoryId {
-		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.", c.factoryId, classDefinition.FactoryId()), nil)
+	if classDefinition.FactoryID() != c.factoryID {
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.",
+			c.factoryID, classDefinition.FactoryID()), nil)
 	}
-	classDefKey := encodeVersionedClassId(classDefinition.ClassId(), classDefinition.Version())
+	classDefKey := encodeVersionedClassID(classDefinition.ClassID(), classDefinition.Version())
 	current := c.classDefs[classDefKey]
 	if current == nil {
 		c.classDefs[classDefKey] = classDefinition
 		return classDefinition, nil
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
-		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d", classDefinition.ClassId()), nil)
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d",
+			classDefinition.ClassID()), nil)
 	}
 	return classDefinition, nil
 }
 
-func encodeVersionedClassId(classId int32, version int32) string {
-	return strconv.Itoa(int(classId)) + "v" + strconv.Itoa(int(version))
+func encodeVersionedClassID(classID int32, version int32) string {
+	return strconv.Itoa(int(classID)) + "v" + strconv.Itoa(int(version))
 }

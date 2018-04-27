@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("3.9", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
 	list, _ = client.GetList("myList")
@@ -79,8 +79,8 @@ func TestListProxy_AddAll(t *testing.T) {
 	added, err := list.AddAll(all)
 	assert.Equalf(t, err, added, true, "list AddAll() failed")
 	res1, err := list.Get(0)
-	res2, err := list.Get(1)
 	assert.Equalf(t, err, res1, "1", "list AddAll() failed")
+	res2, err := list.Get(1)
 	assert.Equalf(t, err, res2, "2", "list AddAll() failed")
 }
 
@@ -104,8 +104,8 @@ func TestListProxy_AddAllAt(t *testing.T) {
 	added, err := list.AddAllAt(1, all)
 	assert.Equalf(t, err, added, true, "list AddAllAt() failed")
 	res1, err := list.Get(1)
-	res2, err := list.Get(2)
 	assert.Equalf(t, err, res1, "1", "list AddAllAt() failed")
+	res2, err := list.Get(2)
 	assert.Equalf(t, err, res2, "2", "list AddAllAt() failed")
 }
 

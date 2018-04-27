@@ -27,35 +27,35 @@ func NewPredicateFactory() *PredicateFactory {
 
 func (pf *PredicateFactory) Create(id int32) serialization.IdentifiedDataSerializable {
 	switch id {
-	case SqlPredicateId:
-		return &SqlPredicate{}
-	case AndPredicateId:
+	case sqlPredicateID:
+		return &SQLPredicate{}
+	case andPredicateID:
 		return &AndPredicate{}
-	case BetweenPredicateId:
+	case betweenPredicateID:
 		return &BetweenPredicate{}
-	case EqualPredicateId:
+	case equalPredicateID:
 		return &EqualPredicate{}
-	case GreaterlessPredicateId:
+	case greaterlessPredicateID:
 		return &GreaterLessPredicate{}
-	case LikePredicateId:
+	case likePredicateID:
 		return &LikePredicate{}
-	case ILikePredicateId:
+	case ilikePredicateID:
 		return &ILikePredicate{}
-	case InPredicateId:
+	case inPredicateID:
 		return &InPredicate{}
-	case InstanceOfPredicateId:
+	case instanceOfPredicateID:
 		return &InstanceOfPredicate{}
-	case NotEqualPredicateId:
+	case notEqualPredicateID:
 		return &NotEqualPredicate{}
-	case NotPredicateId:
+	case notPredicateID:
 		return &NotPredicate{}
-	case OrPredicateId:
+	case orPredicateID:
 		return &OrPredicate{}
-	case RegexPredicateId:
+	case regexPredicateID:
 		return &RegexPredicate{}
-	case FalsePredicateId:
+	case falsePredicateID:
 		return &FalsePredicate{}
-	case TruePredicateId:
+	case truePredicateID:
 		return &TruePredicate{}
 	default:
 		return nil

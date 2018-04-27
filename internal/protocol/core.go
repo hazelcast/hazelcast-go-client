@@ -42,9 +42,9 @@ func (a *Address) Port() int {
 	return int(a.port)
 }
 
-type Uuid struct {
-	Msb int64
-	Lsb int64
+type uuid struct {
+	msb int64
+	lsb int64
 }
 
 type Member struct {
@@ -62,7 +62,7 @@ func (m *Member) Address() core.IAddress {
 	return &m.address
 }
 
-func (m *Member) Uuid() string {
+func (m *Member) UUID() string {
 	return m.uuid
 }
 
@@ -76,7 +76,7 @@ func (m *Member) Attributes() map[string]string {
 
 func (m *Member) String() string {
 	memberInfo := fmt.Sprintf("Member [%s]:%d - %s", m.Address().Host(), m.Address().Port(),
-		m.Uuid(),
+		m.UUID(),
 	)
 	if m.IsLiteMember() {
 		memberInfo += " lite"
@@ -188,7 +188,7 @@ func (ev *DataEntryView) EvictionCriteriaNumber() int64 {
 	return ev.evictionCriteriaNumber
 }
 
-func (ev *DataEntryView) Ttl() int64 {
+func (ev *DataEntryView) TTL() int64 {
 	return ev.ttl
 }
 
@@ -269,7 +269,7 @@ func (ev *EntryView) EvictionCriteriaNumber() int64 {
 	return ev.evictionCriteriaNumber
 }
 
-func (ev *EntryView) Ttl() time.Duration {
+func (ev *EntryView) TTL() time.Duration {
 	return ev.ttl
 }
 
@@ -378,7 +378,7 @@ func (e *EntryEvent) MergingValue() interface{} {
 	return e.mergingValue
 }
 
-func (e *EntryEvent) Uuid() *string {
+func (e *EntryEvent) UUID() *string {
 	return e.uuid
 }
 
@@ -386,8 +386,8 @@ func (e *EntryEvent) EventType() int32 {
 	return e.eventType
 }
 
-func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, Uuid *string) *EntryEvent {
-	return &EntryEvent{key: key, value: value, oldValue: oldValue, mergingValue: mergingValue, eventType: eventType, uuid: Uuid}
+func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, uuid *string) *EntryEvent {
+	return &EntryEvent{key: key, value: value, oldValue: oldValue, mergingValue: mergingValue, eventType: eventType, uuid: uuid}
 }
 
 type MapEvent struct {
@@ -428,7 +428,7 @@ func (e *ItemEvent) Member() core.IMember {
 	return e.member
 }
 
-func (e *MapEvent) Uuid() *string {
+func (e *MapEvent) UUID() *string {
 	return e.uuid
 }
 
@@ -440,8 +440,8 @@ func (e *MapEvent) EventType() int32 {
 	return e.eventType
 }
 
-func NewMapEvent(eventType int32, Uuid *string, numberOfAffectedEntries int32) *MapEvent {
-	return &MapEvent{eventType: eventType, uuid: Uuid, numberOfAffectedEntries: numberOfAffectedEntries}
+func NewMapEvent(eventType int32, uuid *string, numberOfAffectedEntries int32) *MapEvent {
+	return &MapEvent{eventType: eventType, uuid: uuid, numberOfAffectedEntries: numberOfAffectedEntries}
 }
 
 type EntryAddedListener interface {
@@ -477,7 +477,7 @@ type EntryExpiredListener interface {
 }
 
 type DecodeListenerResponse func(message *ClientMessage) *string
-type EncodeListenerRemoveRequest func(registrationId *string) *ClientMessage
+type EncodeListenerRemoveRequest func(registrationID *string) *ClientMessage
 type MemberAddedListener interface {
 	MemberAdded(member core.IMember)
 }

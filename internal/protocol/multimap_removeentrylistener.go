@@ -14,21 +14,21 @@
 
 package protocol
 
-func MultiMapRemoveEntryListenerCalculateSize(name *string, registrationId *string) int {
+func MultiMapRemoveEntryListenerCalculateSize(name *string, registrationID *string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(registrationId)
+	dataSize += StringCalculateSize(registrationID)
 	return dataSize
 }
 
-func MultiMapRemoveEntryListenerEncodeRequest(name *string, registrationId *string) *ClientMessage {
+func MultiMapRemoveEntryListenerEncodeRequest(name *string, registrationID *string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapRemoveEntryListenerCalculateSize(name, registrationId))
+	clientMessage := NewClientMessage(nil, MultiMapRemoveEntryListenerCalculateSize(name, registrationID))
 	clientMessage.SetMessageType(multimapRemoveEntryListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
+	clientMessage.AppendString(registrationID)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }

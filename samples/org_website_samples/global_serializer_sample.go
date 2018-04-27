@@ -23,7 +23,7 @@ import (
 type GlobalSerializer struct {
 }
 
-func (*GlobalSerializer) Id() int32 {
+func (*GlobalSerializer) ID() int32 {
 	return 20
 }
 

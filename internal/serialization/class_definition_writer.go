@@ -25,8 +25,10 @@ type ClassDefinitionWriter struct {
 	classDefinitionBuilder *classdef.ClassDefinitionBuilder
 }
 
-func NewClassDefinitionWriter(portableContext *PortableContext, factoryId int32, classId int32, version int32) *ClassDefinitionWriter {
-	return &ClassDefinitionWriter{portableContext, classdef.NewClassDefinitionBuilder(factoryId, classId, version)}
+func NewClassDefinitionWriter(portableContext *PortableContext, factoryID int32, classID int32,
+	version int32) *ClassDefinitionWriter {
+	return &ClassDefinitionWriter{portableContext,
+		classdef.NewClassDefinitionBuilder(factoryID, classID, version)}
 }
 
 func (cdw *ClassDefinitionWriter) WriteByte(fieldName string, value byte) {
@@ -77,9 +79,9 @@ func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable seria
 	return nil
 }
 
-func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryId int32, classId int32) error {
-	var version int32 = 0
-	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryId, classId, version)
+func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) error {
+	var version int32
+	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if nestedCD == nil {
 		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}

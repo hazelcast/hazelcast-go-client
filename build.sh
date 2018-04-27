@@ -4,14 +4,11 @@
 # gocov: go get github.com/axw/gocov/gocov
 # go2xunit: go get github.com/tebeka/go2xunit
 # gocover-cobertura: go get github.com/t-yuki/gocover-cobertura
+# gometalinter: go get -u github.com/alecthomas/gometalinter
 
-
-gofmt -d . 2>&1 | read; [ $? == 1 ]
-
+sh linter.sh
 
 if [ "$?" = "1" ]; then
-    echo "gofmt -d .  detected formatting problems"
-    gofmt -d .
     exit 1
 fi
 

@@ -19,19 +19,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type SetProxy struct {
+type setProxy struct {
 	*partitionSpecificProxy
 }
 
-func newSetProxy(client *HazelcastClient, serviceName *string, name *string) (*SetProxy, error) {
+func newSetProxy(client *HazelcastClient, serviceName *string, name *string) (*setProxy, error) {
 	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
 	if err != nil {
 		return nil, err
 	}
-	return &SetProxy{parSpecProxy}, nil
+	return &setProxy{parSpecProxy}, nil
 }
 
-func (sp *SetProxy) Add(item interface{}) (added bool, err error) {
+func (sp *setProxy) Add(item interface{}) (added bool, err error) {
 	itemData, err := sp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
@@ -41,7 +41,7 @@ func (sp *SetProxy) Add(item interface{}) (added bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetAddDecodeResponse)
 }
 
-func (sp *SetProxy) AddAll(items []interface{}) (changed bool, err error) {
+func (sp *setProxy) AddAll(items []interface{}) (changed bool, err error) {
 	itemsData, err := sp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
@@ -51,25 +51,25 @@ func (sp *SetProxy) AddAll(items []interface{}) (changed bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetAddAllDecodeResponse)
 }
 
-func (sp *SetProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
 	request := protocol.SetAddListenerEncodeRequest(sp.name, includeValue, false)
 	eventHandler := sp.createEventHandler(listener)
 	return sp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationId *string) *protocol.ClientMessage {
-			return protocol.SetRemoveListenerEncodeRequest(sp.name, registrationId)
+		func(registrationID *string) *protocol.ClientMessage {
+			return protocol.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 		}, func(clientMessage *protocol.ClientMessage) *string {
 			return protocol.SetAddListenerDecodeResponse(clientMessage)()
 		})
 
 }
 
-func (sp *SetProxy) Clear() (err error) {
+func (sp *setProxy) Clear() (err error) {
 	request := protocol.SetClearEncodeRequest(sp.name)
 	_, err = sp.invoke(request)
 	return err
 }
 
-func (sp *SetProxy) Contains(item interface{}) (found bool, err error) {
+func (sp *setProxy) Contains(item interface{}) (found bool, err error) {
 	itemData, err := sp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
@@ -79,7 +79,7 @@ func (sp *SetProxy) Contains(item interface{}) (found bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetContainsDecodeResponse)
 }
 
-func (sp *SetProxy) ContainsAll(items []interface{}) (foundAll bool, err error) {
+func (sp *setProxy) ContainsAll(items []interface{}) (foundAll bool, err error) {
 	itemsData, err := sp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
@@ -89,13 +89,13 @@ func (sp *SetProxy) ContainsAll(items []interface{}) (foundAll bool, err error) 
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetContainsAllDecodeResponse)
 }
 
-func (sp *SetProxy) IsEmpty() (empty bool, err error) {
+func (sp *setProxy) IsEmpty() (empty bool, err error) {
 	request := protocol.SetIsEmptyEncodeRequest(sp.name)
 	responseMessage, err := sp.invoke(request)
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetIsEmptyDecodeResponse)
 }
 
-func (sp *SetProxy) Remove(item interface{}) (removed bool, err error) {
+func (sp *setProxy) Remove(item interface{}) (removed bool, err error) {
 	itemData, err := sp.validateAndSerialize(item)
 	if err != nil {
 		return false, err
@@ -105,7 +105,7 @@ func (sp *SetProxy) Remove(item interface{}) (removed bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetRemoveDecodeResponse)
 }
 
-func (sp *SetProxy) RemoveAll(items []interface{}) (changed bool, err error) {
+func (sp *setProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 	itemsData, err := sp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
@@ -115,7 +115,7 @@ func (sp *SetProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetCompareAndRemoveAllDecodeResponse)
 }
 
-func (sp *SetProxy) RetainAll(items []interface{}) (changed bool, err error) {
+func (sp *setProxy) RetainAll(items []interface{}) (changed bool, err error) {
 	itemsData, err := sp.validateAndSerializeSlice(items)
 	if err != nil {
 		return false, err
@@ -125,25 +125,25 @@ func (sp *SetProxy) RetainAll(items []interface{}) (changed bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, protocol.SetCompareAndRetainAllDecodeResponse)
 }
 
-func (sp *SetProxy) Size() (size int32, err error) {
+func (sp *setProxy) Size() (size int32, err error) {
 	request := protocol.SetSizeEncodeRequest(sp.name)
 	responseMessage, err := sp.invoke(request)
 	return sp.decodeToInt32AndError(responseMessage, err, protocol.SetSizeDecodeResponse)
 }
 
-func (sp *SetProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return sp.client.ListenerService.deregisterListener(*registrationID, func(registrationId *string) *protocol.ClientMessage {
-		return protocol.SetRemoveListenerEncodeRequest(sp.name, registrationId)
+func (sp *setProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
+	return sp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+		return protocol.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 	})
 }
 
-func (sp *SetProxy) ToSlice() (items []interface{}, err error) {
+func (sp *setProxy) ToSlice() (items []interface{}, err error) {
 	request := protocol.SetGetAllEncodeRequest(sp.name)
 	responseMessage, err := sp.invoke(request)
 	return sp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.SetGetAllDecodeResponse)
 }
 
-func (sp *SetProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
+func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.SetAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid *string, eventType int32) {
 			onItemEvent := sp.createOnItemEvent(listener)

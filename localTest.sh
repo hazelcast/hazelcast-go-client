@@ -1,10 +1,8 @@
 #!/bin/bash
 
-gofmt -d . 2>&1 | read; [ $? == 1 ]
+sh linter.sh
 
 if [ "$?" = "1" ]; then
-    echo "gofmt -d .  detected formatting problems"
-    gofmt -d .
     exit 1
 fi
 

@@ -14,7 +14,7 @@
 
 package core
 
-// FlakeIdGenerator is a cluster-wide unique ID generator. Generated IDs are 'int64' primitive values
+// FlakeIDGenerator is a cluster-wide unique ID generator. Generated IDs are 'int64' primitive values
 // and are k-ordered (roughly ordered). IDs are in the range from `0` to `math.MaxInt64`.
 //
 // The IDs contain timestamp component and a node ID component, which is assigned when the member
@@ -35,22 +35,22 @@ package core
 // nodeId will be assigned from zero again. Uniqueness after the restart will be preserved thanks to
 // the timestamp component.
 //
-// FlakeIdGenerator requires Hazelcast 3.10.
-type FlakeIdGenerator interface {
+// FlakeIDGenerator requires Hazelcast 3.10.
+type FlakeIDGenerator interface {
 
 	// IDistributedObject is the base interface for all distributed objects.
 	IDistributedObject
 
-	// NewId generates and returns a cluster-wide unique ID.
+	// NewID generates and returns a cluster-wide unique ID.
 	//
 	// This method goes to a random member and gets a batch of IDs, which will then be returned locally
-	// for limited time. The pre-fetch size and the validity can be configured, see FlakeIdGeneratorConfig.
+	// for limited time. The pre-fetch size and the validity can be configured, see FlakeIDGeneratorConfig.
 	//
 	// Values returned from this method may not be strictly ordered.
 	//
-	// NewId returns a new cluster-wide unique ID.
-	// NewId returns a 'HazelcastError' if node ID for all members in the cluster is out of valid range.
+	// NewID returns a new cluster-wide unique ID.
+	// NewID returns a 'HazelcastError' if node ID for all members in the cluster is out of valid range.
 	// See Node ID overflow note above.
-	// NewId returns 'HazelcastUnsupportedOperationError' if the cluster version is below 3.10.
-	NewId() (id int64, err error)
+	// NewID returns 'HazelcastUnsupportedOperationError' if the cluster version is below 3.10.
+	NewID() (id int64, err error)
 }

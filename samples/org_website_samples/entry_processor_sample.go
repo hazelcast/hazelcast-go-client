@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	IncEntryProcessorClassId   = 1
-	IncEntryProcessorFactoryId = 66
+	incEntryProcessorClassID   = 1
+	incEntryProcessorFactoryID = 66
 )
 
 type IncEntryProcessor struct {
@@ -37,12 +37,12 @@ func (p *IncEntryProcessor) WriteData(output *serialization.DataOutput) error {
 	return nil
 }
 
-func (p *IncEntryProcessor) FactoryId() int32 {
-	return IncEntryProcessorFactoryId
+func (p *IncEntryProcessor) FactoryID() int32 {
+	return incEntryProcessorFactoryID
 }
 
-func (p *IncEntryProcessor) ClassId() int32 {
-	return IncEntryProcessorClassId
+func (p *IncEntryProcessor) ClassID() int32 {
+	return incEntryProcessorClassID
 }
 
 func entryProcessorSampleRun() {

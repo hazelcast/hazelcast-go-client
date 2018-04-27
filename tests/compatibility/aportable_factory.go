@@ -16,12 +16,13 @@ package compatibility
 
 import "github.com/hazelcast/hazelcast-go-client/serialization"
 
-type aPortableFactory struct{}
+type aPortableFactory struct {
+}
 
-func (pf *aPortableFactory) Create(classId int32) serialization.Portable {
-	if classId == portableClassId {
+func (pf *aPortableFactory) Create(classID int32) serialization.Portable {
+	if classID == portableClassID {
 		return &aPortable{}
-	} else if classId == innerPortableClassId {
+	} else if classID == innerPortableClassID {
 		return &AnInnerPortable{}
 	}
 	return nil

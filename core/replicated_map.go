@@ -36,12 +36,12 @@ type ReplicatedMap interface {
 	// one and returned from the call.
 	Put(key interface{}, value interface{}) (oldValue interface{}, err error)
 
-	// PutWithTtl associates a given value to the specified key and replicates it to the
+	// PutWithTTL associates a given value to the specified key and replicates it to the
 	// cluster. If there is an old value, it will be replaced by the specified
 	// one and returned from the call. In addition, you have to specify a ttl and its time unit
 	// to define when the value is outdated and thus should be removed from the
 	// replicated map.
-	PutWithTtl(key interface{}, value interface{}, ttl time.Duration) (oldValue interface{}, err error)
+	PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (oldValue interface{}, err error)
 
 	// PutAll copies all of the mappings from the specified map to this map.
 	// The effect of this call is equivalent to that of calling put(k, v)
@@ -108,10 +108,11 @@ type ReplicatedMap interface {
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate and key.
 	// AddEntryListenerToKeyWithPredicate returns registration id of the listener.
-	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (registrationID *string, err error)
+	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (
+		registrationID *string, err error)
 
 	// RemoveEntryListener removes the specified entry listener and returns silently if there was no such
 	// listener added before.
-	// RemoveEntryListener returns true if remove operation is successful, false if unsuccessful or this listener did not exist.
-	RemoveEntryListener(registrationId *string) (removed bool, err error)
+	// It returns true if remove operation is successful, false if unsuccessful or this listener did not exist.
+	RemoveEntryListener(registrationID *string) (removed bool, err error)
 }

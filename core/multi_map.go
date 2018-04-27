@@ -79,7 +79,7 @@ type MultiMap interface {
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error)
 
 	// RemoveEntryListener removes the entry listener by the registration ID.
-	RemoveEntryListener(registrationId *string) (removed bool, err error)
+	RemoveEntryListener(registrationID *string) (removed bool, err error)
 
 	// Lock acquires a lock for the specified key.
 	// If the lock is not available, then

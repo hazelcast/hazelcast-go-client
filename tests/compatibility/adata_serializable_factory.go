@@ -18,8 +18,8 @@ import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type aDataSerializableFactory struct{}
 
-func (*aDataSerializableFactory) Create(classId int32) serialization.IdentifiedDataSerializable {
-	if classId == dataSerializableClassId {
+func (*aDataSerializableFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
+	if classID == dataSerializableClassID {
 		return &anIdentifiedDataSerializable{}
 	}
 	return nil

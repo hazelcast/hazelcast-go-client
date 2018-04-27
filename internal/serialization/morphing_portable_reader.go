@@ -26,7 +26,8 @@ type MorphingPortableReader struct {
 	*DefaultPortableReader
 }
 
-func NewMorphingPortableReader(portableSerializer *PortableSerializer, input serialization.DataInput, classDefinition serialization.ClassDefinition) *MorphingPortableReader {
+func NewMorphingPortableReader(portableSerializer *PortableSerializer, input serialization.DataInput,
+	classDefinition serialization.ClassDefinition) *MorphingPortableReader {
 	return &MorphingPortableReader{NewDefaultPortableReader(portableSerializer, input, classDefinition)}
 }
 
@@ -329,8 +330,10 @@ func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) ([]serial
 	return mpr.DefaultPortableReader.ReadPortableArray(fieldName)
 }
 
-func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd serialization.FieldDefinition, expectedType int32) error {
-	return core.NewHazelcastSerializationError(fmt.Sprintf("incompatible to read %v from %v while reading field : %v", getTypeByConst(expectedType), getTypeByConst(fd.Type()), fd.Name()), nil)
+func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd serialization.FieldDefinition,
+	expectedType int32) error {
+	return core.NewHazelcastSerializationError(fmt.Sprintf("incompatible to read %v from %v while reading field : %v",
+		TypeByID(expectedType), TypeByID(fd.Type()), fd.Name()), nil)
 }
 
 func (mpr *MorphingPortableReader) validateTypeCompatibility(fd serialization.FieldDefinition, expectedType int32) error {

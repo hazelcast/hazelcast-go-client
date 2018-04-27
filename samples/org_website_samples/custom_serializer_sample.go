@@ -28,7 +28,7 @@ type CustomSerializable struct {
 type CustomSerializer struct {
 }
 
-func (s *CustomSerializer) Id() int32 {
+func (s *CustomSerializer) ID() int32 {
 	return 10
 }
 

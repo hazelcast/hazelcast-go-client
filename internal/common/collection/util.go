@@ -21,7 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func ObjectToDataCollection(objects []interface{}, service *serialization.SerializationService) ([]*serialization.Data, error) {
+func ObjectToDataCollection(objects []interface{}, service *serialization.Service) ([]*serialization.Data, error) {
 	if objects == nil {
 		return nil, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
 	}
@@ -39,7 +39,7 @@ func ObjectToDataCollection(objects []interface{}, service *serialization.Serial
 	return elementsData, nil
 }
 
-func DataToObjectCollection(dataSlice []*serialization.Data, service *serialization.SerializationService) ([]interface{}, error) {
+func DataToObjectCollection(dataSlice []*serialization.Data, service *serialization.Service) ([]interface{}, error) {
 	if dataSlice == nil {
 		return nil, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
 	}
@@ -54,7 +54,7 @@ func DataToObjectCollection(dataSlice []*serialization.Data, service *serializat
 	return elements, nil
 }
 
-func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serialization.SerializationService) (pairSlice []core.IPair, err error) {
+func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serialization.Service) (pairSlice []core.IPair, err error) {
 	pairSlice = make([]core.IPair, len(dataSlice))
 	for index, pairData := range dataSlice {
 		key, err := service.ToObject(pairData.Key().(*serialization.Data))

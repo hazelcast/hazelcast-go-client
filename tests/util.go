@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-var Timeout time.Duration = 1 * time.Minute
+var Timeout = 1 * time.Minute
 
 const DefaultServerConfig = `
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"

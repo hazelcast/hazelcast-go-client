@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	DefaultHeartBeatInterval = 10 * time.Second
-	DefaultHeartBeatTimeout  = 60 * time.Second
+	defaultHeartBeatInterval = 10 * time.Second
+	defaultHeartBeatTimeout  = 60 * time.Second
 )
 
 type heartBeatService struct {
@@ -38,8 +38,8 @@ type heartBeatService struct {
 }
 
 func newHeartBeatService(client *HazelcastClient) *heartBeatService {
-	heartBeat := heartBeatService{client: client, heartBeatInterval: DefaultHeartBeatInterval,
-		heartBeatTimeout: DefaultHeartBeatTimeout,
+	heartBeat := heartBeatService{client: client, heartBeatInterval: defaultHeartBeatInterval,
+		heartBeatTimeout: defaultHeartBeatTimeout,
 		cancel:           make(chan struct{}),
 	}
 	if client.ClientConfig.HeartbeatTimeout() > 0 {
@@ -58,9 +58,7 @@ func (hbs *heartBeatService) AddHeartbeatListener(listener interface{}) {
 	listeners := hbs.listeners.Load().([]interface{})
 	newSize := len(listeners) + 1
 	copyListeners := make([]interface{}, newSize)
-	for index, listener := range listeners {
-		copyListeners[index] = listener
-	}
+	copy(copyListeners, listeners)
 	copyListeners[newSize-1] = listener
 	hbs.listeners.Store(copyListeners)
 }

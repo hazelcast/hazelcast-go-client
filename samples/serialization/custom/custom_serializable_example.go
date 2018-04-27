@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	customSerializerId = 4 // customSerializerId should be greater than 0 and be specific to just one serializer.
+	customSerializerID = 4 // customSerializerID should be greater than 0 and be specific to just one serializer.
 )
 
 type timeOfDay struct {
@@ -38,8 +38,8 @@ type timeOfDay struct {
 type CustomSerializer struct {
 }
 
-func (s *CustomSerializer) Id() int32 {
-	return customSerializerId
+func (*CustomSerializer) ID() int32 {
+	return customSerializerID
 }
 
 func (s *CustomSerializer) Read(input serialization.DataInput) (interface{}, error) {

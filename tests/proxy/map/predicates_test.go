@@ -25,7 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-var serializationService *serialization.SerializationService
+var serializationService *serialization.Service
 
 func predicateTestInit() {
 	defineSerializationService()
@@ -34,7 +34,7 @@ func predicateTestInit() {
 
 func defineSerializationService() {
 	config := config.NewSerializationConfig()
-	serializationService = serialization.NewSerializationService(config)
+	serializationService, _ = serialization.NewSerializationService(config)
 }
 
 func fillMapForPredicates() {
@@ -73,23 +73,23 @@ func testPredicate(t *testing.T, predicate interface{}, expecteds map[interface{
 	}
 }
 
-func TestSql(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+func TestSQL(t *testing.T) {
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key10"] = int32(10)
-	sql := predicates.Sql("this == 10")
+	sql := predicates.SQL("this == 10")
 	testSerialization(t, sql)
 	testPredicate(t, sql, expecteds)
 }
 
 func TestAnd(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	and := predicates.And(predicates.Equal("this", int32(10)), predicates.Equal("this", int32(11)))
 	testSerialization(t, and)
 	testPredicate(t, and, expecteds)
 }
 
 func TestBetween(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	for i := 5; i < 29; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
@@ -99,7 +99,7 @@ func TestBetween(t *testing.T) {
 }
 
 func TestGreaterThan(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
 	greaterThan := predicates.GreaterThan("this", int32(47))
@@ -108,7 +108,7 @@ func TestGreaterThan(t *testing.T) {
 }
 
 func TestGreaterEqual(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key47"] = int32(47)
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
@@ -118,7 +118,7 @@ func TestGreaterEqual(t *testing.T) {
 }
 
 func TestLessThan(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key0"] = int32(0)
 	expecteds["key1"] = int32(1)
 	expecteds["key2"] = int32(2)
@@ -129,7 +129,7 @@ func TestLessThan(t *testing.T) {
 }
 
 func TestLessEqual(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key0"] = int32(0)
 	expecteds["key1"] = int32(1)
 	expecteds["key2"] = int32(2)
@@ -152,7 +152,7 @@ func TestLike(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	testMap := make(map[interface{}]interface{}, 0)
+	testMap := make(map[interface{}]interface{})
 	testMap["temp"] = "tempval"
 	testMap["temp1"] = "tempval1"
 	testMap["temp3"] = "tempval3"
@@ -183,7 +183,7 @@ func TestILike(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	testMap := make(map[interface{}]interface{}, 0)
+	testMap := make(map[interface{}]interface{})
 	testMap["temp"] = "tempval"
 	testMap["TEMP"] = "TeMPVAL"
 	testMap["temp1"] = "teMpvAl1"
@@ -204,7 +204,7 @@ func TestILike(t *testing.T) {
 }
 
 func TestIn(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key48"] = int32(48)
 	expecteds["key49"] = int32(49)
 	in := predicates.In("this", int32(48), int32(49), int32(50), int32(51), int32(52))
@@ -213,7 +213,7 @@ func TestIn(t *testing.T) {
 }
 
 func TestInstanceOf(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	for i := 0; i < 50; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
@@ -223,7 +223,7 @@ func TestInstanceOf(t *testing.T) {
 }
 
 func TestEqual(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key1"] = int32(1)
 	equal := predicates.Equal("this", int32(1))
 	testSerialization(t, equal)
@@ -231,7 +231,7 @@ func TestEqual(t *testing.T) {
 }
 
 func TestNotEqual(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	for i := 0; i < 49; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}
@@ -241,7 +241,7 @@ func TestNotEqual(t *testing.T) {
 }
 
 func TestNot(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key0"] = int32(0)
 	expecteds["key1"] = int32(1)
 	not := predicates.Not(predicates.GreaterEqual("this", int32(2)))
@@ -250,7 +250,7 @@ func TestNot(t *testing.T) {
 }
 
 func TestOr(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["key0"] = int32(0)
 	expecteds["key35"] = int32(35)
 	expecteds["key49"] = int32(49)
@@ -266,7 +266,7 @@ func TestRegex(t *testing.T) {
 	rp := predicates.Regex("this", "^.*ya$")
 	testSerialization(t, rp)
 	set, _ := localMap.EntrySetWithPredicate(rp)
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	expecteds["07"] = "antalya"
 	if len(set) != len(expecteds) {
 		t.Errorf("%s failed", reflect.TypeOf(rp))
@@ -279,14 +279,14 @@ func TestRegex(t *testing.T) {
 }
 
 func TestFalse(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	false := predicates.False()
 	testSerialization(t, false)
 	testPredicate(t, false, expecteds)
 }
 
 func TestTrue(t *testing.T) {
-	expecteds := make(map[interface{}]interface{}, 0)
+	expecteds := make(map[interface{}]interface{})
 	for i := 0; i < 50; i++ {
 		expecteds["key"+strconv.Itoa(i)] = int32(i)
 	}

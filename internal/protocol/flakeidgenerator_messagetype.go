@@ -15,5 +15,5 @@
 package protocol
 
 const (
-	flakeidgeneratorNewIdBatch = 0x1f01
+	flakeidgeneratorNewIDBatch = 0x1f01
 )

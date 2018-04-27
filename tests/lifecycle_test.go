@@ -34,7 +34,7 @@ func (l *lifecycleListener) LifecycleStateChanged(newState string) {
 }
 
 func TestLifecycleListener(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	config := hazelcast.NewHazelcastConfig()
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
@@ -54,7 +54,7 @@ func TestLifecycleListener(t *testing.T) {
 }
 
 func TestLifecycleListenerForDisconnected(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
@@ -62,24 +62,24 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetConnectionAttemptLimit(100)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	registrationId := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
+	registrationID := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownCluster(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, nil, false, timeout, "Lifecycle listener failed")
 	assert.Equalf(t, nil, lifecycleListener.collector[0], internal.LifecycleStateDisconnected, "Lifecycle listener failed")
-	client.GetLifecycle().RemoveListener(&registrationId)
+	client.GetLifecycle().RemoveListener(&registrationID)
 	client.Shutdown()
 }
 
 func TestRemoveListener(t *testing.T) {
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("3.9", DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewHazelcastClient()
-	registrationId := client.GetLifecycle().AddListener(&lifecycleListener)
+	registrationID := client.GetLifecycle().AddListener(&lifecycleListener)
 	wg.Add(2)
-	client.GetLifecycle().RemoveListener(&registrationId)
+	client.GetLifecycle().RemoveListener(&registrationID)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout/20)
 	assert.Equalf(t, nil, true, timeout, "Lifecycle listener failed")

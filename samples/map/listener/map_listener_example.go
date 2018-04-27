@@ -41,16 +41,20 @@ func main() {
 
 	mp, _ := client.GetMap("testMap")
 
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 
-	registrationId, err := mp.AddEntryListener(entryListener, true)
+	registrationID, err := mp.AddEntryListener(entryListener, true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	wg.Add(1)
 	mp.Put("testKey", "testValue")
 	wg.Wait() //Wait for the event
 
-	mp.RemoveEntryListener(registrationId)
+	mp.RemoveEntryListener(registrationID)
 	client.Shutdown()
 
 }

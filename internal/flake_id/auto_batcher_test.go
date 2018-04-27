@@ -23,9 +23,9 @@ type testSupplier struct {
 	base int64
 }
 
-func (s *testSupplier) NewIdBatch(batchSize int32) (*IdBatch, error) {
+func (s *testSupplier) NewIDBatch(batchSize int32) (*IDBatch, error) {
 
-	batch := NewIdBatch(s.base, 1, batchSize)
+	batch := NewIDBatch(s.base, 1, batchSize)
 	s.base += int64(batchSize)
 	return batch, nil
 }
@@ -38,27 +38,27 @@ func TestMain(t *testing.M) {
 
 func TestAutoBatcher_WhenValidButUsedAllThenFetchNew(t *testing.T) {
 	batcher = NewAutoBatcher(3, 10000, &testSupplier{})
-	if id, _ := batcher.NewId(); id != 0 {
+	if id, _ := batcher.NewID(); id != 0 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 0, id)
 	}
-	if id, _ := batcher.NewId(); id != 1 {
+	if id, _ := batcher.NewID(); id != 1 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 1, id)
 	}
-	if id, _ := batcher.NewId(); id != 2 {
+	if id, _ := batcher.NewID(); id != 2 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 2, id)
 	}
-	if id, _ := batcher.NewId(); id != 3 {
+	if id, _ := batcher.NewID(); id != 3 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 3, id)
 	}
 }
 
 func TestAutoBatcher_WhenExpiredThenFetchNew(t *testing.T) {
 	batcher = NewAutoBatcher(3, 10000, &testSupplier{})
-	if id, _ := batcher.NewId(); id != 0 {
+	if id, _ := batcher.NewID(); id != 0 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 0, id)
 	}
 	time.Sleep(10000 * time.Millisecond)
-	if id, _ := batcher.NewId(); id != 3 {
+	if id, _ := batcher.NewID(); id != 3 {
 		t.Errorf("AutoBatcher failed expected: %d got %d", 3, id)
 	}
 }

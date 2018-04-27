@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	globalSerializerId = 5 // globalSerializerId should be greater than 0 and be specific to just one serializer.
+	globalSerializerID = 5 // globalSerializerID should be greater than 0 and be specific to just one serializer.
 )
 
 type colorGroup struct {
@@ -34,13 +34,14 @@ type colorGroup struct {
 }
 
 // GlobalSerializer will handle all struct types if all the steps in searching for a serializer fail.
-// If none of custom and global serializers are not added to SerializationConfig, objects will be serialized by default GoLang Gob Serializer.
+// If none of custom and global serializers are not added to SerializationConfig,
+// objects will be serialized by default GoLang Gob Serializer.
 // For example, here JSON package's serialization is used.
 type GlobalSerializer struct {
 }
 
-func (s *GlobalSerializer) Id() int32 {
-	return globalSerializerId
+func (s *GlobalSerializer) ID() int32 {
+	return globalSerializerID
 }
 
 func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {

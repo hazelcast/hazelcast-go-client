@@ -52,12 +52,12 @@ type aPortable struct {
 	stringsNull  []string
 }
 
-func (*aPortable) ClassId() int32 {
-	return portableClassId
+func (*aPortable) ClassID() int32 {
+	return portableClassID
 }
 
-func (*aPortable) FactoryId() int32 {
-	return portableFactoryId
+func (*aPortable) FactoryID() int32 {
+	return portableFactoryID
 }
 
 func (p *aPortable) WritePortable(writer serialization.PortableWriter) error {
@@ -73,7 +73,7 @@ func (p *aPortable) WritePortable(writer serialization.PortableWriter) error {
 	if p != nil {
 		writer.WritePortable("p", p)
 	} else {
-		writer.WriteNilPortable("p", portableFactoryId, portableClassId)
+		writer.WriteNilPortable("p", portableFactoryID, portableClassID)
 	}
 	writer.WriteBoolArray("booleans", p.booleans)
 	writer.WriteByteArray("bs", p.bytes)

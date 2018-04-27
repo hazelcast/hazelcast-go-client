@@ -21,12 +21,12 @@ type AnInnerPortable struct {
 	aFloat float32
 }
 
-func (*AnInnerPortable) FactoryId() int32 {
-	return portableFactoryId
+func (*AnInnerPortable) FactoryID() int32 {
+	return portableFactoryID
 }
 
-func (*AnInnerPortable) ClassId() int32 {
-	return innerPortableClassId
+func (*AnInnerPortable) ClassID() int32 {
+	return innerPortableClassID
 }
 
 func (ip *AnInnerPortable) WritePortable(writer serialization.PortableWriter) error {

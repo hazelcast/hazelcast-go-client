@@ -25,11 +25,11 @@ type IdentifiedDataSerializableFactory interface {
 // IdentifiedDataSerializable is a serialization method as an alternative to standard Gob serialization.
 // Each IdentifiedDataSerializable is created by a registered IdentifiedDataSerializableFactory.
 type IdentifiedDataSerializable interface {
-	// FactoryId returns IdentifiedDataSerializableFactory factory ID for this struct.
-	FactoryId() int32
+	// FactoryID returns IdentifiedDataSerializableFactory factory ID for this struct.
+	FactoryID() int32
 
-	// ClassId returns type identifier for this struct. It should be unique per IdentifiedDataSerializableFactory.
-	ClassId() int32
+	// ClassID returns type identifier for this struct. It should be unique per IdentifiedDataSerializableFactory.
+	ClassID() int32
 
 	// WriteData writes object fields to output stream.
 	WriteData(output DataOutput) error
@@ -48,11 +48,11 @@ type IdentifiedDataSerializable interface {
 //
 // * Querying and indexing support without deserialization and/or reflection.
 type Portable interface {
-	// FactoryId returns PortableFactory ID for this portable struct.
-	FactoryId() int32
+	// FactoryID returns PortableFactory ID for this portable struct.
+	FactoryID() int32
 
-	// ClassId returns type identifier for this portable struct. Class ID should be unique per PortableFactory.
-	ClassId() int32
+	// ClassID returns type identifier for this portable struct. Class ID should be unique per PortableFactory.
+	ClassID() int32
 
 	// WritePortable serializes this portable object using PortableWriter.
 	WritePortable(writer PortableWriter) error
@@ -74,13 +74,13 @@ type VersionedPortable interface {
 type PortableFactory interface {
 	// Create creates a Portable instance using given class ID and
 	// returns portable instance or nil if class ID is not known by this factory.
-	Create(classId int32) Portable
+	Create(classID int32) Portable
 }
 
 // Serializer is base interface of serializers.
 type Serializer interface {
-	// Id returns id of serializer.
-	Id() int32
+	// ID returns id of serializer.
+	ID() int32
 
 	// Read reads an object from ObjectDataInput.
 	Read(input DataInput) (interface{}, error)
@@ -315,8 +315,8 @@ type PortableWriter interface {
 	// WritePortable writes a Portable with fieldName.
 	WritePortable(fieldName string, value Portable) error
 
-	// WriteNilPortable writes a NilPortable with fieldName, factoryId and classId.
-	WriteNilPortable(fieldName string, factoryId int32, classId int32) error
+	// WriteNilPortable writes a NilPortable with fieldName, factoryID and classID.
+	WriteNilPortable(fieldName string, factoryID int32, classID int32) error
 
 	// WriteByteArray writes a []byte with fieldName.
 	WriteByteArray(fieldName string, value []byte)
@@ -415,11 +415,11 @@ type PortableReader interface {
 
 // ClassDefinition defines a class schema for Portable structs.
 type ClassDefinition interface {
-	// FactoryId returns factory ID of struct.
-	FactoryId() int32
+	// FactoryID returns factory ID of struct.
+	FactoryID() int32
 
-	// ClassId returns class ID of struct.
-	ClassId() int32
+	// ClassID returns class ID of struct.
+	ClassID() int32
 
 	// Version returns version of struct.
 	Version() int32
@@ -442,11 +442,11 @@ type FieldDefinition interface {
 	// Index returns field index.
 	Index() int32
 
-	// ClassId returns class ID of this field's struct.
-	ClassId() int32
+	// ClassID returns class ID of this field's struct.
+	ClassID() int32
 
-	// FactoryId returns factory ID of this field's struct.
-	FactoryId() int32
+	// FactoryID returns factory ID of this field's struct.
+	FactoryID() int32
 
 	// Version returns version of this field's struct.
 	Version() int32

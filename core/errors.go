@@ -14,7 +14,7 @@
 
 package core
 
-// General HazelcastError interface.
+// HazelcastError is the general error interface.
 type HazelcastError interface {
 	// Error returns the error message.
 	Error() string
@@ -23,7 +23,7 @@ type HazelcastError interface {
 	Cause() error
 }
 
-// General HazelcastErrorType struct.
+// HazelcastErrorType is the general error struct.
 type HazelcastErrorType struct {
 	// message is the error message.
 	message string
