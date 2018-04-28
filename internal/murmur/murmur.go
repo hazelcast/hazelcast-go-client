@@ -24,7 +24,7 @@ func Default3A(key []byte, offset int32, len int) int32 {
 	return M3A(key, offset, len, defaultSeed)
 }
 
-// MurmurHash3 for x86, 32-bit (MurmurHash3_x86_32)
+// M3A computes MurmurHash3 for x86, 32-bit (MurmurHash3_x86_32)
 func M3A(key []byte, offset int32, len int, seed uint32) int32 {
 	var h1 = seed
 	var c1 uint32 = 0xcc9e2d51

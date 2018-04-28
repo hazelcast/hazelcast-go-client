@@ -12,37 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufutil
+package timeutil
 
 import (
 	"testing"
 	"time"
 )
-
-func TestIsValidIPAddress(t *testing.T) {
-	ip := "142.1.2.4"
-	if ok := IsValidIPAddress(ip); !ok {
-		t.Fatal("IsValidIPAddress failed")
-	}
-	ip = "123.2.1"
-	if ok := IsValidIPAddress(ip); ok {
-		t.Fatal("IsValidIPAddress failed")
-	}
-}
-
-func TestGetIpAndPort(t *testing.T) {
-	testAddress := "121.1.23.3:1231"
-	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != 1231 {
-		t.Fatal("GetIPAndPort failed.")
-	}
-}
-
-func TestGetIpWithoutPort(t *testing.T) {
-	testAddress := "121.1.23.3"
-	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != -1 {
-		t.Fatal("GetIPAndPort failed.")
-	}
-}
 
 func TestGetTimeInMilliSeconds(t *testing.T) {
 	var expected int64 = 100

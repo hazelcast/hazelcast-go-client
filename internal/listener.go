@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/IPutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 type listenerService struct {
@@ -152,7 +152,7 @@ func (ls *listenerService) registerListener(request *protocol.ClientMessage,
 	if err != nil {
 		return nil, err
 	}
-	userRegistrationID, _ := bufutil.NewUUID()
+	userRegistrationID, _ := IPutil.NewUUID()
 	registrationKey := listenerRegistrationKey{
 		userRegistrationKey: userRegistrationID,
 		request:             request,

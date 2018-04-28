@@ -21,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
 type queueProxy struct {
@@ -131,7 +132,7 @@ func (qp *queueProxy) OfferWithTimeout(item interface{}, timeout time.Duration) 
 	if err != nil {
 		return false, err
 	}
-	timeoutInMilliSeconds := bufutil.GetTimeInMilliSeconds(timeout)
+	timeoutInMilliSeconds := timeutil.GetTimeInMilliSeconds(timeout)
 	request := protocol.QueueOfferEncodeRequest(qp.name, itemData, timeoutInMilliSeconds)
 	responseMessage, err := qp.invoke(request)
 	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
@@ -150,7 +151,7 @@ func (qp *queueProxy) Poll() (item interface{}, err error) {
 }
 
 func (qp *queueProxy) PollWithTimeout(timeout time.Duration) (item interface{}, err error) {
-	timeoutInMilliSeconds := bufutil.GetTimeInMilliSeconds(timeout)
+	timeoutInMilliSeconds := timeutil.GetTimeInMilliSeconds(timeout)
 	request := protocol.QueuePollEncodeRequest(qp.name, timeoutInMilliSeconds)
 	responseMessage, err := qp.invoke(request)
 	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)

@@ -21,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
 type mapProxy struct {
@@ -56,7 +57,7 @@ func (mp *mapProxy) PutTransient(key interface{}, value interface{}, ttl time.Du
 	if err != nil {
 		return err
 	}
-	ttlInMillis := bufutil.GetTimeInMilliSeconds(ttl)
+	ttlInMillis := timeutil.GetTimeInMilliSeconds(ttl)
 	request := protocol.MapPutTransientEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return err
@@ -107,7 +108,7 @@ func (mp *mapProxy) TryRemove(key interface{}, timeout time.Duration) (ok bool, 
 	if err != nil {
 		return false, err
 	}
-	timeoutInMillis := bufutil.GetTimeInMilliSeconds(timeout)
+	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
 	request := protocol.MapTryRemoveEncodeRequest(mp.name, keyData, threadID, timeoutInMillis)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryRemoveDecodeResponse)
@@ -214,7 +215,7 @@ func (mp *mapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err
 	if err != nil {
 		return err
 	}
-	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
+	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MapLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, mp.client.ProxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
@@ -234,8 +235,8 @@ func (mp *mapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Dur
 	if err != nil {
 		return false, err
 	}
-	timeoutInMillis := bufutil.GetTimeInMilliSeconds(timeout)
-	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
+	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
+	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MapTryLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
 		mp.client.ProxyManager.nextReferenceID())
 	responseMessage, err := mp.invokeOnKey(request, keyData)
@@ -304,7 +305,7 @@ func (mp *mapProxy) SetWithTTL(key interface{}, value interface{}, ttl time.Dura
 	if err != nil {
 		return err
 	}
-	ttlInMillis := bufutil.GetTimeInMilliSeconds(ttl)
+	ttlInMillis := timeutil.GetTimeInMilliSeconds(ttl)
 	request := protocol.MapSetEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return

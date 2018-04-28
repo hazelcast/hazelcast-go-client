@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
 type Address struct {
@@ -213,15 +214,15 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		key:                    key,
 		value:                  value,
 		cost:                   cost,
-		creationTime:           bufutil.ConvertMillisToUnixTime(creationTime),
-		expirationTime:         bufutil.ConvertMillisToUnixTime(expirationTime),
+		creationTime:           timeutil.ConvertMillisToUnixTime(creationTime),
+		expirationTime:         timeutil.ConvertMillisToUnixTime(expirationTime),
 		hits:                   hits,
-		lastAccessTime:         bufutil.ConvertMillisToUnixTime(lastAccessTime),
-		lastStoredTime:         bufutil.ConvertMillisToUnixTime(lastStoredTime),
-		lastUpdateTime:         bufutil.ConvertMillisToUnixTime(lastUpdateTime),
+		lastAccessTime:         timeutil.ConvertMillisToUnixTime(lastAccessTime),
+		lastStoredTime:         timeutil.ConvertMillisToUnixTime(lastStoredTime),
+		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl: bufutil.ConvertMillisToDuration(ttl),
+		ttl: timeutil.ConvertMillisToDuration(ttl),
 	}
 }
 
@@ -525,7 +526,7 @@ type TopicMessage struct {
 func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember *Member) *TopicMessage {
 	return &TopicMessage{
 		messageObject:    messageObject,
-		publishTime:      bufutil.ConvertMillisToUnixTime(publishTime),
+		publishTime:      timeutil.ConvertMillisToUnixTime(publishTime),
 		publishingMember: publishingMember,
 	}
 }
