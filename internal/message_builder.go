@@ -15,8 +15,8 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 type clientMessageBuilder struct {
@@ -25,9 +25,9 @@ type clientMessageBuilder struct {
 }
 
 func (mb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
-	if msg.HasFlags(common.BeginEndFlag) > 0 {
+	if msg.HasFlags(bufutil.BeginEndFlag) > 0 {
 		mb.responseChannel <- msg
-	} else if msg.HasFlags(common.BeginFlag) > 0 {
+	} else if msg.HasFlags(bufutil.BeginFlag) > 0 {
 		mb.incompleteMessages[msg.CorrelationID()] = msg
 	} else {
 		message, found := mb.incompleteMessages[msg.CorrelationID()]
@@ -35,8 +35,8 @@ func (mb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
 			return
 		}
 		message.Accumulate(msg)
-		if msg.HasFlags(common.EndFlag) > 0 {
-			message.AddFlags(common.BeginEndFlag)
+		if msg.HasFlags(bufutil.EndFlag) > 0 {
+			message.AddFlags(bufutil.BeginEndFlag)
 			mb.responseChannel <- message
 			delete(mb.incompleteMessages, msg.CorrelationID())
 		}

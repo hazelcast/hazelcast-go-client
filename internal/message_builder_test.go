@@ -19,8 +19,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func TestClientMessageBuilder_OnMessage(t *testing.T) {
@@ -42,7 +42,7 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	serverVersion := "3.9"
 	expectedClientMessage := protocol.ClientAuthenticationEncodeRequest(&testString, &testString, &testString, &testString, false,
 		&testString, 1, &serverVersion)
-	expectedClientMessage.SetFlags(common.BeginEndFlag)
+	expectedClientMessage.SetFlags(bufutil.BeginEndFlag)
 	expectedClientMessage.SetCorrelationID(1)
 	expectedClientMessage.SetFrameLength(int32(len(expectedClientMessage.Buffer)))
 
@@ -60,9 +60,9 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	firstMessage.SetFrameLength(int32(len(firstMessage.Buffer)))
 	secondMessage.SetFrameLength(int32(len(secondMessage.Buffer)))
 
-	firstMessage.SetFlags(common.BeginFlag)
+	firstMessage.SetFlags(bufutil.BeginFlag)
 	builder.onMessage(firstMessage)
-	secondMessage.SetFlags(common.EndFlag)
+	secondMessage.SetFlags(bufutil.EndFlag)
 	builder.onMessage(secondMessage)
 	mu.Lock()
 	if !reflect.DeepEqual(builtClientMessage.Buffer, expectedClientMessage.Buffer) {

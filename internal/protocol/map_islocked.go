@@ -21,8 +21,8 @@ import (
 func MapIsLockedCalculateSize(name *string, key *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(key)
 	return dataSize
 }
 

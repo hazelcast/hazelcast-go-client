@@ -15,13 +15,13 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += common.BoolSizeInBytes
+	dataSize += bufutil.BoolSizeInBytes
 	return dataSize
 }
 
@@ -80,13 +80,13 @@ func ClientAddMembershipListenerHandle(clientMessage *ClientMessage,
 	handleEventMemberAttributeChange ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == common.EventMember && handleEventMember != nil {
+	if messageType == bufutil.EventMember && handleEventMember != nil {
 		handleEventMember(ClientAddMembershipListenerEventMemberDecode(clientMessage))
 	}
-	if messageType == common.EventMemberList && handleEventMemberList != nil {
+	if messageType == bufutil.EventMemberList && handleEventMemberList != nil {
 		handleEventMemberList(ClientAddMembershipListenerEventMemberListDecode(clientMessage))
 	}
-	if messageType == common.EventMemberAttributeChange && handleEventMemberAttributeChange != nil {
+	if messageType == bufutil.EventMemberAttributeChange && handleEventMemberAttributeChange != nil {
 		handleEventMemberAttributeChange(ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage))
 	}
 }

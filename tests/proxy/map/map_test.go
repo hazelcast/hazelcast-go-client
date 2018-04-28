@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/tests"
@@ -61,7 +61,7 @@ func TestMapProxy_Name(t *testing.T) {
 }
 
 func TestMapProxy_ServiceName(t *testing.T) {
-	serviceName := common.ServiceNameMap
+	serviceName := bufutil.ServiceNameMap
 	if serviceName != mp.ServiceName() {
 		t.Error("ServiceName() failed")
 	}

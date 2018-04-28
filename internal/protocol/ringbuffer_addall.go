@@ -17,18 +17,18 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func RingbufferAddAllCalculateSize(name *string, valueList []*serialization.Data, overflowPolicy int32) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.Int32SizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.Int32SizeInBytes
 	for _, valueListItem := range valueList {
-		dataSize += DataCalculateSize(valueListItem)
+		dataSize += dataCalculateSize(valueListItem)
 	}
-	dataSize += common.Int32SizeInBytes
+	dataSize += bufutil.Int32SizeInBytes
 	return dataSize
 }
 

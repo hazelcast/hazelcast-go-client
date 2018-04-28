@@ -4,13 +4,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
 func TestProxy_Destroy(t *testing.T) {
 	name := "testMap"
-	serviceName := common.ServiceNameMap
+	serviceName := bufutil.ServiceNameMap
 	testMap, err := client.GetDistributedObject(serviceName, name)
 	assert.ErrorNil(t, err)
 	res, err := testMap.Destroy()
@@ -28,7 +28,7 @@ func TestProxy_Destroy(t *testing.T) {
 
 func TestProxy_GetDistributedObject(t *testing.T) {
 	name := "testMap"
-	serviceName := common.ServiceNameMap
+	serviceName := bufutil.ServiceNameMap
 	mp, _ := client.GetDistributedObject(serviceName, name)
 	mp2, _ := client.GetDistributedObject(serviceName, name)
 

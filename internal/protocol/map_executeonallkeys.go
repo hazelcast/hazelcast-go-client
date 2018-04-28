@@ -21,8 +21,8 @@ import (
 func MapExecuteOnAllKeysCalculateSize(name *string, entryProcessor *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(entryProcessor)
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(entryProcessor)
 	return dataSize
 }
 

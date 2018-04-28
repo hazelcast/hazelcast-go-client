@@ -17,15 +17,15 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func ReplicatedMapAddEntryListenerWithPredicateCalculateSize(name *string, predicate *serialization.Data, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(predicate)
-	dataSize += common.BoolSizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(predicate)
+	dataSize += bufutil.BoolSizeInBytes
 	return dataSize
 }
 
@@ -78,7 +78,7 @@ func ReplicatedMapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessa
 	handleEventEntry ReplicatedMapAddEntryListenerWithPredicateHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == common.EventEntry && handleEventEntry != nil {
+	if messageType == bufutil.EventEntry && handleEventEntry != nil {
 		handleEventEntry(ReplicatedMapAddEntryListenerWithPredicateEventEntryDecode(clientMessage))
 	}
 }

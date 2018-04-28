@@ -15,26 +15,26 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUUID *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(username)
-	dataSize += StringCalculateSize(password)
-	dataSize += common.BoolSizeInBytes
+	dataSize += stringCalculateSize(username)
+	dataSize += stringCalculateSize(password)
+	dataSize += bufutil.BoolSizeInBytes
 	if uuid != nil {
-		dataSize += StringCalculateSize(uuid)
+		dataSize += stringCalculateSize(uuid)
 	}
-	dataSize += common.BoolSizeInBytes
+	dataSize += bufutil.BoolSizeInBytes
 	if ownerUUID != nil {
-		dataSize += StringCalculateSize(ownerUUID)
+		dataSize += stringCalculateSize(ownerUUID)
 	}
-	dataSize += common.BoolSizeInBytes
-	dataSize += StringCalculateSize(clientType)
-	dataSize += common.Uint8SizeInBytes
-	dataSize += StringCalculateSize(clientHazelcastVersion)
+	dataSize += bufutil.BoolSizeInBytes
+	dataSize += stringCalculateSize(clientType)
+	dataSize += bufutil.Uint8SizeInBytes
+	dataSize += stringCalculateSize(clientHazelcastVersion)
 	return dataSize
 }
 

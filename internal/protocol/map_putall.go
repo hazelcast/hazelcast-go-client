@@ -17,19 +17,19 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func MapPutAllCalculateSize(name *string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.Int32SizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.Int32SizeInBytes
 	for _, entriesItem := range entries {
 		key := entriesItem.key.(*serialization.Data)
 		val := entriesItem.value.(*serialization.Data)
-		dataSize += DataCalculateSize(key)
-		dataSize += DataCalculateSize(val)
+		dataSize += dataCalculateSize(key)
+		dataSize += dataCalculateSize(val)
 	}
 	return dataSize
 }

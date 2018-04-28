@@ -18,7 +18,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0}
@@ -26,7 +26,7 @@ var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 func TestHeaderFields(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	var correlationID int64 = 6474838
-	var messageType common.MessageType = 987
+	var messageType bufutil.MessageType = 987
 	var flags uint8 = 5
 	var partitionID int32 = 27
 	var frameLength int32 = 100
@@ -184,13 +184,13 @@ func TestClientMessage_ReadString(t *testing.T) {
 func TestNoFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	if result := message.HasFlags(common.BeginFlag); result != 0 {
+	if result := message.HasFlags(bufutil.BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(common.EndFlag); result != 0 {
+	if result := message.HasFlags(bufutil.EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(common.ListenerFlag); result != 0 {
+	if result := message.HasFlags(bufutil.ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
@@ -198,14 +198,14 @@ func TestNoFlag(t *testing.T) {
 func TestSetFlagBegin(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(common.BeginFlag)
-	if result := message.HasFlags(common.BeginFlag); result == 0 {
+	message.AddFlags(bufutil.BeginFlag)
+	if result := message.HasFlags(bufutil.BeginFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 128", result)
 	}
-	if result := message.HasFlags(common.EndFlag); result != 0 {
+	if result := message.HasFlags(bufutil.EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(common.ListenerFlag); result != 0 {
+	if result := message.HasFlags(bufutil.ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
@@ -213,14 +213,14 @@ func TestSetFlagBegin(t *testing.T) {
 func TestSetFlagEnd(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(common.EndFlag)
-	if result := message.HasFlags(common.BeginFlag); result != 0 {
+	message.AddFlags(bufutil.EndFlag)
+	if result := message.HasFlags(bufutil.BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(common.EndFlag); result == 0 {
+	if result := message.HasFlags(bufutil.EndFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 64", result)
 	}
-	if result := message.HasFlags(common.ListenerFlag); result != 0 {
+	if result := message.HasFlags(bufutil.ListenerFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
 }
@@ -228,22 +228,22 @@ func TestSetFlagEnd(t *testing.T) {
 func TestSetListenerFlag(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	message.SetFlags(0)
-	message.AddFlags(common.ListenerFlag)
-	if result := message.HasFlags(common.BeginFlag); result != 0 {
+	message.AddFlags(bufutil.ListenerFlag)
+	if result := message.HasFlags(bufutil.BeginFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(common.EndFlag); result != 0 {
+	if result := message.HasFlags(bufutil.EndFlag); result != 0 {
 		t.Errorf("HasFlag returned %d expected 0", result)
 	}
-	if result := message.HasFlags(common.ListenerFlag); result == 0 {
+	if result := message.HasFlags(bufutil.ListenerFlag); result == 0 {
 		t.Errorf("HasFlag returned %d expected 1", result)
 	}
 }
 
 func TestCalculateSizeStr(t *testing.T) {
 	testString := "abc"
-	if result := StringCalculateSize(&testString); result != len(testString)+common.Int32SizeInBytes {
-		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+common.Int32SizeInBytes)
+	if result := stringCalculateSize(&testString); result != len(testString)+bufutil.Int32SizeInBytes {
+		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+bufutil.Int32SizeInBytes)
 	}
 }
 

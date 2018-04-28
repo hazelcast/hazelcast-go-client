@@ -15,15 +15,15 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func MapAddIndexCalculateSize(name *string, attribute *string, ordered bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(attribute)
-	dataSize += common.BoolSizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += stringCalculateSize(attribute)
+	dataSize += bufutil.BoolSizeInBytes
 	return dataSize
 }
 

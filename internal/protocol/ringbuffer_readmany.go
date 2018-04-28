@@ -17,19 +17,19 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func RingbufferReadManyCalculateSize(name *string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.Int64SizeInBytes
-	dataSize += common.Int32SizeInBytes
-	dataSize += common.Int32SizeInBytes
-	dataSize += common.BoolSizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.Int64SizeInBytes
+	dataSize += bufutil.Int32SizeInBytes
+	dataSize += bufutil.Int32SizeInBytes
+	dataSize += bufutil.BoolSizeInBytes
 	if filter != nil {
-		dataSize += DataCalculateSize(filter)
+		dataSize += dataCalculateSize(filter)
 	}
 	return dataSize
 }

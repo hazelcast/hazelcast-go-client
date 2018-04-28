@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -56,7 +56,7 @@ func (mp *mapProxy) PutTransient(key interface{}, value interface{}, ttl time.Du
 	if err != nil {
 		return err
 	}
-	ttlInMillis := common.GetTimeInMilliSeconds(ttl)
+	ttlInMillis := bufutil.GetTimeInMilliSeconds(ttl)
 	request := protocol.MapPutTransientEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return err
@@ -107,7 +107,7 @@ func (mp *mapProxy) TryRemove(key interface{}, timeout time.Duration) (ok bool, 
 	if err != nil {
 		return false, err
 	}
-	timeoutInMillis := common.GetTimeInMilliSeconds(timeout)
+	timeoutInMillis := bufutil.GetTimeInMilliSeconds(timeout)
 	request := protocol.MapTryRemoveEncodeRequest(mp.name, keyData, threadID, timeoutInMillis)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryRemoveDecodeResponse)
@@ -214,7 +214,7 @@ func (mp *mapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err
 	if err != nil {
 		return err
 	}
-	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MapLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, mp.client.ProxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
@@ -234,8 +234,8 @@ func (mp *mapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Dur
 	if err != nil {
 		return false, err
 	}
-	timeoutInMillis := common.GetTimeInMilliSeconds(timeout)
-	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	timeoutInMillis := bufutil.GetTimeInMilliSeconds(timeout)
+	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MapTryLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
 		mp.client.ProxyManager.nextReferenceID())
 	responseMessage, err := mp.invokeOnKey(request, keyData)
@@ -304,7 +304,7 @@ func (mp *mapProxy) SetWithTTL(key interface{}, value interface{}, ttl time.Dura
 	if err != nil {
 		return err
 	}
-	ttlInMillis := common.GetTimeInMilliSeconds(ttl)
+	ttlInMillis := bufutil.GetTimeInMilliSeconds(ttl)
 	request := protocol.MapSetEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return
@@ -323,7 +323,7 @@ func (mp *mapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue in
 
 func (mp *mapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	if entries == nil {
-		return core.NewHazelcastNilPointerError(common.NilMapIsNotAllowed, nil)
+		return core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
 	}
 	partitions, err := mp.validateAndSerializeMapAndGetPartitions(entries)
 	if err != nil {
@@ -389,7 +389,7 @@ func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []
 
 func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if keys == nil {
-		return nil, core.NewHazelcastNilPointerError(common.NilKeysAreNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(bufutil.NilKeysAreNotAllowed, nil)
 	}
 	partitions := make(map[int32][]*serialization.Data)
 	entryMap = make(map[interface{}]interface{})
@@ -545,21 +545,21 @@ func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *seri
 	entryEvent := protocol.NewEntryEvent(key, oldValue, value, mergingValue, eventType, uuid)
 	mapEvent := protocol.NewMapEvent(eventType, uuid, numberOfAffectedEntries)
 	switch eventType {
-	case common.EntryEventAdded:
+	case bufutil.EntryEventAdded:
 		listener.(protocol.EntryAddedListener).EntryAdded(entryEvent)
-	case common.EntryEventRemoved:
+	case bufutil.EntryEventRemoved:
 		listener.(protocol.EntryRemovedListener).EntryRemoved(entryEvent)
-	case common.EntryEventUpdated:
+	case bufutil.EntryEventUpdated:
 		listener.(protocol.EntryUpdatedListener).EntryUpdated(entryEvent)
-	case common.EntryEventEvicted:
+	case bufutil.EntryEventEvicted:
 		listener.(protocol.EntryEvictedListener).EntryEvicted(entryEvent)
-	case common.EntryEventEvictAll:
+	case bufutil.EntryEventEvictAll:
 		listener.(protocol.EntryEvictAllListener).EntryEvictAll(mapEvent)
-	case common.EntryEventClearAll:
+	case bufutil.EntryEventClearAll:
 		listener.(protocol.EntryClearAllListener).EntryClearAll(mapEvent)
-	case common.EntryEventMerged:
+	case bufutil.EntryEventMerged:
 		listener.(protocol.EntryMergedListener).EntryMerged(entryEvent)
-	case common.EntryEventExpired:
+	case bufutil.EntryEventExpired:
 		listener.(protocol.EntryExpiredListener).EntryExpired(entryEvent)
 	}
 }

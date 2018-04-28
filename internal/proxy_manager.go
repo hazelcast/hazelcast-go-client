@@ -19,8 +19,8 @@ import (
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 type proxyManager struct {
@@ -93,25 +93,25 @@ func (pm *proxyManager) findNextProxyAddress() *protocol.Address {
 }
 
 func (pm *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.DistributedObject, error) {
-	if common.ServiceNameMap == *serviceName {
+	if bufutil.ServiceNameMap == *serviceName {
 		return newMapProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameList == *serviceName {
+	} else if bufutil.ServiceNameList == *serviceName {
 		return newListProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameSet == *serviceName {
+	} else if bufutil.ServiceNameSet == *serviceName {
 		return newSetProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameTopic == *serviceName {
+	} else if bufutil.ServiceNameTopic == *serviceName {
 		return newTopicProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameMultiMap == *serviceName {
+	} else if bufutil.ServiceNameMultiMap == *serviceName {
 		return newMultiMapProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameReplicatedMap == *serviceName {
+	} else if bufutil.ServiceNameReplicatedMap == *serviceName {
 		return newReplicatedMapProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameQueue == *serviceName {
+	} else if bufutil.ServiceNameQueue == *serviceName {
 		return newQueueProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameRingbufferService == *serviceName {
+	} else if bufutil.ServiceNameRingbufferService == *serviceName {
 		return newRingbufferProxy(pm.client, serviceName, name)
-	} else if common.ServiceNamePNCounter == *serviceName {
+	} else if bufutil.ServiceNamePNCounter == *serviceName {
 		return newPNCounterProxy(pm.client, serviceName, name)
-	} else if common.ServiceNameIDGenerator == *serviceName {
+	} else if bufutil.ServiceNameIDGenerator == *serviceName {
 		return newFlakeIDGenerator(pm.client, serviceName, name)
 	}
 	return nil, nil

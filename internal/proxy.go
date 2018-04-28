@@ -17,8 +17,8 @@ package internal
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/colutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -55,7 +55,7 @@ func (p *proxy) ServiceName() string {
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *serialization.Data, err error) {
 	if arg1 == nil {
-		return nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	return
@@ -64,10 +64,10 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *serialization.
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *serialization.Data,
 	arg2Data *serialization.Data, err error) {
 	if arg1 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	if arg2 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	if err != nil {
@@ -80,10 +80,10 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *serialization.Data,
 	arg2Data *serialization.Data, arg3Data *serialization.Data, err error) {
 	if arg1 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	if arg2 == nil || arg3 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(common.NilArgIsNotAllowed, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	if err != nil {
@@ -99,7 +99,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 
 func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *serialization.Data, err error) {
 	if arg1 == nil {
-		return nil, core.NewHazelcastSerializationError(common.NilPredicateIsNotAllowed, nil)
+		return nil, core.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	return
@@ -107,7 +107,7 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *seria
 
 func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData []*serialization.Data, err error) {
 	if elements == nil {
-		return nil, core.NewHazelcastSerializationError(common.NilSliceIsNotAllowed, nil)
+		return nil, core.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
 	}
 	elementsData, err = colutil.ObjectToDataCollection(elements, p.client.SerializationService)
 	return
@@ -115,7 +115,7 @@ func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData 
 
 func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*protocol.Pair, error) {
 	if entries == nil {
-		return nil, core.NewHazelcastNilPointerError(common.NilMapIsNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
 	}
 	partitions := make(map[int32][]*protocol.Pair)
 	for key, value := range entries {
@@ -225,11 +225,11 @@ func (p *proxy) createOnItemEvent(listener interface{}) func(itemData *serializa
 		item, _ = p.toObject(itemData)
 		member := p.client.ClusterService.GetMemberByUUID(*uuid)
 		itemEvent := protocol.NewItemEvent(p.name, item, eventType, member.(*protocol.Member))
-		if eventType == common.ItemAdded {
+		if eventType == bufutil.ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {
 				listener.(core.ItemAddedListener).ItemAdded(itemEvent)
 			}
-		} else if eventType == common.ItemRemoved {
+		} else if eventType == bufutil.ItemRemoved {
 			if _, ok := listener.(core.ItemRemovedListener); ok {
 				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
 			}

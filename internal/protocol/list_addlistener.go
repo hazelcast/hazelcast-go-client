@@ -17,15 +17,15 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.BoolSizeInBytes
-	dataSize += common.BoolSizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.BoolSizeInBytes
+	dataSize += bufutil.BoolSizeInBytes
 	return dataSize
 }
 
@@ -65,7 +65,7 @@ func ListAddListenerHandle(clientMessage *ClientMessage,
 	handleEventItem ListAddListenerHandleEventItemFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == common.EventItem && handleEventItem != nil {
+	if messageType == bufutil.EventItem && handleEventItem != nil {
 		handleEventItem(ListAddListenerEventItemDecode(clientMessage))
 	}
 }

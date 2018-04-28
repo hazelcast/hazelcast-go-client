@@ -21,8 +21,8 @@ import (
 func MapContainsValueCalculateSize(name *string, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(value)
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(value)
 	return dataSize
 }
 

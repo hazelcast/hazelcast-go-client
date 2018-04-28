@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func createHazelcastError(err *protocol.Error) core.HazelcastError {
@@ -29,20 +29,20 @@ func createHazelcastError(err *protocol.Error) core.HazelcastError {
 			trace.LineNumber())
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), stackTrace)
-	switch common.ErrorCode(err.ErrorCode()) {
-	case common.ErrorCodeAuthentication:
+	switch bufutil.ErrorCode(err.ErrorCode()) {
+	case bufutil.ErrorCodeAuthentication:
 		return core.NewHazelcastAuthenticationError(message, nil)
-	case common.ErrorCodeHazelcastInstanceNotActive:
+	case bufutil.ErrorCodeHazelcastInstanceNotActive:
 		return core.NewHazelcastInstanceNotActiveError(message, nil)
-	case common.ErrorCodeHazelcastSerialization:
+	case bufutil.ErrorCodeHazelcastSerialization:
 		return core.NewHazelcastSerializationError(message, nil)
-	case common.ErrorCodeTargetDisconnected:
+	case bufutil.ErrorCodeTargetDisconnected:
 		return core.NewHazelcastTargetDisconnectedError(message, nil)
-	case common.ErrorCodeTargetNotMember:
+	case bufutil.ErrorCodeTargetNotMember:
 		return core.NewHazelcastTargetNotMemberError(message, nil)
-	case common.ErrorCodeUnsupportedOperation:
+	case bufutil.ErrorCodeUnsupportedOperation:
 		return core.NewHazelcastUnsupportedOperationError(message, nil)
-	case common.ErrorCodeConsistencyLostException:
+	case bufutil.ErrorCodeConsistencyLostException:
 		return core.NewHazelcastConsistencyLostError(message, nil)
 	}
 

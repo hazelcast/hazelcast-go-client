@@ -21,7 +21,7 @@ import (
 func MapValuesCalculateSize(name *string) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
+	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 

@@ -20,7 +20,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/tests"
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
@@ -53,7 +53,7 @@ func TestRingbufferProxy_Name(t *testing.T) {
 }
 
 func TestRingbufferProxy_ServiceName(t *testing.T) {
-	serviceName := common.ServiceNameRingbufferService
+	serviceName := bufutil.ServiceNameRingbufferService
 	if serviceName != ringbuffer.ServiceName() {
 		t.Error("ServiceName() failed")
 	}

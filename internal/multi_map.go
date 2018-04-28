@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -182,7 +182,7 @@ func (mmp *multiMapProxy) LockWithLeaseTime(key interface{}, lease time.Duration
 	if err != nil {
 		return err
 	}
-	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MultiMapLockEncodeRequest(mmp.name, keyData, threadID, leaseInMillis,
 		mmp.client.ProxyManager.nextReferenceID())
 	_, err = mmp.invokeOnKey(request, keyData)
@@ -213,8 +213,8 @@ func (mmp *multiMapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout ti
 	if err != nil {
 		return false, err
 	}
-	timeoutInMillis := common.GetTimeInMilliSeconds(timeout)
-	leaseInMillis := common.GetTimeInMilliSeconds(lease)
+	timeoutInMillis := bufutil.GetTimeInMilliSeconds(timeout)
+	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MultiMapTryLockEncodeRequest(mmp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
 		mmp.client.ProxyManager.nextReferenceID())
 	responseMessage, err := mmp.invokeOnKey(request, keyData)
@@ -251,11 +251,11 @@ func (mmp *multiMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData
 	entryEvent := protocol.NewEntryEvent(key, oldValue, value, mergingValue, eventType, uuid)
 	mapEvent := protocol.NewMapEvent(eventType, uuid, numberOfAffectedEntries)
 	switch eventType {
-	case common.EntryEventAdded:
+	case bufutil.EntryEventAdded:
 		listener.(protocol.EntryAddedListener).EntryAdded(entryEvent)
-	case common.EntryEventRemoved:
+	case bufutil.EntryEventRemoved:
 		listener.(protocol.EntryRemovedListener).EntryRemoved(entryEvent)
-	case common.EntryEventClearAll:
+	case bufutil.EntryEventClearAll:
 		listener.(protocol.EntryClearAllListener).EntryClearAll(mapEvent)
 	}
 }

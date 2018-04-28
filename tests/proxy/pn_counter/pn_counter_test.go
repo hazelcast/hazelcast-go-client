@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/tests"
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
@@ -64,7 +64,7 @@ func TestPNCounter_Name(t *testing.T) {
 }
 
 func TestPNCounter_ServiceName(t *testing.T) {
-	serviceName := common.ServiceNamePNCounter
+	serviceName := bufutil.ServiceNamePNCounter
 	if serviceName != counter.ServiceName() {
 		t.Error("PNCounter.ServiceName failed")
 	}

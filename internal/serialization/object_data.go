@@ -19,7 +19,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization/bufferutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -74,51 +74,51 @@ func (o *ObjectDataOutput) EnsureAvailable(size int) {
 }
 
 func (o *ObjectDataOutput) WriteByte(v byte) {
-	o.EnsureAvailable(common.ByteSizeInBytes)
+	o.EnsureAvailable(bufutil.ByteSizeInBytes)
 	bufferutil.WriteUInt8(o.buffer, o.position, v)
-	o.position += common.ByteSizeInBytes
+	o.position += bufutil.ByteSizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteBool(v bool) {
-	o.EnsureAvailable(common.BoolSizeInBytes)
+	o.EnsureAvailable(bufutil.BoolSizeInBytes)
 	bufferutil.WriteBool(o.buffer, o.position, v)
-	o.position += common.BoolSizeInBytes
+	o.position += bufutil.BoolSizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteUInt16(v uint16) {
-	o.EnsureAvailable(common.Uint16SizeInBytes)
+	o.EnsureAvailable(bufutil.Uint16SizeInBytes)
 	bufferutil.WriteUInt16(o.buffer, o.position, v, o.bigEndian)
-	o.position += common.Uint16SizeInBytes
+	o.position += bufutil.Uint16SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteInt16(v int16) {
-	o.EnsureAvailable(common.Int16SizeInBytes)
+	o.EnsureAvailable(bufutil.Int16SizeInBytes)
 	bufferutil.WriteInt16(o.buffer, o.position, v, o.bigEndian)
-	o.position += common.Int16SizeInBytes
+	o.position += bufutil.Int16SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteInt32(v int32) {
-	o.EnsureAvailable(common.Int32SizeInBytes)
+	o.EnsureAvailable(bufutil.Int32SizeInBytes)
 	bufferutil.WriteInt32(o.buffer, o.position, v, o.bigEndian)
-	o.position += common.Int32SizeInBytes
+	o.position += bufutil.Int32SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteInt64(v int64) {
-	o.EnsureAvailable(common.Int64SizeInBytes)
+	o.EnsureAvailable(bufutil.Int64SizeInBytes)
 	bufferutil.WriteInt64(o.buffer, o.position, v, o.bigEndian)
-	o.position += common.Int64SizeInBytes
+	o.position += bufutil.Int64SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteFloat32(v float32) {
-	o.EnsureAvailable(common.Float32SizeInBytes)
+	o.EnsureAvailable(bufutil.Float32SizeInBytes)
 	bufferutil.WriteFloat32(o.buffer, o.position, v, o.bigEndian)
-	o.position += common.Float32SizeInBytes
+	o.position += bufutil.Float32SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteFloat64(v float64) {
-	o.EnsureAvailable(common.Float64SizeInBytes)
+	o.EnsureAvailable(bufutil.Float64SizeInBytes)
 	bufferutil.WriteFloat64(o.buffer, o.position, v, o.bigEndian)
-	o.position += common.Float64SizeInBytes
+	o.position += bufutil.Float64SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteUTF(v string) {
@@ -143,7 +143,7 @@ func (o *ObjectDataOutput) WriteByteArray(v []byte) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -156,7 +156,7 @@ func (o *ObjectDataOutput) WriteBoolArray(v []bool) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -169,7 +169,7 @@ func (o *ObjectDataOutput) WriteUInt16Array(v []uint16) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -182,7 +182,7 @@ func (o *ObjectDataOutput) WriteInt16Array(v []int16) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -195,7 +195,7 @@ func (o *ObjectDataOutput) WriteInt32Array(v []int32) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -208,7 +208,7 @@ func (o *ObjectDataOutput) WriteInt64Array(v []int64) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -221,7 +221,7 @@ func (o *ObjectDataOutput) WriteFloat32Array(v []float32) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -234,7 +234,7 @@ func (o *ObjectDataOutput) WriteFloat64Array(v []float64) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -247,7 +247,7 @@ func (o *ObjectDataOutput) WriteUTFArray(v []string) {
 	if v != nil {
 		length = int32(len(v))
 	} else {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
@@ -264,7 +264,7 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 func (o *ObjectDataOutput) WriteData(data serialization.IData) {
 	var length int32
 	if data == nil {
-		length = common.NilArrayLength
+		length = bufutil.NilArrayLength
 	} else {
 		length = int32(data.TotalSize())
 	}
@@ -313,18 +313,18 @@ func (i *ObjectDataInput) SetPosition(pos int32) {
 }
 
 func (i *ObjectDataInput) ReadByte() (byte, error) {
-	var err = i.AssertAvailable(common.ByteSizeInBytes)
+	var err = i.AssertAvailable(bufutil.ByteSizeInBytes)
 	var ret byte
 	if err == nil {
 		ret = bufferutil.ReadUInt8(i.buffer, i.position)
-		i.position += common.ByteSizeInBytes
+		i.position += bufutil.ByteSizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadByteWithPosition(pos int32) (byte, error) {
-	var err = i.AssertAvailable(common.ByteSizeInBytes)
+	var err = i.AssertAvailable(bufutil.ByteSizeInBytes)
 	var ret byte
 	if err == nil {
 		ret = bufferutil.ReadUInt8(i.buffer, pos)
@@ -334,18 +334,18 @@ func (i *ObjectDataInput) ReadByteWithPosition(pos int32) (byte, error) {
 }
 
 func (i *ObjectDataInput) ReadBool() (bool, error) {
-	var err = i.AssertAvailable(common.BoolSizeInBytes)
+	var err = i.AssertAvailable(bufutil.BoolSizeInBytes)
 	var ret bool
 	if err == nil {
 		ret = bufferutil.ReadBool(i.buffer, i.position)
-		i.position += common.BoolSizeInBytes
+		i.position += bufutil.BoolSizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadBoolWithPosition(pos int32) (bool, error) {
-	var err = i.AssertAvailable(common.BoolSizeInBytes)
+	var err = i.AssertAvailable(bufutil.BoolSizeInBytes)
 	var ret bool
 	if err == nil {
 		ret = bufferutil.ReadBool(i.buffer, pos)
@@ -355,18 +355,18 @@ func (i *ObjectDataInput) ReadBoolWithPosition(pos int32) (bool, error) {
 }
 
 func (i *ObjectDataInput) ReadUInt16() (uint16, error) {
-	var err = i.AssertAvailable(common.Uint16SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Uint16SizeInBytes)
 	var ret uint16
 	if err == nil {
 		ret = bufferutil.ReadUInt16(i.buffer, i.position, i.bigEndian)
-		i.position += common.Uint16SizeInBytes
+		i.position += bufutil.Uint16SizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadUInt16WithPosition(pos int32) (uint16, error) {
-	var err = i.AssertAvailable(common.Uint16SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Uint16SizeInBytes)
 	var ret uint16
 	if err == nil {
 		ret = bufferutil.ReadUInt16(i.buffer, pos, i.bigEndian)
@@ -376,18 +376,18 @@ func (i *ObjectDataInput) ReadUInt16WithPosition(pos int32) (uint16, error) {
 }
 
 func (i *ObjectDataInput) ReadInt16() (int16, error) {
-	var err = i.AssertAvailable(common.Int16SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Int16SizeInBytes)
 	var ret int16
 	if err == nil {
 		ret = bufferutil.ReadInt16(i.buffer, i.position, i.bigEndian)
-		i.position += common.Int16SizeInBytes
+		i.position += bufutil.Int16SizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadInt16WithPosition(pos int32) (int16, error) {
-	var err = i.AssertAvailable(common.Int16SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Int16SizeInBytes)
 	var ret int16
 	if err == nil {
 		ret = bufferutil.ReadInt16(i.buffer, pos, i.bigEndian)
@@ -397,18 +397,18 @@ func (i *ObjectDataInput) ReadInt16WithPosition(pos int32) (int16, error) {
 }
 
 func (i *ObjectDataInput) ReadInt32() (int32, error) {
-	var err = i.AssertAvailable(common.Int32SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Int32SizeInBytes)
 	var ret int32
 	if err == nil {
 		ret = bufferutil.ReadInt32(i.buffer, i.position, i.bigEndian)
-		i.position += common.Int32SizeInBytes
+		i.position += bufutil.Int32SizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadInt32WithPosition(pos int32) (int32, error) {
-	var err = i.AssertAvailable(common.Int32SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Int32SizeInBytes)
 	var ret int32
 	if err == nil {
 		ret = bufferutil.ReadInt32(i.buffer, pos, i.bigEndian)
@@ -418,18 +418,18 @@ func (i *ObjectDataInput) ReadInt32WithPosition(pos int32) (int32, error) {
 }
 
 func (i *ObjectDataInput) ReadInt64() (int64, error) {
-	var err = i.AssertAvailable(common.Int64SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Int64SizeInBytes)
 	var ret int64
 	if err == nil {
 		ret = bufferutil.ReadInt64(i.buffer, i.position, i.bigEndian)
-		i.position += common.Int64SizeInBytes
+		i.position += bufutil.Int64SizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadInt64WithPosition(pos int32) (int64, error) {
-	var err = i.AssertAvailable(common.Int64SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Int64SizeInBytes)
 	var ret int64
 	if err == nil {
 		ret = bufferutil.ReadInt64(i.buffer, pos, i.bigEndian)
@@ -439,18 +439,18 @@ func (i *ObjectDataInput) ReadInt64WithPosition(pos int32) (int64, error) {
 }
 
 func (i *ObjectDataInput) ReadFloat32() (float32, error) {
-	var err = i.AssertAvailable(common.Float32SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Float32SizeInBytes)
 	var ret float32
 	if err == nil {
 		ret = bufferutil.ReadFloat32(i.buffer, i.position, i.bigEndian)
-		i.position += common.Float32SizeInBytes
+		i.position += bufutil.Float32SizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadFloat32WithPosition(pos int32) (float32, error) {
-	var err = i.AssertAvailable(common.Float32SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Float32SizeInBytes)
 	var ret float32
 	if err == nil {
 		ret = bufferutil.ReadFloat32(i.buffer, pos, i.bigEndian)
@@ -460,18 +460,18 @@ func (i *ObjectDataInput) ReadFloat32WithPosition(pos int32) (float32, error) {
 }
 
 func (i *ObjectDataInput) ReadFloat64() (float64, error) {
-	var err = i.AssertAvailable(common.Float64SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Float64SizeInBytes)
 	var ret float64
 	if err == nil {
 		ret = bufferutil.ReadFloat64(i.buffer, i.position, i.bigEndian)
-		i.position += common.Float64SizeInBytes
+		i.position += bufutil.Float64SizeInBytes
 		return ret, err
 	}
 	return ret, err
 }
 
 func (i *ObjectDataInput) ReadFloat64WithPosition(pos int32) (float64, error) {
-	var err = i.AssertAvailable(common.Float64SizeInBytes)
+	var err = i.AssertAvailable(bufutil.Float64SizeInBytes)
 	var ret float64
 	if err == nil {
 		ret = bufferutil.ReadFloat64(i.buffer, pos, i.bigEndian)
@@ -482,7 +482,7 @@ func (i *ObjectDataInput) ReadFloat64WithPosition(pos int32) (float64, error) {
 
 func (i *ObjectDataInput) ReadUTF() (string, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return "", err
 	}
 	var ret = make([]rune, length)
@@ -496,10 +496,10 @@ func (i *ObjectDataInput) ReadUTF() (string, error) {
 
 func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) (string, error) {
 	length, err := i.ReadInt32WithPosition(pos)
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return "", err
 	}
-	pos += common.Int32SizeInBytes
+	pos += bufutil.Int32SizeInBytes
 	var ret = make([]rune, length)
 	for j := 0; j < int(length); j++ {
 		r, n := utf8.DecodeRune(i.buffer[pos:])
@@ -515,7 +515,7 @@ func (i *ObjectDataInput) ReadObject() (interface{}, error) {
 
 func (i *ObjectDataInput) ReadByteArray() ([]byte, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]byte, length)
@@ -532,7 +532,7 @@ func (i *ObjectDataInput) ReadByteArrayWithPosition(pos int32) ([]byte, error) {
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]byte, length)
@@ -548,7 +548,7 @@ func (i *ObjectDataInput) ReadByteArrayWithPosition(pos int32) ([]byte, error) {
 
 func (i *ObjectDataInput) ReadBoolArray() ([]bool, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]bool, length)
@@ -565,7 +565,7 @@ func (i *ObjectDataInput) ReadBoolArrayWithPosition(pos int32) ([]bool, error) {
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]bool, length)
@@ -581,7 +581,7 @@ func (i *ObjectDataInput) ReadBoolArrayWithPosition(pos int32) ([]bool, error) {
 
 func (i *ObjectDataInput) ReadUInt16Array() ([]uint16, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]uint16, length)
@@ -598,7 +598,7 @@ func (i *ObjectDataInput) ReadUInt16ArrayWithPosition(pos int32) ([]uint16, erro
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]uint16, length)
@@ -614,7 +614,7 @@ func (i *ObjectDataInput) ReadUInt16ArrayWithPosition(pos int32) ([]uint16, erro
 
 func (i *ObjectDataInput) ReadInt16Array() ([]int16, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]int16, length)
@@ -631,7 +631,7 @@ func (i *ObjectDataInput) ReadInt16ArrayWithPosition(pos int32) ([]int16, error)
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]int16, length)
@@ -647,7 +647,7 @@ func (i *ObjectDataInput) ReadInt16ArrayWithPosition(pos int32) ([]int16, error)
 
 func (i *ObjectDataInput) ReadInt32Array() ([]int32, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]int32, length)
@@ -664,7 +664,7 @@ func (i *ObjectDataInput) ReadInt32ArrayWithPosition(pos int32) ([]int32, error)
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]int32, length)
@@ -680,7 +680,7 @@ func (i *ObjectDataInput) ReadInt32ArrayWithPosition(pos int32) ([]int32, error)
 
 func (i *ObjectDataInput) ReadInt64Array() ([]int64, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]int64, length)
@@ -697,7 +697,7 @@ func (i *ObjectDataInput) ReadInt64ArrayWithPosition(pos int32) ([]int64, error)
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]int64, length)
@@ -713,7 +713,7 @@ func (i *ObjectDataInput) ReadInt64ArrayWithPosition(pos int32) ([]int64, error)
 
 func (i *ObjectDataInput) ReadFloat32Array() ([]float32, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]float32, length)
@@ -730,7 +730,7 @@ func (i *ObjectDataInput) ReadFloat32ArrayWithPosition(pos int32) ([]float32, er
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]float32, length)
@@ -746,7 +746,7 @@ func (i *ObjectDataInput) ReadFloat32ArrayWithPosition(pos int32) ([]float32, er
 
 func (i *ObjectDataInput) ReadFloat64Array() ([]float64, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]float64, length)
@@ -763,7 +763,7 @@ func (i *ObjectDataInput) ReadFloat64ArrayWithPosition(pos int32) ([]float64, er
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]float64, length)
@@ -779,7 +779,7 @@ func (i *ObjectDataInput) ReadFloat64ArrayWithPosition(pos int32) ([]float64, er
 
 func (i *ObjectDataInput) ReadUTFArray() ([]string, error) {
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]string, length)
@@ -796,7 +796,7 @@ func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]string, error) 
 	backupPos := i.position
 	i.position = pos
 	length, err := i.ReadInt32()
-	if err != nil || length == common.NilArrayLength {
+	if err != nil || length == bufutil.NilArrayLength {
 		return nil, err
 	}
 	var arr = make([]string, length)

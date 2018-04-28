@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -278,7 +278,7 @@ func (is *invocationService) registerInvocation(invocation *invocation) {
 	correlationID := is.nextCorrelationID()
 	message.SetCorrelationID(correlationID)
 	message.SetPartitionID(invocation.partitionID)
-	message.SetFlags(common.BeginEndFlag)
+	message.SetFlags(bufutil.BeginEndFlag)
 	if invocation.eventHandler != nil {
 		is.eventHandlers[correlationID] = invocation
 	}
@@ -317,7 +317,7 @@ func (is *invocationService) removeEventHandlerInternal(correlationID int64) {
 func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 	correlationID := response.CorrelationID()
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
-		if response.HasFlags(common.ListenerFlag) > 0 {
+		if response.HasFlags(bufutil.ListenerFlag) > 0 {
 			invocation, found := is.eventHandlers[correlationID]
 			if !found {
 				log.Println("Got an event message with unknown correlation id.")
@@ -326,7 +326,7 @@ func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 			}
 			return
 		}
-		if response.MessageType() == common.MessageTypeException {
+		if response.MessageType() == bufutil.MessageTypeException {
 			err := createHazelcastError(convertToError(response))
 			is.handleException(invocation, err)
 		} else {

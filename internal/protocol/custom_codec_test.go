@@ -17,7 +17,7 @@ package protocol
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -25,7 +25,7 @@ func TestAddressCodecEncodeDecode(t *testing.T) {
 	host := "test-host"
 	var port int32 = 8080
 	address := Address{host, port}
-	msg := NewClientMessage(nil, AddressCalculateSize(&address))
+	msg := NewClientMessage(nil, addressCalculateSize(&address))
 	AddressCodecEncode(msg, &address)
 	//Skip the header.
 	for i := 0; i < len(READ_HEADER); i++ {
@@ -122,9 +122,9 @@ func DataEntryViewCodecEncode(msg *ClientMessage, entryView *DataEntryView) {
 
 func DataEntryViewCalculateSize(ev *DataEntryView) int {
 	dataSize := 0
-	dataSize += DataCalculateSize(ev.keyData)
-	dataSize += DataCalculateSize(ev.valueData)
-	dataSize += 10 * common.Int64SizeInBytes
+	dataSize += dataCalculateSize(ev.keyData)
+	dataSize += dataCalculateSize(ev.valueData)
+	dataSize += 10 * bufutil.Int64SizeInBytes
 	return dataSize
 }
 
@@ -144,13 +144,13 @@ func MemberCodecEncode(msg *ClientMessage, member *Member) {
 
 func MemberCalculateSize(member *Member) int {
 	dataSize := 0
-	dataSize += AddressCalculateSize(&member.address)
-	dataSize += StringCalculateSize(&member.uuid)
-	dataSize += common.BoolSizeInBytes
-	dataSize += common.Int32SizeInBytes //Size of the map(attributes)
+	dataSize += addressCalculateSize(&member.address)
+	dataSize += stringCalculateSize(&member.uuid)
+	dataSize += bufutil.BoolSizeInBytes
+	dataSize += bufutil.Int32SizeInBytes //Size of the map(attributes)
 	for key, value := range member.attributes {
-		dataSize += StringCalculateSize(&key)
-		dataSize += StringCalculateSize(&value)
+		dataSize += stringCalculateSize(&key)
+		dataSize += stringCalculateSize(&value)
 	}
 	return dataSize
 }
@@ -165,7 +165,7 @@ func DistributedObjectInfoCodecEncode(msg *ClientMessage, obj *DistributedObject
 
 func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
 	dataSize := 0
-	dataSize += StringCalculateSize(&obj.name)
-	dataSize += StringCalculateSize(&obj.serviceName)
+	dataSize += stringCalculateSize(&obj.name)
+	dataSize += stringCalculateSize(&obj.serviceName)
 	return dataSize
 }
