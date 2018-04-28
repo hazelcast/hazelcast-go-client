@@ -16,8 +16,8 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/common"
-	"github.com/hazelcast/hazelcast-go-client/internal/common/collection"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -109,7 +109,7 @@ func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData 
 	if elements == nil {
 		return nil, core.NewHazelcastSerializationError(common.NilSliceIsNotAllowed, nil)
 	}
-	elementsData, err = collection.ObjectToDataCollection(elements, p.client.SerializationService)
+	elementsData, err = colutil.ObjectToDataCollection(elements, p.client.SerializationService)
 	return
 }
 
@@ -175,7 +175,7 @@ func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *protocol.ClientM
 	if inputError != nil {
 		return nil, inputError
 	}
-	return collection.DataToObjectCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
+	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
 }
 
 func (p *proxy) decodeToPairSliceAndError(responseMessage *protocol.ClientMessage, inputError error,
@@ -183,7 +183,7 @@ func (p *proxy) decodeToPairSliceAndError(responseMessage *protocol.ClientMessag
 	if inputError != nil {
 		return nil, inputError
 	}
-	return collection.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
+	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
 }
 
 func (p *proxy) decodeToInt32AndError(responseMessage *protocol.ClientMessage, inputError error,
