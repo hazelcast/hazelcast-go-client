@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package murmur
 
 import (
 	"testing"
@@ -37,7 +37,7 @@ func TestMurmur3A(t *testing.T) {
 		{"key-9", 1182720020, 140},
 	}
 	for _, ele := range list {
-		hash := Murmur3ADefault([]byte(ele.key), 0, len(ele.key))
+		hash := Default3A([]byte(ele.key), 0, len(ele.key))
 		if hash != int32(ele.expected) {
 			t.Errorf("Expected %d but was %d for Murmur3A\n", int32(ele.expected), hash)
 		}

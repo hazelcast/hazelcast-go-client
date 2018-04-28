@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package murmur
 
 import (
 	"encoding/binary"
@@ -20,12 +20,12 @@ import (
 
 var defaultSeed uint32 = 0x01000193
 
-func Murmur3ADefault(key []byte, offset int32, len int) int32 {
-	return Murmur3A(key, offset, len, defaultSeed)
+func Default3A(key []byte, offset int32, len int) int32 {
+	return M3A(key, offset, len, defaultSeed)
 }
 
 // MurmurHash3 for x86, 32-bit (MurmurHash3_x86_32)
-func Murmur3A(key []byte, offset int32, len int, seed uint32) int32 {
+func M3A(key []byte, offset int32, len int, seed uint32) int32 {
 	var h1 = seed
 	var c1 uint32 = 0xcc9e2d51
 	var c2 uint32 = 0x1b873593

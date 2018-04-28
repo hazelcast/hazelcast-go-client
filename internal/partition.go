@@ -19,7 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -72,7 +72,7 @@ func (ps *partitionService) GetPartitionID(keyData *serialization.Data) int32 {
 	if count <= 0 {
 		return 0
 	}
-	return common.HashToIndex(keyData.GetPartitionHash(), count)
+	return murmur.HashToIndex(keyData.GetPartitionHash(), count)
 }
 
 func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error) {
