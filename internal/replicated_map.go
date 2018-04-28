@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
 type replicatedMapProxy struct {
@@ -45,7 +46,7 @@ func (rmp *replicatedMapProxy) PutWithTTL(key interface{}, value interface{},
 	if err != nil {
 		return nil, err
 	}
-	ttlInMillis := bufutil.GetTimeInMilliSeconds(ttl)
+	ttlInMillis := timeutil.GetTimeInMilliSeconds(ttl)
 	request := protocol.ReplicatedMapPutEncodeRequest(rmp.name, keyData, valueData, ttlInMillis)
 	responseMessage, err := rmp.invokeOnKey(request, keyData)
 	return rmp.decodeToObjectAndError(responseMessage, err, protocol.ReplicatedMapPutDecodeResponse)

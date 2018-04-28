@@ -21,7 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/IPutil"
 )
 
 const (
@@ -53,7 +53,7 @@ func newLifecycleService(config *config.ClientConfig) *lifecycleService {
 }
 
 func (ls *lifecycleService) AddListener(listener interface{}) string {
-	registrationID, _ := bufutil.NewUUID()
+	registrationID, _ := IPutil.NewUUID()
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	listeners := ls.listeners.Load().(map[string]interface{})

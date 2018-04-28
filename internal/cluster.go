@@ -23,8 +23,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/IPutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 const (
@@ -78,8 +78,8 @@ func getPossibleAddresses(addressList []string, memberList []*protocol.Member) [
 	}
 	allAddresses := make(map[protocol.Address]struct{}, len(addressList)+len(memberList))
 	for _, address := range addressList {
-		ip, port := bufutil.GetIPAndPort(address)
-		if bufutil.IsValidIPAddress(ip) {
+		ip, port := IPutil.GetIPAndPort(address)
+		if IPutil.IsValidIPAddress(ip) {
 			if port == -1 {
 				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
 				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
@@ -210,7 +210,7 @@ func (cs *clusterService) logMembers() {
 }
 
 func (cs *clusterService) AddListener(listener interface{}) *string {
-	registrationID, _ := bufutil.NewUUID()
+	registrationID, _ := IPutil.NewUUID()
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	listeners := cs.listeners.Load().(map[string]interface{})

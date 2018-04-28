@@ -21,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
 type multiMapProxy struct {
@@ -182,7 +183,7 @@ func (mmp *multiMapProxy) LockWithLeaseTime(key interface{}, lease time.Duration
 	if err != nil {
 		return err
 	}
-	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
+	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MultiMapLockEncodeRequest(mmp.name, keyData, threadID, leaseInMillis,
 		mmp.client.ProxyManager.nextReferenceID())
 	_, err = mmp.invokeOnKey(request, keyData)
@@ -213,8 +214,8 @@ func (mmp *multiMapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout ti
 	if err != nil {
 		return false, err
 	}
-	timeoutInMillis := bufutil.GetTimeInMilliSeconds(timeout)
-	leaseInMillis := bufutil.GetTimeInMilliSeconds(lease)
+	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
+	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := protocol.MultiMapTryLockEncodeRequest(mmp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
 		mmp.client.ProxyManager.nextReferenceID())
 	responseMessage, err := mmp.invokeOnKey(request, keyData)

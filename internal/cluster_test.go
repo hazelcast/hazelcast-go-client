@@ -17,8 +17,8 @@ package internal
 import (
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/IPutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func Test_getPossibleAddresses(t *testing.T) {
@@ -42,7 +42,7 @@ func Test_getPossibleAddresses(t *testing.T) {
 		addressesInMap[address] = struct{}{}
 	}
 	for _, address := range configAddresses {
-		ip, port := bufutil.GetIPAndPort(address)
+		ip, port := IPutil.GetIPAndPort(address)
 		if _, found := addressesInMap[*protocol.NewAddressWithParameters(ip, port)]; !found {
 			t.Fatal("getPossibleAddresses failed")
 		}
