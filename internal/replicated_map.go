@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -45,7 +45,7 @@ func (rmp *replicatedMapProxy) PutWithTTL(key interface{}, value interface{},
 	if err != nil {
 		return nil, err
 	}
-	ttlInMillis := common.GetTimeInMilliSeconds(ttl)
+	ttlInMillis := bufutil.GetTimeInMilliSeconds(ttl)
 	request := protocol.ReplicatedMapPutEncodeRequest(rmp.name, keyData, valueData, ttlInMillis)
 	responseMessage, err := rmp.invokeOnKey(request, keyData)
 	return rmp.decodeToObjectAndError(responseMessage, err, protocol.ReplicatedMapPutDecodeResponse)
@@ -53,7 +53,7 @@ func (rmp *replicatedMapProxy) PutWithTTL(key interface{}, value interface{},
 
 func (rmp *replicatedMapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	if entries == nil {
-		return core.NewHazelcastNilPointerError(common.NilMapIsNotAllowed, nil)
+		return core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
 	}
 	pairs := make([]*protocol.Pair, len(entries))
 	index := 0
@@ -221,15 +221,15 @@ func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValu
 	entryEvent := protocol.NewEntryEvent(key, oldValue, value, mergingValue, eventType, uuid)
 	mapEvent := protocol.NewMapEvent(eventType, uuid, numberOfAffectedEntries)
 	switch eventType {
-	case common.EntryEventAdded:
+	case bufutil.EntryEventAdded:
 		listener.(protocol.EntryAddedListener).EntryAdded(entryEvent)
-	case common.EntryEventRemoved:
+	case bufutil.EntryEventRemoved:
 		listener.(protocol.EntryRemovedListener).EntryRemoved(entryEvent)
-	case common.EntryEventUpdated:
+	case bufutil.EntryEventUpdated:
 		listener.(protocol.EntryUpdatedListener).EntryUpdated(entryEvent)
-	case common.EntryEventEvicted:
+	case bufutil.EntryEventEvicted:
 		listener.(protocol.EntryEvictedListener).EntryEvicted(entryEvent)
-	case common.EntryEventClearAll:
+	case bufutil.EntryEventClearAll:
 		listener.(protocol.EntryClearAllListener).EntryClearAll(mapEvent)
 	}
 }

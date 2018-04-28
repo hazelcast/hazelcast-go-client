@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 const BufferSize = 8192 * 2
@@ -146,7 +146,7 @@ func (c *Connection) read() {
 
 func (c *Connection) receiveMessage() {
 	c.lastRead.Store(time.Now())
-	for len(c.readBuffer) > common.Int32SizeInBytes {
+	for len(c.readBuffer) > bufutil.Int32SizeInBytes {
 		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:4])
 		if frameLength > uint32(len(c.readBuffer)) {
 			return

@@ -15,27 +15,27 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const ClientType = "GOO"
 
-func DataCalculateSize(d *serialization.Data) int {
-	return len(d.Buffer()) + common.Int32SizeInBytes
+func dataCalculateSize(d *serialization.Data) int {
+	return len(d.Buffer()) + bufutil.Int32SizeInBytes
 }
 
-func StringCalculateSize(str *string) int {
-	return len(*str) + common.Int32SizeInBytes
+func stringCalculateSize(str *string) int {
+	return len(*str) + bufutil.Int32SizeInBytes
 }
 
-func Int64CalculateSize(v int64) int {
-	return common.Int64SizeInBytes
+func int64CalculateSize(v int64) int {
+	return bufutil.Int64SizeInBytes
 }
 
-func AddressCalculateSize(a *Address) int {
+func addressCalculateSize(a *Address) int {
 	dataSize := 0
-	dataSize += StringCalculateSize(&a.host)
-	dataSize += common.Int32SizeInBytes
+	dataSize += stringCalculateSize(&a.host)
+	dataSize += bufutil.Int32SizeInBytes
 	return dataSize
 }

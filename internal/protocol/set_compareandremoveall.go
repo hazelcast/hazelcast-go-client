@@ -17,16 +17,16 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func SetCompareAndRemoveAllCalculateSize(name *string, values []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.Int32SizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.Int32SizeInBytes
 	for _, valuesItem := range values {
-		dataSize += DataCalculateSize(valuesItem)
+		dataSize += dataCalculateSize(valuesItem)
 	}
 	return dataSize
 }

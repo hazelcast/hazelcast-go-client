@@ -17,9 +17,9 @@ package protocol
 func ClientCreateProxyCalculateSize(name *string, serviceName *string, target *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += StringCalculateSize(serviceName)
-	dataSize += AddressCalculateSize(target)
+	dataSize += stringCalculateSize(name)
+	dataSize += stringCalculateSize(serviceName)
+	dataSize += addressCalculateSize(target)
 	return dataSize
 }
 

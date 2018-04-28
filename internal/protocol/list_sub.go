@@ -15,16 +15,16 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func ListSubCalculateSize(name *string, from int32, to int32) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.Int32SizeInBytes
-	dataSize += common.Int32SizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.Int32SizeInBytes
+	dataSize += bufutil.Int32SizeInBytes
 	return dataSize
 }
 

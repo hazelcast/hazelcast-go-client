@@ -21,8 +21,8 @@ import (
 func MapValuesWithPredicateCalculateSize(name *string, predicate *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(predicate)
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(predicate)
 	return dataSize
 }
 

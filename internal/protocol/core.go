@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -213,15 +213,15 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		key:                    key,
 		value:                  value,
 		cost:                   cost,
-		creationTime:           common.ConvertMillisToUnixTime(creationTime),
-		expirationTime:         common.ConvertMillisToUnixTime(expirationTime),
+		creationTime:           bufutil.ConvertMillisToUnixTime(creationTime),
+		expirationTime:         bufutil.ConvertMillisToUnixTime(expirationTime),
 		hits:                   hits,
-		lastAccessTime:         common.ConvertMillisToUnixTime(lastAccessTime),
-		lastStoredTime:         common.ConvertMillisToUnixTime(lastStoredTime),
-		lastUpdateTime:         common.ConvertMillisToUnixTime(lastUpdateTime),
+		lastAccessTime:         bufutil.ConvertMillisToUnixTime(lastAccessTime),
+		lastStoredTime:         bufutil.ConvertMillisToUnixTime(lastStoredTime),
+		lastUpdateTime:         bufutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl: common.ConvertMillisToDuration(ttl),
+		ttl: bufutil.ConvertMillisToDuration(ttl),
 	}
 }
 
@@ -490,28 +490,28 @@ type MemberRemovedListener interface {
 func GetEntryListenerFlags(listener interface{}) int32 {
 	flags := int32(0)
 	if _, ok := listener.(EntryAddedListener); ok {
-		flags |= common.EntryEventAdded
+		flags |= bufutil.EntryEventAdded
 	}
 	if _, ok := listener.(EntryRemovedListener); ok {
-		flags |= common.EntryEventRemoved
+		flags |= bufutil.EntryEventRemoved
 	}
 	if _, ok := listener.(EntryUpdatedListener); ok {
-		flags |= common.EntryEventUpdated
+		flags |= bufutil.EntryEventUpdated
 	}
 	if _, ok := listener.(EntryEvictedListener); ok {
-		flags |= common.EntryEventEvicted
+		flags |= bufutil.EntryEventEvicted
 	}
 	if _, ok := listener.(EntryEvictAllListener); ok {
-		flags |= common.EntryEventEvictAll
+		flags |= bufutil.EntryEventEvictAll
 	}
 	if _, ok := listener.(EntryClearAllListener); ok {
-		flags |= common.EntryEventClearAll
+		flags |= bufutil.EntryEventClearAll
 	}
 	if _, ok := listener.(EntryExpiredListener); ok {
-		flags |= common.EntryEventExpired
+		flags |= bufutil.EntryEventExpired
 	}
 	if _, ok := listener.(EntryMergedListener); ok {
-		flags |= common.EntryEventMerged
+		flags |= bufutil.EntryEventMerged
 	}
 	return flags
 }
@@ -525,7 +525,7 @@ type TopicMessage struct {
 func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember *Member) *TopicMessage {
 	return &TopicMessage{
 		messageObject:    messageObject,
-		publishTime:      common.ConvertMillisToUnixTime(publishTime),
+		publishTime:      bufutil.ConvertMillisToUnixTime(publishTime),
 		publishingMember: publishingMember,
 	}
 }

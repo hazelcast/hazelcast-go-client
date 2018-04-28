@@ -17,17 +17,17 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func MapAddEntryListenerToKeyCalculateSize(name *string, key *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	dataSize += common.BoolSizeInBytes
-	dataSize += common.Int32SizeInBytes
-	dataSize += common.BoolSizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(key)
+	dataSize += bufutil.BoolSizeInBytes
+	dataSize += bufutil.Int32SizeInBytes
+	dataSize += bufutil.BoolSizeInBytes
 	return dataSize
 }
 
@@ -82,7 +82,7 @@ func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
 	messageType := clientMessage.MessageType()
-	if messageType == common.EventEntry && handleEventEntry != nil {
+	if messageType == bufutil.EventEntry && handleEventEntry != nil {
 		handleEventEntry(MapAddEntryListenerToKeyEventEntryDecode(clientMessage))
 	}
 }

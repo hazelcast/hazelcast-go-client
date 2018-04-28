@@ -21,8 +21,8 @@ import (
 func TopicPublishCalculateSize(name *string, message *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(message)
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(message)
 	return dataSize
 }
 

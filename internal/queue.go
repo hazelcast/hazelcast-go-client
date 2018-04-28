@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -84,7 +84,7 @@ func (qp *queueProxy) ContainsAll(items []interface{}) (foundAll bool, err error
 
 func (qp *queueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err error) {
 	if slice == nil {
-		return 0, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
+		return 0, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
 	request := protocol.QueueDrainToEncodeRequest(qp.name)
 	responseMessage, err := qp.invoke(request)
@@ -98,7 +98,7 @@ func (qp *queueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err erro
 
 func (qp *queueProxy) DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error) {
 	if slice == nil {
-		return 0, core.NewHazelcastNilPointerError(common.NilSliceIsNotAllowed, nil)
+		return 0, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
 	request := protocol.QueueDrainToMaxSizeEncodeRequest(qp.name, maxElements)
 	responseMessage, err := qp.invoke(request)
@@ -131,7 +131,7 @@ func (qp *queueProxy) OfferWithTimeout(item interface{}, timeout time.Duration) 
 	if err != nil {
 		return false, err
 	}
-	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout)
+	timeoutInMilliSeconds := bufutil.GetTimeInMilliSeconds(timeout)
 	request := protocol.QueueOfferEncodeRequest(qp.name, itemData, timeoutInMilliSeconds)
 	responseMessage, err := qp.invoke(request)
 	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueOfferDecodeResponse)
@@ -150,7 +150,7 @@ func (qp *queueProxy) Poll() (item interface{}, err error) {
 }
 
 func (qp *queueProxy) PollWithTimeout(timeout time.Duration) (item interface{}, err error) {
-	timeoutInMilliSeconds := common.GetTimeInMilliSeconds(timeout)
+	timeoutInMilliSeconds := bufutil.GetTimeInMilliSeconds(timeout)
 	request := protocol.QueuePollEncodeRequest(qp.name, timeoutInMilliSeconds)
 	responseMessage, err := qp.invoke(request)
 	return qp.decodeToObjectAndError(responseMessage, err, protocol.QueuePollDecodeResponse)

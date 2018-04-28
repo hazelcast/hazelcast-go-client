@@ -15,21 +15,21 @@
 package protocol
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func PNCounterGetCalculateSize(name *string, replicaTimestamps []*Pair, targetReplica *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += common.Int32SizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += bufutil.Int32SizeInBytes
 	for _, replicaTimestampsItem := range replicaTimestamps {
 		key := replicaTimestampsItem.key.(*string)
 		val := replicaTimestampsItem.value.(int64)
-		dataSize += StringCalculateSize(key)
-		dataSize += Int64CalculateSize(val)
+		dataSize += stringCalculateSize(key)
+		dataSize += int64CalculateSize(val)
 	}
-	dataSize += AddressCalculateSize(targetReplica)
+	dataSize += addressCalculateSize(targetReplica)
 	return dataSize
 }
 

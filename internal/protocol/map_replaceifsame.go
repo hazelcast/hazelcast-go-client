@@ -17,17 +17,17 @@ package protocol
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/common"
+	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
 func MapReplaceIfSameCalculateSize(name *string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
-	dataSize += StringCalculateSize(name)
-	dataSize += DataCalculateSize(key)
-	dataSize += DataCalculateSize(testValue)
-	dataSize += DataCalculateSize(value)
-	dataSize += common.Int64SizeInBytes
+	dataSize += stringCalculateSize(name)
+	dataSize += dataCalculateSize(key)
+	dataSize += dataCalculateSize(testValue)
+	dataSize += dataCalculateSize(value)
+	dataSize += bufutil.Int64SizeInBytes
 	return dataSize
 }
 
