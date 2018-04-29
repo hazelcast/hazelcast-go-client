@@ -27,8 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
-var client hazelcast.IHazelcastInstance
-var mp core.IMap
+var client hazelcast.Instance
+var mp core.Map
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")

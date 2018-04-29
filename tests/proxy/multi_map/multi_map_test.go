@@ -29,7 +29,7 @@ import (
 )
 
 var multiMap core.MultiMap
-var client hazelcast.IHazelcastInstance
+var client hazelcast.Instance
 var testKey = "testKey"
 var testValue = "testValue"
 var testValue2 = "testValue2"
@@ -404,32 +404,32 @@ func TestMultiMapProxy_ForceUnlockWithNil(t *testing.T) {
 
 type EntryListener struct {
 	wg       *sync.WaitGroup
-	event    core.IEntryEvent
-	mapEvent core.IMapEvent
+	event    core.EntryEvent
+	mapEvent core.MapEvent
 }
 
-func (l *EntryListener) EntryAdded(event core.IEntryEvent) {
+func (l *EntryListener) EntryAdded(event core.EntryEvent) {
 	l.event = event
 	l.wg.Done()
 }
 
-func (l *EntryListener) EntryUpdated(event core.IEntryEvent) {
+func (l *EntryListener) EntryUpdated(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *EntryListener) EntryRemoved(event core.IEntryEvent) {
+func (l *EntryListener) EntryRemoved(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *EntryListener) EntryEvicted(event core.IEntryEvent) {
+func (l *EntryListener) EntryEvicted(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *EntryListener) EntryEvictAll(event core.IMapEvent) {
+func (l *EntryListener) EntryEvictAll(event core.MapEvent) {
 	l.mapEvent = event
 	l.wg.Done()
 }
 
-func (l *EntryListener) EntryClearAll(event core.IMapEvent) {
+func (l *EntryListener) EntryClearAll(event core.MapEvent) {
 	l.wg.Done()
 }

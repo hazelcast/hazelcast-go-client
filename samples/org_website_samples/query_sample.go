@@ -81,7 +81,7 @@ func (pf *ThePortableFactory) Create(classID int32) serialization.Portable {
 	return nil
 }
 
-func generateUsers(users core.IMap) {
+func generateUsers(users core.Map) {
 	users.Put("Rod", newUser("Rod", 19, true))
 	users.Put("Jane", newUser("Jane", 20, true))
 	users.Put("Freddy", newUser("Freddy", 23, true))

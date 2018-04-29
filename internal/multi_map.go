@@ -136,7 +136,7 @@ func (mmp *multiMapProxy) KeySet() (keySet []interface{}, err error) {
 	return mmp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MultiMapKeySetDecodeResponse)
 }
 
-func (mmp *multiMapProxy) EntrySet() (resultPairs []core.IPair, err error) {
+func (mmp *multiMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 	request := protocol.MultiMapEntrySetEncodeRequest(mmp.name)
 	responseMessage, err := mmp.invokeOnRandomTarget(request)
 	return mmp.decodeToPairSliceAndError(responseMessage, err, protocol.MultiMapEntrySetDecodeResponse)

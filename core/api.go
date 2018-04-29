@@ -17,8 +17,8 @@ package core
 
 import "time"
 
-// IAddress represents an address of a member in the cluster.
-type IAddress interface {
+// Address represents an address of a member in the cluster.
+type Address interface {
 	// Host returns host of the member.
 	Host() string
 
@@ -26,10 +26,10 @@ type IAddress interface {
 	Port() int
 }
 
-// IMember represents a member in the cluster with its address, uuid, lite member status and attributes.
-type IMember interface {
+// Member represents a member in the cluster with its address, uuid, lite member status and attributes.
+type Member interface {
 	// Address returns the address of this member.
-	Address() IAddress
+	Address() Address
 
 	// UUID returns the uuid of this member.
 	UUID() string
@@ -41,8 +41,8 @@ type IMember interface {
 	Attributes() map[string]string
 }
 
-// IPair represents IMap entry pair.
-type IPair interface {
+// Pair represents Map entry pair.
+type Pair interface {
 	// Key returns key of entry.
 	Key() interface{}
 
@@ -50,8 +50,8 @@ type IPair interface {
 	Value() interface{}
 }
 
-// IDistributedObjectInfo contains name and service name of distributed objects.
-type IDistributedObjectInfo interface {
+// DistributedObjectInfo contains name and service name of distributed objects.
+type DistributedObjectInfo interface {
 	// Name returns the name of distributed object.
 	Name() string
 
@@ -59,8 +59,8 @@ type IDistributedObjectInfo interface {
 	ServiceName() string
 }
 
-// IError contains error information that occurred in the server.
-type IError interface {
+// Error contains error information that occurred in the server.
+type Error interface {
 	// ErrorCode returns the error code.
 	ErrorCode() int32
 
@@ -71,7 +71,7 @@ type IError interface {
 	Message() string
 
 	// StackTrace returns a slice of StackTraceElement.
-	StackTrace() []IStackTraceElement
+	StackTrace() []StackTraceElement
 
 	// CauseErrorCode returns the cause error code.
 	CauseErrorCode() int32
@@ -80,7 +80,7 @@ type IError interface {
 	CauseClassName() string
 }
 
-type IStackTraceElement interface {
+type StackTraceElement interface {
 	// DeclaringClass returns the fully qualified name of the class containing
 	// the execution point represented by the stack trace element.
 	DeclaringClass() string
@@ -102,8 +102,8 @@ type IStackTraceElement interface {
 	LineNumber() int32
 }
 
-// IEntryView represents a readonly view of a map entry.
-type IEntryView interface {
+// EntryView represents a readonly view of a map entry.
+type EntryView interface {
 	// Key returns the key of the entry.
 	Key() interface{}
 
@@ -141,8 +141,8 @@ type IEntryView interface {
 	TTL() time.Duration
 }
 
-// IEntryEvent is map entry event.
-type IEntryEvent interface {
+// EntryEvent is map entry event.
+type EntryEvent interface {
 	// KeyData returns the key of the entry event.
 	Key() interface{}
 
@@ -162,9 +162,9 @@ type IEntryEvent interface {
 	UUID() *string
 }
 
-// IItemEvent is IList, ISet and IQueue events common contract.
-type IItemEvent interface {
-	// Name returns the name of IList, ISet or IQueue
+// ItemEvent is List, Set and Queue events common contract.
+type ItemEvent interface {
+	// Name returns the name of List, Set or Queue
 	Name() string
 
 	// Item returns the item of the event.
@@ -174,11 +174,11 @@ type IItemEvent interface {
 	EventType() int32
 
 	// Member is the member that sent the event.
-	Member() IMember
+	Member() Member
 }
 
-// IMapEvent is map events common contract.
-type IMapEvent interface {
+// MapEvent is map events common contract.
+type MapEvent interface {
 	// EventType returns the event type.
 	EventType() int32
 
@@ -190,89 +190,89 @@ type IMapEvent interface {
 	NumberOfAffectedEntries() int32
 }
 
-// IEntryAddedListener is invoked upon addition of an entry.
-type IEntryAddedListener interface {
+// EntryAddedListener is invoked upon addition of an entry.
+type EntryAddedListener interface {
 	// EntryAdded is invoked upon addition of an entry.
-	EntryAdded(IEntryEvent)
+	EntryAdded(EntryEvent)
 }
 
-// IEntryRemovedListener invoked upon removal of an entry.
-type IEntryRemovedListener interface {
+// EntryRemovedListener invoked upon removal of an entry.
+type EntryRemovedListener interface {
 	// EntryRemoved invoked upon removal of an entry.
-	EntryRemoved(IEntryEvent)
+	EntryRemoved(EntryEvent)
 }
 
-// IEntryUpdatedListener is invoked upon update of an entry.
-type IEntryUpdatedListener interface {
+// EntryUpdatedListener is invoked upon update of an entry.
+type EntryUpdatedListener interface {
 	// EntryUpdated is invoked upon update of an entry.
-	EntryUpdated(IEntryEvent)
+	EntryUpdated(EntryEvent)
 }
 
-// IEntryEvictedListener is invoked upon eviction of an entry.
-type IEntryEvictedListener interface {
+// EntryEvictedListener is invoked upon eviction of an entry.
+type EntryEvictedListener interface {
 	// EntryEvicted is invoked upon eviction of an entry.
-	EntryEvicted(IEntryEvent)
+	EntryEvicted(EntryEvent)
 }
 
-// IEntryEvictAllListener is invoked when all entries are evicted
-// by IMap.EvictAll() method.
-type IEntryEvictAllListener interface {
+// EntryEvictAllListener is invoked when all entries are evicted
+// by Map.EvictAll method.
+type EntryEvictAllListener interface {
 	// EntryEvictAll is invoked when all entries are evicted
-	// by IMap.EvictAll() method.
-	EntryEvictAll(IMapEvent)
+	// by Map.EvictAll method.
+	EntryEvictAll(MapEvent)
 }
 
-// IEntryClearAllListener is invoked when all entries are removed
-// by Imap.Clear() method.
-type IEntryClearAllListener interface {
+// EntryClearAllListener is invoked when all entries are removed
+// by Map.Clear method.
+type EntryClearAllListener interface {
 	// EntryClearAll is invoked when all entries are removed
-	// by Imap.Clear() method.
-	EntryClearAll(IMapEvent)
+	// by Map.Clear method.
+	EntryClearAll(MapEvent)
 }
 
-// IEntryMergedListener is invoked after WAN replicated entry is merged.
-type IEntryMergedListener interface {
+// EntryMergedListener is invoked after WAN replicated entry is merged.
+type EntryMergedListener interface {
 	// EntryMerged is invoked after WAN replicated entry is merged.
-	EntryMerged(IEntryEvent)
+	EntryMerged(EntryEvent)
 }
 
-// IEntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.
-type IEntryExpiredListener interface {
+// EntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.
+type EntryExpiredListener interface {
 	// EntryExpired is invoked upon expiration of an entry.
-	EntryExpired(IEntryEvent)
+	EntryExpired(EntryEvent)
 }
 
-// IMemberAddedListener is invoked when a new member is added to the cluster.
-type IMemberAddedListener interface {
+// MemberAddedListener is invoked when a new member is added to the cluster.
+type MemberAddedListener interface {
 	// MemberAdded is invoked when a new member is added to the cluster.
-	MemberAdded(member IMember)
+	MemberAdded(member Member)
 }
 
-// IMemberRemovedListener is invoked when an existing member leaves the cluster.
-type IMemberRemovedListener interface {
+// MemberRemovedListener is invoked when an existing member leaves the cluster.
+type MemberRemovedListener interface {
 	// MemberRemoved is invoked when an existing member leaves the cluster.
-	MemberRemoved(member IMember)
+	MemberRemoved(member Member)
 }
 
-// ILifecycleListener is a listener object for listening to lifecycle events of the Hazelcast instance.
-type ILifecycleListener interface {
+// LifecycleListener is a listener object for listening to lifecycle events of the Hazelcast instance.
+type LifecycleListener interface {
 	// LifecycleStateChanged is called when instance's state changes. No blocking calls should be made in this method.
 	LifecycleStateChanged(string)
 }
 
-// TopicMessageListener is a listener for ITopic.
+// TopicMessageListener is a listener for Topic.
 // Provided that a TopicMessageListener is not registered twice, a TopicMessageListener will never be called concurrently.
 // So there is no need to provide thread-safety on internal state in the TopicMessageListener. Also there is no need to enforce
-// safe publication, the ITopic is responsible for the memory consistency effects. In other words, there is no need to make
+// safe publication, the Topic is responsible for the memory consistency effects. In other words, there is no need to make
 // internal fields of the TopicMessageListener volatile or access them using synchronized blocks.
 type TopicMessageListener interface {
 	// OnMessage is invoked when a message is received for the added topic. Note that topic guarantees message ordering.
 	// Therefore there is only one thread invoking OnMessage.
-	OnMessage(message ITopicMessage)
+	OnMessage(message TopicMessage)
 }
 
-// ITopicMessage is a message for ITopic.
-type ITopicMessage interface {
+// TopicMessage is a message for Topic.
+type TopicMessage interface {
 	// MessageObject returns the published message.
 	MessageObject() interface{}
 
@@ -283,15 +283,15 @@ type ITopicMessage interface {
 	// The member can be nil if:
 	//    - The message was sent by a client and not a member.
 	//    - The member, that sent the message, left the cluster before the message was processed.
-	PublishingMember() IMember
+	PublishingMember() Member
 }
 
 // ItemAddedListener is invoked when an item is added.
 type ItemAddedListener interface {
-	ItemAdded(event IItemEvent)
+	ItemAdded(event ItemEvent)
 }
 
 // ItemRemovedListener is invoked when an item is removed.
 type ItemRemovedListener interface {
-	ItemRemoved(event IItemEvent)
+	ItemRemoved(event ItemEvent)
 }

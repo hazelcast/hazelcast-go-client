@@ -18,8 +18,8 @@ import "time"
 
 // MultiMap is a specialized map whose keys can be associated with multiple values.
 type MultiMap interface {
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// Put stores a key-value pair in the multi-map.
 	// It returns true if size of the multi-map is increased, false if the multi-map
@@ -67,7 +67,7 @@ type MultiMap interface {
 
 	// EntrySet returns all entries in this multi-map. If a certain key has multiple values associated with it,
 	// then one pair will be returned for each value.
-	EntrySet() (resultPairs []IPair, err error)
+	EntrySet() (resultPairs []Pair, err error)
 
 	// AddEntryListener adds an entry listener to this multi-map.
 	// It returns registration ID for this entry listener.

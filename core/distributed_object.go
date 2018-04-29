@@ -14,17 +14,17 @@
 
 package core
 
-// IDistributedObject is the base interface for all distributed objects.
-type IDistributedObject interface {
+// DistributedObject is the base interface for all distributed objects.
+type DistributedObject interface {
 	// Destroy destroys this object cluster-wide.
 	// Destroy clears and releases all resources for this object.
 	Destroy() (bool, error)
 
-	// Name returns the unique name for this IDistributedObject. Returned value will never be nil.
+	// Name returns the unique name for this DistributedObject. Returned value will never be nil.
 	Name() string
 
-	// PartitionKey returns the key of partition this IDistributedObject is assigned to. The returned value only has meaning
-	// for a non partitioned data structure like an IAtomicLong. For a partitioned data structure like an IMap
+	// PartitionKey returns the key of partition this DistributedObject is assigned to. The returned value only has meaning
+	// for a non partitioned data structure like an IAtomicLong. For a partitioned data structure like an Map
 	// the returned value will not be nil, but otherwise undefined.
 	PartitionKey() string
 

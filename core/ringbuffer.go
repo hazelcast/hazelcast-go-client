@@ -28,8 +28,8 @@ package core
 // If data is read from a ringbuffer with a sequence that is smaller than the headSequence, it means that the data
 // is not available anymore.
 type Ringbuffer interface {
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// Capacity returns capacity of this ringbuffer.
 	Capacity() (capacity int64, err error)

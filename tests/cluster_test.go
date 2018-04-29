@@ -32,11 +32,11 @@ type membershipListener struct {
 	wg *sync.WaitGroup
 }
 
-func (l *membershipListener) MemberAdded(member core.IMember) {
+func (l *membershipListener) MemberAdded(member core.Member) {
 	l.wg.Done()
 }
 
-func (l *membershipListener) MemberRemoved(member core.IMember) {
+func (l *membershipListener) MemberRemoved(member core.Member) {
 	l.wg.Done()
 }
 
@@ -257,6 +257,6 @@ type mapListener struct {
 	wg *sync.WaitGroup
 }
 
-func (l *mapListener) EntryAdded(event core.IEntryEvent) {
+func (l *mapListener) EntryAdded(event core.EntryEvent) {
 	l.wg.Done()
 }

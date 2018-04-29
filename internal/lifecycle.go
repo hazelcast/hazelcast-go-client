@@ -44,7 +44,7 @@ func newLifecycleService(config *config.ClientConfig) *lifecycleService {
 	newLifecycle.isLive.Store(true)
 	newLifecycle.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, listener := range config.LifecycleListeners() {
-		if _, ok := listener.(core.ILifecycleListener); ok {
+		if _, ok := listener.(core.LifecycleListener); ok {
 			newLifecycle.AddListener(listener)
 		}
 	}
@@ -88,8 +88,8 @@ func (ls *lifecycleService) fireLifecycleEvent(newState string) {
 	}
 	listeners := ls.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(core.ILifecycleListener); ok {
-			listener.(core.ILifecycleListener).LifecycleStateChanged(newState)
+		if _, ok := listener.(core.LifecycleListener); ok {
+			listener.(core.LifecycleListener).LifecycleStateChanged(newState)
 		}
 	}
 	log.Println("New State : ", newState)

@@ -14,8 +14,8 @@
 
 package core
 
-// ILifecycle is a lifecycle service for Hazelcast clients.
-type ILifecycle interface {
+// Lifecycle is a lifecycle service for Hazelcast clients.
+type Lifecycle interface {
 	// AddListener adds a listener object to listen for lifecycle events.
 	// AddListener returns the registrationID.
 	AddListener(listener interface{}) string

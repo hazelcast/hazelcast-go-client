@@ -14,16 +14,16 @@
 
 package core
 
-// ITopic is a distribution mechanism for publishing messages that are delivered to multiple subscribers, which
+// Topic is a distribution mechanism for publishing messages that are delivered to multiple subscribers, which
 // is also known as a publish/subscribe (pub/sub) messaging model. Publish and subscriptions are cluster-wide. When a
 // member subscribes for a topic, it is actually registering for messages published by any member in the cluster,
 // including the new members joined after you added the listener.
 //
 // Messages are ordered, meaning that listeners(subscribers) will process the messages in the order they are actually
 // published.
-type ITopic interface {
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+type Topic interface {
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// AddMessageListener subscribes to this topic. When someone publishes a message on this topic.
 	// OnMessage() function of the given messageListener is called. More than one message listener can be

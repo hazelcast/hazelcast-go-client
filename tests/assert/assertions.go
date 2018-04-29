@@ -60,7 +60,7 @@ func ErrorNil(t *testing.T, err error) {
 	}
 }
 
-func MapEqualPairSlice(t *testing.T, err error, mp map[interface{}]interface{}, pairSlice []core.IPair, message string) {
+func MapEqualPairSlice(t *testing.T, err error, mp map[interface{}]interface{}, pairSlice []core.Pair, message string) {
 	if err != nil {
 		t.Fatal(err)
 	}

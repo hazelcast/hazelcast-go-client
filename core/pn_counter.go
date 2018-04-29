@@ -50,8 +50,8 @@ package core
 //
 // PNCounter requires Hazelcast 3.10.
 type PNCounter interface {
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// Get returns the current value of the counter.
 	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,

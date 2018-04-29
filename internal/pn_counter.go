@@ -30,9 +30,9 @@ import (
 type pnCounterProxy struct {
 	*proxy
 	targetSelectionMutex        sync.RWMutex // guards currentTargetReplicaAddress
-	currentTargetReplicaAddress core.IAddress
+	currentTargetReplicaAddress core.Address
 	maxConfiguredReplicaCount   int32
-	emptyAddresses              map[core.IAddress]struct{}
+	emptyAddresses              map[core.Address]struct{}
 	observedClock               unsafe.Pointer
 	random                      *rand.Rand
 }
@@ -40,7 +40,7 @@ type pnCounterProxy struct {
 func newPNCounterProxy(client *HazelcastClient, serviceName *string, name *string) (*pnCounterProxy, error) {
 	pn := &pnCounterProxy{
 		proxy:          &proxy{client, serviceName, name},
-		emptyAddresses: make(map[core.IAddress]struct{}),
+		emptyAddresses: make(map[core.Address]struct{}),
 	}
 	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 	pn.random = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -121,7 +121,7 @@ func (pn *pnCounterProxy) Reset() {
 	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 }
 
-func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.IAddress]struct{}) (core.IAddress, error) {
+func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.Address]struct{}) (core.Address, error) {
 	pn.targetSelectionMutex.RLock()
 	localCurrentTargetReplicaAddress := pn.currentTargetReplicaAddress
 	pn.targetSelectionMutex.RUnlock()
@@ -143,8 +143,8 @@ func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.IAdd
 	return localCurrentTargetReplicaAddress, nil
 }
 
-func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.IAddress]struct{}, lastError error,
-	target core.IAddress) (response *protocol.ClientMessage, err error) {
+func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]struct{}, lastError error,
+	target core.Address) (response *protocol.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -171,8 +171,8 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.IAddress]
 }
 
 func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
-	excludedAddresses map[core.IAddress]struct{}, lastError error,
-	target core.IAddress) (response *protocol.ClientMessage, err error) {
+	excludedAddresses map[core.Address]struct{}, lastError error,
+	target core.Address) (response *protocol.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -197,7 +197,7 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	return response, nil
 }
 
-func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.IAddress]struct{}) (core.IAddress, error) {
+func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.Address]struct{}) (core.Address, error) {
 	replicaAddresses, err := pn.getReplicaAddresses(excludedAddresses)
 	if err != nil || len(replicaAddresses) == 0 {
 		return nil, err
@@ -205,14 +205,14 @@ func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.IAddres
 	return replicaAddresses[pn.random.Intn(len(replicaAddresses))], nil
 }
 
-func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.IAddress]struct{}) ([]core.IAddress, error) {
+func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.Address]struct{}) ([]core.Address, error) {
 	dataMembers := pn.client.ClusterService.GetMembersWithSelector(core.MemberSelectors.DataMemberSelector)
 	maxConfiguredReplicaCount, err := pn.getMaxConfiguredReplicaCount()
 	if err != nil {
 		return nil, err
 	}
 	currentReplicaCount := int(math.Min(float64(maxConfiguredReplicaCount), float64(len(dataMembers))))
-	var replicaAdresses []core.IAddress
+	var replicaAdresses []core.Address
 	for i := 0; i < currentReplicaCount; i++ {
 		dataMemberAddress := dataMembers[i].Address()
 		_, ok := excludedAddresses[dataMemberAddress]
@@ -226,7 +226,7 @@ func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.IAddres
 // GetCurrentTargetReplicaAddress returns the current target replica address to which this proxy is
 // sending invocations.
 // It is public for testing purposes.
-func GetCurrentTargetReplicaAddress(pn core.PNCounter) core.IAddress {
+func GetCurrentTargetReplicaAddress(pn core.PNCounter) core.Address {
 	return pn.(*pnCounterProxy).currentTargetReplicaAddress
 }
 

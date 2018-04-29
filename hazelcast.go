@@ -21,23 +21,23 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
-// NewHazelcastClient creates and returns a new IHazelcastInstance.
-// IHazelcast instance enables you to do all Hazelcast operations without
+// NewHazelcastClient creates and returns a new Instance.
+// Hazelcast instance enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewHazelcastClient() (IHazelcastInstance, error) {
+func NewHazelcastClient() (Instance, error) {
 	return NewHazelcastClientWithConfig(config.NewClientConfig())
 }
 
-// NewHazelcastClientWithConfig creates and returns a new IHazelcastInstance with the given config.
-// IHazelcast instance enables you to do all Hazelcast operations without
+// NewHazelcastClientWithConfig creates and returns a new Instance with the given config.
+// Hazelcast instance enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewHazelcastClientWithConfig(config *config.ClientConfig) (IHazelcastInstance, error) {
+func NewHazelcastClientWithConfig(config *config.ClientConfig) (Instance, error) {
 	return internal.NewHazelcastClient(config)
 }
 
@@ -46,22 +46,22 @@ func NewHazelcastConfig() *config.ClientConfig {
 	return config.NewClientConfig()
 }
 
-// IHazelcastInstance is a Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
+// Instance is a Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
 // Multiple Hazelcast instances can be created.
 // Each Hazelcast instance has its own socket, goroutines.
-type IHazelcastInstance interface {
+type Instance interface {
 
 	// GetMap returns the distributed map instance with the specified name.
-	GetMap(name string) (core.IMap, error)
+	GetMap(name string) (core.Map, error)
 
 	// GetList returns the distributed list instance with the specified name.
-	GetList(name string) (core.IList, error)
+	GetList(name string) (core.List, error)
 
 	// GetSet returns the distributed set instance with the specified name.
-	GetSet(name string) (core.ISet, error)
+	GetSet(name string) (core.Set, error)
 
 	// GetTopic returns the distributed topic instance with the specified name.
-	GetTopic(name string) (core.ITopic, error)
+	GetTopic(name string) (core.Topic, error)
 
 	// GetMultiMap returns the distributed multi-map instance with the specified name.
 	GetMultiMap(name string) (core.MultiMap, error)
@@ -70,7 +70,7 @@ type IHazelcastInstance interface {
 	GetReplicatedMap(name string) (core.ReplicatedMap, error)
 
 	// GetQueue returns the distributed queue instance with the specified name.
-	GetQueue(name string) (core.IQueue, error)
+	GetQueue(name string) (core.Queue, error)
 
 	// GetRingbuffer returns the distributed ringbuffer instance with the specified name.
 	GetRingbuffer(name string) (core.Ringbuffer, error)
@@ -81,19 +81,19 @@ type IHazelcastInstance interface {
 	// GetFlakeIDGenerator returns the distributed flakeIDGenerator instance with the specified name.
 	GetFlakeIDGenerator(name string) (core.FlakeIDGenerator, error)
 
-	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
-	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
+	// GetDistributedObject returns DistributedObject created by the service with the specified name.
+	GetDistributedObject(serviceName string, name string) (core.DistributedObject, error)
 
-	// Shutdown shuts down this IHazelcastInstance.
+	// Shutdown shuts down this Instance.
 	Shutdown()
 
-	// GetCluster returns the ICluster this instance is part of.
-	// ICluster interface allows you to add listener for membership
+	// GetCluster returns the Cluster this instance is part of.
+	// Cluster interface allows you to add listener for membership
 	// events and learn more about the cluster this Hazelcast
 	// instance is part of.
-	GetCluster() core.ICluster
+	GetCluster() core.Cluster
 
-	// GetLifecycle returns the lifecycle service for this instance. ILifecycleService allows you
+	// GetLifecycle returns the lifecycle service for this instance. Lifecycle service allows you
 	// to listen for the lifecycle events.
-	GetLifecycle() core.ILifecycle
+	GetLifecycle() core.Lifecycle
 }

@@ -14,17 +14,17 @@
 
 package core
 
-// IList is a concurrent, distributed, ordered collection. The user of this
+// List is a concurrent, distributed, ordered collection. The user of this
 // interface has precise control over where in the list each element is
 // inserted.  The user can access elements by their integer index (position in the list),
 // and search for elements in the list.
 //
 // The Hazelcast List is not a partitioned data-structure. So all the content of the List is stored in a single
 // machine (and in the backup). So the List will not scale by adding more members in the cluster.
-type IList interface {
+type List interface {
 
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// Add appends the specified element to the end of this list.
 	// Add returns true if the list has changed as a result of this operation, false otherwise.

@@ -54,8 +54,8 @@ func DataToObjectCollection(dataSlice []*serialization.Data, service *serializat
 	return elements, nil
 }
 
-func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serialization.Service) (pairSlice []core.IPair, err error) {
-	pairSlice = make([]core.IPair, len(dataSlice))
+func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serialization.Service) (pairSlice []core.Pair, err error) {
+	pairSlice = make([]core.Pair, len(dataSlice))
 	for index, pairData := range dataSlice {
 		key, err := service.ToObject(pairData.Key().(*serialization.Data))
 		if err != nil {
@@ -65,7 +65,7 @@ func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serializati
 		if err != nil {
 			return nil, err
 		}
-		pairSlice[index] = core.IPair(protocol.NewPair(key, value))
+		pairSlice[index] = core.Pair(protocol.NewPair(key, value))
 	}
 	return
 }

@@ -27,7 +27,7 @@ import (
 )
 
 var ringbuffer core.Ringbuffer
-var client hazelcast.IHazelcastInstance
+var client hazelcast.Instance
 
 const capacity int64 = 10
 const ringbufferName = "ClientRingbufferTestWithTTL"

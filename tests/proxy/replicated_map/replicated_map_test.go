@@ -32,7 +32,7 @@ import (
 )
 
 var rmp core.ReplicatedMap
-var client hazelcast.IHazelcastInstance
+var client hazelcast.Instance
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
@@ -411,26 +411,26 @@ func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 
 type entryListener struct {
 	wg    *sync.WaitGroup
-	event core.IEntryEvent
+	event core.EntryEvent
 }
 
-func (l *entryListener) EntryAdded(event core.IEntryEvent) {
+func (l *entryListener) EntryAdded(event core.EntryEvent) {
 	l.event = event
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryUpdated(event core.IEntryEvent) {
+func (l *entryListener) EntryUpdated(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryRemoved(event core.IEntryEvent) {
+func (l *entryListener) EntryRemoved(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryEvicted(event core.IEntryEvent) {
+func (l *entryListener) EntryEvicted(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryClearAll(event core.IMapEvent) {
+func (l *entryListener) EntryClearAll(event core.MapEvent) {
 	l.wg.Done()
 }
