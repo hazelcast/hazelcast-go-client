@@ -14,7 +14,7 @@ func main() {
 
 	// The map is stored on the server but we can access it from the client
 	mapName := "greetings"
-	greetings, _ := client.GetMap(mapName)
+	greetings, _ := client.Map(mapName)
 
 	// A map is a key-value store, not sorted by default
 	keys, _ := greetings.KeySet()

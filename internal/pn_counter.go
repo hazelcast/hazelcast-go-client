@@ -206,7 +206,7 @@ func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.IAddres
 }
 
 func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.IAddress]struct{}) ([]core.IAddress, error) {
-	dataMembers := pn.client.ClusterService.GetMembersWithSelector(core.MemberSelectors.DataMemberSelector)
+	dataMembers := pn.client.ClusterService.MembersWithSelector(core.MemberSelectors.DataMemberSelector)
 	maxConfiguredReplicaCount, err := pn.getMaxConfiguredReplicaCount()
 	if err != nil {
 		return nil, err

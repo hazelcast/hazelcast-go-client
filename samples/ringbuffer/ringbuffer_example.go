@@ -33,7 +33,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	ringbuffer, _ := client.GetRingbuffer("myRingbuffer")
+	ringbuffer, _ := client.Ringbuffer("myRingbuffer")
 
 	var wg sync.WaitGroup
 	wg.Add(2)

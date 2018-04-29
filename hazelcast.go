@@ -51,49 +51,49 @@ func NewHazelcastConfig() *config.ClientConfig {
 // Each Hazelcast instance has its own socket, goroutines.
 type IHazelcastInstance interface {
 
-	// GetMap returns the distributed map instance with the specified name.
-	GetMap(name string) (core.IMap, error)
+	// Map returns the distributed map instance with the specified name.
+	Map(name string) (core.IMap, error)
 
-	// GetList returns the distributed list instance with the specified name.
-	GetList(name string) (core.IList, error)
+	// List returns the distributed list instance with the specified name.
+	List(name string) (core.IList, error)
 
-	// GetSet returns the distributed set instance with the specified name.
-	GetSet(name string) (core.ISet, error)
+	// Set returns the distributed set instance with the specified name.
+	Set(name string) (core.ISet, error)
 
-	// GetTopic returns the distributed topic instance with the specified name.
-	GetTopic(name string) (core.ITopic, error)
+	// Topic returns the distributed topic instance with the specified name.
+	Topic(name string) (core.ITopic, error)
 
-	// GetMultiMap returns the distributed multi-map instance with the specified name.
-	GetMultiMap(name string) (core.MultiMap, error)
+	// MultiMap returns the distributed multi-map instance with the specified name.
+	MultiMap(name string) (core.MultiMap, error)
 
-	// GetReplicatedMap returns the replicated map instance with the specified name.
-	GetReplicatedMap(name string) (core.ReplicatedMap, error)
+	// ReplicatedMap returns the replicated map instance with the specified name.
+	ReplicatedMap(name string) (core.ReplicatedMap, error)
 
-	// GetQueue returns the distributed queue instance with the specified name.
-	GetQueue(name string) (core.IQueue, error)
+	// Queue returns the distributed queue instance with the specified name.
+	Queue(name string) (core.IQueue, error)
 
-	// GetRingbuffer returns the distributed ringbuffer instance with the specified name.
-	GetRingbuffer(name string) (core.Ringbuffer, error)
+	// Ringbuffer returns the distributed ringbuffer instance with the specified name.
+	Ringbuffer(name string) (core.Ringbuffer, error)
 
-	// GetPNCounter returns the distributed PN (Positive-Negative) CRDT counter instance with the specified name.
-	GetPNCounter(name string) (core.PNCounter, error)
+	// PNCounter returns the distributed PN (Positive-Negative) CRDT counter instance with the specified name.
+	PNCounter(name string) (core.PNCounter, error)
 
-	// GetFlakeIDGenerator returns the distributed flakeIDGenerator instance with the specified name.
-	GetFlakeIDGenerator(name string) (core.FlakeIDGenerator, error)
+	// FlakeIDGenerator returns the distributed flakeIDGenerator instance with the specified name.
+	FlakeIDGenerator(name string) (core.FlakeIDGenerator, error)
 
-	// GetDistributedObject returns IDistributedObject created by the service with the specified name.
-	GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error)
+	// DistributedObject returns IDistributedObject created by the service with the specified name.
+	DistributedObject(serviceName string, name string) (core.IDistributedObject, error)
 
 	// Shutdown shuts down this IHazelcastInstance.
 	Shutdown()
 
-	// GetCluster returns the ICluster this instance is part of.
+	// Cluster returns the ICluster this instance is part of.
 	// ICluster interface allows you to add listener for membership
 	// events and learn more about the cluster this Hazelcast
 	// instance is part of.
-	GetCluster() core.ICluster
+	Cluster() core.ICluster
 
-	// GetLifecycle returns the lifecycle service for this instance. ILifecycleService allows you
+	// Lifecycle returns the lifecycle service for this instance. ILifecycleService allows you
 	// to listen for the lifecycle events.
-	GetLifecycle() core.ILifecycle
+	Lifecycle() core.ILifecycle
 }

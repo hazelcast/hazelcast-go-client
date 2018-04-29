@@ -32,7 +32,7 @@ func TestNonSmartInvoke(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mp, _ := client.GetMap("myMap")
+	mp, _ := client.Map("myMap")
 	testKey := "testingKey"
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
@@ -51,7 +51,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetSmartRouting(false)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)
 		testValue := "testingValue" + strconv.Itoa(i)
@@ -73,7 +73,7 @@ func TestInvocationTimeout(t *testing.T) {
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100)
 	config.ClientNetworkConfig().SetInvocationTimeout(5 * time.Second)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	_, err := mp.Put("a", "b")
 	if _, ok := err.(*core.HazelcastTimeoutError); !ok {
@@ -89,7 +89,7 @@ func TestInvocationRetry(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	mu := sync.Mutex{}
 	//Open the new member in a new subroutine after 5 seconds to ensure that Put will be forced to retry.
@@ -115,7 +115,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 	config := hazelcast.NewHazelcastConfig()
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(10)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 	client.Shutdown()
 	_, err := mp.Put("testingKey", "testingValue")
 	if _, ok := err.(*core.HazelcastClientNotActiveError); !ok {
@@ -132,7 +132,7 @@ func TestInvocationNotSent(t *testing.T) {
 	config.ClientNetworkConfig().SetRedoOperation(true).SetConnectionAttemptLimit(100).
 		SetInvocationTimeout(10 * time.Second).SetConnectionAttemptPeriod(1 * time.Second)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 	wg.Add(50)
 	// make put ops concurrently so that some of them will not be sent when the server gets shut down.
 	go func() {

@@ -30,7 +30,7 @@ func main() {
 		return
 	}
 
-	counter, _ := client.GetPNCounter("myPNCounter")
+	counter, _ := client.PNCounter("myPNCounter")
 
 	currentValue, _ := counter.AddAndGet(5)
 	fmt.Printf("added 5 counter, current value is %d\n", currentValue)

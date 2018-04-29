@@ -30,7 +30,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	list, _ := client.GetList("students")
+	list, _ := client.List("students")
 
 	list.Add("Furkan")
 	list.Add("Talha")

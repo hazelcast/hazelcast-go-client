@@ -107,7 +107,7 @@ type IMap interface {
 	//	// methods
 	// If you are querying your values mostly based on age and active then
 	// you should consider indexing these fields.
-	//	mp, _ := client.GetMap("employee")
+	//	mp, _ := client.Map("employee")
 	//	mp.AddIndex("age", true);        // ordered, since we have ranged queries for this field
 	//	mp.AddIndex("active", false);    // not ordered, because boolean field cannot have range
 	AddIndex(attribute string, ordered bool) (err error)

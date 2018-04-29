@@ -26,7 +26,7 @@ func queueSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClient()
 	// Get a Blocking Queue called "my-distributed-queue"
-	queue, _ := hz.GetQueue("my-distributed-queue")
+	queue, _ := hz.Queue("my-distributed-queue")
 	// Offer a String into the Distributed Queue
 	queue.Offer("item")
 	// Poll the Distributed Queue and return the String

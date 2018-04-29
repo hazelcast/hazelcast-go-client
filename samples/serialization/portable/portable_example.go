@@ -93,7 +93,7 @@ func main() {
 		log.Println(err)
 	}
 
-	mp, err := client.GetMap("testMap")
+	mp, err := client.Map("testMap")
 	if err != nil {
 		log.Println(err)
 	}

@@ -95,8 +95,8 @@ type IData interface {
 	// Buffer returns byte array representation of internal binary format.
 	Buffer() []byte
 
-	// GetType returns serialization type of binary form.
-	GetType() int32
+	// Type returns serialization type of binary form.
+	Type() int32
 
 	// TotalSize returns the total size of Data in bytes.
 	TotalSize() int
@@ -104,8 +104,8 @@ type IData interface {
 	// DataSize returns size of internal binary data in bytes.
 	DataSize() int
 
-	// GetPartitionHash returns partition hash calculated for serialized object.
-	GetPartitionHash() int32
+	// PartitionHash returns partition hash calculated for serialized object.
+	PartitionHash() int32
 }
 
 // DataOutput provides serialization methods.

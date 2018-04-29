@@ -39,7 +39,7 @@ func main() {
 		return
 	}
 
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}

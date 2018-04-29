@@ -70,7 +70,7 @@ func TestFlakeIDGeneratorProxy_ConfigTest(t *testing.T) {
 			SetPrefetchValidityMillis(shortTermValidityMillis))
 	client, _ = hazelcast.NewHazelcastClientWithConfig(config)
 	defer client.Shutdown()
-	flakeIDGenerator, _ = client.GetFlakeIDGenerator("gen")
+	flakeIDGenerator, _ = client.FlakeIDGenerator("gen")
 	// this should take a batch of 3 IDs from the member and store it in the auto-batcher
 	id1, err := flakeIDGenerator.NewID()
 	assert.ErrorNil(t, err)
@@ -93,7 +93,7 @@ func TestFlakeIDGeneratorProxy_ConcurrentlyGeneratedIds(t *testing.T) {
 	mu := sync.Mutex{}
 	client, _ := hazelcast.NewHazelcastClient()
 	defer client.Shutdown()
-	flakeIDGenerator, _ = client.GetFlakeIDGenerator("gen")
+	flakeIDGenerator, _ = client.FlakeIDGenerator("gen")
 	localIdsSlice := make([]map[int64]struct{}, 0)
 	ids := make(map[int64]struct{})
 	wg.Add(numRoutines)
@@ -131,7 +131,7 @@ func TestFlakeIDGeneratorProxy_WhenAllMembersOutOfRangeThenError(t *testing.T) {
 	assert.ErrorNil(t, err)
 	client, _ := hazelcast.NewHazelcastClient()
 	defer client.Shutdown()
-	flakeIDGenerator, _ := client.GetFlakeIDGenerator("test")
+	flakeIDGenerator, _ := client.FlakeIDGenerator("test")
 	_, err = flakeIDGenerator.NewID()
 	assert.ErrorNotNil(t, err, "flakeIDGenerator should return an error when there is no server with a join id smaller than 2^16")
 	if _, ok := err.(core.HazelcastError); !ok {
@@ -148,7 +148,7 @@ func TestFlakeIDGeneratorProxy_WhenMemberOutOfRangeThenOtherMemberUsed(t *testin
 	assert.ErrorNil(t, err)
 	client, _ := hazelcast.NewHazelcastClient()
 	defer client.Shutdown()
-	flakeIDGenerator, _ := client.GetFlakeIDGenerator("test")
+	flakeIDGenerator, _ := client.FlakeIDGenerator("test")
 	_, err = flakeIDGenerator.NewID()
 	assert.ErrorNil(t, err)
 }

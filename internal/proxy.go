@@ -223,7 +223,7 @@ func (p *proxy) createOnItemEvent(listener interface{}) func(itemData *serializa
 	return func(itemData *serialization.Data, uuid *string, eventType int32) {
 		var item interface{}
 		item, _ = p.toObject(itemData)
-		member := p.client.ClusterService.GetMemberByUUID(*uuid)
+		member := p.client.ClusterService.MemberByUUID(*uuid)
 		itemEvent := protocol.NewItemEvent(p.name, item, eventType, member.(*protocol.Member))
 		if eventType == common.ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {

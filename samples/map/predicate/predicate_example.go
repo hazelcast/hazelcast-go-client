@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	mp, _ := client.GetMap("predicateExample")
+	mp, _ := client.Map("predicateExample")
 
 	for i := 0; i < 50; i++ {
 		mp.Put("key"+strconv.Itoa(i), int32(i))

@@ -30,7 +30,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	set, _ := client.GetSet("students")
+	set, _ := client.Set("students")
 
 	set.Add("Furkan")
 	set.Add("Talha")

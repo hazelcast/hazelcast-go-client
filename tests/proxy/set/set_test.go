@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	cluster, _ := remoteController.CreateCluster("", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	set, _ = client.GetSet("mySet")
+	set, _ = client.Set("mySet")
 	m.Run()
 	set.Clear()
 	client.Shutdown()

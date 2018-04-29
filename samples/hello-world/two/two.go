@@ -17,7 +17,7 @@ func main() {
 
 	// The map is stored on the server but we can access it from the client
 	mapName := "greetings"
-	greetings, _ := client.GetMap(mapName)
+	greetings, _ := client.Map(mapName)
 
 	// 0 if first run, non-zero if Hazelcast has data already
 	size, _ := greetings.Size()

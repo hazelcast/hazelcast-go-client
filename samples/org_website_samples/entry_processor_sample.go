@@ -51,7 +51,7 @@ func entryProcessorSampleRun() {
 	entryProcessor := &IncEntryProcessor{}
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get the Distributed Map from Cluster.
-	mp, _ := hz.GetMap("my-distributed-map")
+	mp, _ := hz.Map("my-distributed-map")
 	// Put the integer value of 0 into the Distributed Map
 	mp.Put("key", 0)
 	// Run the IncEntryProcessor class on the Hazelcast Cluster Member holding the key called "key"

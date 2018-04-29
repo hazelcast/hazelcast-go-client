@@ -31,7 +31,7 @@ func main() {
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryID, processor.identifiedFactory)
 	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
 
-	mp, _ := client.GetMap("testMap")
+	mp, _ := client.Map("testMap")
 	mp.Put("testKey", "testValue")
 	value, err := mp.ExecuteOnKey("testKey", processor)
 

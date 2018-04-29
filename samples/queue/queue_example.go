@@ -32,7 +32,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	queue, _ := client.GetQueue("myQueue")
+	queue, _ := client.Queue("myQueue")
 
 	var wg sync.WaitGroup
 	wg.Add(2)
