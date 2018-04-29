@@ -64,10 +64,10 @@ func (s *Service) ToObject(data *Data) (interface{}, error) {
 	if data == nil {
 		return nil, nil
 	}
-	if data.GetType() == 0 {
+	if data.Type() == 0 {
 		return data, nil
 	}
-	var serializer = s.registry[data.GetType()]
+	var serializer = s.registry[data.Type()]
 	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.serializationConfig.IsBigEndian())
 	return serializer.Read(dataInput)
 }

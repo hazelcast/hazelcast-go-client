@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 	cluster, _ := remoteController.CreateCluster("", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	rmp, _ = client.GetReplicatedMap("myReplicatedMap")
+	rmp, _ = client.ReplicatedMap("myReplicatedMap")
 	m.Run()
 	rmp.Clear()
 	client.Shutdown()
@@ -54,7 +54,7 @@ func TestReplicatedMapProxy_Destroy(t *testing.T) {
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
 	rmp.Destroy()
-	rmp, _ := client.GetReplicatedMap("myReplicatedMap")
+	rmp, _ := client.ReplicatedMap("myReplicatedMap")
 	res, err := rmp.Get(testKey)
 	assert.Nilf(t, err, res, "replicatedMap Destroy() failed")
 }

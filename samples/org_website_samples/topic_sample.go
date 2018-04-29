@@ -32,7 +32,7 @@ func topicSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClient()
 	// Get a Topic called "my-distributed-topic"
-	topic, _ := hz.GetTopic("my-distributed-topic")
+	topic, _ := hz.Topic("my-distributed-topic")
 	// Add a Listener to the Topic
 	topic.AddMessageListener(&topicMessageListener{})
 	// Publish a message to the Topic

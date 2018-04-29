@@ -72,7 +72,7 @@ func (ps *partitionService) GetPartitionID(keyData *serialization.Data) int32 {
 	if count <= 0 {
 		return 0
 	}
-	return common.HashToIndex(keyData.GetPartitionHash(), count)
+	return common.HashToIndex(keyData.PartitionHash(), count)
 }
 
 func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error) {

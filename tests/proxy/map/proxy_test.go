@@ -11,7 +11,7 @@ import (
 func TestProxy_Destroy(t *testing.T) {
 	name := "testMap"
 	serviceName := common.ServiceNameMap
-	testMap, err := client.GetDistributedObject(serviceName, name)
+	testMap, err := client.DistributedObject(serviceName, name)
 	assert.ErrorNil(t, err)
 	res, err := testMap.Destroy()
 
@@ -29,10 +29,10 @@ func TestProxy_Destroy(t *testing.T) {
 func TestProxy_GetDistributedObject(t *testing.T) {
 	name := "testMap"
 	serviceName := common.ServiceNameMap
-	mp, _ := client.GetDistributedObject(serviceName, name)
-	mp2, _ := client.GetDistributedObject(serviceName, name)
+	mp, _ := client.DistributedObject(serviceName, name)
+	mp2, _ := client.DistributedObject(serviceName, name)
 
 	if !reflect.DeepEqual(mp, mp2) {
-		t.Error("GetDistributedObject() works wrong")
+		t.Error("DistributedObject() works wrong")
 	}
 }

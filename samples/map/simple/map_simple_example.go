@@ -30,7 +30,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	mp, _ := client.GetMap("simpleExample")
+	mp, _ := client.Map("simpleExample")
 
 	mp.Put("key1", "value1")
 	mp.Put("key2", "value2")

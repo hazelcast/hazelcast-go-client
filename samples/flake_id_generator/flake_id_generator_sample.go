@@ -29,7 +29,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	flakeIDGenerator, _ := client.GetFlakeIDGenerator("generator")
+	flakeIDGenerator, _ := client.FlakeIDGenerator("generator")
 	id, _ := flakeIDGenerator.NewID()
 	fmt.Printf("new id : %d", id)
 

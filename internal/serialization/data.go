@@ -39,7 +39,7 @@ func (d *Data) Buffer() []byte {
 	return d.Payload
 }
 
-func (d *Data) GetType() int32 {
+func (d *Data) Type() int32 {
 	if d.TotalSize() == 0 {
 		return 0
 	}
@@ -57,6 +57,6 @@ func (d *Data) DataSize() int {
 	return int(math.Max(float64(d.TotalSize()-heapDataOverhead), 0))
 }
 
-func (d *Data) GetPartitionHash() int32 {
+func (d *Data) PartitionHash() int32 {
 	return common.Murmur3ADefault(d.Payload, DataOffset, d.DataSize())
 }

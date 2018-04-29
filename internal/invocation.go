@@ -421,7 +421,7 @@ func (is *invocationService) isNotAllowedToRetryOnConnection(invocation *invocat
 		return true
 	}
 	_, isTargetNotMemberError := err.(*core.HazelcastTargetNotMemberError)
-	if invocation.address != nil && isTargetNotMemberError && is.client.ClusterService.GetMember(invocation.address) == nil {
+	if invocation.address != nil && isTargetNotMemberError && is.client.ClusterService.Member(invocation.address) == nil {
 		return true
 	}
 	return false

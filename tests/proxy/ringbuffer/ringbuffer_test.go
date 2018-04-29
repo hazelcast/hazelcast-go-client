@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 	cluster, _ := remoteController.CreateCluster("", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	ringbuffer, _ = client.GetRingbuffer(ringbufferName)
+	ringbuffer, _ = client.Ringbuffer(ringbufferName)
 	m.Run()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -73,7 +73,7 @@ func fillRingbuffer(capacity int64) {
 
 func destroyAndCreate() {
 	ringbuffer.Destroy()
-	ringbuffer, _ = client.GetRingbuffer(ringbufferName)
+	ringbuffer, _ = client.Ringbuffer(ringbufferName)
 }
 
 func TestRingbufferProxy_Capacity(t *testing.T) {

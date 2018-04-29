@@ -94,7 +94,7 @@ func querySampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
 	// Get a Distributed Map called "users"
-	users, _ := hz.GetMap("users")
+	users, _ := hz.Map("users")
 	// Add some users to the Distributed Map
 	generateUsers(users)
 	// Create a Predicate from a String (a SQL like Where clause)

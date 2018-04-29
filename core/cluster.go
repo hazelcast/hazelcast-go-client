@@ -24,12 +24,12 @@ type ICluster interface {
 	// RemoveListener returns true if successfully removed, false otherwise.
 	RemoveListener(registrationID *string) bool
 
-	// GetMemberList returns a slice of members.
-	GetMemberList() []IMember
+	// Members returns a slice of members.
+	Members() []IMember
 
-	// GetMember gets the member with the given address.
-	GetMember(address IAddress) IMember
+	// Member gets the member with the given address.
+	Member(address IAddress) IMember
 
-	// GetMemberByUUID gets the member with the given uuid.
-	GetMemberByUUID(uuid string) IMember
+	// MemberByUUID gets the member with the given uuid.
+	MemberByUUID(uuid string) IMember
 }

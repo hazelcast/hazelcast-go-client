@@ -30,7 +30,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	replicatedMap, _ := client.GetReplicatedMap("myReplicatedMap")
+	replicatedMap, _ := client.ReplicatedMap("myReplicatedMap")
 
 	replicatedMap.Put("key", "value")
 	replicatedMap.Put("key2", "value2")

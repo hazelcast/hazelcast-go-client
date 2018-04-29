@@ -30,7 +30,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	multiMap, _ := client.GetMultiMap("myMultiMap")
+	multiMap, _ := client.MultiMap("myMultiMap")
 
 	multiMap.Put("key", "value")
 	multiMap.Put("key", "value1")

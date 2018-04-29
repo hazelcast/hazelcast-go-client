@@ -64,7 +64,7 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 func (tp *topicProxy) createEventHandler(messageListener core.TopicMessageListener) func(clientMessage *protocol.ClientMessage) {
 	return func(message *protocol.ClientMessage) {
 		protocol.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid *string) {
-			member := tp.client.ClusterService.GetMemberByUUID(*uuid)
+			member := tp.client.ClusterService.MemberByUUID(*uuid)
 			item, _ := tp.toObject(itemData)
 			itemEvent := protocol.NewTopicMessage(item, publishTime, member.(*protocol.Member))
 			messageListener.OnMessage(itemEvent)

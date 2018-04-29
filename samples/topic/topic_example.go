@@ -33,7 +33,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	topic, _ := client.GetTopic("myTopic")
+	topic, _ := client.Topic("myTopic")
 
 	var wg sync.WaitGroup
 	wg.Add(100)

@@ -38,7 +38,7 @@ func defineSerializationService() {
 }
 
 func fillMapForPredicates() {
-	mp2, _ = client.GetMap("myMap2")
+	mp2, _ = client.Map("myMap2")
 	for i := 0; i < 50; i++ {
 		mp2.Put("key"+strconv.Itoa(i), int32(i))
 	}
@@ -141,7 +141,7 @@ func TestLessEqual(t *testing.T) {
 }
 
 func TestLike(t *testing.T) {
-	localMap, _ := client.GetMap("likePredMap")
+	localMap, _ := client.Map("likePredMap")
 	localMap.Put("temp", "tempval")
 	localMap.Put("temp1", "tempval1")
 	localMap.Put("temp2", "val2")
@@ -172,7 +172,7 @@ func TestLike(t *testing.T) {
 }
 
 func TestILike(t *testing.T) {
-	localMap, _ := client.GetMap("ilikePredMap")
+	localMap, _ := client.Map("ilikePredMap")
 	localMap.Put("temp", "tempval")
 	localMap.Put("TEMP", "TeMPVAL")
 	localMap.Put("temp1", "teMpvAl1")
@@ -261,7 +261,7 @@ func TestOr(t *testing.T) {
 }
 
 func TestRegex(t *testing.T) {
-	localMap, _ := client.GetMap("regexMap")
+	localMap, _ := client.Map("regexMap")
 	localMap.PutAll(map[interface{}]interface{}{"06": "ankara", "07": "antalya"})
 	rp := predicates.Regex("this", "^.*ya$")
 	testSerialization(t, rp)

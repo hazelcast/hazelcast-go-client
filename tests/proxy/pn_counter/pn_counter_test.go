@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	cluster, err = remoteController.CreateCluster("", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	counter, _ = client.GetPNCounter(counterName)
+	counter, _ = client.PNCounter(counterName)
 	m.Run()
 	counter.Destroy()
 	client.Shutdown()
@@ -54,7 +54,7 @@ func TestMain(m *testing.M) {
 
 func destroyAndCreate() {
 	counter.Destroy()
-	counter, _ = client.GetPNCounter(counterName)
+	counter, _ = client.PNCounter(counterName)
 }
 
 func TestPNCounter_Name(t *testing.T) {
@@ -80,7 +80,7 @@ func TestPNCounter_Destroy(t *testing.T) {
 	var delta int64 = 5
 	counter.AddAndGet(delta)
 	counter.Destroy()
-	counter, _ = client.GetPNCounter(counterName)
+	counter, _ = client.PNCounter(counterName)
 	res, err := counter.Get()
 	assert.Equalf(t, err, res, int64(0), "PNCounter.Destroy failed")
 }
@@ -178,7 +178,7 @@ func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 	cluster, err = remoteController.CreateCluster("", liteMemberConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	counter, _ = client.GetPNCounter(counterName)
+	counter, _ = client.PNCounter(counterName)
 	var delta int64 = 5
 	_, err = counter.AddAndGet(delta)
 	if _, ok := err.(*core.HazelcastNoDataMemberInClusterError); !ok {
@@ -195,10 +195,10 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	counter, _ = client.GetPNCounter(counterName)
+	counter, _ = client.PNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
-	target := client.GetCluster().GetMember(internal.GetCurrentTargetReplicaAddress(counter))
+	target := client.Cluster().Member(internal.GetCurrentTargetReplicaAddress(counter))
 	remoteController.TerminateMember(cluster.ID, target.UUID())
 	_, err = counter.Get()
 	if _, ok := err.(*core.HazelcastConsistencyLostError); !ok {
@@ -215,10 +215,10 @@ func TestPNCounter_Reset(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewHazelcastClient()
-	counter, _ = client.GetPNCounter(counterName)
+	counter, _ = client.PNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
-	target := client.GetCluster().GetMember(internal.GetCurrentTargetReplicaAddress(counter))
+	target := client.Cluster().Member(internal.GetCurrentTargetReplicaAddress(counter))
 	remoteController.TerminateMember(cluster.ID, target.UUID())
 	counter.Reset()
 	currentValue, err := counter.AddAndGet(delta)

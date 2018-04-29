@@ -20,7 +20,7 @@ func mapSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewHazelcastClient()
 	// Get the Distributed Map from Cluster.
-	mp, _ := hz.GetMap("myDistributedMap")
+	mp, _ := hz.Map("myDistributedMap")
 	//Standard Put and Get.
 	mp.Put("key", "value")
 	mp.Get("key")
