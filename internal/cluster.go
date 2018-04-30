@@ -382,3 +382,7 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 func (cs *clusterService) onConnectionOpened(connection *Connection) {
 
 }
+
+func (cs *clusterService) shutdown() {
+	close(cs.reconnectChan)
+}
