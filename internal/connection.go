@@ -51,7 +51,7 @@ type Connection struct {
 	connectionManager      *connectionManager
 }
 
-func newConnection(address core.IAddress, responseChannel chan *protocol.ClientMessage, sendingError chan int64,
+func newConnection(address core.Address, responseChannel chan *protocol.ClientMessage, sendingError chan int64,
 	connectionID int64, connectionManager *connectionManager) *Connection {
 	connection := Connection{pending: make(chan *protocol.ClientMessage, 1),
 		received: make(chan *protocol.ClientMessage, 1),

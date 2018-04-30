@@ -105,19 +105,19 @@ func startMapSoak() {
 type simpleListener struct {
 }
 
-func (l *simpleListener) EntryAdded(event core.IEntryEvent) {
+func (l *simpleListener) EntryAdded(event core.EntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()
 }
 
-func (l *simpleListener) EntryUpdated(event core.IEntryEvent) {
+func (l *simpleListener) EntryUpdated(event core.EntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()
 }
 
-func (l *simpleListener) EntryRemoved(event core.IEntryEvent) {
+func (l *simpleListener) EntryRemoved(event core.EntryEvent) {
 	event.Key()
 	event.Value()
 	event.OldValue()

@@ -58,7 +58,7 @@ func NewMember(address Address, uuid string, isLiteMember bool, attributes map[s
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
 }
 
-func (m *Member) Address() core.IAddress {
+func (m *Member) Address() core.Address {
 	return &m.address
 }
 
@@ -314,12 +314,12 @@ func (e *Error) Message() string {
 	return e.message
 }
 
-func (e *Error) StackTrace() []core.IStackTraceElement {
-	iStackTrace := make([]core.IStackTraceElement, len(e.stackTrace))
+func (e *Error) StackTrace() []core.StackTraceElement {
+	stackTrace := make([]core.StackTraceElement, len(e.stackTrace))
 	for i, v := range e.stackTrace {
-		iStackTrace[i] = core.IStackTraceElement(v)
+		stackTrace[i] = core.StackTraceElement(v)
 	}
-	return iStackTrace
+	return stackTrace
 }
 
 func (e *Error) CauseErrorCode() int32 {
@@ -424,7 +424,7 @@ func (e *ItemEvent) EventType() int32 {
 	return e.eventType
 }
 
-func (e *ItemEvent) Member() core.IMember {
+func (e *ItemEvent) Member() core.Member {
 	return e.member
 }
 
@@ -445,45 +445,45 @@ func NewMapEvent(eventType int32, uuid *string, numberOfAffectedEntries int32) *
 }
 
 type EntryAddedListener interface {
-	EntryAdded(core.IEntryEvent)
+	EntryAdded(core.EntryEvent)
 }
 
 type EntryRemovedListener interface {
-	EntryRemoved(core.IEntryEvent)
+	EntryRemoved(core.EntryEvent)
 }
 
 type EntryUpdatedListener interface {
-	EntryUpdated(core.IEntryEvent)
+	EntryUpdated(core.EntryEvent)
 }
 
 type EntryEvictedListener interface {
-	EntryEvicted(core.IEntryEvent)
+	EntryEvicted(core.EntryEvent)
 }
 
 type EntryEvictAllListener interface {
-	EntryEvictAll(core.IMapEvent)
+	EntryEvictAll(core.MapEvent)
 }
 
 type EntryClearAllListener interface {
-	EntryClearAll(core.IMapEvent)
+	EntryClearAll(core.MapEvent)
 }
 
 type EntryMergedListener interface {
-	EntryMerged(core.IEntryEvent)
+	EntryMerged(core.EntryEvent)
 }
 
 type EntryExpiredListener interface {
-	EntryExpired(core.IEntryEvent)
+	EntryExpired(core.EntryEvent)
 }
 
 type DecodeListenerResponse func(message *ClientMessage) *string
 type EncodeListenerRemoveRequest func(registrationID *string) *ClientMessage
 type MemberAddedListener interface {
-	MemberAdded(member core.IMember)
+	MemberAdded(member core.Member)
 }
 
 type MemberRemovedListener interface {
-	MemberRemoved(member core.IMember)
+	MemberRemoved(member core.Member)
 }
 
 // Helper function to get flags for listeners
@@ -538,6 +538,6 @@ func (m *TopicMessage) PublishTime() time.Time {
 	return m.publishTime
 }
 
-func (m *TopicMessage) PublishingMember() core.IMember {
+func (m *TopicMessage) PublishingMember() core.Member {
 	return m.publishingMember
 }

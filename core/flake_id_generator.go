@@ -38,8 +38,8 @@ package core
 // FlakeIDGenerator requires Hazelcast 3.10.
 type FlakeIDGenerator interface {
 
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// NewID generates and returns a cluster-wide unique ID.
 	//

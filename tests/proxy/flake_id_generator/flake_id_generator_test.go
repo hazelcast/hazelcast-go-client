@@ -30,7 +30,7 @@ import (
 )
 
 var flakeIDGenerator core.FlakeIDGenerator
-var client hazelcast.IHazelcastInstance
+var client hazelcast.Instance
 
 const (
 	flakeIDStep             = 1 << 16

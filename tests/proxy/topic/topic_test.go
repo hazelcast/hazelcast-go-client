@@ -27,8 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
-var topic core.ITopic
-var client hazelcast.IHazelcastInstance
+var topic core.Topic
+var client hazelcast.Instance
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
@@ -79,7 +79,7 @@ type topicMessageListener struct {
 	publishTime time.Time
 }
 
-func (l *topicMessageListener) OnMessage(message core.ITopicMessage) {
+func (l *topicMessageListener) OnMessage(message core.TopicMessage) {
 	l.msg = message.MessageObject()
 	l.publishTime = message.PublishTime()
 	l.wg.Done()

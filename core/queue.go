@@ -16,12 +16,12 @@ package core
 
 import "time"
 
-// IQueue is a concurrent, blocking, distributed, observable queue. Queue is not a partitioned data-structure.
+// Queue is a concurrent, blocking, distributed, observable queue. Queue is not a partitioned data-structure.
 // All of the Queue content is stored in a single machine (and in the backup).
 // Queue will not scale by adding more members in the cluster.
-type IQueue interface {
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+type Queue interface {
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// AddAll adds all the items. If items slice changes during this operation, behavior is unspecified.
 	// AddAll returns true if the queue has changed, false otherwise.

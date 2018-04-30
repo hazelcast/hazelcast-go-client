@@ -63,7 +63,7 @@ func (cm *connectionManager) addListener(listener connectionListener) {
 	}
 }
 
-func (cm *connectionManager) getActiveConnection(address core.IAddress) *Connection {
+func (cm *connectionManager) getActiveConnection(address core.Address) *Connection {
 	if address == nil {
 		return nil
 	}
@@ -105,7 +105,7 @@ func (cm *connectionManager) connectionClosed(connection *Connection, cause erro
 	}
 }
 
-func (cm *connectionManager) getOrConnect(address core.IAddress, asOwner bool) (chan *Connection, chan error) {
+func (cm *connectionManager) getOrConnect(address core.Address, asOwner bool) (chan *Connection, chan error) {
 	ch := make(chan *Connection, 1)
 	err := make(chan error, 1)
 	go func() {
@@ -138,7 +138,7 @@ func (cm *connectionManager) ConnectionCount() int32 {
 	return int32(len(cm.connections))
 }
 
-func (cm *connectionManager) openNewConnection(address core.IAddress, resp chan *Connection, asOwner bool) error {
+func (cm *connectionManager) openNewConnection(address core.Address, resp chan *Connection, asOwner bool) error {
 	if !asOwner && cm.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address).Host() == "" {
 		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}

@@ -325,29 +325,29 @@ func (cs *clusterService) memberRemoved(member *protocol.Member) {
 	}
 }
 
-func (cs *clusterService) GetMemberList() []core.IMember {
+func (cs *clusterService) GetMemberList() []core.Member {
 	membersList := cs.members.Load().([]*protocol.Member)
-	members := make([]core.IMember, len(membersList))
+	members := make([]core.Member, len(membersList))
 	for index := 0; index < len(membersList); index++ {
-		members[index] = core.IMember(membersList[index])
+		members[index] = core.Member(membersList[index])
 	}
 	return members
 }
 
-func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (members []core.IMember) {
+func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (members []core.Member) {
 	if selector == nil {
 		return cs.GetMemberList()
 	}
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
 		if selector.Select(member) {
-			members = append(members, core.IMember(member))
+			members = append(members, core.Member(member))
 		}
 	}
 	return
 }
 
-func (cs *clusterService) GetMember(address core.IAddress) core.IMember {
+func (cs *clusterService) GetMember(address core.Address) core.Member {
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
 		if *member.Address().(*protocol.Address) == *address.(*protocol.Address) {
@@ -358,7 +358,7 @@ func (cs *clusterService) GetMember(address core.IAddress) core.IMember {
 	return nil
 }
 
-func (cs *clusterService) GetMemberByUUID(uuid string) core.IMember {
+func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
 		if member.UUID() == uuid {

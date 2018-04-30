@@ -27,14 +27,14 @@ type proxyManager struct {
 	ReferenceID int64
 	client      *HazelcastClient
 	mu          sync.RWMutex // guards proxies
-	proxies     map[string]core.IDistributedObject
+	proxies     map[string]core.DistributedObject
 }
 
 func newProxyManager(client *HazelcastClient) *proxyManager {
 	return &proxyManager{
 		ReferenceID: 0,
 		client:      client,
-		proxies:     make(map[string]core.IDistributedObject),
+		proxies:     make(map[string]core.DistributedObject),
 	}
 }
 
@@ -42,7 +42,7 @@ func (pm *proxyManager) nextReferenceID() int64 {
 	return atomic.AddInt64(&pm.ReferenceID, 1)
 }
 
-func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.IDistributedObject, error) {
+func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.DistributedObject, error) {
 	var ns = serviceName + name
 	pm.mu.RLock()
 	if _, ok := pm.proxies[ns]; ok {
@@ -60,7 +60,7 @@ func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.
 	return proxy, nil
 }
 
-func (pm *proxyManager) createProxy(serviceName *string, name *string) (core.IDistributedObject, error) {
+func (pm *proxyManager) createProxy(serviceName *string, name *string) (core.DistributedObject, error) {
 	message := protocol.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress())
 	_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
@@ -92,7 +92,7 @@ func (pm *proxyManager) findNextProxyAddress() *protocol.Address {
 	return pm.client.LoadBalancer.nextAddress()
 }
 
-func (pm *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.IDistributedObject, error) {
+func (pm *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.DistributedObject, error) {
 	if common.ServiceNameMap == *serviceName {
 		return newMapProxy(pm.client, serviceName, name)
 	} else if common.ServiceNameList == *serviceName {

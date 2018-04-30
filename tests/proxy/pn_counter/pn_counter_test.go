@@ -29,7 +29,7 @@ import (
 )
 
 var counter core.PNCounter
-var client hazelcast.IHazelcastInstance
+var client hazelcast.Instance
 
 const counterName = "myPNCounter"
 

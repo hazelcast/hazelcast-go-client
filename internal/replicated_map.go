@@ -141,7 +141,7 @@ func (rmp *replicatedMapProxy) KeySet() (keySet []interface{}, err error) {
 	return rmp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.ReplicatedMapKeySetDecodeResponse)
 }
 
-func (rmp *replicatedMapProxy) EntrySet() (resultPairs []core.IPair, err error) {
+func (rmp *replicatedMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 	request := protocol.ReplicatedMapEntrySetEncodeRequest(rmp.name)
 	responseMessage, err := rmp.invokeOnPartition(request, rmp.tarGetPartitionID)
 	return rmp.decodeToPairSliceAndError(responseMessage, err, protocol.ReplicatedMapEntrySetDecodeResponse)

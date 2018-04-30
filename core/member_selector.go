@@ -22,7 +22,7 @@ package core
 type MemberSelector interface {
 	// Select decides if the given member will be part of an operation or not.
 	// Select returns true if the member should take part in the operation, false otherwise.
-	Select(member IMember) (selected bool)
+	Select(member Member) (selected bool)
 }
 
 // MemberSelectors is a utility variable to get MemberSelector instances.
@@ -33,7 +33,7 @@ var MemberSelectors = &selectors{
 type dataMemberSelector struct {
 }
 
-func (*dataMemberSelector) Select(member IMember) (selected bool) {
+func (*dataMemberSelector) Select(member Member) (selected bool) {
 	return !member.IsLiteMember()
 }
 

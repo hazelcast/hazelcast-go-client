@@ -371,13 +371,13 @@ func (mp *mapProxy) ValuesWithPredicate(predicate interface{}) (values []interfa
 	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapValuesWithPredicateDecodeResponse)
 }
 
-func (mp *mapProxy) EntrySet() (resultPairs []core.IPair, err error) {
+func (mp *mapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 	request := protocol.MapEntrySetEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
 	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapEntrySetDecodeResponse)
 }
 
-func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []core.IPair, err error) {
+func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []core.Pair, err error) {
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -423,7 +423,7 @@ func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 	return entryMap, nil
 }
 
-func (mp *mapProxy) GetEntryView(key interface{}) (entryView core.IEntryView, err error) {
+func (mp *mapProxy) GetEntryView(key interface{}) (entryView core.EntryView, err error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
@@ -580,7 +580,7 @@ func (mp *mapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (r
 	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapExecuteOnKeyDecodeResponse)
 }
 
-func (mp *mapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
+func (mp *mapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.Pair, err error) {
 	keysData := make([]*serialization.Data, len(keys))
 	for index, key := range keys {
 		keyData, err := mp.validateAndSerialize(key)
@@ -598,7 +598,7 @@ func (mp *mapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}
 	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapExecuteOnKeysDecodeResponse)
 }
 
-func (mp *mapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []core.IPair, err error) {
+func (mp *mapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []core.Pair, err error) {
 	entryProcessorData, err := mp.validateAndSerialize(entryProcessor)
 	if err != nil {
 		return nil, err
@@ -609,7 +609,7 @@ func (mp *mapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPai
 }
 
 func (mp *mapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{},
-	predicate interface{}) (keyToResultPairs []core.IPair, err error) {
+	predicate interface{}) (keyToResultPairs []core.Pair, err error) {
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err

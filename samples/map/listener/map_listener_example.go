@@ -26,7 +26,7 @@ type entryListener struct {
 	wg *sync.WaitGroup
 }
 
-func (l *entryListener) EntryAdded(event core.IEntryEvent) {
+func (l *entryListener) EntryAdded(event core.EntryEvent) {
 	fmt.Println("Got an event, key: ", event.Key(), " value: ", event.Value())
 	l.wg.Done()
 }

@@ -41,28 +41,28 @@ func NewHazelcastClient(config *config.ClientConfig) (*HazelcastClient, error) {
 	return &client, err
 }
 
-func (c *HazelcastClient) GetMap(name string) (core.IMap, error) {
+func (c *HazelcastClient) GetMap(name string) (core.Map, error) {
 	mp, err := c.GetDistributedObject(common.ServiceNameMap, name)
 	if err != nil {
 		return nil, err
 	}
-	return mp.(core.IMap), nil
+	return mp.(core.Map), nil
 }
 
-func (c *HazelcastClient) GetList(name string) (core.IList, error) {
+func (c *HazelcastClient) GetList(name string) (core.List, error) {
 	list, err := c.GetDistributedObject(common.ServiceNameList, name)
 	if err != nil {
 		return nil, err
 	}
-	return list.(core.IList), nil
+	return list.(core.List), nil
 }
 
-func (c *HazelcastClient) GetSet(name string) (core.ISet, error) {
+func (c *HazelcastClient) GetSet(name string) (core.Set, error) {
 	set, err := c.GetDistributedObject(common.ServiceNameSet, name)
 	if err != nil {
 		return nil, err
 	}
-	return set.(core.ISet), nil
+	return set.(core.Set), nil
 }
 
 func (c *HazelcastClient) GetReplicatedMap(name string) (core.ReplicatedMap, error) {
@@ -89,20 +89,20 @@ func (c *HazelcastClient) GetFlakeIDGenerator(name string) (core.FlakeIDGenerato
 	return flakeIDGenerator.(core.FlakeIDGenerator), err
 }
 
-func (c *HazelcastClient) GetTopic(name string) (core.ITopic, error) {
+func (c *HazelcastClient) GetTopic(name string) (core.Topic, error) {
 	topic, err := c.GetDistributedObject(common.ServiceNameTopic, name)
 	if err != nil {
 		return nil, err
 	}
-	return topic.(core.ITopic), nil
+	return topic.(core.Topic), nil
 }
 
-func (c *HazelcastClient) GetQueue(name string) (core.IQueue, error) {
+func (c *HazelcastClient) GetQueue(name string) (core.Queue, error) {
 	queue, err := c.GetDistributedObject(common.ServiceNameQueue, name)
 	if err != nil {
 		return nil, err
 	}
-	return queue.(core.IQueue), nil
+	return queue.(core.Queue), nil
 }
 
 func (c *HazelcastClient) GetRingbuffer(name string) (core.Ringbuffer, error) {
@@ -121,7 +121,7 @@ func (c *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
 	return counter.(core.PNCounter), nil
 }
 
-func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.IDistributedObject, error) {
+func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.DistributedObject, error) {
 	var clientProxy, err = c.ProxyManager.getOrCreateProxy(serviceName, name)
 	if err != nil {
 		return nil, err
@@ -129,11 +129,11 @@ func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) 
 	return clientProxy, nil
 }
 
-func (c *HazelcastClient) GetCluster() core.ICluster {
+func (c *HazelcastClient) GetCluster() core.Cluster {
 	return c.ClusterService
 }
 
-func (c *HazelcastClient) GetLifecycle() core.ILifecycle {
+func (c *HazelcastClient) GetLifecycle() core.Lifecycle {
 	return c.LifecycleService
 }
 

@@ -28,8 +28,8 @@ import (
 // When a new node joins the cluster, the new node initially will request existing
 // values from older nodes and replicate them locally.
 type ReplicatedMap interface {
-	// IDistributedObject is the base interface for all distributed objects.
-	IDistributedObject
+	// DistributedObject is the base interface for all distributed objects.
+	DistributedObject
 
 	// Put associates a given value to the specified key and replicates it to the
 	// cluster. If there is an old value, it will be replaced by the specified
@@ -88,7 +88,7 @@ type ReplicatedMap interface {
 	KeySet() (keySet []interface{}, err error)
 
 	// EntrySet returns entries as a slice of key-value pairs.
-	EntrySet() (resultPairs []IPair, err error)
+	EntrySet() (resultPairs []Pair, err error)
 
 	// AddEntryListener adds an entry listener for this map. The listener will be notified for all
 	// map add/remove/update/evict events.

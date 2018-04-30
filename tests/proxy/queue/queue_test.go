@@ -27,8 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
-var queue core.IQueue
-var client hazelcast.IHazelcastInstance
+var queue core.Queue
+var client hazelcast.Instance
 var testElement = "testElement"
 var queueName = "ClientQueueTest"
 
@@ -409,15 +409,15 @@ func TestListProxy_AddItemItemRemovedListener(t *testing.T) {
 
 type itemListener struct {
 	wg    *sync.WaitGroup
-	event core.IItemEvent
+	event core.ItemEvent
 }
 
-func (l *itemListener) ItemAdded(event core.IItemEvent) {
+func (l *itemListener) ItemAdded(event core.ItemEvent) {
 	l.event = event
 	l.wg.Done()
 }
 
-func (l *itemListener) ItemRemoved(event core.IItemEvent) {
+func (l *itemListener) ItemRemoved(event core.ItemEvent) {
 	l.event = event
 	l.wg.Done()
 }

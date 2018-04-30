@@ -179,7 +179,7 @@ func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *protocol.ClientM
 }
 
 func (p *proxy) decodeToPairSliceAndError(responseMessage *protocol.ClientMessage, inputError error,
-	decodeFunc func(*protocol.ClientMessage) func() []*protocol.Pair) (response []core.IPair, err error) {
+	decodeFunc func(*protocol.ClientMessage) func() []*protocol.Pair) (response []core.Pair, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}

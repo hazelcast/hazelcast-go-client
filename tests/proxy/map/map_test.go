@@ -33,9 +33,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
-var mp core.IMap
-var mp2 core.IMap
-var client hazelcast.IHazelcastInstance
+var mp core.Map
+var mp2 core.Map
+var client hazelcast.Instance
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
@@ -804,33 +804,33 @@ func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
 
 type entryListener struct {
 	wg       *sync.WaitGroup
-	event    core.IEntryEvent
-	mapEvent core.IMapEvent
+	event    core.EntryEvent
+	mapEvent core.MapEvent
 }
 
-func (l *entryListener) EntryAdded(event core.IEntryEvent) {
+func (l *entryListener) EntryAdded(event core.EntryEvent) {
 	l.event = event
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryUpdated(event core.IEntryEvent) {
+func (l *entryListener) EntryUpdated(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryRemoved(event core.IEntryEvent) {
+func (l *entryListener) EntryRemoved(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryEvicted(event core.IEntryEvent) {
+func (l *entryListener) EntryEvicted(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryEvictAll(event core.IMapEvent) {
+func (l *entryListener) EntryEvictAll(event core.MapEvent) {
 	l.mapEvent = event
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryClearAll(event core.IMapEvent) {
+func (l *entryListener) EntryClearAll(event core.MapEvent) {
 	l.wg.Done()
 }
 
