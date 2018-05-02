@@ -163,12 +163,6 @@ func (cs *clusterService) connectToAddress(address *protocol.Address) error {
 	case err := <-errChannel:
 		return err
 	}
-	if !con.isOwnerConnection {
-		err := cs.client.ConnectionManager.clusterAuthenticator(con, true)
-		if err != nil {
-			return err
-		}
-	}
 
 	err := cs.initMembershipListener(con)
 	if err != nil {

@@ -35,7 +35,7 @@ type connectionManager struct {
 	lock                sync.RWMutex
 	nextConnID          int64
 	connectionListeners atomic.Value
-	mu                  sync.Mutex
+	listenerLock        sync.Mutex
 }
 
 func newConnectionManager(client *HazelcastClient) *connectionManager {
@@ -46,13 +46,13 @@ func newConnectionManager(client *HazelcastClient) *connectionManager {
 	return &cm
 }
 
-func (cm *connectionManager) nextConnectionID() int64 {
+func (cm *connectionManager) NextConnectionID() int64 {
 	return atomic.AddInt64(&cm.nextConnID, 1)
 }
 
 func (cm *connectionManager) addListener(listener connectionListener) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
+	cm.listenerLock.Lock()
+	defer cm.listenerLock.Unlock()
 	if listener != nil {
 		listeners := cm.connectionListeners.Load().([]connectionListener)
 		size := len(listeners) + 1
@@ -68,11 +68,10 @@ func (cm *connectionManager) getActiveConnection(address core.Address) *Connecti
 		return nil
 	}
 	cm.lock.RLock()
+	defer cm.lock.RUnlock()
 	if conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
-		cm.lock.RUnlock()
 		return conn
 	}
-	cm.lock.RUnlock()
 	return nil
 }
 
@@ -107,29 +106,46 @@ func (cm *connectionManager) connectionClosed(connection *Connection, cause erro
 
 func (cm *connectionManager) getOrConnect(address core.Address, asOwner bool) (chan *Connection, chan error) {
 	ch := make(chan *Connection, 1)
-	err := make(chan error, 1)
+	errCh := make(chan error, 1)
 	go func() {
-		//First try readLock
-		cm.lock.RLock()
-		if conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
+		//First tries to read under read lock
+		conn := cm.getConnection(address, asOwner)
+		if conn != nil {
 			ch <- conn
-			cm.lock.RUnlock()
 			return
 		}
-		//Check if Connection is opened
-		if conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]; found {
-			ch <- conn
-			cm.lock.RUnlock()
-			return
-		}
-		cm.lock.RUnlock()
-		//Open new Connection
-		connErr := cm.openNewConnection(address, ch, asOwner)
-		if connErr != nil {
-			err <- connErr
+		//if not available, checks and creates under write lock
+		newConn, err := cm.getOrConnectInternal(address, asOwner)
+		if err != nil {
+			errCh <- err
+		} else {
+			ch <- newConn
 		}
 	}()
-	return ch, err
+	return ch, errCh
+}
+
+func (cm *connectionManager) getConnection(address core.Address, asOwner bool) *Connection {
+	cm.lock.RLock()
+	defer cm.lock.RUnlock()
+	return cm.getConnectionInternal(address, asOwner)
+}
+
+func (cm *connectionManager) getConnectionInternal(address core.Address, asOwner bool) *Connection {
+	conn, found := cm.connections[address.Host()+":"+strconv.Itoa(address.Port())]
+	if !found {
+		return nil
+	}
+
+	if !asOwner {
+		return conn
+	}
+
+	if conn.isOwnerConnection {
+		return conn
+	}
+
+	return nil
 }
 
 func (cm *connectionManager) ConnectionCount() int32 {
@@ -138,23 +154,31 @@ func (cm *connectionManager) ConnectionCount() int32 {
 	return int32(len(cm.connections))
 }
 
-func (cm *connectionManager) openNewConnection(address core.Address, resp chan *Connection, asOwner bool) error {
+func (cm *connectionManager) getOrConnectInternal(address core.Address, asOwner bool) (*Connection, error) {
+	cm.lock.Lock()
+	defer cm.lock.Unlock()
+
+	conn := cm.getConnectionInternal(address, asOwner)
+	if conn != nil {
+		return conn, nil
+	}
+
 	if !asOwner && cm.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address).Host() == "" {
-		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
+		return nil, core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
 	invocationService := cm.client.InvocationService
-	connectionID := cm.nextConnectionID()
+	connectionID := cm.NextConnectionID()
 	con := newConnection(address, invocationService.responseChannel, invocationService.notSentMessages, connectionID, cm)
 	if con == nil {
-		return core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
+		return nil, core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
-	err := cm.clusterAuthenticator(con, asOwner)
+	err := cm.authenticate(con, asOwner)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp <- con
-	return nil
+
+	return con, nil
 }
 
 func (cm *connectionManager) getOwnerConnection() *Connection {
@@ -166,7 +190,7 @@ func (cm *connectionManager) getOwnerConnection() *Connection {
 
 }
 
-func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwner bool) error {
+func (cm *connectionManager) authenticate(connection *Connection, asOwner bool) error {
 	uuid := cm.client.ClusterService.uuid.Load().(*string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*string)
 	clientType := protocol.ClientType
@@ -194,9 +218,7 @@ func (cm *connectionManager) clusterAuthenticator(connection *Connection, asOwne
 		connection.serverHazelcastVersion = serverHazelcastVersion
 		connection.endpoint.Store(address)
 		connection.isOwnerConnection = asOwner
-		cm.lock.Lock()
 		cm.connections[address.Host()+":"+strconv.Itoa(address.Port())] = connection
-		cm.lock.Unlock()
 		cm.fireConnectionAddedEvent(connection)
 		if asOwner {
 			cm.client.ClusterService.ownerConnectionAddress.Store(connection.endpoint.Load().(*protocol.Address))
