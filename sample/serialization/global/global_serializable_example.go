@@ -69,7 +69,7 @@ func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{
 
 func main() {
 	var err error
-	config := hazelcast.NewHazelcastConfig()
+	config := hazelcast.NewConfig()
 
 	group := colorGroup{
 		ID:     1,
@@ -78,7 +78,7 @@ func main() {
 	}
 
 	config.SerializationConfig().SetGlobalSerializer(&GlobalSerializer{})
-	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
 		log.Println(err)
 	}

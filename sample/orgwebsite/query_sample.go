@@ -88,11 +88,11 @@ func generateUsers(users core.Map) {
 }
 
 func querySampleRun() {
-	clientConfig := hazelcast.NewHazelcastConfig()
+	clientConfig := hazelcast.NewConfig()
 	clientConfig.SerializationConfig().
 		AddPortableFactory(userFactoryID, &ThePortableFactory{})
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
+	hz, _ := hazelcast.NewClientWithConfig(clientConfig)
 	// Get a Distributed Map called "users"
 	users, _ := hz.GetMap("users")
 	// Add some users to the Distributed Map

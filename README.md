@@ -62,10 +62,10 @@ go get github.com/hazelcast/hazelcast-go-client
 Following code snippet illustrates a simple usage of Map in Hazelcast Go Client.
 
 ```golang
-	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig().AddAddress("127.0.0.1:5701")
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().AddAddress("127.0.0.1:5701")
 
-	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
 		fmt.Println(err)
 		return

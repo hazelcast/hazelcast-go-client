@@ -14,13 +14,13 @@ import "github.com/hazelcast/hazelcast-go-client"
  */
 
 func main() {
-	clientConfig := hazelcast.NewHazelcastConfig()
+	clientConfig := hazelcast.NewConfig()
 	fmt.Println("Cluster name: ", clientConfig.GroupConfig().Name())
 
-	clientConfig.ClientNetworkConfig().AddAddress("127.0.0.1:5701")
-	fmt.Println("Cluster discovery: ", clientConfig.ClientNetworkConfig().Addresses())
+	clientConfig.NetworkConfig().AddAddress("127.0.0.1:5701")
+	fmt.Println("Cluster discovery: ", clientConfig.NetworkConfig().Addresses())
 
-	client, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
+	client, _ := hazelcast.NewClientWithConfig(clientConfig)
 
 	client.Shutdown()
 }

@@ -68,9 +68,9 @@ func TestFlakeIDGeneratorProxy_ConfigTest(t *testing.T) {
 	flakeIDConf := config.NewFlakeIDGeneratorConfig("gen")
 	flakeIDConf.SetPrefetchCount(myBatchSize)
 	flakeIDConf.SetPrefetchValidityMillis(shortTermValidityMillis)
-	config := hazelcast.NewHazelcastConfig()
+	config := hazelcast.NewConfig()
 	config.AddFlakeIDGeneratorConfig(flakeIDConf)
-	client, _ = hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ = hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
 	flakeIDGenerator, _ = client.GetFlakeIDGenerator("gen")
 	// this should take a batch of 3 IDs from the member and store it in the auto-batcher
@@ -93,7 +93,7 @@ func TestFlakeIDGeneratorProxy_ConcurrentlyGeneratedIds(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	wg := sync.WaitGroup{}
 	mu := sync.Mutex{}
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	defer client.Shutdown()
 	flakeIDGenerator, _ = client.GetFlakeIDGenerator("gen")
 	localIdsSlice := make([]map[int64]struct{}, 0)
@@ -131,7 +131,7 @@ func TestFlakeIDGeneratorProxy_WhenAllMembersOutOfRangeThenError(t *testing.T) {
 	assert.ErrorNil(t, err)
 	_, err = asssignOverFlowID(cluster.ID, 1)
 	assert.ErrorNil(t, err)
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	defer client.Shutdown()
 	flakeIDGenerator, _ := client.GetFlakeIDGenerator("test")
 	_, err = flakeIDGenerator.NewID()
@@ -148,7 +148,7 @@ func TestFlakeIDGeneratorProxy_WhenMemberOutOfRangeThenOtherMemberUsed(t *testin
 	remoteController.StartMember(cluster.ID)
 	_, err := asssignOverFlowID(cluster.ID, 0)
 	assert.ErrorNil(t, err)
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	defer client.Shutdown()
 	flakeIDGenerator, _ := client.GetFlakeIDGenerator("test")
 	_, err = flakeIDGenerator.NewID()

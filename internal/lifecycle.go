@@ -39,7 +39,7 @@ type lifecycleService struct {
 	mu        sync.Mutex
 }
 
-func newLifecycleService(config *config.ClientConfig) *lifecycleService {
+func newLifecycleService(config *config.Config) *lifecycleService {
 	newLifecycle := &lifecycleService{}
 	newLifecycle.isLive.Store(true)
 	newLifecycle.listeners.Store(make(map[string]interface{})) //Initialize

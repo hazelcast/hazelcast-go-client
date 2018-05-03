@@ -8,9 +8,9 @@ import "github.com/hazelcast/hazelcast-go-client"
  */
 func main() {
 	// Connect
-	clientConfig := hazelcast.NewHazelcastConfig()
-	clientConfig.ClientNetworkConfig().AddAddress("127.0.0.1:5701")
-	client, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
+	clientConfig := hazelcast.NewConfig()
+	clientConfig.NetworkConfig().AddAddress("127.0.0.1:5701")
+	client, _ := hazelcast.NewClientWithConfig(clientConfig)
 
 	// The map is stored on the server but we can access it from the client
 	mapName := "greetings"

@@ -47,9 +47,9 @@ func (p *IncEntryProcessor) ClassID() int32 {
 
 func entryProcessorSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	clientConfig := hazelcast.NewHazelcastConfig()
+	clientConfig := hazelcast.NewConfig()
 	entryProcessor := &IncEntryProcessor{}
-	hz, _ := hazelcast.NewHazelcastClientWithConfig(clientConfig)
+	hz, _ := hazelcast.NewClientWithConfig(clientConfig)
 	// Get the Distributed Map from Cluster.
 	mp, _ := hz.GetMap("my-distributed-map")
 	// Put the integer value of 0 into the Distributed Map

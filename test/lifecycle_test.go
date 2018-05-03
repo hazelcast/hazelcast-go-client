@@ -36,12 +36,12 @@ func (l *lifecycleListener) LifecycleStateChanged(newState string) {
 func TestLifecycleListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
-	config := hazelcast.NewHazelcastConfig()
+	config := hazelcast.NewConfig()
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	config.AddLifecycleListener(&lifecycleListener)
 	remoteController.StartMember(cluster.ID)
 	wg.Add(5)
-	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	client, _ := hazelcast.NewClientWithConfig(config)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, nil, false, timeout, "Lifecycle listener failed")
@@ -59,9 +59,9 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	wg.Add(1)
-	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig().SetConnectionAttemptLimit(100)
-	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().SetConnectionAttemptLimit(100)
+	client, _ := hazelcast.NewClientWithConfig(config)
 	registrationID := client.(*internal.HazelcastClient).LifecycleService.AddListener(&lifecycleListener)
 	remoteController.ShutdownCluster(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
@@ -76,7 +76,7 @@ func TestRemoveListener(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	registrationID := client.GetLifecycle().AddListener(&lifecycleListener)
 	wg.Add(2)
 	client.GetLifecycle().RemoveListener(registrationID)

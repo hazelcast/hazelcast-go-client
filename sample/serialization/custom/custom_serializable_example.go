@@ -64,12 +64,12 @@ func (s *CustomSerializer) Write(output serialization.DataOutput, obj interface{
 
 func main() {
 	var err error
-	config := hazelcast.NewHazelcastConfig()
+	config := hazelcast.NewConfig()
 
 	time := &timeOfDay{10, 12, 47}
 
 	config.SerializationConfig().AddCustomSerializer(reflect.TypeOf(time), &CustomSerializer{})
-	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
 		log.Println(err)
 	}
