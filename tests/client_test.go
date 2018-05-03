@@ -23,7 +23,11 @@ import (
 
 	"log"
 
+	"math/rand"
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/tests/assert"
 )
 
@@ -70,4 +74,33 @@ func TestClientRoutineLeakage(t *testing.T) {
 	if routineNumBefore != routineNumAfter {
 		t.Fatalf("Expected number of routines %d, found %d", routineNumBefore, routineNumAfter)
 	}
+}
+
+func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	for i := 0; i < 5; i++ {
+		remoteController.StartMember(cluster.ID)
+	}
+	client, _ := hazelcast.NewHazelcastClient()
+
+	m, _ := client.GetMap("test")
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(10)
+
+	for i := 0; i < 10; i++ {
+		go func() {
+			for j := 0; j < 100; j++ {
+				m.Put(rand.Int(), rand.Int())
+			}
+			waitGroup.Done()
+		}()
+	}
+
+	waitGroup.Wait()
+	connectionManager := client.(*internal.HazelcastClient).ConnectionManager
+	//There should be 5 connections. Next id will be 6
+	assert.Equal(t, nil, connectionManager.NextConnectionID(), int64(6))
+
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
 }
