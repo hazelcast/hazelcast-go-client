@@ -33,7 +33,7 @@ func (l *entryListener) EntryAdded(event core.EntryEvent) {
 
 func main() {
 
-	client, err := hazelcast.NewHazelcastClient()
+	client, err := hazelcast.NewClient()
 	if err != nil {
 		fmt.Println(err)
 		return

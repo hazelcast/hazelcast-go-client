@@ -25,10 +25,10 @@ import (
 
 func main() {
 
-	config := hazelcast.NewHazelcastConfig()
-	config.ClientNetworkConfig().AddAddress("127.0.0.1:5701")
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().AddAddress("127.0.0.1:5701")
 
-	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
 		fmt.Println(err)
 		return

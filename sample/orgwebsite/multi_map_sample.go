@@ -22,7 +22,7 @@ import (
 
 func multimapSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := hazelcast.NewHazelcastClient()
+	hz, _ := hazelcast.NewClient()
 	// Get the Distributed MultiMap from Cluster.
 	multiMap, _ := hz.GetMultiMap("myDistributedMultimap")
 	// Put values in the map against the same key

@@ -82,13 +82,13 @@ func (*studentFactory) Create(classID int32) serialization.IdentifiedDataSeriali
 
 func main() {
 	var err error
-	config := hazelcast.NewHazelcastConfig()
+	config := hazelcast.NewConfig()
 
 	st := &student{10, "Furkan", "Şenharputlu", 3.5}
 	stFactory := &studentFactory{}
 
 	config.SerializationConfig().AddDataSerializableFactory(st.FactoryID(), stFactory)
-	client, err := hazelcast.NewHazelcastClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
 		log.Println(err)
 	}

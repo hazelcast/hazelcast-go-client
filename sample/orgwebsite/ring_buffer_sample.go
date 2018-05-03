@@ -23,7 +23,7 @@ import (
 
 func ringBufferSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := hazelcast.NewHazelcastClient()
+	hz, _ := hazelcast.NewClient()
 
 	rb, _ := hz.GetRingbuffer("rb")
 	// we start from the oldest item.

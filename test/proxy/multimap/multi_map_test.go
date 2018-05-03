@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 	}
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewClient()
 	multiMap, _ = client.GetMultiMap("myMultiMap")
 	m.Run()
 	multiMap.Clear()

@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err = remoteController.CreateCluster("", test.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewClient()
 	counter, _ = client.GetPNCounter(counterName)
 	m.Run()
 	counter.Destroy()
@@ -177,7 +177,7 @@ func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 	liteMemberConfig, _ := test.Read("lite_member_config.xml")
 	cluster, err = remoteController.CreateCluster("", liteMemberConfig)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewClient()
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	_, err = counter.AddAndGet(delta)
@@ -193,7 +193,7 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewClient()
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
@@ -212,7 +212,7 @@ func TestPNCounter_Reset(t *testing.T) {
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewClient()
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)

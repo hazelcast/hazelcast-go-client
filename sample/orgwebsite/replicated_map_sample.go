@@ -22,7 +22,7 @@ import (
 
 func replicatedMapSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := hazelcast.NewHazelcastClient()
+	hz, _ := hazelcast.NewClient()
 	// Get a Replicated Map called "my-replicated-map"
 	mp, _ := hz.GetReplicatedMap("my-replicated-map")
 	// Put and Get a value from the Replicated Map

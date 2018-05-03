@@ -23,7 +23,7 @@ import (
 func listSampleRun() {
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := hazelcast.NewHazelcastClient()
+	hz, _ := hazelcast.NewClient()
 	// Get the distributed list from cluster
 	list, _ := hz.GetList("my-distributed-list")
 	// Add elements to the list

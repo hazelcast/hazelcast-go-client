@@ -34,7 +34,7 @@ import (
 func TestClientGetMapWhenNoMemberUp(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	remoteController.ShutdownCluster(cluster.ID)
 	_, err := client.GetMap("map")
 	assert.ErrorNotNil(t, err, "getMap should have returned an error when no member is up")
@@ -46,13 +46,13 @@ func TestClientShutdownAndReopen(t *testing.T) {
 	log.Println(err, cluster)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
 	client.Shutdown()
 	time.Sleep(2 * time.Second)
 
-	client, _ = hazelcast.NewHazelcastClient()
+	client, _ = hazelcast.NewClient()
 	testMp, _ = client.GetMap("test")
 	value, err := testMp.Get("key")
 	assert.Equalf(t, err, value, "value", "Client shutdown and reopen failed")
@@ -65,7 +65,7 @@ func TestClientRoutineLeakage(t *testing.T) {
 	defer remoteController.ShutdownCluster(cluster.ID)
 	time.Sleep(2 * time.Second)
 	routineNumBefore := runtime.NumGoroutine()
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
 	client.Shutdown()
@@ -81,7 +81,7 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		remoteController.StartMember(cluster.ID)
 	}
-	client, _ := hazelcast.NewHazelcastClient()
+	client, _ := hazelcast.NewClient()
 
 	m, _ := client.GetMap("test")
 	var waitGroup sync.WaitGroup

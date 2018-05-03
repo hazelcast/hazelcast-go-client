@@ -23,7 +23,7 @@ import (
 func setSampleRun() {
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
-	hz, _ := hazelcast.NewHazelcastClient()
+	hz, _ := hazelcast.NewClient()
 	// Get the distributed set from cluster
 	set, _ := hz.GetSet("my-distributed-set")
 	// Add items to the set with duplicates
