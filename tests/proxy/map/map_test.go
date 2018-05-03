@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicates"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
@@ -42,11 +43,15 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
+
 	cluster, _ := remoteController.CreateCluster("", tests.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewHazelcastClient()
+	config := config.NewClientConfig()
+	config.SerializationConfig().AddPortableFactory(666, &portableFactory{})
+	client, _ = hazelcast.NewHazelcastClientWithConfig(config)
 	mp, _ = client.GetMap("myMap")
 	predicateTestInit()
+	projectionTestInit()
 	m.Run()
 	mp.Clear()
 	client.Shutdown()

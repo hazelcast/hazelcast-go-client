@@ -245,16 +245,15 @@ type Map interface {
 	// given. In the case of a failure, some of the key-value tuples may get written, while others are not.
 	PutAll(entries map[interface{}]interface{}) (err error)
 
-	// Project applies the projection logic on all map entries and returns the result
+	// Project applies the projection logic on all map entries and returns the result.
 	// The given projection must be serializable via hazelcast serialization and have a counterpart on server side.
 	// Project returns the result of the given projection.
 	Project(projection interface{}) (result []interface{}, err error)
 
-	// ProjectWithPredicate applies the projection logic on all map entries and returns the result
-	// ProjectWithPredicate filters the results by the given predicate.
+	// ProjectWithPredicate applies the projection logic on map entries filtered with the predicate and returns the result.
 	// The given projection must be serializable via hazelcast serialization and have a counterpart on server side.
 	// The given predicate must be serializable via hazelcast serialization and have a counterpart on server side.
-	// ProjectWithPredicate returns the result of the given projection.
+	// ProjectWithPredicate returns the result of the given predicate and projection.
 	ProjectWithPredicate(projection interface{}, predicate interface{}) (result []interface{}, err error)
 
 	// KeySet returns a slice clone of the keys contained in this map.

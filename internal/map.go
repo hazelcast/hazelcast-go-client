@@ -129,11 +129,29 @@ func (mp *mapProxy) AggregateWithPredicate(aggregator interface{}, predicate int
 }
 
 func (mp *mapProxy) Project(projection interface{}) (result []interface{}, err error) {
-	panic("implement me")
+	// TODO checkNotPagingPredicate when PagingPredicate is implemented.
+	projectionData, err := mp.validateAndSerialize(projection)
+	if err != nil {
+		return
+	}
+	request := protocol.MapProjectEncodeRequest(mp.name, projectionData)
+	responseMessage, err := mp.invokeOnRandomTarget(request)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapProjectDecodeResponse)
 }
 
 func (mp *mapProxy) ProjectWithPredicate(projection interface{}, predicate interface{}) (result []interface{}, err error) {
-	panic("implement me")
+	// TODO checkNotPagingPredicate when PagingPredicate is implemented.
+	projectionData, err := mp.validateAndSerialize(projection)
+	if err != nil {
+		return
+	}
+	predicateData, err := mp.validateAndSerialize(predicate)
+	if err != nil {
+		return
+	}
+	request := protocol.MapProjectWithPredicateEncodeRequest(mp.name, projectionData, predicateData)
+	responseMessage, err := mp.invokeOnRandomTarget(request)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapProjectWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) ContainsKey(key interface{}) (found bool, err error) {

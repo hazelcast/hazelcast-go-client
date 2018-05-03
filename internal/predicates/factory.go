@@ -18,14 +18,16 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-type PredicateFactory struct {
+const FactoryID = -32
+
+type Factory struct {
 }
 
-func NewPredicateFactory() *PredicateFactory {
-	return &PredicateFactory{}
+func NewFactory() *Factory {
+	return &Factory{}
 }
 
-func (pf *PredicateFactory) Create(id int32) serialization.IdentifiedDataSerializable {
+func (pf *Factory) Create(id int32) serialization.IdentifiedDataSerializable {
 	switch id {
 	case sqlPredicateID:
 		return &SQLPredicate{}

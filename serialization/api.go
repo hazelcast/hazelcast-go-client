@@ -19,23 +19,23 @@ package serialization
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.
 type IdentifiedDataSerializableFactory interface {
 	// Creates an IdentifiedDataSerializable instance using given type ID.
-	Create(id int32) IdentifiedDataSerializable
+	Create(id int32) (instance IdentifiedDataSerializable)
 }
 
 // IdentifiedDataSerializable is a serialization method as an alternative to standard Gob serialization.
 // Each IdentifiedDataSerializable is created by a registered IdentifiedDataSerializableFactory.
 type IdentifiedDataSerializable interface {
 	// FactoryID returns IdentifiedDataSerializableFactory factory ID for this struct.
-	FactoryID() int32
+	FactoryID() (factoryID int32)
 
 	// ClassID returns type identifier for this struct. It should be unique per IdentifiedDataSerializableFactory.
-	ClassID() int32
+	ClassID() (classID int32)
 
 	// WriteData writes object fields to output stream.
-	WriteData(output DataOutput) error
+	WriteData(output DataOutput) (err error)
 
 	// ReadData reads fields from the input stream.
-	ReadData(input DataInput) error
+	ReadData(input DataInput) (err error)
 }
 
 // Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
@@ -49,16 +49,16 @@ type IdentifiedDataSerializable interface {
 // * Querying and indexing support without deserialization and/or reflection.
 type Portable interface {
 	// FactoryID returns PortableFactory ID for this portable struct.
-	FactoryID() int32
+	FactoryID() (factoryID int32)
 
 	// ClassID returns type identifier for this portable struct. Class ID should be unique per PortableFactory.
-	ClassID() int32
+	ClassID() (classID int32)
 
 	// WritePortable serializes this portable object using PortableWriter.
-	WritePortable(writer PortableWriter) error
+	WritePortable(writer PortableWriter) (err error)
 
 	// ReadPortable reads portable fields using PortableReader.
-	ReadPortable(reader PortableReader) error
+	ReadPortable(reader PortableReader) (err error)
 }
 
 // VersionedPortable is an extension to Portable
@@ -67,26 +67,26 @@ type VersionedPortable interface {
 	Portable
 
 	// Version returns version for this Portable struct.
-	Version() int32
+	Version() (version int32)
 }
 
 // PortableFactory is used to create Portable instances during deserialization.
 type PortableFactory interface {
 	// Create creates a Portable instance using given class ID and
 	// returns portable instance or nil if class ID is not known by this factory.
-	Create(classID int32) Portable
+	Create(classID int32) (instance Portable)
 }
 
 // Serializer is base interface of serializers.
 type Serializer interface {
 	// ID returns id of serializer.
-	ID() int32
+	ID() (id int32)
 
 	// Read reads an object from ObjectDataInput.
-	Read(input DataInput) (interface{}, error)
+	Read(input DataInput) (object interface{}, err error)
 
 	// Write writes an object to ObjectDataOutput.
-	Write(output DataOutput, object interface{}) error
+	Write(output DataOutput, object interface{}) (err error)
 }
 
 // IData is the basic unit of serialization. It stores binary form of an object serialized
