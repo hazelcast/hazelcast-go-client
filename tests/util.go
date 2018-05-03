@@ -58,6 +58,10 @@ const DefaultServerConfig = `
             <data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
             </data-serializable-factory>
         </data-serializable-factories>
+		<portable-factories>
+            <portable-factory factory-id="666">com.hazelcast.client.test.PortableFactory
+            </portable-factory>
+        </portable-factories>
     </serialization>
 
     <queue name="ClientQueueTest*">

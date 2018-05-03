@@ -18,8 +18,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const PredicateFactoryID = -32
-
 type predicate struct {
 	id int32
 }
@@ -37,7 +35,7 @@ func (p *predicate) WriteData(output serialization.DataOutput) error {
 }
 
 func (*predicate) FactoryID() int32 {
-	return PredicateFactoryID
+	return FactoryID
 }
 
 func (p *predicate) ClassID() int32 {
