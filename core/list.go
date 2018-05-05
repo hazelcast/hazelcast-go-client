@@ -45,6 +45,8 @@ type List interface {
 
 	// AddItemListener adds an item listener for this list.
 	// Listener will be invoked whenever an item is added to or removed from this list.
+	// To receive an event, listener should implement a corresponding interface for that event
+	// such as ItemAddedListener, ItemRemovedListener.
 	// AddItemListener returns registrationID of the listener.
 	AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error)
 

@@ -141,6 +141,13 @@ func TestSetProxy_Size(t *testing.T) {
 	assert.Equalf(t, err, size, int32(1), "set Size() failed")
 }
 
+func TestSetProxy_AddItemListener_IllegalListener(t *testing.T) {
+	_, err := set.AddItemListener(5, true)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("Set.AddItemListener should return HazelcastIllegalArgumentError")
+	}
+}
+
 func TestSetProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	defer set.Clear()
 	var wg = new(sync.WaitGroup)

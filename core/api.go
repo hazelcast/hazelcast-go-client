@@ -214,26 +214,26 @@ type EntryEvictedListener interface {
 	EntryEvicted(EntryEvent)
 }
 
-// EntryEvictAllListener is invoked when all entries are evicted
-// by Map.EvictAll method.
-type EntryEvictAllListener interface {
-	// EntryEvictAll is invoked when all entries are evicted
-	// by Map.EvictAll method.
-	EntryEvictAll(MapEvent)
-}
-
-// EntryClearAllListener is invoked when all entries are removed
-// by Map.Clear method.
-type EntryClearAllListener interface {
-	// EntryClearAll is invoked when all entries are removed
-	// by Map.Clear method.
-	EntryClearAll(MapEvent)
-}
-
 // EntryMergedListener is invoked after WAN replicated entry is merged.
 type EntryMergedListener interface {
 	// EntryMerged is invoked after WAN replicated entry is merged.
 	EntryMerged(EntryEvent)
+}
+
+// MapEvictedListener is invoked when all entries are evicted
+// by Map.EvictAll method.
+type MapEvictedListener interface {
+	// MapEvicted is invoked when all entries are evicted
+	// by Map.EvictAll method.
+	MapEvicted(MapEvent)
+}
+
+// MapClearedListener is invoked when all entries are removed
+// by Map.Clear method.
+type MapClearedListener interface {
+	// MapCleared is invoked when all entries are removed
+	// by Map.Clear method.
+	MapCleared(MapEvent)
 }
 
 // EntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.

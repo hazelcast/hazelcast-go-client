@@ -149,6 +149,10 @@ func (rmp *replicatedMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 }
 
 func (rmp *replicatedMapProxy) AddEntryListener(listener interface{}) (registrationID *string, err error) {
+	err = rmp.validateEntryListener(listener)
+	if err != nil {
+		return
+	}
 	request := protocol.ReplicatedMapAddEntryListenerEncodeRequest(rmp.name, rmp.isSmart())
 	eventHandler := rmp.createEventHandler(listener)
 	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
@@ -160,6 +164,10 @@ func (rmp *replicatedMapProxy) AddEntryListener(listener interface{}) (registrat
 
 func (rmp *replicatedMapProxy) AddEntryListenerWithPredicate(listener interface{},
 	predicate interface{}) (registrationID *string, err error) {
+	err = rmp.validateEntryListener(listener)
+	if err != nil {
+		return
+	}
 	predicateData, err := rmp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -174,6 +182,10 @@ func (rmp *replicatedMapProxy) AddEntryListenerWithPredicate(listener interface{
 }
 
 func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *string, err error) {
+	err = rmp.validateEntryListener(listener)
+	if err != nil {
+		return
+	}
 	keyData, err := rmp.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
@@ -189,6 +201,10 @@ func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key i
 
 func (rmp *replicatedMapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{},
 	key interface{}) (registrationID *string, err error) {
+	err = rmp.validateEntryListener(listener)
+	if err != nil {
+		return
+	}
 	predicateData, err := rmp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err

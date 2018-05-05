@@ -29,6 +29,8 @@ type Set interface {
 	AddAll(items []interface{}) (changed bool, err error)
 
 	// AddItemListener adds an item listener for this set.
+	// To receive an event, listener should implement a corresponding interface for that event
+	// such as ItemAddedListener, ItemRemovedListener.
 	// AddItemListener returns the registrationID of the listener.
 	AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error)
 

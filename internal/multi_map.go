@@ -144,6 +144,10 @@ func (mmp *multiMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 }
 
 func (mmp *multiMapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+	err = mmp.validateEntryListener(listener)
+	if err != nil {
+		return
+	}
 	request := protocol.MultiMapAddEntryListenerEncodeRequest(mmp.name, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandler(listener)
 	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
@@ -155,6 +159,10 @@ func (mmp *multiMapProxy) AddEntryListener(listener interface{}, includeValue bo
 
 func (mmp *multiMapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 	includeValue bool) (registrationID *string, err error) {
+	err = mmp.validateEntryListener(listener)
+	if err != nil {
+		return
+	}
 	keyData, err := mmp.validateAndSerialize(key)
 	if err != nil {
 		return nil, err

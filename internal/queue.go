@@ -47,6 +47,10 @@ func (qp *queueProxy) AddAll(items []interface{}) (changed bool, err error) {
 }
 
 func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+	err = qp.validateItemListener(listener)
+	if err != nil {
+		return
+	}
 	request := protocol.QueueAddListenerEncodeRequest(qp.name, includeValue, false)
 	eventHandler := qp.createEventHandler(listener)
 	return qp.client.ListenerService.registerListener(request, eventHandler,

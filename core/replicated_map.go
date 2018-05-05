@@ -92,21 +92,33 @@ type ReplicatedMap interface {
 
 	// AddEntryListener adds an entry listener for this map. The listener will be notified for all
 	// map add/remove/update/evict events.
+	// To receive an event, listener should implement a corresponding interface for that event such as
+	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
+	// MapEvictedListener, MapClearedListener.
 	// AddEntryListener returns registration id of the listener.
 	AddEntryListener(listener interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate.
+	// To receive an event, listener should implement a corresponding interface for that event such as
+	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
+	// MapEvictedListener, MapClearedListener.
 	// AddEntryListenerWithPredicate returns registration id of the listener.
 	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerToKey adds the specified entry listener for the specified key. The listener will be
 	// notified for all add/remove/update/evict events of the specified key only.
+	// To receive an event, listener should implement a corresponding interface for that event such as
+	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
+	// MapEvictedListener, MapClearedListener.
 	// AddEntryListenerToKey returns registration id of the listener.
 	AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *string, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate and key.
+	// To receive an event, listener should implement a corresponding interface for that event such as
+	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
+	// MapEvictedListener, MapClearedListener.
 	// AddEntryListenerToKeyWithPredicate returns registration id of the listener.
 	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (
 		registrationID *string, err error)
