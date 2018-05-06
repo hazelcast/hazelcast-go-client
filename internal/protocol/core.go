@@ -488,7 +488,7 @@ type MemberRemovedListener interface {
 }
 
 // Helper function to get flags for listeners
-func GetEntryListenerFlags(listener interface{}) int32 {
+func GetMapListenerFlags(listener interface{}) (int32, error) {
 	flags := int32(0)
 	if _, ok := listener.(EntryAddedListener); ok {
 		flags |= bufutil.EntryEventAdded
@@ -514,7 +514,11 @@ func GetEntryListenerFlags(listener interface{}) int32 {
 	if _, ok := listener.(EntryMergedListener); ok {
 		flags |= bufutil.EntryEventMerged
 	}
-	return flags
+	if flags == 0 {
+		return 0, core.NewHazelcastIllegalArgumentError("listener argument type must be one of EntryAddedListener, EntryRemovedListener,"+
+			"\nEntryUpdatedListener, EntryEvictedListener, EntryMergedListener, MapEvictedListener, MapClearedListener", nil)
+	}
+	return flags, nil
 }
 
 type TopicMessage struct {

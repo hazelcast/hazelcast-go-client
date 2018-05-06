@@ -52,6 +52,10 @@ func (sp *setProxy) AddAll(items []interface{}) (changed bool, err error) {
 }
 
 func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+	err = sp.validateItemListener(listener)
+	if err != nil {
+		return
+	}
 	request := protocol.SetAddListenerEncodeRequest(sp.name, includeValue, false)
 	eventHandler := sp.createEventHandler(listener)
 	return sp.client.ListenerService.registerListener(request, eventHandler,

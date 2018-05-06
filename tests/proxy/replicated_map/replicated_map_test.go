@@ -325,6 +325,13 @@ func TestReplicatedMapProxy_EntrySet(t *testing.T) {
 	assert.MapEqualPairSlice(t, err, testMap, entrySet, "replicatedMap EntrySet() failed")
 }
 
+func TestReplicatedMapProxy_AddEntryListener_IllegalListener(t *testing.T) {
+	_, err := rmp.AddEntryListener(5)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("ReplicatedMap.AddEntryListener should return HazelcastIllegalArgumentError")
+	}
+}
+
 func TestReplicatedMapProxy_AddEntryListener(t *testing.T) {
 	defer rmp.Clear()
 	var wg = new(sync.WaitGroup)
@@ -343,6 +350,13 @@ func TestReplicatedMapProxy_AddEntryListener(t *testing.T) {
 	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListener entryAdded failed")
 }
 
+func TestReplicatedMapProxy_AddEntryListenerWithPredicate_IllegalListener(t *testing.T) {
+	_, err := rmp.AddEntryListenerWithPredicate(5, nil)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("ReplicatedMap.AddEntryListenerWithPredicate should return HazelcastIllegalArgumentError")
+	}
+}
+
 func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	defer rmp.Clear()
 	var wg = new(sync.WaitGroup)
@@ -359,6 +373,13 @@ func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
+}
+
+func TestReplicatedMapProxy_AddEntryListenerToKey_IllegalListener(t *testing.T) {
+	_, err := rmp.AddEntryListenerToKey(5, nil)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("ReplicatedMap.AddEntryListenerToKey should return HazelcastIllegalArgumentError")
+	}
 }
 
 func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
@@ -381,6 +402,13 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 	assert.Equalf(t, nil, true, timeout, "replicatedMap AddEntryListenerToKey failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
+}
+
+func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate_IllegalListener(t *testing.T) {
+	_, err := rmp.AddEntryListenerToKeyWithPredicate(5, nil, nil)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("ReplicatedMap.AddEntryListenerToKeyWithPredicate should return HazelcastIllegalArgumentError")
+	}
 }
 
 func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {

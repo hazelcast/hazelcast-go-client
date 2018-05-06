@@ -331,7 +331,14 @@ func TestQueueProxy_ToSlice(t *testing.T) {
 	assert.Equalf(t, err, res[1], all[1], "queue ToSlice() failed")
 }
 
-func TestListProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
+func TestQueueProxy_AddItemListener_IllegalListener(t *testing.T) {
+	_, err := queue.AddItemListener(5, true)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("Queue.AddItemListener should return HazelcastIllegalArgumentError")
+	}
+}
+
+func TestQueueProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	defer queue.Clear()
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)
@@ -347,7 +354,7 @@ func TestListProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	assert.Equalf(t, nil, listener.event.Name(), queueName, "queue AddItemListener() failed when item is added")
 }
 
-func TestListProxy_AddItemItemAddedListener(t *testing.T) {
+func TestQueueProxy_AddItemItemAddedListener(t *testing.T) {
 	defer queue.Clear()
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)
@@ -361,7 +368,7 @@ func TestListProxy_AddItemItemAddedListener(t *testing.T) {
 	assert.Equalf(t, nil, listener.event.Item(), nil, "queue AddItemListener() failed when item is added")
 }
 
-func TestListProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
+func TestQueueProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	defer queue.Clear()
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)
@@ -378,7 +385,7 @@ func TestListProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	assert.Equalf(t, nil, listener.event.Name(), queueName, "queue AddItemListener() failed when item is removed")
 }
 
-func TestListProxy_AddItemListenerItemRemoved(t *testing.T) {
+func TestQueueProxy_AddItemListenerItemRemoved(t *testing.T) {
 	defer queue.Clear()
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)
@@ -393,7 +400,7 @@ func TestListProxy_AddItemListenerItemRemoved(t *testing.T) {
 	assert.Equalf(t, nil, listener.event.Item(), nil, "queue AddItemListener() failed when item is removed")
 }
 
-func TestListProxy_AddItemItemRemovedListener(t *testing.T) {
+func TestQueueProxy_AddItemItemRemovedListener(t *testing.T) {
 	defer queue.Clear()
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)

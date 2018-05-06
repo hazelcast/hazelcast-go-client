@@ -305,6 +305,13 @@ func TestListProxy_SetWithoutItem(t *testing.T) {
 	assert.ErrorNotNil(t, err, "list Set() should return error with index error")
 }
 
+func TestListProxy_AddItemListener_IllegalListener(t *testing.T) {
+	_, err := list.AddItemListener(5, true)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("List.AddItemListener should return HazelcastIllegalArgumentError")
+	}
+}
+
 func TestListProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	defer list.Clear()
 	var wg = new(sync.WaitGroup)

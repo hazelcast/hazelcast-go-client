@@ -463,7 +463,10 @@ func (mp *mapProxy) GetEntryView(key interface{}) (entryView core.EntryView, err
 
 func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
 	var request *protocol.ClientMessage
-	listenerFlags := protocol.GetEntryListenerFlags(listener)
+	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	if err != nil {
+		return nil, err
+	}
 	request = protocol.MapAddEntryListenerEncodeRequest(mp.name, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *protocol.ClientMessage) {
 		protocol.MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
@@ -482,7 +485,10 @@ func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (r
 func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (
 	*string, error) {
 	var request *protocol.ClientMessage
-	listenerFlags := protocol.GetEntryListenerFlags(listener)
+	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	if err != nil {
+		return nil, err
+	}
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
 		return nil, err
@@ -506,7 +512,10 @@ func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (
 	registrationID *string, err error) {
 	var request *protocol.ClientMessage
-	listenerFlags := protocol.GetEntryListenerFlags(listener)
+	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	if err != nil {
+		return nil, err
+	}
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
@@ -529,7 +538,10 @@ func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{},
 	includeValue bool) (*string, error) {
 	var request *protocol.ClientMessage
-	listenerFlags := protocol.GetEntryListenerFlags(listener)
+	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	if err != nil {
+		return nil, err
+	}
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return nil, err

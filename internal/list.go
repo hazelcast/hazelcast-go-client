@@ -73,6 +73,10 @@ func (lp *listProxy) AddAllAt(index int32, elements []interface{}) (changed bool
 }
 
 func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+	err = lp.validateItemListener(listener)
+	if err != nil {
+		return
+	}
 	request := protocol.ListAddListenerEncodeRequest(lp.name, includeValue, false)
 	eventHandler := lp.createEventHandler(listener)
 	return lp.client.ListenerService.registerListener(request, eventHandler,

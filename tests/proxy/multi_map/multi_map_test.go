@@ -273,6 +273,13 @@ func TestMultiMapProxy_EntrySet(t *testing.T) {
 	assert.SlicesHaveSameElements(t, err, resultValues, expectedValues, "multiMap EntrySet() failed")
 }
 
+func TestMultiMapProxy_AddEntryListener_IllegalListener(t *testing.T) {
+	_, err := multiMap.AddEntryListener(5, true)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("MultiMap.AddEntryListener should return HazelcastIllegalArgumentError")
+	}
+}
+
 func TestMultiMapProxy_AddEntryListenerAdded(t *testing.T) {
 	defer multiMap.Clear()
 	var wg = new(sync.WaitGroup)
@@ -290,6 +297,13 @@ func TestMultiMapProxy_AddEntryListenerAdded(t *testing.T) {
 	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "multiMap AddEntryListener entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "multiMap AddEntryListener entryAdded failed")
 
+}
+
+func TestMultiMapProxy_AddEntryListenerToKey_IllegalListener(t *testing.T) {
+	_, err := multiMap.AddEntryListenerToKey(5, nil, true)
+	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
+		t.Error("MultiMap.AddEntryListenerToKey should return HazelcastIllegalArgumentError")
+	}
 }
 
 func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {

@@ -113,6 +113,32 @@ func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData 
 	return
 }
 
+func (p *proxy) validateItemListener(listener interface{}) (err error) {
+	switch listener.(type) {
+	case core.ItemAddedListener:
+	case core.ItemRemovedListener:
+	default:
+		return core.NewHazelcastIllegalArgumentError("listener argument type must be one of ItemAddedListener,"+
+			" ItemRemovedListener", nil)
+	}
+	return nil
+}
+
+func (p *proxy) validateEntryListener(listener interface{}) (err error) {
+	switch listener.(type) {
+	case core.EntryAddedListener:
+	case core.EntryRemovedListener:
+	case core.EntryUpdatedListener:
+	case core.EntryEvictedListener:
+	case core.MapEvictedListener:
+	case core.MapClearedListener:
+	default:
+		return core.NewHazelcastIllegalArgumentError("listener argument type must be one of EntryAddedListener, EntryRemovedListener,"+
+			"\nEntryUpdatedListener, EntryEvictedListener, MapEvictedListener, MapClearedListener", nil)
+	}
+	return nil
+}
+
 func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*protocol.Pair, error) {
 	if entries == nil {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
