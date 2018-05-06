@@ -338,30 +338,55 @@ type Map interface {
 	PutTransient(key interface{}, value interface{}, ttl time.Duration) (err error)
 
 	// AddEntryListener adds a continuous entry listener for this map.
-	// To receive an event, listener should implement a corresponding interface for that event such as
-	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener,EntryEvictedListener,
-	// EntryMergedListener, MapEvictedListener, MapClearedListener.
+	// To receive an event, listener should implement a corresponding interface for that event.
+	// Supported listeners for Map:
+	//  * EntryAddedListener
+	//  * EntryRemovedListener
+	//  * EntryUpdatedListener
+	//  * EntryEvictedListener
+	//  * EntryMergedListener
+	//  * EntryExpiredListener
+	//  * MapEvictedListener
+	//  * MapClearedListener
 	// AddEntryListener returns uuid which is used as a key to remove the listener.
 	AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error)
 
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map filtered with the given predicate.
-	// To receive an event, listener should implement a corresponding interface for that event such as
-	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener,EntryEvictedListener,
-	// EntryMergedListener, MapEvictedListener, MapClearedListener.
+	// Supported listeners for Map:
+	//  * EntryAddedListener
+	//  * EntryRemovedListener
+	//  * EntryUpdatedListener
+	//  * EntryEvictedListener
+	//  * EntryMergedListener
+	//  * EntryExpiredListener
+	//  * MapEvictedListener
+	//  * MapClearedListener
 	// AddEntryListenerWithPredicate returns uuid which is used as a key to remove the listener.
 	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (registrationID string, err error)
 
 	// AddEntryListenerToKey adds a continuous entry listener for this map filtered with the given key.
-	// To receive an event, listener should implement a corresponding interface for that event such as
-	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener,EntryEvictedListener,
-	// EntryMergedListener, MapEvictedListener, MapClearedListener.
+	// Supported listeners for Map:
+	//  * EntryAddedListener
+	//  * EntryRemovedListener
+	//  * EntryUpdatedListener
+	//  * EntryEvictedListener
+	//  * EntryMergedListener
+	//  * EntryExpiredListener
+	//  * MapEvictedListener
+	//  * MapClearedListener
 	// AddEntryListenerToKey returns uuid which is used as a key to remove the listener.
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID string, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map filtered with the given key and predicate.
-	// To receive an event, listener should implement a corresponding interface for that event such as
-	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener,EntryEvictedListener,
-	// EntryMergedListener, MapEvictedListener, MapClearedListener.
+	// Supported listeners for Map:
+	//  * EntryAddedListener
+	//  * EntryRemovedListener
+	//  * EntryUpdatedListener
+	//  * EntryEvictedListener
+	//  * EntryMergedListener
+	//  * EntryExpiredListener
+	//  * MapEvictedListener
+	//  * MapClearedListener
 	// AddEntryListenerToKeyWithPredicate returns uuid which is used as a key to remove the listener.
 	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (
 		registrationID string, err error)

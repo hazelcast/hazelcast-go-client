@@ -830,12 +830,12 @@ func (l *entryListener) EntryEvicted(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryEvictAll(event core.MapEvent) {
+func (l *entryListener) MapEvicted(event core.MapEvent) {
 	l.mapEvent = event
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryClearAll(event core.MapEvent) {
+func (l *entryListener) MapCleared(event core.MapEvent) {
 	l.wg.Done()
 }
 
@@ -855,6 +855,7 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	mp.Put("key123", "value")
 	timeout := tests.WaitTimeout(wg, tests.Timeout)
 	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.Value(), "value", "AddEntryListener entryAdded failed")
 	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
@@ -919,6 +920,7 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 	timeout := tests.WaitTimeout(wg, tests.Timeout)
 	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
 	assert.Equalf(t, nil, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, nil, entryListener.mapEvent.Name(), "myMap", "AddEntryListener entryEvictAll failed")
 	assert.Equalf(t, nil, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
