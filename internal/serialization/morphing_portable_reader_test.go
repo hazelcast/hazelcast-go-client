@@ -803,11 +803,12 @@ func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testi
 func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 	var expectedRet = &student{10, 22, "Furkan Şenharputlu"}
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+
 	o := NewPositionalObjectDataOutput(0, service, false)
 	serializer, _ := service.FindSerializerFor(expectedRet)
 	pw := NewDefaultPortableWriter(serializer.(*PortableSerializer), o, classDef)
@@ -826,11 +827,12 @@ func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 	var value serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
 	var expectedRet serialization.Portable
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+
 	o := NewPositionalObjectDataOutput(0, service, false)
 	serializer, _ := service.FindSerializerFor(value)
 	pw := NewDefaultPortableWriter(serializer.(*PortableSerializer), o, classDef)
@@ -1352,7 +1354,7 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineers", classdef.TypePortableArray,
@@ -1376,7 +1378,7 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 		&student{11, 20, "Jack Purcell"}}
 	var expectedRet []serialization.Portable
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineers", classdef.TypePortableArray,
@@ -1415,8 +1417,9 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 func TestNewMorphingPortableReader(t *testing.T) {
 	s := &student{10, 22, "Furkan Şenharputlu"}
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory2{})
+	config.AddPortableFactory(2, &portableFactory2{})
 	service, _ := NewSerializationService(config)
+
 	data, _ := service.ToData(s)
 
 	service.serializationConfig.SetPortableVersion(1)
