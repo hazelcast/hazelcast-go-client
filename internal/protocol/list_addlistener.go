@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
+func ListAddListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func ListAddListenerCalculateSize(name *string, includeValue bool, localOnly boo
 	return dataSize
 }
 
-func ListAddListenerEncodeRequest(name *string, includeValue bool, localOnly bool) *ClientMessage {
+func ListAddListenerEncodeRequest(name string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListAddListenerCalculateSize(name, includeValue, localOnly))
 	clientMessage.SetMessageType(listAddListener)
@@ -41,17 +41,17 @@ func ListAddListenerEncodeRequest(name *string, includeValue bool, localOnly boo
 	return clientMessage
 }
 
-func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
 }
 
-type ListAddListenerHandleEventItemFunc func(*serialization.Data, *string, int32)
+type ListAddListenerHandleEventItemFunc func(*serialization.Data, string, int32)
 
-func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *serialization.Data, uuid *string, eventType int32) {
+func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *serialization.Data, uuid string, eventType int32) {
 
 	if !clientMessage.ReadBool() {
 		item = clientMessage.ReadData()

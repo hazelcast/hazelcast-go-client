@@ -27,7 +27,7 @@ type ringbufferProxy struct {
 	capacity int64
 }
 
-func newRingbufferProxy(client *HazelcastClient, serviceName *string, name *string) (*ringbufferProxy, error) {
+func newRingbufferProxy(client *HazelcastClient, serviceName string, name string) (*ringbufferProxy, error) {
 	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
 	if err != nil {
 		return nil, err

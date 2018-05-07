@@ -18,14 +18,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func QueuePeekCalculateSize(name *string) int {
+func QueuePeekCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func QueuePeekEncodeRequest(name *string) *ClientMessage {
+func QueuePeekEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueuePeekCalculateSize(name))
 	clientMessage.SetMessageType(queuePeek)

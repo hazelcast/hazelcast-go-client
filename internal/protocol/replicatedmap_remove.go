@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func ReplicatedMapRemoveCalculateSize(name *string, key *serialization.Data) int {
+func ReplicatedMapRemoveCalculateSize(name string, key *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func ReplicatedMapRemoveCalculateSize(name *string, key *serialization.Data) int
 	return dataSize
 }
 
-func ReplicatedMapRemoveEncodeRequest(name *string, key *serialization.Data) *ClientMessage {
+func ReplicatedMapRemoveEncodeRequest(name string, key *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapRemoveCalculateSize(name, key))
 	clientMessage.SetMessageType(replicatedmapRemove)

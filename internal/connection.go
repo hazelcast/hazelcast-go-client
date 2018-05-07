@@ -44,7 +44,7 @@ type Connection struct {
 	closedTime             atomic.Value
 	lastHeartbeatRequested atomic.Value
 	lastHeartbeatReceived  atomic.Value
-	serverHazelcastVersion *string
+	serverHazelcastVersion string
 	heartBeating           bool
 	readBuffer             []byte
 	connectionID           int64
@@ -195,5 +195,5 @@ func (c *Connection) String() string {
 		c.endpoint.Load().(*protocol.Address).Host(), c.endpoint.Load().(*protocol.Address).Port(),
 		c.lastRead.Load().(time.Time).String(), c.lastWrite.Load().(time.Time).String(),
 		c.closedTime.Load().(time.Time).String(), c.lastHeartbeatRequested.Load().(time.Time).String(),
-		c.lastHeartbeatReceived.Load().(time.Time).String(), *c.serverHazelcastVersion)
+		c.lastHeartbeatReceived.Load().(time.Time).String(), c.serverHazelcastVersion)
 }

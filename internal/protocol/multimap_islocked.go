@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MultiMapIsLockedCalculateSize(name *string, key *serialization.Data) int {
+func MultiMapIsLockedCalculateSize(name string, key *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func MultiMapIsLockedCalculateSize(name *string, key *serialization.Data) int {
 	return dataSize
 }
 
-func MultiMapIsLockedEncodeRequest(name *string, key *serialization.Data) *ClientMessage {
+func MultiMapIsLockedEncodeRequest(name string, key *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapIsLockedCalculateSize(name, key))
 	clientMessage.SetMessageType(multimapIsLocked)

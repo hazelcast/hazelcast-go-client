@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func RingbufferReadManyCalculateSize(name *string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) int {
+func RingbufferReadManyCalculateSize(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,7 +34,7 @@ func RingbufferReadManyCalculateSize(name *string, startSequence int64, minCount
 	return dataSize
 }
 
-func RingbufferReadManyEncodeRequest(name *string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) *ClientMessage {
+func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferReadManyCalculateSize(name, startSequence, minCount, maxCount, filter))
 	clientMessage.SetMessageType(ringbufferReadMany)

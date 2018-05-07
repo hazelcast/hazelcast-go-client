@@ -18,17 +18,17 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func ClientAuthenticationCalculateSize(username *string, password *string, uuid *string, ownerUUID *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) int {
+func ClientAuthenticationCalculateSize(username string, password string, uuid string, ownerUUID string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(username)
 	dataSize += stringCalculateSize(password)
 	dataSize += bufutil.BoolSizeInBytes
-	if uuid != nil {
+	if uuid != "" {
 		dataSize += stringCalculateSize(uuid)
 	}
 	dataSize += bufutil.BoolSizeInBytes
-	if ownerUUID != nil {
+	if ownerUUID != "" {
 		dataSize += stringCalculateSize(ownerUUID)
 	}
 	dataSize += bufutil.BoolSizeInBytes
@@ -38,19 +38,19 @@ func ClientAuthenticationCalculateSize(username *string, password *string, uuid 
 	return dataSize
 }
 
-func ClientAuthenticationEncodeRequest(username *string, password *string, uuid *string, ownerUUID *string, isOwnerConnection bool, clientType *string, serializationVersion uint8, clientHazelcastVersion *string) *ClientMessage {
+func ClientAuthenticationEncodeRequest(username string, password string, uuid string, ownerUUID string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientAuthenticationCalculateSize(username, password, uuid, ownerUUID, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
 	clientMessage.SetMessageType(clientAuthentication)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(username)
 	clientMessage.AppendString(password)
-	clientMessage.AppendBool(uuid == nil)
-	if uuid != nil {
+	clientMessage.AppendBool(uuid == "")
+	if uuid != "" {
 		clientMessage.AppendString(uuid)
 	}
-	clientMessage.AppendBool(ownerUUID == nil)
-	if ownerUUID != nil {
+	clientMessage.AppendBool(ownerUUID == "")
+	if ownerUUID != "" {
 		clientMessage.AppendString(ownerUUID)
 	}
 	clientMessage.AppendBool(isOwnerConnection)
@@ -61,9 +61,9 @@ func ClientAuthenticationEncodeRequest(username *string, password *string, uuid 
 	return clientMessage
 }
 
-func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid *string, ownerUUID *string, serializationVersion uint8, serverHazelcastVersion *string, clientUnregisteredMembers []*Member) {
+func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid string, ownerUUID string, serializationVersion uint8, serverHazelcastVersion string, clientUnregisteredMembers []*Member) {
 	// Decode response from client message
-	return func() (status uint8, address *Address, uuid *string, ownerUUID *string, serializationVersion uint8, serverHazelcastVersion *string, clientUnregisteredMembers []*Member) {
+	return func() (status uint8, address *Address, uuid string, ownerUUID string, serializationVersion uint8, serverHazelcastVersion string, clientUnregisteredMembers []*Member) {
 		status = clientMessage.ReadUint8()
 
 		if !clientMessage.ReadBool() {

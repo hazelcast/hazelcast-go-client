@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapPutIfAbsentCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) int {
+func MapPutIfAbsentCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,7 +31,7 @@ func MapPutIfAbsentCalculateSize(name *string, key *serialization.Data, value *s
 	return dataSize
 }
 
-func MapPutIfAbsentEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) *ClientMessage {
+func MapPutIfAbsentEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutIfAbsentCalculateSize(name, key, value, threadID, ttl))
 	clientMessage.SetMessageType(mapPutIfAbsent)

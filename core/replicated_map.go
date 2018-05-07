@@ -96,7 +96,7 @@ type ReplicatedMap interface {
 	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
 	// MapEvictedListener, MapClearedListener.
 	// AddEntryListener returns registration id of the listener.
-	AddEntryListener(listener interface{}) (registrationID *string, err error)
+	AddEntryListener(listener interface{}) (registrationID string, err error)
 
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate.
@@ -104,7 +104,7 @@ type ReplicatedMap interface {
 	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
 	// MapEvictedListener, MapClearedListener.
 	// AddEntryListenerWithPredicate returns registration id of the listener.
-	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}) (registrationID *string, err error)
+	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}) (registrationID string, err error)
 
 	// AddEntryListenerToKey adds the specified entry listener for the specified key. The listener will be
 	// notified for all add/remove/update/evict events of the specified key only.
@@ -112,7 +112,7 @@ type ReplicatedMap interface {
 	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
 	// MapEvictedListener, MapClearedListener.
 	// AddEntryListenerToKey returns registration id of the listener.
-	AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *string, err error)
+	AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID string, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map. The listener will be notified for
 	// map add/remove/update/evict events filtered by the given predicate and key.
@@ -121,10 +121,10 @@ type ReplicatedMap interface {
 	// MapEvictedListener, MapClearedListener.
 	// AddEntryListenerToKeyWithPredicate returns registration id of the listener.
 	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}) (
-		registrationID *string, err error)
+		registrationID string, err error)
 
 	// RemoveEntryListener removes the specified entry listener and returns silently if there was no such
 	// listener added before.
 	// It returns true if remove operation is successful, false if unsuccessful or this listener did not exist.
-	RemoveEntryListener(registrationID *string) (removed bool, err error)
+	RemoveEntryListener(registrationID string) (removed bool, err error)
 }

@@ -218,7 +218,7 @@ func TestRestartMember(t *testing.T) {
 	timeout = WaitTimeout(wg, Timeout)
 	assert.Equalf(t, nil, false, timeout, "clusterService reconnect has failed")
 	assert.Equalf(t, nil, lifecycleListener.collector[1], internal.LifecycleStateConnected, "clusterService reconnect has failed")
-	client.GetLifecycle().RemoveListener(&registrationID)
+	client.GetLifecycle().RemoveListener(registrationID)
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }

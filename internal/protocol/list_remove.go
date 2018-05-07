@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func ListRemoveCalculateSize(name *string, value *serialization.Data) int {
+func ListRemoveCalculateSize(name string, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func ListRemoveCalculateSize(name *string, value *serialization.Data) int {
 	return dataSize
 }
 
-func ListRemoveEncodeRequest(name *string, value *serialization.Data) *ClientMessage {
+func ListRemoveEncodeRequest(name string, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListRemoveCalculateSize(name, value))
 	clientMessage.SetMessageType(listRemove)

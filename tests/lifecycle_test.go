@@ -67,7 +67,7 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, nil, false, timeout, "Lifecycle listener failed")
 	assert.Equalf(t, nil, lifecycleListener.collector[0], internal.LifecycleStateDisconnected, "Lifecycle listener failed")
-	client.GetLifecycle().RemoveListener(&registrationID)
+	client.GetLifecycle().RemoveListener(registrationID)
 	client.Shutdown()
 }
 
@@ -79,7 +79,7 @@ func TestRemoveListener(t *testing.T) {
 	client, _ := hazelcast.NewHazelcastClient()
 	registrationID := client.GetLifecycle().AddListener(&lifecycleListener)
 	wg.Add(2)
-	client.GetLifecycle().RemoveListener(&registrationID)
+	client.GetLifecycle().RemoveListener(registrationID)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout/20)
 	assert.Equalf(t, nil, true, timeout, "Lifecycle listener failed")

@@ -14,14 +14,14 @@
 
 package protocol
 
-func MultiMapEntrySetCalculateSize(name *string) int {
+func MultiMapEntrySetCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func MultiMapEntrySetEncodeRequest(name *string) *ClientMessage {
+func MultiMapEntrySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapEntrySetCalculateSize(name))
 	clientMessage.SetMessageType(multimapEntrySet)

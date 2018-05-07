@@ -22,5 +22,5 @@ type Lifecycle interface {
 
 	// RemoveListener removes lifecycle listener with the given registrationID.
 	// RemoveListener returns true if the listener is removed successfully, false otherwise.
-	RemoveListener(registrationID *string) bool
+	RemoveListener(registrationID string) bool
 }

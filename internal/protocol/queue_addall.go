@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func QueueAddAllCalculateSize(name *string, dataList []*serialization.Data) int {
+func QueueAddAllCalculateSize(name string, dataList []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,7 +31,7 @@ func QueueAddAllCalculateSize(name *string, dataList []*serialization.Data) int 
 	return dataSize
 }
 
-func QueueAddAllEncodeRequest(name *string, dataList []*serialization.Data) *ClientMessage {
+func QueueAddAllEncodeRequest(name string, dataList []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueAddAllCalculateSize(name, dataList))
 	clientMessage.SetMessageType(queueAddAll)

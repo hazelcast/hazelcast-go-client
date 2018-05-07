@@ -18,11 +18,11 @@ package core
 type Cluster interface {
 	// AddListener registers the given listener.
 	// AddListener returns uuid which will be used to remove the listener.
-	AddListener(listener interface{}) *string
+	AddListener(listener interface{}) string
 
 	// RemoveListener removes the listener with the given registrationID.
 	// RemoveListener returns true if successfully removed, false otherwise.
-	RemoveListener(registrationID *string) bool
+	RemoveListener(registrationID string) bool
 
 	// GetMemberList returns a slice of members.
 	GetMemberList() []Member

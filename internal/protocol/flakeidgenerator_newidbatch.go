@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func FlakeIDGeneratorNewIDBatchCalculateSize(name *string, batchSize int32) int {
+func FlakeIDGeneratorNewIDBatchCalculateSize(name string, batchSize int32) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func FlakeIDGeneratorNewIDBatchCalculateSize(name *string, batchSize int32) int 
 	return dataSize
 }
 
-func FlakeIDGeneratorNewIDBatchEncodeRequest(name *string, batchSize int32) *ClientMessage {
+func FlakeIDGeneratorNewIDBatchEncodeRequest(name string, batchSize int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, FlakeIDGeneratorNewIDBatchCalculateSize(name, batchSize))
 	clientMessage.SetMessageType(flakeidgeneratorNewIDBatch)

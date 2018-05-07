@@ -116,7 +116,7 @@ func TestClientMessage_AppendInt64(t *testing.T) {
 func TestClientMessage_AppendString(t *testing.T) {
 	message := NewClientMessage(nil, 30)
 	testString := "abc"
-	message.AppendString(&testString)
+	message.AppendString(testString)
 	dataOffset := message.DataOffset()
 	result := message.Buffer[dataOffset : dataOffset+4]
 	if hexResult := hex.EncodeToString(result); hexResult != "03000000" {
@@ -176,8 +176,8 @@ func TestClientMessage_ReadString(t *testing.T) {
 	buf[len(READ_HEADER)+5] = 0x62
 	buf[len(READ_HEADER)+6] = 0x63
 	message := NewClientMessage(buf, 7)
-	if result := message.ReadString(); *result != "abc" {
-		t.Errorf("ReadString returned %s expected abc", *result)
+	if result := message.ReadString(); result != "abc" {
+		t.Errorf("ReadString returned %s expected abc", result)
 	}
 }
 
@@ -242,7 +242,7 @@ func TestSetListenerFlag(t *testing.T) {
 
 func TestCalculateSizeStr(t *testing.T) {
 	testString := "abc"
-	if result := stringCalculateSize(&testString); result != len(testString)+bufutil.Int32SizeInBytes {
+	if result := stringCalculateSize(testString); result != len(testString)+bufutil.Int32SizeInBytes {
 		t.Errorf("StringCalculateSize returned %d expected %d", result, len(testString)+bufutil.Int32SizeInBytes)
 	}
 }

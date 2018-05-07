@@ -14,14 +14,14 @@
 
 package protocol
 
-func RingbufferTailSequenceCalculateSize(name *string) int {
+func RingbufferTailSequenceCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func RingbufferTailSequenceEncodeRequest(name *string) *ClientMessage {
+func RingbufferTailSequenceEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferTailSequenceCalculateSize(name))
 	clientMessage.SetMessageType(ringbufferTailSequence)

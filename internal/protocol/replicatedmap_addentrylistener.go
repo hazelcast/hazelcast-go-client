@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func ReplicatedMapAddEntryListenerCalculateSize(name *string, localOnly bool) int {
+func ReplicatedMapAddEntryListenerCalculateSize(name string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -28,7 +28,7 @@ func ReplicatedMapAddEntryListenerCalculateSize(name *string, localOnly bool) in
 	return dataSize
 }
 
-func ReplicatedMapAddEntryListenerEncodeRequest(name *string, localOnly bool) *ClientMessage {
+func ReplicatedMapAddEntryListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapAddEntryListenerCalculateSize(name, localOnly))
 	clientMessage.SetMessageType(replicatedmapAddEntryListener)
@@ -39,17 +39,17 @@ func ReplicatedMapAddEntryListenerEncodeRequest(name *string, localOnly bool) *C
 	return clientMessage
 }
 
-func ReplicatedMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func ReplicatedMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
 }
 
-type ReplicatedMapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
+type ReplicatedMapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func ReplicatedMapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func ReplicatedMapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()

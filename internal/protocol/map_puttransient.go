@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapPutTransientCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) int {
+func MapPutTransientCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,7 +31,7 @@ func MapPutTransientCalculateSize(name *string, key *serialization.Data, value *
 	return dataSize
 }
 
-func MapPutTransientEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) *ClientMessage {
+func MapPutTransientEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadID int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutTransientCalculateSize(name, key, value, threadID, ttl))
 	clientMessage.SetMessageType(mapPutTransient)

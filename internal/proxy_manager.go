@@ -50,7 +50,7 @@ func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.
 		return pm.proxies[ns], nil
 	}
 	pm.mu.RUnlock()
-	proxy, err := pm.createProxy(&serviceName, &name)
+	proxy, err := pm.createProxy(serviceName, name)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.
 	return proxy, nil
 }
 
-func (pm *proxyManager) createProxy(serviceName *string, name *string) (core.DistributedObject, error) {
+func (pm *proxyManager) createProxy(serviceName string, name string) (core.DistributedObject, error) {
 	message := protocol.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress())
 	_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
@@ -69,8 +69,8 @@ func (pm *proxyManager) createProxy(serviceName *string, name *string) (core.Dis
 	return pm.getProxyByNameSpace(serviceName, name)
 }
 
-func (pm *proxyManager) destroyProxy(serviceName *string, name *string) (bool, error) {
-	var ns = *serviceName + *name
+func (pm *proxyManager) destroyProxy(serviceName string, name string) (bool, error) {
+	var ns = serviceName + name
 	pm.mu.RLock()
 	if _, ok := pm.proxies[ns]; ok {
 		pm.mu.RUnlock()
@@ -92,26 +92,26 @@ func (pm *proxyManager) findNextProxyAddress() *protocol.Address {
 	return pm.client.LoadBalancer.nextAddress()
 }
 
-func (pm *proxyManager) getProxyByNameSpace(serviceName *string, name *string) (core.DistributedObject, error) {
-	if bufutil.ServiceNameMap == *serviceName {
+func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (core.DistributedObject, error) {
+	if bufutil.ServiceNameMap == serviceName {
 		return newMapProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameList == *serviceName {
+	} else if bufutil.ServiceNameList == serviceName {
 		return newListProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameSet == *serviceName {
+	} else if bufutil.ServiceNameSet == serviceName {
 		return newSetProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameTopic == *serviceName {
+	} else if bufutil.ServiceNameTopic == serviceName {
 		return newTopicProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameMultiMap == *serviceName {
+	} else if bufutil.ServiceNameMultiMap == serviceName {
 		return newMultiMapProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameReplicatedMap == *serviceName {
+	} else if bufutil.ServiceNameReplicatedMap == serviceName {
 		return newReplicatedMapProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameQueue == *serviceName {
+	} else if bufutil.ServiceNameQueue == serviceName {
 		return newQueueProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameRingbufferService == *serviceName {
+	} else if bufutil.ServiceNameRingbufferService == serviceName {
 		return newRingbufferProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNamePNCounter == *serviceName {
+	} else if bufutil.ServiceNamePNCounter == serviceName {
 		return newPNCounterProxy(pm.client, serviceName, name)
-	} else if bufutil.ServiceNameIDGenerator == *serviceName {
+	} else if bufutil.ServiceNameIDGenerator == serviceName {
 		return newFlakeIDGenerator(pm.client, serviceName, name)
 	}
 	return nil, nil

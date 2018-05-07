@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func RingbufferAddCalculateSize(name *string, overflowPolicy int32, value *serialization.Data) int {
+func RingbufferAddCalculateSize(name string, overflowPolicy int32, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func RingbufferAddCalculateSize(name *string, overflowPolicy int32, value *seria
 	return dataSize
 }
 
-func RingbufferAddEncodeRequest(name *string, overflowPolicy int32, value *serialization.Data) *ClientMessage {
+func RingbufferAddEncodeRequest(name string, overflowPolicy int32, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferAddCalculateSize(name, overflowPolicy, value))
 	clientMessage.SetMessageType(ringbufferAdd)

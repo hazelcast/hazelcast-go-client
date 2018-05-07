@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func ReplicatedMapPutAllCalculateSize(name *string, entries []*Pair) int {
+func ReplicatedMapPutAllCalculateSize(name string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,7 +34,7 @@ func ReplicatedMapPutAllCalculateSize(name *string, entries []*Pair) int {
 	return dataSize
 }
 
-func ReplicatedMapPutAllEncodeRequest(name *string, entries []*Pair) *ClientMessage {
+func ReplicatedMapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapPutAllCalculateSize(name, entries))
 	clientMessage.SetMessageType(replicatedmapPutAll)

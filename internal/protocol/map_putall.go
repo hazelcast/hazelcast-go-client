@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapPutAllCalculateSize(name *string, entries []*Pair) int {
+func MapPutAllCalculateSize(name string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,7 +34,7 @@ func MapPutAllCalculateSize(name *string, entries []*Pair) int {
 	return dataSize
 }
 
-func MapPutAllEncodeRequest(name *string, entries []*Pair) *ClientMessage {
+func MapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapPutAllCalculateSize(name, entries))
 	clientMessage.SetMessageType(mapPutAll)

@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapAddEntryListenerCalculateSize(name *string, includeValue bool, listenerFlags int32, localOnly bool) int {
+func MapAddEntryListenerCalculateSize(name string, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,7 +30,7 @@ func MapAddEntryListenerCalculateSize(name *string, includeValue bool, listenerF
 	return dataSize
 }
 
-func MapAddEntryListenerEncodeRequest(name *string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddEntryListenerCalculateSize(name, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(mapAddEntryListener)
@@ -43,17 +43,17 @@ func MapAddEntryListenerEncodeRequest(name *string, includeValue bool, listenerF
 	return clientMessage
 }
 
-func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
 }
 
-type MapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
+type MapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()

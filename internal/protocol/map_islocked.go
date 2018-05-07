@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapIsLockedCalculateSize(name *string, key *serialization.Data) int {
+func MapIsLockedCalculateSize(name string, key *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func MapIsLockedCalculateSize(name *string, key *serialization.Data) int {
 	return dataSize
 }
 
-func MapIsLockedEncodeRequest(name *string, key *serialization.Data) *ClientMessage {
+func MapIsLockedEncodeRequest(name string, key *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapIsLockedCalculateSize(name, key))
 	clientMessage.SetMessageType(mapIsLocked)

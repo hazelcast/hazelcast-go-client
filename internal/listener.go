@@ -157,10 +157,10 @@ func (ls *listenerService) registerListenerInit(key *listenerRegistrationKey) {
 func (ls *listenerService) registerListener(request *protocol.ClientMessage,
 	eventHandler func(clientMessage *protocol.ClientMessage),
 	encodeListenerRemoveRequest protocol.EncodeListenerRemoveRequest,
-	responseDecoder protocol.DecodeListenerResponse) (*string, error) {
+	responseDecoder protocol.DecodeListenerResponse) (string, error) {
 	err := ls.trySyncConnectToAllConnections()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	userRegistrationID, _ := IPutil.NewUUID()
 	registrationKey := listenerRegistrationKey{
@@ -181,12 +181,12 @@ func (ls *listenerService) registerListener(request *protocol.ClientMessage,
 		if err != nil {
 			if connection.isAlive() {
 				ls.deregisterListener(userRegistrationID, encodeListenerRemoveRequest)
-				return nil, core.NewHazelcastErrorType("listener cannot be added", nil)
+				return "", core.NewHazelcastErrorType("listener cannot be added", nil)
 			}
 		}
 	}
 
-	return &userRegistrationID, nil
+	return userRegistrationID, nil
 }
 
 func (ls *listenerService) registerListenerOnConnection(registrationID string, connection *Connection) error {
@@ -204,7 +204,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 	if err != nil {
 		return err
 	}
-	serverRegistrationID := *registrationKey.responseDecoder(responseMessage)
+	serverRegistrationID := registrationKey.responseDecoder(responseMessage)
 	correlationID := registrationKey.request.CorrelationID()
 	registration := &eventRegistration{
 		serverRegistrationID: serverRegistrationID,
@@ -238,7 +238,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 	for _, registration := range registrationMap {
 		connection := registration.connection
 		serverRegistrationID := registration.serverRegistrationID
-		request := requestEncoder(&serverRegistrationID)
+		request := requestEncoder(serverRegistrationID)
 		invocation := newInvocation(request, -1, nil, connection, ls.client)
 		_, err = ls.client.InvocationService.sendInvocation(invocation).Result()
 		if err != nil {

@@ -179,13 +179,13 @@ func (m *ClientMessage) AppendInt64(v int64) {
 	m.writeIndex += bufutil.Int64SizeInBytes
 }
 
-func (m *ClientMessage) AppendString(str *string) {
-	if utf8.ValidString(*str) {
-		m.AppendByteArray([]byte(*str))
+func (m *ClientMessage) AppendString(str string) {
+	if utf8.ValidString(str) {
+		m.AppendByteArray([]byte(str))
 	} else {
-		buff := make([]byte, 0, len(*str)*3)
+		buff := make([]byte, 0, len(str)*3)
 		n := 0
-		for _, b := range *str {
+		for _, b := range str {
 			n += utf8.EncodeRune(buff[n:], rune(b))
 		}
 		//append fixed size slice
@@ -231,9 +231,9 @@ func (m *ClientMessage) ReadBool() bool {
 	}
 }
 
-func (m *ClientMessage) ReadString() *string {
+func (m *ClientMessage) ReadString() string {
 	str := string(m.ReadByteArray())
-	return &str
+	return str
 }
 
 func (m *ClientMessage) ReadData() *serialization.Data {

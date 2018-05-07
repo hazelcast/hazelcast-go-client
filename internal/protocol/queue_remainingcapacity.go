@@ -14,14 +14,14 @@
 
 package protocol
 
-func QueueRemainingCapacityCalculateSize(name *string) int {
+func QueueRemainingCapacityCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func QueueRemainingCapacityEncodeRequest(name *string) *ClientMessage {
+func QueueRemainingCapacityEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueRemainingCapacityCalculateSize(name))
 	clientMessage.SetMessageType(queueRemainingCapacity)

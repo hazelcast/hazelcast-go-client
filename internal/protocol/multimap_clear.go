@@ -14,14 +14,14 @@
 
 package protocol
 
-func MultiMapClearCalculateSize(name *string) int {
+func MultiMapClearCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func MultiMapClearEncodeRequest(name *string) *ClientMessage {
+func MultiMapClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapClearCalculateSize(name))
 	clientMessage.SetMessageType(multimapClear)

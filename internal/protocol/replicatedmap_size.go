@@ -14,14 +14,14 @@
 
 package protocol
 
-func ReplicatedMapSizeCalculateSize(name *string) int {
+func ReplicatedMapSizeCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func ReplicatedMapSizeEncodeRequest(name *string) *ClientMessage {
+func ReplicatedMapSizeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapSizeCalculateSize(name))
 	clientMessage.SetMessageType(replicatedmapSize)

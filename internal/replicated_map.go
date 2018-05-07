@@ -30,7 +30,7 @@ type replicatedMapProxy struct {
 	tarGetPartitionID int32
 }
 
-func newReplicatedMapProxy(client *HazelcastClient, serviceName *string, name *string) (*replicatedMapProxy, error) {
+func newReplicatedMapProxy(client *HazelcastClient, serviceName string, name string) (*replicatedMapProxy, error) {
 	partitionCount := client.PartitionService.getPartitionCount()
 	tarGetPartitionID := rand.Int31n(partitionCount)
 	return &replicatedMapProxy{proxy: &proxy{client, serviceName, name}, tarGetPartitionID: tarGetPartitionID}, nil
@@ -148,88 +148,88 @@ func (rmp *replicatedMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 	return rmp.decodeToPairSliceAndError(responseMessage, err, protocol.ReplicatedMapEntrySetDecodeResponse)
 }
 
-func (rmp *replicatedMapProxy) AddEntryListener(listener interface{}) (registrationID *string, err error) {
+func (rmp *replicatedMapProxy) AddEntryListener(listener interface{}) (registrationID string, err error) {
 	err = rmp.validateEntryListener(listener)
 	if err != nil {
 		return
 	}
 	request := protocol.ReplicatedMapAddEntryListenerEncodeRequest(rmp.name, rmp.isSmart())
 	eventHandler := rmp.createEventHandler(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
+	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
 		return protocol.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) *string {
+	}, func(clientMessage *protocol.ClientMessage) string {
 		return protocol.ReplicatedMapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
 
 func (rmp *replicatedMapProxy) AddEntryListenerWithPredicate(listener interface{},
-	predicate interface{}) (registrationID *string, err error) {
+	predicate interface{}) (registrationID string, err error) {
 	err = rmp.validateEntryListener(listener)
 	if err != nil {
 		return
 	}
 	predicateData, err := rmp.validateAndSerializePredicate(predicate)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request := protocol.ReplicatedMapAddEntryListenerWithPredicateEncodeRequest(rmp.name, predicateData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerWithPredicate(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
+	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
 		return protocol.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) *string {
+	}, func(clientMessage *protocol.ClientMessage) string {
 		return protocol.ReplicatedMapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
 	})
 }
 
-func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *string, err error) {
+func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID string, err error) {
 	err = rmp.validateEntryListener(listener)
 	if err != nil {
 		return
 	}
 	keyData, err := rmp.validateAndSerialize(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request := protocol.ReplicatedMapAddEntryListenerToKeyEncodeRequest(rmp.name, keyData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerToKey(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
+	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
 		return protocol.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) *string {
+	}, func(clientMessage *protocol.ClientMessage) string {
 		return protocol.ReplicatedMapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
 
 func (rmp *replicatedMapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{},
-	key interface{}) (registrationID *string, err error) {
+	key interface{}) (registrationID string, err error) {
 	err = rmp.validateEntryListener(listener)
 	if err != nil {
 		return
 	}
 	predicateData, err := rmp.validateAndSerializePredicate(predicate)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	keyData, err := rmp.validateAndSerialize(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request := protocol.ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(rmp.name, keyData, predicateData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerToKeyWithPredicate(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
+	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
 		return protocol.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) *string {
+	}, func(clientMessage *protocol.ClientMessage) string {
 		return protocol.ReplicatedMapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
 	})
 }
 
-func (rmp *replicatedMapProxy) RemoveEntryListener(registrationID *string) (removed bool, err error) {
-	return rmp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+func (rmp *replicatedMapProxy) RemoveEntryListener(registrationID string) (removed bool, err error) {
+	return rmp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
 		return protocol.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	})
 }
 
 func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
-	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid *string,
+	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
 	key, _ := rmp.toObject(keyData)
 	oldValue, _ := rmp.toObject(oldValueData)
@@ -254,7 +254,7 @@ func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValu
 func (rmp *replicatedMapProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.ReplicatedMapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
@@ -264,7 +264,7 @@ func (rmp *replicatedMapProxy) createEventHandlerWithPredicate(listener interfac
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.ReplicatedMapAddEntryListenerWithPredicateHandle(clientMessage,
 			func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data,
-				eventType int32, uuid *string, numberOfAffectedEntries int32) {
+				eventType int32, uuid string, numberOfAffectedEntries int32) {
 				rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 			})
 	}
@@ -274,7 +274,7 @@ func (rmp *replicatedMapProxy) createEventHandlerToKey(listener interface{}) fun
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.ReplicatedMapAddEntryListenerToKeyHandle(clientMessage,
 			func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data,
-				eventType int32, uuid *string, numberOfAffectedEntries int32) {
+				eventType int32, uuid string, numberOfAffectedEntries int32) {
 				rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 			})
 	}
@@ -285,7 +285,7 @@ func (rmp *replicatedMapProxy) createEventHandlerToKeyWithPredicate(listener int
 	return func(clientMessage *protocol.ClientMessage) {
 		protocol.ReplicatedMapAddEntryListenerToKeyWithPredicateHandle(clientMessage,
 			func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data,
-				eventType int32, uuid *string, numberOfAffectedEntries int32) {
+				eventType int32, uuid string, numberOfAffectedEntries int32) {
 				rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 			})
 	}

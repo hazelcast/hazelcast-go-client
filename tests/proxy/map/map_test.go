@@ -1013,7 +1013,7 @@ func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationID(t *testing.T
 	registrationID, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
 	assert.Equal(t, err, nil, nil)
 	invalidRegistrationID := "invalid"
-	removed, _ := mp.RemoveEntryListener(&invalidRegistrationID)
+	removed, _ := mp.RemoveEntryListener(invalidRegistrationID)
 	if removed {
 		t.Fatal("remove entry listener to key with invalid registration id failed")
 	}

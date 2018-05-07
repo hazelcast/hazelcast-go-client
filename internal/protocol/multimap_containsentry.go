@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MultiMapContainsEntryCalculateSize(name *string, key *serialization.Data, value *serialization.Data, threadID int64) int {
+func MultiMapContainsEntryCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,7 +30,7 @@ func MultiMapContainsEntryCalculateSize(name *string, key *serialization.Data, v
 	return dataSize
 }
 
-func MultiMapContainsEntryEncodeRequest(name *string, key *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
+func MultiMapContainsEntryEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapContainsEntryCalculateSize(name, key, value, threadID))
 	clientMessage.SetMessageType(multimapContainsEntry)

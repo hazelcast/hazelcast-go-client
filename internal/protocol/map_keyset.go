@@ -18,14 +18,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapKeySetCalculateSize(name *string) int {
+func MapKeySetCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func MapKeySetEncodeRequest(name *string) *ClientMessage {
+func MapKeySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapKeySetCalculateSize(name))
 	clientMessage.SetMessageType(mapKeySet)

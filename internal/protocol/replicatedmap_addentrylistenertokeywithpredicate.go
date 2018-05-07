@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func ReplicatedMapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, key *serialization.Data, predicate *serialization.Data, localOnly bool) int {
+func ReplicatedMapAddEntryListenerToKeyWithPredicateCalculateSize(name string, key *serialization.Data, predicate *serialization.Data, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,7 +30,7 @@ func ReplicatedMapAddEntryListenerToKeyWithPredicateCalculateSize(name *string, 
 	return dataSize
 }
 
-func ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(name *string, key *serialization.Data, predicate *serialization.Data, localOnly bool) *ClientMessage {
+func ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(name string, key *serialization.Data, predicate *serialization.Data, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, localOnly))
 	clientMessage.SetMessageType(replicatedmapAddEntryListenerToKeyWithPredicate)
@@ -43,17 +43,17 @@ func ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(name *string, 
 	return clientMessage
 }
 
-func ReplicatedMapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func ReplicatedMapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
 }
 
-type ReplicatedMapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
+type ReplicatedMapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func ReplicatedMapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func ReplicatedMapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()

@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapUnlockCalculateSize(name *string, key *serialization.Data, threadID int64, referenceID int64) int {
+func MapUnlockCalculateSize(name string, key *serialization.Data, threadID int64, referenceID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,7 +30,7 @@ func MapUnlockCalculateSize(name *string, key *serialization.Data, threadID int6
 	return dataSize
 }
 
-func MapUnlockEncodeRequest(name *string, key *serialization.Data, threadID int64, referenceID int64) *ClientMessage {
+func MapUnlockEncodeRequest(name string, key *serialization.Data, threadID int64, referenceID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapUnlockCalculateSize(name, key, threadID, referenceID))
 	clientMessage.SetMessageType(mapUnlock)

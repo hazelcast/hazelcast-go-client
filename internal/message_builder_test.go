@@ -40,8 +40,8 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 
 	testString := "testString"
 	serverVersion := "3.9"
-	expectedClientMessage := protocol.ClientAuthenticationEncodeRequest(&testString, &testString, &testString, &testString, false,
-		&testString, 1, &serverVersion)
+	expectedClientMessage := protocol.ClientAuthenticationEncodeRequest(testString, testString, testString, testString, false,
+		testString, 1, serverVersion)
 	expectedClientMessage.SetFlags(bufutil.BeginEndFlag)
 	expectedClientMessage.SetCorrelationID(1)
 	expectedClientMessage.SetFrameLength(int32(len(expectedClientMessage.Buffer)))

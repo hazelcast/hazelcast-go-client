@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name *string, includeValue bool, localOnly bool) int {
+func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name *string, includeVa
 	return dataSize
 }
 
-func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name *string, includeValue bool, localOnly bool) *ClientMessage {
+func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapAddNearCacheEntryListenerCalculateSize(name, includeValue, localOnly))
 	clientMessage.SetMessageType(replicatedmapAddNearCacheEntryListener)
@@ -41,17 +41,17 @@ func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name *string, includeVa
 	return clientMessage
 }
 
-func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
 }
 
-type ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, *string, int32)
+type ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()

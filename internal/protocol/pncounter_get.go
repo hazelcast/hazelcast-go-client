@@ -18,13 +18,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func PNCounterGetCalculateSize(name *string, replicaTimestamps []*Pair, targetReplica *Address) int {
+func PNCounterGetCalculateSize(name string, replicaTimestamps []*Pair, targetReplica *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	dataSize += bufutil.Int32SizeInBytes
 	for _, replicaTimestampsItem := range replicaTimestamps {
-		key := replicaTimestampsItem.key.(*string)
+		key := replicaTimestampsItem.key.(string)
 		val := replicaTimestampsItem.value.(int64)
 		dataSize += stringCalculateSize(key)
 		dataSize += int64CalculateSize(val)
@@ -33,7 +33,7 @@ func PNCounterGetCalculateSize(name *string, replicaTimestamps []*Pair, targetRe
 	return dataSize
 }
 
-func PNCounterGetEncodeRequest(name *string, replicaTimestamps []*Pair, targetReplica *Address) *ClientMessage {
+func PNCounterGetEncodeRequest(name string, replicaTimestamps []*Pair, targetReplica *Address) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, PNCounterGetCalculateSize(name, replicaTimestamps, targetReplica))
 	clientMessage.SetMessageType(pncounterGet)
@@ -41,7 +41,7 @@ func PNCounterGetEncodeRequest(name *string, replicaTimestamps []*Pair, targetRe
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(replicaTimestamps)))
 	for _, replicaTimestampsItem := range replicaTimestamps {
-		key := replicaTimestampsItem.key.(*string)
+		key := replicaTimestampsItem.key.(string)
 		val := replicaTimestampsItem.value.(int64)
 		clientMessage.AppendString(key)
 		clientMessage.AppendInt64(val)

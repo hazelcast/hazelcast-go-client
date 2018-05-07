@@ -37,7 +37,7 @@ type pnCounterProxy struct {
 	random                      *rand.Rand
 }
 
-func newPNCounterProxy(client *HazelcastClient, serviceName *string, name *string) (*pnCounterProxy, error) {
+func newPNCounterProxy(client *HazelcastClient, serviceName string, name string) (*pnCounterProxy, error) {
 	pn := &pnCounterProxy{
 		proxy:          &proxy{client, serviceName, name},
 		emptyAddresses: make(map[core.Address]struct{}),
@@ -247,7 +247,7 @@ func (pn *pnCounterProxy) getMaxConfiguredReplicaCount() (int32, error) {
 func (pn *pnCounterProxy) ToVectorClock(replicaLogicalTimestamps []*protocol.Pair) (timestamps *vectorClock) {
 	timestamps = newVectorClock()
 	for _, pair := range replicaLogicalTimestamps {
-		timestamps.SetReplicaTimestamp(pair.Key().(*string), pair.Value().(int64))
+		timestamps.SetReplicaTimestamp(pair.Key().(string), pair.Value().(int64))
 	}
 	return
 }
