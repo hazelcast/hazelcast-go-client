@@ -38,8 +38,8 @@ func (fp *flakeIDGeneratorProxy) NewIDBatch(batchSize int32) (*flake_id.IDBatch,
 	return flake_id.NewIDBatch(base, increment, newBatchSize), nil
 }
 
-func newFlakeIDGenerator(client *HazelcastClient, serviceName *string, name *string) (*flakeIDGeneratorProxy, error) {
-	config := client.ClientConfig.GetFlakeIDGeneratorConfig(*name)
+func newFlakeIDGenerator(client *HazelcastClient, serviceName string, name string) (*flakeIDGeneratorProxy, error) {
+	config := client.ClientConfig.GetFlakeIDGeneratorConfig(name)
 	flakeIDGenerator := &flakeIDGeneratorProxy{}
 	flakeIDGenerator.proxy = &proxy{client: client, serviceName: serviceName, name: name}
 	flakeIDGenerator.batcher = flake_id.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIDGenerator)

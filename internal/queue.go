@@ -28,7 +28,7 @@ type queueProxy struct {
 	*partitionSpecificProxy
 }
 
-func newQueueProxy(client *HazelcastClient, serviceName *string, name *string) (*queueProxy, error) {
+func newQueueProxy(client *HazelcastClient, serviceName string, name string) (*queueProxy, error) {
 	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (qp *queueProxy) AddAll(items []interface{}) (changed bool, err error) {
 	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueAddAllDecodeResponse)
 }
 
-func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error) {
 	err = qp.validateItemListener(listener)
 	if err != nil {
 		return
@@ -54,9 +54,9 @@ func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (
 	request := protocol.QueueAddListenerEncodeRequest(qp.name, includeValue, false)
 	eventHandler := qp.createEventHandler(listener)
 	return qp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID *string) *protocol.ClientMessage {
+		func(registrationID string) *protocol.ClientMessage {
 			return protocol.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) *string {
+		}, func(clientMessage *protocol.ClientMessage) string {
 			return protocol.QueueAddListenerDecodeResponse(clientMessage)()
 		})
 }
@@ -197,8 +197,8 @@ func (qp *queueProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 	return qp.decodeToBoolAndError(responseMessage, err, protocol.QueueCompareAndRemoveAllDecodeResponse)
 }
 
-func (qp *queueProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return qp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+func (qp *queueProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
+	return qp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
 		return protocol.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
 	})
 }
@@ -233,7 +233,7 @@ func (qp *queueProxy) ToSlice() (items []interface{}, err error) {
 
 func (qp *queueProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
 	return func(clientMessage *protocol.ClientMessage) {
-		protocol.QueueAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid *string, eventType int32) {
+		protocol.QueueAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid string, eventType int32) {
 			onItemEvent := qp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

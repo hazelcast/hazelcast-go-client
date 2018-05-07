@@ -28,11 +28,11 @@ const (
 
 type vectorClock struct {
 	mutex             sync.RWMutex //guards replicaTimestamps
-	replicaTimestamps map[*string]int64
+	replicaTimestamps map[string]int64
 }
 
 func newVectorClock() *vectorClock {
-	return &vectorClock{replicaTimestamps: make(map[*string]int64)}
+	return &vectorClock{replicaTimestamps: make(map[string]int64)}
 }
 
 func (*vectorClock) FactoryID() int32 {
@@ -48,7 +48,7 @@ func (v *vectorClock) WriteData(output serialization.DataOutput) (err error) {
 	defer v.mutex.RUnlock()
 	output.WriteInt32(int32(len(v.replicaTimestamps)))
 	for key, value := range v.replicaTimestamps {
-		output.WriteUTF(*key)
+		output.WriteUTF(key)
 		output.WriteInt64(value)
 	}
 	return
@@ -68,7 +68,7 @@ func (v *vectorClock) ReadData(input serialization.DataInput) error {
 		if err != nil {
 			return err
 		}
-		v.replicaTimestamps[&replicaID] = timestamp
+		v.replicaTimestamps[replicaID] = timestamp
 	}
 	return nil
 }
@@ -100,13 +100,13 @@ func (v *vectorClock) IsAfter(other *vectorClock) (isAfter bool) {
 	return anyTimestampGreater || (len(v.replicaTimestamps) > len(other.replicaTimestamps))
 }
 
-func (v *vectorClock) SetReplicaTimestamp(replicaID *string, timestamp int64) {
+func (v *vectorClock) SetReplicaTimestamp(replicaID string, timestamp int64) {
 	v.mutex.Lock()
 	v.replicaTimestamps[replicaID] = timestamp
 	v.mutex.Unlock()
 }
 
-func (v *vectorClock) TimestampForReplica(replicaID *string) (int64, bool) {
+func (v *vectorClock) TimestampForReplica(replicaID string) (int64, bool) {
 	v.mutex.RLock()
 	val, ok := v.replicaTimestamps[replicaID]
 	v.mutex.RUnlock()

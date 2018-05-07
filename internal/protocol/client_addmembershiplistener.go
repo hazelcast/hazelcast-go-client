@@ -35,9 +35,9 @@ func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	return clientMessage
 }
 
-func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
@@ -45,7 +45,7 @@ func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) fun
 
 type ClientAddMembershipListenerHandleEventMemberFunc func(*Member, int32)
 type ClientAddMembershipListenerHandleEventMemberListFunc func([]*Member)
-type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(*string, *string, int32, *string)
+type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(string, string, int32, string)
 
 func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) (member *Member, eventType int32) {
 	member = MemberCodecDecode(clientMessage)
@@ -63,7 +63,7 @@ func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessa
 	return
 }
 
-func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (uuid *string, key *string, operationType int32, value *string) {
+func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (uuid string, key string, operationType int32, value string) {
 	uuid = clientMessage.ReadString()
 	key = clientMessage.ReadString()
 	operationType = clientMessage.ReadInt32()

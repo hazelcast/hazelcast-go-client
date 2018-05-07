@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func QueueDrainToMaxSizeCalculateSize(name *string, maxSize int32) int {
+func QueueDrainToMaxSizeCalculateSize(name string, maxSize int32) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,7 +27,7 @@ func QueueDrainToMaxSizeCalculateSize(name *string, maxSize int32) int {
 	return dataSize
 }
 
-func QueueDrainToMaxSizeEncodeRequest(name *string, maxSize int32) *ClientMessage {
+func QueueDrainToMaxSizeEncodeRequest(name string, maxSize int32) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueDrainToMaxSizeCalculateSize(name, maxSize))
 	clientMessage.SetMessageType(queueDrainToMaxSize)

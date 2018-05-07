@@ -32,7 +32,7 @@ type Queue interface {
 	// To receive an event, listener should implement a corresponding interface for that event
 	// such as ItemAddedListener, ItemRemovedListener.
 	// AddItemListener returns the registrationID of the listener.
-	AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error)
+	AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error)
 
 	// Clear removes all of the items in this queue.
 	Clear() (err error)
@@ -94,7 +94,7 @@ type Queue interface {
 
 	// RemoveItemListener removes the item listener with the given registrationID from this queue.
 	// RemoveItemListener returns true if the listener is removed, false otherwise.
-	RemoveItemListener(registrationID *string) (removed bool, err error)
+	RemoveItemListener(registrationID string) (removed bool, err error)
 
 	// RetainAll removes all the items from this queue except the 'items'
 	// RetainAll returns true if this queue has changed, false otherwise.

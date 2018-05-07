@@ -23,7 +23,7 @@ type listProxy struct {
 	*partitionSpecificProxy
 }
 
-func newListProxy(client *HazelcastClient, serviceName *string, name *string) (*listProxy, error) {
+func newListProxy(client *HazelcastClient, serviceName string, name string) (*listProxy, error) {
 	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (lp *listProxy) AddAllAt(index int32, elements []interface{}) (changed bool
 	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListAddAllWithIndexDecodeResponse)
 }
 
-func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error) {
 	err = lp.validateItemListener(listener)
 	if err != nil {
 		return
@@ -80,9 +80,9 @@ func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (r
 	request := protocol.ListAddListenerEncodeRequest(lp.name, includeValue, false)
 	eventHandler := lp.createEventHandler(listener)
 	return lp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID *string) *protocol.ClientMessage {
+		func(registrationID string) *protocol.ClientMessage {
 			return protocol.ListRemoveListenerEncodeRequest(lp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) *string {
+		}, func(clientMessage *protocol.ClientMessage) string {
 			return protocol.ListAddListenerDecodeResponse(clientMessage)()
 		})
 }
@@ -171,8 +171,8 @@ func (lp *listProxy) RemoveAll(elements []interface{}) (changed bool, err error)
 	return lp.decodeToBoolAndError(responseMessage, err, protocol.ListCompareAndRemoveAllDecodeResponse)
 }
 
-func (lp *listProxy) RemoveItemListener(registrationID *string) (removed bool, err error) {
-	return lp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+func (lp *listProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
+	return lp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
 		return protocol.ListRemoveListenerEncodeRequest(lp.name, registrationID)
 	})
 }
@@ -217,7 +217,7 @@ func (lp *listProxy) ToSlice() (elements []interface{}, err error) {
 
 func (lp *listProxy) createEventHandler(listener interface{}) func(clientMessage *protocol.ClientMessage) {
 	return func(clientMessage *protocol.ClientMessage) {
-		protocol.ListAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid *string, eventType int32) {
+		protocol.ListAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid string, eventType int32) {
 			onItemEvent := lp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

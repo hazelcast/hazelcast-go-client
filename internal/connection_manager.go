@@ -191,21 +191,21 @@ func (cm *connectionManager) getOwnerConnection() *Connection {
 }
 
 func (cm *connectionManager) authenticate(connection *Connection, asOwner bool) error {
-	uuid := cm.client.ClusterService.uuid.Load().(*string)
-	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*string)
+	uuid := cm.client.ClusterService.uuid.Load().(string)
+	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	clientType := protocol.ClientType
 	name := cm.client.ClientConfig.GroupConfig().Name()
 	password := cm.client.ClientConfig.GroupConfig().Password()
 	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
 	request := protocol.ClientAuthenticationEncodeRequest(
-		&name,
-		&password,
+		name,
+		password,
 		uuid,
 		ownerUUID,
 		asOwner,
-		&clientType,
+		clientType,
 		1,
-		&clientVersion,
+		clientVersion,
 	)
 	result, err := cm.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {

@@ -66,7 +66,7 @@ func (ls *lifecycleService) AddListener(listener interface{}) string {
 	return registrationID
 }
 
-func (ls *lifecycleService) RemoveListener(registrationID *string) bool {
+func (ls *lifecycleService) RemoveListener(registrationID string) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	listeners := ls.listeners.Load().(map[string]interface{})
@@ -74,9 +74,9 @@ func (ls *lifecycleService) RemoveListener(registrationID *string) bool {
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
-	_, found := copyListeners[*registrationID]
+	_, found := copyListeners[registrationID]
 	if found {
-		delete(copyListeners, *registrationID)
+		delete(copyListeners, registrationID)
 	}
 	ls.listeners.Store(copyListeners)
 	return found

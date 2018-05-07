@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapAddIndexCalculateSize(name *string, attribute *string, ordered bool) int {
+func MapAddIndexCalculateSize(name string, attribute string, ordered bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,7 +27,7 @@ func MapAddIndexCalculateSize(name *string, attribute *string, ordered bool) int
 	return dataSize
 }
 
-func MapAddIndexEncodeRequest(name *string, attribute *string, ordered bool) *ClientMessage {
+func MapAddIndexEncodeRequest(name string, attribute string, ordered bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapAddIndexCalculateSize(name, attribute, ordered))
 	clientMessage.SetMessageType(mapAddIndex)

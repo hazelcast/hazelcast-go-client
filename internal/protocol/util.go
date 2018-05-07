@@ -25,8 +25,8 @@ func dataCalculateSize(d *serialization.Data) int {
 	return len(d.Buffer()) + bufutil.Int32SizeInBytes
 }
 
-func stringCalculateSize(str *string) int {
-	return len(*str) + bufutil.Int32SizeInBytes
+func stringCalculateSize(str string) int {
+	return len(str) + bufutil.Int32SizeInBytes
 }
 
 func int64CalculateSize(v int64) int {
@@ -35,7 +35,7 @@ func int64CalculateSize(v int64) int {
 
 func addressCalculateSize(a *Address) int {
 	dataSize := 0
-	dataSize += stringCalculateSize(&a.host)
+	dataSize += stringCalculateSize(a.host)
 	dataSize += bufutil.Int32SizeInBytes
 	return dataSize
 }

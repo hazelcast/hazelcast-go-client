@@ -133,24 +133,24 @@ func DataEntryViewCalculateSize(ev *DataEntryView) int {
 */
 func MemberCodecEncode(msg *ClientMessage, member *Member) {
 	AddressCodecEncode(msg, &member.address)
-	msg.AppendString(&member.uuid)
+	msg.AppendString(member.uuid)
 	msg.AppendBool(member.isLiteMember)
 	msg.AppendInt32(int32(len(member.attributes)))
 	for key, value := range member.attributes {
-		msg.AppendString(&key)
-		msg.AppendString(&value)
+		msg.AppendString(key)
+		msg.AppendString(value)
 	}
 }
 
 func MemberCalculateSize(member *Member) int {
 	dataSize := 0
 	dataSize += addressCalculateSize(&member.address)
-	dataSize += stringCalculateSize(&member.uuid)
+	dataSize += stringCalculateSize(member.uuid)
 	dataSize += bufutil.BoolSizeInBytes
 	dataSize += bufutil.Int32SizeInBytes //Size of the map(attributes)
 	for key, value := range member.attributes {
-		dataSize += stringCalculateSize(&key)
-		dataSize += stringCalculateSize(&value)
+		dataSize += stringCalculateSize(key)
+		dataSize += stringCalculateSize(value)
 	}
 	return dataSize
 }
@@ -159,13 +159,13 @@ func MemberCalculateSize(member *Member) int {
 	DistributedObjectInfo Helper functions
 */
 func DistributedObjectInfoCodecEncode(msg *ClientMessage, obj *DistributedObjectInfo) {
-	msg.AppendString(&obj.serviceName)
-	msg.AppendString(&obj.name)
+	msg.AppendString(obj.serviceName)
+	msg.AppendString(obj.name)
 }
 
 func DistributedObjectInfoCalculateSize(obj *DistributedObjectInfo) int {
 	dataSize := 0
-	dataSize += stringCalculateSize(&obj.name)
-	dataSize += stringCalculateSize(&obj.serviceName)
+	dataSize += stringCalculateSize(obj.name)
+	dataSize += stringCalculateSize(obj.serviceName)
 	return dataSize
 }

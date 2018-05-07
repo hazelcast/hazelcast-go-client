@@ -159,7 +159,7 @@ type EntryEvent interface {
 	EventType() int32
 
 	// UUID returns the uuid of the member.
-	UUID() *string
+	UUID() string
 }
 
 // ItemEvent is List, Set and Queue events common contract.
@@ -183,7 +183,7 @@ type MapEvent interface {
 	EventType() int32
 
 	// UUID returns the uuid of the member.
-	UUID() *string
+	UUID() string
 
 	// NumberOfAffectedEntries returns the number of affected
 	// entries by this event.

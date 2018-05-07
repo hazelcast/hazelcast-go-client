@@ -28,7 +28,7 @@ type mapProxy struct {
 	*proxy
 }
 
-func newMapProxy(client *HazelcastClient, serviceName *string, name *string) (*mapProxy, error) {
+func newMapProxy(client *HazelcastClient, serviceName string, name string) (*mapProxy, error) {
 	return &mapProxy{&proxy{client, serviceName, name}}, nil
 }
 
@@ -197,7 +197,7 @@ func (mp *mapProxy) IsEmpty() (empty bool, err error) {
 }
 
 func (mp *mapProxy) AddIndex(attribute string, ordered bool) (err error) {
-	request := protocol.MapAddIndexEncodeRequest(mp.name, &attribute, ordered)
+	request := protocol.MapAddIndexEncodeRequest(mp.name, attribute, ordered)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
@@ -461,113 +461,113 @@ func (mp *mapProxy) GetEntryView(key interface{}) (entryView core.EntryView, err
 	return entryView, nil
 }
 
-func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error) {
+func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error) {
 	var request *protocol.ClientMessage
 	listenerFlags, err := protocol.GetMapListenerFlags(listener)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request = protocol.MapAddEntryListenerEncodeRequest(mp.name, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *protocol.ClientMessage) {
 		protocol.MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string,
+			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
+	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
 		return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) *string {
+	}, func(clientMessage *protocol.ClientMessage) string {
 		return protocol.MapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
 
 func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (
-	*string, error) {
+	string, error) {
 	var request *protocol.ClientMessage
 	listenerFlags, err := protocol.GetMapListenerFlags(listener)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request = protocol.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, false)
 	eventHandler := func(clientMessage *protocol.ClientMessage) {
 		protocol.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string,
+			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID *string) *protocol.ClientMessage {
+		func(registrationID string) *protocol.ClientMessage {
 			return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) *string {
+		}, func(clientMessage *protocol.ClientMessage) string {
 			return protocol.MapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
 		})
 }
 
 func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (
-	registrationID *string, err error) {
+	registrationID string, err error) {
 	var request *protocol.ClientMessage
 	listenerFlags, err := protocol.GetMapListenerFlags(listener)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request = protocol.MapAddEntryListenerToKeyEncodeRequest(mp.name, keyData, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *protocol.ClientMessage) {
 		protocol.MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string,
+			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *string) *protocol.ClientMessage {
+	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
 		return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) *string {
+	}, func(clientMessage *protocol.ClientMessage) string {
 		return protocol.MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
 
 func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{},
-	includeValue bool) (*string, error) {
+	includeValue bool) (string, error) {
 	var request *protocol.ClientMessage
 	listenerFlags, err := protocol.GetMapListenerFlags(listener)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	request = protocol.MapAddEntryListenerToKeyWithPredicateEncodeRequest(mp.name, keyData, predicateData, includeValue,
 		listenerFlags, false)
 	eventHandler := func(clientMessage *protocol.ClientMessage) {
 		protocol.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid *string, numberOfAffectedEntries int32) {
+			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID *string) *protocol.ClientMessage {
+		func(registrationID string) *protocol.ClientMessage {
 			return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) *string {
+		}, func(clientMessage *protocol.ClientMessage) string {
 			return protocol.MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
 		})
 }
 
 func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
-	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid *string,
+	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
 	key, _ := mp.toObject(keyData)
 	oldValue, _ := mp.toObject(oldValueData)
@@ -595,8 +595,8 @@ func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *seri
 	}
 }
 
-func (mp *mapProxy) RemoveEntryListener(registrationID *string) (bool, error) {
-	return mp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+func (mp *mapProxy) RemoveEntryListener(registrationID string) (bool, error) {
+	return mp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
 		return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 	})
 }

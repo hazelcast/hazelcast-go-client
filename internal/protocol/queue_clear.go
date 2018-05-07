@@ -14,14 +14,14 @@
 
 package protocol
 
-func QueueClearCalculateSize(name *string) int {
+func QueueClearCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func QueueClearEncodeRequest(name *string) *ClientMessage {
+func QueueClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, QueueClearCalculateSize(name))
 	clientMessage.SetMessageType(queueClear)

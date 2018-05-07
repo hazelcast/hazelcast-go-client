@@ -54,9 +54,9 @@ func newClusterService(client *HazelcastClient, config *config.ClientConfig) *cl
 	service.members.Store(make([]*protocol.Member, 0))    //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
 	ownerUUID := ""
-	service.ownerUUID.Store(&ownerUUID) //Initialize
+	service.ownerUUID.Store(ownerUUID) //Initialize
 	uuid := ""
-	service.uuid.Store(&uuid) //Initialize
+	service.uuid.Store(uuid) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
 		service.AddListener(membershipListener)
 	}
@@ -187,7 +187,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	registrationID := protocol.ClientAddMembershipListenerDecodeResponse(response)()
 	wg.Wait() // Wait until the initial member list is fetched.
 	cs.logMembers()
-	log.Println("Registered membership listener with ID ", *registrationID)
+	log.Println("Registered membership listener with ID ", registrationID)
 	return nil
 }
 
@@ -203,7 +203,7 @@ func (cs *clusterService) logMembers() {
 	log.Println(membersInfo)
 }
 
-func (cs *clusterService) AddListener(listener interface{}) *string {
+func (cs *clusterService) AddListener(listener interface{}) string {
 	registrationID, _ := IPutil.NewUUID()
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
@@ -214,10 +214,10 @@ func (cs *clusterService) AddListener(listener interface{}) *string {
 	}
 	copyListeners[registrationID] = listener
 	cs.listeners.Store(copyListeners)
-	return &registrationID
+	return registrationID
 }
 
-func (cs *clusterService) RemoveListener(registrationID *string) bool {
+func (cs *clusterService) RemoveListener(registrationID string) bool {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	listeners := cs.listeners.Load().(map[string]interface{})
@@ -225,9 +225,9 @@ func (cs *clusterService) RemoveListener(registrationID *string) bool {
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
-	_, found := copyListeners[*registrationID]
+	_, found := copyListeners[registrationID]
 	if found {
-		delete(copyListeners, *registrationID)
+		delete(copyListeners, registrationID)
 	}
 	cs.listeners.Store(copyListeners)
 	return found
@@ -277,7 +277,7 @@ func (cs *clusterService) handleMemberList(members []*protocol.Member) {
 	wg.Done() //initial member list is fetched
 }
 
-func (cs *clusterService) handleMemberAttributeChange(uuid *string, key *string, operationType int32, value *string) {
+func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {
 	//TODO :: implement this.
 }
 

@@ -29,8 +29,8 @@ const (
 
 type proxy struct {
 	client      *HazelcastClient
-	serviceName *string
-	name        *string
+	serviceName string
+	name        string
 }
 
 func (p *proxy) Destroy() (bool, error) {
@@ -42,15 +42,15 @@ func (p *proxy) isSmart() bool {
 }
 
 func (p *proxy) Name() string {
-	return *p.name
+	return p.name
 }
 
 func (p *proxy) PartitionKey() string {
-	return *p.name
+	return p.name
 }
 
 func (p *proxy) ServiceName() string {
-	return *p.serviceName
+	return p.serviceName
 }
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data *serialization.Data, err error) {
@@ -233,7 +233,7 @@ type partitionSpecificProxy struct {
 	partitionID int32
 }
 
-func newPartitionSpecificProxy(client *HazelcastClient, serviceName *string, name *string) (*partitionSpecificProxy, error) {
+func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name string) (*partitionSpecificProxy, error) {
 	var err error
 	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
 	parSpecProxy.partitionID, err = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
@@ -245,11 +245,11 @@ func (parSpecProxy *partitionSpecificProxy) invoke(request *protocol.ClientMessa
 	return parSpecProxy.invokeOnPartition(request, parSpecProxy.partitionID)
 }
 
-func (p *proxy) createOnItemEvent(listener interface{}) func(itemData *serialization.Data, uuid *string, eventType int32) {
-	return func(itemData *serialization.Data, uuid *string, eventType int32) {
+func (p *proxy) createOnItemEvent(listener interface{}) func(itemData *serialization.Data, uuid string, eventType int32) {
+	return func(itemData *serialization.Data, uuid string, eventType int32) {
 		var item interface{}
 		item, _ = p.toObject(itemData)
-		member := p.client.ClusterService.GetMemberByUUID(*uuid)
+		member := p.client.ClusterService.GetMemberByUUID(uuid)
 		itemEvent := protocol.NewItemEvent(p.name, item, eventType, member.(*protocol.Member))
 		if eventType == bufutil.ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {

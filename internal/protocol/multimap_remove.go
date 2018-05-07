@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MultiMapRemoveCalculateSize(name *string, key *serialization.Data, threadID int64) int {
+func MultiMapRemoveCalculateSize(name string, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func MultiMapRemoveCalculateSize(name *string, key *serialization.Data, threadID
 	return dataSize
 }
 
-func MultiMapRemoveEncodeRequest(name *string, key *serialization.Data, threadID int64) *ClientMessage {
+func MultiMapRemoveEncodeRequest(name string, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapRemoveCalculateSize(name, key, threadID))
 	clientMessage.SetMessageType(multimapRemove)

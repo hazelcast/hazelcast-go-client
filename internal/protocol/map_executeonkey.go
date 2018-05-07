@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadID int64) int {
+func MapExecuteOnKeyCalculateSize(name string, entryProcessor *serialization.Data, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,7 +30,7 @@ func MapExecuteOnKeyCalculateSize(name *string, entryProcessor *serialization.Da
 	return dataSize
 }
 
-func MapExecuteOnKeyEncodeRequest(name *string, entryProcessor *serialization.Data, key *serialization.Data, threadID int64) *ClientMessage {
+func MapExecuteOnKeyEncodeRequest(name string, entryProcessor *serialization.Data, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapExecuteOnKeyCalculateSize(name, entryProcessor, key, threadID))
 	clientMessage.SetMessageType(mapExecuteOnKey)

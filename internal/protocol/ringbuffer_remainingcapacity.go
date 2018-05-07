@@ -14,14 +14,14 @@
 
 package protocol
 
-func RingbufferRemainingCapacityCalculateSize(name *string) int {
+func RingbufferRemainingCapacityCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func RingbufferRemainingCapacityEncodeRequest(name *string) *ClientMessage {
+func RingbufferRemainingCapacityEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, RingbufferRemainingCapacityCalculateSize(name))
 	clientMessage.SetMessageType(ringbufferRemainingCapacity)

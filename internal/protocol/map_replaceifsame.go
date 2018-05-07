@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapReplaceIfSameCalculateSize(name *string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) int {
+func MapReplaceIfSameCalculateSize(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,7 +31,7 @@ func MapReplaceIfSameCalculateSize(name *string, key *serialization.Data, testVa
 	return dataSize
 }
 
-func MapReplaceIfSameEncodeRequest(name *string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
+func MapReplaceIfSameEncodeRequest(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapReplaceIfSameCalculateSize(name, key, testValue, value, threadID))
 	clientMessage.SetMessageType(mapReplaceIfSame)

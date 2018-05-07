@@ -14,7 +14,7 @@
 
 package protocol
 
-func ReplicatedMapRemoveEntryListenerCalculateSize(name *string, registrationID *string) int {
+func ReplicatedMapRemoveEntryListenerCalculateSize(name string, registrationID string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -22,7 +22,7 @@ func ReplicatedMapRemoveEntryListenerCalculateSize(name *string, registrationID 
 	return dataSize
 }
 
-func ReplicatedMapRemoveEntryListenerEncodeRequest(name *string, registrationID *string) *ClientMessage {
+func ReplicatedMapRemoveEntryListenerEncodeRequest(name string, registrationID string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapRemoveEntryListenerCalculateSize(name, registrationID))
 	clientMessage.SetMessageType(replicatedmapRemoveEntryListener)

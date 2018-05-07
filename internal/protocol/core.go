@@ -360,7 +360,7 @@ type EntryEvent struct {
 	oldValue     interface{}
 	mergingValue interface{}
 	eventType    int32
-	uuid         *string
+	uuid         string
 }
 
 func (e *EntryEvent) Key() interface{} {
@@ -379,7 +379,7 @@ func (e *EntryEvent) MergingValue() interface{} {
 	return e.mergingValue
 }
 
-func (e *EntryEvent) UUID() *string {
+func (e *EntryEvent) UUID() string {
 	return e.uuid
 }
 
@@ -387,19 +387,19 @@ func (e *EntryEvent) EventType() int32 {
 	return e.eventType
 }
 
-func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, uuid *string) *EntryEvent {
+func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, uuid string) *EntryEvent {
 	return &EntryEvent{key: key, value: value, oldValue: oldValue, mergingValue: mergingValue, eventType: eventType, uuid: uuid}
 }
 
 type MapEvent struct {
 	eventType               int32
-	uuid                    *string
+	uuid                    string
 	numberOfAffectedEntries int32
 }
 
-func NewItemEvent(name *string, item interface{}, eventType int32, member *Member) *ItemEvent {
+func NewItemEvent(name string, item interface{}, eventType int32, member *Member) *ItemEvent {
 	return &ItemEvent{
-		name:      *name,
+		name:      name,
 		item:      item,
 		eventType: eventType,
 		member:    member,
@@ -429,7 +429,7 @@ func (e *ItemEvent) Member() core.Member {
 	return e.member
 }
 
-func (e *MapEvent) UUID() *string {
+func (e *MapEvent) UUID() string {
 	return e.uuid
 }
 
@@ -441,7 +441,7 @@ func (e *MapEvent) EventType() int32 {
 	return e.eventType
 }
 
-func NewMapEvent(eventType int32, uuid *string, numberOfAffectedEntries int32) *MapEvent {
+func NewMapEvent(eventType int32, uuid string, numberOfAffectedEntries int32) *MapEvent {
 	return &MapEvent{eventType: eventType, uuid: uuid, numberOfAffectedEntries: numberOfAffectedEntries}
 }
 
@@ -477,8 +477,8 @@ type EntryExpiredListener interface {
 	EntryExpired(core.EntryEvent)
 }
 
-type DecodeListenerResponse func(message *ClientMessage) *string
-type EncodeListenerRemoveRequest func(registrationID *string) *ClientMessage
+type DecodeListenerResponse func(message *ClientMessage) string
+type EncodeListenerRemoveRequest func(registrationID string) *ClientMessage
 type MemberAddedListener interface {
 	MemberAdded(member core.Member)
 }

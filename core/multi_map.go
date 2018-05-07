@@ -74,7 +74,7 @@ type MultiMap interface {
 	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
 	// MapEvictedListener, MapClearedListener.
 	// It returns registration ID for this entry listener.
-	AddEntryListener(listener interface{}, includeValue bool) (registrationID *string, err error)
+	AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error)
 
 	// AddEntryListenerToKey adds an entry listener to this multi-map.
 	// To receive an event, listener should implement a corresponding interface for that event such as
@@ -82,10 +82,10 @@ type MultiMap interface {
 	// MapEvictedListener, MapClearedListener.
 	// This entry listener will only be notified of updates related to this key.
 	// It returns registration ID for this entry listener.
-	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID *string, err error)
+	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID string, err error)
 
 	// RemoveEntryListener removes the entry listener by the registration ID.
-	RemoveEntryListener(registrationID *string) (removed bool, err error)
+	RemoveEntryListener(registrationID string) (removed bool, err error)
 
 	// Lock acquires a lock for the specified key.
 	// If the lock is not available, then

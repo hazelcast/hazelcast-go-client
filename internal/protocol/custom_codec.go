@@ -18,14 +18,14 @@ package protocol
 Address Codec
 */
 func AddressCodecEncode(msg *ClientMessage, address *Address) {
-	msg.AppendString(&address.host)
+	msg.AppendString(address.host)
 	msg.AppendInt32(address.port)
 }
 
 func AddressCodecDecode(msg *ClientMessage) *Address {
 	host := msg.ReadString()
 	port := msg.ReadInt32()
-	return &Address{*host, port}
+	return &Address{host, port}
 }
 
 /*
@@ -35,7 +35,7 @@ DistributedObjectInfo Codec
 func DistributedObjectInfoCodecDecode(msg *ClientMessage) *DistributedObjectInfo {
 	serviceName := msg.ReadString()
 	name := msg.ReadString()
-	return &DistributedObjectInfo{*name, *serviceName}
+	return &DistributedObjectInfo{name, serviceName}
 }
 
 /*
@@ -51,9 +51,9 @@ func MemberCodecDecode(msg *ClientMessage) *Member {
 	for i := 0; i < int(attributeSize); i++ {
 		key := msg.ReadString()
 		value := msg.ReadString()
-		attributes[*key] = *value
+		attributes[key] = value
 	}
-	return &Member{*address, *uuid, liteMember, attributes}
+	return &Member{*address, uuid, liteMember, attributes}
 }
 
 func DataEntryViewCodecDecode(msg *ClientMessage) *DataEntryView {
@@ -89,9 +89,9 @@ func UUIDCodecDecode(msg *ClientMessage) *uuid {
 func ErrorCodecDecode(msg *ClientMessage) *Error {
 	response := Error{}
 	response.errorCode = msg.ReadInt32()
-	response.className = *msg.ReadString()
+	response.className = msg.ReadString()
 	if !msg.ReadBool() {
-		response.message = *msg.ReadString()
+		response.message = msg.ReadString()
 	}
 	stackTrace := make([]*StackTraceElement, 0)
 	stackTraceCount := msg.ReadInt32()
@@ -101,7 +101,7 @@ func ErrorCodecDecode(msg *ClientMessage) *Error {
 	response.stackTrace = stackTrace
 	response.causeErrorCode = msg.ReadInt32()
 	if !msg.ReadBool() {
-		response.causeClassName = *msg.ReadString()
+		response.causeClassName = msg.ReadString()
 	}
 	return &response
 
@@ -112,8 +112,8 @@ func DecodeStackTrace(msg *ClientMessage) *StackTraceElement {
 	methodName := msg.ReadString()
 	fileName := ""
 	if !msg.ReadBool() {
-		fileName = *msg.ReadString()
+		fileName = msg.ReadString()
 	}
 	lineNumber := msg.ReadInt32()
-	return &StackTraceElement{*declaringClass, *methodName, fileName, lineNumber}
+	return &StackTraceElement{declaringClass, methodName, fileName, lineNumber}
 }

@@ -18,7 +18,7 @@ import (
 	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapProjectCalculateSize(name *string, projection *Data) int {
+func MapProjectCalculateSize(name string, projection *Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func MapProjectCalculateSize(name *string, projection *Data) int {
 	return dataSize
 }
 
-func MapProjectEncodeRequest(name *string, projection *Data) *ClientMessage {
+func MapProjectEncodeRequest(name string, projection *Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapProjectCalculateSize(name, projection))
 	clientMessage.SetMessageType(mapProject)

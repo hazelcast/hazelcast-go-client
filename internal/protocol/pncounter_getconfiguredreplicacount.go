@@ -14,14 +14,14 @@
 
 package protocol
 
-func PNCounterGetConfiguredReplicaCountCalculateSize(name *string) int {
+func PNCounterGetConfiguredReplicaCountCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func PNCounterGetConfiguredReplicaCountEncodeRequest(name *string) *ClientMessage {
+func PNCounterGetConfiguredReplicaCountEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, PNCounterGetConfiguredReplicaCountCalculateSize(name))
 	clientMessage.SetMessageType(pncounterGetConfiguredReplicaCount)

@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MultiMapTryLockCalculateSize(name *string, key *serialization.Data, threadID int64, lease int64, timeout int64, referenceID int64) int {
+func MultiMapTryLockCalculateSize(name string, key *serialization.Data, threadID int64, lease int64, timeout int64, referenceID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,7 +32,7 @@ func MultiMapTryLockCalculateSize(name *string, key *serialization.Data, threadI
 	return dataSize
 }
 
-func MultiMapTryLockEncodeRequest(name *string, key *serialization.Data, threadID int64, lease int64, timeout int64, referenceID int64) *ClientMessage {
+func MultiMapTryLockEncodeRequest(name string, key *serialization.Data, threadID int64, lease int64, timeout int64, referenceID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MultiMapTryLockCalculateSize(name, key, threadID, lease, timeout, referenceID))
 	clientMessage.SetMessageType(multimapTryLock)

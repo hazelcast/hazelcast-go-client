@@ -14,7 +14,7 @@
 
 package protocol
 
-func ListRemoveListenerCalculateSize(name *string, registrationID *string) int {
+func ListRemoveListenerCalculateSize(name string, registrationID string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -22,7 +22,7 @@ func ListRemoveListenerCalculateSize(name *string, registrationID *string) int {
 	return dataSize
 }
 
-func ListRemoveListenerEncodeRequest(name *string, registrationID *string) *ClientMessage {
+func ListRemoveListenerEncodeRequest(name string, registrationID string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ListRemoveListenerCalculateSize(name, registrationID))
 	clientMessage.SetMessageType(listRemoveListener)

@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func TopicPublishCalculateSize(name *string, message *serialization.Data) int {
+func TopicPublishCalculateSize(name string, message *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,7 +26,7 @@ func TopicPublishCalculateSize(name *string, message *serialization.Data) int {
 	return dataSize
 }
 
-func TopicPublishEncodeRequest(name *string, message *serialization.Data) *ClientMessage {
+func TopicPublishEncodeRequest(name string, message *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, TopicPublishCalculateSize(name, message))
 	clientMessage.SetMessageType(topicPublish)

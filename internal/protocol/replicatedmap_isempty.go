@@ -14,14 +14,14 @@
 
 package protocol
 
-func ReplicatedMapIsEmptyCalculateSize(name *string) int {
+func ReplicatedMapIsEmptyCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func ReplicatedMapIsEmptyEncodeRequest(name *string) *ClientMessage {
+func ReplicatedMapIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ReplicatedMapIsEmptyCalculateSize(name))
 	clientMessage.SetMessageType(replicatedmapIsEmpty)

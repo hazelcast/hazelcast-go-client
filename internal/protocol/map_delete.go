@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func MapDeleteCalculateSize(name *string, key *serialization.Data, threadID int64) int {
+func MapDeleteCalculateSize(name string, key *serialization.Data, threadID int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func MapDeleteCalculateSize(name *string, key *serialization.Data, threadID int6
 	return dataSize
 }
 
-func MapDeleteEncodeRequest(name *string, key *serialization.Data, threadID int64) *ClientMessage {
+func MapDeleteEncodeRequest(name string, key *serialization.Data, threadID int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapDeleteCalculateSize(name, key, threadID))
 	clientMessage.SetMessageType(mapDelete)

@@ -14,7 +14,7 @@
 
 package protocol
 
-func ClientDestroyProxyCalculateSize(name *string, serviceName *string) int {
+func ClientDestroyProxyCalculateSize(name string, serviceName string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -22,7 +22,7 @@ func ClientDestroyProxyCalculateSize(name *string, serviceName *string) int {
 	return dataSize
 }
 
-func ClientDestroyProxyEncodeRequest(name *string, serviceName *string) *ClientMessage {
+func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ClientDestroyProxyCalculateSize(name, serviceName))
 	clientMessage.SetMessageType(clientDestroyProxy)

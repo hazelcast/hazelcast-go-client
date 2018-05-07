@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
 )
 
-func TopicAddMessageListenerCalculateSize(name *string, localOnly bool) int {
+func TopicAddMessageListenerCalculateSize(name string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -28,7 +28,7 @@ func TopicAddMessageListenerCalculateSize(name *string, localOnly bool) int {
 	return dataSize
 }
 
-func TopicAddMessageListenerEncodeRequest(name *string, localOnly bool) *ClientMessage {
+func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, TopicAddMessageListenerCalculateSize(name, localOnly))
 	clientMessage.SetMessageType(topicAddMessageListener)
@@ -39,17 +39,17 @@ func TopicAddMessageListenerEncodeRequest(name *string, localOnly bool) *ClientM
 	return clientMessage
 }
 
-func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (response *string) {
+func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response *string) {
+	return func() (response string) {
 		response = clientMessage.ReadString()
 		return
 	}
 }
 
-type TopicAddMessageListenerHandleEventTopicFunc func(*serialization.Data, int64, *string)
+type TopicAddMessageListenerHandleEventTopicFunc func(*serialization.Data, int64, string)
 
-func TopicAddMessageListenerEventTopicDecode(clientMessage *ClientMessage) (item *serialization.Data, publishTime int64, uuid *string) {
+func TopicAddMessageListenerEventTopicDecode(clientMessage *ClientMessage) (item *serialization.Data, publishTime int64, uuid string) {
 	item = clientMessage.ReadData()
 	publishTime = clientMessage.ReadInt64()
 	uuid = clientMessage.ReadString()

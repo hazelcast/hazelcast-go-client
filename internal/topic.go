@@ -24,7 +24,7 @@ type topicProxy struct {
 	*partitionSpecificProxy
 }
 
-func newTopicProxy(client *HazelcastClient, serviceName *string, name *string) (*topicProxy, error) {
+func newTopicProxy(client *HazelcastClient, serviceName string, name string) (*topicProxy, error) {
 	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
 	if err != nil {
 		return nil, err
@@ -32,21 +32,21 @@ func newTopicProxy(client *HazelcastClient, serviceName *string, name *string) (
 	return &topicProxy{parSpecProxy}, nil
 }
 
-func (tp *topicProxy) AddMessageListener(messageListener core.TopicMessageListener) (registrationID *string, err error) {
+func (tp *topicProxy) AddMessageListener(messageListener core.TopicMessageListener) (registrationID string, err error) {
 	request := protocol.TopicAddMessageListenerEncodeRequest(tp.name, false)
 	eventHandler := tp.createEventHandler(messageListener)
 
 	return tp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID *string) *protocol.ClientMessage {
+		func(registrationID string) *protocol.ClientMessage {
 			return protocol.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) *string {
+		}, func(clientMessage *protocol.ClientMessage) string {
 			return protocol.TopicAddMessageListenerDecodeResponse(clientMessage)()
 		})
 
 }
 
-func (tp *topicProxy) RemoveMessageListener(registrationID *string) (removed bool, err error) {
-	return tp.client.ListenerService.deregisterListener(*registrationID, func(registrationID *string) *protocol.ClientMessage {
+func (tp *topicProxy) RemoveMessageListener(registrationID string) (removed bool, err error) {
+	return tp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
 		return protocol.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
 	})
 }
@@ -63,8 +63,8 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 
 func (tp *topicProxy) createEventHandler(messageListener core.TopicMessageListener) func(clientMessage *protocol.ClientMessage) {
 	return func(message *protocol.ClientMessage) {
-		protocol.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid *string) {
-			member := tp.client.ClusterService.GetMemberByUUID(*uuid)
+		protocol.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
+			member := tp.client.ClusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
 			itemEvent := protocol.NewTopicMessage(item, publishTime, member.(*protocol.Member))
 			messageListener.OnMessage(itemEvent)

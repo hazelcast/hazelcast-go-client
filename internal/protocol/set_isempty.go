@@ -14,14 +14,14 @@
 
 package protocol
 
-func SetIsEmptyCalculateSize(name *string) int {
+func SetIsEmptyCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func SetIsEmptyEncodeRequest(name *string) *ClientMessage {
+func SetIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, SetIsEmptyCalculateSize(name))
 	clientMessage.SetMessageType(setIsEmpty)

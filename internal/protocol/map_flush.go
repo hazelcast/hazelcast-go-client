@@ -14,14 +14,14 @@
 
 package protocol
 
-func MapFlushCalculateSize(name *string) int {
+func MapFlushCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
-func MapFlushEncodeRequest(name *string) *ClientMessage {
+func MapFlushEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, MapFlushCalculateSize(name))
 	clientMessage.SetMessageType(mapFlush)
