@@ -16,7 +16,7 @@ package serialization
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
-	internalclassdef "github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
+	internalClassDef "github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 )
@@ -24,11 +24,11 @@ import (
 type PortableContext struct {
 	service         *Service
 	portableVersion int32
-	classDefContext map[int32]*internalclassdef.ClassDefinitionContext
+	classDefContext map[int32]*internalClassDef.ClassDefinitionContext
 }
 
 func NewPortableContext(service *Service, portableVersion int32) *PortableContext {
-	return &PortableContext{service, portableVersion, make(map[int32]*internalclassdef.ClassDefinitionContext)}
+	return &PortableContext{service, portableVersion, make(map[int32]*internalClassDef.ClassDefinitionContext)}
 }
 
 func (c *PortableContext) Version() int32 {
@@ -71,8 +71,8 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 		name := string(temp)
 		var fieldFactoryID int32
 		var fieldClassID int32
-		var fieldVersion int32
-		if fieldType == internalclassdef.TypePortable {
+		fieldVersion := version
+		if fieldType == internalClassDef.TypePortable {
 			temp, err := input.ReadBool()
 			if err != nil {
 				return nil, err
@@ -94,9 +94,12 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 				if err != nil {
 					return nil, err
 				}
-				c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
+				_, err = c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
+				if err != nil {
+					return nil, err
+				}
 			}
-		} else if fieldType == internalclassdef.TypePortableArray {
+		} else if fieldType == internalClassDef.TypePortableArray {
 			k, err := input.ReadInt32()
 			if err != nil {
 				return nil, err
@@ -124,7 +127,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 				register = false
 			}
 		}
-		classDefBuilder.AddField(internalclassdef.NewFieldDefinitionImpl(i, name, int32(fieldType),
+		classDefBuilder.AddField(internalClassDef.NewFieldDefinitionImpl(i, name, int32(fieldType),
 			fieldFactoryID, fieldClassID, fieldVersion))
 	}
 
@@ -133,7 +136,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 	if register {
 		classDefinition, err = c.RegisterClassDefinition(classDefinition)
 		if err != nil {
-			return classDefinition, nil
+			return nil, err
 		}
 	}
 	return classDefinition, nil
@@ -164,7 +167,7 @@ func (c *PortableContext) RegisterClassDefinition(classDefinition serialization.
 	serialization.ClassDefinition, error) {
 	factoryID := classDefinition.FactoryID()
 	if c.classDefContext[factoryID] == nil {
-		c.classDefContext[factoryID] = internalclassdef.NewClassDefinitionContext(factoryID)
+		c.classDefContext[factoryID] = internalClassDef.NewClassDefinitionContext(factoryID)
 	}
 	return c.classDefContext[factoryID].Register(classDefinition)
 }
