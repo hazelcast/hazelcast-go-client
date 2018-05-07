@@ -187,7 +187,6 @@ func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 }
 
 func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
-	t.SkipNow()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 	crdtReplicationDelayedConfig, _ := tests.Read("crdt_replication_delayed_config.xml")
@@ -207,7 +206,6 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 }
 
 func TestPNCounter_Reset(t *testing.T) {
-	t.SkipNow()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 	crdtReplicationDelayedConfig, _ := tests.Read("crdt_replication_delayed_config.xml")
