@@ -355,3 +355,81 @@ func TestPortableSerializer4(t *testing.T) {
 		t.Error("ReadObject() failed")
 	}
 }
+
+type portableFactory struct {
+}
+
+func (*portableFactory) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &parent{}
+	} else if classID == 2 {
+		return &child{}
+	}
+	return
+}
+
+type child struct {
+	name string
+}
+
+func (*child) FactoryID() (factoryID int32) {
+	return 1
+}
+
+func (*child) ClassID() (classID int32) {
+	return 2
+}
+
+func (c *child) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteUTF("name", c.name)
+	return
+}
+
+func (c *child) ReadPortable(reader serialization.PortableReader) (err error) {
+	c.name, _ = reader.ReadUTF("name")
+	return
+}
+
+type parent struct {
+	child *child
+}
+
+func (*parent) FactoryID() (factoryID int32) {
+	return 1
+}
+
+func (*parent) ClassID() (classID int32) {
+	return 1
+}
+
+func (p *parent) WritePortable(writer serialization.PortableWriter) (err error) {
+	return writer.WritePortable("child", p.child)
+}
+
+func (p *parent) ReadPortable(reader serialization.PortableReader) (err error) {
+	obj, _ := reader.ReadPortable("child")
+	p.child = obj.(*child)
+	return
+}
+
+func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
+	sc := config.NewSerializationConfig()
+	sc.SetPortableVersion(6)
+	sc.AddPortableFactory(1, &portableFactory{})
+	ss1, _ := NewSerializationService(sc)
+	ss2, _ := NewSerializationService(sc)
+
+	// make sure ss2 cached class definition of child
+	ss2.ToData(&child{"Furkan"})
+
+	// serialized parent from ss1
+	p := &parent{&child{"Furkan"}}
+	data, _ := ss1.ToData(p)
+
+	// cached class definition of child and the class definition from data coming from ss1 should be compatible
+	deserializedParent, _ := ss2.ToObject(data)
+	if !reflect.DeepEqual(deserializedParent, p) {
+		t.Error("nested portable version is wrong")
+	}
+
+}
