@@ -16,7 +16,6 @@ package internal
 
 import (
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -27,16 +26,10 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	builder := &clientMessageBuilder{
 		incompleteMessages: make(map[int64]*proto.ClientMessage),
 	}
-	var mu = sync.Mutex{}
-	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
-	ch := make(chan *proto.ClientMessage)
-	builder.responseChannel = ch
 	var builtClientMessage *proto.ClientMessage
-	go func() {
-		mu.Lock()
-		builtClientMessage = <-ch
-		mu.Unlock()
-	}()
+	builder.handleResponse = func(command interface{}) {
+		builtClientMessage = command.(*proto.ClientMessage)
+	}
 
 	testString := "testString"
 	serverVersion := "3.9"
@@ -64,11 +57,9 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 	builder.onMessage(firstMessage)
 	secondMessage.SetFlags(bufutil.EndFlag)
 	builder.onMessage(secondMessage)
-	mu.Lock()
 	if !reflect.DeepEqual(builtClientMessage.Buffer, expectedClientMessage.Buffer) {
 		t.Fatal("message builder has failed")
 	}
-	mu.Unlock()
 
 }
 
@@ -76,9 +67,8 @@ func TestClientMessageBuilder_OnMessageWithNotFoundCorrelationID(t *testing.T) {
 	builder := &clientMessageBuilder{
 		incompleteMessages: make(map[int64]*proto.ClientMessage),
 	}
-	// make this channel blocking to ensure that test wont continue until the builtClientMessage is received
-	ch := make(chan *proto.ClientMessage)
-	builder.responseChannel = ch
+	builder.handleResponse = func(command interface{}) {
+	}
 	msg := proto.NewClientMessage(nil, 40)
 	msg.SetCorrelationID(2)
 	msg.SetFrameLength(int32(len(msg.Buffer)))

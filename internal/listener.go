@@ -99,7 +99,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 func (ls *listenerService) connectToAllMembersInternal() {
 	members := ls.client.ClusterService.GetMembers()
 	for _, member := range members {
-		ls.client.ConnectionManager.getOrConnect(member.Address().(*proto.Address), false)
+		ls.client.ConnectionManager.getOrConnect(member.Address().(core.Address), false)
 	}
 }
 
@@ -199,7 +199,6 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 	registrationKey := ls.registrationIDToListenerRegistration[registrationID]
 	invocation := newInvocation(registrationKey.request, -1, nil, connection, ls.client)
 	invocation.eventHandler = registrationKey.eventHandler
-	invocation.listenerResponseDecoder = registrationKey.responseDecoder
 	responseMessage, err := ls.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
@@ -239,14 +238,11 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 		connection := registration.connection
 		serverRegistrationID := registration.serverRegistrationID
 		request := requestEncoder(serverRegistrationID)
-		invocation := newInvocation(request, -1, nil, connection, ls.client)
-		_, err = ls.client.InvocationService.sendInvocation(invocation).Result()
+		_, err = ls.client.InvocationService.invokeOnConnection(request, connection).Result()
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
-				log.Println("Deregistration of listener with ID ", registrationID, " has failed to address ",
-					connection.endpoint.Load().(*proto.Address).Host(),
-					":", connection.endpoint.Load().(*proto.Address).Port())
+				log.Println("Deregistration of listener with ID ", registrationID, " has failed to connection ", connection)
 				continue
 			}
 		}
@@ -332,10 +328,8 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 		start := time.Now()
 		successful := true
 		for _, member := range members {
-			connectionChannel, errorChannel := ls.client.ConnectionManager.getOrConnect(member.Address().(*proto.Address), false)
-			select {
-			case <-connectionChannel:
-			case <-errorChannel:
+			_, err := ls.client.ConnectionManager.getOrConnect(member.Address(), false)
+			if err != nil {
 				successful = false
 			}
 		}

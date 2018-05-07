@@ -23,11 +23,11 @@ import (
 
 type HazelcastClient struct {
 	ClientConfig         *config.ClientConfig
-	InvocationService    *invocationService
+	InvocationService    invocationService
 	PartitionService     *partitionService
 	SerializationService *serialization.Service
 	LifecycleService     *lifecycleService
-	ConnectionManager    *connectionManager
+	ConnectionManager    connectionManager
 	ListenerService      *listenerService
 	ClusterService       *clusterService
 	ProxyManager         *proxyManager
