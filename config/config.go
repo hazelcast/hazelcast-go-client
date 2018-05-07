@@ -134,9 +134,8 @@ func (cc *ClientConfig) GetFlakeIDGeneratorConfig(name string) *FlakeIDGenerator
 }
 
 // AddFlakeIDGeneratorConfig adds the given config to the configurations map.
-func (cc *ClientConfig) AddFlakeIDGeneratorConfig(config *FlakeIDGeneratorConfig) *ClientConfig {
+func (cc *ClientConfig) AddFlakeIDGeneratorConfig(config *FlakeIDGeneratorConfig) {
 	cc.flakeIDGeneratorConfigMap[config.Name()] = config
-	return cc
 }
 
 // AddMembershipListener adds a membership listener.
@@ -307,10 +306,8 @@ func (gc *GroupConfig) Password() string {
 }
 
 // SetName sets the group name of the group.
-// SetName returns the configured GroupConfig for chaining.
-func (gc *GroupConfig) SetName(name string) *GroupConfig {
+func (gc *GroupConfig) SetName(name string) {
 	gc.name = name
-	return gc
 }
 
 // SetPassword sets the group password of the group.
@@ -404,42 +401,32 @@ func (nc *ClientNetworkConfig) InvocationTimeout() time.Duration {
 }
 
 // AddAddress adds given addresses to candidate address list that client will use to establish initial connection.
-// AddAddress returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) AddAddress(addresses ...string) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) AddAddress(addresses ...string) {
 	nc.addresses = append(nc.addresses, addresses...)
-	return nc
 }
 
 // SetAddresses sets given addresses as candidate address list that client will use to establish initial connection.
-// SetAddresses returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetAddresses(addresses []string) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetAddresses(addresses []string) {
 	nc.addresses = addresses
-	return nc
 }
 
 // SetConnectionAttemptLimit sets the connection attempt limit.
 // While client is trying to connect initially to one of the members in the addresses slice, all might not be
 // available. Instead of giving up, returning Error and stopping client, it will attempt to retry as much as defined
 // by this parameter.
-// SetConnectionAttemptLimit returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetConnectionAttemptLimit(connectionAttemptLimit int32) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetConnectionAttemptLimit(connectionAttemptLimit int32) {
 	nc.connectionAttemptLimit = connectionAttemptLimit
-	return nc
 }
 
 // SetConnectionAttemptPeriod sets the period for the next attempt to find a member to connect
-// SetConnectionAttemptPeriod returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod time.Duration) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod time.Duration) {
 	nc.connectionAttemptPeriod = connectionAttemptPeriod
-	return nc
 }
 
 // SetConnectionTimeout sets the connection timeout.
 // Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
-// SetConnectionTimeout returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout time.Duration) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout time.Duration) {
 	nc.connectionTimeout = connectionTimeout
-	return nc
 }
 
 // SetRedoOperation sets redoOperation.
@@ -447,10 +434,8 @@ func (nc *ClientNetworkConfig) SetConnectionTimeout(connectionTimeout time.Durat
 // This can be because of network, or simply because the member died. However it is not clear whether the
 // application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
 // retrying can cause to undesirable effects. Note that the redo can perform on any member.
-// SetRedoOperation returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetRedoOperation(redoOperation bool) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetRedoOperation(redoOperation bool) {
 	nc.redoOperation = redoOperation
-	return nc
 }
 
 // SetSmartRouting sets smartRouting.
@@ -458,15 +443,11 @@ func (nc *ClientNetworkConfig) SetRedoOperation(redoOperation bool) *ClientNetwo
 // Note that it uses a cached version of partitionService and doesn't
 // guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
 // Default value is true.
-// SetSmartRouting returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetSmartRouting(smartRouting bool) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetSmartRouting(smartRouting bool) {
 	nc.smartRouting = smartRouting
-	return nc
 }
 
 // SetInvocationTimeout sets the invocation timeout for sending invocation.
-// SetInvocationTimeout returns the configured ClientNetworkConfig for chaining.
-func (nc *ClientNetworkConfig) SetInvocationTimeout(invocationTimeout time.Duration) *ClientNetworkConfig {
+func (nc *ClientNetworkConfig) SetInvocationTimeout(invocationTimeout time.Duration) {
 	nc.invocationTimeout = invocationTimeout
-	return nc
 }

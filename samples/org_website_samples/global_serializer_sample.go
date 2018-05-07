@@ -28,7 +28,7 @@ func (*GlobalSerializer) ID() int32 {
 }
 
 func (*GlobalSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
-	// return MyFavoriteSerializer.deserialize(in)
+	// return MyFavoriteSerializer.deserialize(input)
 	return
 }
 
