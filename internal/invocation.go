@@ -207,7 +207,7 @@ func (is *invocationService) invokeSmart(invocation *invocation) {
 		if target, ok := is.client.PartitionService.partitionOwner(invocation.partitionID); ok {
 			is.sendToAddress(invocation, target)
 		} else {
-			is.handleException(invocation,
+			is.handleError(invocation,
 				core.NewHazelcastIOError(fmt.Sprintf("partition does not have an owner. partitionID: %d", invocation.partitionID), nil))
 		}
 	} else if invocation.address != nil {
@@ -235,7 +235,7 @@ func (is *invocationService) send(invocation *invocation, connectionChannel chan
 			is.sendToConnectionChannel <- &invocationConnection{invocation: invocation, connection: connection}
 		case err := <-errorChannel:
 			log.Println("The following error occurred while trying to send the invocation: ", err)
-			is.handleException(invocation, err)
+			is.handleError(invocation, err)
 		}
 	}()
 }
@@ -295,7 +295,7 @@ func (is *invocationService) unRegisterInvocation(correlationID int64) (*invocat
 
 func (is *invocationService) handleNotSentInvocation(correlationID int64) {
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
-		is.handleException(invocation, core.NewHazelcastIOError("packet is not sent", nil))
+		is.handleError(invocation, core.NewHazelcastIOError("packet is not sent", nil))
 	} else {
 		log.Println("No invocation has been found with the correlation iD: ", correlationID)
 	}
@@ -325,7 +325,7 @@ func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 		}
 		if response.MessageType() == bufutil.MessageTypeException {
 			err := createHazelcastError(convertToError(response))
-			is.handleException(invocation, err)
+			is.handleError(invocation, err)
 		} else {
 			invocation.response <- response
 		}
@@ -352,13 +352,13 @@ func (is *invocationService) cleanupConnection(connection *Connection, cause err
 func (is *invocationService) cleanupConnectionInternal(connection *Connection, cause error) {
 	for _, invocation := range is.responseWaitings {
 		if invocation.sentConnection == connection {
-			is.handleException(invocation, cause)
+			is.handleError(invocation, cause)
 		}
 	}
 
 }
 
-func (is *invocationService) handleException(invocation *invocation, err error) {
+func (is *invocationService) handleError(invocation *invocation, err error) {
 	is.unRegisterInvocationChannel <- invocation.request.CorrelationID()
 	if !is.client.LifecycleService.isLive.Load().(bool) {
 		invocation.err <- core.NewHazelcastClientNotActiveError(err.Error(), err)
