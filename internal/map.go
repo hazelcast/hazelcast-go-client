@@ -121,11 +121,23 @@ func (mp *mapProxy) Size() (size int32, err error) {
 }
 
 func (mp *mapProxy) Aggregate(aggregator interface{}) (result interface{}, err error) {
-	panic("implement me")
+	aggregatorData, err := mp.validateAndSerialize(aggregator)
+	if err != nil {
+		return nil, err
+	}
+	request := protocol.MapAggregateEncodeRequest(mp.name, aggregatorData)
+	responseMessage, err := mp.invokeOnRandomTarget(request)
+	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapAggregateDecodeResponse)
 }
 
 func (mp *mapProxy) AggregateWithPredicate(aggregator interface{}, predicate interface{}) (result interface{}, err error) {
-	panic("implement me")
+	aggregatorData, predicateData, err := mp.validateAndSerialize2(aggregator, predicate)
+	if err != nil {
+		return nil, err
+	}
+	request := protocol.MapAggregateWithPredicateEncodeRequest(mp.name, aggregatorData, predicateData)
+	responseMessage, err := mp.invokeOnRandomTarget(request)
+	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapAggregateWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) Project(projection interface{}) (result []interface{}, err error) {

@@ -21,6 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
 	"github.com/hazelcast/hazelcast-go-client/internal/predicates"
 	"github.com/hazelcast/hazelcast-go-client/internal/projection"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -278,6 +279,7 @@ func (s *Service) registerIdentifiedFactories() error {
 
 	factories[predicates.FactoryID] = predicates.NewFactory()
 	factories[projection.FactoryID] = projection.NewFactory()
+	factories[aggregation.FactoryID] = aggregation.NewFactory()
 
 	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
 	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
