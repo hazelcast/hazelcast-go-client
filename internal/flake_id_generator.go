@@ -15,33 +15,33 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/flake_id"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/flakeid"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type flakeIDGeneratorProxy struct {
 	*proxy
-	batcher *flake_id.AutoBatcher
+	batcher *flakeid.AutoBatcher
 }
 
 func (fp *flakeIDGeneratorProxy) NewID() (id int64, err error) {
 	return fp.batcher.NewID()
 }
 
-func (fp *flakeIDGeneratorProxy) NewIDBatch(batchSize int32) (*flake_id.IDBatch, error) {
-	request := protocol.FlakeIDGeneratorNewIDBatchEncodeRequest(fp.name, batchSize)
+func (fp *flakeIDGeneratorProxy) NewIDBatch(batchSize int32) (*flakeid.IDBatch, error) {
+	request := proto.FlakeIDGeneratorNewIDBatchEncodeRequest(fp.name, batchSize)
 	responseMessage, err := fp.invokeOnRandomTarget(request)
 	if err != nil {
 		return nil, err
 	}
-	base, increment, newBatchSize := protocol.FlakeIDGeneratorNewIDBatchDecodeResponse(responseMessage)()
-	return flake_id.NewIDBatch(base, increment, newBatchSize), nil
+	base, increment, newBatchSize := proto.FlakeIDGeneratorNewIDBatchDecodeResponse(responseMessage)()
+	return flakeid.NewIDBatch(base, increment, newBatchSize), nil
 }
 
 func newFlakeIDGenerator(client *HazelcastClient, serviceName string, name string) (*flakeIDGeneratorProxy, error) {
 	config := client.ClientConfig.GetFlakeIDGeneratorConfig(name)
 	flakeIDGenerator := &flakeIDGeneratorProxy{}
 	flakeIDGenerator.proxy = &proxy{client: client, serviceName: serviceName, name: name}
-	flakeIDGenerator.batcher = flake_id.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIDGenerator)
+	flakeIDGenerator.batcher = flakeid.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIDGenerator)
 	return flakeIDGenerator, nil
 }

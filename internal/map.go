@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
@@ -37,9 +37,9 @@ func (mp *mapProxy) Put(key interface{}, value interface{}) (oldValue interface{
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapPutEncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
+	request := proto.MapPutEncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapPutDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapPutDecodeResponse)
 }
 
 func (mp *mapProxy) TryPut(key interface{}, value interface{}) (ok bool, err error) {
@@ -47,9 +47,9 @@ func (mp *mapProxy) TryPut(key interface{}, value interface{}) (ok bool, err err
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapTryPutEncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
+	request := proto.MapTryPutEncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryPutDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapTryPutDecodeResponse)
 }
 
 func (mp *mapProxy) PutTransient(key interface{}, value interface{}, ttl time.Duration) (err error) {
@@ -58,7 +58,7 @@ func (mp *mapProxy) PutTransient(key interface{}, value interface{}, ttl time.Du
 		return err
 	}
 	ttlInMillis := timeutil.GetTimeInMilliSeconds(ttl)
-	request := protocol.MapPutTransientEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
+	request := proto.MapPutTransientEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return err
 }
@@ -68,9 +68,9 @@ func (mp *mapProxy) Get(key interface{}) (value interface{}, err error) {
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapGetEncodeRequest(mp.name, keyData, threadID)
+	request := proto.MapGetEncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapGetDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapGetDecodeResponse)
 }
 
 func (mp *mapProxy) Remove(key interface{}) (value interface{}, err error) {
@@ -78,9 +78,9 @@ func (mp *mapProxy) Remove(key interface{}) (value interface{}, err error) {
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapRemoveEncodeRequest(mp.name, keyData, threadID)
+	request := proto.MapRemoveEncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapRemoveDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapRemoveDecodeResponse)
 }
 
 func (mp *mapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool, err error) {
@@ -88,9 +88,9 @@ func (mp *mapProxy) RemoveIfSame(key interface{}, value interface{}) (ok bool, e
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapRemoveIfSameEncodeRequest(mp.name, keyData, valueData, threadID)
+	request := proto.MapRemoveIfSameEncodeRequest(mp.name, keyData, valueData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapRemoveIfSameDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapRemoveIfSameDecodeResponse)
 }
 
 func (mp *mapProxy) RemoveAll(predicate interface{}) (err error) {
@@ -98,7 +98,7 @@ func (mp *mapProxy) RemoveAll(predicate interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := protocol.MapRemoveAllEncodeRequest(mp.name, predicateData)
+	request := proto.MapRemoveAllEncodeRequest(mp.name, predicateData)
 	_, err = mp.invokeOnRandomTarget(request)
 	return err
 }
@@ -109,15 +109,15 @@ func (mp *mapProxy) TryRemove(key interface{}, timeout time.Duration) (ok bool, 
 		return false, err
 	}
 	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
-	request := protocol.MapTryRemoveEncodeRequest(mp.name, keyData, threadID, timeoutInMillis)
+	request := proto.MapTryRemoveEncodeRequest(mp.name, keyData, threadID, timeoutInMillis)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryRemoveDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapTryRemoveDecodeResponse)
 }
 
 func (mp *mapProxy) Size() (size int32, err error) {
-	request := protocol.MapSizeEncodeRequest(mp.name)
+	request := proto.MapSizeEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInt32AndError(responseMessage, err, protocol.MapSizeDecodeResponse)
+	return mp.decodeToInt32AndError(responseMessage, err, proto.MapSizeDecodeResponse)
 }
 
 func (mp *mapProxy) Aggregate(aggregator interface{}) (result interface{}, err error) {
@@ -125,9 +125,9 @@ func (mp *mapProxy) Aggregate(aggregator interface{}) (result interface{}, err e
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapAggregateEncodeRequest(mp.name, aggregatorData)
+	request := proto.MapAggregateEncodeRequest(mp.name, aggregatorData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapAggregateDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapAggregateDecodeResponse)
 }
 
 func (mp *mapProxy) AggregateWithPredicate(aggregator interface{}, predicate interface{}) (result interface{}, err error) {
@@ -135,9 +135,9 @@ func (mp *mapProxy) AggregateWithPredicate(aggregator interface{}, predicate int
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapAggregateWithPredicateEncodeRequest(mp.name, aggregatorData, predicateData)
+	request := proto.MapAggregateWithPredicateEncodeRequest(mp.name, aggregatorData, predicateData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapAggregateWithPredicateDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapAggregateWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) Project(projection interface{}) (result []interface{}, err error) {
@@ -146,9 +146,9 @@ func (mp *mapProxy) Project(projection interface{}) (result []interface{}, err e
 	if err != nil {
 		return
 	}
-	request := protocol.MapProjectEncodeRequest(mp.name, projectionData)
+	request := proto.MapProjectEncodeRequest(mp.name, projectionData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapProjectDecodeResponse)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MapProjectDecodeResponse)
 }
 
 func (mp *mapProxy) ProjectWithPredicate(projection interface{}, predicate interface{}) (result []interface{}, err error) {
@@ -161,9 +161,9 @@ func (mp *mapProxy) ProjectWithPredicate(projection interface{}, predicate inter
 	if err != nil {
 		return
 	}
-	request := protocol.MapProjectWithPredicateEncodeRequest(mp.name, projectionData, predicateData)
+	request := proto.MapProjectWithPredicateEncodeRequest(mp.name, projectionData, predicateData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapProjectWithPredicateDecodeResponse)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MapProjectWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) ContainsKey(key interface{}) (found bool, err error) {
@@ -171,9 +171,9 @@ func (mp *mapProxy) ContainsKey(key interface{}) (found bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapContainsKeyEncodeRequest(mp.name, keyData, threadID)
+	request := proto.MapContainsKeyEncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapContainsKeyDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapContainsKeyDecodeResponse)
 }
 
 func (mp *mapProxy) ContainsValue(value interface{}) (found bool, err error) {
@@ -181,13 +181,13 @@ func (mp *mapProxy) ContainsValue(value interface{}) (found bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapContainsValueEncodeRequest(mp.name, valueData)
+	request := proto.MapContainsValueEncodeRequest(mp.name, valueData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapContainsValueDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapContainsValueDecodeResponse)
 }
 
 func (mp *mapProxy) Clear() (err error) {
-	request := protocol.MapClearEncodeRequest(mp.name)
+	request := proto.MapClearEncodeRequest(mp.name)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
@@ -197,19 +197,19 @@ func (mp *mapProxy) Delete(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := protocol.MapDeleteEncodeRequest(mp.name, keyData, threadID)
+	request := proto.MapDeleteEncodeRequest(mp.name, keyData, threadID)
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
 
 func (mp *mapProxy) IsEmpty() (empty bool, err error) {
-	request := protocol.MapIsEmptyEncodeRequest(mp.name)
+	request := proto.MapIsEmptyEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapIsEmptyDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapIsEmptyDecodeResponse)
 }
 
 func (mp *mapProxy) AddIndex(attribute string, ordered bool) (err error) {
-	request := protocol.MapAddIndexEncodeRequest(mp.name, attribute, ordered)
+	request := proto.MapAddIndexEncodeRequest(mp.name, attribute, ordered)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
@@ -219,19 +219,19 @@ func (mp *mapProxy) Evict(key interface{}) (evicted bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapEvictEncodeRequest(mp.name, keyData, threadID)
+	request := proto.MapEvictEncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapEvictDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapEvictDecodeResponse)
 }
 
 func (mp *mapProxy) EvictAll() (err error) {
-	request := protocol.MapEvictAllEncodeRequest(mp.name)
+	request := proto.MapEvictAllEncodeRequest(mp.name)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
 
 func (mp *mapProxy) Flush() (err error) {
-	request := protocol.MapFlushEncodeRequest(mp.name)
+	request := proto.MapFlushEncodeRequest(mp.name)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
@@ -246,7 +246,7 @@ func (mp *mapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err
 		return err
 	}
 	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
-	request := protocol.MapLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, mp.client.ProxyManager.nextReferenceID())
+	request := proto.MapLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, mp.client.ProxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -267,10 +267,10 @@ func (mp *mapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Dur
 	}
 	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
 	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
-	request := protocol.MapTryLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
+	request := proto.MapTryLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
 		mp.client.ProxyManager.nextReferenceID())
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapTryLockDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapTryLockDecodeResponse)
 }
 
 func (mp *mapProxy) Unlock(key interface{}) (err error) {
@@ -278,7 +278,7 @@ func (mp *mapProxy) Unlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := protocol.MapUnlockEncodeRequest(mp.name, keyData, threadID, mp.client.ProxyManager.nextReferenceID())
+	request := proto.MapUnlockEncodeRequest(mp.name, keyData, threadID, mp.client.ProxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -288,7 +288,7 @@ func (mp *mapProxy) ForceUnlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := protocol.MapForceUnlockEncodeRequest(mp.name, keyData, mp.client.ProxyManager.nextReferenceID())
+	request := proto.MapForceUnlockEncodeRequest(mp.name, keyData, mp.client.ProxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -298,9 +298,9 @@ func (mp *mapProxy) IsLocked(key interface{}) (locked bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapIsLockedEncodeRequest(mp.name, keyData)
+	request := proto.MapIsLockedEncodeRequest(mp.name, keyData)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapIsLockedDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapIsLockedDecodeResponse)
 
 }
 
@@ -309,9 +309,9 @@ func (mp *mapProxy) Replace(key interface{}, value interface{}) (oldValue interf
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapReplaceEncodeRequest(mp.name, keyData, valueData, threadID)
+	request := proto.MapReplaceEncodeRequest(mp.name, keyData, valueData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapReplaceDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapReplaceDecodeResponse)
 
 }
 
@@ -320,9 +320,9 @@ func (mp *mapProxy) ReplaceIfSame(key interface{}, oldValue interface{}, newValu
 	if err != nil {
 		return false, err
 	}
-	request := protocol.MapReplaceIfSameEncodeRequest(mp.name, keyData, oldValueData, newValueData, threadID)
+	request := proto.MapReplaceIfSameEncodeRequest(mp.name, keyData, oldValueData, newValueData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToBoolAndError(responseMessage, err, protocol.MapReplaceIfSameDecodeResponse)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapReplaceIfSameDecodeResponse)
 
 }
 
@@ -336,7 +336,7 @@ func (mp *mapProxy) SetWithTTL(key interface{}, value interface{}, ttl time.Dura
 		return err
 	}
 	ttlInMillis := timeutil.GetTimeInMilliSeconds(ttl)
-	request := protocol.MapSetEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
+	request := proto.MapSetEncodeRequest(mp.name, keyData, valueData, threadID, ttlInMillis)
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -346,9 +346,9 @@ func (mp *mapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue in
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapPutIfAbsentEncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
+	request := proto.MapPutIfAbsentEncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapPutIfAbsentDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapPutIfAbsentDecodeResponse)
 
 }
 
@@ -361,7 +361,7 @@ func (mp *mapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 		return err
 	}
 	for partitionID, entryList := range partitions {
-		request := protocol.MapPutAllEncodeRequest(mp.name, entryList)
+		request := proto.MapPutAllEncodeRequest(mp.name, entryList)
 		_, err = mp.invokeOnPartition(request, partitionID)
 		if err != nil {
 			return err
@@ -371,9 +371,9 @@ func (mp *mapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 }
 
 func (mp *mapProxy) KeySet() (keySet []interface{}, err error) {
-	request := protocol.MapKeySetEncodeRequest(mp.name)
+	request := proto.MapKeySetEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapKeySetDecodeResponse)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MapKeySetDecodeResponse)
 }
 
 func (mp *mapProxy) KeySetWithPredicate(predicate interface{}) (keySet []interface{}, err error) {
@@ -381,15 +381,15 @@ func (mp *mapProxy) KeySetWithPredicate(predicate interface{}) (keySet []interfa
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapKeySetWithPredicateEncodeRequest(mp.name, predicateData)
+	request := proto.MapKeySetWithPredicateEncodeRequest(mp.name, predicateData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapKeySetWithPredicateDecodeResponse)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MapKeySetWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) Values() (values []interface{}, err error) {
-	request := protocol.MapValuesEncodeRequest(mp.name)
+	request := proto.MapValuesEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapValuesDecodeResponse)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MapValuesDecodeResponse)
 }
 
 func (mp *mapProxy) ValuesWithPredicate(predicate interface{}) (values []interface{}, err error) {
@@ -397,15 +397,15 @@ func (mp *mapProxy) ValuesWithPredicate(predicate interface{}) (values []interfa
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapValuesWithPredicateEncodeRequest(mp.name, predicateData)
+	request := proto.MapValuesWithPredicateEncodeRequest(mp.name, predicateData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToInterfaceSliceAndError(responseMessage, err, protocol.MapValuesWithPredicateDecodeResponse)
+	return mp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MapValuesWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) EntrySet() (resultPairs []core.Pair, err error) {
-	request := protocol.MapEntrySetEncodeRequest(mp.name)
+	request := proto.MapEntrySetEncodeRequest(mp.name)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapEntrySetDecodeResponse)
+	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapEntrySetDecodeResponse)
 }
 
 func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []core.Pair, err error) {
@@ -413,9 +413,9 @@ func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapEntriesWithPredicateEncodeRequest(mp.name, predicateData)
+	request := proto.MapEntriesWithPredicateEncodeRequest(mp.name, predicateData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapEntriesWithPredicateDecodeResponse)
+	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapEntriesWithPredicateDecodeResponse)
 }
 
 func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
@@ -433,12 +433,12 @@ func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 		partitions[partitionID] = append(partitions[partitionID], keyData)
 	}
 	for partitionID, keyList := range partitions {
-		request := protocol.MapGetAllEncodeRequest(mp.name, keyList)
+		request := proto.MapGetAllEncodeRequest(mp.name, keyList)
 		responseMessage, err := mp.invokeOnPartition(request, partitionID)
 		if err != nil {
 			return nil, err
 		}
-		response := protocol.MapGetAllDecodeResponse(responseMessage)()
+		response := proto.MapGetAllDecodeResponse(responseMessage)()
 		for _, pairData := range response {
 			key, err := mp.toObject(pairData.Key().(*serialization.Data))
 			if err != nil {
@@ -459,45 +459,45 @@ func (mp *mapProxy) GetEntryView(key interface{}) (entryView core.EntryView, err
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapGetEntryViewEncodeRequest(mp.name, keyData, threadID)
+	request := proto.MapGetEntryViewEncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	if err != nil {
 		return nil, err
 	}
-	response := protocol.MapGetEntryViewDecodeResponse(responseMessage)()
+	response := proto.MapGetEntryViewDecodeResponse(responseMessage)()
 	resultKey, _ := mp.toObject(response.KeyData())
 	resultValue, _ := mp.toObject(response.ValueData())
-	entryView = protocol.NewEntryView(resultKey, resultValue, response.Cost(),
+	entryView = proto.NewEntryView(resultKey, resultValue, response.Cost(),
 		response.CreationTime(), response.ExpirationTime(), response.Hits(), response.LastAccessTime(), response.LastStoredTime(),
 		response.LastUpdateTime(), response.Version(), response.EvictionCriteriaNumber(), response.TTL())
 	return entryView, nil
 }
 
 func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error) {
-	var request *protocol.ClientMessage
-	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	var request *proto.ClientMessage
+	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
 		return "", err
 	}
-	request = protocol.MapAddEntryListenerEncodeRequest(mp.name, includeValue, listenerFlags, mp.isSmart())
-	eventHandler := func(clientMessage *protocol.ClientMessage) {
-		protocol.MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
+	request = proto.MapAddEntryListenerEncodeRequest(mp.name, includeValue, listenerFlags, mp.isSmart())
+	eventHandler := func(clientMessage *proto.ClientMessage) {
+		proto.MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
-		return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) string {
-		return protocol.MapAddEntryListenerDecodeResponse(clientMessage)()
+	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
+	}, func(clientMessage *proto.ClientMessage) string {
+		return proto.MapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
 
 func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (
 	string, error) {
-	var request *protocol.ClientMessage
-	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	var request *proto.ClientMessage
+	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
 		return "", err
 	}
@@ -505,26 +505,26 @@ func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 	if err != nil {
 		return "", err
 	}
-	request = protocol.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, false)
-	eventHandler := func(clientMessage *protocol.ClientMessage) {
-		protocol.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
+	request = proto.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, false)
+	eventHandler := func(clientMessage *proto.ClientMessage) {
+		proto.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *protocol.ClientMessage {
-			return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) string {
-			return protocol.MapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
+		func(registrationID string) *proto.ClientMessage {
+			return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
+		}, func(clientMessage *proto.ClientMessage) string {
+			return proto.MapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
 		})
 }
 
 func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (
 	registrationID string, err error) {
-	var request *protocol.ClientMessage
-	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	var request *proto.ClientMessage
+	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
 		return "", err
 	}
@@ -532,25 +532,25 @@ func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 	if err != nil {
 		return "", err
 	}
-	request = protocol.MapAddEntryListenerToKeyEncodeRequest(mp.name, keyData, includeValue, listenerFlags, mp.isSmart())
-	eventHandler := func(clientMessage *protocol.ClientMessage) {
-		protocol.MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
+	request = proto.MapAddEntryListenerToKeyEncodeRequest(mp.name, keyData, includeValue, listenerFlags, mp.isSmart())
+	eventHandler := func(clientMessage *proto.ClientMessage) {
+		proto.MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *protocol.ClientMessage {
-		return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-	}, func(clientMessage *protocol.ClientMessage) string {
-		return protocol.MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
+	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
+	}, func(clientMessage *proto.ClientMessage) string {
+		return proto.MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
 
 func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{},
 	includeValue bool) (string, error) {
-	var request *protocol.ClientMessage
-	listenerFlags, err := protocol.GetMapListenerFlags(listener)
+	var request *proto.ClientMessage
+	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
 		return "", err
 	}
@@ -562,19 +562,19 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 	if err != nil {
 		return "", err
 	}
-	request = protocol.MapAddEntryListenerToKeyWithPredicateEncodeRequest(mp.name, keyData, predicateData, includeValue,
+	request = proto.MapAddEntryListenerToKeyWithPredicateEncodeRequest(mp.name, keyData, predicateData, includeValue,
 		listenerFlags, false)
-	eventHandler := func(clientMessage *protocol.ClientMessage) {
-		protocol.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
+	eventHandler := func(clientMessage *proto.ClientMessage) {
+		proto.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *protocol.ClientMessage {
-			return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) string {
-			return protocol.MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
+		func(registrationID string) *proto.ClientMessage {
+			return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
+		}, func(clientMessage *proto.ClientMessage) string {
+			return proto.MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
 		})
 }
 
@@ -586,8 +586,8 @@ func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *seri
 	oldValue, _ := mp.toObject(oldValueData)
 	value, _ := mp.toObject(valueData)
 	mergingValue, _ := mp.toObject(mergingValueData)
-	entryEvent := protocol.NewEntryEvent(mp.name, member, eventType, key, oldValue, value, mergingValue)
-	mapEvent := protocol.NewMapEvent(mp.name, member, eventType, numberOfAffectedEntries)
+	entryEvent := proto.NewEntryEvent(mp.name, member, eventType, key, oldValue, value, mergingValue)
+	mapEvent := proto.NewMapEvent(mp.name, member, eventType, numberOfAffectedEntries)
 	switch eventType {
 	case bufutil.EntryEventAdded:
 		listener.(core.EntryAddedListener).EntryAdded(entryEvent)
@@ -609,8 +609,8 @@ func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *seri
 }
 
 func (mp *mapProxy) RemoveEntryListener(registrationID string) (bool, error) {
-	return mp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
-		return protocol.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
+	return mp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 	})
 }
 
@@ -619,9 +619,9 @@ func (mp *mapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (r
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapExecuteOnKeyEncodeRequest(mp.name, entryProcessorData, keyData, threadID)
+	request := proto.MapExecuteOnKeyEncodeRequest(mp.name, entryProcessorData, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return mp.decodeToObjectAndError(responseMessage, err, protocol.MapExecuteOnKeyDecodeResponse)
+	return mp.decodeToObjectAndError(responseMessage, err, proto.MapExecuteOnKeyDecodeResponse)
 }
 
 func (mp *mapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.Pair, err error) {
@@ -637,9 +637,9 @@ func (mp *mapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapExecuteOnKeysEncodeRequest(mp.name, entryProcessorData, keysData)
+	request := proto.MapExecuteOnKeysEncodeRequest(mp.name, entryProcessorData, keysData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapExecuteOnKeysDecodeResponse)
+	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapExecuteOnKeysDecodeResponse)
 }
 
 func (mp *mapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPairs []core.Pair, err error) {
@@ -647,9 +647,9 @@ func (mp *mapProxy) ExecuteOnEntries(entryProcessor interface{}) (keyToResultPai
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapExecuteOnAllKeysEncodeRequest(mp.name, entryProcessorData)
+	request := proto.MapExecuteOnAllKeysEncodeRequest(mp.name, entryProcessorData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapExecuteOnAllKeysDecodeResponse)
+	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapExecuteOnAllKeysDecodeResponse)
 }
 
 func (mp *mapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{},
@@ -662,7 +662,7 @@ func (mp *mapProxy) ExecuteOnEntriesWithPredicate(entryProcessor interface{},
 	if err != nil {
 		return nil, err
 	}
-	request := protocol.MapExecuteWithPredicateEncodeRequest(mp.name, entryProcessorData, predicateData)
+	request := proto.MapExecuteWithPredicateEncodeRequest(mp.name, entryProcessorData, predicateData)
 	responseMessage, err := mp.invokeOnRandomTarget(request)
-	return mp.decodeToPairSliceAndError(responseMessage, err, protocol.MapExecuteWithPredicateDecodeResponse)
+	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapExecuteWithPredicateDecodeResponse)
 }

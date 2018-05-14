@@ -19,7 +19,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization/bufferutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )

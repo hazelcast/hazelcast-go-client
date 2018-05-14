@@ -23,8 +23,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/IPutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 const (
@@ -50,8 +50,8 @@ type clusterService struct {
 
 func newClusterService(client *HazelcastClient, config *config.ClientConfig) *clusterService {
 	service := &clusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
-	service.ownerConnectionAddress.Store(&protocol.Address{})
-	service.members.Store(make([]*protocol.Member, 0))    //Initialize
+	service.ownerConnectionAddress.Store(&proto.Address{})
+	service.members.Store(make([]*proto.Member, 0))       //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
 	ownerUUID := ""
 	service.ownerUUID.Store(ownerUUID) //Initialize
@@ -69,38 +69,38 @@ func (cs *clusterService) start() error {
 	return cs.connectToCluster()
 }
 
-func getPossibleAddresses(addressList []string, memberList []*protocol.Member) []protocol.Address {
+func getPossibleAddresses(addressList []string, memberList []*proto.Member) []proto.Address {
 	if addressList == nil {
 		addressList = make([]string, 0)
 	}
 	if memberList == nil {
-		memberList = make([]*protocol.Member, 0)
+		memberList = make([]*proto.Member, 0)
 	}
-	allAddresses := make(map[protocol.Address]struct{}, len(addressList)+len(memberList))
+	allAddresses := make(map[proto.Address]struct{}, len(addressList)+len(memberList))
 	for _, address := range addressList {
-		ip, port := IPutil.GetIPAndPort(address)
-		if IPutil.IsValidIPAddress(ip) {
+		ip, port := iputil.GetIPAndPort(address)
+		if iputil.IsValidIPAddress(ip) {
 			if port == -1 {
-				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
-				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
-				allAddresses[*protocol.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
+				allAddresses[*proto.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
+				allAddresses[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
+				allAddresses[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
 			} else {
-				allAddresses[*protocol.NewAddressWithParameters(ip, port)] = struct{}{}
+				allAddresses[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
 			}
 
 		}
 	}
 	for _, member := range memberList {
-		allAddresses[*member.Address().(*protocol.Address)] = struct{}{}
+		allAddresses[*member.Address().(*proto.Address)] = struct{}{}
 	}
-	addresses := make([]protocol.Address, len(allAddresses))
+	addresses := make([]proto.Address, len(allAddresses))
 	index := 0
 	for k := range allAddresses {
 		addresses[index] = k
 		index++
 	}
 	if len(addresses) == 0 {
-		addresses = append(addresses, *protocol.NewAddressWithParameters(defaultAddress, defaultPort))
+		addresses = append(addresses, *proto.NewAddressWithParameters(defaultAddress, defaultPort))
 	}
 	return addresses
 }
@@ -131,7 +131,7 @@ func (cs *clusterService) connectToCluster() error {
 	retryDelay := cs.config.ClientNetworkConfig().ConnectionAttemptPeriod()
 	for currentAttempt < attempLimit {
 		currentAttempt++
-		members := cs.members.Load().([]*protocol.Member)
+		members := cs.members.Load().([]*proto.Member)
 		addresses := getPossibleAddresses(cs.config.ClientNetworkConfig().Addresses(), members)
 		for _, address := range addresses {
 			if !cs.client.LifecycleService.isLive.Load().(bool) {
@@ -155,7 +155,7 @@ func (cs *clusterService) connectToCluster() error {
 	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 
-func (cs *clusterService) connectToAddress(address *protocol.Address) error {
+func (cs *clusterService) connectToAddress(address *proto.Address) error {
 	connectionChannel, errChannel := cs.client.ConnectionManager.getOrConnect(address, true)
 	var con *Connection
 	select {
@@ -174,9 +174,9 @@ func (cs *clusterService) connectToAddress(address *protocol.Address) error {
 
 func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	wg.Add(1)
-	request := protocol.ClientAddMembershipListenerEncodeRequest(false)
-	eventHandler := func(message *protocol.ClientMessage) {
-		protocol.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList, cs.handleMemberAttributeChange)
+	request := proto.ClientAddMembershipListenerEncodeRequest(false)
+	eventHandler := func(message *proto.ClientMessage) {
+		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList, cs.handleMemberAttributeChange)
 	}
 	invocation := newInvocation(request, -1, nil, connection, cs.client)
 	invocation.eventHandler = eventHandler
@@ -184,7 +184,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	if err != nil {
 		return err
 	}
-	registrationID := protocol.ClientAddMembershipListenerDecodeResponse(response)()
+	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
 	wg.Wait() // Wait until the initial member list is fetched.
 	cs.logMembers()
 	log.Println("Registered membership listener with ID ", registrationID)
@@ -192,7 +192,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 }
 
 func (cs *clusterService) logMembers() {
-	members := cs.members.Load().([]*protocol.Member)
+	members := cs.members.Load().([]*proto.Member)
 	membersInfo := fmt.Sprintf("\n\nMembers {size:%d} [\n", len(members))
 	for _, member := range members {
 		memberInfo := fmt.Sprint("\t", member)
@@ -204,7 +204,7 @@ func (cs *clusterService) logMembers() {
 }
 
 func (cs *clusterService) AddListener(listener interface{}) string {
-	registrationID, _ := IPutil.NewUUID()
+	registrationID, _ := iputil.NewUUID()
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	listeners := cs.listeners.Load().(map[string]interface{})
@@ -233,7 +233,7 @@ func (cs *clusterService) RemoveListener(registrationID string) bool {
 	return found
 }
 
-func (cs *clusterService) handleMember(member *protocol.Member, eventType int32) {
+func (cs *clusterService) handleMember(member *proto.Member, eventType int32) {
 	if eventType == memberAdded {
 		cs.memberAdded(member)
 	} else if eventType == memberRemoved {
@@ -243,16 +243,16 @@ func (cs *clusterService) handleMember(member *protocol.Member, eventType int32)
 	cs.client.PartitionService.refresh <- struct{}{}
 }
 
-func (cs *clusterService) handleMemberList(members []*protocol.Member) {
+func (cs *clusterService) handleMemberList(members []*proto.Member) {
 	if len(members) == 0 {
 		return
 	}
-	previousMembers := cs.members.Load().([]*protocol.Member)
+	previousMembers := cs.members.Load().([]*proto.Member)
 	//TODO:: This loop is O(n^2), it is better to store members in a map to speed it up.
 	for _, member := range previousMembers {
 		found := false
 		for _, newMember := range members {
-			if *member.Address().(*protocol.Address) == *newMember.Address().(*protocol.Address) {
+			if *member.Address().(*proto.Address) == *newMember.Address().(*proto.Address) {
 				found = true
 				break
 			}
@@ -264,7 +264,7 @@ func (cs *clusterService) handleMemberList(members []*protocol.Member) {
 	for _, member := range members {
 		found := false
 		for _, previousMember := range previousMembers {
-			if *member.Address().(*protocol.Address) == *previousMember.Address().(*protocol.Address) {
+			if *member.Address().(*proto.Address) == *previousMember.Address().(*proto.Address) {
 				found = true
 				break
 			}
@@ -281,9 +281,9 @@ func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, o
 	//TODO :: implement this.
 }
 
-func (cs *clusterService) memberAdded(member *protocol.Member) {
-	members := cs.members.Load().([]*protocol.Member)
-	copyMembers := make([]*protocol.Member, len(members))
+func (cs *clusterService) memberAdded(member *proto.Member) {
+	members := cs.members.Load().([]*proto.Member)
+	copyMembers := make([]*proto.Member, len(members))
 	copy(copyMembers, members)
 	copyMembers = append(copyMembers, member)
 	cs.members.Store(copyMembers)
@@ -295,9 +295,9 @@ func (cs *clusterService) memberAdded(member *protocol.Member) {
 	}
 }
 
-func (cs *clusterService) memberRemoved(member *protocol.Member) {
-	members := cs.members.Load().([]*protocol.Member)
-	copyMembers := make([]*protocol.Member, len(members)-1)
+func (cs *clusterService) memberRemoved(member *proto.Member) {
+	members := cs.members.Load().([]*proto.Member)
+	copyMembers := make([]*proto.Member, len(members)-1)
 	index := 0
 	for _, curMember := range members {
 		if !curMember.Equal(*member) {
@@ -306,7 +306,7 @@ func (cs *clusterService) memberRemoved(member *protocol.Member) {
 		}
 	}
 	cs.members.Store(copyMembers)
-	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*protocol.Address))
+	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address))
 	if connection != nil {
 		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
 			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
@@ -320,7 +320,7 @@ func (cs *clusterService) memberRemoved(member *protocol.Member) {
 }
 
 func (cs *clusterService) GetMembers() []core.Member {
-	membersList := cs.members.Load().([]*protocol.Member)
+	membersList := cs.members.Load().([]*proto.Member)
 	members := make([]core.Member, len(membersList))
 	for index := 0; index < len(membersList); index++ {
 		members[index] = core.Member(membersList[index])
@@ -332,7 +332,7 @@ func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (
 	if selector == nil {
 		return cs.GetMembers()
 	}
-	membersList := cs.members.Load().([]*protocol.Member)
+	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
 		if selector.Select(member) {
 			members = append(members, core.Member(member))
@@ -342,9 +342,9 @@ func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (
 }
 
 func (cs *clusterService) GetMember(address core.Address) core.Member {
-	membersList := cs.members.Load().([]*protocol.Member)
+	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
-		if *member.Address().(*protocol.Address) == *address.(*protocol.Address) {
+		if *member.Address().(*proto.Address) == *address.(*proto.Address) {
 			return member
 		}
 	}
@@ -352,7 +352,7 @@ func (cs *clusterService) GetMember(address core.Address) core.Member {
 }
 
 func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
-	membersList := cs.members.Load().([]*protocol.Member)
+	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
 		if member.UUID() == uuid {
 			return member
@@ -362,11 +362,11 @@ func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
 }
 
 func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
-	ownerConnectionAddress := cs.ownerConnectionAddress.Load().(*protocol.Address)
-	if connection.endpoint.Load().(*protocol.Address).Host() != "" && ownerConnectionAddress.Host() != "" &&
-		*connection.endpoint.Load().(*protocol.Address) == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
+	ownerConnectionAddress := cs.ownerConnectionAddress.Load().(*proto.Address)
+	if connection.endpoint.Load().(*proto.Address).Host() != "" && ownerConnectionAddress.Host() != "" &&
+		*connection.endpoint.Load().(*proto.Address) == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
 		cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
-		cs.ownerConnectionAddress.Store(&protocol.Address{})
+		cs.ownerConnectionAddress.Store(&proto.Address{})
 		cs.reconnectChan <- struct{}{}
 	}
 }

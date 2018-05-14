@@ -18,11 +18,11 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func createHazelcastError(err *protocol.Error) core.HazelcastError {
+func createHazelcastError(err *proto.Error) core.HazelcastError {
 	stackTrace := ""
 	for _, trace := range err.StackTrace() {
 		stackTrace += fmt.Sprintf("\n %s.%s(%s:%d)", trace.DeclaringClass(), trace.MethodName(), trace.FileName(),

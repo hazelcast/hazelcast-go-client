@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/IPutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type listenerService struct {
@@ -49,7 +49,7 @@ type removedErr struct {
 
 type registrationIDRequestEncoder struct {
 	registrationID string
-	requestEncoder protocol.EncodeListenerRemoveRequest
+	requestEncoder proto.EncodeListenerRemoveRequest
 }
 type registrationIDConnection struct {
 	registrationID string
@@ -64,9 +64,9 @@ type eventRegistration struct {
 
 type listenerRegistrationKey struct {
 	userRegistrationKey string
-	request             *protocol.ClientMessage
-	responseDecoder     protocol.DecodeListenerResponse
-	eventHandler        func(clientMessage *protocol.ClientMessage)
+	request             *proto.ClientMessage
+	responseDecoder     proto.DecodeListenerResponse
+	eventHandler        func(clientMessage *proto.ClientMessage)
 }
 
 func newListenerService(client *HazelcastClient) *listenerService {
@@ -99,7 +99,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 func (ls *listenerService) connectToAllMembersInternal() {
 	members := ls.client.ClusterService.GetMembers()
 	for _, member := range members {
-		ls.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
+		ls.client.ConnectionManager.getOrConnect(member.Address().(*proto.Address), false)
 	}
 }
 
@@ -154,15 +154,15 @@ func (ls *listenerService) registerListenerInit(key *listenerRegistrationKey) {
 	ls.registrations[key.userRegistrationKey] = make(map[int64]*eventRegistration)
 }
 
-func (ls *listenerService) registerListener(request *protocol.ClientMessage,
-	eventHandler func(clientMessage *protocol.ClientMessage),
-	encodeListenerRemoveRequest protocol.EncodeListenerRemoveRequest,
-	responseDecoder protocol.DecodeListenerResponse) (string, error) {
+func (ls *listenerService) registerListener(request *proto.ClientMessage,
+	eventHandler func(clientMessage *proto.ClientMessage),
+	encodeListenerRemoveRequest proto.EncodeListenerRemoveRequest,
+	responseDecoder proto.DecodeListenerResponse) (string, error) {
 	err := ls.trySyncConnectToAllConnections()
 	if err != nil {
 		return "", err
 	}
-	userRegistrationID, _ := IPutil.NewUUID()
+	userRegistrationID, _ := iputil.NewUUID()
 	registrationKey := listenerRegistrationKey{
 		userRegistrationKey: userRegistrationID,
 		request:             request,
@@ -216,7 +216,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 }
 
 func (ls *listenerService) deregisterListener(registrationID string,
-	requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
+	requestEncoder proto.EncodeListenerRemoveRequest) (bool, error) {
 	registrationIDRequestEncoder := registrationIDRequestEncoder{
 		registrationID: registrationID,
 		requestEncoder: requestEncoder,
@@ -227,7 +227,7 @@ func (ls *listenerService) deregisterListener(registrationID string,
 }
 
 func (ls *listenerService) deregisterListenerInternal(registrationID string,
-	requestEncoder protocol.EncodeListenerRemoveRequest) (bool, error) {
+	requestEncoder proto.EncodeListenerRemoveRequest) (bool, error) {
 	var registrationMap map[int64]*eventRegistration
 	var found bool
 	if registrationMap, found = ls.registrations[registrationID]; !found {
@@ -245,8 +245,8 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 			if connection.isAlive() {
 				successful = false
 				log.Println("Deregistration of listener with ID ", registrationID, " has failed to address ",
-					connection.endpoint.Load().(*protocol.Address).Host(),
-					":", connection.endpoint.Load().(*protocol.Address).Port())
+					connection.endpoint.Load().(*proto.Address).Host(),
+					":", connection.endpoint.Load().(*proto.Address).Port())
 				continue
 			}
 		}
@@ -332,7 +332,7 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 		start := time.Now()
 		successful := true
 		for _, member := range members {
-			connectionChannel, errorChannel := ls.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
+			connectionChannel, errorChannel := ls.client.ConnectionManager.getOrConnect(member.Address().(*proto.Address), false)
 			select {
 			case <-connectionChannel:
 			case <-errorChannel:

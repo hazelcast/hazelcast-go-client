@@ -24,7 +24,7 @@ import (
 	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type pnCounterProxy struct {
@@ -61,7 +61,7 @@ func (pn *pnCounterProxy) Get() (currentValue int64, err error) {
 	if err != nil {
 		return
 	}
-	value, replicaTimestamps, _ := protocol.PNCounterGetDecodeResponse(response)()
+	value, replicaTimestamps, _ := proto.PNCounterGetDecodeResponse(response)()
 	pn.updateObservedReplicaTimestamps(replicaTimestamps)
 	return value, nil
 }
@@ -80,7 +80,7 @@ func (pn *pnCounterProxy) operation(delta int64, getBeforeUpdate bool) (value in
 	if err != nil {
 		return
 	}
-	value, replicaTimestamps, _ := protocol.PNCounterAddDecodeResponse(response)()
+	value, replicaTimestamps, _ := proto.PNCounterAddDecodeResponse(response)()
 	pn.updateObservedReplicaTimestamps(replicaTimestamps)
 	return value, nil
 }
@@ -144,7 +144,7 @@ func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.Addr
 }
 
 func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]struct{}, lastError error,
-	target core.Address) (response *protocol.ClientMessage, err error) {
+	target core.Address) (response *proto.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -154,9 +154,9 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]s
 		}
 		return
 	}
-	request := protocol.PNCounterGetEncodeRequest(pn.name,
-		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*protocol.Address))
-	response, lastError = pn.invokeOnAddress(request, target.(*protocol.Address))
+	request := proto.PNCounterGetEncodeRequest(pn.name,
+		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*proto.Address))
+	response, lastError = pn.invokeOnAddress(request, target.(*proto.Address))
 	if lastError != nil {
 		log.Printf("error occurred while invoking operation on target %v, choosing different target", target)
 		excludedAddresses[target] = struct{}{}
@@ -172,7 +172,7 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]s
 
 func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	excludedAddresses map[core.Address]struct{}, lastError error,
-	target core.Address) (response *protocol.ClientMessage, err error) {
+	target core.Address) (response *proto.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -182,9 +182,9 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 		}
 		return
 	}
-	request := protocol.PNCounterAddEncodeRequest(pn.name, delta, getBeforeUpdate,
-		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*protocol.Address))
-	response, lastError = pn.invokeOnAddress(request, target.(*protocol.Address))
+	request := proto.PNCounterAddEncodeRequest(pn.name, delta, getBeforeUpdate,
+		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*proto.Address))
+	response, lastError = pn.invokeOnAddress(request, target.(*proto.Address))
 	if lastError != nil {
 		log.Printf("unable to provide session guarantees when sending operations to %v, choosing different target", target)
 		excludedAddresses[target] = struct{}{}
@@ -234,17 +234,17 @@ func (pn *pnCounterProxy) getMaxConfiguredReplicaCount() (int32, error) {
 	if pn.maxConfiguredReplicaCount > 0 {
 		return pn.maxConfiguredReplicaCount, nil
 	}
-	request := protocol.PNCounterGetConfiguredReplicaCountEncodeRequest(pn.name)
+	request := proto.PNCounterGetConfiguredReplicaCountEncodeRequest(pn.name)
 	response, err := pn.invokeOnRandomTarget(request)
 	if err != nil {
 		return 0, err
 	}
 	pn.maxConfiguredReplicaCount, err = pn.decodeToInt32AndError(response, err,
-		protocol.PNCounterGetConfiguredReplicaCountDecodeResponse)
+		proto.PNCounterGetConfiguredReplicaCountDecodeResponse)
 	return pn.maxConfiguredReplicaCount, err
 }
 
-func (pn *pnCounterProxy) ToVectorClock(replicaLogicalTimestamps []*protocol.Pair) (timestamps *vectorClock) {
+func (pn *pnCounterProxy) ToVectorClock(replicaLogicalTimestamps []*proto.Pair) (timestamps *vectorClock) {
 	timestamps = newVectorClock()
 	for _, pair := range replicaLogicalTimestamps {
 		timestamps.SetReplicaTimestamp(pair.Key().(string), pair.Value().(int64))
@@ -252,7 +252,7 @@ func (pn *pnCounterProxy) ToVectorClock(replicaLogicalTimestamps []*protocol.Pai
 	return
 }
 
-func (pn *pnCounterProxy) updateObservedReplicaTimestamps(receivedLogicalTimestamps []*protocol.Pair) {
+func (pn *pnCounterProxy) updateObservedReplicaTimestamps(receivedLogicalTimestamps []*proto.Pair) {
 	received := pn.ToVectorClock(receivedLogicalTimestamps)
 	for {
 		if (*vectorClock)(atomic.LoadPointer(&pn.observedClock)).IsAfter(received) {

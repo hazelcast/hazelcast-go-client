@@ -108,8 +108,8 @@ type Map interface {
 	// The map will not contain a mapping for the specified key once the call returns.
 	// Warning:
 	// This method breaks the contract of EntryListener. When an entry is removed by Delete(), it fires an EntryEvent
-	// with a nil oldValue. Also, a listener with predicates will have nil values, so only the keys can be queried
-	// via predicates.
+	// with a nil oldValue. Also, a listener with predicate will have nil values, so only the keys can be queried
+	// via predicate.
 	Delete(key interface{}) (err error)
 
 	// IsEmpty returns true if this map contains no key-value mappings.
