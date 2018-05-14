@@ -24,8 +24,8 @@ type Cluster interface {
 	// RemoveListener returns true if successfully removed, false otherwise.
 	RemoveListener(registrationID string) bool
 
-	// GetMemberList returns a slice of members.
-	GetMemberList() []Member
+	// GetMembers returns a slice of members.
+	GetMembers() []Member
 
 	// GetMember gets the member with the given address.
 	GetMember(address Address) Member

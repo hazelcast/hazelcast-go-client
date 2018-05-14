@@ -319,7 +319,7 @@ func (cs *clusterService) memberRemoved(member *protocol.Member) {
 	}
 }
 
-func (cs *clusterService) GetMemberList() []core.Member {
+func (cs *clusterService) GetMembers() []core.Member {
 	membersList := cs.members.Load().([]*protocol.Member)
 	members := make([]core.Member, len(membersList))
 	for index := 0; index < len(membersList); index++ {
@@ -330,7 +330,7 @@ func (cs *clusterService) GetMemberList() []core.Member {
 
 func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (members []core.Member) {
 	if selector == nil {
-		return cs.GetMemberList()
+		return cs.GetMembers()
 	}
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
