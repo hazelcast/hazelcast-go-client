@@ -20,7 +20,6 @@
     ".*DataOffset should have comment.*",
     ".*TypePortable should have comment.*",
     ".*LifecycleStateStarting should have comment.*",
-    ".*includedValue is unused.*",
     ".*aggregator_hook.go.* is unused*"
   ],
   "EnableGC": true,

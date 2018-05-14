@@ -866,6 +866,26 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	mp.Clear()
 }
 
+func TestMapProxy_AddEntryListenerAddedWithIncludeValueFalse(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	entryListener := &entryListener{wg: wg}
+	registrationID, err := mp.AddEntryListener(entryListener, false)
+	assert.Equal(t, err, nil, nil)
+	wg.Add(1)
+	mp.Put("key123", "value")
+	timeout := test.WaitTimeout(wg, test.Timeout)
+	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.Value(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+
+	mp.RemoveEntryListener(registrationID)
+	mp.Clear()
+}
+
 func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryAdded := &entryListener{wg: wg}

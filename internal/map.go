@@ -484,7 +484,7 @@ func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (r
 		proto.MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
-			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
+			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
@@ -510,7 +510,7 @@ func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 		proto.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
-			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
+			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
@@ -537,7 +537,7 @@ func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 		proto.MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
-			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
+			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
@@ -567,7 +567,7 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 	eventHandler := func(clientMessage *proto.ClientMessage) {
 		proto.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
 			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
-			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, includeValue, listener)
+			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
@@ -580,7 +580,7 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 
 func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
-	numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
+	numberOfAffectedEntries int32, listener interface{}) {
 	member := mp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mp.toObject(keyData)
 	oldValue, _ := mp.toObject(oldValueData)
