@@ -97,7 +97,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 }
 
 func (ls *listenerService) connectToAllMembersInternal() {
-	members := ls.client.ClusterService.GetMemberList()
+	members := ls.client.ClusterService.GetMembers()
 	for _, member := range members {
 		ls.client.ConnectionManager.getOrConnect(member.Address().(*protocol.Address), false)
 	}
@@ -328,7 +328,7 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 	}
 	remainingTime := ls.client.ClientConfig.ClientNetworkConfig().InvocationTimeout()
 	for ls.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
-		members := ls.client.GetCluster().GetMemberList()
+		members := ls.client.GetCluster().GetMembers()
 		start := time.Now()
 		successful := true
 		for _, member := range members {
