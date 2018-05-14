@@ -56,7 +56,7 @@ type topicMessageListener struct {
 	wg *sync.WaitGroup
 }
 
-func (l *topicMessageListener) OnMessage(message core.TopicMessage) {
+func (l *topicMessageListener) OnMessage(message core.Message) {
 	fmt.Println("Got message: ", message.MessageObject())
 	fmt.Println("Publishing Time: ", message.PublishTime())
 	l.wg.Done()

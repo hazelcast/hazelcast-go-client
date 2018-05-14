@@ -50,58 +50,6 @@ type Pair interface {
 	Value() interface{}
 }
 
-// DistributedObjectInfo contains name and service name of distributed objects.
-type DistributedObjectInfo interface {
-	// Name returns the name of distributed object.
-	Name() string
-
-	// ServiceName returns the service name of distributed object.
-	ServiceName() string
-}
-
-// Error contains error information that occurred in the server.
-type Error interface {
-	// ErrorCode returns the error code.
-	ErrorCode() int32
-
-	// ClassName returns the class name where error occurred.
-	ClassName() string
-
-	// Message returns the error message.
-	Message() string
-
-	// StackTrace returns a slice of StackTraceElement.
-	StackTrace() []StackTraceElement
-
-	// CauseErrorCode returns the cause error code.
-	CauseErrorCode() int32
-
-	// CauseClassName returns the cause class name.
-	CauseClassName() string
-}
-
-type StackTraceElement interface {
-	// DeclaringClass returns the fully qualified name of the class containing
-	// the execution point represented by the stack trace element.
-	DeclaringClass() string
-
-	// MethodName returns the name of the method containing the execution point
-	// represented by this stack trace element.
-	MethodName() string
-
-	// FileName returns the name of the file containing the execution point
-	// represented by the stack trace element, or nil if
-	// this information is unavailable.
-	FileName() string
-
-	// LineNumber returns the line number of the source line containing the
-	// execution point represented by this stack trace element, or
-	// a negative number if this information is unavailable. A value
-	// of -2 indicates that the method containing the execution point
-	// is a native method.
-	LineNumber() int32
-}
-
 // EntryView represents a readonly view of a map entry.
 type EntryView interface {
 	// Key returns the key of the entry.
@@ -141,30 +89,52 @@ type EntryView interface {
 	TTL() time.Duration
 }
 
-// EntryEvent is map entry event.
-type EntryEvent interface {
-	// KeyData returns the key of the entry event.
-	Key() interface{}
+// AbstractMapEvent is base for a map event.
+type AbstractMapEvent interface {
+	// Name returns the name of the map for this event.
+	Name() string
 
-	// ValueData returns the value of the entry event.
-	Value() interface{}
-
-	// OldValueData returns the old value of the entry event.
-	OldValue() interface{}
-
-	// MergingValueData returns the incoming merging value of the entry event.
-	MergingValue() interface{}
+	// Member returns the member that fired this event.
+	Member() Member
 
 	// EventType returns the type of entry event.
 	EventType() int32
 
-	// UUID returns the uuid of the member.
-	UUID() string
+	// String returns a string representation of this event.
+	String() string
+}
+
+// EntryEvent is map entry event.
+type EntryEvent interface {
+	// AbstractMapEvent is base for a map event.
+	AbstractMapEvent
+
+	// Key returns the key of the entry event.
+	Key() interface{}
+
+	// Value returns the value of the entry event.
+	Value() interface{}
+
+	// OldValue returns the old value of the entry event.
+	OldValue() interface{}
+
+	// MergingValue returns the incoming merging value of the entry event.
+	MergingValue() interface{}
+}
+
+// MapEvent is map events common contract.
+type MapEvent interface {
+	// AbstractMapEvent is base for a map event.
+	AbstractMapEvent
+
+	// NumberOfAffectedEntries returns the number of affected
+	// entries by this event.
+	NumberOfAffectedEntries() int32
 }
 
 // ItemEvent is List, Set and Queue events common contract.
 type ItemEvent interface {
-	// Name returns the name of List, Set or Queue
+	// Name returns the name of List, Set or Queue.
 	Name() string
 
 	// Item returns the item of the event.
@@ -177,47 +147,40 @@ type ItemEvent interface {
 	Member() Member
 }
 
-// MapEvent is map events common contract.
-type MapEvent interface {
-	// EventType returns the event type.
-	EventType() int32
-
-	// UUID returns the uuid of the member.
-	UUID() string
-
-	// NumberOfAffectedEntries returns the number of affected
-	// entries by this event.
-	NumberOfAffectedEntries() int32
-}
-
 // EntryAddedListener is invoked upon addition of an entry.
 type EntryAddedListener interface {
 	// EntryAdded is invoked upon addition of an entry.
-	EntryAdded(EntryEvent)
+	EntryAdded(event EntryEvent)
 }
 
 // EntryRemovedListener invoked upon removal of an entry.
 type EntryRemovedListener interface {
 	// EntryRemoved invoked upon removal of an entry.
-	EntryRemoved(EntryEvent)
+	EntryRemoved(event EntryEvent)
 }
 
 // EntryUpdatedListener is invoked upon update of an entry.
 type EntryUpdatedListener interface {
 	// EntryUpdated is invoked upon update of an entry.
-	EntryUpdated(EntryEvent)
+	EntryUpdated(event EntryEvent)
 }
 
 // EntryEvictedListener is invoked upon eviction of an entry.
 type EntryEvictedListener interface {
 	// EntryEvicted is invoked upon eviction of an entry.
-	EntryEvicted(EntryEvent)
+	EntryEvicted(event EntryEvent)
 }
 
 // EntryMergedListener is invoked after WAN replicated entry is merged.
 type EntryMergedListener interface {
 	// EntryMerged is invoked after WAN replicated entry is merged.
-	EntryMerged(EntryEvent)
+	EntryMerged(event EntryEvent)
+}
+
+// EntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.
+type EntryExpiredListener interface {
+	// EntryExpired is invoked upon expiration of an entry.
+	EntryExpired(event EntryEvent)
 }
 
 // MapEvictedListener is invoked when all entries are evicted
@@ -225,7 +188,7 @@ type EntryMergedListener interface {
 type MapEvictedListener interface {
 	// MapEvicted is invoked when all entries are evicted
 	// by Map.EvictAll method.
-	MapEvicted(MapEvent)
+	MapEvicted(event MapEvent)
 }
 
 // MapClearedListener is invoked when all entries are removed
@@ -233,13 +196,7 @@ type MapEvictedListener interface {
 type MapClearedListener interface {
 	// MapCleared is invoked when all entries are removed
 	// by Map.Clear method.
-	MapCleared(MapEvent)
-}
-
-// EntryExpiredListener which is notified after removal of an entry due to the expiration-based-eviction.
-type EntryExpiredListener interface {
-	// EntryExpired is invoked upon expiration of an entry.
-	EntryExpired(EntryEvent)
+	MapCleared(event MapEvent)
 }
 
 // MemberAddedListener is invoked when a new member is added to the cluster.
@@ -260,19 +217,19 @@ type LifecycleListener interface {
 	LifecycleStateChanged(string)
 }
 
-// TopicMessageListener is a listener for Topic.
-// Provided that a TopicMessageListener is not registered twice, a TopicMessageListener will never be called concurrently.
-// So there is no need to provide thread-safety on internal state in the TopicMessageListener. Also there is no need to enforce
+// MessageListener is a listener for Topic.
+// Provided that a MessageListener is not registered twice, a MessageListener will never be called concurrently.
+// So there is no need to provide thread-safety on internal state in the MessageListener. Also there is no need to enforce
 // safe publication, the Topic is responsible for the memory consistency effects. In other words, there is no need to make
-// internal fields of the TopicMessageListener volatile or access them using synchronized blocks.
-type TopicMessageListener interface {
+// internal fields of the MessageListener volatile or access them using synchronized blocks.
+type MessageListener interface {
 	// OnMessage is invoked when a message is received for the added topic. Note that topic guarantees message ordering.
 	// Therefore there is only one thread invoking OnMessage.
-	OnMessage(message TopicMessage)
+	OnMessage(message Message)
 }
 
-// TopicMessage is a message for Topic.
-type TopicMessage interface {
+// Message is a message for Topic.
+type Message interface {
 	// MessageObject returns the published message.
 	MessageObject() interface{}
 

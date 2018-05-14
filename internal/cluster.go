@@ -289,8 +289,8 @@ func (cs *clusterService) memberAdded(member *protocol.Member) {
 	cs.members.Store(copyMembers)
 	listeners := cs.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(protocol.MemberAddedListener); ok {
-			listener.(protocol.MemberAddedListener).MemberAdded(member)
+		if _, ok := listener.(core.MemberAddedListener); ok {
+			listener.(core.MemberAddedListener).MemberAdded(member)
 		}
 	}
 }
@@ -313,8 +313,8 @@ func (cs *clusterService) memberRemoved(member *protocol.Member) {
 	}
 	listeners := cs.listeners.Load().(map[string]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(protocol.MemberRemovedListener); ok {
-			listener.(protocol.MemberRemovedListener).MemberRemoved(member)
+		if _, ok := listener.(core.MemberRemovedListener); ok {
+			listener.(core.MemberRemovedListener).MemberRemoved(member)
 		}
 	}
 }
@@ -345,8 +345,7 @@ func (cs *clusterService) GetMember(address core.Address) core.Member {
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
 		if *member.Address().(*protocol.Address) == *address.(*protocol.Address) {
-			copyMember := *member
-			return &copyMember
+			return member
 		}
 	}
 	return nil
@@ -356,8 +355,7 @@ func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
 	membersList := cs.members.Load().([]*protocol.Member)
 	for _, member := range membersList {
 		if member.UUID() == uuid {
-			copyMember := *member
-			return &copyMember
+			return member
 		}
 	}
 	return nil

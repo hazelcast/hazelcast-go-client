@@ -253,19 +253,20 @@ func (mmp *multiMapProxy) ForceUnlock(key interface{}) (err error) {
 func (mmp *multiMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
+	member := mmp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mmp.toObject(keyData)
 	oldValue, _ := mmp.toObject(oldValueData)
 	value, _ := mmp.toObject(valueData)
 	mergingValue, _ := mmp.toObject(mergingValueData)
-	entryEvent := protocol.NewEntryEvent(key, oldValue, value, mergingValue, eventType, uuid)
-	mapEvent := protocol.NewMapEvent(eventType, uuid, numberOfAffectedEntries)
+	entryEvent := protocol.NewEntryEvent(mmp.name, member, eventType, key, oldValue, value, mergingValue)
+	mapEvent := protocol.NewMapEvent(mmp.name, member, eventType, numberOfAffectedEntries)
 	switch eventType {
 	case bufutil.EntryEventAdded:
-		listener.(protocol.EntryAddedListener).EntryAdded(entryEvent)
+		listener.(core.EntryAddedListener).EntryAdded(entryEvent)
 	case bufutil.EntryEventRemoved:
-		listener.(protocol.EntryRemovedListener).EntryRemoved(entryEvent)
-	case bufutil.EntryEventClearAll:
-		listener.(protocol.EntryClearAllListener).EntryClearAll(mapEvent)
+		listener.(core.EntryRemovedListener).EntryRemoved(entryEvent)
+	case bufutil.MapEventCleared:
+		listener.(core.MapClearedListener).MapCleared(mapEvent)
 	}
 }
 

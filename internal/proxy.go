@@ -15,6 +15,9 @@
 package internal
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
@@ -125,18 +128,28 @@ func (p *proxy) validateItemListener(listener interface{}) (err error) {
 }
 
 func (p *proxy) validateEntryListener(listener interface{}) (err error) {
-	switch listener.(type) {
-	case core.EntryAddedListener:
-	case core.EntryRemovedListener:
-	case core.EntryUpdatedListener:
-	case core.EntryEvictedListener:
-	case core.MapEvictedListener:
-	case core.MapClearedListener:
-	default:
-		return core.NewHazelcastIllegalArgumentError("listener argument type must be one of EntryAddedListener, EntryRemovedListener,"+
-			"\nEntryUpdatedListener, EntryEvictedListener, MapEvictedListener, MapClearedListener", nil)
+	argErr := core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
+		reflect.TypeOf(listener)), nil)
+	if p.serviceName == bufutil.ServiceNameReplicatedMap {
+		switch listener.(type) {
+		case core.EntryAddedListener:
+		case core.EntryRemovedListener:
+		case core.EntryUpdatedListener:
+		case core.EntryEvictedListener:
+		case core.MapClearedListener:
+		default:
+			err = argErr
+		}
+	} else if p.serviceName == bufutil.ServiceNameMultiMap {
+		switch listener.(type) {
+		case core.EntryAddedListener:
+		case core.EntryRemovedListener:
+		case core.MapClearedListener:
+		default:
+			err = argErr
+		}
 	}
-	return nil
+	return
 }
 
 func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*protocol.Pair, error) {

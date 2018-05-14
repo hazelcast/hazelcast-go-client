@@ -459,6 +459,6 @@ func (l *entryListener) EntryEvicted(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *entryListener) EntryClearAll(event core.MapEvent) {
+func (l *entryListener) MapCleared(event core.MapEvent) {
 	l.wg.Done()
 }

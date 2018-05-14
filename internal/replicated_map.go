@@ -231,23 +231,24 @@ func (rmp *replicatedMapProxy) RemoveEntryListener(registrationID string) (remov
 func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
+	member := rmp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := rmp.toObject(keyData)
 	oldValue, _ := rmp.toObject(oldValueData)
 	value, _ := rmp.toObject(valueData)
 	mergingValue, _ := rmp.toObject(mergingValueData)
-	entryEvent := protocol.NewEntryEvent(key, oldValue, value, mergingValue, eventType, uuid)
-	mapEvent := protocol.NewMapEvent(eventType, uuid, numberOfAffectedEntries)
+	entryEvent := protocol.NewEntryEvent(rmp.name, member, eventType, key, oldValue, value, mergingValue)
+	mapEvent := protocol.NewMapEvent(rmp.name, member, eventType, numberOfAffectedEntries)
 	switch eventType {
 	case bufutil.EntryEventAdded:
-		listener.(protocol.EntryAddedListener).EntryAdded(entryEvent)
+		listener.(core.EntryAddedListener).EntryAdded(entryEvent)
 	case bufutil.EntryEventRemoved:
-		listener.(protocol.EntryRemovedListener).EntryRemoved(entryEvent)
+		listener.(core.EntryRemovedListener).EntryRemoved(entryEvent)
 	case bufutil.EntryEventUpdated:
-		listener.(protocol.EntryUpdatedListener).EntryUpdated(entryEvent)
+		listener.(core.EntryUpdatedListener).EntryUpdated(entryEvent)
 	case bufutil.EntryEventEvicted:
-		listener.(protocol.EntryEvictedListener).EntryEvicted(entryEvent)
-	case bufutil.EntryEventClearAll:
-		listener.(protocol.EntryClearAllListener).EntryClearAll(mapEvent)
+		listener.(core.EntryEvictedListener).EntryEvicted(entryEvent)
+	case bufutil.MapEventCleared:
+		listener.(core.MapClearedListener).MapCleared(mapEvent)
 	}
 }
 

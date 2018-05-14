@@ -222,7 +222,7 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl: timeutil.ConvertMillisToDuration(ttl),
+		ttl:                    timeutil.ConvertMillisToDuration(ttl),
 	}
 }
 
@@ -315,10 +315,10 @@ func (e *Error) Message() string {
 	return e.message
 }
 
-func (e *Error) StackTrace() []core.StackTraceElement {
-	stackTrace := make([]core.StackTraceElement, len(e.stackTrace))
+func (e *Error) StackTrace() []*StackTraceElement {
+	stackTrace := make([]*StackTraceElement, len(e.stackTrace))
 	for i, v := range e.stackTrace {
-		stackTrace[i] = core.StackTraceElement(v)
+		stackTrace[i] = v
 	}
 	return stackTrace
 }
@@ -354,13 +354,46 @@ func (e *StackTraceElement) LineNumber() int32 {
 	return e.lineNumber
 }
 
+type AbstractMapEvent struct {
+	name      string
+	member    core.Member
+	eventType int32
+}
+
+func (e *AbstractMapEvent) Name() string {
+	return e.name
+}
+
+func (e *AbstractMapEvent) Member() core.Member {
+	return e.member
+}
+
+func (e *AbstractMapEvent) EventType() int32 {
+	return e.eventType
+}
+
+func (e *AbstractMapEvent) String() string {
+	return fmt.Sprintf("entryEventType = %d, member = %v, name = '%s'",
+		e.eventType, e.member, e.name)
+}
+
 type EntryEvent struct {
+	*AbstractMapEvent
 	key          interface{}
 	value        interface{}
 	oldValue     interface{}
 	mergingValue interface{}
-	eventType    int32
-	uuid         string
+}
+
+func NewEntryEvent(name string, member core.Member, eventType int32, key interface{}, value interface{},
+	oldValue interface{}, mergingValue interface{}) *EntryEvent {
+	return &EntryEvent{
+		AbstractMapEvent: &AbstractMapEvent{name, member, eventType},
+		key:              key,
+		value:            value,
+		oldValue:         oldValue,
+		mergingValue:     mergingValue,
+	}
 }
 
 func (e *EntryEvent) Key() interface{} {
@@ -379,38 +412,40 @@ func (e *EntryEvent) MergingValue() interface{} {
 	return e.mergingValue
 }
 
-func (e *EntryEvent) UUID() string {
-	return e.uuid
-}
-
-func (e *EntryEvent) EventType() int32 {
-	return e.eventType
-}
-
-func NewEntryEvent(key interface{}, value interface{}, oldValue interface{}, mergingValue interface{}, eventType int32, uuid string) *EntryEvent {
-	return &EntryEvent{key: key, value: value, oldValue: oldValue, mergingValue: mergingValue, eventType: eventType, uuid: uuid}
-}
-
 type MapEvent struct {
-	eventType               int32
-	uuid                    string
+	*AbstractMapEvent
 	numberOfAffectedEntries int32
 }
 
-func NewItemEvent(name string, item interface{}, eventType int32, member *Member) *ItemEvent {
-	return &ItemEvent{
-		name:      name,
-		item:      item,
-		eventType: eventType,
-		member:    member,
+func NewMapEvent(name string, member core.Member, eventType int32, numberOfAffectedEntries int32) core.MapEvent {
+	return &MapEvent{
+		AbstractMapEvent:        &AbstractMapEvent{name, member, eventType},
+		numberOfAffectedEntries: numberOfAffectedEntries,
 	}
+}
+
+func (e *MapEvent) NumberOfAffectedEntries() int32 {
+	return e.numberOfAffectedEntries
+}
+
+func (e *MapEvent) String() string {
+	return fmt.Sprintf("MapEvent{%s, numberOfAffectedEntries = %d}", e.AbstractMapEvent.String(), e.numberOfAffectedEntries)
 }
 
 type ItemEvent struct {
 	name      string
 	item      interface{}
 	eventType int32
-	member    *Member
+	member    core.Member
+}
+
+func NewItemEvent(name string, item interface{}, eventType int32, member core.Member) core.ItemEvent {
+	return &ItemEvent{
+		name:      name,
+		item:      item,
+		eventType: eventType,
+		member:    member,
+	}
 }
 
 func (e *ItemEvent) Name() string {
@@ -429,94 +464,39 @@ func (e *ItemEvent) Member() core.Member {
 	return e.member
 }
 
-func (e *MapEvent) UUID() string {
-	return e.uuid
-}
-
-func (e *MapEvent) NumberOfAffectedEntries() int32 {
-	return e.numberOfAffectedEntries
-}
-
-func (e *MapEvent) EventType() int32 {
-	return e.eventType
-}
-
-func NewMapEvent(eventType int32, uuid string, numberOfAffectedEntries int32) *MapEvent {
-	return &MapEvent{eventType: eventType, uuid: uuid, numberOfAffectedEntries: numberOfAffectedEntries}
-}
-
-type EntryAddedListener interface {
-	EntryAdded(core.EntryEvent)
-}
-
-type EntryRemovedListener interface {
-	EntryRemoved(core.EntryEvent)
-}
-
-type EntryUpdatedListener interface {
-	EntryUpdated(core.EntryEvent)
-}
-
-type EntryEvictedListener interface {
-	EntryEvicted(core.EntryEvent)
-}
-
-type EntryEvictAllListener interface {
-	EntryEvictAll(core.MapEvent)
-}
-
-type EntryClearAllListener interface {
-	EntryClearAll(core.MapEvent)
-}
-
-type EntryMergedListener interface {
-	EntryMerged(core.EntryEvent)
-}
-
-type EntryExpiredListener interface {
-	EntryExpired(core.EntryEvent)
-}
-
 type DecodeListenerResponse func(message *ClientMessage) string
 type EncodeListenerRemoveRequest func(registrationID string) *ClientMessage
-type MemberAddedListener interface {
-	MemberAdded(member core.Member)
-}
-
-type MemberRemovedListener interface {
-	MemberRemoved(member core.Member)
-}
 
 // Helper function to get flags for listeners
 func GetMapListenerFlags(listener interface{}) (int32, error) {
 	flags := int32(0)
-	if _, ok := listener.(EntryAddedListener); ok {
+	if _, ok := listener.(core.EntryAddedListener); ok {
 		flags |= bufutil.EntryEventAdded
 	}
-	if _, ok := listener.(EntryRemovedListener); ok {
+	if _, ok := listener.(core.EntryRemovedListener); ok {
 		flags |= bufutil.EntryEventRemoved
 	}
-	if _, ok := listener.(EntryUpdatedListener); ok {
+	if _, ok := listener.(core.EntryUpdatedListener); ok {
 		flags |= bufutil.EntryEventUpdated
 	}
-	if _, ok := listener.(EntryEvictedListener); ok {
+	if _, ok := listener.(core.EntryEvictedListener); ok {
 		flags |= bufutil.EntryEventEvicted
 	}
-	if _, ok := listener.(EntryEvictAllListener); ok {
-		flags |= bufutil.EntryEventEvictAll
+	if _, ok := listener.(core.MapEvictedListener); ok {
+		flags |= bufutil.MapEventEvicted
 	}
-	if _, ok := listener.(EntryClearAllListener); ok {
-		flags |= bufutil.EntryEventClearAll
+	if _, ok := listener.(core.MapClearedListener); ok {
+		flags |= bufutil.MapEventCleared
 	}
-	if _, ok := listener.(EntryExpiredListener); ok {
+	if _, ok := listener.(core.EntryExpiredListener); ok {
 		flags |= bufutil.EntryEventExpired
 	}
-	if _, ok := listener.(EntryMergedListener); ok {
+	if _, ok := listener.(core.EntryMergedListener); ok {
 		flags |= bufutil.EntryEventMerged
 	}
 	if flags == 0 {
-		return 0, core.NewHazelcastIllegalArgumentError("listener argument type must be one of EntryAddedListener, EntryRemovedListener,"+
-			"\nEntryUpdatedListener, EntryEvictedListener, EntryMergedListener, MapEvictedListener, MapClearedListener", nil)
+		return 0, core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
+			reflect.TypeOf(listener)), nil)
 	}
 	return flags, nil
 }

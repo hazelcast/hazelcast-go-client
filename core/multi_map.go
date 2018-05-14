@@ -70,16 +70,19 @@ type MultiMap interface {
 	EntrySet() (resultPairs []Pair, err error)
 
 	// AddEntryListener adds an entry listener to this multi-map.
-	// To receive an event, listener should implement a corresponding interface for that event such as
-	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
-	// MapEvictedListener, MapClearedListener.
+	// To receive an event, listener should implement a corresponding interface for that event.
+	// Supported listeners for MultiMap:
+	//  * EntryAddedListener
+	//  * EntryRemovedListener
+	//  * MapClearedListener
 	// It returns registration ID for this entry listener.
 	AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error)
 
 	// AddEntryListenerToKey adds an entry listener to this multi-map.
-	// To receive an event, listener should implement a corresponding interface for that event such as
-	// EntryAddedListener, EntryRemovedListener, EntryUpdatedListener, EntryEvictedListener,
-	// MapEvictedListener, MapClearedListener.
+	// Supported listeners for MultiMap:
+	//  * EntryAddedListener
+	//  * EntryRemovedListener
+	//  * MapClearedListener
 	// This entry listener will only be notified of updates related to this key.
 	// It returns registration ID for this entry listener.
 	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID string, err error)

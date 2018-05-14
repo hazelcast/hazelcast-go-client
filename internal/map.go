@@ -581,29 +581,30 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, includedValue bool, listener interface{}) {
+	member := mp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mp.toObject(keyData)
 	oldValue, _ := mp.toObject(oldValueData)
 	value, _ := mp.toObject(valueData)
 	mergingValue, _ := mp.toObject(mergingValueData)
-	entryEvent := protocol.NewEntryEvent(key, oldValue, value, mergingValue, eventType, uuid)
-	mapEvent := protocol.NewMapEvent(eventType, uuid, numberOfAffectedEntries)
+	entryEvent := protocol.NewEntryEvent(mp.name, member, eventType, key, oldValue, value, mergingValue)
+	mapEvent := protocol.NewMapEvent(mp.name, member, eventType, numberOfAffectedEntries)
 	switch eventType {
 	case bufutil.EntryEventAdded:
-		listener.(protocol.EntryAddedListener).EntryAdded(entryEvent)
+		listener.(core.EntryAddedListener).EntryAdded(entryEvent)
 	case bufutil.EntryEventRemoved:
-		listener.(protocol.EntryRemovedListener).EntryRemoved(entryEvent)
+		listener.(core.EntryRemovedListener).EntryRemoved(entryEvent)
 	case bufutil.EntryEventUpdated:
-		listener.(protocol.EntryUpdatedListener).EntryUpdated(entryEvent)
+		listener.(core.EntryUpdatedListener).EntryUpdated(entryEvent)
 	case bufutil.EntryEventEvicted:
-		listener.(protocol.EntryEvictedListener).EntryEvicted(entryEvent)
-	case bufutil.EntryEventEvictAll:
-		listener.(protocol.EntryEvictAllListener).EntryEvictAll(mapEvent)
-	case bufutil.EntryEventClearAll:
-		listener.(protocol.EntryClearAllListener).EntryClearAll(mapEvent)
+		listener.(core.EntryEvictedListener).EntryEvicted(entryEvent)
+	case bufutil.MapEventEvicted:
+		listener.(core.MapEvictedListener).MapEvicted(mapEvent)
+	case bufutil.MapEventCleared:
+		listener.(core.MapClearedListener).MapCleared(mapEvent)
 	case bufutil.EntryEventMerged:
-		listener.(protocol.EntryMergedListener).EntryMerged(entryEvent)
+		listener.(core.EntryMergedListener).EntryMerged(entryEvent)
 	case bufutil.EntryEventExpired:
-		listener.(protocol.EntryExpiredListener).EntryExpired(entryEvent)
+		listener.(core.EntryExpiredListener).EntryExpired(entryEvent)
 	}
 }
 

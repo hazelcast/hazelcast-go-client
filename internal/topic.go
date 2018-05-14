@@ -32,7 +32,7 @@ func newTopicProxy(client *HazelcastClient, serviceName string, name string) (*t
 	return &topicProxy{parSpecProxy}, nil
 }
 
-func (tp *topicProxy) AddMessageListener(messageListener core.TopicMessageListener) (registrationID string, err error) {
+func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID string, err error) {
 	request := protocol.TopicAddMessageListenerEncodeRequest(tp.name, false)
 	eventHandler := tp.createEventHandler(messageListener)
 
@@ -61,7 +61,7 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 	return
 }
 
-func (tp *topicProxy) createEventHandler(messageListener core.TopicMessageListener) func(clientMessage *protocol.ClientMessage) {
+func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) func(clientMessage *protocol.ClientMessage) {
 	return func(message *protocol.ClientMessage) {
 		protocol.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
 			member := tp.client.ClusterService.GetMemberByUUID(uuid)

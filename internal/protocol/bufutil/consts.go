@@ -199,8 +199,8 @@ const (
 	EntryEventRemoved      int32 = 2
 	EntryEventUpdated      int32 = 4
 	EntryEventEvicted      int32 = 8
-	EntryEventEvictAll     int32 = 16
-	EntryEventClearAll     int32 = 32
+	MapEventEvicted        int32 = 16
+	MapEventCleared        int32 = 32
 	EntryEventMerged       int32 = 64
 	EntryEventExpired      int32 = 128
 	EntryEventInvalidation int32 = 256

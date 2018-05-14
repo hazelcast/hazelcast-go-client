@@ -417,17 +417,12 @@ func TestMultiMapProxy_ForceUnlockWithNil(t *testing.T) {
 }
 
 type EntryListener struct {
-	wg       *sync.WaitGroup
-	event    core.EntryEvent
-	mapEvent core.MapEvent
+	wg    *sync.WaitGroup
+	event core.EntryEvent
 }
 
 func (l *EntryListener) EntryAdded(event core.EntryEvent) {
 	l.event = event
-	l.wg.Done()
-}
-
-func (l *EntryListener) EntryUpdated(event core.EntryEvent) {
 	l.wg.Done()
 }
 
@@ -439,11 +434,6 @@ func (l *EntryListener) EntryEvicted(event core.EntryEvent) {
 	l.wg.Done()
 }
 
-func (l *EntryListener) EntryEvictAll(event core.MapEvent) {
-	l.mapEvent = event
-	l.wg.Done()
-}
-
-func (l *EntryListener) EntryClearAll(event core.MapEvent) {
+func (l *EntryListener) MapCleared(event core.MapEvent) {
 	l.wg.Done()
 }

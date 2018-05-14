@@ -79,7 +79,7 @@ type topicMessageListener struct {
 	publishTime time.Time
 }
 
-func (l *topicMessageListener) OnMessage(message core.TopicMessage) {
+func (l *topicMessageListener) OnMessage(message core.Message) {
 	l.msg = message.MessageObject()
 	l.publishTime = message.PublishTime()
 	l.wg.Done()
