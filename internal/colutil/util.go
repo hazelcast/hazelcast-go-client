@@ -16,8 +16,8 @@ package colutil
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -54,7 +54,7 @@ func DataToObjectCollection(dataSlice []*serialization.Data, service *serializat
 	return elements, nil
 }
 
-func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serialization.Service) (pairSlice []core.Pair, err error) {
+func DataToObjectPairCollection(dataSlice []*proto.Pair, service *serialization.Service) (pairSlice []core.Pair, err error) {
 	pairSlice = make([]core.Pair, len(dataSlice))
 	for index, pairData := range dataSlice {
 		key, err := service.ToObject(pairData.Key().(*serialization.Data))
@@ -65,7 +65,7 @@ func DataToObjectPairCollection(dataSlice []*protocol.Pair, service *serializati
 		if err != nil {
 			return nil, err
 		}
-		pairSlice[index] = core.Pair(protocol.NewPair(key, value))
+		pairSlice[index] = core.Pair(proto.NewPair(key, value))
 	}
 	return
 }

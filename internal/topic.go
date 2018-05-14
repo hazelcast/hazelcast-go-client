@@ -16,7 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -33,21 +33,21 @@ func newTopicProxy(client *HazelcastClient, serviceName string, name string) (*t
 }
 
 func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID string, err error) {
-	request := protocol.TopicAddMessageListenerEncodeRequest(tp.name, false)
+	request := proto.TopicAddMessageListenerEncodeRequest(tp.name, false)
 	eventHandler := tp.createEventHandler(messageListener)
 
 	return tp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *protocol.ClientMessage {
-			return protocol.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
-		}, func(clientMessage *protocol.ClientMessage) string {
-			return protocol.TopicAddMessageListenerDecodeResponse(clientMessage)()
+		func(registrationID string) *proto.ClientMessage {
+			return proto.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
+		}, func(clientMessage *proto.ClientMessage) string {
+			return proto.TopicAddMessageListenerDecodeResponse(clientMessage)()
 		})
 
 }
 
 func (tp *topicProxy) RemoveMessageListener(registrationID string) (removed bool, err error) {
-	return tp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *protocol.ClientMessage {
-		return protocol.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
+	return tp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+		return proto.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
 	})
 }
 
@@ -56,17 +56,17 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := protocol.TopicPublishEncodeRequest(tp.name, messageData)
+	request := proto.TopicPublishEncodeRequest(tp.name, messageData)
 	_, err = tp.invoke(request)
 	return
 }
 
-func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) func(clientMessage *protocol.ClientMessage) {
-	return func(message *protocol.ClientMessage) {
-		protocol.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
+func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) func(clientMessage *proto.ClientMessage) {
+	return func(message *proto.ClientMessage) {
+		proto.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
 			member := tp.client.ClusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
-			itemEvent := protocol.NewTopicMessage(item, publishTime, member.(*protocol.Member))
+			itemEvent := proto.NewTopicMessage(item, publishTime, member.(*proto.Member))
 			messageListener.OnMessage(itemEvent)
 		})
 	}

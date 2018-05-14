@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 const (
@@ -91,7 +91,7 @@ func (hbs *heartBeatService) heartBeat() {
 		}
 		if timeSinceLastRead > hbs.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
-			request := protocol.ClientPingEncodeRequest()
+			request := proto.ClientPingEncodeRequest()
 			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)
 			copyConnection := connection
 			go func() {

@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
-	"github.com/hazelcast/hazelcast-go-client/internal/predicates"
+	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
 	"github.com/hazelcast/hazelcast-go-client/internal/projection"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -277,7 +277,7 @@ func (s *Service) registerIdentifiedFactories() error {
 		factories[id] = s.serializationConfig.DataSerializableFactories()[id]
 	}
 
-	factories[predicates.FactoryID] = predicates.NewFactory()
+	factories[predicate.FactoryID] = predicate.NewFactory()
 	factories[projection.FactoryID] = projection.NewFactory()
 	factories[aggregation.FactoryID] = aggregation.NewFactory()
 

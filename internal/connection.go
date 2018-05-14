@@ -23,15 +23,15 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 const BufferSize = 8192 * 2
 
 type Connection struct {
-	pending                chan *protocol.ClientMessage
-	received               chan *protocol.ClientMessage
+	pending                chan *proto.ClientMessage
+	received               chan *proto.ClientMessage
 	socket                 net.Conn
 	clientMessageBuilder   *clientMessageBuilder
 	closed                 chan struct{}
@@ -51,19 +51,19 @@ type Connection struct {
 	connectionManager      *connectionManager
 }
 
-func newConnection(address core.Address, responseChannel chan *protocol.ClientMessage, sendingError chan int64,
+func newConnection(address core.Address, responseChannel chan *proto.ClientMessage, sendingError chan int64,
 	connectionID int64, connectionManager *connectionManager) *Connection {
-	connection := Connection{pending: make(chan *protocol.ClientMessage, 1),
+	connection := Connection{pending: make(chan *proto.ClientMessage, 1),
 		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel,
-			incompleteMessages: make(map[int64]*protocol.ClientMessage)}, sendingError: sendingError,
-		received:          make(chan *protocol.ClientMessage, 1),
+			incompleteMessages: make(map[int64]*proto.ClientMessage)}, sendingError: sendingError,
+		received:          make(chan *proto.ClientMessage, 1),
 		closed:            make(chan struct{}),
 		heartBeating:      true,
 		readBuffer:        make([]byte, 0),
 		connectionID:      connectionID,
 		connectionManager: connectionManager,
 	}
-	connection.endpoint.Store(&protocol.Address{})
+	connection.endpoint.Store(&proto.Address{})
 	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
 	if err != nil {
 		return nil
@@ -100,7 +100,7 @@ func (c *Connection) writePool() {
 	}
 }
 
-func (c *Connection) send(clientMessage *protocol.ClientMessage) bool {
+func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 	if !c.isAlive() {
 		return false
 	}
@@ -113,7 +113,7 @@ func (c *Connection) send(clientMessage *protocol.ClientMessage) bool {
 	}
 }
 
-func (c *Connection) write(clientMessage *protocol.ClientMessage) error {
+func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	remainingLen := len(clientMessage.Buffer)
 	writeIndex := 0
 	for remainingLen > 0 {
@@ -166,7 +166,7 @@ func (c *Connection) receiveMessage() {
 		if frameLength > uint32(len(c.readBuffer)) {
 			return
 		}
-		resp := protocol.NewClientMessage(c.readBuffer[:frameLength], 0)
+		resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
 		c.readBuffer = c.readBuffer[frameLength:]
 		c.clientMessageBuilder.onMessage(resp)
 	}
@@ -192,7 +192,7 @@ func (c *Connection) String() string {
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
 		", connected server version=%s", c.isAlive(), c.connectionID,
-		c.endpoint.Load().(*protocol.Address).Host(), c.endpoint.Load().(*protocol.Address).Port(),
+		c.endpoint.Load().(*proto.Address).Host(), c.endpoint.Load().(*proto.Address).Port(),
 		c.lastRead.Load().(time.Time).String(), c.lastWrite.Load().(time.Time).String(),
 		c.closedTime.Load().(time.Time).String(), c.lastHeartbeatRequested.Load().(time.Time).String(),
 		c.lastHeartbeatReceived.Load().(time.Time).String(), c.serverHazelcastVersion)

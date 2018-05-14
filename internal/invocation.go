@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
@@ -31,17 +31,17 @@ const retryWaitTimeInSeconds = 1
 type invocation struct {
 	boundConnection         *Connection
 	sentConnection          *Connection
-	address                 *protocol.Address
-	request                 *protocol.ClientMessage
+	address                 *proto.Address
+	request                 *proto.ClientMessage
 	partitionID             int32
-	response                chan *protocol.ClientMessage
+	response                chan *proto.ClientMessage
 	err                     chan error
 	done                    chan bool
-	eventHandler            func(clientMessage *protocol.ClientMessage)
+	eventHandler            func(clientMessage *proto.ClientMessage)
 	timeout                 <-chan time.Time
 	isTimedout              atomic.Value
 	timedoutTime            atomic.Value
-	listenerResponseDecoder protocol.DecodeListenerResponse
+	listenerResponseDecoder proto.DecodeListenerResponse
 }
 
 type connectionAndError struct {
@@ -50,17 +50,17 @@ type connectionAndError struct {
 }
 
 type invocationResult interface {
-	Result() (*protocol.ClientMessage, error)
+	Result() (*proto.ClientMessage, error)
 }
 
-func newInvocation(request *protocol.ClientMessage, partitionID int32, address *protocol.Address,
+func newInvocation(request *proto.ClientMessage, partitionID int32, address *proto.Address,
 	connection *Connection, client *HazelcastClient) *invocation {
 	invocation := &invocation{
 		request:         request,
 		partitionID:     partitionID,
 		address:         address,
 		boundConnection: connection,
-		response:        make(chan *protocol.ClientMessage, 10),
+		response:        make(chan *proto.ClientMessage, 10),
 		err:             make(chan error, 1),
 		done:            make(chan bool, 1),
 		timeout:         time.After(client.ClientConfig.ClientNetworkConfig().InvocationTimeout()),
@@ -78,7 +78,7 @@ func newInvocation(request *protocol.ClientMessage, partitionID int32, address *
 	return invocation
 }
 
-func (i *invocation) Result() (*protocol.ClientMessage, error) {
+func (i *invocation) Result() (*proto.ClientMessage, error) {
 	select {
 	case response := <-i.response:
 		i.done <- true
@@ -96,7 +96,7 @@ type invocationService struct {
 	responseWaitings            map[int64]*invocation
 	eventHandlers               map[int64]*invocation
 	sending                     chan *invocation
-	responseChannel             chan *protocol.ClientMessage
+	responseChannel             chan *proto.ClientMessage
 	cleanupConnectionChannel    chan *connectionAndError
 	removeEventHandlerChannel   chan int64
 	notSentMessages             chan int64
@@ -116,7 +116,7 @@ func newInvocationService(client *HazelcastClient) *invocationService {
 		sending:          make(chan *invocation, 10000),
 		responseWaitings: make(map[int64]*invocation),
 		eventHandlers:    make(map[int64]*invocation),
-		responseChannel:  make(chan *protocol.ClientMessage, 1),
+		responseChannel:  make(chan *proto.ClientMessage, 1),
 		quit:             make(chan struct{}),
 		cleanupConnectionChannel:    make(chan *connectionAndError, 1),
 		sendToConnectionChannel:     make(chan *invocationConnection, 100),
@@ -144,22 +144,22 @@ func (is *invocationService) nextCorrelationID() int64 {
 	return atomic.AddInt64(&is.nextCorrelation, 1)
 }
 
-func (is *invocationService) invokeOnPartitionOwner(request *protocol.ClientMessage, partitionID int32) invocationResult {
+func (is *invocationService) invokeOnPartitionOwner(request *proto.ClientMessage, partitionID int32) invocationResult {
 	invocation := newInvocation(request, partitionID, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationService) invokeOnRandomTarget(request *protocol.ClientMessage) invocationResult {
+func (is *invocationService) invokeOnRandomTarget(request *proto.ClientMessage) invocationResult {
 	invocation := newInvocation(request, -1, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationService) invokeOnKeyOwner(request *protocol.ClientMessage, keyData *serialization.Data) invocationResult {
+func (is *invocationService) invokeOnKeyOwner(request *proto.ClientMessage, keyData *serialization.Data) invocationResult {
 	partitionID := is.client.PartitionService.GetPartitionID(keyData)
 	return is.invokeOnPartitionOwner(request, partitionID)
 }
 
-func (is *invocationService) invokeOnTarget(request *protocol.ClientMessage, target *protocol.Address) invocationResult {
+func (is *invocationService) invokeOnTarget(request *proto.ClientMessage, target *proto.Address) invocationResult {
 	invocation := newInvocation(request, -1, target, nil, is.client)
 	return is.sendInvocation(invocation)
 }
@@ -221,7 +221,7 @@ func (is *invocationService) invokeNonSmart(invocation *invocation) {
 	if invocation.boundConnection != nil {
 		is.sendToConnectionChannel <- &invocationConnection{invocation: invocation, connection: invocation.boundConnection}
 	} else {
-		addr := is.client.ClusterService.ownerConnectionAddress.Load().(*protocol.Address)
+		addr := is.client.ClusterService.ownerConnectionAddress.Load().(*proto.Address)
 		is.sendToAddress(invocation, addr)
 	}
 }
@@ -249,7 +249,7 @@ func (is *invocationService) sendInvocation(invocation *invocation) invocationRe
 	return invocation
 }
 
-func (is *invocationService) invokeOnConnection(request *protocol.ClientMessage, connection *Connection) invocationResult {
+func (is *invocationService) invokeOnConnection(request *proto.ClientMessage, connection *Connection) invocationResult {
 	invocation := newInvocation(request, -1, nil, connection, is.client)
 	return is.sendInvocation(invocation)
 }
@@ -265,7 +265,7 @@ func (is *invocationService) sendToConnection(invocation *invocation, connection
 
 }
 
-func (is *invocationService) sendToAddress(invocation *invocation, address *protocol.Address) {
+func (is *invocationService) sendToAddress(invocation *invocation, address *proto.Address) {
 	connectionChannel, errorChannel := is.client.ConnectionManager.getOrConnect(address, false)
 	is.send(invocation, connectionChannel, errorChannel)
 }
@@ -311,7 +311,7 @@ func (is *invocationService) removeEventHandlerInternal(correlationID int64) {
 	}
 }
 
-func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
+func (is *invocationService) handleResponse(response *proto.ClientMessage) {
 	correlationID := response.CorrelationID()
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
 		if response.HasFlags(bufutil.ListenerFlag) > 0 {
@@ -334,8 +334,8 @@ func (is *invocationService) handleResponse(response *protocol.ClientMessage) {
 	}
 }
 
-func convertToError(clientMessage *protocol.ClientMessage) *protocol.Error {
-	return protocol.ErrorCodecDecode(clientMessage)
+func convertToError(clientMessage *proto.ClientMessage) *proto.Error {
+	return proto.ErrorCodecDecode(clientMessage)
 }
 
 func (is *invocationService) onConnectionClosed(connection *Connection, cause error) {

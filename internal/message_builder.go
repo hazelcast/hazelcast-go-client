@@ -15,16 +15,16 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol"
-	"github.com/hazelcast/hazelcast-go-client/internal/protocol/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 type clientMessageBuilder struct {
-	incompleteMessages map[int64]*protocol.ClientMessage
-	responseChannel    chan *protocol.ClientMessage
+	incompleteMessages map[int64]*proto.ClientMessage
+	responseChannel    chan *proto.ClientMessage
 }
 
-func (mb *clientMessageBuilder) onMessage(msg *protocol.ClientMessage) {
+func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
 	if msg.HasFlags(bufutil.BeginEndFlag) > 0 {
 		mb.responseChannel <- msg
 	} else if msg.HasFlags(bufutil.BeginFlag) > 0 {
