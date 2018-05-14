@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"runtime"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
@@ -41,7 +43,8 @@ func main() {
 }
 
 func startMapSoak() {
-	numbPtr := flag.Float64("hour", 48, "a float")
+	routineNumBefore := runtime.NumGoroutine()
+	numbPtr := flag.Float64("hour", 0, "a float")
 	addresses := flag.String("addresses", "", "addresses")
 	flag.Parse()
 	config := hazelcast.NewHazelcastConfig()
@@ -54,12 +57,14 @@ func startMapSoak() {
 	client, err := hazelcast.NewHazelcastClientWithConfig(config)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	mp, err := client.GetMap("testMap")
 
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	mp.AddEntryListener(simpleListener{}, false)
 	wg := sync.WaitGroup{}
@@ -99,7 +104,12 @@ func startMapSoak() {
 
 	}
 	wg.Wait()
+	client.Shutdown()
 	log.Println("Soak test has finished!")
+	time.Sleep(10 * time.Second)
+	routineNumAfter := runtime.NumGoroutine()
+	log.Printf("Number of go subroutines before: %d after: %d", routineNumBefore, routineNumAfter)
+
 }
 
 type simpleListener struct {
