@@ -42,38 +42,38 @@ func (p *predicate) ClassID() int32 {
 	return p.id
 }
 
-type SQLPredicate struct {
+type SQL struct {
 	*predicate
 	sql string
 }
 
-func NewSQLPredicate(sql string) *SQLPredicate {
-	return &SQLPredicate{newPredicate(sqlPredicateID), sql}
+func NewSQL(sql string) *SQL {
+	return &SQL{newPredicate(sqlID), sql}
 }
 
-func (sp *SQLPredicate) ReadData(input serialization.DataInput) error {
+func (sp *SQL) ReadData(input serialization.DataInput) error {
 	var err error
-	sp.predicate = newPredicate(sqlPredicateID)
+	sp.predicate = newPredicate(sqlID)
 	sp.sql, err = input.ReadUTF()
 	return err
 }
 
-func (sp *SQLPredicate) WriteData(output serialization.DataOutput) error {
+func (sp *SQL) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(sp.sql)
 	return nil
 }
 
-type AndPredicate struct {
+type And struct {
 	*predicate
 	predicates []interface{}
 }
 
-func NewAndPredicate(predicates []interface{}) *AndPredicate {
-	return &AndPredicate{newPredicate(andPredicateID), predicates}
+func NewAnd(predicates []interface{}) *And {
+	return &And{newPredicate(andID), predicates}
 }
 
-func (ap *AndPredicate) ReadData(input serialization.DataInput) error {
-	ap.predicate = newPredicate(andPredicateID)
+func (ap *And) ReadData(input serialization.DataInput) error {
+	ap.predicate = newPredicate(andID)
 	length, err := input.ReadInt32()
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (ap *AndPredicate) ReadData(input serialization.DataInput) error {
 	return nil
 }
 
-func (ap *AndPredicate) WriteData(output serialization.DataOutput) error {
+func (ap *And) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(int32(len(ap.predicates)))
 	for _, pred := range ap.predicates {
 		err := output.WriteObject(pred)
@@ -100,20 +100,20 @@ func (ap *AndPredicate) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-type BetweenPredicate struct {
+type Between struct {
 	*predicate
 	field string
 	from  interface{}
 	to    interface{}
 }
 
-func NewBetweenPredicate(field string, from interface{}, to interface{}) *BetweenPredicate {
-	return &BetweenPredicate{newPredicate(betweenPredicateID), field, from, to}
+func NewBetween(field string, from interface{}, to interface{}) *Between {
+	return &Between{newPredicate(betweenID), field, from, to}
 }
 
-func (bp *BetweenPredicate) ReadData(input serialization.DataInput) error {
+func (bp *Between) ReadData(input serialization.DataInput) error {
 	var err error
-	bp.predicate = newPredicate(betweenPredicateID)
+	bp.predicate = newPredicate(betweenID)
 	bp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func (bp *BetweenPredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-func (bp *BetweenPredicate) WriteData(output serialization.DataOutput) error {
+func (bp *Between) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(bp.field)
 	err := output.WriteObject(bp.to)
 	if err != nil {
@@ -136,19 +136,19 @@ func (bp *BetweenPredicate) WriteData(output serialization.DataOutput) error {
 	return output.WriteObject(bp.from)
 }
 
-type EqualPredicate struct {
+type Equal struct {
 	*predicate
 	field string
 	value interface{}
 }
 
-func NewEqualPredicate(field string, value interface{}) *EqualPredicate {
-	return &EqualPredicate{newPredicate(equalPredicateID), field, value}
+func NewEqual(field string, value interface{}) *Equal {
+	return &Equal{newPredicate(equalID), field, value}
 }
 
-func (ep *EqualPredicate) ReadData(input serialization.DataInput) error {
+func (ep *Equal) ReadData(input serialization.DataInput) error {
 	var err error
-	ep.predicate = newPredicate(equalPredicateID)
+	ep.predicate = newPredicate(equalID)
 	ep.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -158,12 +158,12 @@ func (ep *EqualPredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-func (ep *EqualPredicate) WriteData(output serialization.DataOutput) error {
+func (ep *Equal) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(ep.field)
 	return output.WriteObject(ep.value)
 }
 
-type GreaterLessPredicate struct {
+type GreaterLess struct {
 	*predicate
 	field string
 	value interface{}
@@ -171,13 +171,13 @@ type GreaterLessPredicate struct {
 	less  bool
 }
 
-func NewGreaterLessPredicate(field string, value interface{}, equal bool, less bool) *GreaterLessPredicate {
-	return &GreaterLessPredicate{newPredicate(greaterlessPredicateID), field, value, equal, less}
+func NewGreaterLess(field string, value interface{}, equal bool, less bool) *GreaterLess {
+	return &GreaterLess{newPredicate(greaterlessID), field, value, equal, less}
 }
 
-func (glp *GreaterLessPredicate) ReadData(input serialization.DataInput) error {
+func (glp *GreaterLess) ReadData(input serialization.DataInput) error {
 	var err error
-	glp.predicate = newPredicate(greaterlessPredicateID)
+	glp.predicate = newPredicate(greaterlessID)
 	glp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func (glp *GreaterLessPredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-func (glp *GreaterLessPredicate) WriteData(output serialization.DataOutput) error {
+func (glp *GreaterLess) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(glp.field)
 	err := output.WriteObject(glp.value)
 	if err != nil {
@@ -205,19 +205,19 @@ func (glp *GreaterLessPredicate) WriteData(output serialization.DataOutput) erro
 	return nil
 }
 
-type LikePredicate struct {
+type Like struct {
 	*predicate
 	field string
 	expr  string
 }
 
-func NewLikePredicate(field string, expr string) *LikePredicate {
-	return &LikePredicate{newPredicate(likePredicateID), field, expr}
+func NewLike(field string, expr string) *Like {
+	return &Like{newPredicate(likeID), field, expr}
 }
 
-func (lp *LikePredicate) ReadData(input serialization.DataInput) error {
+func (lp *Like) ReadData(input serialization.DataInput) error {
 	var err error
-	lp.predicate = newPredicate(likePredicateID)
+	lp.predicate = newPredicate(likeID)
 	lp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -226,23 +226,23 @@ func (lp *LikePredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-func (lp *LikePredicate) WriteData(output serialization.DataOutput) error {
+func (lp *Like) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(lp.field)
 	output.WriteUTF(lp.expr)
 	return nil
 }
 
-type ILikePredicate struct {
-	*LikePredicate
+type ILike struct {
+	*Like
 }
 
-func NewILikePredicate(field string, expr string) *ILikePredicate {
-	return &ILikePredicate{&LikePredicate{newPredicate(ilikePredicateID), field, expr}}
+func NewILike(field string, expr string) *ILike {
+	return &ILike{&Like{newPredicate(ilikeID), field, expr}}
 }
 
-func (ilp *ILikePredicate) ReadData(input serialization.DataInput) error {
+func (ilp *ILike) ReadData(input serialization.DataInput) error {
 	var err error
-	ilp.LikePredicate = &LikePredicate{predicate: newPredicate(ilikePredicateID)}
+	ilp.Like = &Like{predicate: newPredicate(ilikeID)}
 	ilp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -251,19 +251,19 @@ func (ilp *ILikePredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-type InPredicate struct {
+type In struct {
 	*predicate
 	field  string
 	values []interface{}
 }
 
-func NewInPredicate(field string, values []interface{}) *InPredicate {
-	return &InPredicate{newPredicate(inPredicateID), field, values}
+func NewIn(field string, values []interface{}) *In {
+	return &In{newPredicate(inID), field, values}
 }
 
-func (ip *InPredicate) ReadData(input serialization.DataInput) error {
+func (ip *In) ReadData(input serialization.DataInput) error {
 	var err error
-	ip.predicate = newPredicate(inPredicateID)
+	ip.predicate = newPredicate(inID)
 	ip.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -282,7 +282,7 @@ func (ip *InPredicate) ReadData(input serialization.DataInput) error {
 	return nil
 }
 
-func (ip *InPredicate) WriteData(output serialization.DataOutput) error {
+func (ip *In) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(ip.field)
 	output.WriteInt32(int32(len(ip.values)))
 	for _, value := range ip.values {
@@ -294,38 +294,38 @@ func (ip *InPredicate) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-type InstanceOfPredicate struct {
+type InstanceOf struct {
 	*predicate
 	className string
 }
 
-func NewInstanceOfPredicate(className string) *InstanceOfPredicate {
-	return &InstanceOfPredicate{newPredicate(instanceOfPredicateID), className}
+func NewInstanceOf(className string) *InstanceOf {
+	return &InstanceOf{newPredicate(instanceOfID), className}
 }
 
-func (iop *InstanceOfPredicate) ReadData(input serialization.DataInput) error {
+func (iop *InstanceOf) ReadData(input serialization.DataInput) error {
 	var err error
-	iop.predicate = newPredicate(instanceOfPredicateID)
+	iop.predicate = newPredicate(instanceOfID)
 	iop.className, err = input.ReadUTF()
 	return err
 }
 
-func (iop *InstanceOfPredicate) WriteData(output serialization.DataOutput) error {
+func (iop *InstanceOf) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(iop.className)
 	return nil
 }
 
-type NotEqualPredicate struct {
-	*EqualPredicate
+type NotEqual struct {
+	*Equal
 }
 
-func NewNotEqualPredicate(field string, value interface{}) *NotEqualPredicate {
-	return &NotEqualPredicate{&EqualPredicate{newPredicate(notEqualPredicateID), field, value}}
+func NewNotEqual(field string, value interface{}) *NotEqual {
+	return &NotEqual{&Equal{newPredicate(notEqualID), field, value}}
 }
 
-func (nep *NotEqualPredicate) ReadData(input serialization.DataInput) error {
+func (nep *NotEqual) ReadData(input serialization.DataInput) error {
 	var err error
-	nep.EqualPredicate = &EqualPredicate{predicate: newPredicate(notEqualPredicateID)}
+	nep.Equal = &Equal{predicate: newPredicate(notEqualID)}
 	nep.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -335,38 +335,38 @@ func (nep *NotEqualPredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-type NotPredicate struct {
+type Not struct {
 	*predicate
 	pred interface{}
 }
 
-func NewNotPredicate(pred interface{}) *NotPredicate {
-	return &NotPredicate{newPredicate(notPredicateID), pred}
+func NewNot(pred interface{}) *Not {
+	return &Not{newPredicate(notID), pred}
 }
 
-func (np *NotPredicate) ReadData(input serialization.DataInput) error {
-	np.predicate = newPredicate(notPredicateID)
+func (np *Not) ReadData(input serialization.DataInput) error {
+	np.predicate = newPredicate(notID)
 	i, err := input.ReadObject()
 	np.pred = i.(interface{})
 	return err
 }
 
-func (np *NotPredicate) WriteData(output serialization.DataOutput) error {
+func (np *Not) WriteData(output serialization.DataOutput) error {
 	return output.WriteObject(np.pred)
 }
 
-type OrPredicate struct {
+type Or struct {
 	*predicate
 	predicates []interface{}
 }
 
-func NewOrPredicate(predicates []interface{}) *OrPredicate {
-	return &OrPredicate{newPredicate(orPredicateID), predicates}
+func NewOr(predicates []interface{}) *Or {
+	return &Or{newPredicate(orID), predicates}
 }
 
-func (or *OrPredicate) ReadData(input serialization.DataInput) error {
+func (or *Or) ReadData(input serialization.DataInput) error {
 	var err error
-	or.predicate = newPredicate(orPredicateID)
+	or.predicate = newPredicate(orID)
 	length, err := input.ReadInt32()
 	if err != nil {
 		return err
@@ -382,7 +382,7 @@ func (or *OrPredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-func (or *OrPredicate) WriteData(output serialization.DataOutput) error {
+func (or *Or) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(int32(len(or.predicates)))
 	for _, pred := range or.predicates {
 		err := output.WriteObject(pred)
@@ -393,19 +393,19 @@ func (or *OrPredicate) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-type RegexPredicate struct {
+type Regex struct {
 	*predicate
 	field string
 	regex string
 }
 
-func NewRegexPredicate(field string, regex string) *RegexPredicate {
-	return &RegexPredicate{newPredicate(regexPredicateID), field, regex}
+func NewRegex(field string, regex string) *Regex {
+	return &Regex{newPredicate(regexID), field, regex}
 }
 
-func (rp *RegexPredicate) ReadData(input serialization.DataInput) error {
+func (rp *Regex) ReadData(input serialization.DataInput) error {
 	var err error
-	rp.predicate = newPredicate(regexPredicateID)
+	rp.predicate = newPredicate(regexID)
 	rp.field, err = input.ReadUTF()
 	if err != nil {
 		return err
@@ -414,44 +414,44 @@ func (rp *RegexPredicate) ReadData(input serialization.DataInput) error {
 	return err
 }
 
-func (rp *RegexPredicate) WriteData(output serialization.DataOutput) error {
+func (rp *Regex) WriteData(output serialization.DataOutput) error {
 	output.WriteUTF(rp.field)
 	output.WriteUTF(rp.regex)
 	return nil
 }
 
-type FalsePredicate struct {
+type False struct {
 	*predicate
 }
 
-func NewFalsePredicate() *FalsePredicate {
-	return &FalsePredicate{newPredicate(falsePredicateID)}
+func NewFalse() *False {
+	return &False{newPredicate(falseID)}
 }
 
-func (fp *FalsePredicate) ReadData(input serialization.DataInput) error {
-	fp.predicate = newPredicate(falsePredicateID)
+func (fp *False) ReadData(input serialization.DataInput) error {
+	fp.predicate = newPredicate(falseID)
 	return nil
 }
 
-func (fp *FalsePredicate) WriteData(output serialization.DataOutput) error {
+func (fp *False) WriteData(output serialization.DataOutput) error {
 	//Empty method
 	return nil
 }
 
-type TruePredicate struct {
+type True struct {
 	*predicate
 }
 
-func NewTruePredicate() *TruePredicate {
-	return &TruePredicate{newPredicate(truePredicateID)}
+func NewTrue() *True {
+	return &True{newPredicate(trueID)}
 }
 
-func (tp *TruePredicate) ReadData(input serialization.DataInput) error {
-	tp.predicate = newPredicate(truePredicateID)
+func (tp *True) ReadData(input serialization.DataInput) error {
+	tp.predicate = newPredicate(trueID)
 	return nil
 }
 
-func (tp *TruePredicate) WriteData(output serialization.DataOutput) error {
+func (tp *True) WriteData(output serialization.DataOutput) error {
 	//Empty method
 	return nil
 }

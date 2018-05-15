@@ -21,94 +21,94 @@ import (
 
 // SQL returns a SQLPredicate with the given sql.
 func SQL(sql string) interface{} {
-	return predicate.NewSQLPredicate(sql)
+	return predicate.NewSQL(sql)
 }
 
 // And returns an AndPredicate with the given predicate.
 func And(predicates ...interface{}) interface{} {
-	return predicate.NewAndPredicate(predicates)
+	return predicate.NewAnd(predicates)
 }
 
 // Between returns a BetweenPredicate with the given parameters.
 func Between(field string, from interface{}, to interface{}) interface{} {
-	return predicate.NewBetweenPredicate(field, from, to)
+	return predicate.NewBetween(field, from, to)
 }
 
 // Equal returns an EqualPredicate with the given field and value.
 func Equal(field string, value interface{}) interface{} {
-	return predicate.NewEqualPredicate(field, value)
+	return predicate.NewEqual(field, value)
 }
 
 // GreaterThan returns a GreaterLessPredicate with the given field and value.
 // The returned GreaterLessPredicate behaves like greater than.
 func GreaterThan(field string, value interface{}) interface{} {
-	return predicate.NewGreaterLessPredicate(field, value, false, false)
+	return predicate.NewGreaterLess(field, value, false, false)
 }
 
 // GreaterEqual returns a GreaterLessPredicate with the given field and value.
 // The returned GreaterLessPredicate behaves like greater equal.
 func GreaterEqual(field string, value interface{}) interface{} {
-	return predicate.NewGreaterLessPredicate(field, value, true, false)
+	return predicate.NewGreaterLess(field, value, true, false)
 }
 
 // LessThan returns a GreaterLessPredicate with the given field and value.
 // The returned GreaterLessPredicate behaves like less than.
 func LessThan(field string, value interface{}) interface{} {
-	return predicate.NewGreaterLessPredicate(field, value, false, true)
+	return predicate.NewGreaterLess(field, value, false, true)
 }
 
 // LessEqual returns a GreaterLessPredicate with the given field and value.
 // The returned GreaterLessPredicate behaves like less equal.
 func LessEqual(field string, value interface{}) interface{} {
-	return predicate.NewGreaterLessPredicate(field, value, true, true)
+	return predicate.NewGreaterLess(field, value, true, true)
 }
 
 // Like returns a LikePredicate with the given field and expr.
 func Like(field string, expr string) interface{} {
-	return predicate.NewLikePredicate(field, expr)
+	return predicate.NewLike(field, expr)
 }
 
 // ILike returns an ILikePredicate with the given field and expr.
 func ILike(field string, expr string) interface{} {
-	return predicate.NewILikePredicate(field, expr)
+	return predicate.NewILike(field, expr)
 }
 
 // In returns an InPredicate with the given field and values.
 func In(field string, values ...interface{}) interface{} {
-	return predicate.NewInPredicate(field, values)
+	return predicate.NewIn(field, values)
 }
 
 // InstanceOf returns an InstanceOfPredicate with the given className.
 func InstanceOf(className string) interface{} {
-	return predicate.NewInstanceOfPredicate(className)
+	return predicate.NewInstanceOf(className)
 }
 
 // NotEqual returns a NotEqualPredicate with the given field and value.
 func NotEqual(field string, value interface{}) interface{} {
-	return predicate.NewNotEqualPredicate(field, value)
+	return predicate.NewNotEqual(field, value)
 }
 
 // Not returns a NotPredicate with the given predicate.
 func Not(predicates interface{}) interface{} {
-	return predicate.NewNotPredicate(predicates)
+	return predicate.NewNot(predicates)
 }
 
 // Or returns an OrPredicate with the given predicate.
 func Or(predicates ...interface{}) interface{} {
-	return predicate.NewOrPredicate(predicates)
+	return predicate.NewOr(predicates)
 }
 
 // Regex returns a RegexPredicate with the given field and regex.
 func Regex(field string, regex string) interface{} {
-	return predicate.NewRegexPredicate(field, regex)
+	return predicate.NewRegex(field, regex)
 }
 
 // True returns a TruePredicate.
 func True() interface{} {
-	return predicate.NewTruePredicate()
+	return predicate.NewTrue()
 }
 
 // False returns a FalsePredicate.
 func False() interface{} {
-	return predicate.NewFalsePredicate()
+	return predicate.NewFalse()
 }

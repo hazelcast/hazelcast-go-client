@@ -29,36 +29,36 @@ func NewFactory() *Factory {
 
 func (pf *Factory) Create(id int32) serialization.IdentifiedDataSerializable {
 	switch id {
-	case sqlPredicateID:
-		return &SQLPredicate{}
-	case andPredicateID:
-		return &AndPredicate{}
-	case betweenPredicateID:
-		return &BetweenPredicate{}
-	case equalPredicateID:
-		return &EqualPredicate{}
-	case greaterlessPredicateID:
-		return &GreaterLessPredicate{}
-	case likePredicateID:
-		return &LikePredicate{}
-	case ilikePredicateID:
-		return &ILikePredicate{}
-	case inPredicateID:
-		return &InPredicate{}
-	case instanceOfPredicateID:
-		return &InstanceOfPredicate{}
-	case notEqualPredicateID:
-		return &NotEqualPredicate{}
-	case notPredicateID:
-		return &NotPredicate{}
-	case orPredicateID:
-		return &OrPredicate{}
-	case regexPredicateID:
-		return &RegexPredicate{}
-	case falsePredicateID:
-		return &FalsePredicate{}
-	case truePredicateID:
-		return &TruePredicate{}
+	case sqlID:
+		return &SQL{}
+	case andID:
+		return &And{}
+	case betweenID:
+		return &Between{}
+	case equalID:
+		return &Equal{}
+	case greaterlessID:
+		return &GreaterLess{}
+	case likeID:
+		return &Like{}
+	case ilikeID:
+		return &ILike{}
+	case inID:
+		return &In{}
+	case instanceOfID:
+		return &InstanceOf{}
+	case notEqualID:
+		return &NotEqual{}
+	case notID:
+		return &Not{}
+	case orID:
+		return &Or{}
+	case regexID:
+		return &Regex{}
+	case falseID:
+		return &False{}
+	case trueID:
+		return &True{}
 	default:
 		return nil
 	}
