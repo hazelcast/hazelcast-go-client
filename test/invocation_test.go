@@ -166,8 +166,8 @@ func TestInvocationShouldNotHang_whenClientShutsDown(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
-	config := hazelcast.NewHazelcastConfig()
-	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	config := hazelcast.NewConfig()
+	client, _ := hazelcast.NewClientWithConfig(config)
 	mp, _ := client.GetMap("testMap")
 
 	putCount := 1000
