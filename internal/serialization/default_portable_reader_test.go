@@ -180,11 +180,12 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	var expectedRet serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), 0))
+
 	o := NewPositionalObjectDataOutput(0, service, false)
 	serializer, _ := service.FindSerializerFor(expectedRet)
 	pw := NewDefaultPortableWriter(serializer.(*PortableSerializer), o, classDef)
@@ -202,7 +203,7 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	var expectedRet serialization.Portable
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
@@ -387,11 +388,12 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineers", classdef.TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), 0))
+
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	serializer := NewPortableSerializer(service, config.PortableFactories(), 0)
 	pw := NewDefaultPortableWriter(serializer, o, classDef)
@@ -409,7 +411,7 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	var expectedRet serialization.Portable
 	config := config.NewSerializationConfig()
-	config.AddPortableFactory(2, &PortableFactory1{})
+	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewSerializationService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
@@ -434,6 +436,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), 3))
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(10, "a9", classdef.TypeUTFArray,
 		classDef.FactoryID(), classDef.ClassID(), 3))
+
 	o := NewPositionalObjectDataOutput(0, service, false)
 
 	pw := NewDefaultPortableWriter(nil, o, classDef)

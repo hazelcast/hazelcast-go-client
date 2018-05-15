@@ -17,6 +17,8 @@ package serialization
 import (
 	"fmt"
 
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -55,12 +57,11 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 		return nil, err
 	}
 
-	factory := ps.factories[factoryID]
-	if factory == nil {
-		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for %v", factoryID), nil)
+	portable, err := ps.createNewPortableInstance(factoryID, classID)
+	if err != nil {
+		return nil, err
 	}
 
-	portable := factory.Create(classID)
 	classDefinition := ps.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if classDefinition == nil {
 		var backupPos = input.Position()
@@ -91,6 +92,21 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 		reader.(*DefaultPortableReader).End()
 	}
 
+	return portable, nil
+}
+
+func (ps *PortableSerializer) createNewPortableInstance(factoryID int32, classID int32) (serialization.Portable, error) {
+	factory := ps.factories[factoryID]
+	if factory == nil {
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
+			factoryID), nil)
+	}
+
+	portable := factory.Create(classID)
+	if portable == nil {
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
+			reflect.TypeOf(factory), classID, factoryID), nil)
+	}
 	return portable, nil
 }
 
