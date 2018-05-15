@@ -28,12 +28,12 @@ type heartbeatListener struct {
 	wg *sync.WaitGroup
 }
 
-func (l *heartbeatListener) OnHeartbeatRestored(connection *internal.Connection) {
+func (l *heartbeatListener) HeartbeatResumed(connection *internal.Connection) {
 	l.wg.Done()
 
 }
 
-func (l *heartbeatListener) OnHeartbeatStopped(connection *internal.Connection) {
+func (l *heartbeatListener) HeartbeatStopped(connection *internal.Connection) {
 	l.wg.Done()
 }
 

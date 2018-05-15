@@ -261,7 +261,7 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteData(data serialization.IData) {
+func (o *ObjectDataOutput) WriteData(data serialization.Data) {
 	var length int32
 	if data == nil {
 		length = bufutil.NilArrayLength
@@ -810,7 +810,7 @@ func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) ([]string, error) 
 	return arr, nil
 }
 
-func (i *ObjectDataInput) ReadData() (serialization.IData, error) {
+func (i *ObjectDataInput) ReadData() (serialization.Data, error) {
 	array, err := i.ReadByteArray()
 	if err != nil {
 		return nil, err
