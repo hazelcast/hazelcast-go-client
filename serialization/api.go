@@ -89,9 +89,9 @@ type Serializer interface {
 	Write(output DataOutput, object interface{}) (err error)
 }
 
-// IData is the basic unit of serialization. It stores binary form of an object serialized
+// Data is the basic unit of serialization. It stores binary form of an object serialized
 // by SerializationService's ToData() method.
-type IData interface {
+type Data interface {
 	// Buffer returns byte array representation of internal binary format.
 	Buffer() []byte
 
@@ -146,8 +146,8 @@ type DataOutput interface {
 	// WriteObject writes an object.
 	WriteObject(i interface{}) error
 
-	// WriteData writes an IData.
-	WriteData(data IData)
+	// WriteData writes an Data.
+	WriteData(data Data)
 
 	// WriteByteArray writes a []byte.
 	WriteByteArray(v []byte)
@@ -251,8 +251,8 @@ type DataInput interface {
 	// ReadObject returns object read and error.
 	ReadObject() (interface{}, error)
 
-	// ReadData returns IData read and error.
-	ReadData() (IData, error)
+	// ReadData returns Data read and error.
+	ReadData() (Data, error)
 
 	// ReadByteArray returns []byte read and error.
 	ReadByteArray() ([]byte, error)

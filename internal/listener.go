@@ -307,7 +307,11 @@ func (ls *listenerService) onConnectionOpenedInternal(connection *Connection) {
 	}
 }
 
-func (ls *listenerService) OnHeartbeatRestored(connection *Connection) {
+func (ls *listenerService) HeartbeatStopped(connection *Connection) {
+	// NO OP
+}
+
+func (ls *listenerService) HeartbeatResumed(connection *Connection) {
 	ls.onHeartbeatRestoredChannel <- connection
 }
 

@@ -86,7 +86,7 @@ func (hbs *heartBeatService) heartBeat() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
 		if timeSinceLastRead > hbs.heartBeatTimeout {
 			if connection.heartBeating {
-				hbs.onHeartBeatStopped(connection)
+				hbs.HeartbeatStopped(connection)
 			}
 		}
 		if timeSinceLastRead > hbs.heartBeatInterval {
@@ -104,30 +104,30 @@ func (hbs *heartBeatService) heartBeat() {
 			}()
 		} else {
 			if !connection.heartBeating {
-				hbs.onHeartBeatRestored(connection)
+				hbs.HeartbeatResumed(connection)
 			}
 		}
 	}
 }
 
-func (hbs *heartBeatService) onHeartBeatRestored(connection *Connection) {
+func (hbs *heartBeatService) HeartbeatResumed(connection *Connection) {
 	log.Println("Heartbeat restored for a connection ", connection)
 	connection.heartBeating = true
 	listeners := hbs.listeners.Load().([]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(IOnHeartbeatRestored); ok {
-			listener.(IOnHeartbeatRestored).OnHeartbeatRestored(connection)
+		if _, ok := listener.(ConnectionHeartbeatListener); ok {
+			listener.(ConnectionHeartbeatListener).HeartbeatResumed(connection)
 		}
 	}
 }
 
-func (hbs *heartBeatService) onHeartBeatStopped(connection *Connection) {
+func (hbs *heartBeatService) HeartbeatStopped(connection *Connection) {
 	log.Println("Heartbeat stopped for a connection ", connection)
 	connection.heartBeating = false
 	listeners := hbs.listeners.Load().([]interface{})
 	for _, listener := range listeners {
-		if _, ok := listener.(IOnHeartbeatStopped); ok {
-			listener.(IOnHeartbeatStopped).OnHeartbeatStopped(connection)
+		if _, ok := listener.(ConnectionHeartbeatListener); ok {
+			listener.(ConnectionHeartbeatListener).HeartbeatStopped(connection)
 		}
 	}
 }
@@ -136,10 +136,7 @@ func (hbs *heartBeatService) shutdown() {
 	close(hbs.cancel)
 }
 
-type IOnHeartbeatStopped interface {
-	OnHeartbeatStopped(connection *Connection)
-}
-
-type IOnHeartbeatRestored interface {
-	OnHeartbeatRestored(connection *Connection)
+type ConnectionHeartbeatListener interface {
+	HeartbeatStopped(connection *Connection)
+	HeartbeatResumed(connection *Connection)
 }
