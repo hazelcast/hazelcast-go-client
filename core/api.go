@@ -15,10 +15,14 @@
 // Package core provides core API interfaces/classes.
 package core
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Address represents an address of a member in the cluster.
 type Address interface {
+	fmt.Stringer
 	// Host returns host of the member.
 	Host() string
 
@@ -28,6 +32,7 @@ type Address interface {
 
 // Member represents a member in the cluster with its address, uuid, lite member status and attributes.
 type Member interface {
+	fmt.Stringer
 	// Address returns the address of this member.
 	Address() Address
 

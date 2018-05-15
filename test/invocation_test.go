@@ -6,7 +6,7 @@
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless re®quired by applicable law or agreed to in writing, software
+// Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
@@ -158,6 +158,34 @@ func TestInvocationNotSent(t *testing.T) {
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, nil, timeout, false, "invocationNotSent failed")
 	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+
+}
+
+func TestInvocationShouldNotHang_whenClientShutsDown(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewHazelcastConfig()
+	client, _ := hazelcast.NewHazelcastClientWithConfig(config)
+	mp, _ := client.GetMap("testMap")
+
+	putCount := 1000
+	wg.Add(putCount)
+	// make put ops concurrently so that some of them will not be sent when the server gets shut down.
+	go func() {
+		for i := 0; i < putCount; i++ {
+			go func() {
+				mp.Put("testKey", "testValue")
+				wg.Done()
+			}()
+
+		}
+	}()
+	time.Sleep(10 * time.Millisecond)
+	client.Shutdown()
+	timeout := WaitTimeout(wg, Timeout)
+	assert.Equalf(t, nil, timeout, false, "invocationNotSent failed")
 	remoteController.ShutdownCluster(cluster.ID)
 
 }

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -41,6 +42,10 @@ func (a *Address) Host() string {
 
 func (a *Address) Port() int {
 	return int(a.port)
+}
+
+func (a *Address) String() string {
+	return a.Host() + ":" + strconv.Itoa(a.Port())
 }
 
 type uuid struct {
@@ -76,9 +81,7 @@ func (m *Member) Attributes() map[string]string {
 }
 
 func (m *Member) String() string {
-	memberInfo := fmt.Sprintf("Member [%s]:%d - %s", m.Address().Host(), m.Address().Port(),
-		m.UUID(),
-	)
+	memberInfo := fmt.Sprintf("Member %s - %s", &m.address, m.UUID())
 	if m.IsLiteMember() {
 		memberInfo += " lite"
 	}
@@ -222,7 +225,7 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl:                    timeutil.ConvertMillisToDuration(ttl),
+		ttl: timeutil.ConvertMillisToDuration(ttl),
 	}
 }
 

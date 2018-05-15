@@ -18,7 +18,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -36,7 +35,6 @@ type Connection struct {
 	clientMessageBuilder   *clientMessageBuilder
 	closed                 chan struct{}
 	endpoint               atomic.Value
-	sendingError           chan int64
 	status                 int32
 	isOwnerConnection      bool
 	lastRead               atomic.Value
@@ -48,32 +46,32 @@ type Connection struct {
 	heartBeating           bool
 	readBuffer             []byte
 	connectionID           int64
-	connectionManager      *connectionManager
+	connectionManager      connectionManager
 }
 
-func newConnection(address core.Address, responseChannel chan *proto.ClientMessage, sendingError chan int64,
-	connectionID int64, connectionManager *connectionManager) *Connection {
+func newConnection(address core.Address, handleResponse func(interface{}),
+	connectionID int64, connectionManager connectionManager) *Connection {
+	builder := &clientMessageBuilder{handleResponse: handleResponse,
+		incompleteMessages: make(map[int64]*proto.ClientMessage)}
 	connection := Connection{pending: make(chan *proto.ClientMessage, 1),
-		clientMessageBuilder: &clientMessageBuilder{responseChannel: responseChannel,
-			incompleteMessages: make(map[int64]*proto.ClientMessage)}, sendingError: sendingError,
-		received:          make(chan *proto.ClientMessage, 1),
-		closed:            make(chan struct{}),
-		heartBeating:      true,
-		readBuffer:        make([]byte, 0),
-		connectionID:      connectionID,
-		connectionManager: connectionManager,
+		received:             make(chan *proto.ClientMessage, 1),
+		closed:               make(chan struct{}),
+		clientMessageBuilder: builder,
+		heartBeating:         true,
+		readBuffer:           make([]byte, 0),
+		connectionID:         connectionID,
+		connectionManager:    connectionManager,
 	}
-	connection.endpoint.Store(&proto.Address{})
-	socket, err := net.Dial("tcp", address.Host()+":"+strconv.Itoa(address.Port()))
+	socket, err := net.Dial("tcp", address.String())
 	if err != nil {
 		return nil
 	}
 	connection.socket = socket
 	connection.lastRead.Store(time.Now())
-	connection.lastWrite.Store(time.Time{})             //initialization
-	connection.lastHeartbeatReceived.Store(time.Time{}) //initialization
-	connection.lastHeartbeatReceived.Store(time.Time{}) //initialization
-	connection.closedTime.Store(time.Time{})            //initialization
+	connection.lastWrite.Store(time.Time{})              //initialization
+	connection.lastHeartbeatReceived.Store(time.Time{})  //initialization
+	connection.lastHeartbeatRequested.Store(time.Time{}) //initialization
+	connection.closedTime.Store(time.Time{})             //initialization
 	socket.Write([]byte("CB2"))
 	go connection.writePool()
 	go connection.read()
@@ -91,7 +89,7 @@ func (c *Connection) writePool() {
 		case request := <-c.pending:
 			err := c.write(request)
 			if err != nil {
-				c.sendingError <- request.CorrelationID()
+				c.clientMessageBuilder.handleResponse(request.CorrelationID())
 			}
 			c.lastWrite.Store(time.Now())
 		case <-c.closed:
@@ -178,22 +176,22 @@ func (c *Connection) close(err error) {
 	}
 	close(c.closed)
 	c.closedTime.Store(time.Now())
-	c.connectionManager.connectionClosed(c, err)
+	c.connectionManager.onConnectionClose(c, err)
 }
 
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{"+
 		"isAlive=%t"+
 		", connectionID=%d"+
-		", endpoint=%s:%d"+
+		", endpoint=%s"+
 		", lastReadTime=%s"+
 		", lastWriteTime=%s"+
 		", closedTime=%s"+
 		", lastHeartbeatRequested=%s"+
 		", lastHeartbeatReceived=%s"+
 		", connected server version=%s", c.isAlive(), c.connectionID,
-		c.endpoint.Load().(*proto.Address).Host(), c.endpoint.Load().(*proto.Address).Port(),
-		c.lastRead.Load().(time.Time).String(), c.lastWrite.Load().(time.Time).String(),
-		c.closedTime.Load().(time.Time).String(), c.lastHeartbeatRequested.Load().(time.Time).String(),
-		c.lastHeartbeatReceived.Load().(time.Time).String(), c.serverHazelcastVersion)
+		c.endpoint.Load().(core.Address),
+		c.lastRead.Load().(time.Time), c.lastWrite.Load().(time.Time),
+		c.closedTime.Load().(time.Time), c.lastHeartbeatRequested.Load().(time.Time),
+		c.lastHeartbeatReceived.Load().(time.Time), c.serverHazelcastVersion)
 }
