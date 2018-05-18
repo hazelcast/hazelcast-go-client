@@ -8,9 +8,7 @@
 
 # Set up environment
 export CLIENT_IMPORT_PATH="github.com/hazelcast/hazelcast-go-client"
-export PACKAGE_LIST=$(go list $CLIENT_IMPORT_PATH/... | grep -vE ".*/tests|.*/compatibility|.*/rc|.*/samples" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
-echo $PACKAGE_LIST
-
+export PACKAGE_LIST=$(go list $CLIENT_IMPORT_PATH/... | grep -vE ".*/test|.*/compatibility|.*/rc|.*/sample" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
 #run linter
 pushd $GOPATH/src/$CLIENT_IMPORT_PATH
 bash ./linter.sh
@@ -57,7 +55,7 @@ for pkg in $(go list $CLIENT_IMPORT_PATH/...);
 do
     if [[ $pkg != *"vendor"* ]]; then
       echo "testing... $pkg"
-      go test -race -covermode=atomic  -v -coverprofile=tmp.out ${pkg} | tee -a test.out
+      go test -race -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
       if [ -f tmp.out ]; then
          cat tmp.out | grep -v "mode: atomic" >> coverage.out | echo
       fi
