@@ -44,6 +44,9 @@ Hazelcast Go client supports the following data structures and features:
 * Query (Predicates)
 * API configuration
 * Event Listeners
+* Flake Id Generator
+* CRDT Counter
+* Aggregations & Projections
 * Lifecycle Service
 * Smart and Unisocket Client operation
 * Hazelcast Serialization (IdentifiedDataSerializable, Portable, Custom Serializers, Global Serializers)
@@ -55,7 +58,7 @@ Following command installs Hazelcast Go client:
 ```
 go get github.com/hazelcast/hazelcast-go-client
 ```
-[For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/samples/hello-world/README.md)
+[For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/helloworld)
 
 ## Using the Client
 
@@ -85,7 +88,7 @@ Following code snippet illustrates a simple usage of Map in Hazelcast Go Client.
 	client.Shutdown()
 ```
 
-Please see Hazelcast Go [code samples](https://github.com/hazelcast/hazelcast-go-client/blob/master/samples) for more examples.
+Please see Hazelcast Go [code samples](https://github.com/hazelcast/hazelcast-go-client/blob/master/sample) for more examples.
 
 You can also refer to Hazelcast Go [API Documentation](https://godoc.org/github.com/hazelcast/hazelcast-go-client).
 
