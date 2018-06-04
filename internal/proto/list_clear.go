@@ -14,16 +14,21 @@
 
 package proto
 
-func ListClearCalculateSize(name string) int {
+import ()
+
+func listClearCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// ListClearEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListClearCalculateSize(name))
+	clientMessage := NewClientMessage(nil, listClearCalculateSize(name))
 	clientMessage.SetMessageType(listClear)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -31,4 +36,4 @@ func ListClearEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// ListClearDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

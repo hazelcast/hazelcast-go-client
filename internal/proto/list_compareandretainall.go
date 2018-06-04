@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ListCompareAndRetainAllCalculateSize(name string, values []*serialization.Data) int {
+func listCompareAndRetainAllCalculateSize(name string, values []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,9 +31,12 @@ func ListCompareAndRetainAllCalculateSize(name string, values []*serialization.D
 	return dataSize
 }
 
+// ListCompareAndRetainAllEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListCompareAndRetainAllEncodeRequest(name string, values []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListCompareAndRetainAllCalculateSize(name, values))
+	clientMessage := NewClientMessage(nil, listCompareAndRetainAllCalculateSize(name, values))
 	clientMessage.SetMessageType(listCompareAndRetainAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -45,6 +48,8 @@ func ListCompareAndRetainAllEncodeRequest(name string, values []*serialization.D
 	return clientMessage
 }
 
+// ListCompareAndRetainAllDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

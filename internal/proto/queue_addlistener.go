@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func QueueAddListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
+func queueAddListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,9 +29,12 @@ func QueueAddListenerCalculateSize(name string, includeValue bool, localOnly boo
 	return dataSize
 }
 
+// QueueAddListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueueAddListenerEncodeRequest(name string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueueAddListenerCalculateSize(name, includeValue, localOnly))
+	clientMessage := NewClientMessage(nil, queueAddListenerCalculateSize(name, includeValue, localOnly))
 	clientMessage.SetMessageType(queueAddListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -41,6 +44,8 @@ func QueueAddListenerEncodeRequest(name string, includeValue bool, localOnly boo
 	return clientMessage
 }
 
+// QueueAddListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueueAddListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -49,9 +54,14 @@ func QueueAddListenerDecodeResponse(clientMessage *ClientMessage) func() (respon
 	}
 }
 
+// QueueAddListenerHandleEventItemFunc is the event handler function.
 type QueueAddListenerHandleEventItemFunc func(*serialization.Data, string, int32)
 
-func QueueAddListenerEventItemDecode(clientMessage *ClientMessage) (item *serialization.Data, uuid string, eventType int32) {
+// QueueAddListenerEventItemDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func QueueAddListenerEventItemDecode(clientMessage *ClientMessage) (
+	item *serialization.Data, uuid string, eventType int32) {
 
 	if !clientMessage.ReadBool() {
 		item = clientMessage.ReadData()
@@ -61,6 +71,8 @@ func QueueAddListenerEventItemDecode(clientMessage *ClientMessage) (item *serial
 	return
 }
 
+// QueueAddListenerHandle handles the event with the given
+// event handler function.
 func QueueAddListenerHandle(clientMessage *ClientMessage,
 	handleEventItem QueueAddListenerHandleEventItemFunc) {
 	// Event handler

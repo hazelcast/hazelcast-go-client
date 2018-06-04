@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MapAddIndexCalculateSize(name string, attribute string, ordered bool) int {
+func mapAddIndexCalculateSize(name string, attribute string, ordered bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,9 +27,12 @@ func MapAddIndexCalculateSize(name string, attribute string, ordered bool) int {
 	return dataSize
 }
 
+// MapAddIndexEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapAddIndexEncodeRequest(name string, attribute string, ordered bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapAddIndexCalculateSize(name, attribute, ordered))
+	clientMessage := NewClientMessage(nil, mapAddIndexCalculateSize(name, attribute, ordered))
 	clientMessage.SetMessageType(mapAddIndex)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -39,4 +42,4 @@ func MapAddIndexEncodeRequest(name string, attribute string, ordered bool) *Clie
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// MapAddIndexDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

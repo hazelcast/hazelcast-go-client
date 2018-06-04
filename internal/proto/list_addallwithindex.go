@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ListAddAllWithIndexCalculateSize(name string, index int32, valueList []*serialization.Data) int {
+func listAddAllWithIndexCalculateSize(name string, index int32, valueList []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,9 +32,12 @@ func ListAddAllWithIndexCalculateSize(name string, index int32, valueList []*ser
 	return dataSize
 }
 
+// ListAddAllWithIndexEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListAddAllWithIndexEncodeRequest(name string, index int32, valueList []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListAddAllWithIndexCalculateSize(name, index, valueList))
+	clientMessage := NewClientMessage(nil, listAddAllWithIndexCalculateSize(name, index, valueList))
 	clientMessage.SetMessageType(listAddAllWithIndex)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -47,6 +50,8 @@ func ListAddAllWithIndexEncodeRequest(name string, index int32, valueList []*ser
 	return clientMessage
 }
 
+// ListAddAllWithIndexDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListAddAllWithIndexDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

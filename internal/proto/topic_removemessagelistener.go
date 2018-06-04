@@ -14,25 +14,32 @@
 
 package proto
 
-func TopicRemoveMessageListenerCalculateSize(name string, registrationID string) int {
+import ()
+
+func topicRemoveMessageListenerCalculateSize(name string, registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
-	dataSize += stringCalculateSize(registrationID)
+	dataSize += stringCalculateSize(registrationId)
 	return dataSize
 }
 
-func TopicRemoveMessageListenerEncodeRequest(name string, registrationID string) *ClientMessage {
+// TopicRemoveMessageListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func TopicRemoveMessageListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, TopicRemoveMessageListenerCalculateSize(name, registrationID))
+	clientMessage := NewClientMessage(nil, topicRemoveMessageListenerCalculateSize(name, registrationId))
 	clientMessage.SetMessageType(topicRemoveMessageListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationID)
+	clientMessage.AppendString(registrationId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// TopicRemoveMessageListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func TopicRemoveMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

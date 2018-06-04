@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MultiMapContainsValueCalculateSize(name string, value *serialization.Data) int {
+func multimapContainsValueCalculateSize(name string, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,9 +26,12 @@ func MultiMapContainsValueCalculateSize(name string, value *serialization.Data) 
 	return dataSize
 }
 
+// MultiMapContainsValueEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MultiMapContainsValueEncodeRequest(name string, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapContainsValueCalculateSize(name, value))
+	clientMessage := NewClientMessage(nil, multimapContainsValueCalculateSize(name, value))
 	clientMessage.SetMessageType(multimapContainsValue)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -37,6 +40,8 @@ func MultiMapContainsValueEncodeRequest(name string, value *serialization.Data) 
 	return clientMessage
 }
 
+// MultiMapContainsValueDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapContainsValueDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

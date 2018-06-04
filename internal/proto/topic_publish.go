@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func TopicPublishCalculateSize(name string, message *serialization.Data) int {
+func topicPublishCalculateSize(name string, message *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,9 +26,12 @@ func TopicPublishCalculateSize(name string, message *serialization.Data) int {
 	return dataSize
 }
 
+// TopicPublishEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func TopicPublishEncodeRequest(name string, message *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, TopicPublishCalculateSize(name, message))
+	clientMessage := NewClientMessage(nil, topicPublishCalculateSize(name, message))
 	clientMessage.SetMessageType(topicPublish)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -37,4 +40,4 @@ func TopicPublishEncodeRequest(name string, message *serialization.Data) *Client
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// TopicPublishDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

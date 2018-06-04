@@ -14,25 +14,32 @@
 
 package proto
 
-func MultiMapRemoveEntryListenerCalculateSize(name string, registrationID string) int {
+import ()
+
+func multimapRemoveEntryListenerCalculateSize(name string, registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
-	dataSize += stringCalculateSize(registrationID)
+	dataSize += stringCalculateSize(registrationId)
 	return dataSize
 }
 
-func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationID string) *ClientMessage {
+// MultiMapRemoveEntryListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapRemoveEntryListenerCalculateSize(name, registrationID))
+	clientMessage := NewClientMessage(nil, multimapRemoveEntryListenerCalculateSize(name, registrationId))
 	clientMessage.SetMessageType(multimapRemoveEntryListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationID)
+	clientMessage.AppendString(registrationId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MultiMapRemoveEntryListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

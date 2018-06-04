@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ReplicatedMapAddEntryListenerCalculateSize(name string, localOnly bool) int {
+func replicatedmapAddEntryListenerCalculateSize(name string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -28,9 +28,12 @@ func ReplicatedMapAddEntryListenerCalculateSize(name string, localOnly bool) int
 	return dataSize
 }
 
+// ReplicatedMapAddEntryListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ReplicatedMapAddEntryListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ReplicatedMapAddEntryListenerCalculateSize(name, localOnly))
+	clientMessage := NewClientMessage(nil, replicatedmapAddEntryListenerCalculateSize(name, localOnly))
 	clientMessage.SetMessageType(replicatedmapAddEntryListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -39,6 +42,8 @@ func ReplicatedMapAddEntryListenerEncodeRequest(name string, localOnly bool) *Cl
 	return clientMessage
 }
 
+// ReplicatedMapAddEntryListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ReplicatedMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -47,9 +52,14 @@ func ReplicatedMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) f
 	}
 }
 
+// ReplicatedMapAddEntryListenerHandleEventEntryFunc is the event handler function.
 type ReplicatedMapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func ReplicatedMapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+// ReplicatedMapAddEntryListenerEventEntryDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func ReplicatedMapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (
+	key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -72,6 +82,8 @@ func ReplicatedMapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage)
 	return
 }
 
+// ReplicatedMapAddEntryListenerHandle handles the event with the given
+// event handler function.
 func ReplicatedMapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler

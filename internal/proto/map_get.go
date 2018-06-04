@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MapGetCalculateSize(name string, key *serialization.Data, threadID int64) int {
+func mapGetCalculateSize(name string, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,18 +29,23 @@ func MapGetCalculateSize(name string, key *serialization.Data, threadID int64) i
 	return dataSize
 }
 
-func MapGetEncodeRequest(name string, key *serialization.Data, threadID int64) *ClientMessage {
+// MapGetEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MapGetEncodeRequest(name string, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapGetCalculateSize(name, key, threadID))
+	clientMessage := NewClientMessage(nil, mapGetCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(mapGet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MapGetDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapGetDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
 	return func() (response *serialization.Data) {

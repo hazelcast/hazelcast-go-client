@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapTryLockCalculateSize(name string, key *serialization.Data, threadID int64, lease int64, timeout int64, referenceID int64) int {
+func multimapTryLockCalculateSize(name string, key *serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,21 +32,26 @@ func MultiMapTryLockCalculateSize(name string, key *serialization.Data, threadID
 	return dataSize
 }
 
-func MultiMapTryLockEncodeRequest(name string, key *serialization.Data, threadID int64, lease int64, timeout int64, referenceID int64) *ClientMessage {
+// MultiMapTryLockEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapTryLockEncodeRequest(name string, key *serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapTryLockCalculateSize(name, key, threadID, lease, timeout, referenceID))
+	clientMessage := NewClientMessage(nil, multimapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
 	clientMessage.SetMessageType(multimapTryLock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.AppendInt64(lease)
 	clientMessage.AppendInt64(timeout)
-	clientMessage.AppendInt64(referenceID)
+	clientMessage.AppendInt64(referenceId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MultiMapTryLockDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapTryLockDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

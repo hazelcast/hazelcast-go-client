@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapExecuteWithPredicateCalculateSize(name string, entryProcessor *serialization.Data, predicate *serialization.Data) int {
+func mapExecuteWithPredicateCalculateSize(name string, entryProcessor *serialization.Data, predicate *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,9 +27,12 @@ func MapExecuteWithPredicateCalculateSize(name string, entryProcessor *serializa
 	return dataSize
 }
 
+// MapExecuteWithPredicateEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapExecuteWithPredicateEncodeRequest(name string, entryProcessor *serialization.Data, predicate *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapExecuteWithPredicateCalculateSize(name, entryProcessor, predicate))
+	clientMessage := NewClientMessage(nil, mapExecuteWithPredicateCalculateSize(name, entryProcessor, predicate))
 	clientMessage.SetMessageType(mapExecuteWithPredicate)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -39,6 +42,8 @@ func MapExecuteWithPredicateEncodeRequest(name string, entryProcessor *serializa
 	return clientMessage
 }
 
+// MapExecuteWithPredicateDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
 	return func() (response []*Pair) {

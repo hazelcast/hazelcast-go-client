@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func QueueCompareAndRemoveAllCalculateSize(name string, dataList []*serialization.Data) int {
+func queueCompareAndRemoveAllCalculateSize(name string, dataList []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,9 +31,12 @@ func QueueCompareAndRemoveAllCalculateSize(name string, dataList []*serializatio
 	return dataSize
 }
 
+// QueueCompareAndRemoveAllEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueueCompareAndRemoveAllEncodeRequest(name string, dataList []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueueCompareAndRemoveAllCalculateSize(name, dataList))
+	clientMessage := NewClientMessage(nil, queueCompareAndRemoveAllCalculateSize(name, dataList))
 	clientMessage.SetMessageType(queueCompareAndRemoveAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -45,6 +48,8 @@ func QueueCompareAndRemoveAllEncodeRequest(name string, dataList []*serializatio
 	return clientMessage
 }
 
+// QueueCompareAndRemoveAllDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueueCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

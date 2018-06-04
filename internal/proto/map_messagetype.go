@@ -78,7 +78,7 @@ const (
 	mapProject                            = 0x0140
 	mapProjectWithPredicate               = 0x0141
 	mapFetchNearCacheInvalidationMetadata = 0x0142
-	mapAssignAndGetUUIDs                  = 0x0143
+	mapAssignAndGetUuids                  = 0x0143
 	mapRemoveAll                          = 0x0144
 	mapAddNearCacheInvalidationListener   = 0x0145
 	mapFetchWithQuery                     = 0x0146

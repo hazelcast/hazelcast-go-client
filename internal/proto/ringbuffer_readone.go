@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func RingbufferReadOneCalculateSize(name string, sequence int64) int {
+func ringbufferReadOneCalculateSize(name string, sequence int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,9 +27,12 @@ func RingbufferReadOneCalculateSize(name string, sequence int64) int {
 	return dataSize
 }
 
+// RingbufferReadOneEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func RingbufferReadOneEncodeRequest(name string, sequence int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, RingbufferReadOneCalculateSize(name, sequence))
+	clientMessage := NewClientMessage(nil, ringbufferReadOneCalculateSize(name, sequence))
 	clientMessage.SetMessageType(ringbufferReadOne)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -38,6 +41,8 @@ func RingbufferReadOneEncodeRequest(name string, sequence int64) *ClientMessage 
 	return clientMessage
 }
 
+// RingbufferReadOneDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func RingbufferReadOneDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
 	return func() (response *serialization.Data) {

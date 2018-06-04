@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func RingbufferReadManyCalculateSize(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) int {
+func ringbufferReadManyCalculateSize(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,9 +34,12 @@ func RingbufferReadManyCalculateSize(name string, startSequence int64, minCount 
 	return dataSize
 }
 
+// RingbufferReadManyEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, RingbufferReadManyCalculateSize(name, startSequence, minCount, maxCount, filter))
+	clientMessage := NewClientMessage(nil, ringbufferReadManyCalculateSize(name, startSequence, minCount, maxCount, filter))
 	clientMessage.SetMessageType(ringbufferReadMany)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -51,6 +54,8 @@ func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount 
 	return clientMessage
 }
 
+// RingbufferReadManyDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (readCount int32, items []*serialization.Data, itemSeqs []int64, nextSeq int64) {
 	// Decode response from client message
 	return func() (readCount int32, items []*serialization.Data, itemSeqs []int64, nextSeq int64) {

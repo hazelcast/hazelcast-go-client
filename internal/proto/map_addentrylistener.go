@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MapAddEntryListenerCalculateSize(name string, includeValue bool, listenerFlags int32, localOnly bool) int {
+func mapAddEntryListenerCalculateSize(name string, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,9 +30,12 @@ func MapAddEntryListenerCalculateSize(name string, includeValue bool, listenerFl
 	return dataSize
 }
 
+// MapAddEntryListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapAddEntryListenerCalculateSize(name, includeValue, listenerFlags, localOnly))
+	clientMessage := NewClientMessage(nil, mapAddEntryListenerCalculateSize(name, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(mapAddEntryListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -43,6 +46,8 @@ func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFl
 	return clientMessage
 }
 
+// MapAddEntryListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -51,9 +56,14 @@ func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (res
 	}
 }
 
+// MapAddEntryListenerHandleEventEntryFunc is the event handler function.
 type MapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+// MapAddEntryListenerEventEntryDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (
+	key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -76,6 +86,8 @@ func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *ser
 	return
 }
 
+// MapAddEntryListenerHandle handles the event with the given
+// event handler function.
 func MapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler

@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func PNCounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *Address) int {
+func pncounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -35,9 +35,12 @@ func PNCounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, r
 	return dataSize
 }
 
+// PNCounterAddEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *Address) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, PNCounterAddCalculateSize(name, delta, getBeforeUpdate, replicaTimestamps, targetReplica))
+	clientMessage := NewClientMessage(nil, pncounterAddCalculateSize(name, delta, getBeforeUpdate, replicaTimestamps, targetReplica))
 	clientMessage.SetMessageType(pncounterAdd)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -55,6 +58,8 @@ func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, r
 	return clientMessage
 }
 
+// PNCounterAddDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func PNCounterAddDecodeResponse(clientMessage *ClientMessage) func() (value int64, replicaTimestamps []*Pair, replicaCount int32) {
 	// Decode response from client message
 	return func() (value int64, replicaTimestamps []*Pair, replicaCount int32) {

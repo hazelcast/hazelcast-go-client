@@ -14,16 +14,21 @@
 
 package proto
 
-func MultiMapEntrySetCalculateSize(name string) int {
+import ()
+
+func multimapEntrySetCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// MultiMapEntrySetEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MultiMapEntrySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapEntrySetCalculateSize(name))
+	clientMessage := NewClientMessage(nil, multimapEntrySetCalculateSize(name))
 	clientMessage.SetMessageType(multimapEntrySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func MultiMapEntrySetEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// MultiMapEntrySetDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapEntrySetDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
 	return func() (response []*Pair) {

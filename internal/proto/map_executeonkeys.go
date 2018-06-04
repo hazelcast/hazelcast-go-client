@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MapExecuteOnKeysCalculateSize(name string, entryProcessor *serialization.Data, keys []*serialization.Data) int {
+func mapExecuteOnKeysCalculateSize(name string, entryProcessor *serialization.Data, keys []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,9 +32,12 @@ func MapExecuteOnKeysCalculateSize(name string, entryProcessor *serialization.Da
 	return dataSize
 }
 
+// MapExecuteOnKeysEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapExecuteOnKeysEncodeRequest(name string, entryProcessor *serialization.Data, keys []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
+	clientMessage := NewClientMessage(nil, mapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
 	clientMessage.SetMessageType(mapExecuteOnKeys)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -47,6 +50,8 @@ func MapExecuteOnKeysEncodeRequest(name string, entryProcessor *serialization.Da
 	return clientMessage
 }
 
+// MapExecuteOnKeysDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapExecuteOnKeysDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
 	return func() (response []*Pair) {

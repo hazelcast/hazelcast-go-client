@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ListSetCalculateSize(name string, index int32, value *serialization.Data) int {
+func listSetCalculateSize(name string, index int32, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,9 +29,12 @@ func ListSetCalculateSize(name string, index int32, value *serialization.Data) i
 	return dataSize
 }
 
+// ListSetEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListSetEncodeRequest(name string, index int32, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListSetCalculateSize(name, index, value))
+	clientMessage := NewClientMessage(nil, listSetCalculateSize(name, index, value))
 	clientMessage.SetMessageType(listSet)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -41,6 +44,8 @@ func ListSetEncodeRequest(name string, index int32, value *serialization.Data) *
 	return clientMessage
 }
 
+// ListSetDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListSetDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
 	return func() (response *serialization.Data) {

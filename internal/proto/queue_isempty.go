@@ -14,16 +14,21 @@
 
 package proto
 
-func QueueIsEmptyCalculateSize(name string) int {
+import ()
+
+func queueIsEmptyCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// QueueIsEmptyEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueueIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueueIsEmptyCalculateSize(name))
+	clientMessage := NewClientMessage(nil, queueIsEmptyCalculateSize(name))
 	clientMessage.SetMessageType(queueIsEmpty)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func QueueIsEmptyEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// QueueIsEmptyDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueueIsEmptyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {
