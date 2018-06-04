@@ -14,21 +14,26 @@
 
 package proto
 
-func ClientGetPartitionsCalculateSize() int {
+func clientGetPartitionsCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
+// ClientGetPartitionsEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ClientGetPartitionsEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientGetPartitionsCalculateSize())
+	clientMessage := NewClientMessage(nil, clientGetPartitionsCalculateSize())
 	clientMessage.SetMessageType(clientGetPartitions)
 	clientMessage.IsRetryable = false
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// ClientGetPartitionsDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) func() (partitions []*Pair, partitionStateVersion int32) {
 	// Decode response from client message
 	return func() (partitions []*Pair, partitionStateVersion int32) {

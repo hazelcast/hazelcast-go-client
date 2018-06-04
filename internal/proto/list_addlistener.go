@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ListAddListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
+func listAddListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,9 +29,12 @@ func ListAddListenerCalculateSize(name string, includeValue bool, localOnly bool
 	return dataSize
 }
 
+// ListAddListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListAddListenerEncodeRequest(name string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListAddListenerCalculateSize(name, includeValue, localOnly))
+	clientMessage := NewClientMessage(nil, listAddListenerCalculateSize(name, includeValue, localOnly))
 	clientMessage.SetMessageType(listAddListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -41,6 +44,8 @@ func ListAddListenerEncodeRequest(name string, includeValue bool, localOnly bool
 	return clientMessage
 }
 
+// ListAddListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -49,9 +54,14 @@ func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (respons
 	}
 }
 
+// ListAddListenerHandleEventItemFunc is the event handler function.
 type ListAddListenerHandleEventItemFunc func(*serialization.Data, string, int32)
 
-func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *serialization.Data, uuid string, eventType int32) {
+// ListAddListenerEventItemDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (
+	item *serialization.Data, uuid string, eventType int32) {
 
 	if !clientMessage.ReadBool() {
 		item = clientMessage.ReadData()
@@ -61,6 +71,8 @@ func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (item *seriali
 	return
 }
 
+// ListAddListenerHandle handles the event with the given
+// event handler function.
 func ListAddListenerHandle(clientMessage *ClientMessage,
 	handleEventItem ListAddListenerHandleEventItemFunc) {
 	// Event handler

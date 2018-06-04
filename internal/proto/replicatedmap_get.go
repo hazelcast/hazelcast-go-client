@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func ReplicatedMapGetCalculateSize(name string, key *serialization.Data) int {
+func replicatedmapGetCalculateSize(name string, key *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,9 +26,12 @@ func ReplicatedMapGetCalculateSize(name string, key *serialization.Data) int {
 	return dataSize
 }
 
+// ReplicatedMapGetEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ReplicatedMapGetEncodeRequest(name string, key *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ReplicatedMapGetCalculateSize(name, key))
+	clientMessage := NewClientMessage(nil, replicatedmapGetCalculateSize(name, key))
 	clientMessage.SetMessageType(replicatedmapGet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -37,6 +40,8 @@ func ReplicatedMapGetEncodeRequest(name string, key *serialization.Data) *Client
 	return clientMessage
 }
 
+// ReplicatedMapGetDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ReplicatedMapGetDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
 	return func() (response *serialization.Data) {

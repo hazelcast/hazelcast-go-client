@@ -15,10 +15,10 @@
 package proto
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapProjectCalculateSize(name string, projection *Data) int {
+func mapProjectCalculateSize(name string, projection *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,9 +26,12 @@ func MapProjectCalculateSize(name string, projection *Data) int {
 	return dataSize
 }
 
-func MapProjectEncodeRequest(name string, projection *Data) *ClientMessage {
+// MapProjectEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MapProjectEncodeRequest(name string, projection *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapProjectCalculateSize(name, projection))
+	clientMessage := NewClientMessage(nil, mapProjectCalculateSize(name, projection))
 	clientMessage.SetMessageType(mapProject)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -37,14 +40,16 @@ func MapProjectEncodeRequest(name string, projection *Data) *ClientMessage {
 	return clientMessage
 }
 
-func MapProjectDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
+// MapProjectDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
+func MapProjectDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
 	// Decode response from client message
-	return func() (response []*Data) {
+	return func() (response []*serialization.Data) {
 		if clientMessage.IsComplete() {
 			return
 		}
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*Data, responseSize)
+		response = make([]*serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			if !clientMessage.ReadBool() {
 				responseItem := clientMessage.ReadData()
@@ -52,7 +57,6 @@ func MapProjectDecodeResponse(clientMessage *ClientMessage) func() (response []*
 			} else {
 				response[responseIndex] = nil
 			}
-
 		}
 		return
 	}

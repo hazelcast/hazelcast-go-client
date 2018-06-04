@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func SetAddAllCalculateSize(name string, valueList []*serialization.Data) int {
+func setAddAllCalculateSize(name string, valueList []*serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,9 +31,12 @@ func SetAddAllCalculateSize(name string, valueList []*serialization.Data) int {
 	return dataSize
 }
 
+// SetAddAllEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func SetAddAllEncodeRequest(name string, valueList []*serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, SetAddAllCalculateSize(name, valueList))
+	clientMessage := NewClientMessage(nil, setAddAllCalculateSize(name, valueList))
 	clientMessage.SetMessageType(setAddAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -45,6 +48,8 @@ func SetAddAllEncodeRequest(name string, valueList []*serialization.Data) *Clien
 	return clientMessage
 }
 
+// SetAddAllDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func SetAddAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

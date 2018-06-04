@@ -14,16 +14,21 @@
 
 package proto
 
-func ReplicatedMapSizeCalculateSize(name string) int {
+import ()
+
+func replicatedmapSizeCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// ReplicatedMapSizeEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ReplicatedMapSizeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ReplicatedMapSizeCalculateSize(name))
+	clientMessage := NewClientMessage(nil, replicatedmapSizeCalculateSize(name))
 	clientMessage.SetMessageType(replicatedmapSize)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func ReplicatedMapSizeEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// ReplicatedMapSizeDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ReplicatedMapSizeDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
 	return func() (response int32) {

@@ -18,16 +18,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapKeySetCalculateSize(name string) int {
+func mapKeySetCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// MapKeySetEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapKeySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapKeySetCalculateSize(name))
+	clientMessage := NewClientMessage(nil, mapKeySetCalculateSize(name))
 	clientMessage.SetMessageType(mapKeySet)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -35,6 +38,8 @@ func MapKeySetEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// MapKeySetDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapKeySetDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
 	// Decode response from client message
 	return func() (response []*serialization.Data) {

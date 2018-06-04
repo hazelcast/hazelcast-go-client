@@ -18,7 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func ListIndexOfCalculateSize(name string, value *serialization.Data) int {
+func listIndexOfCalculateSize(name string, value *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -26,9 +26,12 @@ func ListIndexOfCalculateSize(name string, value *serialization.Data) int {
 	return dataSize
 }
 
+// ListIndexOfEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListIndexOfEncodeRequest(name string, value *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListIndexOfCalculateSize(name, value))
+	clientMessage := NewClientMessage(nil, listIndexOfCalculateSize(name, value))
 	clientMessage.SetMessageType(listIndexOf)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -37,6 +40,8 @@ func ListIndexOfEncodeRequest(name string, value *serialization.Data) *ClientMes
 	return clientMessage
 }
 
+// ListIndexOfDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListIndexOfDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
 	return func() (response int32) {

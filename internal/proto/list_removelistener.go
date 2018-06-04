@@ -14,25 +14,32 @@
 
 package proto
 
-func ListRemoveListenerCalculateSize(name string, registrationID string) int {
+import ()
+
+func listRemoveListenerCalculateSize(name string, registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
-	dataSize += stringCalculateSize(registrationID)
+	dataSize += stringCalculateSize(registrationId)
 	return dataSize
 }
 
-func ListRemoveListenerEncodeRequest(name string, registrationID string) *ClientMessage {
+// ListRemoveListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func ListRemoveListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListRemoveListenerCalculateSize(name, registrationID))
+	clientMessage := NewClientMessage(nil, listRemoveListenerCalculateSize(name, registrationId))
 	clientMessage.SetMessageType(listRemoveListener)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationID)
+	clientMessage.AppendString(registrationId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// ListRemoveListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListRemoveListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

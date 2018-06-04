@@ -14,16 +14,21 @@
 
 package proto
 
-func ListSizeCalculateSize(name string) int {
+import ()
+
+func listSizeCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// ListSizeEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ListSizeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ListSizeCalculateSize(name))
+	clientMessage := NewClientMessage(nil, listSizeCalculateSize(name))
 	clientMessage.SetMessageType(listSize)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func ListSizeEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// ListSizeDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ListSizeDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
 	return func() (response int32) {

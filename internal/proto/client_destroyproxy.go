@@ -14,7 +14,9 @@
 
 package proto
 
-func ClientDestroyProxyCalculateSize(name string, serviceName string) int {
+import ()
+
+func clientDestroyProxyCalculateSize(name string, serviceName string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -22,9 +24,12 @@ func ClientDestroyProxyCalculateSize(name string, serviceName string) int {
 	return dataSize
 }
 
+// ClientDestroyProxyEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientDestroyProxyCalculateSize(name, serviceName))
+	clientMessage := NewClientMessage(nil, clientDestroyProxyCalculateSize(name, serviceName))
 	clientMessage.SetMessageType(clientDestroyProxy)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -33,4 +38,4 @@ func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMes
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// ClientDestroyProxyDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

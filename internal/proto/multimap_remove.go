@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapRemoveCalculateSize(name string, key *serialization.Data, threadID int64) int {
+func multimapRemoveCalculateSize(name string, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,18 +29,23 @@ func MultiMapRemoveCalculateSize(name string, key *serialization.Data, threadID 
 	return dataSize
 }
 
-func MultiMapRemoveEncodeRequest(name string, key *serialization.Data, threadID int64) *ClientMessage {
+// MultiMapRemoveEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapRemoveEncodeRequest(name string, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapRemoveCalculateSize(name, key, threadID))
+	clientMessage := NewClientMessage(nil, multimapRemoveCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(multimapRemove)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MultiMapRemoveDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapRemoveDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
 	// Decode response from client message
 	return func() (response []*serialization.Data) {

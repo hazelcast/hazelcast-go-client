@@ -14,19 +14,24 @@
 
 package proto
 
-func ClientPingCalculateSize() int {
+import ()
+
+func clientPingCalculateSize() int {
 	// Calculates the request payload size
 	dataSize := 0
 	return dataSize
 }
 
+// ClientPingEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ClientPingEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientPingCalculateSize())
+	clientMessage := NewClientMessage(nil, clientPingCalculateSize())
 	clientMessage.SetMessageType(clientPing)
 	clientMessage.IsRetryable = true
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// ClientPingDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

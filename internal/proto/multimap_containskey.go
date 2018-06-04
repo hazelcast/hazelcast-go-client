@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapContainsKeyCalculateSize(name string, key *serialization.Data, threadID int64) int {
+func multimapContainsKeyCalculateSize(name string, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,18 +29,23 @@ func MultiMapContainsKeyCalculateSize(name string, key *serialization.Data, thre
 	return dataSize
 }
 
-func MultiMapContainsKeyEncodeRequest(name string, key *serialization.Data, threadID int64) *ClientMessage {
+// MultiMapContainsKeyEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapContainsKeyEncodeRequest(name string, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapContainsKeyCalculateSize(name, key, threadID))
+	clientMessage := NewClientMessage(nil, multimapContainsKeyCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(multimapContainsKey)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MultiMapContainsKeyDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapContainsKeyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

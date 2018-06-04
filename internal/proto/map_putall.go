@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MapPutAllCalculateSize(name string, entries []*Pair) int {
+func mapPutAllCalculateSize(name string, entries []*Pair) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,9 +34,12 @@ func MapPutAllCalculateSize(name string, entries []*Pair) int {
 	return dataSize
 }
 
+// MapPutAllEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapPutAllCalculateSize(name, entries))
+	clientMessage := NewClientMessage(nil, mapPutAllCalculateSize(name, entries))
 	clientMessage.SetMessageType(mapPutAll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -51,4 +54,4 @@ func MapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// MapPutAllDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MapReplaceIfSameCalculateSize(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) int {
+func mapReplaceIfSameCalculateSize(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -31,20 +31,25 @@ func MapReplaceIfSameCalculateSize(name string, key *serialization.Data, testVal
 	return dataSize
 }
 
-func MapReplaceIfSameEncodeRequest(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
+// MapReplaceIfSameEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MapReplaceIfSameEncodeRequest(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapReplaceIfSameCalculateSize(name, key, testValue, value, threadID))
+	clientMessage := NewClientMessage(nil, mapReplaceIfSameCalculateSize(name, key, testValue, value, threadId))
 	clientMessage.SetMessageType(mapReplaceIfSame)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
 	clientMessage.AppendData(testValue)
 	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MapReplaceIfSameDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapReplaceIfSameDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

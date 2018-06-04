@@ -15,5 +15,5 @@
 package proto
 
 const (
-	flakeidgeneratorNewIDBatch = 0x1f01
+	flakeidgeneratorNewIdBatch = 0x1f01
 )

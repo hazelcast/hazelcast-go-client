@@ -14,16 +14,21 @@
 
 package proto
 
-func QueueRemainingCapacityCalculateSize(name string) int {
+import ()
+
+func queueRemainingCapacityCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// QueueRemainingCapacityEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueueRemainingCapacityEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueueRemainingCapacityCalculateSize(name))
+	clientMessage := NewClientMessage(nil, queueRemainingCapacityCalculateSize(name))
 	clientMessage.SetMessageType(queueRemainingCapacity)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func QueueRemainingCapacityEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// QueueRemainingCapacityDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueueRemainingCapacityDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
 	return func() (response int32) {

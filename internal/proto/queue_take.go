@@ -18,16 +18,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func QueueTakeCalculateSize(name string) int {
+func queueTakeCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// QueueTakeEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueueTakeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueueTakeCalculateSize(name))
+	clientMessage := NewClientMessage(nil, queueTakeCalculateSize(name))
 	clientMessage.SetMessageType(queueTake)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -35,6 +38,8 @@ func QueueTakeEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// QueueTakeDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
 	return func() (response *serialization.Data) {

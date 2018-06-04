@@ -15,10 +15,10 @@
 package proto
 
 import (
-	. "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func MapProjectWithPredicateCalculateSize(name string, projection *Data, predicate *Data) int {
+func mapProjectWithPredicateCalculateSize(name string, projection *serialization.Data, predicate *serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,9 +27,12 @@ func MapProjectWithPredicateCalculateSize(name string, projection *Data, predica
 	return dataSize
 }
 
-func MapProjectWithPredicateEncodeRequest(name string, projection *Data, predicate *Data) *ClientMessage {
+// MapProjectWithPredicateEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MapProjectWithPredicateEncodeRequest(name string, projection *serialization.Data, predicate *serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapProjectWithPredicateCalculateSize(name, projection, predicate))
+	clientMessage := NewClientMessage(nil, mapProjectWithPredicateCalculateSize(name, projection, predicate))
 	clientMessage.SetMessageType(mapProjectWithPredicate)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -39,14 +42,16 @@ func MapProjectWithPredicateEncodeRequest(name string, projection *Data, predica
 	return clientMessage
 }
 
-func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*Data) {
+// MapProjectWithPredicateDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
+func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
 	// Decode response from client message
-	return func() (response []*Data) {
+	return func() (response []*serialization.Data) {
 		if clientMessage.IsComplete() {
 			return
 		}
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*Data, responseSize)
+		response = make([]*serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			if !clientMessage.ReadBool() {
 				responseItem := clientMessage.ReadData()

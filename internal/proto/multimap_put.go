@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapPutCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadID int64) int {
+func multimapPutCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,19 +30,24 @@ func MultiMapPutCalculateSize(name string, key *serialization.Data, value *seria
 	return dataSize
 }
 
-func MultiMapPutEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
+// MultiMapPutEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapPutEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapPutCalculateSize(name, key, value, threadID))
+	clientMessage := NewClientMessage(nil, multimapPutCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(multimapPut)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
 	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MultiMapPutDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapPutDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

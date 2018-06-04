@@ -14,16 +14,21 @@
 
 package proto
 
-func RingbufferCapacityCalculateSize(name string) int {
+import ()
+
+func ringbufferCapacityCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// RingbufferCapacityEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func RingbufferCapacityEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, RingbufferCapacityCalculateSize(name))
+	clientMessage := NewClientMessage(nil, ringbufferCapacityCalculateSize(name))
 	clientMessage.SetMessageType(ringbufferCapacity)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func RingbufferCapacityEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// RingbufferCapacityDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func RingbufferCapacityDecodeResponse(clientMessage *ClientMessage) func() (response int64) {
 	// Decode response from client message
 	return func() (response int64) {

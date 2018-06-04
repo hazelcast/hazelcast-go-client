@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
+func replicatedmapAddNearCacheEntryListenerCalculateSize(name string, includeValue bool, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,9 +29,12 @@ func ReplicatedMapAddNearCacheEntryListenerCalculateSize(name string, includeVal
 	return dataSize
 }
 
+// ReplicatedMapAddNearCacheEntryListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ReplicatedMapAddNearCacheEntryListenerCalculateSize(name, includeValue, localOnly))
+	clientMessage := NewClientMessage(nil, replicatedmapAddNearCacheEntryListenerCalculateSize(name, includeValue, localOnly))
 	clientMessage.SetMessageType(replicatedmapAddNearCacheEntryListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -41,6 +44,8 @@ func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name string, includeVal
 	return clientMessage
 }
 
+// ReplicatedMapAddNearCacheEntryListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -49,9 +54,14 @@ func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientM
 	}
 }
 
+// ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc is the event handler function.
 type ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
 
-func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *ClientMessage) (key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+// ReplicatedMapAddNearCacheEntryListenerEventEntryDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *ClientMessage) (
+	key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -74,6 +84,8 @@ func ReplicatedMapAddNearCacheEntryListenerEventEntryDecode(clientMessage *Clien
 	return
 }
 
+// ReplicatedMapAddNearCacheEntryListenerHandle handles the event with the given
+// event handler function.
 func ReplicatedMapAddNearCacheEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddNearCacheEntryListenerHandleEventEntryFunc) {
 	// Event handler

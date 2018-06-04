@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapForceUnlockCalculateSize(name string, key *serialization.Data, referenceID int64) int {
+func multimapForceUnlockCalculateSize(name string, key *serialization.Data, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,16 +29,19 @@ func MultiMapForceUnlockCalculateSize(name string, key *serialization.Data, refe
 	return dataSize
 }
 
-func MultiMapForceUnlockEncodeRequest(name string, key *serialization.Data, referenceID int64) *ClientMessage {
+// MultiMapForceUnlockEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapForceUnlockEncodeRequest(name string, key *serialization.Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapForceUnlockCalculateSize(name, key, referenceID))
+	clientMessage := NewClientMessage(nil, multimapForceUnlockCalculateSize(name, key, referenceId))
 	clientMessage.SetMessageType(multimapForceUnlock)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(referenceID)
+	clientMessage.AppendInt64(referenceId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// MultiMapForceUnlockDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

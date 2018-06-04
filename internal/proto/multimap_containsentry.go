@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapContainsEntryCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadID int64) int {
+func multimapContainsEntryCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,19 +30,24 @@ func MultiMapContainsEntryCalculateSize(name string, key *serialization.Data, va
 	return dataSize
 }
 
-func MultiMapContainsEntryEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadID int64) *ClientMessage {
+// MultiMapContainsEntryEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapContainsEntryEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapContainsEntryCalculateSize(name, key, value, threadID))
+	clientMessage := NewClientMessage(nil, multimapContainsEntryCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(multimapContainsEntry)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
 	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
+// MultiMapContainsEntryDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MultiMapContainsEntryDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

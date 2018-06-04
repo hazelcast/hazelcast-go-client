@@ -19,7 +19,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func QueuePollCalculateSize(name string, timeoutMillis int64) int {
+func queuePollCalculateSize(name string, timeoutMillis int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -27,9 +27,12 @@ func QueuePollCalculateSize(name string, timeoutMillis int64) int {
 	return dataSize
 }
 
+// QueuePollEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueuePollEncodeRequest(name string, timeoutMillis int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueuePollCalculateSize(name, timeoutMillis))
+	clientMessage := NewClientMessage(nil, queuePollCalculateSize(name, timeoutMillis))
 	clientMessage.SetMessageType(queuePoll)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -38,6 +41,8 @@ func QueuePollEncodeRequest(name string, timeoutMillis int64) *ClientMessage {
 	return clientMessage
 }
 
+// QueuePollDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueuePollDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
 	// Decode response from client message
 	return func() (response *serialization.Data) {

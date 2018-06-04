@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func QueueOfferCalculateSize(name string, value *serialization.Data, timeoutMillis int64) int {
+func queueOfferCalculateSize(name string, value *serialization.Data, timeoutMillis int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,9 +29,12 @@ func QueueOfferCalculateSize(name string, value *serialization.Data, timeoutMill
 	return dataSize
 }
 
+// QueueOfferEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func QueueOfferEncodeRequest(name string, value *serialization.Data, timeoutMillis int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, QueueOfferCalculateSize(name, value, timeoutMillis))
+	clientMessage := NewClientMessage(nil, queueOfferCalculateSize(name, value, timeoutMillis))
 	clientMessage.SetMessageType(queueOffer)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -41,6 +44,8 @@ func QueueOfferEncodeRequest(name string, value *serialization.Data, timeoutMill
 	return clientMessage
 }
 
+// QueueOfferDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func QueueOfferDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

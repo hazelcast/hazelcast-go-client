@@ -14,16 +14,21 @@
 
 package proto
 
-func MapFlushCalculateSize(name string) int {
+import ()
+
+func mapFlushCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// MapFlushEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapFlushEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapFlushCalculateSize(name))
+	clientMessage := NewClientMessage(nil, mapFlushCalculateSize(name))
 	clientMessage.SetMessageType(mapFlush)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -31,4 +36,4 @@ func MapFlushEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// MapFlushDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

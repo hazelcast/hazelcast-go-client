@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func MultiMapDeleteCalculateSize(name string, key *serialization.Data, threadID int64) int {
+func multimapDeleteCalculateSize(name string, key *serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,16 +29,19 @@ func MultiMapDeleteCalculateSize(name string, key *serialization.Data, threadID 
 	return dataSize
 }
 
-func MultiMapDeleteEncodeRequest(name string, key *serialization.Data, threadID int64) *ClientMessage {
+// MultiMapDeleteEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
+func MultiMapDeleteEncodeRequest(name string, key *serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MultiMapDeleteCalculateSize(name, key, threadID))
+	clientMessage := NewClientMessage(nil, multimapDeleteCalculateSize(name, key, threadId))
 	clientMessage.SetMessageType(multimapDelete)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
 	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadID)
+	clientMessage.AppendInt64(threadId)
 	clientMessage.UpdateFrameLength()
 	return clientMessage
 }
 
-// Empty decodeResponse(clientMessage), this message has no parameters to decode
+// MultiMapDeleteDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

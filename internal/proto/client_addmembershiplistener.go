@@ -18,16 +18,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ClientAddMembershipListenerCalculateSize(localOnly bool) int {
+func clientAddMembershipListenerCalculateSize(localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += bufutil.BoolSizeInBytes
 	return dataSize
 }
 
+// ClientAddMembershipListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ClientAddMembershipListenerCalculateSize(localOnly))
+	clientMessage := NewClientMessage(nil, clientAddMembershipListenerCalculateSize(localOnly))
 	clientMessage.SetMessageType(clientAddMembershipListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendBool(localOnly)
@@ -35,6 +38,8 @@ func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	return clientMessage
 }
 
+// ClientAddMembershipListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -43,17 +48,30 @@ func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) fun
 	}
 }
 
+// ClientAddMembershipListenerHandleEventMemberFunc is the event handler function.
 type ClientAddMembershipListenerHandleEventMemberFunc func(*Member, int32)
+
+// ClientAddMembershipListenerHandleEventMemberListFunc is the event handler function.
 type ClientAddMembershipListenerHandleEventMemberListFunc func([]*Member)
+
+// ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc is the event handler function.
 type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(string, string, int32, string)
 
-func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) (member *Member, eventType int32) {
+// ClientAddMembershipListenerEventMemberDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) (
+	member *Member, eventType int32) {
 	member = MemberCodecDecode(clientMessage)
 	eventType = clientMessage.ReadInt32()
 	return
 }
 
-func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessage) (members []*Member) {
+// ClientAddMembershipListenerEventMemberListDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessage) (
+	members []*Member) {
 	membersSize := clientMessage.ReadInt32()
 	members = make([]*Member, membersSize)
 	for membersIndex := 0; membersIndex < int(membersSize); membersIndex++ {
@@ -63,7 +81,11 @@ func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessa
 	return
 }
 
-func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (uuid string, key string, operationType int32, value string) {
+// ClientAddMembershipListenerEventMemberAttributeChangeDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (
+	uuid string, key string, operationType int32, value string) {
 	uuid = clientMessage.ReadString()
 	key = clientMessage.ReadString()
 	operationType = clientMessage.ReadInt32()
@@ -74,6 +96,8 @@ func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *
 	return
 }
 
+// ClientAddMembershipListenerHandle handles the event with the given
+// event handler function.
 func ClientAddMembershipListenerHandle(clientMessage *ClientMessage,
 	handleEventMember ClientAddMembershipListenerHandleEventMemberFunc,
 	handleEventMemberList ClientAddMembershipListenerHandleEventMemberListFunc,

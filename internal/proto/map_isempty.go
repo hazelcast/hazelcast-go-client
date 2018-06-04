@@ -14,16 +14,21 @@
 
 package proto
 
-func MapIsEmptyCalculateSize(name string) int {
+import ()
+
+func mapIsEmptyCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
 	return dataSize
 }
 
+// MapIsEmptyEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func MapIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, MapIsEmptyCalculateSize(name))
+	clientMessage := NewClientMessage(nil, mapIsEmptyCalculateSize(name))
 	clientMessage.SetMessageType(mapIsEmpty)
 	clientMessage.IsRetryable = true
 	clientMessage.AppendString(name)
@@ -31,6 +36,8 @@ func MapIsEmptyEncodeRequest(name string) *ClientMessage {
 	return clientMessage
 }
 
+// MapIsEmptyDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func MapIsEmptyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
 	return func() (response bool) {

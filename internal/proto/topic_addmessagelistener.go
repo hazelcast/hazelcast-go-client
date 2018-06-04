@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func TopicAddMessageListenerCalculateSize(name string, localOnly bool) int {
+func topicAddMessageListenerCalculateSize(name string, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -28,9 +28,12 @@ func TopicAddMessageListenerCalculateSize(name string, localOnly bool) int {
 	return dataSize
 }
 
+// TopicAddMessageListenerEncodeRequest creates and encodes a client message
+// with the given parameters.
+// It returns the encoded client message.
 func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, TopicAddMessageListenerCalculateSize(name, localOnly))
+	clientMessage := NewClientMessage(nil, topicAddMessageListenerCalculateSize(name, localOnly))
 	clientMessage.SetMessageType(topicAddMessageListener)
 	clientMessage.IsRetryable = false
 	clientMessage.AppendString(name)
@@ -39,6 +42,8 @@ func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMe
 	return clientMessage
 }
 
+// TopicAddMessageListenerDecodeResponse decodes the given client message.
+// It returns a function which returns the response parameters.
 func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
@@ -47,15 +52,22 @@ func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() 
 	}
 }
 
+// TopicAddMessageListenerHandleEventTopicFunc is the event handler function.
 type TopicAddMessageListenerHandleEventTopicFunc func(*serialization.Data, int64, string)
 
-func TopicAddMessageListenerEventTopicDecode(clientMessage *ClientMessage) (item *serialization.Data, publishTime int64, uuid string) {
+// TopicAddMessageListenerEventTopicDecode decodes the corresponding event
+// from the given client message.
+// It returns the result parameters for the event.
+func TopicAddMessageListenerEventTopicDecode(clientMessage *ClientMessage) (
+	item *serialization.Data, publishTime int64, uuid string) {
 	item = clientMessage.ReadData()
 	publishTime = clientMessage.ReadInt64()
 	uuid = clientMessage.ReadString()
 	return
 }
 
+// TopicAddMessageListenerHandle handles the event with the given
+// event handler function.
 func TopicAddMessageListenerHandle(clientMessage *ClientMessage,
 	handleEventTopic TopicAddMessageListenerHandleEventTopicFunc) {
 	// Event handler
