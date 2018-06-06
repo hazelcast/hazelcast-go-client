@@ -14,8 +14,6 @@
 
 package proto
 
-import ()
-
 func mapRemoveEntryListenerCalculateSize(name string, registrationId string) int {
 	// Calculates the request payload size
 	dataSize := 0

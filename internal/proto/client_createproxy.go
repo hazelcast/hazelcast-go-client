@@ -14,8 +14,6 @@
 
 package proto
 
-import ()
-
 func clientCreateProxyCalculateSize(name string, serviceName string, target *Address) int {
 	// Calculates the request payload size
 	dataSize := 0

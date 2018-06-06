@@ -14,8 +14,6 @@
 
 package proto
 
-import ()
-
 func ringbufferTailSequenceCalculateSize(name string) int {
 	// Calculates the request payload size
 	dataSize := 0
