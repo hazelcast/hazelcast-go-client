@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
 
 var READ_HEADER = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0}
@@ -179,6 +180,34 @@ func TestClientMessage_ReadString(t *testing.T) {
 	if result := message.ReadString(); result != "abc" {
 		t.Errorf("ReadString returned %s expected abc", result)
 	}
+}
+
+func TestClientMessage_Clone(t *testing.T) {
+	message := NewClientMessage(nil, 30)
+	var correlationID int64 = 6474838
+	var messageType bufutil.MessageType = 987
+	var flags uint8 = 5
+	var partitionID int32 = 27
+	var frameLength int32 = 100
+	var dataOffset uint16 = 17
+
+	message.SetFrameLength(frameLength)
+	message.SetFlags(flags)
+	message.SetMessageType(messageType)
+	message.SetPartitionID(partitionID)
+	message.SetDataOffset(dataOffset)
+	message.SetCorrelationID(correlationID)
+	message.IsRetryable = true
+
+	cloneMessage := message.CloneMessage()
+
+	assert.Equal(t, nil, cloneMessage.FrameLength(), message.FrameLength())
+	assert.Equal(t, nil, cloneMessage.Flags(), message.Flags())
+	assert.Equal(t, nil, cloneMessage.MessageType(), message.MessageType())
+	assert.Equal(t, nil, cloneMessage.PartitionID(), message.PartitionID())
+	assert.Equal(t, nil, cloneMessage.DataOffset(), message.DataOffset())
+	assert.Equal(t, nil, cloneMessage.CorrelationID(), message.CorrelationID())
+	assert.Equal(t, nil, cloneMessage.IsRetryable, message.IsRetryable)
 }
 
 func TestNoFlag(t *testing.T) {

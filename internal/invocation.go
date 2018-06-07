@@ -170,14 +170,9 @@ func (is *invocationServiceImpl) retryInvocation(invocation *invocation, cause e
 	}
 	// retryInvocation modifies the client message and should not reuse the client message.
 	// It could be the case that it is in write queue of the connection.
-	invocation.request.Store(copyMessage(invocation.request.Load().(*proto.ClientMessage)))
+	invocation.request.Store(invocation.request.Load().(*proto.ClientMessage).CloneMessage())
 	is.registerInvocation(invocation)
 	is.invoke(invocation)
-}
-
-func copyMessage(message *proto.ClientMessage) *proto.ClientMessage {
-	copiedBuffer := append([]byte{}, message.Buffer...)
-	return proto.NewClientMessage(copiedBuffer, 0)
 }
 
 func (is *invocationServiceImpl) shutdown() {
