@@ -22,6 +22,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
 
 const (
@@ -284,4 +285,15 @@ func TestSerializeData(t *testing.T) {
 	if !reflect.DeepEqual(data, serializedData) {
 		t.Error("data type should not be serialized")
 	}
+}
+
+func TestUndefinedDataDeserialization(t *testing.T) {
+	s, _ := NewSerializationService(config.NewSerializationConfig())
+	dataOutput := NewPositionalObjectDataOutput(1, s, s.serializationConfig.IsBigEndian())
+	dataOutput.WriteInt32(0) // partition
+	dataOutput.WriteInt32(-100)
+	dataOutput.WriteUTF("Furkan")
+	data := &Data{dataOutput.buffer}
+	_, err := s.ToObject(data)
+	assert.ErrorNotNil(t, err, "err should not be nil")
 }
