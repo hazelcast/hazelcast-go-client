@@ -146,12 +146,14 @@ type connectionManagerImpl struct {
 	nextConnectionID    int64
 	listenerMutex       sync.Mutex
 	connectionListeners atomic.Value
+	addressTranslator   AddressTranslator
 }
 
-func newConnectionManager(client *HazelcastClient) connectionManager {
+func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
 	cm := connectionManagerImpl{
-		client:      client,
-		connections: make(map[string]*Connection),
+		client:            client,
+		connections:       make(map[string]*Connection),
+		addressTranslator: addressTranslator,
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0))
 	return &cm
@@ -186,7 +188,12 @@ func (cm *connectionManagerImpl) getOrCreateConnectionInternal(address core.Addr
 	conn, found := cm.connections[address.String()]
 
 	if !found {
-		return cm.createConnection(address, asOwner)
+		addr := cm.addressTranslator.Translate(address)
+		if addr == nil {
+			return nil, core.NewHazelcastNilPointerError("address translator could not translate address:"+
+				address.String(), nil)
+		}
+		return cm.createConnection(addr, asOwner)
 	}
 
 	if !asOwner {

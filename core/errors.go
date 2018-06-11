@@ -112,6 +112,11 @@ type HazelcastUnsupportedOperationError struct {
 	*HazelcastErrorType
 }
 
+// HazelcastCertificateError is returned when there is an error in certificates.
+type HazelcastCertificateError struct {
+	*HazelcastErrorType
+}
+
 // HazelcastConsistencyLostError is an error that indicates that the consistency guarantees provided by
 // some service has been lost. The exact guarantees depend on the service.
 type HazelcastConsistencyLostError struct {
@@ -196,4 +201,9 @@ func NewHazelcastUnsupportedOperationError(message string, cause error) *Hazelca
 // NewHazelcastConsistencyLostError returns a HazelcastConsistencyLostError.
 func NewHazelcastConsistencyLostError(message string, cause error) *HazelcastConsistencyLostError {
 	return &HazelcastConsistencyLostError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastCertificateError returns a HazelcastCertificateError.
+func NewHazelcastCertificateError(message string, cause error) *HazelcastCertificateError {
+	return &HazelcastCertificateError{&HazelcastErrorType{message: message, cause: cause}}
 }

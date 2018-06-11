@@ -333,6 +333,9 @@ type NetworkConfig struct {
 	// executed on the owner.
 	// The cached table is updated every 10 seconds.
 	smartRouting bool
+
+	// cloudConfig is the config for cloud discovery.
+	cloudConfig *ClientCloud
 }
 
 // NewNetworkConfig returns a new NetworkConfig with default configuration.
@@ -344,6 +347,7 @@ func NewNetworkConfig() *NetworkConfig {
 		connectionTimeout:       5 * time.Second,
 		redoOperation:           false,
 		smartRouting:            true,
+		cloudConfig:             NewClientCloud(),
 	}
 }
 
@@ -422,4 +426,14 @@ func (nc *NetworkConfig) SetRedoOperation(redoOperation bool) {
 // Default value is true.
 func (nc *NetworkConfig) SetSmartRouting(smartRouting bool) {
 	nc.smartRouting = smartRouting
+}
+
+// CloudConfig returns the cloud config.
+func (nc *NetworkConfig) CloudConfig() *ClientCloud {
+	return nc.cloudConfig
+}
+
+// SetCloudConfig sets the Cloud Config as the given config.
+func (nc *NetworkConfig) SetCloudConfig(cloudConfig *ClientCloud) {
+	nc.cloudConfig = cloudConfig
 }

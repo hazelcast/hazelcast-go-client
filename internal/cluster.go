@@ -44,11 +44,12 @@ type clusterService struct {
 	uuid                   atomic.Value
 	ownerConnectionAddress atomic.Value
 	listeners              atomic.Value
+	addressProviders       []AddressProvider
 	mu                     sync.Mutex
 	reconnectChan          chan struct{}
 }
 
-func newClusterService(client *HazelcastClient, config *config.Config) *clusterService {
+func newClusterService(client *HazelcastClient, config *config.Config, addressProviders []AddressProvider) *clusterService {
 	service := &clusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
 	service.ownerConnectionAddress.Store(&proto.Address{})
 	service.members.Store(make([]*proto.Member, 0))       //Initialize
@@ -60,6 +61,7 @@ func newClusterService(client *HazelcastClient, config *config.Config) *clusterS
 	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
 		service.AddListener(membershipListener)
 	}
+	service.addressProviders = addressProviders
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
 	return service
@@ -69,14 +71,35 @@ func (cs *clusterService) start() error {
 	return cs.connectToCluster()
 }
 
-func getPossibleAddresses(addressList []string, memberList []*proto.Member) []proto.Address {
+func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
+	addresses := make(map[core.Address]struct{})
+	memberList := cs.GetMembers()
+
+	for _, member := range memberList {
+		addresses[member.Address()] = struct{}{}
+	}
+
+	for _, provider := range cs.addressProviders {
+		providerAddrs := provider.LoadAddresses()
+		for _, k := range providerAddrs {
+			addresses[k] = struct{}{}
+		}
+	}
+
+	addrs := make([]core.Address, len(addresses))
+	index := 0
+	for a := range addresses {
+		addrs[index] = a
+		index++
+	}
+	return addrs
+}
+
+func createAddressFromString(addressList []string) []proto.Address {
 	if addressList == nil {
 		addressList = make([]string, 0)
 	}
-	if memberList == nil {
-		memberList = make([]*proto.Member, 0)
-	}
-	allAddresses := make(map[proto.Address]struct{}, len(addressList)+len(memberList))
+	allAddresses := make(map[proto.Address]struct{}, len(addressList))
 	for _, address := range addressList {
 		ip, port := iputil.GetIPAndPort(address)
 		if iputil.IsValidIPAddress(ip) {
@@ -89,9 +112,6 @@ func getPossibleAddresses(addressList []string, memberList []*proto.Member) []pr
 			}
 
 		}
-	}
-	for _, member := range memberList {
-		allAddresses[*member.Address().(*proto.Address)] = struct{}{}
 	}
 	addresses := make([]proto.Address, len(allAddresses))
 	index := 0
@@ -131,13 +151,12 @@ func (cs *clusterService) connectToCluster() error {
 	retryDelay := cs.config.NetworkConfig().ConnectionAttemptPeriod()
 	for currentAttempt < attempLimit {
 		currentAttempt++
-		members := cs.members.Load().([]*proto.Member)
-		addresses := getPossibleAddresses(cs.config.NetworkConfig().Addresses(), members)
+		addresses := cs.getPossibleMemberAddresses()
 		for _, address := range addresses {
 			if !cs.client.LifecycleService.isLive.Load().(bool) {
 				return core.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
 			}
-			err := cs.connectToAddress(&address)
+			err := cs.connectToAddress(address)
 			if err != nil {
 				log.Println("The following error occurred while trying to connect to cluster. attempt ",
 					currentAttempt, " of ", attempLimit, " error: ", err)
@@ -155,7 +174,7 @@ func (cs *clusterService) connectToCluster() error {
 	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 
-func (cs *clusterService) connectToAddress(address *proto.Address) error {
+func (cs *clusterService) connectToAddress(address core.Address) error {
 	connection, err := cs.client.ConnectionManager.getOrConnect(address, true)
 	if err != nil {
 		return err
