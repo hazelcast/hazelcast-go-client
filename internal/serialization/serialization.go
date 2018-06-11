@@ -66,10 +66,14 @@ func (s *Service) ToObject(data *Data) (interface{}, error) {
 	if data == nil {
 		return nil, nil
 	}
-	if data.GetType() == 0 {
+	typeID := data.GetType()
+	if typeID == 0 {
 		return data, nil
 	}
-	var serializer = s.registry[data.GetType()]
+	serializer, ok := s.registry[typeID]
+	if !ok {
+		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
+	}
 	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.serializationConfig.IsBigEndian())
 	return serializer.Read(dataInput)
 }
