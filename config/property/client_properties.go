@@ -45,4 +45,11 @@ var (
 
 	// HazelcastCloudDiscoveryToken is a token to use discovering cluster via hazelcast.cloud.
 	HazelcastCloudDiscoveryToken = NewHazelcastProperty("hazelcast.client.cloud.discovery.token")
+
+	// StatisticsPeriodSeconds is the period in seconds to collect statistics.
+	StatisticsPeriodSeconds = NewHazelcastPropertyInt64WithTimeUnit("hazelcast.client.statistics.period.seconds",
+		3, time.Second)
+
+	// StatisticsEnabled is used to enable the client statistics collection.
+	StatisticsEnabled = NewHazelcastPropertyBool("hazelcast.client.statistics.enabled", false)
 )

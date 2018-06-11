@@ -147,7 +147,7 @@ func TestHazelcastProperties_GetDurationFromEnvWhenIncorrectFormat(t *testing.T)
 	}
 }
 
-func TestHazelcastProperties_GetPositiveDurationFromEnv(t *testing.T) {
+func TestHazelcastProperties_GetPositiveDurationOrDefaultFromEnv(t *testing.T) {
 	name := "testDuration"
 	coeff := int64(5)
 	timeUnit := time.Second
@@ -155,7 +155,7 @@ func TestHazelcastProperties_GetPositiveDurationFromEnv(t *testing.T) {
 	os.Setenv(name, "-300")
 	property := NewHazelcastPropertyInt64WithTimeUnit(name, coeff, timeUnit)
 	properties := NewHazelcastProperties(nil)
-	if value := properties.GetPositiveDuration(property); value != duration {
+	if value := properties.GetPositiveDurationOrDef(property); value != duration {
 		t.Errorf("expected %s got %s", duration, value)
 	}
 

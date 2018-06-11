@@ -27,7 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
 const (
@@ -36,21 +37,23 @@ const (
 )
 
 type Connection struct {
-	pending                chan *proto.ClientMessage
-	received               chan *proto.ClientMessage
-	socket                 net.Conn
-	clientMessageBuilder   *clientMessageBuilder
-	closed                 chan struct{}
-	endpoint               atomic.Value
-	status                 int32
-	isOwnerConnection      bool
-	lastRead               atomic.Value
-	lastWrite              atomic.Value
-	closedTime             atomic.Value
-	serverHazelcastVersion string
-	readBuffer             []byte
-	connectionID           int64
-	connectionManager      connectionManager
+	pending                   chan *proto.ClientMessage
+	received                  chan *proto.ClientMessage
+	socket                    net.Conn
+	clientMessageBuilder      *clientMessageBuilder
+	closed                    chan struct{}
+	endpoint                  atomic.Value
+	status                    int32
+	isOwnerConnection         bool
+	lastRead                  atomic.Value
+	lastWrite                 atomic.Value
+	closedTime                atomic.Value
+	readBuffer                []byte
+	connectionID              int64
+	connectionManager         connectionManager
+	connectedServerVersion    int32
+	connectedServerVersionStr string
+	startTime                 int64
 }
 
 func newConnection(address core.Address, handleResponse func(interface{}),
@@ -78,6 +81,7 @@ func newConnection(address core.Address, handleResponse func(interface{}),
 	if networkCfg.SSLConfig().Enabled() {
 		socket, err = connection.openTLSConnection(networkCfg.SSLConfig(), socket, conTimeout)
 	}
+	connection.startTime = timeutil.GetCurrentTimeInMilliSeconds()
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +181,10 @@ func (c *Connection) read() {
 	}
 }
 
+func (c *Connection) StartTime() int64 {
+	return c.startTime
+}
+
 func (c *Connection) receiveMessage() {
 	c.lastRead.Store(time.Now())
 	for len(c.readBuffer) > bufutil.Int32SizeInBytes {
@@ -188,6 +196,15 @@ func (c *Connection) receiveMessage() {
 		c.readBuffer = c.readBuffer[frameLength:]
 		c.clientMessageBuilder.onMessage(resp)
 	}
+}
+
+func (c *Connection) localAddress() net.Addr {
+	return c.socket.LocalAddr()
+}
+
+func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
+	c.connectedServerVersionStr = connectedServerVersion
+	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
 }
 
 func (c *Connection) close(err error) {
@@ -211,5 +228,5 @@ func (c *Connection) String() string {
 		", connected server version=%s", c.isAlive(), c.connectionID,
 		c.endpoint.Load().(core.Address),
 		c.lastRead.Load().(time.Time), c.lastWrite.Load().(time.Time),
-		c.closedTime.Load().(time.Time), c.serverHazelcastVersion)
+		c.closedTime.Load().(time.Time), c.connectedServerVersionStr)
 }

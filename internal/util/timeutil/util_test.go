@@ -15,6 +15,7 @@
 package timeutil
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -56,4 +57,14 @@ func TestGetPositiveDurationOrMax(t *testing.T) {
 	if res := GetPositiveDurationOrMax(duration); res != duration {
 		t.Errorf("Expected %d, got %d", duration, res)
 	}
+}
+
+func TestGetCurrentTimeInMilliSeconds(t *testing.T) {
+	now := time.Now().UnixNano()
+	result := GetCurrentTimeInMilliSeconds()
+	expected := now / int64(time.Millisecond)
+	if math.Abs(float64(result-expected)) > float64(100*time.Millisecond) {
+		t.Fatalf("expected %d got %d", expected, result)
+	}
+
 }

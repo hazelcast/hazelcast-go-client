@@ -19,10 +19,10 @@ import (
 	"reflect"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 )
 
 const (

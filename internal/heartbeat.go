@@ -32,8 +32,8 @@ type heartBeatService struct {
 
 func newHeartBeatService(client *HazelcastClient) *heartBeatService {
 	heartBeat := heartBeatService{client: client,
-		heartBeatInterval: client.properties.GetPositiveDuration(property.HeartbeatInterval),
-		heartBeatTimeout:  client.properties.GetPositiveDuration(property.HeartbeatTimeout),
+		heartBeatInterval: client.properties.GetPositiveDurationOrDef(property.HeartbeatInterval),
+		heartBeatTimeout:  client.properties.GetPositiveDurationOrDef(property.HeartbeatTimeout),
 		cancel:            make(chan struct{}),
 	}
 

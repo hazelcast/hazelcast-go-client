@@ -16,7 +16,7 @@ package reliabletopic
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 

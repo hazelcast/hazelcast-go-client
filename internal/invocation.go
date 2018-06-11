@@ -244,11 +244,11 @@ func (is *invocationServiceImpl) InvocationTimeout() time.Duration {
 }
 
 func (is *invocationServiceImpl) initInvocationTimeout() {
-	is.invocationTimeout = is.client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
+	is.invocationTimeout = is.client.properties.GetPositiveDurationOrDef(property.InvocationTimeoutSeconds)
 }
 
 func (is *invocationServiceImpl) initRetryPause() {
-	is.retryPause = is.client.properties.GetPositiveDuration(property.InvocationRetryPause)
+	is.retryPause = is.client.properties.GetPositiveDurationOrDef(property.InvocationRetryPause)
 }
 
 func (is *invocationServiceImpl) process() {
@@ -424,7 +424,6 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 		invocation.complete(core.NewHazelcastOperationTimeoutError("invocation timed out by"+timeSinceDeadline.String(), err))
 		return
 	}
-
 	if is.shouldRetryInvocation(invocation, err) {
 		time.AfterFunc(is.retryPause, func() {
 			is.retryInvocation(invocation, err)

@@ -51,13 +51,16 @@ type HazelcastClient struct {
 	credentials          security.Credentials
 	name                 string
 	id                   int64
+	statistics           *statistics
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
-	client := HazelcastClient{Config: config}
+	client := &HazelcastClient{Config: config}
 	client.properties = property.NewHazelcastProperties(config.Properties())
+	client.id = client.nextClientID()
+	client.statistics = newStatistics(client)
 	err := client.init()
-	return &client, err
+	return client, err
 }
 
 func (c *HazelcastClient) Name() string {
@@ -195,8 +198,8 @@ func (c *HazelcastClient) init() error {
 	}
 
 	c.HeartBeatService.start()
+	c.statistics.start()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
-
 	return nil
 }
 
@@ -299,6 +302,7 @@ func (c *HazelcastClient) Shutdown() {
 		c.InvocationService.shutdown()
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
+		c.statistics.shutdown()
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
 }

@@ -86,9 +86,9 @@ func (hp *HazelcastProperties) GetDuration(property *HazelcastProperty) time.Dur
 	return duration
 }
 
-// GetPositiveDuration returns the time duration as GetDuration except it returns the default value
+// GetPositiveDurationOrDef returns the time duration as GetDuration except it returns the default value
 // if the set time duration is a non-positive value.
-func (hp *HazelcastProperties) GetPositiveDuration(property *HazelcastProperty) time.Duration {
+func (hp *HazelcastProperties) GetPositiveDurationOrDef(property *HazelcastProperty) time.Duration {
 	duration := hp.GetDuration(property)
 	if duration <= 0 {
 		defaultValInt, _ := strconv.Atoi(property.DefaultValue())

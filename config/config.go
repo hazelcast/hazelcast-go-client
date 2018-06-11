@@ -75,137 +75,137 @@ func New() *Config {
 }
 
 // SecurityConfig returns the security config for this client.
-func (cc *Config) SecurityConfig() *SecurityConfig {
-	return cc.securityConfig
+func (c *Config) SecurityConfig() *SecurityConfig {
+	return c.securityConfig
 }
 
 // GetReliableTopicConfig returns the reliable topic config for this client.
-func (cc *Config) GetReliableTopicConfig(name string) *ReliableTopicConfig {
-	if cfg, found := cc.reliableTopicConfigMap[name]; found {
+func (c *Config) GetReliableTopicConfig(name string) *ReliableTopicConfig {
+	if cfg, found := c.reliableTopicConfigMap[name]; found {
 		return cfg
 	}
-	_, found := cc.reliableTopicConfigMap["default"]
+	_, found := c.reliableTopicConfigMap["default"]
 	if !found {
 		defConfig := NewReliableTopicConfig("default")
-		cc.reliableTopicConfigMap["default"] = defConfig
+		c.reliableTopicConfigMap["default"] = defConfig
 	}
 	config := NewReliableTopicConfig(name)
-	cc.reliableTopicConfigMap[name] = config
+	c.reliableTopicConfigMap[name] = config
 	return config
 
 }
 
 // SetSecurityConfig sets the security config for this client.
-func (cc *Config) SetSecurityConfig(securityConfig *SecurityConfig) {
-	cc.securityConfig = securityConfig
+func (c *Config) SetSecurityConfig(securityConfig *SecurityConfig) {
+	c.securityConfig = securityConfig
 }
 
 // MembershipListeners returns membership listeners.
-func (cc *Config) MembershipListeners() []interface{} {
-	return cc.membershipListeners
+func (c *Config) MembershipListeners() []interface{} {
+	return c.membershipListeners
 }
 
 // AddReliableTopicConfig adds the given reliable topic config to reliable topic configurations.
-func (cc *Config) AddReliableTopicConfig(config *ReliableTopicConfig) {
-	cc.reliableTopicConfigMap[config.Name()] = config
+func (c *Config) AddReliableTopicConfig(config *ReliableTopicConfig) {
+	c.reliableTopicConfigMap[config.Name()] = config
 }
 
 // LifecycleListeners returns lifecycle listeners.
-func (cc *Config) LifecycleListeners() []interface{} {
-	return cc.lifecycleListeners
+func (c *Config) LifecycleListeners() []interface{} {
+	return c.lifecycleListeners
 }
 
 // GroupConfig returns GroupConfig.
-func (cc *Config) GroupConfig() *GroupConfig {
-	return cc.groupConfig
+func (c *Config) GroupConfig() *GroupConfig {
+	return c.groupConfig
 }
 
 // NetworkConfig returns NetworkConfig.
-func (cc *Config) NetworkConfig() *NetworkConfig {
-	return cc.networkConfig
+func (c *Config) NetworkConfig() *NetworkConfig {
+	return c.networkConfig
 }
 
 // SerializationConfig returns SerializationConfig.
-func (cc *Config) SerializationConfig() *SerializationConfig {
-	return cc.serializationConfig
+func (c *Config) SerializationConfig() *SerializationConfig {
+	return c.serializationConfig
 }
 
 // SetProperty sets a new pair of property as (name, value).
-func (cc *Config) SetProperty(name string, value string) {
-	cc.properties[name] = value
+func (c *Config) SetProperty(name string, value string) {
+	c.properties[name] = value
 }
 
 // Properties returns the properties of the config.
-func (cc *Config) Properties() Properties {
-	return cc.properties
+func (c *Config) Properties() Properties {
+	return c.properties
 }
 
 // SetClientName sets the client name.
-func (cc *Config) SetClientName(name string) {
-	cc.clientName = name
+func (c *Config) SetClientName(name string) {
+	c.clientName = name
 }
 
 // ClientName returns the client name with this config.
-func (cc *Config) ClientName() string {
-	return cc.clientName
+func (c *Config) ClientName() string {
+	return c.clientName
 }
 
 // LoadBalancer returns loadBalancer for this client.
 // If it is not set, this will return nil.
-func (cc *Config) LoadBalancer() core.LoadBalancer {
-	return cc.loadBalancer
+func (c *Config) LoadBalancer() core.LoadBalancer {
+	return c.loadBalancer
 }
 
 // SetLoadBalancer sets loadBalancer as the given one.
-func (cc *Config) SetLoadBalancer(loadBalancer core.LoadBalancer) {
-	cc.loadBalancer = loadBalancer
+func (c *Config) SetLoadBalancer(loadBalancer core.LoadBalancer) {
+	c.loadBalancer = loadBalancer
 }
 
 // GetFlakeIDGeneratorConfig returns the FlakeIDGeneratorConfig for the given name, creating one
 // if necessary and adding it to the map of known configurations.
 // If no configuration is found with the given name it will create a new one with the default Config.
-func (cc *Config) GetFlakeIDGeneratorConfig(name string) *FlakeIDGeneratorConfig {
+func (c *Config) GetFlakeIDGeneratorConfig(name string) *FlakeIDGeneratorConfig {
 	//TODO:: add Config pattern matcher
-	if config, found := cc.flakeIDGeneratorConfigMap[name]; found {
+	if config, found := c.flakeIDGeneratorConfigMap[name]; found {
 		return config
 	}
-	_, found := cc.flakeIDGeneratorConfigMap["default"]
+	_, found := c.flakeIDGeneratorConfigMap["default"]
 	if !found {
 		defConfig := NewFlakeIDGeneratorConfig("default")
-		cc.flakeIDGeneratorConfigMap["default"] = defConfig
+		c.flakeIDGeneratorConfigMap["default"] = defConfig
 	}
 	config := NewFlakeIDGeneratorConfig(name)
-	cc.flakeIDGeneratorConfigMap[name] = config
+	c.flakeIDGeneratorConfigMap[name] = config
 	return config
 
 }
 
 // AddFlakeIDGeneratorConfig adds the given config to the configurations map.
-func (cc *Config) AddFlakeIDGeneratorConfig(config *FlakeIDGeneratorConfig) {
-	cc.flakeIDGeneratorConfigMap[config.Name()] = config
+func (c *Config) AddFlakeIDGeneratorConfig(config *FlakeIDGeneratorConfig) {
+	c.flakeIDGeneratorConfigMap[config.Name()] = config
 }
 
 // AddMembershipListener adds a membership listener.
-func (cc *Config) AddMembershipListener(listener interface{}) {
-	cc.membershipListeners = append(cc.membershipListeners, listener)
+func (c *Config) AddMembershipListener(listener interface{}) {
+	c.membershipListeners = append(c.membershipListeners, listener)
 }
 
 // AddLifecycleListener adds a lifecycle listener.
-func (cc *Config) AddLifecycleListener(listener interface{}) {
-	cc.lifecycleListeners = append(cc.lifecycleListeners, listener)
+func (c *Config) AddLifecycleListener(listener interface{}) {
+	c.lifecycleListeners = append(c.lifecycleListeners, listener)
 }
 
 // SetGroupConfig sets the GroupConfig.
-func (cc *Config) SetGroupConfig(groupConfig *GroupConfig) {
-	cc.groupConfig = groupConfig
+func (c *Config) SetGroupConfig(groupConfig *GroupConfig) {
+	c.groupConfig = groupConfig
 }
 
 // SetNetworkConfig sets the NetworkConfig.
-func (cc *Config) SetNetworkConfig(networkConfig *NetworkConfig) {
-	cc.networkConfig = networkConfig
+func (c *Config) SetNetworkConfig(networkConfig *NetworkConfig) {
+	c.networkConfig = networkConfig
 }
 
 // SetSerializationConfig sets the SerializationConfig.
-func (cc *Config) SetSerializationConfig(serializationConfig *SerializationConfig) {
-	cc.serializationConfig = serializationConfig
+func (c *Config) SetSerializationConfig(serializationConfig *SerializationConfig) {
+	c.serializationConfig = serializationConfig
 }
