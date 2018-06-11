@@ -25,7 +25,7 @@
     ".*TypePortable should have comment.*",
     ".*LifecycleStateStarting should have comment.*",
     ".*aggregator_hook.go.* is unused*",
-    "address can be fmt.Stringer \\(interfacer\\)"
+    ".*can be fmt.Stringer \\(interfacer\\)"
   ],
   "EnableGC": true,
   "WarnUnmatchedDirective": true,

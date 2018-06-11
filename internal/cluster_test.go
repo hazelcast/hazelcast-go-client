@@ -29,13 +29,9 @@ func Test_getPossibleAddresses(t *testing.T) {
 		"132.63.211.12:5010",
 		"12.63.31.12:501",
 	}
-	members := []*proto.Member{
-		proto.NewMember(*proto.NewAddressWithParameters("132.63.211.12", 5012), "", false, nil),
-		proto.NewMember(*proto.NewAddressWithParameters("55.63.211.112", 5011), "", false, nil),
-	}
-	addresses := getPossibleAddresses(configAddresses, members)
-	if len(addresses) != 5 {
-		t.Fatal("getPossibleAddresses failed")
+	addresses := createAddressFromString(configAddresses)
+	if len(addresses) != 4 {
+		t.Fatalf("createAddressFromString failed expected %d got %d", 4, len(addresses))
 	}
 	addressesInMap := make(map[proto.Address]struct{}, len(addresses))
 	for _, address := range addresses {
@@ -44,26 +40,20 @@ func Test_getPossibleAddresses(t *testing.T) {
 	for _, address := range configAddresses {
 		ip, port := iputil.GetIPAndPort(address)
 		if _, found := addressesInMap[*proto.NewAddressWithParameters(ip, port)]; !found {
-			t.Fatal("getPossibleAddresses failed")
-		}
-	}
-	for _, member := range members {
-		if _, found := addressesInMap[*proto.NewAddressWithParameters(member.Address().Host(),
-			int32(member.Address().Port()))]; !found {
-			t.Fatal("getPossibleAddresses failed")
+			t.Fatal("createAddressFromString failed")
 		}
 	}
 }
 
 func Test_getPossibleAddressesWithEmptyParamters(t *testing.T) {
-	addresses := getPossibleAddresses(nil, nil)
+	addresses := createAddressFromString(nil)
 	if len(addresses) != 1 {
-		t.Fatal("getPossibleAddresses failed")
+		t.Fatal("createAddressFromString failed")
 	}
 	defaultAddress := proto.NewAddressWithParameters(defaultAddress, defaultPort)
 	for _, address := range addresses {
 		if address != *defaultAddress {
-			t.Fatal("getPossibleAddresses failed")
+			t.Fatal("createAddressFromString failed")
 		}
 	}
 

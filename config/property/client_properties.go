@@ -42,4 +42,7 @@ var (
 	// InvocationRetryPause time is the pause time between each retry cycle of an invocation in milliseconds.
 	InvocationRetryPause = NewHazelcastPropertyInt64WithTimeUnit("hazelcast.client.invocation.retry.pause.millis",
 		1000, time.Millisecond)
+
+	// HazelcastCloudDiscoveryToken is a token to use discovering cluster via hazelcast.cloud.
+	HazelcastCloudDiscoveryToken = NewHazelcastProperty("hazelcast.client.cloud.discovery.token")
 )

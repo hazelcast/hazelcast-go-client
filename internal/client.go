@@ -15,9 +15,14 @@
 package internal
 
 import (
+	"math"
+
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -141,16 +146,20 @@ func (c *HazelcastClient) GetLifecycle() core.Lifecycle {
 }
 
 func (c *HazelcastClient) init() error {
+	addressTranslator, err := c.createAddressTranslator()
+	if err != nil {
+		return err
+	}
 	c.LifecycleService = newLifecycleService(c.ClientConfig)
-	c.ConnectionManager = newConnectionManager(c)
+	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
 	c.InvocationService = newInvocationService(c)
-	c.ClusterService = newClusterService(c, c.ClientConfig)
+	addressProviders := c.createAddressProviders()
+	c.ClusterService = newClusterService(c, c.ClientConfig, addressProviders)
 	c.ListenerService = newListenerService(c)
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
 	c.LoadBalancer = newRandomLoadBalancer(c.ClusterService)
-	var err error
 	c.SerializationService, err = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
 	if err != nil {
 		return err
@@ -163,6 +172,64 @@ func (c *HazelcastClient) init() error {
 	c.PartitionService.start()
 	c.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
 	return nil
+}
+
+func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {
+	cloudConfig := c.ClientConfig.NetworkConfig().CloudConfig()
+	cloudDiscoveryToken := c.properties.GetString(property.HazelcastCloudDiscoveryToken)
+	if cloudDiscoveryToken != "" && cloudConfig.IsEnabled() {
+		return nil, core.NewHazelcastIllegalStateError("ambigious hazelcast.cloud configuration. "+
+			"Both property based and client configuration based settings are provided for Hazelcast "+
+			"cloud discovery together. Use only one", nil)
+	}
+	var hzCloudDiscEnabled bool
+	if cloudDiscoveryToken != "" || cloudConfig.IsEnabled() {
+		hzCloudDiscEnabled = true
+	}
+	if hzCloudDiscEnabled {
+		var discoveryToken string
+		if cloudConfig.IsEnabled() {
+			discoveryToken = cloudConfig.DiscoveryToken()
+		} else {
+			discoveryToken = cloudDiscoveryToken
+		}
+		return discovery.NewHzCloudAddrTranslator(discoveryToken, c.getConnectionTimeout()), nil
+	}
+	return newDefaultAddressTranslator(), nil
+}
+
+func (c *HazelcastClient) createAddressProviders() []AddressProvider {
+	addressProviders := make([]AddressProvider, 0)
+	cloudConfig := c.ClientConfig.NetworkConfig().CloudConfig()
+	cloudAddressProvider := c.initCloudAddressProvider(cloudConfig)
+	if cloudAddressProvider != nil {
+		addressProviders = append(addressProviders, cloudAddressProvider)
+	}
+	addressProviders = append(addressProviders, newDefaultAddressProvider(c.ClientConfig.NetworkConfig(),
+		len(addressProviders) == 0))
+
+	return addressProviders
+}
+
+func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.ClientCloud) *discovery.HzCloudAddrProvider {
+	if cloudConfig.IsEnabled() {
+		return discovery.NewHzCloudAddrProvider(cloudConfig.DiscoveryToken(), c.getConnectionTimeout())
+	}
+
+	cloudToken := c.properties.GetString(property.HazelcastCloudDiscoveryToken)
+	if cloudToken != "" {
+		return discovery.NewHzCloudAddrProvider(cloudToken, c.getConnectionTimeout())
+	}
+	return nil
+}
+
+func (c *HazelcastClient) getConnectionTimeout() time.Duration {
+	nc := c.ClientConfig.NetworkConfig()
+	connTimeout := nc.ConnectionTimeout()
+	if connTimeout == 0 {
+		connTimeout = math.MaxInt64
+	}
+	return connTimeout
 }
 
 func (c *HazelcastClient) Shutdown() {
