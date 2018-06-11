@@ -28,8 +28,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
 )
 
 const (

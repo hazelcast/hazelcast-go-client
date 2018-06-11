@@ -24,7 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 )
 
 type Address struct {

@@ -33,6 +33,8 @@ const (
 
 const serializationVersion = 1
 
+var ClientVersion = "0.4" //TODO This should be replace with a build time version variable, BuildInfo etc.
+
 type connectionManager interface {
 	//getActiveConnections returns a snapshot of active connections
 	getActiveConnections() map[string]*Connection
@@ -242,7 +244,6 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 	uuid := cm.client.ClusterService.uuid.Load().(string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	clientType := proto.ClientType
-	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
 	var request *proto.ClientMessage
 	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
 		request = proto.ClientAuthenticationEncodeRequest(
@@ -253,7 +254,7 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 			asOwner,
 			clientType,
 			serializationVersion,
-			clientVersion,
+			ClientVersion,
 		)
 	} else {
 		credsData, err := cm.client.SerializationService.ToData(cm.credentials)
@@ -267,7 +268,7 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 			asOwner,
 			clientType,
 			serializationVersion,
-			clientVersion,
+			ClientVersion,
 		)
 	}
 	return request
@@ -301,7 +302,7 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := authenticationDecoder(result)()
 	switch status {
 	case authenticated:
-		connection.serverHazelcastVersion = serverHazelcastVersion
+		connection.setConnectedServerVersion(serverHazelcastVersion)
 		connection.endpoint.Store(address)
 		connection.isOwnerConnection = asOwner
 		cm.connections[address.String()] = connection

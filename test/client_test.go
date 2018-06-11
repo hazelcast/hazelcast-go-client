@@ -104,6 +104,36 @@ func TestNegativeConnectionTimeoutShouldPanic(t *testing.T) {
 	cfg.NetworkConfig().SetConnectionTimeout(-5 * time.Second)
 }
 
+func TestClientUniqueNames(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+
+	defer remoteController.ShutdownCluster(cluster.ID)
+
+	mp := make(map[string]struct{})
+
+	var waitGroup sync.WaitGroup
+	var mu sync.Mutex
+	repeations := 10
+
+	waitGroup.Add(repeations)
+
+	for i := 0; i < repeations; i++ {
+		go func() {
+			client, _ := hazelcast.NewClient()
+			mu.Lock()
+			mp[client.Name()] = struct{}{}
+			mu.Unlock()
+			client.Shutdown()
+			waitGroup.Done()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	assert.Equalf(t, len(mp), repeations, "Client names are not unique")
+}
+
 func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	for i := 0; i < 5; i++ {

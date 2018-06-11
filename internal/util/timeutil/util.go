@@ -30,6 +30,10 @@ func GetTimeInMilliSeconds(duration time.Duration) int64 {
 	return duration.Nanoseconds() / int64(time.Millisecond)
 }
 
+func GetCurrentTimeInMilliSeconds() int64 {
+	return time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+}
+
 func ConvertMillisToDuration(timeInMillis int64) time.Duration {
 	if timeInMillis == math.MaxInt64 {
 		return time.Duration(timeInMillis)
