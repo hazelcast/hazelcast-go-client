@@ -70,6 +70,14 @@ func NewClientMessage(buffer []byte, payloadSize int) *ClientMessage {
 	return clientMessage
 }
 
+func (m *ClientMessage) CloneMessage() *ClientMessage {
+	newBuffer := make([]byte, len(m.Buffer))
+	copy(newBuffer, m.Buffer)
+	copiedMessage := NewClientMessage(newBuffer, 0)
+	copiedMessage.IsRetryable = m.IsRetryable
+	return copiedMessage
+}
+
 func (m *ClientMessage) FrameLength() int32 {
 	return int32(binary.LittleEndian.Uint32(m.Buffer[bufutil.FrameLengthFieldOffset:bufutil.VersionFieldOffset]))
 }
