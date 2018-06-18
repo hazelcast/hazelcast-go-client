@@ -22,13 +22,12 @@ import (
 
 	"sync"
 
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
-
-const RetryWaitTime = 1 * time.Second
 
 type invocation struct {
 	request         atomic.Value
@@ -49,13 +48,14 @@ type invocationResult interface {
 
 func newInvocation(request *proto.ClientMessage, partitionID int32, address core.Address,
 	connection *Connection, client *HazelcastClient) *invocation {
+	invocationTimeout := client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
 	invocation := &invocation{
 		partitionID:     partitionID,
 		address:         address,
 		boundConnection: connection,
 		response:        make(chan interface{}, 1),
 		isComplete:      0,
-		deadline:        time.Now().Add(client.ClientConfig.NetworkConfig().InvocationTimeout()),
+		deadline:        time.Now().Add(invocationTimeout),
 	}
 	invocation.request.Store(request)
 	return invocation
@@ -400,8 +400,9 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 		invocation.complete(core.NewHazelcastTimeoutError("invocation timed out by"+timeSinceDeadline.String(), nil))
 		return
 	}
+	retryPauseTime := is.client.properties.GetPositiveDuration(property.InvocationRetryPause)
 	if is.shouldRetryInvocation(invocation, err) {
-		time.AfterFunc(RetryWaitTime, func() {
+		time.AfterFunc(retryPauseTime, func() {
 			is.retryInvocation(invocation, err)
 		})
 		return

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
@@ -72,7 +73,7 @@ func TestInvocationTimeout(t *testing.T) {
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetRedoOperation(true)
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
-	config.NetworkConfig().SetInvocationTimeout(5 * time.Second)
+	config.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
 	client, _ := hazelcast.NewClientWithConfig(config)
 	mp, _ := client.GetMap("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
@@ -134,7 +135,7 @@ func TestInvocationNotSent(t *testing.T) {
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetRedoOperation(true)
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
-	config.NetworkConfig().SetInvocationTimeout(10 * time.Second)
+	config.SetProperty(property.InvocationTimeoutSeconds.Name(), "10")
 	config.NetworkConfig().SetConnectionAttemptPeriod(1 * time.Second)
 	client, _ := hazelcast.NewClientWithConfig(config)
 	mp, _ := client.GetMap("testMap")

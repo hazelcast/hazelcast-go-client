@@ -24,10 +24,11 @@ import (
 )
 
 const (
-	defaultGroupName         = "dev"
-	defaultGroupPassword     = "dev-pass"
-	defaultInvocationTimeout = 120 * time.Second
+	defaultGroupName     = "dev"
+	defaultGroupPassword = "dev-pass"
 )
+
+type Properties map[string]string
 
 // Config is the main configuration to setup a Hazelcast client.
 type Config struct {
@@ -46,14 +47,10 @@ type Config struct {
 	// serializationConfig is the serialization configuration of the client.
 	serializationConfig *SerializationConfig
 
-	// heartbeatTimeout is the timeout value for heartbeat.
-	heartbeatTimeout time.Duration
-
-	// heartbeatInterval is heartbeat internal.
-	heartbeatInterval time.Duration
-
 	// flakeIDGeneratorConfigMap is mapping of names to flakeIDGeneratorConfigs.
 	flakeIDGeneratorConfigMap map[string]*FlakeIDGeneratorConfig
+
+	properties Properties
 }
 
 // New returns a new Config with default configuration.
@@ -64,6 +61,7 @@ func New() *Config {
 		serializationConfig:       NewSerializationConfig(),
 		lifecycleListeners:        make([]interface{}, 0),
 		flakeIDGeneratorConfigMap: make(map[string]*FlakeIDGeneratorConfig),
+		properties:                make(Properties),
 	}
 }
 
@@ -92,26 +90,14 @@ func (cc *Config) SerializationConfig() *SerializationConfig {
 	return cc.serializationConfig
 }
 
-// SetHeartbeatTimeout sets the heartbeat timeout value to given timeout value.
-func (cc *Config) SetHeartbeatTimeout(heartbeatTimeout time.Duration) *Config {
-	cc.heartbeatTimeout = heartbeatTimeout
-	return cc
+// SetProperty sets a new pair of property as (name, value).
+func (cc *Config) SetProperty(name string, value string) {
+	cc.properties[name] = value
 }
 
-// HeartbeatTimeout returns heartbeat timeout
-func (cc *Config) HeartbeatTimeout() time.Duration {
-	return cc.heartbeatTimeout
-}
-
-// SetHeartbeatInterval sets the heartbeat timeout value to given interval value.
-func (cc *Config) SetHeartbeatInterval(heartbeatInterval time.Duration) *Config {
-	cc.heartbeatInterval = heartbeatInterval
-	return cc
-}
-
-// HeartbeatInterval returns heartbeat interval.
-func (cc *Config) HeartbeatInterval() time.Duration {
-	return cc.heartbeatInterval
+// Properties returns the properties of the config.
+func (cc *Config) Properties() Properties {
+	return cc.properties
 }
 
 // GetFlakeIDGeneratorConfig returns the FlakeIDGeneratorConfig for the given name, creating one
@@ -347,9 +333,6 @@ type NetworkConfig struct {
 	// executed on the owner.
 	// The cached table is updated every 10 seconds.
 	smartRouting bool
-
-	// invocationTimeout is the invocation timeout for sending invocation.
-	invocationTimeout time.Duration
 }
 
 // NewNetworkConfig returns a new NetworkConfig with default configuration.
@@ -361,7 +344,6 @@ func NewNetworkConfig() *NetworkConfig {
 		connectionTimeout:       5 * time.Second,
 		redoOperation:           false,
 		smartRouting:            true,
-		invocationTimeout:       defaultInvocationTimeout,
 	}
 }
 
@@ -393,11 +375,6 @@ func (nc *NetworkConfig) IsRedoOperation() bool {
 // IsSmartRouting returns true if client is smart.
 func (nc *NetworkConfig) IsSmartRouting() bool {
 	return nc.smartRouting
-}
-
-// InvocationTimeout returns the invocation timeout
-func (nc *NetworkConfig) InvocationTimeout() time.Duration {
-	return nc.invocationTimeout
 }
 
 // AddAddress adds given addresses to candidate address list that client will use to establish initial connection.
@@ -445,9 +422,4 @@ func (nc *NetworkConfig) SetRedoOperation(redoOperation bool) {
 // Default value is true.
 func (nc *NetworkConfig) SetSmartRouting(smartRouting bool) {
 	nc.smartRouting = smartRouting
-}
-
-// SetInvocationTimeout sets the invocation timeout for sending invocation.
-func (nc *NetworkConfig) SetInvocationTimeout(invocationTimeout time.Duration) {
-	nc.invocationTimeout = invocationTimeout
 }

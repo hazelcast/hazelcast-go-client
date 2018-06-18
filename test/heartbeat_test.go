@@ -17,9 +17,9 @@ package test
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
@@ -44,8 +44,8 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
-	config.SetHeartbeatInterval(3 * time.Second)
-	config.SetHeartbeatTimeout(5 * time.Second)
+	config.SetProperty(property.HeartbeatInterval.Name(), "3000")
+	config.SetProperty(property.HeartbeatTimeout.Name(), "5000")
 	client, _ := hazelcast.NewClientWithConfig(config)
 	wg.Add(1)
 	client.(*internal.HazelcastClient).HeartBeatService.AddHeartbeatListener(heartbeatListener)

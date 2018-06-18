@@ -20,12 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-)
-
-const (
-	defaultHeartBeatInterval = 10 * time.Second
-	defaultHeartBeatTimeout  = 60 * time.Second
 )
 
 type heartBeatService struct {
@@ -38,16 +34,12 @@ type heartBeatService struct {
 }
 
 func newHeartBeatService(client *HazelcastClient) *heartBeatService {
-	heartBeat := heartBeatService{client: client, heartBeatInterval: defaultHeartBeatInterval,
-		heartBeatTimeout: defaultHeartBeatTimeout,
-		cancel:           make(chan struct{}),
+	heartBeat := heartBeatService{client: client,
+		heartBeatInterval: client.properties.GetPositiveDuration(property.HeartbeatInterval),
+		heartBeatTimeout:  client.properties.GetPositiveDuration(property.HeartbeatTimeout),
+		cancel:            make(chan struct{}),
 	}
-	if client.ClientConfig.HeartbeatTimeout() > 0 {
-		heartBeat.heartBeatTimeout = client.ClientConfig.HeartbeatTimeout()
-	}
-	if client.ClientConfig.HeartbeatInterval() > 0 {
-		heartBeat.heartBeatInterval = client.ClientConfig.HeartbeatInterval()
-	}
+
 	heartBeat.listeners.Store(make([]interface{}, 0)) //initialize
 	return &heartBeat
 }
