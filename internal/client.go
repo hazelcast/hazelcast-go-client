@@ -16,6 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -33,10 +34,12 @@ type HazelcastClient struct {
 	ProxyManager         *proxyManager
 	LoadBalancer         *randomLoadBalancer
 	HeartBeatService     *heartBeatService
+	properties           *property.HazelcastProperties
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
 	client := HazelcastClient{ClientConfig: config}
+	client.properties = property.NewHazelcastProperties(config.Properties())
 	err := client.init()
 	return &client, err
 }

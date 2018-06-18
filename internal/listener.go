@@ -18,6 +18,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -326,7 +327,7 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 	if !ls.client.ClientConfig.NetworkConfig().IsSmartRouting() {
 		return nil
 	}
-	remainingTime := ls.client.ClientConfig.NetworkConfig().InvocationTimeout()
+	remainingTime := ls.client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
 	for ls.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
 		members := ls.client.GetCluster().GetMembers()
 		start := time.Now()
