@@ -1,6 +1,7 @@
 # Hazelcast Go Client  
 
 [![GoDoc](https://godoc.org/github.com/hazelcast/hazelcast-go-client?status.svg)](https://godoc.org/github.com/hazelcast/hazelcast-go-client)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hazelcast/hazelcast-go-client)](https://goreportcard.com/report/github.com/hazelcast/hazelcast-go-client)
 
 ![Gopher](assets/hazelcast-golang-logo.png )
 
