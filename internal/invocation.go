@@ -309,7 +309,7 @@ func (is *invocationServiceImpl) sendToConnection(invocation *invocation, connec
 func (is *invocationServiceImpl) sendToAddress(invocation *invocation, address core.Address) {
 	connection, err := is.client.ConnectionManager.getOrTriggerConnect(address)
 	if err != nil {
-		log.Println("the following error occurred while trying to send the invocation ", err)
+		// TODO:: add the error to debugging level logging
 		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(), err)
 		return
 	}
