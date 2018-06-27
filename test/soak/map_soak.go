@@ -25,6 +25,10 @@ import (
 
 	"runtime"
 
+	"fmt"
+
+	"os"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
@@ -46,7 +50,13 @@ func startMapSoak() {
 	routineNumBefore := runtime.NumGoroutine()
 	numbPtr := flag.Float64("hour", 0, "a float")
 	addresses := flag.String("addresses", "", "addresses")
+	logFile := flag.String("log", "defaultLog", "log")
 	flag.Parse()
+	f, err := os.OpenFile(*logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	log.SetOutput(f)
 	config := hazelcast.NewConfig()
 	processor := newSimpleEntryProcessor()
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryID, processor.identifiedFactory)
@@ -68,11 +78,16 @@ func startMapSoak() {
 	}
 	mp.AddEntryListener(simpleListener{}, false)
 	wg := sync.WaitGroup{}
+
 	log.Println("Soak test operations are starting!")
 	for i := 0; i < subroutineCount; i++ {
 		wg.Add(1)
-		go func() {
+		go func(i int) {
 			startTime := time.Now()
+			getCount := 0
+			putCount := 0
+			valuesCount := 0
+			executeOnKeyCount := 0
 			for time.Since(startTime).Hours() < *numbPtr {
 				key := strconv.Itoa(rand.Intn(entryCount))
 				value := strconv.Itoa(rand.Intn(entryCount))
@@ -82,25 +97,36 @@ func startMapSoak() {
 					if err != nil {
 						log.Println("Error in Get() ", err)
 					}
+					getCount++
 				} else if op < 60 {
 					_, err := mp.Put(key, value)
 					if err != nil {
 						log.Println("Error in Put() ", err)
 					}
+					putCount++
 				} else if op < 80 {
 					_, err := mp.ValuesWithPredicate(predicate.Between("this", int32(0), int32(10)))
 					if err != nil {
 						log.Println("Error in ValuesWithPredicate() ", err)
 					}
+					valuesCount++
 				} else {
 					_, err := mp.ExecuteOnKey(key, processor)
 					if err != nil {
 						log.Println("Error in ExecuteOnKey() ", err)
 					}
+					executeOnKeyCount++
 				}
+				totalCount := getCount + putCount + valuesCount + executeOnKeyCount
+				if totalCount%10000 == 0 {
+					log.Println(fmt.Sprintf("Subroutine: %d \n TotalCount: %d GetCount: %d PutCount: %d "+
+						"ValuesCount: %d ExecuteOnKeyCount: %d", i, totalCount, getCount, putCount, valuesCount,
+						executeOnKeyCount))
+				}
+
 			}
 			wg.Done()
-		}()
+		}(i)
 
 	}
 	wg.Wait()
