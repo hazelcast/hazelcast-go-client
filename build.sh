@@ -40,10 +40,6 @@ bash ./start-rc.sh
 
 sleep 10
 
-
-# Run vet tools (Compiler warning plugin)
-go vet $CLIENT_IMPORT_PATH > vet.txt
-
 go get github.com/t-yuki/gocover-cobertura
 go get github.com/tebeka/go2xunit
 
