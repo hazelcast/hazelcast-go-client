@@ -106,6 +106,9 @@ func (cm *connectionManagerImpl) onConnectionClose(connection *Connection, cause
 }
 
 func (cm *connectionManagerImpl) getOrTriggerConnect(address core.Address) (*Connection, error) {
+	if cm.isAlive.Load() == false {
+		return nil, core.NewHazelcastClientNotActiveError("Connection Manager is not active", nil)
+	}
 	connection := cm.getConnection(address, false)
 	if connection != nil {
 		return connection, nil
@@ -131,8 +134,13 @@ func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
 }
 
 func (cm *connectionManagerImpl) shutdown() {
+	if cm.isAlive.Load() == false {
+		return
+	}
+	cm.isAlive.Store(false)
 	activeCons := cm.getActiveConnections()
 	for _, con := range activeCons {
+
 		con.close(core.NewHazelcastClientNotActiveError("client is shutting down", nil))
 	}
 }
@@ -147,6 +155,7 @@ type connectionManagerImpl struct {
 	listenerMutex       sync.Mutex
 	connectionListeners atomic.Value
 	addressTranslator   AddressTranslator
+	isAlive             atomic.Value
 }
 
 func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
@@ -156,6 +165,7 @@ func newConnectionManager(client *HazelcastClient, addressTranslator AddressTran
 		addressTranslator: addressTranslator,
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0))
+	cm.isAlive.Store(true)
 	return &cm
 }
 
@@ -279,6 +289,10 @@ func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner 
 	if !asOwner && cm.client.ClusterService.getOwnerConnectionAddress() == nil {
 		return nil, core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
+	if cm.isAlive.Load() == false {
+		return nil, core.NewHazelcastClientNotActiveError("Connection Manager is not active", nil)
+	}
+
 	invocationService := cm.client.InvocationService.(*invocationServiceImpl)
 	connectionID := cm.NextConnectionID()
 	con := newConnection(address, invocationService.handleResponse, connectionID, cm)

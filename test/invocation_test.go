@@ -150,7 +150,6 @@ func TestInvocationNotSent(t *testing.T) {
 					t.Fatal("put should have been retried, the error was :", err)
 				}
 			}()
-
 		}
 	}()
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
@@ -183,7 +182,7 @@ func TestInvocationShouldNotHang_whenClientShutsDown(t *testing.T) {
 
 		}
 	}()
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, nil, timeout, false, "invocationNotSent failed")
