@@ -74,6 +74,7 @@ func (i *invocation) complete(response interface{}) {
 	if atomic.CompareAndSwapInt32(&i.isComplete, 0, 1) {
 		i.response <- response
 	}
+
 }
 
 func (i *invocation) unwrapResponse(response interface{}) (*proto.ClientMessage, error) {
@@ -184,6 +185,7 @@ func (is *invocationServiceImpl) shutdown() {
 		delete(is.invocations, correlationID)
 		invocation.complete(core.NewHazelcastClientNotActiveError("client is shutting down", nil))
 	}
+
 	is.invocationsLock.Unlock()
 }
 
