@@ -18,8 +18,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"log"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/security"
 )
 
 const (
@@ -27,6 +30,8 @@ const (
 	credentialsFailed
 	serializationVersionMismatch
 )
+
+const serializationVersion = 1
 
 type connectionManager interface {
 	//getActiveConnections returns a snapshot of active connections
@@ -156,6 +161,7 @@ type connectionManagerImpl struct {
 	connectionListeners atomic.Value
 	addressTranslator   AddressTranslator
 	isAlive             atomic.Value
+	credentials         security.Credentials
 }
 
 func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
@@ -163,6 +169,7 @@ func newConnectionManager(client *HazelcastClient, addressTranslator AddressTran
 		client:            client,
 		connections:       make(map[string]*Connection),
 		addressTranslator: addressTranslator,
+		credentials:       client.credentials,
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0))
 	cm.isAlive.Store(true)
@@ -230,23 +237,39 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 	uuid := cm.client.ClusterService.uuid.Load().(string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	clientType := proto.ClientType
-	name := cm.client.ClientConfig.GroupConfig().Name()
-	password := cm.client.ClientConfig.GroupConfig().Password()
 	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
-	request := proto.ClientAuthenticationEncodeRequest(
-		name,
-		password,
-		uuid,
-		ownerUUID,
-		asOwner,
-		clientType,
-		1,
-		clientVersion,
-	)
+	var request *proto.ClientMessage
+	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
+		request = proto.ClientAuthenticationEncodeRequest(
+			creds.Username(),
+			creds.Password(),
+			uuid,
+			ownerUUID,
+			asOwner,
+			clientType,
+			serializationVersion,
+			clientVersion,
+		)
+	} else {
+		credsData, err := cm.client.SerializationService.ToData(cm.credentials)
+		if err != nil {
+			log.Panic("Credentials cannot be serialized!")
+		}
+		request = proto.ClientAuthenticationCustomEncodeRequest(
+			credsData,
+			uuid,
+			ownerUUID,
+			asOwner,
+			clientType,
+			serializationVersion,
+			clientVersion,
+		)
+	}
 	return request
 }
 
 func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bool) error {
+	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := cm.encodeAuthenticationRequest(asOwner)
 	invocationResult := cm.client.InvocationService.invokeOnConnection(request, connection)
 	result, err := invocationResult.ResultWithTimeout(cm.client.HeartBeatService.heartBeatTimeout)
