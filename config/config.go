@@ -47,6 +47,8 @@ type Config struct {
 	// serializationConfig is the serialization configuration of the client.
 	serializationConfig *SerializationConfig
 
+	securityConfig *SecurityConfig
+
 	// flakeIDGeneratorConfigMap is mapping of names to flakeIDGeneratorConfigs.
 	flakeIDGeneratorConfigMap map[string]*FlakeIDGeneratorConfig
 
@@ -62,7 +64,18 @@ func New() *Config {
 		lifecycleListeners:        make([]interface{}, 0),
 		flakeIDGeneratorConfigMap: make(map[string]*FlakeIDGeneratorConfig),
 		properties:                make(Properties),
+		securityConfig:            new(SecurityConfig),
 	}
+}
+
+// SecurityConfig returns the security config for this client.
+func (cc *Config) SecurityConfig() *SecurityConfig {
+	return cc.securityConfig
+}
+
+// SetSecurityConfig sets the security config for this client.
+func (cc *Config) SetSecurityConfig(securityConfig *SecurityConfig) {
+	cc.securityConfig = securityConfig
 }
 
 // MembershipListeners returns membership listeners.

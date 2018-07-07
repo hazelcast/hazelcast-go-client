@@ -25,6 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/security"
 )
 
 type HazelcastClient struct {
@@ -40,6 +41,7 @@ type HazelcastClient struct {
 	LoadBalancer         *randomLoadBalancer
 	HeartBeatService     *heartBeatService
 	properties           *property.HazelcastProperties
+	credentials          security.Credentials
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
@@ -150,6 +152,8 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
+
+	c.credentials = c.initCredentials(c.ClientConfig)
 	c.LifecycleService = newLifecycleService(c.ClientConfig)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
@@ -172,6 +176,16 @@ func (c *HazelcastClient) init() error {
 	c.PartitionService.start()
 	c.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
 	return nil
+}
+
+func (c *HazelcastClient) initCredentials(cfg *config.Config) security.Credentials {
+	groupCfg := cfg.GroupConfig()
+	securityCfg := cfg.SecurityConfig()
+	creds := securityCfg.Credentials()
+	if creds == nil {
+		creds = security.NewUsernamePasswordCredentials(groupCfg.Name(), groupCfg.Password())
+	}
+	return creds
 }
 
 func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {

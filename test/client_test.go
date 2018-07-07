@@ -60,8 +60,14 @@ func TestClientShutdownAndReopen(t *testing.T) {
 }
 
 func TestClientRoutineLeakage(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
+	cluster, err := remoteController.CreateCluster("", DefaultServerConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = remoteController.StartMember(cluster.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer remoteController.ShutdownCluster(cluster.ID)
 	time.Sleep(2 * time.Second)
 	routineNumBefore := runtime.NumGoroutine()
