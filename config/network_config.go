@@ -52,6 +52,9 @@ type NetworkConfig struct {
 
 	// cloudConfig is the config for cloud discovery.
 	cloudConfig *CloudConfig
+
+	// sslConfig is used for ssl/tls configuration of client.
+	sslConfig *TLSConfig
 }
 
 // NewNetworkConfig returns a new NetworkConfig with default configuration.
@@ -155,4 +158,9 @@ func (nc *NetworkConfig) CloudConfig() *CloudConfig {
 // SetCloudConfig sets the Cloud Config as the given config.
 func (nc *NetworkConfig) SetCloudConfig(cloudConfig *CloudConfig) {
 	nc.cloudConfig = cloudConfig
+}
+
+// SSLConfig returns SSLConfig for this client.
+func (nc *NetworkConfig) TLSConfig() *TLSConfig {
+	return nc.sslConfig
 }

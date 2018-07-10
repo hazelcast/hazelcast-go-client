@@ -85,3 +85,7 @@ func (ls *lifecycleService) fireLifecycleEvent(newState string) {
 	}
 	log.Println("New State : ", newState)
 }
+
+func (ls *lifecycleService) IsRunning() bool {
+	return ls.isLive.Load().(bool)
+}
