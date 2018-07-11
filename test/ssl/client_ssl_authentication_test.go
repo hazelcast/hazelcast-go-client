@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tls
+package ssl
 
 import (
 	"log"
@@ -61,9 +61,9 @@ func createMemberWithXML(path string) (clusterID string, err error) {
 	return cluster.ID, nil
 }
 
-func createClientConfigWithTLSConfig(clientCertPath string, clientKeyPath string, caPath string) (*config.Config, error) {
+func createClientConfigWithSSLConfig(clientCertPath string, clientKeyPath string, caPath string) (*config.Config, error) {
 	config := hazelcast.NewConfig()
-	sslConfig := config.NetworkConfig().TLSConfig()
+	sslConfig := config.NetworkConfig().SSLConfig()
 	sslConfig.SetEnabled(true)
 	err := sslConfig.SetCaPath(caPath)
 	if err != nil {
@@ -73,20 +73,20 @@ func createClientConfigWithTLSConfig(clientCertPath string, clientKeyPath string
 	if err != nil {
 		return nil, err
 	}
-	sslConfig.SetServerName(serverName)
+	sslConfig.ServerName = serverName
 	return config, nil
 }
 
-func TestTLSMutualAuthenticationConnect(t *testing.T) {
+func TestSSLMutualAuthenticationConnect(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client1Cert,
+	config, err := createClientConfigWithSSLConfig(client1Cert,
 		client1Key, server1CA)
 	if err != nil {
 		t.Fatal(err)
@@ -99,16 +99,16 @@ func TestTLSMutualAuthenticationConnect(t *testing.T) {
 	}
 }
 
-func TestTLSMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
+func TestSSLMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client1Cert,
+	config, err := createClientConfigWithSSLConfig(client1Cert,
 		client1Key, server2CA)
 	if err != nil {
 		t.Fatal(err)
@@ -119,16 +119,16 @@ func TestTLSMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
 	}
 }
 
-func TestTLSMutualAuthentication_ServerDoesntKnowClientFail(t *testing.T) {
+func TestSSLMutualAuthentication_ServerDoesntKnowClientFail(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client2Cert,
+	config, err := createClientConfigWithSSLConfig(client2Cert,
 		client2Key, server2CA)
 	if err != nil {
 		t.Fatal(err)
@@ -139,16 +139,16 @@ func TestTLSMutualAuthentication_ServerDoesntKnowClientFail(t *testing.T) {
 	}
 }
 
-func TestTLSMutualAuthentication_NeitherServerNotClientKnowsTheOtherFail(t *testing.T) {
+func TestSSLMutualAuthentication_NeitherServerNorClientKnowsTheOtherFail(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig("client2-cert.pem",
+	config, err := createClientConfigWithSSLConfig("client2-cert.pem",
 		client2Key, server2CA)
 	if err != nil {
 		t.Fatal(err)
@@ -159,16 +159,16 @@ func TestTLSMutualAuthentication_NeitherServerNotClientKnowsTheOtherFail(t *test
 	}
 }
 
-func TestTLSOptionalMutualAuthenticationConnect(t *testing.T) {
+func TestSSLOptionalMutualAuthenticationConnect(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client1Cert,
+	config, err := createClientConfigWithSSLConfig(client1Cert,
 		client1Key, server1CA)
 	if err != nil {
 		t.Fatal(err)
@@ -181,16 +181,16 @@ func TestTLSOptionalMutualAuthenticationConnect(t *testing.T) {
 	}
 }
 
-func TestTLSOptionalMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
+func TestSSLOptionalMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client1Cert,
+	config, err := createClientConfigWithSSLConfig(client1Cert,
 		client1Key, server2CA)
 	if err != nil {
 		t.Fatal(err)
@@ -201,21 +201,21 @@ func TestTLSOptionalMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T
 	}
 }
 
-func TestTLSOptionalMutualAuthentication_ServerDoesntKnowClientConnect(t *testing.T) {
+func TestSSLOptionalMutualAuthentication_ServerDoesntKnowClientConnect(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client2Cert,
+	config, err := createClientConfigWithSSLConfig(client2Cert,
 		client2Key, server1CA)
 	if err != nil {
 		t.Fatal(err)
 	}
-	config.NetworkConfig().TLSConfig().BaseTLSConfig().Certificates = nil
+	config.NetworkConfig().SSLConfig().Certificates = nil
 	client, err := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
 	if err != nil {
@@ -223,16 +223,16 @@ func TestTLSOptionalMutualAuthentication_ServerDoesntKnowClientConnect(t *testin
 	}
 }
 
-func TestTLSOptionalMutualAuthentication_NeitherServerNotClientKnowsTheOther(t *testing.T) {
+func TestSSLOptionalMutualAuthentication_NeitherServerNotClientKnowsTheOther(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithTLSConfig(client2Cert,
+	config, err := createClientConfigWithSSLConfig(client2Cert,
 		client2Key, server2CA)
 	if err != nil {
 		t.Fatal(err)

@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tls
+package ssl
 
 import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
 
-func TestTLSAuthenticationClientRunning(t *testing.T) {
+func TestSSLAuthenticationClientRunning(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML("hazelcast-ssl.xml")
 	if err != nil {
@@ -33,31 +34,41 @@ func TestTLSAuthenticationClientRunning(t *testing.T) {
 	defer remoteController.ShutdownCluster(clusterID)
 
 	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().TLSConfig()
+	sslCfg := cfg.NetworkConfig().SSLConfig()
 	sslCfg.SetEnabled(true)
 	sslCfg.SetCaPath(server1CA)
-	sslCfg.SetInsecureSkipVerify(true)
+	sslCfg.ServerName = serverName
 	client, err := hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
 	assert.Equal(t, err, client.GetLifecycle().IsRunning(), true)
 }
 
-func TestTLSConfigWrongCAFilePath(t *testing.T) {
+func TestSSLConfigWrongCAFilePath(t *testing.T) {
 	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().TLSConfig()
+	sslCfg := cfg.NetworkConfig().SSLConfig()
 	err := sslCfg.SetCaPath("WrongPath.pem")
 	assert.ErrorNotNil(t, err, "ssl configuration should fail with wrong CA path")
 }
 
-func TestTLSConfigWrongClientCertOrKeyFilePath(t *testing.T) {
+func TestSSLConfigWithWrongFormatCAFile(t *testing.T) {
 	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().TLSConfig()
+	sslCfg := cfg.NetworkConfig().SSLConfig()
+	err := sslCfg.SetCaPath("invalid-format.txt")
+	if _, ok := err.(*core.HazelcastIOError); !ok {
+		t.Errorf("SSL Config.SetCaPath should return a HazelcastIOError for invalid file format")
+	}
+}
+
+func TestSSLConfigWrongClientCertOrKeyFilePath(t *testing.T) {
+	cfg := hazelcast.NewConfig()
+	sslCfg := cfg.NetworkConfig().SSLConfig()
 	err := sslCfg.AddClientCertAndKeyPath("WrongPath.pem", "WrongPath.pem")
 	assert.ErrorNotNil(t, err, "ssl configuration should fail with wrong client cert or key path")
 }
 
-func TestTLSAuthenticationMapTest(t *testing.T) {
+func TestSSLAuthenticationMapTest(t *testing.T) {
 	if !test.IsEnterprise() {
-		t.Skipf("TLS feature requires enterprise version")
+		t.Skipf("SSL feature requires enterprise version")
 	}
 	clusterID, err := createMemberWithXML("hazelcast-ssl.xml")
 	if err != nil {
@@ -66,11 +77,12 @@ func TestTLSAuthenticationMapTest(t *testing.T) {
 	defer remoteController.ShutdownCluster(clusterID)
 
 	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().TLSConfig()
+	sslCfg := cfg.NetworkConfig().SSLConfig()
 	sslCfg.SetEnabled(true)
 	sslCfg.SetCaPath(server1CA)
-	sslCfg.SetInsecureSkipVerify(true)
+	sslCfg.ServerName = serverName
 	client, _ := hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
 	mp, _ := client.GetMap("testMap")
 	mp.Put("key", "value")
 	val, err := mp.Get("key")

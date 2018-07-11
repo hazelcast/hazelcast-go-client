@@ -185,8 +185,10 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
+
 	c.HeartBeatService.start()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
+
 	return nil
 }
 

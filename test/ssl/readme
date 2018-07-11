@@ -1,0 +1,3 @@
+The pem files were taken from Java Client.
+
+https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/resources/com/hazelcast/nio/ssl-mutual-auth
