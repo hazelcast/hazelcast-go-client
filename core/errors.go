@@ -107,6 +107,11 @@ type HazelcastNoDataMemberInClusterError struct {
 	*HazelcastErrorType
 }
 
+// HazelcastClientServiceNotFoundError indicates that a requested client service doesn't exist.
+type HazelcastClientServiceNotFoundError struct {
+	*HazelcastErrorType
+}
+
 // HazelcastUnsupportedOperationError is returned to indicate that the requested operation is not supported.
 type HazelcastUnsupportedOperationError struct {
 	*HazelcastErrorType
@@ -206,4 +211,11 @@ func NewHazelcastConsistencyLostError(message string, cause error) *HazelcastCon
 // NewHazelcastCertificateError returns a HazelcastCertificateError.
 func NewHazelcastCertificateError(message string, cause error) *HazelcastCertificateError {
 	return &HazelcastCertificateError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
+// NewHazelcastClientServiceNotFoundError returns a HazelcastClientServiceNotFoundError.
+func NewHazelcastClientServiceNotFoundError(message string, cause error) *HazelcastClientServiceNotFoundError {
+	return &HazelcastClientServiceNotFoundError{&HazelcastErrorType{
+		message: message, cause: cause,
+	}}
 }
