@@ -27,6 +27,7 @@ import (
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
@@ -103,4 +104,23 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	clientConfig := hazelcast.NewConfig()
+	clientConfig.NetworkConfig().AddAddress("127.0.0.1:5701")
+	client, err := hazelcast.NewClientWithConfig(clientConfig)
+	defer client.Shutdown()
+	if err != nil {
+		t.Fatal(err)
+	}
+	serviceName := "InvalidServiceName"
+	_, err = client.GetDistributedObject(serviceName, "testName")
+	if _, ok := err.(*core.HazelcastClientServiceNotFoundError); ok {
+		t.Error("HazelcastClientServiceNotFoundError expected got :", err)
+	}
+
 }

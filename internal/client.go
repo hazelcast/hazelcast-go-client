@@ -130,11 +130,7 @@ func (c *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
 }
 
 func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.DistributedObject, error) {
-	var clientProxy, err = c.ProxyManager.getOrCreateProxy(serviceName, name)
-	if err != nil {
-		return nil, err
-	}
-	return clientProxy, nil
+	return c.ProxyManager.getOrCreateProxy(serviceName, name)
 }
 
 func (c *HazelcastClient) GetCluster() core.Cluster {

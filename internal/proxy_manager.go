@@ -18,6 +18,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -114,5 +116,6 @@ func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (co
 	} else if bufutil.ServiceNameIDGenerator == serviceName {
 		return newFlakeIDGenerator(pm.client, serviceName, name)
 	}
-	return nil, nil
+	return nil, core.NewHazelcastClientServiceNotFoundError(fmt.Sprintf("no factory registered for service: %s",
+		serviceName), nil)
 }
