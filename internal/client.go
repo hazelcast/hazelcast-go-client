@@ -216,8 +216,7 @@ func (c *HazelcastClient) createAddressProviders() []AddressProvider {
 	if cloudAddressProvider != nil {
 		addressProviders = append(addressProviders, cloudAddressProvider)
 	}
-	addressProviders = append(addressProviders, newDefaultAddressProvider(c.ClientConfig.NetworkConfig(),
-		len(addressProviders) == 0))
+	addressProviders = append(addressProviders, newDefaultAddressProvider(c.ClientConfig.NetworkConfig()))
 
 	return addressProviders
 }
