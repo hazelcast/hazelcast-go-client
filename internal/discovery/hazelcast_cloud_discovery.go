@@ -25,16 +25,20 @@ import (
 
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 const (
-	cloudURL          = "https://coordinator.hazelcast.cloud/cluster/discovery?token="
+	cloudURLPath      = "/cluster/discovery?token="
 	privateAddressStr = "private-address"
 	publicAddressStr  = "public-address"
 )
+
+var CloudURLBaseProperty = property.NewHazelcastPropertyString("hazelcast.client.cloud.url",
+	"https://coordinator.hazelcast.cloud")
 
 type nodeDiscoverer func() (map[string]core.Address, error)
 
@@ -44,9 +48,9 @@ type HazelcastCloud struct {
 	discoverNodes     nodeDiscoverer
 }
 
-func NewHazelcastCloud(cloudToken string, connectionTimeout time.Duration) *HazelcastCloud {
+func NewHazelcastCloud(endpointURL string, connectionTimeout time.Duration) *HazelcastCloud {
 	hzCloud := &HazelcastCloud{}
-	hzCloud.endPointURL = cloudURL + cloudToken
+	hzCloud.endPointURL = endpointURL
 	hzCloud.connectionTimeout = connectionTimeout
 	hzCloud.discoverNodes = hzCloud.discoverNodesInternal
 	return hzCloud
@@ -128,6 +132,11 @@ func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]co
 	}
 
 	return privateToPublicAddrs, nil
+}
+
+func CreateURLEndpoint(hazelcastProperties *property.HazelcastProperties, cloudToken string) string {
+	cloudBaseURL := hazelcastProperties.GetString(CloudURLBaseProperty)
+	return cloudBaseURL + cloudURLPath + cloudToken
 }
 
 func (hzC *HazelcastCloud) createAddress(hostname string) core.Address {

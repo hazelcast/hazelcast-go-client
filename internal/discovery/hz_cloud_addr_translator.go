@@ -29,10 +29,10 @@ type HzCloudAddrTranslator struct {
 }
 
 // NewHzCloudAddrTranslator returns a HzCloudAddrTranslator with the given parameters.
-func NewHzCloudAddrTranslator(cloudToken string, connectionTimeout time.Duration) *HzCloudAddrTranslator {
+func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duration) *HzCloudAddrTranslator {
 	return NewHzCloudAddrTranslatorWithCloudDisc(
 		NewHazelcastCloud(
-			cloudToken,
+			endpointURL,
 			connectionTimeout,
 		),
 	)

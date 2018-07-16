@@ -15,6 +15,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 )
@@ -35,7 +37,7 @@ func main() {
 
 	res, _ := mp.Get("exampleKey")
 
-	print("Get returned : ", res)
+	log.Println("Get returned : ", res)
 
 	client.Shutdown()
 
