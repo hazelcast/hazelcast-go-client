@@ -24,14 +24,12 @@ type AddressProvider interface {
 }
 
 type defaultAddressProvider struct {
-	networkConfig     *config.NetworkConfig
-	isNoOtherProvider bool
+	networkConfig *config.NetworkConfig
 }
 
-func newDefaultAddressProvider(networkConfig *config.NetworkConfig, isNoOtherProvider bool) *defaultAddressProvider {
+func newDefaultAddressProvider(networkConfig *config.NetworkConfig) *defaultAddressProvider {
 	return &defaultAddressProvider{
-		networkConfig:     networkConfig,
-		isNoOtherProvider: isNoOtherProvider,
+		networkConfig: networkConfig,
 	}
 }
 

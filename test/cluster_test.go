@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -264,6 +265,22 @@ func TestConnectToClusterWithSetAddress(t *testing.T) {
 	assert.Equalf(t, nil, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestAddressesWhenCloudConfigEnabled(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	defer remoteController.ShutdownCluster(cluster.ID)
+
+	cfg := hazelcast.NewConfig()
+	cloudConfig := config.NewClientCloud()
+	cloudConfig.SetEnabled(true)
+	cloudConfig.SetDiscoveryToken("test")
+	cfg.NetworkConfig().SetCloudConfig(cloudConfig)
+	_, err := hazelcast.NewClientWithConfig(cfg)
+	// Since cloudConfig is enabled and it does not have a valid url returning an error means
+	// default address is not used.
+	assert.ErrorNotNil(t, err, "")
 }
 
 type mapListener struct {
