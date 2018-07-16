@@ -21,7 +21,9 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
 
@@ -50,7 +52,7 @@ func TestCloudConfig(t *testing.T) {
 func TestCloudConfigWithPropertySet(t *testing.T) {
 	cloudConfig := config.NewClientCloud()
 	cloudConfig.SetEnabled(true)
-	os.Setenv("hazelcast.client.cloud.discovery.token", testDiscoveryToken)
+	os.Setenv(property.HazelcastCloudDiscoveryToken.Name(), testDiscoveryToken)
 	cfg := hazelcast.NewConfig()
 	cfg.NetworkConfig().SetCloudConfig(cloudConfig)
 	_, err := hazelcast.NewClientWithConfig(cfg)
@@ -58,4 +60,19 @@ func TestCloudConfigWithPropertySet(t *testing.T) {
 		t.Error("Cloud discovery should have returned an error for both property and client configuration based" +
 			" setup")
 	}
+}
+
+func TestCloudConfigCustomUrlEndpoint(t *testing.T) {
+	cfg := hazelcast.NewConfig()
+	cfg.SetProperty(discovery.CloudURLBaseProperty.Name(), "https://dev.hazelcast.cloud")
+	properties := property.NewHazelcastProperties(cfg.Properties())
+	urlEndpoint := discovery.CreateURLEndpoint(properties, "token")
+	assert.Equal(t, nil, urlEndpoint, "https://dev.hazelcast.cloud/cluster/discovery?token=token")
+}
+
+func TestDefaultCloudUrlEndpoint(t *testing.T) {
+	cfg := hazelcast.NewConfig()
+	properties := property.NewHazelcastProperties(cfg.Properties())
+	urlEndpoint := discovery.CreateURLEndpoint(properties, "token")
+	assert.Equal(t, nil, urlEndpoint, "https://coordinator.hazelcast.cloud/cluster/discovery?token=token")
 }

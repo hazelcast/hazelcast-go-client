@@ -203,7 +203,8 @@ func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {
 		} else {
 			discoveryToken = cloudDiscoveryToken
 		}
-		return discovery.NewHzCloudAddrTranslator(discoveryToken, c.getConnectionTimeout()), nil
+		urlEndpoint := discovery.CreateURLEndpoint(c.properties, discoveryToken)
+		return discovery.NewHzCloudAddrTranslator(urlEndpoint, c.getConnectionTimeout()), nil
 	}
 	return newDefaultAddressTranslator(), nil
 }
@@ -223,12 +224,14 @@ func (c *HazelcastClient) createAddressProviders() []AddressProvider {
 
 func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.ClientCloud) *discovery.HzCloudAddrProvider {
 	if cloudConfig.IsEnabled() {
-		return discovery.NewHzCloudAddrProvider(cloudConfig.DiscoveryToken(), c.getConnectionTimeout())
+		urlEndpoint := discovery.CreateURLEndpoint(c.properties, cloudConfig.DiscoveryToken())
+		return discovery.NewHzCloudAddrProvider(urlEndpoint, c.getConnectionTimeout())
 	}
 
 	cloudToken := c.properties.GetString(property.HazelcastCloudDiscoveryToken)
 	if cloudToken != "" {
-		return discovery.NewHzCloudAddrProvider(cloudToken, c.getConnectionTimeout())
+		urlEndpoint := discovery.CreateURLEndpoint(c.properties, cloudToken)
+		return discovery.NewHzCloudAddrProvider(urlEndpoint, c.getConnectionTimeout())
 	}
 	return nil
 }

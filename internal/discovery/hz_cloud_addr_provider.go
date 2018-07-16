@@ -30,10 +30,10 @@ type HzCloudAddrProvider struct {
 }
 
 // NewHzCloudAddrProvider returns a HzCloudAddrProvider with the given parameters.
-func NewHzCloudAddrProvider(cloudToken string, connectionTimeout time.Duration) *HzCloudAddrProvider {
+func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration) *HzCloudAddrProvider {
 	return NewHzCloudAddrProviderWithCloudDisc(
 		NewHazelcastCloud(
-			cloudToken,
+			endpointURL,
 			connectionTimeout,
 		),
 	)
