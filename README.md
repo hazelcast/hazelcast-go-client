@@ -121,7 +121,7 @@ Follow the below steps to build and install Hazelcast Go client from its source:
 
 Following command starts the tests:
 
-Run `sh localTest.sh`
+Run `sh local-test.sh`
 
 ### Mail Group
 
