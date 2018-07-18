@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -193,7 +194,9 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewClient()
+	cfg := hazelcast.NewConfig()
+	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
+	client, _ = hazelcast.NewClientWithConfig(cfg)
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
@@ -212,7 +215,9 @@ func TestPNCounter_Reset(t *testing.T) {
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewClient()
+	cfg := hazelcast.NewConfig()
+	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
+	client, _ = hazelcast.NewClientWithConfig(cfg)
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)

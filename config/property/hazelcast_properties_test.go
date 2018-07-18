@@ -160,3 +160,13 @@ func TestHazelcastProperties_GetPositiveDurationFromEnv(t *testing.T) {
 	}
 
 }
+
+func TestHazelcastProperty_SetNameAndString(t *testing.T) {
+	expected := "bar"
+	property := NewHazelcastProperty("foo")
+	property.SetName("bar")
+	actual := property.String()
+	if actual != expected {
+		t.Errorf("expected %s got %s", expected, actual)
+	}
+}
