@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"time"
 
+	"log"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -420,6 +422,9 @@ func (nc *NetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod time
 // SetConnectionTimeout sets the connection timeout.
 // Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
 func (nc *NetworkConfig) SetConnectionTimeout(connectionTimeout time.Duration) {
+	if connectionTimeout < 0 {
+		log.Panicf("connectionTimeout should be non-negative, got %s", connectionTimeout)
+	}
 	nc.connectionTimeout = connectionTimeout
 }
 

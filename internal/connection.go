@@ -24,6 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
 const BufferSize = 8192 * 2
@@ -49,7 +50,7 @@ type Connection struct {
 	connectionManager      connectionManager
 }
 
-func newConnection(address core.Address, handleResponse func(interface{}),
+func newConnection(client *HazelcastClient, address core.Address, handleResponse func(interface{}),
 	connectionID int64, connectionManager connectionManager) *Connection {
 	builder := &clientMessageBuilder{handleResponse: handleResponse,
 		incompleteMessages: make(map[int64]*proto.ClientMessage)}
@@ -62,7 +63,8 @@ func newConnection(address core.Address, handleResponse func(interface{}),
 		connectionID:         connectionID,
 		connectionManager:    connectionManager,
 	}
-	socket, err := net.Dial("tcp", address.String())
+	connectionTimeout := timeutil.GetPositiveDurationOrMax(client.ClientConfig.NetworkConfig().ConnectionTimeout())
+	socket, err := net.DialTimeout("tcp", address.String(), connectionTimeout)
 	if err != nil {
 		return nil
 	}

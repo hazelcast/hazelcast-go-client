@@ -21,8 +21,6 @@ import (
 
 	"runtime"
 
-	"log"
-
 	"math/rand"
 	"sync"
 
@@ -43,8 +41,7 @@ func TestClientGetMapWhenNoMemberUp(t *testing.T) {
 }
 
 func TestClientShutdownAndReopen(t *testing.T) {
-	cluster, err := remoteController.CreateCluster("", DefaultServerConfig)
-	log.Println(err, cluster)
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
@@ -81,6 +78,26 @@ func TestClientRoutineLeakage(t *testing.T) {
 	if routineNumBefore != routineNumAfter {
 		t.Fatalf("Expected number of routines %d, found %d", routineNumBefore, routineNumAfter)
 	}
+}
+
+func TestConnectionTimeout(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	cfg := hazelcast.NewConfig()
+	cfg.NetworkConfig().SetConnectionTimeout(0)
+	_, err := hazelcast.NewClient()
+	assert.ErrorNil(t, err)
+}
+
+func TestNegativeConnectionTimeoutShouldPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Negative connection timeout count should panic.")
+		}
+	}()
+	cfg := hazelcast.NewConfig()
+	cfg.NetworkConfig().SetConnectionTimeout(-5 * time.Second)
 }
 
 func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
@@ -128,7 +145,6 @@ func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
 	if _, ok := err.(*core.HazelcastClientServiceNotFoundError); ok {
 		t.Error("HazelcastClientServiceNotFoundError expected got :", err)
 	}
-
 }
 
 func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {

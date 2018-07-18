@@ -37,3 +37,16 @@ func TestGetTimeInMilliSeconds(t *testing.T) {
 		t.Fatal("An error in GetTimeInMilleSeconds()")
 	}
 }
+
+func TestGetPositiveDurationOrMax(t *testing.T) {
+	duration := -1 * time.Second
+	if res := GetPositiveDurationOrMax(duration); res < 0 {
+		t.Errorf("Expected positive time, got %d", res)
+	}
+
+	duration = 1 * time.Second
+
+	if res := GetPositiveDurationOrMax(duration); res != duration {
+		t.Errorf("Expected %d, got %d", duration, res)
+	}
+}
