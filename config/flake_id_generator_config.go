@@ -50,11 +50,12 @@ func NewFlakeIDGeneratorConfig(name string) *FlakeIDGeneratorConfig {
 // prefetchValidityMillis.
 func NewFlakeIDGeneratorConfigWithParameters(name string, prefetchCount int32,
 	prefetchValidityMillis int64) *FlakeIDGeneratorConfig {
-	return &FlakeIDGeneratorConfig{
-		name:                   name,
-		prefetchCount:          prefetchCount,
-		prefetchValidityMillis: prefetchValidityMillis,
+	flakeCfg := &FlakeIDGeneratorConfig{
+		name: name,
 	}
+	flakeCfg.SetPrefetchValidityMillis(prefetchValidityMillis)
+	flakeCfg.SetPrefetchCount(prefetchCount)
+	return flakeCfg
 }
 
 // SetPrefetchCount sets prefetchCount as the given value.
@@ -68,6 +69,7 @@ func (igc *FlakeIDGeneratorConfig) SetPrefetchCount(prefetchCount int32) {
 }
 
 // SetName sets the name as the given name.
+// Name must not be set after flake id config is added to config.
 func (igc *FlakeIDGeneratorConfig) SetName(name string) {
 	igc.name = name
 }

@@ -60,12 +60,53 @@ func asssignOverFlowID(clusterID string, instanceNum int) (r *rc.Response, err e
 	return remoteController.ExecuteOnController(clusterID, script, 1)
 }
 
+func TestFlakeIDGeneratorProxy_ConfigPanicsWithInvalidPrefetchCount(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Negative prefetch count should panic.")
+		}
+	}()
+	flakeIDCfg := config.NewFlakeIDGeneratorConfig("gen")
+	flakeIDCfg.SetPrefetchCount(-1)
+
+}
+
+func TestFlakeIDGeneratorProxy_ConfigPanicsWithInvalidPrefetchCount2(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Negative prefetch count should panic.")
+		}
+	}()
+	config.NewFlakeIDGeneratorConfigWithParameters("gen", -1, 10)
+}
+
+func TestFlakeIDGeneratorProxy_ConfigPanicsWithInvalidPrefetchValidityMillis(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Negative prefetchValidityMillis count should panic.")
+		}
+	}()
+	flakeIDCfg := config.NewFlakeIDGeneratorConfig("gen")
+	flakeIDCfg.SetPrefetchValidityMillis(-1)
+
+}
+
+func TestFlakeIDGeneratorProxy_ConfigPanicsWithInvalidPrefetchValidityMillis2(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Negative prefetchValidityMillis count should panic.")
+		}
+	}()
+	config.NewFlakeIDGeneratorConfigWithParameters("gen", 10, -1)
+}
+
 func TestFlakeIDGeneratorProxy_ConfigTest(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	var myBatchSize int32 = shortTermBatchSize
 	flakeIDConf := config.NewFlakeIDGeneratorConfig("gen")
+	flakeIDConf.SetName("gen") // this is redundant, just to check if it doesnt mess anything.
 	flakeIDConf.SetPrefetchCount(myBatchSize)
 	flakeIDConf.SetPrefetchValidityMillis(shortTermValidityMillis)
 	config := hazelcast.NewConfig()

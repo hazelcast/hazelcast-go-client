@@ -130,3 +130,42 @@ func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
 	}
 
 }
+
+func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewClient()
+	remoteController.ShutdownCluster(cluster.ID)
+	name := "test"
+	message := "Distributed object should not be created when client is not active"
+	_, err := client.GetMap(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetTopic(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetReplicatedMap(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetSet(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetQueue(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetList(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetMultiMap(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetPNCounter(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetRingbuffer(name)
+	assert.ErrorNotNil(t, err, message)
+
+	_, err = client.GetFlakeIDGenerator(name)
+	assert.ErrorNotNil(t, err, message)
+
+}

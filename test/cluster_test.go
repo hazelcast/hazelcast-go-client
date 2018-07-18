@@ -253,6 +253,19 @@ func TestConnectToClusterWithoutPort(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 
+func TestConnectToClusterWithSetAddress(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().SetAddresses([]string{"127.0.0.1"})
+	client, _ := hazelcast.NewClientWithConfig(config)
+	members := client.GetCluster().GetMembers()
+	assert.Equalf(t, nil, members[0].Address().Host(), "127.0.0.1", "connectToClusterWithoutPort returned a wrong member address")
+	assert.Equalf(t, nil, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+
 type mapListener struct {
 	wg *sync.WaitGroup
 }

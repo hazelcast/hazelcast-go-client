@@ -18,12 +18,6 @@ import (
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-)
-
-const (
-	fID                = 0
-	vectorClockClassID = 43
 )
 
 type vectorClock struct {
@@ -33,44 +27,6 @@ type vectorClock struct {
 
 func newVectorClock() *vectorClock {
 	return &vectorClock{replicaTimestamps: make(map[string]int64)}
-}
-
-func (*vectorClock) FactoryID() int32 {
-	return fID
-}
-
-func (*vectorClock) ClassID() int32 {
-	return vectorClockClassID
-}
-
-func (v *vectorClock) WriteData(output serialization.DataOutput) (err error) {
-	v.mutex.RLock()
-	defer v.mutex.RUnlock()
-	output.WriteInt32(int32(len(v.replicaTimestamps)))
-	for key, value := range v.replicaTimestamps {
-		output.WriteUTF(key)
-		output.WriteInt64(value)
-	}
-	return
-}
-
-func (v *vectorClock) ReadData(input serialization.DataInput) error {
-	stateSize, err := input.ReadInt32()
-	if err != nil {
-		return err
-	}
-	for i := int32(0); i < stateSize; i++ {
-		replicaID, err := input.ReadUTF()
-		if err != nil {
-			return err
-		}
-		timestamp, err := input.ReadInt64()
-		if err != nil {
-			return err
-		}
-		v.replicaTimestamps[replicaID] = timestamp
-	}
-	return nil
 }
 
 func (v *vectorClock) EntrySet() (entrySet []*proto.Pair) {
