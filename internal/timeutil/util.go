@@ -44,3 +44,10 @@ func ConvertMillisToUnixTime(timeInMillis int64) time.Time {
 	}
 	return time.Unix(0, timeInMillis*int64(time.Millisecond))
 }
+
+func GetPositiveDurationOrMax(duration time.Duration) time.Duration {
+	if duration > 0 {
+		return duration
+	}
+	return time.Duration(math.MaxInt64)
+}

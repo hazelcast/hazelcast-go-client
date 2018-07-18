@@ -318,7 +318,7 @@ func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner 
 
 	invocationService := cm.client.InvocationService.(*invocationServiceImpl)
 	connectionID := cm.NextConnectionID()
-	con := newConnection(address, invocationService.handleResponse, connectionID, cm)
+	con := newConnection(cm.client, address, invocationService.handleResponse, connectionID, cm)
 	if con == nil {
 		return nil, core.NewHazelcastTargetDisconnectedError("target is disconnected", nil)
 	}
