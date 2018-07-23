@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	hazelcast "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	serialization2 "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/security"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
@@ -46,6 +48,73 @@ func TestCustomAuthentication(t *testing.T) {
 	_, err := mp.Put("key", "value")
 
 	assert.ErrorNil(t, err)
+}
+
+func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	defer remoteController.ShutdownCluster(cluster.ID)
+
+	cfg := hazelcast.NewConfig()
+	cfg.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &portableFactory{})
+
+	cfg.SecurityConfig().SetCredentials(&CustomCredentials{
+		security.NewUsernamePasswordCredentials(
+			"dev",
+			"invalidPass",
+		),
+	})
+
+	_, err := hazelcast.NewClientWithConfig(cfg)
+	assert.ErrorNotNil(t, err, "Client should not connect with invalid password")
+}
+
+func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	defer remoteController.ShutdownCluster(cluster.ID)
+
+	cfg := hazelcast.NewConfig()
+	cfg.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &portableFactory{})
+
+	cfg.SecurityConfig().SetCredentials(&CustomCredentials{
+		security.NewUsernamePasswordCredentials(
+			"invalidUsername",
+			"dev-pass",
+		),
+	})
+
+	_, err := hazelcast.NewClientWithConfig(cfg)
+	assert.ErrorNotNil(t, err, "Client should not connect with invalid username")
+}
+
+func TestSerializationOfCredentials(t *testing.T) {
+	cfg := config.NewSerializationConfig()
+	creds := security.NewUsernamePasswordCredentials(
+		"dev",
+		"dev-pass",
+	)
+	cfg.AddPortableFactory(creds.FactoryID(), &portableFactory2{})
+	serializationService, _ := serialization2.NewSerializationService(cfg)
+	credsData, err := serializationService.ToData(creds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	retCreds, err := serializationService.ToObject(credsData)
+	assert.Equal(t, err, retCreds.(*security.UsernamePasswordCredentials).Username(), "dev")
+	assert.Equal(t, err, retCreds.(*security.UsernamePasswordCredentials).Principal(), "dev")
+}
+
+type portableFactory2 struct {
+}
+
+func (pf *portableFactory2) Create(classID int32) serialization.Portable {
+	if classID == 1 {
+		return &security.UsernamePasswordCredentials{
+			BaseCredentials: &security.BaseCredentials{},
+		}
+	}
+	return nil
 }
 
 type portableFactory struct {
