@@ -149,10 +149,10 @@ func (is *invocationServiceImpl) cleanupConnection(connection *Connection, cause
 
 func (is *invocationServiceImpl) removeEventHandler(correlationID int64) {
 	is.eventHandlersLock.Lock()
+	defer is.eventHandlersLock.Unlock()
 	if _, ok := is.eventHandlers[correlationID]; ok {
 		delete(is.eventHandlers, correlationID)
 	}
-	is.eventHandlersLock.Unlock()
 }
 
 func (is *invocationServiceImpl) sendInvocation(invocation *invocation) invocationResult {
@@ -181,12 +181,12 @@ func (is *invocationServiceImpl) shutdown() {
 	is.isShutdown.Store(true)
 
 	is.invocationsLock.Lock()
+	defer is.invocationsLock.Unlock()
 	for correlationID, invocation := range is.invocations {
 		delete(is.invocations, correlationID)
 		invocation.complete(core.NewHazelcastClientNotActiveError("client is shutting down", nil))
 	}
 
-	is.invocationsLock.Unlock()
 }
 
 func (is *invocationServiceImpl) onConnectionClosed(connection *Connection, cause error) {
@@ -246,7 +246,7 @@ func (is *invocationServiceImpl) process() {
 		case struct{}:
 			return
 		default:
-			log.Fatalf("unexpected command from response channel %s", command)
+			panic(fmt.Sprintf("Unexpected command from response channel %s", command))
 		}
 	}
 }

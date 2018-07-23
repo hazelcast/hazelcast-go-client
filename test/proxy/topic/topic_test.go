@@ -73,6 +73,11 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	assert.Equalf(t, nil, true, timeout, "topic RemoveListener() failed")
 }
 
+func TestTopicProxy_PublishNilMessage(t *testing.T) {
+	err := topic.Publish(nil)
+	assert.ErrorNotNil(t, err, "nil message should return an error")
+}
+
 type topicMessageListener struct {
 	wg          *sync.WaitGroup
 	msg         interface{}

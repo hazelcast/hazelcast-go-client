@@ -53,6 +53,12 @@ func TestSetProxy_Add(t *testing.T) {
 	assert.Equalf(t, err, found, true, "set Add() failed")
 }
 
+func TestSetProxy_AddNil(t *testing.T) {
+	defer set.Clear()
+	_, err := set.Add(nil)
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
 func TestSetProxy_AddAll(t *testing.T) {
 	defer set.Clear()
 	all := []interface{}{"1", "2"}
@@ -62,6 +68,19 @@ func TestSetProxy_AddAll(t *testing.T) {
 	assert.Equalf(t, err, res1, true, "set AddAll() failed")
 	res2, err := set.Contains("2")
 	assert.Equalf(t, err, res2, true, "set AddAll() failed")
+}
+
+func TestSetProxy_AddAllWithNilElement(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{nil, "2"}
+	_, err := set.AddAll(all)
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
+func TestSetProxy_AddAllWithNilSlice(t *testing.T) {
+	defer set.Clear()
+	_, err := set.AddAll(nil)
+	assert.ErrorNotNil(t, err, "nil slice should return an error.")
 }
 
 func TestSetProxy_Clear(t *testing.T) {
@@ -80,12 +99,36 @@ func TestSetProxy_Contains(t *testing.T) {
 	assert.Equalf(t, err, found, true, "set Contains() failed")
 }
 
+func TestSetProxy_ContainsNil(t *testing.T) {
+	defer set.Clear()
+	changed, err := set.Add(testElement)
+	assert.Equalf(t, err, changed, true, "set Add() failed")
+	_, err = set.Contains(nil)
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
 func TestSetProxy_ContainsAll(t *testing.T) {
 	defer set.Clear()
 	all := []interface{}{"1", "2"}
 	set.AddAll(all)
 	foundAll, err := set.ContainsAll(all)
 	assert.Equalf(t, err, foundAll, true, "set ContainsAll() failed")
+}
+
+func TestSetProxy_ContainsAllNilElement(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{nil, "2"}
+	set.AddAll(all)
+	_, err := set.ContainsAll(all)
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
+func TestSetProxy_ContainsAllNilSlice(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{"1", "2"}
+	set.AddAll(all)
+	_, err := set.ContainsAll(nil)
+	assert.ErrorNotNil(t, err, "nil slice should return an error.")
 }
 
 func TestSetProxy_ToSlice(t *testing.T) {
@@ -113,6 +156,14 @@ func TestSetProxy_Remove(t *testing.T) {
 	assert.Equalf(t, err, removed, true, "set Remove() failed")
 }
 
+func TestSetProxy_RemoveNil(t *testing.T) {
+	defer set.Clear()
+	changed, err := set.Add(testElement)
+	assert.Equalf(t, err, changed, true, "set Add() failed")
+	_, err = set.Remove(nil)
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
 func TestSetProxy_RemoveAll(t *testing.T) {
 	defer set.Clear()
 	all := []interface{}{"1", "2", "3"}
@@ -123,6 +174,22 @@ func TestSetProxy_RemoveAll(t *testing.T) {
 	assert.Equalf(t, err, items[0], "3", "set RemoveAll() failed")
 }
 
+func TestSetProxy_RemoveAllNilElement(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{"1", "2", "3"}
+	set.AddAll(all)
+	_, err := set.RemoveAll([]interface{}{nil, "2"})
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
+func TestSetProxy_RemoveAllNilSlice(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{"1", "2", "3"}
+	set.AddAll(all)
+	_, err := set.RemoveAll(nil)
+	assert.ErrorNotNil(t, err, "nil slice should return an error")
+}
+
 func TestSetProxy_RetainAll(t *testing.T) {
 	defer set.Clear()
 	all := []interface{}{"1", "2", "3"}
@@ -131,6 +198,22 @@ func TestSetProxy_RetainAll(t *testing.T) {
 	assert.Equalf(t, err, changed, true, "set RetainAll() failed")
 	items, err := set.ToSlice()
 	assert.Equalf(t, err, items[0], "2", "set RetainAll() failed")
+}
+
+func TestSetProxy_RetainAllNilElement(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{"1", "2", "3"}
+	set.AddAll(all)
+	_, err := set.RetainAll([]interface{}{nil})
+	assert.ErrorNotNil(t, err, "nil element should return an error.")
+}
+
+func TestSetProxy_RetainAllNilSlice(t *testing.T) {
+	defer set.Clear()
+	all := []interface{}{"1", "2", "3"}
+	set.AddAll(all)
+	_, err := set.RetainAll(nil)
+	assert.ErrorNotNil(t, err, "nil slice should return an error")
 }
 
 func TestSetProxy_Size(t *testing.T) {
