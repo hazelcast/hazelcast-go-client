@@ -17,17 +17,17 @@ package internal
 import (
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 func TestRandomLoadBalancer_NextAddressWithNoMembers(t *testing.T) {
 	cs := &clusterService{}
 	cs.members.Store(make([]*proto.Member, 0)) // initialize with empty member slice
-	lb := randomLoadBalancer{
-		clusterService: cs,
-	}
-	addr := lb.nextAddress()
-	if addr != nil {
+	lb := core.NewRandomLoadBalancer()
+	lb.Init(cs)
+	member := lb.Next()
+	if member != nil {
 		t.Errorf("RandomLoadBalancer should return nil when there are no members.")
 	}
 }

@@ -256,8 +256,16 @@ func (is *invocationServiceImpl) nextCorrelationID() int64 {
 	return is.nextCorrelation
 }
 
+func (is *invocationServiceImpl) getNextAddress() core.Address {
+	member := is.client.LoadBalancer.Next()
+	if member != nil {
+		return member.Address()
+	}
+	return nil
+}
+
 func (is *invocationServiceImpl) sendToRandomAddress(invocation *invocation) {
-	var target = is.client.LoadBalancer.nextAddress()
+	var target = is.getNextAddress()
 	if target == nil {
 		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
 			core.NewHazelcastIOError("no address found to invoke", nil))
