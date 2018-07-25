@@ -63,7 +63,7 @@ func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.
 }
 
 func (pm *proxyManager) createProxy(serviceName string, name string) (core.DistributedObject, error) {
-	message := proto.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress())
+	message := proto.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress().(*proto.Address))
 	_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
@@ -90,8 +90,12 @@ func (pm *proxyManager) destroyProxy(serviceName string, name string) (bool, err
 	return false, nil
 }
 
-func (pm *proxyManager) findNextProxyAddress() *proto.Address {
-	return pm.client.LoadBalancer.nextAddress()
+func (pm *proxyManager) findNextProxyAddress() core.Address {
+	member := pm.client.LoadBalancer.Next()
+	if member != nil {
+		return member.Address()
+	}
+	return nil
 }
 
 func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (core.DistributedObject, error) {

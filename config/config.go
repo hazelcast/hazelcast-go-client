@@ -15,6 +15,10 @@
 // Package config contains all the configuration to start a Hazelcast instance.
 package config
 
+import (
+	"github.com/hazelcast/hazelcast-go-client/core"
+)
+
 const (
 	defaultGroupName     = "dev"
 	defaultGroupPassword = "dev-pass"
@@ -45,6 +49,9 @@ type Config struct {
 	flakeIDGeneratorConfigMap map[string]*FlakeIDGeneratorConfig
 
 	properties Properties
+
+	// loadBalancer is used to distribute the operations to multiple endpoints.
+	loadBalancer core.LoadBalancer
 }
 
 // New returns a new Config with default configuration.
@@ -103,6 +110,17 @@ func (cc *Config) SetProperty(name string, value string) {
 // Properties returns the properties of the config.
 func (cc *Config) Properties() Properties {
 	return cc.properties
+}
+
+// LoadBalancer returns loadBalancer for this client.
+// If it is not set, this will return nil.
+func (cc *Config) LoadBalancer() core.LoadBalancer {
+	return cc.loadBalancer
+}
+
+// SetLoadBalancer sets loadBalancer as the given one.
+func (cc *Config) SetLoadBalancer(loadBalancer core.LoadBalancer) {
+	cc.loadBalancer = loadBalancer
 }
 
 // GetFlakeIDGeneratorConfig returns the FlakeIDGeneratorConfig for the given name, creating one

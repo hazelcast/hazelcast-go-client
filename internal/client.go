@@ -38,7 +38,7 @@ type HazelcastClient struct {
 	ListenerService      *listenerService
 	ClusterService       *clusterService
 	ProxyManager         *proxyManager
-	LoadBalancer         *randomLoadBalancer
+	LoadBalancer         core.LoadBalancer
 	HeartBeatService     *heartBeatService
 	properties           *property.HazelcastProperties
 	credentials          security.Credentials
@@ -159,7 +159,8 @@ func (c *HazelcastClient) init() error {
 	c.ListenerService = newListenerService(c)
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
-	c.LoadBalancer = newRandomLoadBalancer(c.ClusterService)
+	c.LoadBalancer = c.initLoadBalancer(c.ClientConfig)
+	c.LoadBalancer.Init(c.ClusterService)
 	c.SerializationService, err = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
 	if err != nil {
 		return err
@@ -219,6 +220,14 @@ func (c *HazelcastClient) createAddressProviders() []AddressProvider {
 	addressProviders = append(addressProviders, newDefaultAddressProvider(c.ClientConfig.NetworkConfig()))
 
 	return addressProviders
+}
+
+func (c *HazelcastClient) initLoadBalancer(config *config.Config) core.LoadBalancer {
+	lb := config.LoadBalancer()
+	if lb == nil {
+		lb = core.NewRoundRobinLoadBalancer()
+	}
+	return lb
 }
 
 func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.CloudConfig) *discovery.HzCloudAddrProvider {
