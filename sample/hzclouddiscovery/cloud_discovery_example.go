@@ -25,7 +25,7 @@ func main() {
 
 	cfg := hazelcast.NewConfig()
 	cfg.GroupConfig().SetName("exampleName")
-	discoveryCfg := config.NewClientCloud()
+	discoveryCfg := config.NewCloudConfig()
 	discoveryCfg.SetEnabled(true)
 	discoveryCfg.SetDiscoveryToken("exampleToken")
 	cfg.NetworkConfig().SetCloudConfig(discoveryCfg)

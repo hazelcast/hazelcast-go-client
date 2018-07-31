@@ -14,7 +14,10 @@
 
 package config
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 // NetworkConfig contains network related configuration parameters.
 type NetworkConfig struct {
@@ -48,7 +51,7 @@ type NetworkConfig struct {
 	smartRouting bool
 
 	// cloudConfig is the config for cloud discovery.
-	cloudConfig *ClientCloud
+	cloudConfig *CloudConfig
 }
 
 // NewNetworkConfig returns a new NetworkConfig with default configuration.
@@ -60,7 +63,7 @@ func NewNetworkConfig() *NetworkConfig {
 		connectionTimeout:       5 * time.Second,
 		redoOperation:           false,
 		smartRouting:            true,
-		cloudConfig:             NewClientCloud(),
+		cloudConfig:             NewCloudConfig(),
 	}
 }
 
@@ -120,6 +123,9 @@ func (nc *NetworkConfig) SetConnectionAttemptPeriod(connectionAttemptPeriod time
 // SetConnectionTimeout sets the connection timeout.
 // Setting a timeout of zero disables the timeout feature and is equivalent to block the socket until it connects.
 func (nc *NetworkConfig) SetConnectionTimeout(connectionTimeout time.Duration) {
+	if connectionTimeout < 0 {
+		log.Panicf("connectionTimeout should be non-negative, got %s", connectionTimeout)
+	}
 	nc.connectionTimeout = connectionTimeout
 }
 
@@ -142,11 +148,11 @@ func (nc *NetworkConfig) SetSmartRouting(smartRouting bool) {
 }
 
 // CloudConfig returns the cloud config.
-func (nc *NetworkConfig) CloudConfig() *ClientCloud {
+func (nc *NetworkConfig) CloudConfig() *CloudConfig {
 	return nc.cloudConfig
 }
 
 // SetCloudConfig sets the Cloud Config as the given config.
-func (nc *NetworkConfig) SetCloudConfig(cloudConfig *ClientCloud) {
+func (nc *NetworkConfig) SetCloudConfig(cloudConfig *CloudConfig) {
 	nc.cloudConfig = cloudConfig
 }

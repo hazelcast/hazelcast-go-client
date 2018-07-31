@@ -14,36 +14,36 @@
 
 package config
 
-// ClientCloud is used as hazelcast.cloud configuration to let the client connect
+// CloudConfig is used as hazelcast.cloud configuration to let the client connect
 // the cluster via hazelcast.cloud.
-type ClientCloud struct {
+type CloudConfig struct {
 	discoveryToken string
 	enabled        bool
 }
 
-// NewClientCloud returns a clientCloud.
-// ClientCloud is used as hazelcast.cloud configuration to let the client connect
+// NewCloudConfig returns a cloud config.
+// CloudConfig is used as hazelcast.cloud configuration to let the client connect
 // the cluster via hazelcast.cloud.
-func NewClientCloud() *ClientCloud {
-	return &ClientCloud{}
+func NewCloudConfig() *CloudConfig {
+	return &CloudConfig{}
 }
 
 // SetDiscoveryToken sets the discovery token as the given token.
-func (cc *ClientCloud) SetDiscoveryToken(discoveryToken string) {
+func (cc *CloudConfig) SetDiscoveryToken(discoveryToken string) {
 	cc.discoveryToken = discoveryToken
 }
 
 // DiscoveryToken returns the discovery token.
-func (cc *ClientCloud) DiscoveryToken() string {
+func (cc *CloudConfig) DiscoveryToken() string {
 	return cc.discoveryToken
 }
 
 // IsEnabled returns true if client cloud discovery is enabled, false otherwise.
-func (cc *ClientCloud) IsEnabled() bool {
+func (cc *CloudConfig) IsEnabled() bool {
 	return cc.enabled
 }
 
-// SetEnabled sets the enabled field of clientCloud.
-func (cc *ClientCloud) SetEnabled(enabled bool) {
+// SetEnabled sets the enabled field of cloud config.
+func (cc *CloudConfig) SetEnabled(enabled bool) {
 	cc.enabled = enabled
 }
