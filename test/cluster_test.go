@@ -273,7 +273,7 @@ func TestAddressesWhenCloudConfigEnabled(t *testing.T) {
 	defer remoteController.ShutdownCluster(cluster.ID)
 
 	cfg := hazelcast.NewConfig()
-	cloudConfig := config.NewClientCloud()
+	cloudConfig := config.NewCloudConfig()
 	cloudConfig.SetEnabled(true)
 	cloudConfig.SetDiscoveryToken("test")
 	cfg.NetworkConfig().SetCloudConfig(cloudConfig)

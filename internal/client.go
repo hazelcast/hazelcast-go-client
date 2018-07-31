@@ -221,7 +221,7 @@ func (c *HazelcastClient) createAddressProviders() []AddressProvider {
 	return addressProviders
 }
 
-func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.ClientCloud) *discovery.HzCloudAddrProvider {
+func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.CloudConfig) *discovery.HzCloudAddrProvider {
 	if cloudConfig.IsEnabled() {
 		urlEndpoint := discovery.CreateURLEndpoint(c.properties, cloudConfig.DiscoveryToken())
 		return discovery.NewHzCloudAddrProvider(urlEndpoint, c.getConnectionTimeout())

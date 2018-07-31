@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 
 func TestCloudDiscoveryWithInvalidToken(t *testing.T) {
 	cfg := hazelcast.NewConfig()
-	discoveryCfg := config.NewClientCloud()
+	discoveryCfg := config.NewCloudConfig()
 	discoveryCfg.SetEnabled(true)
 	discoveryCfg.SetDiscoveryToken("invalidToken")
 	cfg.NetworkConfig().SetCloudConfig(discoveryCfg)

@@ -39,7 +39,7 @@ func TestCloudConfigDefaults(t *testing.T) {
 
 func TestCloudConfig(t *testing.T) {
 	cfg := hazelcast.NewConfig()
-	cloudConfig := config.NewClientCloud()
+	cloudConfig := config.NewCloudConfig()
 	cloudConfig.SetEnabled(true)
 	cloudConfig.SetDiscoveryToken(testDiscoveryToken)
 	cfg.NetworkConfig().SetCloudConfig(cloudConfig)
@@ -50,7 +50,7 @@ func TestCloudConfig(t *testing.T) {
 }
 
 func TestCloudConfigWithPropertySet(t *testing.T) {
-	cloudConfig := config.NewClientCloud()
+	cloudConfig := config.NewCloudConfig()
 	cloudConfig.SetEnabled(true)
 	os.Setenv(property.HazelcastCloudDiscoveryToken.Name(), testDiscoveryToken)
 	cfg := hazelcast.NewConfig()
