@@ -16,7 +16,6 @@ package test
 
 import (
 	"io/ioutil"
-	"os"
 	"sync"
 	"time"
 )
@@ -84,12 +83,6 @@ const DefaultServerConfig = `
     </ringbuffer>
 </hazelcast>
 `
-const enterpriseKey = "HAZELCAST_ENTERPRISE_KEY"
-
-func IsEnterprise() bool {
-	_, found := os.LookupEnv(enterpriseKey)
-	return found
-}
 
 func Read(filename string) (string, error) {
 	bytes, err := ioutil.ReadFile(filename)

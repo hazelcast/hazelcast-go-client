@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build enterprise
+
 package ssl
 
 import (
@@ -19,14 +21,10 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
 
 func TestSSLAuthenticationClientRunning(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML("hazelcast-ssl.xml")
 	if err != nil {
 		t.Fatal(err)
@@ -67,9 +65,6 @@ func TestSSLConfigWrongClientCertOrKeyFilePath(t *testing.T) {
 }
 
 func TestSSLAuthenticationMapTest(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML("hazelcast-ssl.xml")
 	if err != nil {
 		t.Fatal(err)

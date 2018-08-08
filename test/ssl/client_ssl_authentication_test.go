@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build enterprise
+
 package ssl
 
 import (
@@ -78,9 +80,6 @@ func createClientConfigWithSSLConfig(clientCertPath string, clientKeyPath string
 }
 
 func TestSSLMutualAuthenticationConnect(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
@@ -100,9 +99,6 @@ func TestSSLMutualAuthenticationConnect(t *testing.T) {
 }
 
 func TestSSLMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
@@ -120,9 +116,6 @@ func TestSSLMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
 }
 
 func TestSSLMutualAuthentication_ServerDoesntKnowClientFail(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
@@ -140,9 +133,6 @@ func TestSSLMutualAuthentication_ServerDoesntKnowClientFail(t *testing.T) {
 }
 
 func TestSSLMutualAuthentication_NeitherServerNorClientKnowsTheOtherFail(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maRequiredXML)
 	if err != nil {
 		t.Fatal(err)
@@ -160,9 +150,6 @@ func TestSSLMutualAuthentication_NeitherServerNorClientKnowsTheOtherFail(t *test
 }
 
 func TestSSLOptionalMutualAuthenticationConnect(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
@@ -182,9 +169,6 @@ func TestSSLOptionalMutualAuthenticationConnect(t *testing.T) {
 }
 
 func TestSSLOptionalMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
@@ -202,9 +186,6 @@ func TestSSLOptionalMutualAuthentication_ClientDoesntKnowServerFail(t *testing.T
 }
 
 func TestSSLOptionalMutualAuthentication_ServerDoesntKnowClientConnect(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
@@ -223,10 +204,7 @@ func TestSSLOptionalMutualAuthentication_ServerDoesntKnowClientConnect(t *testin
 	}
 }
 
-func TestSSLOptionalMutualAuthentication_NeitherServerNotClientKnowsTheOther(t *testing.T) {
-	if !test.IsEnterprise() {
-		t.Skipf("SSL feature requires enterprise version")
-	}
+func TestSSLOptionalMutualAuthentication_NeitherServerNorClientKnowsTheOther(t *testing.T) {
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
