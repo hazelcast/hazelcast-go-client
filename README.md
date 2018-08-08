@@ -51,6 +51,10 @@ Hazelcast Go client supports the following data structures and features:
 * Lifecycle Service
 * Smart and Unisocket Client operation
 * Hazelcast Serialization (IdentifiedDataSerializable, Portable, Custom Serializers, Global Serializers)
+* SSL/TLS Support With Mutual Authentication(Enterprise)
+* Custom Credentials
+* Hazelcast Cloud Discovery
+* Statistics
 
 ## Installing the Client
 
