@@ -50,11 +50,11 @@ func TestTopicProxy_AddListener(t *testing.T) {
 	listener := &topicMessageListener{wg: wg}
 	registrationID, err := topic.AddMessageListener(listener)
 	defer topic.RemoveMessageListener(registrationID)
-	assert.Nilf(t, err, nil, "topic AddListener() failed")
+	assert.Nilf(t, err, nil, "topic AddMembershipListener() failed")
 	topic.Publish("item-value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "topic AddListener() failed")
-	assert.Equalf(t, nil, listener.msg, "item-value", "topic AddListener() failed")
+	assert.Equalf(t, nil, false, timeout, "topic AddMembershipListener() failed")
+	assert.Equalf(t, nil, listener.msg, "item-value", "topic AddMembershipListener() failed")
 	if !listener.publishTime.After(time.Time{}) {
 		t.Fatal("publishTime should be greater than 0")
 	}
@@ -65,12 +65,12 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	wg.Add(1)
 	listener := &topicMessageListener{wg: wg}
 	registrationID, err := topic.AddMessageListener(listener)
-	assert.Nilf(t, err, nil, "topic AddListener() failed")
+	assert.Nilf(t, err, nil, "topic AddMembershipListener() failed")
 	removed, err := topic.RemoveMessageListener(registrationID)
-	assert.Equalf(t, err, removed, true, "topic RemoveListener() failed")
+	assert.Equalf(t, err, removed, true, "topic RemoveMembershipListener() failed")
 	topic.Publish("item-value")
 	timeout := test.WaitTimeout(wg, test.Timeout/10)
-	assert.Equalf(t, nil, true, timeout, "topic RemoveListener() failed")
+	assert.Equalf(t, nil, true, timeout, "topic RemoveMembershipListener() failed")
 }
 
 func TestTopicProxy_PublishNilMessage(t *testing.T) {

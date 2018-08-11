@@ -19,7 +19,7 @@ type HazelcastError interface {
 	// Error returns the error message.
 	Error() string
 
-	// cause returns the cause error.
+	// Cause returns the cause of error.
 	Cause() error
 }
 

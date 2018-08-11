@@ -20,7 +20,7 @@ type DistributedObject interface {
 	// Destroy clears and releases all resources for this object.
 	Destroy() (bool, error)
 
-	// Name returns the unique name for this DistributedObject. Returned value will never be nil.
+	// Name returns the unique name for this DistributedObject.
 	Name() string
 
 	// PartitionKey returns the key of partition this DistributedObject is assigned to. The returned value only has meaning

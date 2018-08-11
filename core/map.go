@@ -18,16 +18,16 @@ import (
 	"time"
 )
 
-// Map is Hazelcast Map client proxy to access the map on the cluster.
-// Concurrent, distributed, observable and queryable map.
+// Map is concurrent, distributed, observable and queryable.
 // This map is sync (blocking). Blocking calls return the value of the call and block
 // the execution until the return value is calculated.
-// This map does not allow nil to be used as a key or value.
+// It does not allow nil to be used as a key or value.
 type Map interface {
 	// DistributedObject is the base interface for all distributed objects.
 	DistributedObject
 
-	// Put associates the specified value with the specified key in this map. If the map previously contained a mapping for
+	// Put returns the value with the specified key in this map.
+	// If the map previously contained a mapping for
 	// the key, the old value is replaced by the specified value.
 	// Put returns a clone of the previous value, not the original (identically equal) value previously put
 	// into the map.
@@ -45,6 +45,10 @@ type Map interface {
 
 	// Remove removes the mapping for a key from this map if it is present. The map will not contain a mapping for the
 	// specified key once the call returns.
+	// If you don't need the previously mapped value for the removed key, prefer to use
+	// delete and avoid the cost of serialization and network transfer.
+	// It returns a clone of the previous value, not the original (identically equal) value
+	// previously put into the map.
 	// Remove returns the previous value associated with key, or nil if there was no mapping for the key.
 	Remove(key interface{}) (value interface{}, err error)
 
@@ -98,7 +102,7 @@ type Map interface {
 	// ContainsValue  returns true if this map contains an entry for the specified value.
 	ContainsValue(value interface{}) (found bool, err error)
 
-	// Clear clears the map.
+	// Clear clears the map and deletes the items from the backing map store.
 	Clear() (err error)
 
 	// Delete removes the mapping for a key from this map if it is present (optional operation).
@@ -117,6 +121,7 @@ type Map interface {
 
 	// AddIndex Adds an index to this map for the specified entries so
 	// that queries can run faster.
+	//
 	// Let's say your map values are Employee struct which implements identifiedDataSerializable.
 	//	type Employee struct {
 	//		age int32
@@ -130,6 +135,17 @@ type Map interface {
 	//	mp, _ := client.GetMap("employee")
 	//	mp.AddIndex("age", true);        // ordered, since we have ranged queries for this field
 	//	mp.AddIndex("active", false);    // not ordered, because boolean field cannot have range
+	//
+	// You should make sure to add the indexes before adding
+	// entries to this map.
+	//
+	// Indexing is executed in parallel on each partition by operation threads on server side. The Map
+	// is not blocked during this operation.
+	//
+	// The time taken in is proportional to the size of the Map and the number of members.
+	//
+	// Until the index finishes being created, any searches for the attribute will use a full Map scan,
+	// thus avoiding using a partially built index and returning incorrect results.
 	AddIndex(attribute string, ordered bool) (err error)
 
 	// Evict evicts the specified key from this map.
@@ -137,14 +153,18 @@ type Map interface {
 	Evict(key interface{}) (evicted bool, err error)
 
 	// EvictAll evicts all keys from this map except the locked ones.
-	// The EVICT_ALL event is fired for any registered listeners.
+	// The EvictAll event is fired for any registered listeners for MapEvicted.
 	EvictAll() (err error)
 
 	// Flush flushes all the local dirty entries.
+	// Please note that this method has effect only if write-behind
+	// persistence mode is configured. If the persistence mode is
+	// write-through calling this method has no practical effect, but an
+	// operation is executed on all partitions wasting resources.
 	Flush() (err error)
 
-	// ForceUnlock releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
-	// never blocks, and returns immediately.
+	// ForceUnlock releases the lock for the specified key regardless of the lock owner.
+	// It always successfully unlocks the key, never blocks, and returns immediately.
 	ForceUnlock(key interface{}) (err error)
 
 	// Lock acquires the lock for the specified key infinitely.
@@ -202,6 +222,12 @@ type Map interface {
 	//	}
 	//	return false
 	// except that the action is performed atomically.
+	//
+	// This method may return false even if the operation succeeds.
+	// Background: If the partition owner for given key goes down after successful value replace,
+	// but before the executing node retrieved the invocation result response, then the operation is retried.
+	// The invocation retry fails because the value is already updated and the result of such replace call
+	// returns false. Hazelcast doesn't guarantee exactly once invocation.
 	// ReplaceIfSame returns true if the value was replaced.
 	ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (replaced bool, err error)
 
@@ -221,7 +247,7 @@ type Map interface {
 	// For example:
 	// 	mp.SetWithTTL("testingKey1", "testingValue1", 5 * time. Second)
 	// will expire and get evicted after 5 seconds whereas
-	// mp.SetWithTTL("testingKey1", "testingValue1", 5 * time. Millisecond)
+	//  mp.SetWithTTL("testingKey1", "testingValue1", 5 * time. Millisecond)
 	// will expire and get evicted after 5 milliseconds.
 	SetWithTTL(key interface{}, value interface{}, ttl time.Duration) (err error)
 

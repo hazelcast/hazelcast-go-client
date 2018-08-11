@@ -61,7 +61,7 @@ func newClusterService(client *HazelcastClient, config *config.Config, addressPr
 	uuid := ""
 	service.uuid.Store(uuid) //Initialize
 	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
-		service.AddListener(membershipListener)
+		service.AddMembershipListener(membershipListener)
 	}
 	service.addressProviders = addressProviders
 	service.client.ConnectionManager.addListener(service)
@@ -187,7 +187,7 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 	if err != nil {
 		return err
 	}
-	cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateConnected)
+	cs.client.LifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)
 	return nil
 }
 
@@ -222,7 +222,7 @@ func (cs *clusterService) logMembers() {
 	log.Println(membersInfo)
 }
 
-func (cs *clusterService) AddListener(listener interface{}) string {
+func (cs *clusterService) AddMembershipListener(listener interface{}) string {
 	registrationID, _ := iputil.NewUUID()
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
@@ -236,7 +236,7 @@ func (cs *clusterService) AddListener(listener interface{}) string {
 	return registrationID
 }
 
-func (cs *clusterService) RemoveListener(registrationID string) bool {
+func (cs *clusterService) RemoveMembershipListener(registrationID string) bool {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	listeners := cs.listeners.Load().(map[string]interface{})
@@ -393,7 +393,7 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
 	if ok && ownerConnectionAddress != nil &&
 		*address == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
-		cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
+		cs.client.LifecycleService.fireLifecycleEvent(core.LifecycleStateDisconnected)
 		cs.ownerConnectionAddress.Store(&proto.Address{})
 		cs.reconnectChan <- struct{}{}
 	}

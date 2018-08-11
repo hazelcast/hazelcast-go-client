@@ -14,13 +14,34 @@
 
 package core
 
-// Lifecycle is a lifecycle service for Hazelcast clients.
-type Lifecycle interface {
-	// AddListener adds a listener object to listen for lifecycle events.
-	// AddListener returns the registrationID.
-	AddListener(listener interface{}) string
+const (
+	// LifecycleStateStarting is fired when the client is starting.
+	LifecycleStateStarting = "STARTING"
 
-	// RemoveListener removes lifecycle listener with the given registrationID.
-	// RemoveListener returns true if the listener is removed successfully, false otherwise.
-	RemoveListener(registrationID string) bool
+	// LifecycleStateStarted is fired when the client start is completed.
+	LifecycleStateStarted = "STARTED"
+
+	// LifecycleStateConnected is fired when the client is connected to a member.
+	LifecycleStateConnected = "CONNECTED"
+
+	// LifecycleStateDisconnected is fired when the client disconnected from a member.
+	LifecycleStateDisconnected = "DISCONNECTED"
+
+	// LifecycleStateShuttingDown is fired when the client is shutting down.
+	LifecycleStateShuttingDown = "SHUTTING_DOWN"
+
+	// LifecycleStateShutdown is fired when the client shutdown is completed.
+	LifecycleStateShutdown = "SHUTDOWN"
+)
+
+// LifecycleService allows you to shutdown, terminate, and listen to lifecycle events
+// on HazelcastInstance.
+type LifecycleService interface {
+	// AddLifecycleListener adds a listener object to listen for lifecycle events.
+	// AddLifecycleListener returns the registrationID.
+	AddLifecycleListener(listener interface{}) string
+
+	// RemoveLifecycleListener removes lifecycle listener with the given registrationID.
+	// RemoveLifecycleListener returns true if the listener is removed successfully, false otherwise.
+	RemoveLifecycleListener(registrationID string) bool
 }

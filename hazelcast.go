@@ -93,7 +93,7 @@ type Instance interface {
 	// instance is part of.
 	GetCluster() core.Cluster
 
-	// GetLifecycle returns the lifecycle service for this instance. Lifecycle service allows you
+	// GetLifecycleService returns the lifecycle service for this instance. LifecycleService service allows you
 	// to listen for the lifecycle events.
-	GetLifecycle() core.Lifecycle
+	GetLifecycleService() core.LifecycleService
 }
