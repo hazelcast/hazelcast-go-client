@@ -34,6 +34,9 @@ type MultiMap interface {
 	// It returns true if the value was detached from the specified key, false if it was not.
 	Remove(key interface{}, value interface{}) (removed bool, err error)
 
+	// Delete deletes all the entries with the given key.
+	Delete(key interface{}) (err error)
+
 	// RemoveAll detaches all values from the specified key.
 	// It returns a slice of old values that were associated with this key prior to this method call.
 	RemoveAll(key interface{}) (oldValues []interface{}, err error)

@@ -194,6 +194,15 @@ func TestMultiMapProxy_ContainsEntryWithNonExistValue(t *testing.T) {
 	assert.Equalf(t, err, found, false, "multiMap ContainsEntry() returned a wrong result")
 }
 
+func TestMultiMapProxy_Delete(t *testing.T) {
+	defer multiMap.Clear()
+	multiMap.Put("testKey", "testValue1")
+	multiMap.Put("testKey", "testValue2")
+	multiMap.Delete("testKey")
+	size, err := multiMap.Size()
+	assert.Equal(t, err, size, int32(0))
+}
+
 func TestMultiMapProxy_Clear(t *testing.T) {
 	multiMap.Put(testKey, testValue)
 	err := multiMap.Clear()
