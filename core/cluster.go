@@ -36,10 +36,4 @@ type Cluster interface {
 	// GetMembers returns a slice of current members in the cluster. The returned slice is
 	// a copy of current members.
 	GetMembers() []Member
-
-	// GetMember gets the member with the given address.
-	GetMember(address Address) Member
-
-	// GetMemberByUUID gets the member with the given uuid.
-	GetMemberByUUID(uuid string) Member
 }
