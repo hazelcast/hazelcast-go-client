@@ -63,6 +63,16 @@ func (mmp *multiMapProxy) Remove(key interface{}, value interface{}) (removed bo
 
 }
 
+func (mmp *multiMapProxy) Delete(key interface{}) (err error) {
+	keyData, err := mmp.validateAndSerialize(key)
+	if err != nil {
+		return
+	}
+	request := proto.MultiMapDeleteEncodeRequest(mmp.name, keyData, threadID)
+	_, err = mmp.invokeOnKey(request, keyData)
+	return
+}
+
 func (mmp *multiMapProxy) RemoveAll(key interface{}) (oldValues []interface{}, err error) {
 	keyData, err := mmp.validateAndSerialize(key)
 	if err != nil {
