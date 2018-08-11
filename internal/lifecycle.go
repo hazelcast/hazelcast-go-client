@@ -24,15 +24,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
 )
 
-const (
-	LifecycleStateStarting     = "STARTING"
-	LifecycleStateStarted      = "STARTED"
-	LifecycleStateConnected    = "CONNECTED"
-	LifecycleStateDisconnected = "DISCONNECTED"
-	LifecycleStateShuttingDown = "SHUTTING_DOWN"
-	LifecycleStateShutdown     = "SHUTDOWN"
-)
-
 type lifecycleService struct {
 	isLive    atomic.Value
 	listeners atomic.Value
@@ -45,14 +36,14 @@ func newLifecycleService(config *config.Config) *lifecycleService {
 	newLifecycle.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, listener := range config.LifecycleListeners() {
 		if _, ok := listener.(core.LifecycleListener); ok {
-			newLifecycle.AddListener(listener)
+			newLifecycle.AddLifecycleListener(listener)
 		}
 	}
-	newLifecycle.fireLifecycleEvent(LifecycleStateStarting)
+	newLifecycle.fireLifecycleEvent(core.LifecycleStateStarting)
 	return newLifecycle
 }
 
-func (ls *lifecycleService) AddListener(listener interface{}) string {
+func (ls *lifecycleService) AddLifecycleListener(listener interface{}) string {
 	registrationID, _ := iputil.NewUUID()
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
@@ -66,7 +57,7 @@ func (ls *lifecycleService) AddListener(listener interface{}) string {
 	return registrationID
 }
 
-func (ls *lifecycleService) RemoveListener(registrationID string) bool {
+func (ls *lifecycleService) RemoveLifecycleListener(registrationID string) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	listeners := ls.listeners.Load().(map[string]interface{})
@@ -83,7 +74,7 @@ func (ls *lifecycleService) RemoveListener(registrationID string) bool {
 }
 
 func (ls *lifecycleService) fireLifecycleEvent(newState string) {
-	if newState == LifecycleStateShuttingDown {
+	if newState == core.LifecycleStateShuttingDown {
 		ls.isLive.Store(false)
 	}
 	listeners := ls.listeners.Load().(map[string]interface{})

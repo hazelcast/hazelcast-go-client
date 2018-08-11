@@ -34,6 +34,9 @@ type ReplicatedMap interface {
 	// Put associates a given value to the specified key and replicates it to the
 	// cluster. If there is an old value, it will be replaced by the specified
 	// one and returned from the call.
+	//
+	// It returns a clone of the previous value,
+	// not the original (identically equal) value previously put into the map.
 	Put(key interface{}, value interface{}) (oldValue interface{}, err error)
 
 	// PutWithTTL associates a given value to the specified key and replicates it to the
@@ -41,6 +44,9 @@ type ReplicatedMap interface {
 	// one and returned from the call. In addition, you have to specify a ttl and its time unit
 	// to define when the value is outdated and thus should be removed from the
 	// replicated map.
+	//
+	// It returns a clone of the previous value,
+	// not the original (identically equal) value previously put into the map.
 	PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (oldValue interface{}, err error)
 
 	// PutAll copies all of the mappings from the specified map to this map.
@@ -48,12 +54,17 @@ type ReplicatedMap interface {
 	// on this map once for each mapping from key k to value v in the specified
 	// map. The behavior of this operation is undefined if the specified map is modified
 	// while the operation is in progress.
+	//
+	// Any change in the returned map will not be reflected on server side.
 	PutAll(entries map[interface{}]interface{}) (err error)
 
 	// Get returns the value to which the specified key is mapped, or nil if this map
 	// contains no mapping for the key. If this map permits nil values, then a return value of nil does not
 	// necessarily indicate that the map contains no mapping for the key; it's also
 	// possible that the map explicitly maps the key to nil.
+	//
+	// It returns a clone of the value,
+	// not the original (identically equal) value put into the map.
 	Get(key interface{}) (value interface{}, err error)
 
 	// ContainsKey returns true if this map contains a mapping for the specified key.

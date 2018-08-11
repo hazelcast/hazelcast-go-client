@@ -27,6 +27,8 @@ type MultiMap interface {
 	Put(key interface{}, value interface{}) (increased bool, err error)
 
 	// Get returns a slice of values associated with the specified key.
+	// The slice is NOT backed by the map, so changes to the map
+	// are NOT reflected in the collection, and vice-versa.
 	Get(key interface{}) (values []interface{}, err error)
 
 	// Remove removes an association of the specified value with the specified key. Calling this method does not affect
@@ -39,6 +41,8 @@ type MultiMap interface {
 
 	// RemoveAll detaches all values from the specified key.
 	// It returns a slice of old values that were associated with this key prior to this method call.
+	// The slice is NOT backed by the map, so changes to the map
+	// are NOT reflected in the collection, and vice-versa.
 	RemoveAll(key interface{}) (oldValues []interface{}, err error)
 
 	// ContainsKey checks if this multi-map contains a specified key.
@@ -63,13 +67,19 @@ type MultiMap interface {
 	ValueCount(key interface{}) (valueCount int32, err error)
 
 	// Values returns a flat slice of all values stored in this multi-map.
+	// The slice is NOT backed by the map, so changes to the map
+	// are NOT reflected in the collection, and vice-versa.
 	Values() (values []interface{}, err error)
 
 	// KeySet returns a slice of all keys in this multi-map.
+	// The slice is NOT backed by the map, so changes to the map
+	// are NOT reflected in the collection, and vice-versa.
 	KeySet() (keySet []interface{}, err error)
 
 	// EntrySet returns all entries in this multi-map. If a certain key has multiple values associated with it,
 	// then one pair will be returned for each value.
+	// The slice is NOT backed by the map, so changes to the map
+	// are NOT reflected in the collection, and vice-versa.
 	EntrySet() (resultPairs []Pair, err error)
 
 	// AddEntryListener adds an entry listener to this multi-map.
@@ -146,6 +156,7 @@ type MultiMap interface {
 	TryLockWithTimeoutAndLease(key interface{}, timeout time.Duration, lease time.Duration) (locked bool, err error)
 
 	// Unlock unlocks the specified key.
+	// It never blocks and returns immediately.
 	Unlock(key interface{}) (err error)
 
 	// ForceUnlock forcefully unlocks the specified key, disregarding the acquisition count.

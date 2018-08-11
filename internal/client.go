@@ -139,7 +139,7 @@ func (c *HazelcastClient) GetCluster() core.Cluster {
 	return c.ClusterService
 }
 
-func (c *HazelcastClient) GetLifecycle() core.Lifecycle {
+func (c *HazelcastClient) GetLifecycleService() core.LifecycleService {
 	return c.LifecycleService
 }
 
@@ -170,7 +170,7 @@ func (c *HazelcastClient) init() error {
 		return err
 	}
 	c.HeartBeatService.start()
-	c.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
+	c.LifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
 }
 
@@ -246,13 +246,13 @@ func (c *HazelcastClient) getConnectionTimeout() time.Duration {
 
 func (c *HazelcastClient) Shutdown() {
 	if c.LifecycleService.isLive.Load().(bool) {
-		c.LifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
+		c.LifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
 		c.ConnectionManager.shutdown()
 		c.PartitionService.shutdown()
 		c.ClusterService.shutdown()
 		c.InvocationService.shutdown()
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
-		c.LifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
+		c.LifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
 }

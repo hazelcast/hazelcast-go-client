@@ -15,16 +15,26 @@
 package core
 
 // Cluster is a cluster service for Hazelcast clients.
+// It provides access to the members in the cluster and one can register for changes in the
+// cluster members.
+// All the methods on the Cluster are thread-safe.
 type Cluster interface {
-	// AddListener registers the given listener.
-	// AddListener returns uuid which will be used to remove the listener.
-	AddListener(listener interface{}) string
+	// AddMembershipListener registers the given listener to listen to membership updates.
+	// AddMembershipListener returns uuid which will be used to remove the listener.
+	// There is no check for duplicate registrations, so if you register the listener twice,
+	// it will get events twice.
+	// The given listener should implement MemberAddedListener or MemberRemovedListener interfaces or both.
+	// If the given listener does not implement any of these, it will not have any effect.
+	AddMembershipListener(listener interface{}) string
 
-	// RemoveListener removes the listener with the given registrationID.
-	// RemoveListener returns true if successfully removed, false otherwise.
-	RemoveListener(registrationID string) bool
+	// RemoveMembershipListener removes the listener with the given registrationID.
+	// RemoveMembershipListener returns true if successfully removed, false otherwise.
+	// If the same MembershipListener is registered multiple times,
+	// it needs to be removed multiple times.
+	RemoveMembershipListener(registrationID string) bool
 
-	// GetMembers returns a slice of members.
+	// GetMembers returns a slice of current members in the cluster. The returned slice is
+	// a copy of current members.
 	GetMembers() []Member
 
 	// GetMember gets the member with the given address.
