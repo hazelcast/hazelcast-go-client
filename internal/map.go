@@ -52,6 +52,17 @@ func (mp *mapProxy) TryPut(key interface{}, value interface{}) (ok bool, err err
 	return mp.decodeToBoolAndError(responseMessage, err, proto.MapTryPutDecodeResponse)
 }
 
+func (mp *mapProxy) TryPutWithTimeout(key interface{}, value interface{}, timeout time.Duration) (ok bool, err error) {
+	keyData, valueData, err := mp.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
+	request := proto.MapTryPutEncodeRequest(mp.name, keyData, valueData, threadID, timeoutInMillis)
+	responseMessage, err := mp.invokeOnKey(request, keyData)
+	return mp.decodeToBoolAndError(responseMessage, err, proto.MapTryPutDecodeResponse)
+}
+
 func (mp *mapProxy) PutTransient(key interface{}, value interface{}, ttl time.Duration) (err error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {

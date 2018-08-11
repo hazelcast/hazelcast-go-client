@@ -143,6 +143,21 @@ func TestMapProxy_TryPut(t *testing.T) {
 	mp.Clear()
 }
 
+func TestMapProxy_TryPutWithTimeout(t *testing.T) {
+	testKey := "testingKey"
+	testValue := "testingValue"
+	ok, err := mp.TryPutWithTimeout(testKey, testValue, 1*time.Second)
+	assert.Equal(t, err, ok, true)
+	mp.Clear()
+}
+
+func TestMapProxy_TryPutWithTimeoutWithNilKey(t *testing.T) {
+	testValue := "testingValue"
+	_, err := mp.TryPutWithTimeout(nil, testValue, 1*time.Second)
+	assert.ErrorNotNil(t, err, "Map.TryPutWithTimeout should return error for nil key")
+	mp.Clear()
+}
+
 func TestMapProxy_TryPutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.TryPut(nil, testValue)

@@ -314,6 +314,12 @@ type Map interface {
 	// TryPut returns true if the put is successful, false otherwise.
 	TryPut(key interface{}, value interface{}) (ok bool, err error)
 
+	// TryPutWithTimeout tries to put the given key and value into this map within a specified
+	// timeout value. If this method returns false, it means that
+	// the caller thread could not acquire the lock for the key within the
+	// timeout duration, thus the put operation is not successful.
+	TryPutWithTimeout(key interface{}, value interface{}, timeout time.Duration) (ok bool, err error)
+
 	// TryRemove tries to remove the entry with the given key from this map
 	// within the specified timeout value. If the key is already locked by another
 	// thread and/or member, then this operation will wait the timeout
