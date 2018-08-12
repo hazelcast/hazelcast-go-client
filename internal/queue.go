@@ -53,7 +53,7 @@ func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (
 	}
 	request := proto.QueueAddListenerEncodeRequest(qp.name, includeValue, false)
 	eventHandler := qp.createEventHandler(listener)
-	return qp.client.ListenerService.registerListener(request, eventHandler,
+	return qp.client.listenerService.registerListener(request, eventHandler,
 		func(registrationID string) *proto.ClientMessage {
 			return proto.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
 		}, func(clientMessage *proto.ClientMessage) string {
@@ -198,7 +198,7 @@ func (qp *queueProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 }
 
 func (qp *queueProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return qp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return qp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
 	})
 }

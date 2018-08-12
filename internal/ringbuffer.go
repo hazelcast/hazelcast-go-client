@@ -119,7 +119,7 @@ func (rp *ringbufferProxy) ReadMany(startSequence int64, minCount int32, maxCoun
 		return
 	}
 	readCount, itemsData, itemSeqs, _ /*nextSeq*/ := proto.RingbufferReadManyDecodeResponse(responseMessage)()
-	return NewLazyReadResultSet(readCount, itemsData, itemSeqs, rp.client.SerializationService), nil
+	return NewLazyReadResultSet(readCount, itemsData, itemSeqs, rp.client.serializationService), nil
 }
 
 func (rp *ringbufferProxy) validateSequenceNotNegative(value int64, argName string) (err error) {

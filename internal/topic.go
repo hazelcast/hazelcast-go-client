@@ -36,7 +36,7 @@ func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (
 	request := proto.TopicAddMessageListenerEncodeRequest(tp.name, false)
 	eventHandler := tp.createEventHandler(messageListener)
 
-	return tp.client.ListenerService.registerListener(request, eventHandler,
+	return tp.client.listenerService.registerListener(request, eventHandler,
 		func(registrationID string) *proto.ClientMessage {
 			return proto.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
 		}, func(clientMessage *proto.ClientMessage) string {
@@ -46,7 +46,7 @@ func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (
 }
 
 func (tp *topicProxy) RemoveMessageListener(registrationID string) (removed bool, err error) {
-	return tp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return tp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
 	})
 }
@@ -64,7 +64,7 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) func(clientMessage *proto.ClientMessage) {
 	return func(message *proto.ClientMessage) {
 		proto.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
-			member := tp.client.ClusterService.GetMemberByUUID(uuid)
+			member := tp.client.clusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
 			itemEvent := proto.NewTopicMessage(item, publishTime, member.(*proto.Member))
 			messageListener.OnMessage(itemEvent)

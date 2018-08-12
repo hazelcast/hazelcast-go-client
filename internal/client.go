@@ -29,23 +29,23 @@ import (
 )
 
 type HazelcastClient struct {
-	InvocationService    invocationService
-	ClientConfig         *config.Config
-	PartitionService     *partitionService
-	SerializationService *serialization.Service
-	LifecycleService     *lifecycleService
+	invocationService    invocationService
+	clientConfig         *config.Config
+	partitionService     *partitionService
+	serializationService *serialization.Service
+	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
-	ListenerService      *listenerService
-	ClusterService       *clusterService
-	ProxyManager         *proxyManager
-	LoadBalancer         *randomLoadBalancer
+	listenerService      *listenerService
+	clusterService       *clusterService
+	proxyManager         *proxyManager
+	loadBalancer         *randomLoadBalancer
 	HeartBeatService     *heartBeatService
 	properties           *property.HazelcastProperties
 	credentials          security.Credentials
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
-	client := HazelcastClient{ClientConfig: config}
+	client := HazelcastClient{clientConfig: config}
 	client.properties = property.NewHazelcastProperties(config.Properties())
 	err := client.init()
 	return &client, err
@@ -132,15 +132,19 @@ func (c *HazelcastClient) GetPNCounter(name string) (core.PNCounter, error) {
 }
 
 func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) (core.DistributedObject, error) {
-	return c.ProxyManager.getOrCreateProxy(serviceName, name)
+	return c.proxyManager.getOrCreateProxy(serviceName, name)
 }
 
-func (c *HazelcastClient) GetCluster() core.Cluster {
-	return c.ClusterService
+func (c *HazelcastClient) ClusterService() core.Cluster {
+	return c.clusterService
 }
 
-func (c *HazelcastClient) GetLifecycle() core.Lifecycle {
-	return c.LifecycleService
+func (c *HazelcastClient) LifecycleService() core.Lifecycle {
+	return c.lifecycleService
+}
+
+func (c *HazelcastClient) Config() *config.Config {
+	return c.clientConfig
 }
 
 func (c *HazelcastClient) init() error {
@@ -149,28 +153,28 @@ func (c *HazelcastClient) init() error {
 		return err
 	}
 
-	c.credentials = c.initCredentials(c.ClientConfig)
-	c.LifecycleService = newLifecycleService(c.ClientConfig)
+	c.credentials = c.initCredentials(c.clientConfig)
+	c.lifecycleService = newLifecycleService(c.clientConfig)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
-	c.InvocationService = newInvocationService(c)
+	c.invocationService = newInvocationService(c)
 	addressProviders := c.createAddressProviders()
-	c.ClusterService = newClusterService(c, c.ClientConfig, addressProviders)
-	c.ListenerService = newListenerService(c)
-	c.PartitionService = newPartitionService(c)
-	c.ProxyManager = newProxyManager(c)
-	c.LoadBalancer = newRandomLoadBalancer(c.ClusterService)
-	c.SerializationService, err = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
+	c.clusterService = newClusterService(c, c.clientConfig, addressProviders)
+	c.listenerService = newListenerService(c)
+	c.partitionService = newPartitionService(c)
+	c.proxyManager = newProxyManager(c)
+	c.loadBalancer = newRandomLoadBalancer(c.clusterService)
+	c.serializationService, err = serialization.NewSerializationService(c.clientConfig.SerializationConfig())
 	if err != nil {
 		return err
 	}
-	err = c.ClusterService.start()
+	err = c.clusterService.start()
 	if err != nil {
 		return err
 	}
 	c.HeartBeatService.start()
-	c.PartitionService.start()
-	c.LifecycleService.fireLifecycleEvent(LifecycleStateStarted)
+	c.partitionService.start()
+	c.lifecycleService.fireLifecycleEvent(LifecycleStateStarted)
 	return nil
 }
 
@@ -185,7 +189,7 @@ func (c *HazelcastClient) initCredentials(cfg *config.Config) security.Credentia
 }
 
 func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {
-	cloudConfig := c.ClientConfig.NetworkConfig().CloudConfig()
+	cloudConfig := c.clientConfig.NetworkConfig().CloudConfig()
 	cloudDiscoveryToken := c.properties.GetString(property.HazelcastCloudDiscoveryToken)
 	if cloudDiscoveryToken != "" && cloudConfig.IsEnabled() {
 		return nil, core.NewHazelcastIllegalStateError("ambigious hazelcast.cloud configuration. "+
@@ -211,12 +215,12 @@ func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {
 
 func (c *HazelcastClient) createAddressProviders() []AddressProvider {
 	addressProviders := make([]AddressProvider, 0)
-	cloudConfig := c.ClientConfig.NetworkConfig().CloudConfig()
+	cloudConfig := c.clientConfig.NetworkConfig().CloudConfig()
 	cloudAddressProvider := c.initCloudAddressProvider(cloudConfig)
 	if cloudAddressProvider != nil {
 		addressProviders = append(addressProviders, cloudAddressProvider)
 	}
-	addressProviders = append(addressProviders, newDefaultAddressProvider(c.ClientConfig.NetworkConfig()))
+	addressProviders = append(addressProviders, newDefaultAddressProvider(c.clientConfig.NetworkConfig()))
 
 	return addressProviders
 }
@@ -236,7 +240,7 @@ func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.CloudConf
 }
 
 func (c *HazelcastClient) getConnectionTimeout() time.Duration {
-	nc := c.ClientConfig.NetworkConfig()
+	nc := c.clientConfig.NetworkConfig()
 	connTimeout := nc.ConnectionTimeout()
 	if connTimeout == 0 {
 		connTimeout = math.MaxInt64
@@ -245,14 +249,14 @@ func (c *HazelcastClient) getConnectionTimeout() time.Duration {
 }
 
 func (c *HazelcastClient) Shutdown() {
-	if c.LifecycleService.isLive.Load().(bool) {
-		c.LifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
+	if c.lifecycleService.isLive.Load().(bool) {
+		c.lifecycleService.fireLifecycleEvent(LifecycleStateShuttingDown)
 		c.ConnectionManager.shutdown()
-		c.PartitionService.shutdown()
-		c.ClusterService.shutdown()
-		c.InvocationService.shutdown()
+		c.partitionService.shutdown()
+		c.clusterService.shutdown()
+		c.invocationService.shutdown()
 		c.HeartBeatService.shutdown()
-		c.ListenerService.shutdown()
-		c.LifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
+		c.listenerService.shutdown()
+		c.lifecycleService.fireLifecycleEvent(LifecycleStateShutdown)
 	}
 }

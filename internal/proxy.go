@@ -37,11 +37,11 @@ type proxy struct {
 }
 
 func (p *proxy) Destroy() (bool, error) {
-	return p.client.ProxyManager.destroyProxy(p.serviceName, p.name)
+	return p.client.proxyManager.destroyProxy(p.serviceName, p.name)
 }
 
 func (p *proxy) isSmart() bool {
-	return p.client.ClientConfig.NetworkConfig().IsSmartRouting()
+	return p.client.clientConfig.NetworkConfig().IsSmartRouting()
 }
 
 func (p *proxy) Name() string {
@@ -112,7 +112,7 @@ func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData 
 	if elements == nil {
 		return nil, core.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
 	}
-	elementsData, err = colutil.ObjectToDataCollection(elements, p.client.SerializationService)
+	elementsData, err = colutil.ObjectToDataCollection(elements, p.client.serializationService)
 	return
 }
 
@@ -163,34 +163,34 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 			return nil, err
 		}
 		pair := proto.NewPair(keyData, valueData)
-		partitionID := p.client.PartitionService.GetPartitionID(keyData)
+		partitionID := p.client.partitionService.GetPartitionID(keyData)
 		partitions[partitionID] = append(partitions[partitionID], pair)
 	}
 	return partitions, nil
 }
 
 func (p *proxy) invokeOnKey(request *proto.ClientMessage, keyData *serialization.Data) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnKeyOwner(request, keyData).Result()
+	return p.client.invocationService.invokeOnKeyOwner(request, keyData).Result()
 }
 
 func (p *proxy) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnRandomTarget(request).Result()
+	return p.client.invocationService.invokeOnRandomTarget(request).Result()
 }
 
 func (p *proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionID).Result()
+	return p.client.invocationService.invokeOnPartitionOwner(request, partitionID).Result()
 }
 
 func (p *proxy) invokeOnAddress(request *proto.ClientMessage, address *proto.Address) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnTarget(request, address).Result()
+	return p.client.invocationService.invokeOnTarget(request, address).Result()
 }
 
 func (p *proxy) toObject(data *serialization.Data) (interface{}, error) {
-	return p.client.SerializationService.ToObject(data)
+	return p.client.serializationService.ToObject(data)
 }
 
 func (p *proxy) toData(object interface{}) (*serialization.Data, error) {
-	return p.client.SerializationService.ToData(object)
+	return p.client.serializationService.ToData(object)
 }
 
 func (p *proxy) decodeToObjectAndError(responseMessage *proto.ClientMessage, inputError error,
@@ -214,7 +214,7 @@ func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *proto.ClientMess
 	if inputError != nil {
 		return nil, inputError
 	}
-	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
+	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.client.serializationService)
 }
 
 func (p *proxy) decodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
@@ -222,7 +222,7 @@ func (p *proxy) decodeToPairSliceAndError(responseMessage *proto.ClientMessage, 
 	if inputError != nil {
 		return nil, inputError
 	}
-	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
+	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.client.serializationService)
 }
 
 func (p *proxy) decodeToInt32AndError(responseMessage *proto.ClientMessage, inputError error,
@@ -249,7 +249,7 @@ type partitionSpecificProxy struct {
 func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name string) (*partitionSpecificProxy, error) {
 	var err error
 	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
-	parSpecProxy.partitionID, err = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
+	parSpecProxy.partitionID, err = parSpecProxy.client.partitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
 	return parSpecProxy, err
 
 }
@@ -262,7 +262,7 @@ func (p *proxy) createOnItemEvent(listener interface{}) func(itemData *serializa
 	return func(itemData *serialization.Data, uuid string, eventType int32) {
 		var item interface{}
 		item, _ = p.toObject(itemData)
-		member := p.client.ClusterService.GetMemberByUUID(uuid)
+		member := p.client.clusterService.GetMemberByUUID(uuid)
 		itemEvent := proto.NewItemEvent(p.name, item, eventType, member.(*proto.Member))
 		if eventType == bufutil.ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {
