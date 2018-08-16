@@ -142,7 +142,7 @@ func (lp *listProxy) LastIndexOf(element interface{}) (index int32, err error) {
 	}
 	request := proto.ListLastIndexOfEncodeRequest(lp.name, elementData)
 	responseMessage, err := lp.invoke(request)
-	return lp.decodeToInt32AndError(responseMessage, err, proto.ListIndexOfDecodeResponse)
+	return lp.decodeToInt32AndError(responseMessage, err, proto.ListLastIndexOfDecodeResponse)
 }
 
 func (lp *listProxy) Remove(element interface{}) (changed bool, err error) {
