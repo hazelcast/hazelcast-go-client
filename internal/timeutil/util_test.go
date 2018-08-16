@@ -22,19 +22,26 @@ import (
 func TestGetTimeInMilliSeconds(t *testing.T) {
 	var expected int64 = 100
 	if result := GetTimeInMilliSeconds(100 * time.Millisecond); result != expected {
-		t.Fatal("An error in GetTimeInMilleSeconds()")
+		t.Fatal("An error in GetTimeInMilliSeconds()")
 	}
 	expected = expected * 1000
 	if result := GetTimeInMilliSeconds(100 * time.Second); result != expected {
-		t.Fatal("An error in GetTimeInMilleSeconds()")
+		t.Fatal("An error in GetTimeInMilliSeconds()")
 	}
 	expected = expected * 60
 	if result := GetTimeInMilliSeconds(100 * time.Minute); result != expected {
-		t.Fatal("An error in GetTimeInMilleSeconds()")
+		t.Fatal("An error in GetTimeInMilliSeconds()")
 	}
 	expected = expected * 60
 	if result := GetTimeInMilliSeconds(100 * time.Hour); result != expected {
-		t.Fatal("An error in GetTimeInMilleSeconds()")
+		t.Fatal("An error in GetTimeInMilliSeconds()")
+	}
+}
+
+func TestGetTimeInMilliSecondsLessThanAMilliSecond(t *testing.T) {
+	var expected int64 = 1
+	if result := GetTimeInMilliSeconds(1 * time.Nanosecond); result != expected {
+		t.Fatalf("Expected %d got %d", expected, result)
 	}
 }
 

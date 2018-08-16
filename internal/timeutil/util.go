@@ -23,8 +23,9 @@ func GetTimeInMilliSeconds(duration time.Duration) int64 {
 	if duration == -1 {
 		return -1
 	}
+	// if duration is positive and less than a millisecond return 1.
 	if duration > 0 && duration < time.Millisecond {
-		return int64(time.Millisecond)
+		return 1
 	}
 	return duration.Nanoseconds() / int64(time.Millisecond)
 }
