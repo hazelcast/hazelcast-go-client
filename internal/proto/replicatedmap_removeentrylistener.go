@@ -36,12 +36,4 @@ func ReplicatedMapRemoveEntryListenerEncodeRequest(name string, registrationId s
 	return clientMessage
 }
 
-// ReplicatedMapRemoveEntryListenerDecodeResponse decodes the given client message.
-// It returns a function which returns the response parameters.
-func ReplicatedMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
-	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
-}
+// func ReplicatedMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) , this message has no parameters to decode.

@@ -36,12 +36,4 @@ func ListRemoveListenerEncodeRequest(name string, registrationId string) *Client
 	return clientMessage
 }
 
-// ListRemoveListenerDecodeResponse decodes the given client message.
-// It returns a function which returns the response parameters.
-func ListRemoveListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
-	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
-}
+// func ListRemoveListenerDecodeResponse(clientMessage *ClientMessage) , this message has no parameters to decode.
