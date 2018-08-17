@@ -268,6 +268,21 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 	return request
 }
 
+func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *proto.ClientMessage) func() (
+	status uint8, address *proto.Address,
+	uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
+	clientUnregisteredMembers []*proto.Member) {
+	var authenticationDecoder func(clientMessage *proto.ClientMessage) func() (status uint8, address *proto.Address,
+		uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
+		clientUnregisteredMembers []*proto.Member)
+	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
+		authenticationDecoder = proto.ClientAuthenticationDecodeResponse
+	} else {
+		authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
+	}
+	return authenticationDecoder
+}
+
 func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bool) error {
 	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := cm.encodeAuthenticationRequest(asOwner)
@@ -276,8 +291,9 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 	if err != nil {
 		return err
 	}
+	authenticationDecoder := cm.getAuthenticationDecoder()
 	//status, address, uuid, ownerUUID, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
-	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := proto.ClientAuthenticationDecodeResponse(result)()
+	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := authenticationDecoder(result)()
 	switch status {
 	case authenticated:
 		connection.serverHazelcastVersion = serverHazelcastVersion
