@@ -36,12 +36,4 @@ func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationId string
 	return clientMessage
 }
 
-// MultiMapRemoveEntryListenerDecodeResponse decodes the given client message.
-// It returns a function which returns the response parameters.
-func MultiMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
-	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
-}
+// func MultiMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) , this message has no parameters to decode.
