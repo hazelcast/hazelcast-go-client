@@ -58,7 +58,7 @@ func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (re
 	}
 	request := proto.SetAddListenerEncodeRequest(sp.name, includeValue, false)
 	eventHandler := sp.createEventHandler(listener)
-	return sp.client.ListenerService.registerListener(request, eventHandler,
+	return sp.client.listenerService.registerListener(request, eventHandler,
 		func(registrationID string) *proto.ClientMessage {
 			return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 		}, func(clientMessage *proto.ClientMessage) string {
@@ -136,7 +136,7 @@ func (sp *setProxy) Size() (size int32, err error) {
 }
 
 func (sp *setProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return sp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 	})
 }

@@ -59,7 +59,7 @@ func (hbs *heartBeatService) start() {
 	go func() {
 		ticker := time.NewTicker(hbs.heartBeatInterval)
 		for {
-			if !hbs.client.LifecycleService.isLive.Load().(bool) {
+			if !hbs.client.lifecycleService.isLive.Load().(bool) {
 				return
 			}
 			select {
@@ -84,7 +84,7 @@ func (hbs *heartBeatService) heartBeat() {
 		if timeSinceLastRead > hbs.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := proto.ClientPingEncodeRequest()
-			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)
+			sentInvocation := hbs.client.invocationService.invokeOnConnection(request, connection)
 			copyConnection := connection
 			go func() {
 				_, err := sentInvocation.Result()

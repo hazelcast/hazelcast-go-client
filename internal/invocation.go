@@ -121,7 +121,7 @@ func (is *invocationServiceImpl) invokeOnRandomTarget(request *proto.ClientMessa
 }
 
 func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData *serialization.Data) invocationResult {
-	partitionID := is.client.PartitionService.GetPartitionID(keyData)
+	partitionID := is.client.partitionService.GetPartitionID(keyData)
 	return is.invokeOnPartitionOwner(request, partitionID)
 }
 
@@ -226,7 +226,7 @@ func newInvocationService(client *HazelcastClient) *invocationServiceImpl {
 	}
 
 	service.isShutdown.Store(false)
-	if client.ClientConfig.NetworkConfig().IsSmartRouting() {
+	if client.clientConfig.NetworkConfig().IsSmartRouting() {
 		service.invoke = service.invokeSmart
 	} else {
 		service.invoke = service.invokeNonSmart
@@ -257,7 +257,7 @@ func (is *invocationServiceImpl) nextCorrelationID() int64 {
 }
 
 func (is *invocationServiceImpl) sendToRandomAddress(invocation *invocation) {
-	var target = is.client.LoadBalancer.nextAddress()
+	var target = is.client.loadBalancer.nextAddress()
 	if target == nil {
 		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
 			core.NewHazelcastIOError("no address found to invoke", nil))
@@ -270,7 +270,7 @@ func (is *invocationServiceImpl) invokeSmart(invocation *invocation) {
 	if invocation.boundConnection != nil {
 		is.sendToConnection(invocation, invocation.boundConnection)
 	} else if invocation.partitionID != -1 {
-		if target, ok := is.client.PartitionService.partitionOwner(invocation.partitionID); ok {
+		if target, ok := is.client.partitionService.partitionOwner(invocation.partitionID); ok {
 			is.sendToAddress(invocation, target)
 		} else {
 			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
@@ -287,7 +287,7 @@ func (is *invocationServiceImpl) invokeNonSmart(invocation *invocation) {
 	if invocation.boundConnection != nil {
 		is.sendToConnection(invocation, invocation.boundConnection)
 	} else {
-		address := is.client.ClusterService.getOwnerConnectionAddress()
+		address := is.client.clusterService.getOwnerConnectionAddress()
 		if address == nil {
 			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
 				core.NewHazelcastIOError("no address found to invoke", nil))
@@ -387,7 +387,7 @@ func convertToError(clientMessage *proto.ClientMessage) *proto.Error {
 }
 
 func (is *invocationServiceImpl) handleError(invocation *invocation, err error) {
-	if !is.client.LifecycleService.isLive.Load().(bool) {
+	if !is.client.lifecycleService.isLive.Load().(bool) {
 		invocation.complete(core.NewHazelcastClientNotActiveError("client is shutdown", err))
 		return
 	}
@@ -413,7 +413,7 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 }
 
 func (is *invocationServiceImpl) isRedoOperation() bool {
-	return is.client.ClientConfig.NetworkConfig().IsRedoOperation()
+	return is.client.clientConfig.NetworkConfig().IsRedoOperation()
 }
 
 func (is *invocationServiceImpl) shouldRetryInvocation(invocation *invocation, err error) bool {
@@ -442,7 +442,7 @@ func (is *invocationServiceImpl) isNotAllowedToRetryOnConnection(invocation *inv
 		return true
 	}
 	_, isTargetNotMemberError := err.(*core.HazelcastTargetNotMemberError)
-	if invocation.address != nil && isTargetNotMemberError && is.client.ClusterService.GetMember(invocation.address) == nil {
+	if invocation.address != nil && isTargetNotMemberError && is.client.clusterService.GetMember(invocation.address) == nil {
 		return true
 	}
 	return false

@@ -90,7 +90,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 	}
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
-	if service.client.ClientConfig.NetworkConfig().IsSmartRouting() {
+	if service.client.clientConfig.NetworkConfig().IsSmartRouting() {
 		service.client.HeartBeatService.AddHeartbeatListener(service)
 		go service.connectToAllMembersPeriodically()
 	}
@@ -98,7 +98,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 }
 
 func (ls *listenerService) connectToAllMembersInternal() {
-	members := ls.client.ClusterService.GetMembers()
+	members := ls.client.clusterService.GetMembers()
 	for _, member := range members {
 		ls.client.ConnectionManager.getOrConnect(member.Address().(core.Address), false)
 	}
@@ -200,7 +200,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 	registrationKey := ls.registrationIDToListenerRegistration[registrationID]
 	invocation := newInvocation(registrationKey.request, -1, nil, connection, ls.client)
 	invocation.eventHandler = registrationKey.eventHandler
-	responseMessage, err := ls.client.InvocationService.sendInvocation(invocation).Result()
+	responseMessage, err := ls.client.invocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 		connection := registration.connection
 		serverRegistrationID := registration.serverRegistrationID
 		request := requestEncoder(serverRegistrationID)
-		_, err = ls.client.InvocationService.invokeOnConnection(request, connection).Result()
+		_, err = ls.client.invocationService.invokeOnConnection(request, connection).Result()
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
@@ -247,7 +247,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 				continue
 			}
 		}
-		ls.client.InvocationService.removeEventHandler(registration.correlationID)
+		ls.client.invocationService.removeEventHandler(registration.correlationID)
 		delete(registrationMap, connection.connectionID)
 	}
 	if successful {
@@ -293,7 +293,7 @@ func (ls *listenerService) onConnectionClosedInternal(connection *Connection) {
 		registration, found := registrationMap[connection.connectionID]
 		if found {
 			delete(registrationMap, connection.connectionID)
-			ls.client.InvocationService.removeEventHandler(registration.correlationID)
+			ls.client.invocationService.removeEventHandler(registration.correlationID)
 		}
 	}
 }
@@ -324,12 +324,12 @@ func (ls *listenerService) OnHeartbeatRestoredInternal(connection *Connection) {
 }
 
 func (ls *listenerService) trySyncConnectToAllConnections() error {
-	if !ls.client.ClientConfig.NetworkConfig().IsSmartRouting() {
+	if !ls.client.clientConfig.NetworkConfig().IsSmartRouting() {
 		return nil
 	}
 	remainingTime := ls.client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
-	for ls.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
-		members := ls.client.GetCluster().GetMembers()
+	for ls.client.lifecycleService.isLive.Load().(bool) && remainingTime > 0 {
+		members := ls.client.ClusterService().GetMembers()
 		start := time.Now()
 		successful := true
 		for _, member := range members {

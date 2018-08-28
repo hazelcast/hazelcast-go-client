@@ -200,7 +200,7 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
-	target := client.GetCluster().GetMember(internal.GetCurrentTargetReplicaAddress(counter))
+	target := client.ClusterService().GetMember(internal.GetCurrentTargetReplicaAddress(counter))
 	remoteController.TerminateMember(cluster.ID, target.UUID())
 	_, err = counter.Get()
 	if _, ok := err.(*core.HazelcastConsistencyLostError); !ok {
@@ -221,7 +221,7 @@ func TestPNCounter_Reset(t *testing.T) {
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
-	target := client.GetCluster().GetMember(internal.GetCurrentTargetReplicaAddress(counter))
+	target := client.ClusterService().GetMember(internal.GetCurrentTargetReplicaAddress(counter))
 	remoteController.TerminateMember(cluster.ID, target.UUID())
 	counter.Reset()
 	currentValue, err := counter.AddAndGet(delta)

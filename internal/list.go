@@ -79,7 +79,7 @@ func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (r
 	}
 	request := proto.ListAddListenerEncodeRequest(lp.name, includeValue, false)
 	eventHandler := lp.createEventHandler(listener)
-	return lp.client.ListenerService.registerListener(request, eventHandler,
+	return lp.client.listenerService.registerListener(request, eventHandler,
 		func(registrationID string) *proto.ClientMessage {
 			return proto.ListRemoveListenerEncodeRequest(lp.name, registrationID)
 		}, func(clientMessage *proto.ClientMessage) string {
@@ -172,7 +172,7 @@ func (lp *listProxy) RemoveAll(elements []interface{}) (changed bool, err error)
 }
 
 func (lp *listProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return lp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return lp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.ListRemoveListenerEncodeRequest(lp.name, registrationID)
 	})
 }

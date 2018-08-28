@@ -63,7 +63,7 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 		connectionID:         connectionID,
 		connectionManager:    connectionManager,
 	}
-	connectionTimeout := timeutil.GetPositiveDurationOrMax(client.ClientConfig.NetworkConfig().ConnectionTimeout())
+	connectionTimeout := timeutil.GetPositiveDurationOrMax(client.clientConfig.NetworkConfig().ConnectionTimeout())
 	socket, err := net.DialTimeout("tcp", address.String(), connectionTimeout)
 	if err != nil {
 		return nil

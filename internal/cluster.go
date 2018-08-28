@@ -58,7 +58,7 @@ func newClusterService(client *HazelcastClient, config *config.Config, addressPr
 	service.ownerUUID.Store(ownerUUID) //Initialize
 	uuid := ""
 	service.uuid.Store(uuid) //Initialize
-	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
+	for _, membershipListener := range client.clientConfig.MembershipListeners() {
 		service.AddListener(membershipListener)
 	}
 	service.addressProviders = addressProviders
@@ -153,7 +153,7 @@ func (cs *clusterService) connectToCluster() error {
 		currentAttempt++
 		addresses := cs.getPossibleMemberAddresses()
 		for _, address := range addresses {
-			if !cs.client.LifecycleService.isLive.Load().(bool) {
+			if !cs.client.lifecycleService.isLive.Load().(bool) {
 				return core.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
 			}
 			err := cs.connectToAddress(address)
@@ -184,7 +184,7 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 	if err != nil {
 		return err
 	}
-	cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateConnected)
+	cs.client.lifecycleService.fireLifecycleEvent(LifecycleStateConnected)
 	return nil
 }
 
@@ -196,7 +196,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	}
 	invocation := newInvocation(request, -1, nil, connection, cs.client)
 	invocation.eventHandler = eventHandler
-	response, err := cs.client.InvocationService.sendInvocation(invocation).Result()
+	response, err := cs.client.invocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (cs *clusterService) handleMember(member *proto.Member, eventType int32) {
 		cs.memberRemoved(member)
 	}
 	cs.logMembers()
-	cs.client.PartitionService.refresh <- struct{}{}
+	cs.client.partitionService.refresh <- struct{}{}
 }
 
 func (cs *clusterService) handleMemberList(members []*proto.Member) {
@@ -289,7 +289,7 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 			cs.memberAdded(member)
 		}
 	}
-	cs.client.PartitionService.refresh <- struct{}{}
+	cs.client.partitionService.refresh <- struct{}{}
 	wg.Done() //initial member list is fetched
 }
 
@@ -389,8 +389,8 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 	address, ok := connection.endpoint.Load().(*proto.Address)
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
 	if ok && ownerConnectionAddress != nil &&
-		*address == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
-		cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
+		*address == *ownerConnectionAddress && cs.client.lifecycleService.isLive.Load().(bool) {
+		cs.client.lifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
 		cs.ownerConnectionAddress.Store(&proto.Address{})
 		cs.reconnectChan <- struct{}{}
 	}

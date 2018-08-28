@@ -257,7 +257,7 @@ func (mp *mapProxy) LockWithLeaseTime(key interface{}, lease time.Duration) (err
 		return err
 	}
 	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
-	request := proto.MapLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, mp.client.ProxyManager.nextReferenceID())
+	request := proto.MapLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, mp.client.proxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -279,7 +279,7 @@ func (mp *mapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout time.Dur
 	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
 	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := proto.MapTryLockEncodeRequest(mp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
-		mp.client.ProxyManager.nextReferenceID())
+		mp.client.proxyManager.nextReferenceID())
 	responseMessage, err := mp.invokeOnKey(request, keyData)
 	return mp.decodeToBoolAndError(responseMessage, err, proto.MapTryLockDecodeResponse)
 }
@@ -289,7 +289,7 @@ func (mp *mapProxy) Unlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := proto.MapUnlockEncodeRequest(mp.name, keyData, threadID, mp.client.ProxyManager.nextReferenceID())
+	request := proto.MapUnlockEncodeRequest(mp.name, keyData, threadID, mp.client.proxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -299,7 +299,7 @@ func (mp *mapProxy) ForceUnlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := proto.MapForceUnlockEncodeRequest(mp.name, keyData, mp.client.ProxyManager.nextReferenceID())
+	request := proto.MapForceUnlockEncodeRequest(mp.name, keyData, mp.client.proxyManager.nextReferenceID())
 	_, err = mp.invokeOnKey(request, keyData)
 	return
 }
@@ -440,7 +440,7 @@ func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 		if err != nil {
 			return nil, err
 		}
-		partitionID := mp.client.PartitionService.GetPartitionID(keyData)
+		partitionID := mp.client.partitionService.GetPartitionID(keyData)
 		partitions[partitionID] = append(partitions[partitionID], keyData)
 	}
 	for partitionID, keyList := range partitions {
@@ -498,7 +498,7 @@ func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (r
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.MapAddEntryListenerDecodeResponse(clientMessage)()
@@ -524,7 +524,7 @@ func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler,
+	return mp.client.listenerService.registerListener(request, eventHandler,
 		func(registrationID string) *proto.ClientMessage {
 			return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 		}, func(clientMessage *proto.ClientMessage) string {
@@ -551,7 +551,7 @@ func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
@@ -581,7 +581,7 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler,
+	return mp.client.listenerService.registerListener(request, eventHandler,
 		func(registrationID string) *proto.ClientMessage {
 			return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 		}, func(clientMessage *proto.ClientMessage) string {
@@ -592,7 +592,7 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
-	member := mp.client.ClusterService.GetMemberByUUID(uuid)
+	member := mp.client.clusterService.GetMemberByUUID(uuid)
 	key, _ := mp.toObject(keyData)
 	oldValue, _ := mp.toObject(oldValueData)
 	value, _ := mp.toObject(valueData)
@@ -620,7 +620,7 @@ func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *seri
 }
 
 func (mp *mapProxy) RemoveEntryListener(registrationID string) (bool, error) {
-	return mp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return mp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 	})
 }

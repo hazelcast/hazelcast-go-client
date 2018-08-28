@@ -31,7 +31,7 @@ type replicatedMapProxy struct {
 }
 
 func newReplicatedMapProxy(client *HazelcastClient, serviceName string, name string) (*replicatedMapProxy, error) {
-	partitionCount := client.PartitionService.getPartitionCount()
+	partitionCount := client.partitionService.getPartitionCount()
 	tarGetPartitionID := rand.Int31n(partitionCount)
 	return &replicatedMapProxy{proxy: &proxy{client, serviceName, name}, tarGetPartitionID: tarGetPartitionID}, nil
 }
@@ -155,7 +155,7 @@ func (rmp *replicatedMapProxy) AddEntryListener(listener interface{}) (registrat
 	}
 	request := proto.ReplicatedMapAddEntryListenerEncodeRequest(rmp.name, rmp.isSmart())
 	eventHandler := rmp.createEventHandler(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return rmp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.ReplicatedMapAddEntryListenerDecodeResponse(clientMessage)()
@@ -174,7 +174,7 @@ func (rmp *replicatedMapProxy) AddEntryListenerWithPredicate(listener interface{
 	}
 	request := proto.ReplicatedMapAddEntryListenerWithPredicateEncodeRequest(rmp.name, predicateData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerWithPredicate(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return rmp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.ReplicatedMapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
@@ -192,7 +192,7 @@ func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key i
 	}
 	request := proto.ReplicatedMapAddEntryListenerToKeyEncodeRequest(rmp.name, keyData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerToKey(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return rmp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.ReplicatedMapAddEntryListenerToKeyDecodeResponse(clientMessage)()
@@ -215,7 +215,7 @@ func (rmp *replicatedMapProxy) AddEntryListenerToKeyWithPredicate(listener inter
 	}
 	request := proto.ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(rmp.name, keyData, predicateData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerToKeyWithPredicate(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return rmp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.ReplicatedMapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
@@ -223,7 +223,7 @@ func (rmp *replicatedMapProxy) AddEntryListenerToKeyWithPredicate(listener inter
 }
 
 func (rmp *replicatedMapProxy) RemoveEntryListener(registrationID string) (removed bool, err error) {
-	return rmp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return rmp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	})
 }
@@ -231,7 +231,7 @@ func (rmp *replicatedMapProxy) RemoveEntryListener(registrationID string) (remov
 func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
-	member := rmp.client.ClusterService.GetMemberByUUID(uuid)
+	member := rmp.client.clusterService.GetMemberByUUID(uuid)
 	key, _ := rmp.toObject(keyData)
 	oldValue, _ := rmp.toObject(oldValueData)
 	value, _ := rmp.toObject(valueData)

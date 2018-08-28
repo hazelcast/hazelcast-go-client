@@ -106,7 +106,7 @@ func (cm *connectionManagerImpl) onConnectionClose(connection *Connection, cause
 		}
 	} else {
 		//Clean up unauthenticated Connection
-		cm.client.InvocationService.cleanupConnection(connection, cause)
+		cm.client.invocationService.cleanupConnection(connection, cause)
 	}
 }
 
@@ -131,7 +131,7 @@ func (cm *connectionManagerImpl) getOrConnect(address core.Address, asOwner bool
 }
 
 func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
-	ownerConnectionAddress := cm.client.ClusterService.getOwnerConnectionAddress()
+	ownerConnectionAddress := cm.client.clusterService.getOwnerConnectionAddress()
 	if ownerConnectionAddress == nil {
 		return nil
 	}
@@ -234,8 +234,8 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 }
 
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
-	uuid := cm.client.ClusterService.uuid.Load().(string)
-	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	uuid := cm.client.clusterService.uuid.Load().(string)
+	ownerUUID := cm.client.clusterService.ownerUUID.Load().(string)
 	clientType := proto.ClientType
 	clientVersion := "ALPHA" //TODO This should be replace with a build time version variable, BuildInfo etc.
 	var request *proto.ClientMessage
@@ -251,7 +251,7 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 			clientVersion,
 		)
 	} else {
-		credsData, err := cm.client.SerializationService.ToData(cm.credentials)
+		credsData, err := cm.client.serializationService.ToData(cm.credentials)
 		if err != nil {
 			log.Panic("Credentials cannot be serialized!")
 		}
@@ -286,7 +286,7 @@ func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *
 func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bool) error {
 	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := cm.encodeAuthenticationRequest(asOwner)
-	invocationResult := cm.client.InvocationService.invokeOnConnection(request, connection)
+	invocationResult := cm.client.invocationService.invokeOnConnection(request, connection)
 	result, err := invocationResult.ResultWithTimeout(cm.client.HeartBeatService.heartBeatTimeout)
 	if err != nil {
 		return err
@@ -302,9 +302,9 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 		cm.connections[address.String()] = connection
 		go cm.fireConnectionAddedEvent(connection)
 		if asOwner {
-			cm.client.ClusterService.ownerConnectionAddress.Store(address)
-			cm.client.ClusterService.ownerUUID.Store(ownerUUID)
-			cm.client.ClusterService.uuid.Store(uuid)
+			cm.client.clusterService.ownerConnectionAddress.Store(address)
+			cm.client.clusterService.ownerUUID.Store(ownerUUID)
+			cm.client.clusterService.uuid.Store(uuid)
 		}
 	case credentialsFailed:
 		return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
@@ -325,14 +325,14 @@ func (cm *connectionManagerImpl) fireConnectionAddedEvent(connection *Connection
 }
 
 func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner bool) (*Connection, error) {
-	if !asOwner && cm.client.ClusterService.getOwnerConnectionAddress() == nil {
+	if !asOwner && cm.client.clusterService.getOwnerConnectionAddress() == nil {
 		return nil, core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
 	if cm.isAlive.Load() == false {
 		return nil, core.NewHazelcastClientNotActiveError("Connection Manager is not active", nil)
 	}
 
-	invocationService := cm.client.InvocationService.(*invocationServiceImpl)
+	invocationService := cm.client.invocationService.(*invocationServiceImpl)
 	connectionID := cm.NextConnectionID()
 	con := newConnection(cm.client, address, invocationService.handleResponse, connectionID, cm)
 	if con == nil {

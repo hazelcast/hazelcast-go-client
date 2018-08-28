@@ -76,7 +76,7 @@ func (ps *partitionService) GetPartitionID(keyData *serialization.Data) int32 {
 }
 
 func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error) {
-	data, err := ps.client.SerializationService.ToData(key)
+	data, err := ps.client.serializationService.ToData(key)
 	if err != nil {
 		return 0, err
 	}
@@ -90,7 +90,7 @@ func (ps *partitionService) doRefresh() {
 		return
 	}
 	request := proto.ClientGetPartitionsEncodeRequest()
-	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
+	result, err := ps.client.invocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		log.Println("Error while fetching cluster partition table! ", err)
 		return

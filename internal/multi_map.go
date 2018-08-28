@@ -160,7 +160,7 @@ func (mmp *multiMapProxy) AddEntryListener(listener interface{}, includeValue bo
 	}
 	request := proto.MultiMapAddEntryListenerEncodeRequest(mmp.name, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandler(listener)
-	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mmp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.MultiMapAddEntryListenerDecodeResponse(clientMessage)()
@@ -179,7 +179,7 @@ func (mmp *multiMapProxy) AddEntryListenerToKey(listener interface{}, key interf
 	}
 	request := proto.MultiMapAddEntryListenerToKeyEncodeRequest(mmp.name, keyData, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandlerToKey(listener)
-	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mmp.client.listenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) string {
 		return proto.MultiMapAddEntryListenerToKeyDecodeResponse(clientMessage)()
@@ -187,7 +187,7 @@ func (mmp *multiMapProxy) AddEntryListenerToKey(listener interface{}, key interf
 }
 
 func (mmp *multiMapProxy) RemoveEntryListener(registrationID string) (removed bool, err error) {
-	return mmp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return mmp.client.listenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
 	})
 }
@@ -203,7 +203,7 @@ func (mmp *multiMapProxy) LockWithLeaseTime(key interface{}, lease time.Duration
 	}
 	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := proto.MultiMapLockEncodeRequest(mmp.name, keyData, threadID, leaseInMillis,
-		mmp.client.ProxyManager.nextReferenceID())
+		mmp.client.proxyManager.nextReferenceID())
 	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
@@ -235,7 +235,7 @@ func (mmp *multiMapProxy) TryLockWithTimeoutAndLease(key interface{}, timeout ti
 	timeoutInMillis := timeutil.GetTimeInMilliSeconds(timeout)
 	leaseInMillis := timeutil.GetTimeInMilliSeconds(lease)
 	request := proto.MultiMapTryLockEncodeRequest(mmp.name, keyData, threadID, leaseInMillis, timeoutInMillis,
-		mmp.client.ProxyManager.nextReferenceID())
+		mmp.client.proxyManager.nextReferenceID())
 	responseMessage, err := mmp.invokeOnKey(request, keyData)
 	return mmp.decodeToBoolAndError(responseMessage, err, proto.MultiMapTryLockDecodeResponse)
 }
@@ -245,7 +245,7 @@ func (mmp *multiMapProxy) Unlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := proto.MultiMapUnlockEncodeRequest(mmp.name, keyData, threadID, mmp.client.ProxyManager.nextReferenceID())
+	request := proto.MultiMapUnlockEncodeRequest(mmp.name, keyData, threadID, mmp.client.proxyManager.nextReferenceID())
 	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
@@ -255,7 +255,7 @@ func (mmp *multiMapProxy) ForceUnlock(key interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	request := proto.MultiMapForceUnlockEncodeRequest(mmp.name, keyData, mmp.client.ProxyManager.nextReferenceID())
+	request := proto.MultiMapForceUnlockEncodeRequest(mmp.name, keyData, mmp.client.proxyManager.nextReferenceID())
 	_, err = mmp.invokeOnKey(request, keyData)
 	return
 }
@@ -263,7 +263,7 @@ func (mmp *multiMapProxy) ForceUnlock(key interface{}) (err error) {
 func (mmp *multiMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
 	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
-	member := mmp.client.ClusterService.GetMemberByUUID(uuid)
+	member := mmp.client.clusterService.GetMemberByUUID(uuid)
 	key, _ := mmp.toObject(keyData)
 	oldValue, _ := mmp.toObject(oldValueData)
 	value, _ := mmp.toObject(valueData)
