@@ -25,6 +25,9 @@ import (
 
 	"time"
 
+	"crypto/tls"
+	"crypto/x509"
+
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/iputil"
@@ -43,13 +46,22 @@ var CloudURLBaseProperty = property.NewHazelcastPropertyString("hazelcast.client
 type nodeDiscoverer func() (map[string]core.Address, error)
 
 type HazelcastCloud struct {
+	client            http.Client
 	endPointURL       string
 	connectionTimeout time.Duration
 	discoverNodes     nodeDiscoverer
 }
 
-func NewHazelcastCloud(endpointURL string, connectionTimeout time.Duration) *HazelcastCloud {
+func NewHazelcastCloud(endpointURL string, connectionTimeout time.Duration, certPool *x509.CertPool) *HazelcastCloud {
 	hzCloud := &HazelcastCloud{}
+	hzCloud.client = http.Client{
+		Timeout: hzCloud.connectionTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: certPool,
+			},
+		},
+	}
 	hzCloud.endPointURL = endpointURL
 	hzCloud.connectionTimeout = connectionTimeout
 	hzCloud.discoverNodes = hzCloud.discoverNodesInternal
@@ -62,27 +74,26 @@ func (hzC *HazelcastCloud) discoverNodesInternal() (map[string]core.Address, err
 
 func (hzC *HazelcastCloud) callService() (map[string]core.Address, error) {
 	url := hzC.endPointURL
-	client := http.Client{
-		Timeout: hzC.connectionTimeout,
-	}
-	resp, err := client.Get(url)
-	// Check certificates
-	if !hzC.checkCertificates(resp) {
-		return nil, core.NewHazelcastCertificateError("invalid certificate from hazelcast.cloud endpoint",
-			nil)
-	}
-
+	resp, err := hzC.client.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, core.NewHazelcastIOError("got a status :"+resp.Status, nil)
 	}
+	// Check certificates
+	if !hzC.checkCertificates(resp) {
+		return nil, core.NewHazelcastCertificateError("invalid certificate from hazelcast.cloud endpoint",
+			nil)
+	}
 
 	return hzC.parseResponse(resp)
 }
 
 func (hzC *HazelcastCloud) checkCertificates(response *http.Response) bool {
+	if response.TLS == nil {
+		return false
+	}
 	for _, cert := range response.TLS.PeerCertificates {
 		if !cert.BasicConstraintsValid {
 			return false

@@ -133,9 +133,7 @@ func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	clientConfig := hazelcast.NewConfig()
-	clientConfig.NetworkConfig().AddAddress("127.0.0.1:5701")
-	client, err := hazelcast.NewClientWithConfig(clientConfig)
+	client, err := hazelcast.NewClient()
 	defer client.Shutdown()
 	if err != nil {
 		t.Fatal(err)
