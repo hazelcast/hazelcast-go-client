@@ -35,6 +35,7 @@ func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration)
 		NewHazelcastCloud(
 			endpointURL,
 			connectionTimeout,
+			nil,
 		),
 	)
 }

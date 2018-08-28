@@ -34,6 +34,7 @@ func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duratio
 		NewHazelcastCloud(
 			endpointURL,
 			connectionTimeout,
+			nil,
 		),
 	)
 }
