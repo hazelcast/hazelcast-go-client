@@ -34,8 +34,6 @@ const (
 	memberRemoved  int32 = 2
 )
 
-var wg sync.WaitGroup
-
 type clusterService struct {
 	client                 *HazelcastClient
 	config                 *config.Config
@@ -46,6 +44,7 @@ type clusterService struct {
 	listeners              atomic.Value
 	addressProviders       []AddressProvider
 	mu                     sync.Mutex
+	wg                     *sync.WaitGroup
 	reconnectChan          chan struct{}
 }
 
@@ -54,6 +53,7 @@ func newClusterService(client *HazelcastClient, config *config.Config, addressPr
 	service.ownerConnectionAddress.Store(&proto.Address{})
 	service.members.Store(make([]*proto.Member, 0))       //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
+	service.wg = new(sync.WaitGroup)
 	ownerUUID := ""
 	service.ownerUUID.Store(ownerUUID) //Initialize
 	uuid := ""
@@ -189,7 +189,7 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 }
 
 func (cs *clusterService) initMembershipListener(connection *Connection) error {
-	wg.Add(1)
+	cs.wg.Add(1)
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *proto.ClientMessage) {
 		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList, cs.handleMemberAttributeChange)
@@ -201,7 +201,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 		return err
 	}
 	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
-	wg.Wait() // Wait until the initial member list is fetched.
+	cs.wg.Wait() // Wait until the initial member list is fetched.
 	cs.logMembers()
 	log.Println("Registered membership listener with ID ", registrationID)
 	return nil
@@ -290,7 +290,7 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 		}
 	}
 	cs.client.PartitionService.refresh <- struct{}{}
-	wg.Done() //initial member list is fetched
+	cs.wg.Done() //initial member list is fetched
 }
 
 func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {
@@ -388,6 +388,8 @@ func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
 func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
 	address, ok := connection.endpoint.Load().(*proto.Address)
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
 	if ok && ownerConnectionAddress != nil &&
 		*address == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
 		cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
@@ -401,5 +403,7 @@ func (cs *clusterService) onConnectionOpened(connection *Connection) {
 }
 
 func (cs *clusterService) shutdown() {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
 	close(cs.reconnectChan)
 }

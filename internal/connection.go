@@ -62,6 +62,7 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 		readBuffer:           make([]byte, 0),
 		connectionID:         connectionID,
 		connectionManager:    connectionManager,
+		status:               0,
 	}
 	connectionTimeout := timeutil.GetPositiveDurationOrMax(client.ClientConfig.NetworkConfig().ConnectionTimeout())
 	socket, err := net.DialTimeout("tcp", address.String(), connectionTimeout)
@@ -176,6 +177,7 @@ func (c *Connection) close(err error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
+	//TODO log close message
 	close(c.closed)
 	c.closedTime.Store(time.Now())
 	c.connectionManager.onConnectionClose(c, err)

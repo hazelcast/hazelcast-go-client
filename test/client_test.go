@@ -86,7 +86,8 @@ func TestConnectionTimeout(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	cfg := hazelcast.NewConfig()
 	cfg.NetworkConfig().SetConnectionTimeout(0)
-	_, err := hazelcast.NewClient()
+	client, err := hazelcast.NewClient()
+	defer client.Shutdown()
 	assert.ErrorNil(t, err)
 }
 
@@ -128,14 +129,11 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
-
 func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-	clientConfig := hazelcast.NewConfig()
-	clientConfig.NetworkConfig().AddAddress("127.0.0.1:5701")
-	client, err := hazelcast.NewClientWithConfig(clientConfig)
+	client, err := hazelcast.NewClient()
 	defer client.Shutdown()
 	if err != nil {
 		t.Fatal(err)
