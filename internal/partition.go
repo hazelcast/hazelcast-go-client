@@ -34,7 +34,7 @@ type partitionService struct {
 }
 
 func newPartitionService(client *HazelcastClient) *partitionService {
-	return &partitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 1)}
+	return &partitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 10)}
 }
 
 func (ps *partitionService) start() {
