@@ -46,10 +46,12 @@ type clusterService struct {
 	mu                     sync.Mutex
 	wg                     *sync.WaitGroup
 	reconnectChan          chan struct{}
+	cancelChan             chan struct{}
 }
 
 func newClusterService(client *HazelcastClient, config *config.Config, addressProviders []AddressProvider) *clusterService {
-	service := &clusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1)}
+	service := &clusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1),
+		cancelChan: make(chan struct{}, 1)}
 	service.ownerConnectionAddress.Store(&proto.Address{})
 	service.members.Store(make([]*proto.Member, 0))       //Initialize
 	service.listeners.Store(make(map[string]interface{})) //Initialize
@@ -127,11 +129,12 @@ func createAddressFromString(addressList []string) []proto.Address {
 
 func (cs *clusterService) process() {
 	for {
-		_, alive := <-cs.reconnectChan
-		if !alive {
+		select {
+		case <-cs.reconnectChan:
+			cs.reconnect()
+		case <-cs.cancelChan:
 			return
 		}
-		cs.reconnect()
 	}
 }
 
@@ -388,8 +391,6 @@ func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
 func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
 	address, ok := connection.endpoint.Load().(*proto.Address)
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
 	if ok && ownerConnectionAddress != nil &&
 		*address == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
 		cs.client.LifecycleService.fireLifecycleEvent(LifecycleStateDisconnected)
@@ -403,7 +404,5 @@ func (cs *clusterService) onConnectionOpened(connection *Connection) {
 }
 
 func (cs *clusterService) shutdown() {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	close(cs.reconnectChan)
+	cs.cancelChan <- struct{}{}
 }
