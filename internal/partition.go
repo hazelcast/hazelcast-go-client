@@ -34,7 +34,9 @@ type partitionService struct {
 }
 
 func newPartitionService(client *HazelcastClient) *partitionService {
-	return &partitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 10)}
+	service := &partitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 1)}
+	service.mp.Store(make(map[int32]*proto.Address))
+	return service
 }
 
 func (ps *partitionService) start() {
@@ -57,11 +59,13 @@ func (ps *partitionService) start() {
 }
 
 func (ps *partitionService) getPartitionCount() int32 {
+	ps.waitForPartitionsFetchedOnce()
 	partitions := ps.mp.Load().(map[int32]*proto.Address)
 	return int32(len(partitions))
 }
 
 func (ps *partitionService) partitionOwner(partitionID int32) (*proto.Address, bool) {
+	ps.waitForPartitionsFetchedOnce()
 	partitions := ps.mp.Load().(map[int32]*proto.Address)
 	address, ok := partitions[partitionID]
 	return address, ok
@@ -86,13 +90,16 @@ func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error
 func (ps *partitionService) doRefresh() {
 	connection := ps.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
-		log.Println("Error while fetching cluster partition table!")
+		// TODO:: log this at debug level
+		//log.Println("Error while fetching cluster partition table!")
 		return
 	}
 	request := proto.ClientGetPartitionsEncodeRequest()
 	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
-		log.Println("Error while fetching cluster partition table! ", err)
+		if ps.client.LifecycleService.isLive.Load() == true {
+			log.Println("Error while fetching cluster partition table! ", err)
+		}
 		return
 	}
 	ps.processPartitionResponse(result)
@@ -112,4 +119,10 @@ func (ps *partitionService) processPartitionResponse(result *proto.ClientMessage
 
 func (ps *partitionService) shutdown() {
 	close(ps.cancel)
+}
+
+func (ps *partitionService) waitForPartitionsFetchedOnce() {
+	for len(ps.mp.Load().(map[int32]*proto.Address)) == 0 && ps.client.ConnectionManager.IsAlive() {
+		ps.doRefresh()
+	}
 }

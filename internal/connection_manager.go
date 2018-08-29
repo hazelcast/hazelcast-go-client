@@ -54,6 +54,7 @@ type connectionManager interface {
 	addListener(listener connectionListener)
 	onConnectionClose(connection *Connection, cause error)
 	NextConnectionID() int64
+	IsAlive() bool
 	shutdown()
 }
 
@@ -136,6 +137,10 @@ func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
 		return nil
 	}
 	return cm.getActiveConnection(ownerConnectionAddress)
+}
+
+func (cm *connectionManagerImpl) IsAlive() bool {
+	return cm.isAlive.Load().(bool)
 }
 
 func (cm *connectionManagerImpl) shutdown() {
