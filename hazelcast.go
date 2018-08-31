@@ -87,13 +87,13 @@ type Instance interface {
 	// Shutdown shuts down this Instance.
 	Shutdown()
 
-	// GetCluster returns the Cluster this instance is part of.
+	// Cluster returns the Cluster this instance is part of.
 	// Cluster interface allows you to add listener for membership
 	// events and learn more about the cluster this Hazelcast
 	// instance is part of.
-	GetCluster() core.Cluster
+	Cluster() core.Cluster
 
-	// GetLifecycleService returns the lifecycle service for this instance. LifecycleService service allows you
+	// LifecycleService returns the lifecycle service for this instance. LifecycleService service allows you
 	// to listen for the lifecycle events.
-	GetLifecycleService() core.LifecycleService
+	LifecycleService() core.LifecycleService
 }

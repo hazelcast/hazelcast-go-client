@@ -97,7 +97,7 @@ func (ps *partitionService) doRefresh() {
 	request := proto.ClientGetPartitionsEncodeRequest()
 	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
-		if ps.client.LifecycleService.isLive.Load() == true {
+		if ps.client.lifecycleService.isLive.Load() == true {
 			log.Println("Error while fetching cluster partition table! ", err)
 		}
 		return
