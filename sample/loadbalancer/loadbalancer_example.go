@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loadbalancer
+package main
 
 import (
-	"testing"
+	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/test"
 )
 
 type customLoadBalancer struct {
@@ -39,31 +38,21 @@ func (clb *customLoadBalancer) Next() core.Member {
 	return nil
 }
 
-func TestCustomLoadBalancer(t *testing.T) {
-
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-
-	remoteController.StartMember(cluster.ID)
-	remoteController.StartMember(cluster.ID)
+func main() {
 
 	cfg := hazelcast.NewConfig()
 	lb := &customLoadBalancer{}
 	cfg.SetLoadBalancer(lb)
 
-	client, err := hazelcast.NewClientWithConfig(cfg)
-	defer client.Shutdown()
-	if err != nil {
-		t.Fatal(err)
-	}
+	client, _ := hazelcast.NewClientWithConfig(cfg)
 
 	addressMp := make(map[core.Member]struct{})
 	for i := 0; i < 100; i++ {
 		addressMp[lb.Next()] = struct{}{}
 	}
 
-	if len(addressMp) != 1 {
-		t.Error("Custom loadbalancer should be using only one member.")
-	}
+	// should print 1
+	log.Println(len(addressMp))
 
+	client.Shutdown()
 }
