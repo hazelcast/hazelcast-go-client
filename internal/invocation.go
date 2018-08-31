@@ -395,7 +395,7 @@ func convertToError(clientMessage *proto.ClientMessage) *proto.Error {
 }
 
 func (is *invocationServiceImpl) handleError(invocation *invocation, err error) {
-	if !is.client.LifecycleService.isLive.Load().(bool) {
+	if !is.client.lifecycleService.isLive.Load().(bool) {
 		invocation.complete(core.NewHazelcastClientNotActiveError("client is shutdown", err))
 		return
 	}

@@ -59,7 +59,7 @@ func (hbs *heartBeatService) start() {
 	go func() {
 		ticker := time.NewTicker(hbs.heartBeatInterval)
 		for {
-			if !hbs.client.LifecycleService.isLive.Load().(bool) {
+			if !hbs.client.lifecycleService.isLive.Load().(bool) {
 				return
 			}
 			select {

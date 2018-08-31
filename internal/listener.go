@@ -328,8 +328,8 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 		return nil
 	}
 	remainingTime := ls.client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
-	for ls.client.LifecycleService.isLive.Load().(bool) && remainingTime > 0 {
-		members := ls.client.GetCluster().GetMembers()
+	for ls.client.lifecycleService.isLive.Load().(bool) && remainingTime > 0 {
+		members := ls.client.Cluster().GetMembers()
 		start := time.Now()
 		successful := true
 		for _, member := range members {

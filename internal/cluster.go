@@ -156,7 +156,7 @@ func (cs *clusterService) connectToCluster() error {
 		currentAttempt++
 		addresses := cs.getPossibleMemberAddresses()
 		for _, address := range addresses {
-			if !cs.client.LifecycleService.isLive.Load().(bool) {
+			if !cs.client.lifecycleService.isLive.Load().(bool) {
 				return core.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
 			}
 			err := cs.connectToAddress(address)
@@ -187,7 +187,7 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 	if err != nil {
 		return err
 	}
-	cs.client.LifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)
+	cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)
 	return nil
 }
 
@@ -392,8 +392,8 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 	address, ok := connection.endpoint.Load().(*proto.Address)
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
 	if ok && ownerConnectionAddress != nil &&
-		*address == *ownerConnectionAddress && cs.client.LifecycleService.isLive.Load().(bool) {
-		cs.client.LifecycleService.fireLifecycleEvent(core.LifecycleStateDisconnected)
+		*address == *ownerConnectionAddress && cs.client.lifecycleService.isLive.Load().(bool) {
+		cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateDisconnected)
 		cs.ownerConnectionAddress.Store(&proto.Address{})
 		cs.reconnectChan <- struct{}{}
 	}

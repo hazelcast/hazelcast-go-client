@@ -42,7 +42,7 @@ func TestRoundRobinLoadBalancer(t *testing.T) {
 	}
 
 	addressMp := make(map[core.Member]struct{})
-	expected := len(client.GetCluster().GetMembers())
+	expected := len(client.Cluster().GetMembers())
 	for i := 0; i < expected; i++ {
 		addressMp[lb.Next()] = struct{}{}
 	}
@@ -73,7 +73,7 @@ func TestRoundRobinLoadBalancerOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := client.GetCluster().GetMembers()
+	expected := client.Cluster().GetMembers()
 	for j := 0; j < 50; j++ {
 		for i := 0; i < len(expected); i++ {
 			member := lb.Next()

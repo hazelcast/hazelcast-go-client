@@ -33,7 +33,7 @@ type HazelcastClient struct {
 	ClientConfig         *config.Config
 	PartitionService     *partitionService
 	SerializationService *serialization.Service
-	LifecycleService     *lifecycleService
+	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
 	ListenerService      *listenerService
 	ClusterService       *clusterService
@@ -135,12 +135,12 @@ func (c *HazelcastClient) GetDistributedObject(serviceName string, name string) 
 	return c.ProxyManager.getOrCreateProxy(serviceName, name)
 }
 
-func (c *HazelcastClient) GetCluster() core.Cluster {
+func (c *HazelcastClient) Cluster() core.Cluster {
 	return c.ClusterService
 }
 
-func (c *HazelcastClient) GetLifecycleService() core.LifecycleService {
-	return c.LifecycleService
+func (c *HazelcastClient) LifecycleService() core.LifecycleService {
+	return c.lifecycleService
 }
 
 func (c *HazelcastClient) init() error {
@@ -150,7 +150,7 @@ func (c *HazelcastClient) init() error {
 	}
 
 	c.credentials = c.initCredentials(c.ClientConfig)
-	c.LifecycleService = newLifecycleService(c.ClientConfig)
+	c.lifecycleService = newLifecycleService(c.ClientConfig)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
 	c.InvocationService = newInvocationService(c)
@@ -171,7 +171,7 @@ func (c *HazelcastClient) init() error {
 		return err
 	}
 	c.HeartBeatService.start()
-	c.LifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
+	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
 }
 
@@ -254,14 +254,14 @@ func (c *HazelcastClient) getConnectionTimeout() time.Duration {
 }
 
 func (c *HazelcastClient) Shutdown() {
-	if c.LifecycleService.isLive.Load().(bool) {
-		c.LifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
+	if c.lifecycleService.isLive.Load().(bool) {
+		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
 		c.ConnectionManager.shutdown()
 		c.PartitionService.shutdown()
 		c.ClusterService.shutdown()
 		c.InvocationService.shutdown()
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
-		c.LifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
+		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
 }
