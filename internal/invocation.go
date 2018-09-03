@@ -252,8 +252,7 @@ func (is *invocationServiceImpl) process() {
 }
 
 func (is *invocationServiceImpl) nextCorrelationID() int64 {
-	is.nextCorrelation = is.nextCorrelation + 1
-	return is.nextCorrelation
+	return atomic.AddInt64(&is.nextCorrelation, 1)
 }
 
 func (is *invocationServiceImpl) getNextAddress() core.Address {
@@ -327,7 +326,6 @@ func (is *invocationServiceImpl) sendToAddress(invocation *invocation, address c
 }
 
 func (is *invocationServiceImpl) registerInvocation(invocation *invocation) {
-	is.invocationsLock.Lock()
 	message := invocation.request.Load().(*proto.ClientMessage)
 	correlationID := is.nextCorrelationID()
 	message.SetCorrelationID(correlationID)
@@ -338,6 +336,7 @@ func (is *invocationServiceImpl) registerInvocation(invocation *invocation) {
 		is.eventHandlers[correlationID] = invocation
 		is.eventHandlersLock.Unlock()
 	}
+	is.invocationsLock.Lock()
 	is.invocations[correlationID] = invocation
 	is.invocationsLock.Unlock()
 }
