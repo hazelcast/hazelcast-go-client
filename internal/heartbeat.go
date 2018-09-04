@@ -76,12 +76,13 @@ func (hbs *heartBeatService) start() {
 func (hbs *heartBeatService) heartBeat() {
 	for _, connection := range hbs.client.ConnectionManager.getActiveConnections() {
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
+		timeSinceLastWrite := time.Since(connection.lastWrite.Load().(time.Time))
 		if timeSinceLastRead > hbs.heartBeatTimeout {
 			if connection.heartBeating {
 				hbs.HeartbeatStopped(connection)
 			}
 		}
-		if timeSinceLastRead > hbs.heartBeatInterval {
+		if timeSinceLastWrite > hbs.heartBeatInterval {
 			connection.lastHeartbeatRequested.Store(time.Now())
 			request := proto.ClientPingEncodeRequest()
 			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)

@@ -18,8 +18,11 @@ import (
 	"sync"
 	"testing"
 
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,4 +61,50 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	assert.Equalf(t, false, timeout, "heartbeatRestored listener failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestServerShouldNotCloseClientWhenClientOnlyListening(t *testing.T) {
+	heartbeatConfig, _ := Read("heartbeat_config.xml")
+	cluster, _ = remoteController.CreateCluster("", heartbeatConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+
+	lifecycleListener := lifecycleListener2{collector: make([]string, 0)}
+	config := hazelcast.NewConfig()
+	config.AddLifecycleListener(&lifecycleListener)
+	config.SetProperty(property.HeartbeatInterval.Name(), "1000")
+	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+
+	client2, _ := hazelcast.NewClient()
+	defer client2.Shutdown()
+	topicName := "topicName"
+	topic, _ := client.GetTopic(topicName)
+	listener := &topicMessageListener{}
+	topic.AddMessageListener(listener)
+	topic2, _ := client2.GetTopic(topicName)
+	begin := time.Now()
+	for time.Since(begin) < 16*time.Second {
+		topic2.Publish("message")
+	}
+	assert.Equal(t, len(lifecycleListener.collector), 0)
+
+}
+
+type topicMessageListener struct {
+}
+
+func (l *topicMessageListener) OnMessage(message core.Message) error {
+	return nil
+}
+
+type lifecycleListener2 struct {
+	collector []string
+}
+
+func (l *lifecycleListener2) LifecycleStateChanged(newState string) {
+	if newState == core.LifecycleStateDisconnected {
+		l.collector = append(l.collector, newState)
+
+	}
 }
