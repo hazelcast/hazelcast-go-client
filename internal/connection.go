@@ -51,7 +51,7 @@ type Connection struct {
 }
 
 func newConnection(client *HazelcastClient, address core.Address, handleResponse func(interface{}),
-	connectionID int64, connectionManager connectionManager) *Connection {
+	connectionID int64, connectionManager connectionManager) (*Connection, error) {
 	builder := &clientMessageBuilder{handleResponse: handleResponse,
 		incompleteMessages: make(map[int64]*proto.ClientMessage)}
 	connection := Connection{pending: make(chan *proto.ClientMessage, 1),
@@ -67,7 +67,7 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 	connectionTimeout := timeutil.GetPositiveDurationOrMax(client.ClientConfig.NetworkConfig().ConnectionTimeout())
 	socket, err := net.DialTimeout("tcp", address.String(), connectionTimeout)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	connection.socket = socket
 	connection.lastRead.Store(time.Now())
@@ -78,7 +78,7 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 	socket.Write([]byte("CB2"))
 	go connection.writePool()
 	go connection.read()
-	return &connection
+	return &connection, nil
 }
 
 func (c *Connection) isAlive() bool {
