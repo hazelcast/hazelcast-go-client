@@ -48,14 +48,13 @@ type invocationResult interface {
 
 func newInvocation(request *proto.ClientMessage, partitionID int32, address core.Address,
 	connection *Connection, client *HazelcastClient) *invocation {
-	invocationTimeout := client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
 	invocation := &invocation{
 		partitionID:     partitionID,
 		address:         address,
 		boundConnection: connection,
 		response:        make(chan interface{}, 1),
 		isComplete:      0,
-		deadline:        time.Now().Add(invocationTimeout),
+		deadline:        time.Now().Add(client.InvocationService.InvocationTimeout()),
 	}
 	invocation.request.Store(request)
 	return invocation
@@ -106,6 +105,7 @@ type invocationService interface {
 	cleanupConnection(connection *Connection, e error)
 	removeEventHandler(correlationID int64)
 	sendInvocation(invocation *invocation) invocationResult
+	InvocationTimeout() time.Duration
 	handleResponse(response interface{})
 	shutdown()
 }
@@ -210,6 +210,8 @@ type invocationServiceImpl struct {
 	nextCorrelation   int64
 	invocationsLock   sync.RWMutex
 	invocations       map[int64]*invocation
+	invocationTimeout time.Duration
+	retryPause        time.Duration
 	eventHandlersLock sync.RWMutex
 	eventHandlers     map[int64]*invocation
 	responseChannel   chan interface{}
@@ -224,7 +226,8 @@ func newInvocationService(client *HazelcastClient) *invocationServiceImpl {
 		eventHandlers:   make(map[int64]*invocation),
 		responseChannel: make(chan interface{}, 1),
 	}
-
+	service.initInvocationTimeout()
+	service.initRetryPause()
 	service.isShutdown.Store(false)
 	if client.ClientConfig.NetworkConfig().IsSmartRouting() {
 		service.invoke = service.invokeSmart
@@ -234,6 +237,18 @@ func newInvocationService(client *HazelcastClient) *invocationServiceImpl {
 	go service.process()
 	service.client.ConnectionManager.addListener(service)
 	return service
+}
+
+func (is *invocationServiceImpl) InvocationTimeout() time.Duration {
+	return is.invocationTimeout
+}
+
+func (is *invocationServiceImpl) initInvocationTimeout() {
+	is.invocationTimeout = is.client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
+}
+
+func (is *invocationServiceImpl) initRetryPause() {
+	is.retryPause = is.client.properties.GetPositiveDuration(property.InvocationRetryPause)
 }
 
 func (is *invocationServiceImpl) process() {
@@ -409,9 +424,9 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 		invocation.complete(core.NewHazelcastTimeoutError("invocation timed out by"+timeSinceDeadline.String(), nil))
 		return
 	}
-	retryPauseTime := is.client.properties.GetPositiveDuration(property.InvocationRetryPause)
+
 	if is.shouldRetryInvocation(invocation, err) {
-		time.AfterFunc(retryPauseTime, func() {
+		time.AfterFunc(is.retryPause, func() {
 			is.retryInvocation(invocation, err)
 		})
 		return
