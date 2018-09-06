@@ -119,6 +119,8 @@ func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (co
 		return newPNCounterProxy(pm.client, serviceName, name)
 	} else if bufutil.ServiceNameIDGenerator == serviceName {
 		return newFlakeIDGenerator(pm.client, serviceName, name)
+	} else if bufutil.ServiceNameReliableTopic == serviceName {
+		return newReliableTopicProxy(pm.client, serviceName, name)
 	}
 	return nil, core.NewHazelcastClientServiceNotFoundError(fmt.Sprintf("no factory registered for service: %s",
 		serviceName), nil)

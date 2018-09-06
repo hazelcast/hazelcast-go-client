@@ -55,6 +55,9 @@ type Config struct {
 
 	// clientName is the name of client with this config.
 	clientName string
+
+	// reliableTopicConfigMap is mapping of names to ReliableTopicConfigs
+	reliableTopicConfigMap map[string]*ReliableTopicConfig
 }
 
 // New returns a new Config with default configuration.
@@ -67,12 +70,29 @@ func New() *Config {
 		flakeIDGeneratorConfigMap: make(map[string]*FlakeIDGeneratorConfig),
 		properties:                make(Properties),
 		securityConfig:            new(SecurityConfig),
+		reliableTopicConfigMap:    make(map[string]*ReliableTopicConfig),
 	}
 }
 
 // SecurityConfig returns the security config for this client.
 func (cc *Config) SecurityConfig() *SecurityConfig {
 	return cc.securityConfig
+}
+
+// GetReliableTopicConfig returns the reliable topic config for this client.
+func (cc *Config) GetReliableTopicConfig(name string) *ReliableTopicConfig {
+	if cfg, found := cc.reliableTopicConfigMap[name]; found {
+		return cfg
+	}
+	_, found := cc.reliableTopicConfigMap["default"]
+	if !found {
+		defConfig := NewReliableTopicConfig("default")
+		cc.reliableTopicConfigMap["default"] = defConfig
+	}
+	config := NewReliableTopicConfig(name)
+	cc.reliableTopicConfigMap[name] = config
+	return config
+
 }
 
 // SetSecurityConfig sets the security config for this client.
@@ -83,6 +103,11 @@ func (cc *Config) SetSecurityConfig(securityConfig *SecurityConfig) {
 // MembershipListeners returns membership listeners.
 func (cc *Config) MembershipListeners() []interface{} {
 	return cc.membershipListeners
+}
+
+// AddReliableTopicConfig adds the given reliable topic config to reliable topic configurations.
+func (cc *Config) AddReliableTopicConfig(config *ReliableTopicConfig) {
+	cc.reliableTopicConfigMap[config.Name()] = config
 }
 
 // LifecycleListeners returns lifecycle listeners.

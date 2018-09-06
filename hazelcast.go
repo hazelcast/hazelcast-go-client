@@ -71,6 +71,9 @@ type Client interface {
 	// GetTopic returns the distributed topic instance with the specified name.
 	GetTopic(name string) (core.Topic, error)
 
+	// GetReliableTopic returns the distributed reliable topic instance with the specified name.
+	GetReliableTopic(name string) (core.Topic, error)
+
 	// GetMultiMap returns the distributed multi-map instance with the specified name.
 	GetMultiMap(name string) (core.MultiMap, error)
 

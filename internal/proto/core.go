@@ -507,10 +507,10 @@ func GetMapListenerFlags(listener interface{}) (int32, error) {
 type TopicMessage struct {
 	messageObject    interface{}
 	publishTime      time.Time
-	publishingMember *Member
+	publishingMember core.Member
 }
 
-func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember *Member) *TopicMessage {
+func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember core.Member) *TopicMessage {
 	return &TopicMessage{
 		messageObject:    messageObject,
 		publishTime:      timeutil.ConvertMillisToUnixTime(publishTime),
