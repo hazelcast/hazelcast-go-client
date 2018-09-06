@@ -120,6 +120,14 @@ func (c *HazelcastClient) GetTopic(name string) (core.Topic, error) {
 	return topic.(core.Topic), nil
 }
 
+func (c *HazelcastClient) GetReliableTopic(name string) (core.Topic, error) {
+	reliableTopic, err := c.GetDistributedObject(bufutil.ServiceNameReliableTopic, name)
+	if err != nil {
+		return nil, err
+	}
+	return reliableTopic.(core.Topic), nil
+}
+
 func (c *HazelcastClient) GetQueue(name string) (core.Queue, error) {
 	queue, err := c.GetDistributedObject(bufutil.ServiceNameQueue, name)
 	if err != nil {

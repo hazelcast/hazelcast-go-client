@@ -68,7 +68,7 @@ func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) f
 		proto.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
 			member := tp.client.ClusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
-			itemEvent := proto.NewTopicMessage(item, publishTime, member.(*proto.Member))
+			itemEvent := proto.NewTopicMessage(item, publishTime, member)
 			err := messageListener.OnMessage(itemEvent)
 			if err != nil {
 				log.Println("Error while handling the message in MessageListener OnMessage: ", err)

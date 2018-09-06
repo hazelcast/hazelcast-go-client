@@ -141,6 +141,18 @@ type HazelcastConsistencyLostError struct {
 	*HazelcastErrorType
 }
 
+// HazelcastTopicOverflowError is returned when a publisher wants to write to a topic, but there is not sufficient storage
+// to deal with the event.
+// This is returned only when reliable topic is used.
+type HazelcastTopicOverflowError struct {
+	*HazelcastErrorType
+}
+
+// NewHazelcastTopicOverflowError return a HazelcastTopicOverflowError.
+func NewHazelcastTopicOverflowError(message string, cause error) *HazelcastTopicOverflowError {
+	return &HazelcastTopicOverflowError{&HazelcastErrorType{message: message, cause: cause}}
+}
+
 // NewHazelcastNilPointerError returns a HazelcastNilPointerError.
 func NewHazelcastNilPointerError(message string, cause error) *HazelcastNilPointerError {
 	return &HazelcastNilPointerError{&HazelcastErrorType{message: message, cause: cause}}

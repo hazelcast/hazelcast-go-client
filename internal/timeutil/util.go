@@ -52,3 +52,9 @@ func GetPositiveDurationOrMax(duration time.Duration) time.Duration {
 	}
 	return time.Duration(math.MaxInt64)
 }
+
+func GetCurrentTimeInMillis() int64 {
+	now := time.Now()
+	unixNano := now.UnixNano()
+	return unixNano / 1000000
+}

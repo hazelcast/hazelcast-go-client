@@ -318,3 +318,55 @@ type ServerError interface {
 	// CauseClassName returns the cause class name.
 	CauseClassName() string
 }
+
+// ReliableMessageListener is to better integrate with the reliable topic.
+//
+// If a regular MessageListener is registered on a reliable topic, the message listener works fine, but it can't do much
+// more than listen to messages.
+//
+// If a ReliableMessageListener is registered on a normal topic, only the MessageListener methods will be called.
+//
+//  Durable Subscription
+// The ReliableMessageListener allows you to control where you want to start processing a message when the listener is
+// registered. This makes it possible to create a durable subscription by storing the sequence of the last message and
+// using this sequenceId as the sequenceId to start from.
+//
+//  Exception handling
+// The ReliableMessageListener also gives the ability to deal with exceptions using the {@link #isTerminal(Throwable)}
+// method. If a plain MessageListener is used, then it won't terminate on exceptions and it will keep on running. But in some
+// cases it is better to stop running.
+//
+//  Global order
+// The ReliableMessageListener will always get all events in order (global order). It will not get duplicates and
+// there will only be gaps if it is too slow. For more information see {@link #isLossTolerant()}.
+//
+//  Delivery guarantees
+// Because the ReliableMessageListener controls which item it wants to continue from upon restart, it is very easy to provide
+// an at-least-once or at-most-once delivery guarantee. The storeSequence is always called before a message is processed;
+// so it can be persisted on some non-volatile storage. When the RetrieveInitialSequence  returns the stored
+// sequence, then an at-least-once delivery is implemented since the same item is now being processed twice. To implement
+// an at-most-once delivery guarantee, add 1 to the stored sequence when the RetrieveInitialSequence is called.
+type ReliableMessageListener interface {
+	MessageListener
+
+	// RetrieveInitialSequence retrieves the initial sequence from which this ReliableMessageListener should start.
+	//
+	// Return -1 if there is no initial sequence and you want to start from the next published message.
+	//
+	// If you intent to create a durable subscriber so you continue from where you stopped the previous
+	// time, load the previous sequence and add 1. If you don't add one, then you will be receiving the
+	// same message twice.
+	RetrieveInitialSequence() int64
+	// StoreSequence informs the ReliableMessageListener that it should store the sequence.
+	// This method is called before the message is
+	// processed. Can be used to make a durable subscription.
+	StoreSequence(sequence int64)
+
+	// IsLossTolerant checks if this ReliableMessageListener is able to deal with message loss.
+	// Even though the reliable topic promises to
+	// be reliable, it can be that a MessageListener is too slow. Eventually the message won't be available anymore.
+	//
+	// If the ReliableMessageListener is not loss tolerant and the topic detects that there are missing messages, it will
+	// terminate the ReliableMessageListener.
+	IsLossTolerant() bool
+}

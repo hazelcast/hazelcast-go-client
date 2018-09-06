@@ -361,6 +361,9 @@ func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (
 }
 
 func (cs *clusterService) GetMember(address core.Address) core.Member {
+	if address == nil {
+		return nil
+	}
 	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
 		if *member.Address().(*proto.Address) == *address.(*proto.Address) {
