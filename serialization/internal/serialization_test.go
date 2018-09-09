@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"bytes"
@@ -20,7 +20,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +31,7 @@ const (
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	service, _ := NewSerializationService(config.NewSerializationConfig())
+	service, _ := NewService(serialization.NewConfig())
 	id := service.lookUpDefaultSerializer(a).ID()
 	var expectedID int32 = -7
 	if id != expectedID {
@@ -42,8 +41,8 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
-	c := config.NewSerializationConfig()
-	service, _ := NewSerializationService(c)
+	c := serialization.NewConfig()
+	service, _ := NewService(c)
 	data, _ := service.ToData(expected)
 	var ret int32
 	temp, _ := service.ToObject(data)
@@ -150,10 +149,10 @@ func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
 	p := &painter{"Leonardo", "da Vinci"}
 	customSerializer := &CustomArtistSerializer{}
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 
 	config.AddCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 	data, _ := service.ToData(m)
 	ret, _ := service.ToObject(data)
 	data2, _ := service.ToData(p)
@@ -166,9 +165,9 @@ func TestCustomSerializer(t *testing.T) {
 
 func TestGlobalSerializer(t *testing.T) {
 	obj := &customObject{10, "Furkan Şenharputlu"}
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 	config.SetGlobalSerializer(&GlobalSerializer{})
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 	data, _ := service.ToData(obj)
 	ret, _ := service.ToObject(data)
 
@@ -238,7 +237,7 @@ func TestGobSerializer(t *testing.T) {
 	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
 		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
 		nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	service, _ := NewSerializationService(config.NewSerializationConfig())
+	service, _ := NewService(serialization.NewConfig())
 	data, _ := service.ToData(expected)
 	ret, _ := service.ToObject(data)
 
@@ -250,8 +249,8 @@ func TestGobSerializer(t *testing.T) {
 
 func TestInt64SerializerWithInt(t *testing.T) {
 	var id = 15
-	config := config.NewSerializationConfig()
-	service, _ := NewSerializationService(config)
+	config := serialization.NewConfig()
+	service, _ := NewService(config)
 	data, _ := service.ToData(id)
 	ret, _ := service.ToObject(data)
 
@@ -262,8 +261,8 @@ func TestInt64SerializerWithInt(t *testing.T) {
 
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	var ids = []int{15, 10, 20, 12, 35}
-	config := config.NewSerializationConfig()
-	service, _ := NewSerializationService(config)
+	config := serialization.NewConfig()
+	service, _ := NewService(config)
 	data, _ := service.ToData(ids)
 	ret, _ := service.ToObject(data)
 
@@ -279,16 +278,16 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 
 func TestSerializeData(t *testing.T) {
 	data := NewData([]byte{10, 20, 0, 30, 5, 7, 6})
-	config := config.NewSerializationConfig()
-	service, _ := NewSerializationService(config)
+	config := serialization.NewConfig()
+	service, _ := NewService(config)
 	serializedData, _ := service.ToData(data)
 	if !reflect.DeepEqual(data, serializedData) {
-		t.Error("data type should not be serialized")
+		t.Error("Data type should not be serialized")
 	}
 }
 
 func TestUndefinedDataDeserialization(t *testing.T) {
-	s, _ := NewSerializationService(config.NewSerializationConfig())
+	s, _ := NewService(serialization.NewConfig())
 	dataOutput := NewPositionalObjectDataOutput(1, s, s.serializationConfig.IsBigEndian())
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)

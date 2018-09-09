@@ -16,12 +16,12 @@ package proto
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const ClientType = "GOO"
 
-func dataCalculateSize(d *serialization.Data) int {
+func dataCalculateSize(d serialization.Data) int {
 	return len(d.Buffer()) + bufutil.Int32SizeInBytes
 }
 

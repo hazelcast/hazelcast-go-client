@@ -19,7 +19,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type topicProxy struct {
@@ -65,7 +65,7 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 
 func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) func(clientMessage *proto.ClientMessage) {
 	return func(message *proto.ClientMessage) {
-		proto.TopicAddMessageListenerHandle(message, func(itemData *serialization.Data, publishTime int64, uuid string) {
+		proto.TopicAddMessageListenerHandle(message, func(itemData serialization.Data, publishTime int64, uuid string) {
 			member := tp.client.ClusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
 			itemEvent := proto.NewTopicMessage(item, publishTime, member)

@@ -23,8 +23,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type Address struct {
@@ -134,8 +134,8 @@ func (i *DistributedObjectInfo) ServiceName() string {
 }
 
 type DataEntryView struct {
-	keyData                *serialization.Data
-	valueData              *serialization.Data
+	keyData                serialization.Data
+	valueData              serialization.Data
 	cost                   int64
 	creationTime           int64
 	expirationTime         int64
@@ -148,11 +148,11 @@ type DataEntryView struct {
 	ttl                    int64
 }
 
-func (ev *DataEntryView) KeyData() *serialization.Data {
+func (ev *DataEntryView) KeyData() serialization.Data {
 	return ev.keyData
 }
 
-func (ev *DataEntryView) ValueData() *serialization.Data {
+func (ev *DataEntryView) ValueData() serialization.Data {
 	return ev.valueData
 }
 

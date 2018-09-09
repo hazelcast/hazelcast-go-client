@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func mapIsLockedCalculateSize(name string, key *serialization.Data) int {
+func mapIsLockedCalculateSize(name string, key serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func mapIsLockedCalculateSize(name string, key *serialization.Data) int {
 // MapIsLockedEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapIsLockedEncodeRequest(name string, key *serialization.Data) *ClientMessage {
+func MapIsLockedEncodeRequest(name string, key serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapIsLockedCalculateSize(name, key))
 	clientMessage.SetMessageType(mapIsLocked)

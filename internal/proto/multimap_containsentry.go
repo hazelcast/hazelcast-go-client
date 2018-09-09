@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func multimapContainsEntryCalculateSize(name string, key *serialization.Data, value *serialization.Data, threadId int64) int {
+func multimapContainsEntryCalculateSize(name string, key serialization.Data, value serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -33,7 +33,7 @@ func multimapContainsEntryCalculateSize(name string, key *serialization.Data, va
 // MultiMapContainsEntryEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MultiMapContainsEntryEncodeRequest(name string, key *serialization.Data, value *serialization.Data, threadId int64) *ClientMessage {
+func MultiMapContainsEntryEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, multimapContainsEntryCalculateSize(name, key, value, threadId))
 	clientMessage.SetMessageType(multimapContainsEntry)

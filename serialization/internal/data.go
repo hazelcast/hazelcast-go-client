@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"encoding/binary"
 	"math"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -31,7 +32,8 @@ type Data struct {
 	Payload []byte
 }
 
-func NewData(payload []byte) *Data {
+// NewData return serialization Data with the given payload.
+func NewData(payload []byte) serialization.Data {
 	return &Data{payload}
 }
 

@@ -17,7 +17,7 @@ package proto
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 func TestMember_Equal(t *testing.T) {
@@ -63,18 +63,18 @@ func TestDataEntryView_Equal(t *testing.T) {
 	dataEntryView := DataEntryView{}
 	payload1 := make([]byte, 5)
 	payload1[0] = 1
-	dataEntryView.keyData = serialization.NewData(payload1)
-	dataEntryView.valueData = serialization.NewData(payload1)
+	dataEntryView.keyData = spi.NewData(payload1)
+	dataEntryView.valueData = spi.NewData(payload1)
 	dataEntryView2 := DataEntryView{}
 	payload2 := make([]byte, 5)
 	payload2[0] = 2
-	dataEntryView2.keyData = serialization.NewData(payload2)
-	dataEntryView2.valueData = serialization.NewData(payload1)
+	dataEntryView2.keyData = spi.NewData(payload2)
+	dataEntryView2.valueData = spi.NewData(payload1)
 	if ok := dataEntryView.Equal(dataEntryView2); ok {
 		t.Fatal("Data EntryView Equal failed")
 	}
 
-	dataEntryView2.keyData = serialization.NewData(payload1)
+	dataEntryView2.keyData = spi.NewData(payload1)
 	dataEntryView2.cost = 5
 
 	if ok := dataEntryView.Equal(dataEntryView2); ok {

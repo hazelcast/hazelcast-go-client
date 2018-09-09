@@ -18,14 +18,15 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
-func ObjectToDataCollection(objects []interface{}, service *serialization.Service) ([]*serialization.Data, error) {
+func ObjectToDataCollection(objects []interface{}, service spi.SerializationService) ([]serialization.Data, error) {
 	if objects == nil {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
-	elementsData := make([]*serialization.Data, len(objects))
+	elementsData := make([]serialization.Data, len(objects))
 	for index, element := range objects {
 		if element == nil {
 			return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
@@ -39,7 +40,7 @@ func ObjectToDataCollection(objects []interface{}, service *serialization.Servic
 	return elementsData, nil
 }
 
-func DataToObjectCollection(dataSlice []*serialization.Data, service *serialization.Service) ([]interface{}, error) {
+func DataToObjectCollection(dataSlice []serialization.Data, service spi.SerializationService) ([]interface{}, error) {
 	if dataSlice == nil {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
@@ -54,14 +55,14 @@ func DataToObjectCollection(dataSlice []*serialization.Data, service *serializat
 	return elements, nil
 }
 
-func DataToObjectPairCollection(dataSlice []*proto.Pair, service *serialization.Service) (pairSlice []core.Pair, err error) {
+func DataToObjectPairCollection(dataSlice []*proto.Pair, service spi.SerializationService) (pairSlice []core.Pair, err error) {
 	pairSlice = make([]core.Pair, len(dataSlice))
 	for index, pairData := range dataSlice {
-		key, err := service.ToObject(pairData.Key().(*serialization.Data))
+		key, err := service.ToObject(pairData.Key().(serialization.Data))
 		if err != nil {
 			return nil, err
 		}
-		value, err := service.ToObject(pairData.Value().(*serialization.Data))
+		value, err := service.ToObject(pairData.Value().(serialization.Data))
 		if err != nil {
 			return nil, err
 		}

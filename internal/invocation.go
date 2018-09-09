@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type invocation struct {
@@ -99,7 +99,7 @@ func (i *invocation) ResultWithTimeout(duration time.Duration) (*proto.ClientMes
 type invocationService interface {
 	invokeOnPartitionOwner(message *proto.ClientMessage, partitionID int32) invocationResult
 	invokeOnRandomTarget(message *proto.ClientMessage) invocationResult
-	invokeOnKeyOwner(message *proto.ClientMessage, data *serialization.Data) invocationResult
+	invokeOnKeyOwner(message *proto.ClientMessage, data serialization.Data) invocationResult
 	invokeOnTarget(message *proto.ClientMessage, address core.Address) invocationResult
 	invokeOnConnection(message *proto.ClientMessage, connection *Connection) invocationResult
 	cleanupConnection(connection *Connection, e error)
@@ -120,7 +120,7 @@ func (is *invocationServiceImpl) invokeOnRandomTarget(request *proto.ClientMessa
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData *serialization.Data) invocationResult {
+func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData serialization.Data) invocationResult {
 	partitionID := is.client.PartitionService.GetPartitionID(keyData)
 	return is.invokeOnPartitionOwner(request, partitionID)
 }

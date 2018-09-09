@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func mapReplaceIfSameCalculateSize(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadId int64) int {
+func mapReplaceIfSameCalculateSize(name string, key serialization.Data, testValue serialization.Data, value serialization.Data, threadId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,7 +34,7 @@ func mapReplaceIfSameCalculateSize(name string, key *serialization.Data, testVal
 // MapReplaceIfSameEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapReplaceIfSameEncodeRequest(name string, key *serialization.Data, testValue *serialization.Data, value *serialization.Data, threadId int64) *ClientMessage {
+func MapReplaceIfSameEncodeRequest(name string, key serialization.Data, testValue serialization.Data, value serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapReplaceIfSameCalculateSize(name, key, testValue, value, threadId))
 	clientMessage.SetMessageType(mapReplaceIfSame)

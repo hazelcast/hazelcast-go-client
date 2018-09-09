@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func listAddWithIndexCalculateSize(name string, index int32, value *serialization.Data) int {
+func listAddWithIndexCalculateSize(name string, index int32, value serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,7 +32,7 @@ func listAddWithIndexCalculateSize(name string, index int32, value *serializatio
 // ListAddWithIndexEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func ListAddWithIndexEncodeRequest(name string, index int32, value *serialization.Data) *ClientMessage {
+func ListAddWithIndexEncodeRequest(name string, index int32, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, listAddWithIndexCalculateSize(name, index, value))
 	clientMessage.SetMessageType(listAddWithIndex)

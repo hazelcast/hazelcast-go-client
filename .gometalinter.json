@@ -14,6 +14,7 @@
     "consts.go.*should have comment",
     "rc",
     "test.compatibility",
+    ".*compatibility/",
     "internal.proto",
     "sample.orgwebsite",
     "internal.common.murmur.go",

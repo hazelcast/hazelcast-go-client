@@ -16,7 +16,7 @@ package proto
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func listSubCalculateSize(name string, from int32, to int32) int {
@@ -45,11 +45,11 @@ func ListSubEncodeRequest(name string, from int32, to int32) *ClientMessage {
 
 // ListSubDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func ListSubDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
+func ListSubDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []*serialization.Data) {
+	return func() (response []serialization.Data) {
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*serialization.Data, responseSize)
+		response = make([]serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			responseItem := clientMessage.ReadData()
 			response[responseIndex] = responseItem

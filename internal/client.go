@@ -25,10 +25,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
+	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
+	"github.com/hazelcast/hazelcast-go-client/internal/projection"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
 	"github.com/hazelcast/hazelcast-go-client/security"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 // clientID is used as a unique id per client. It will be increased atomically when a new client
@@ -39,7 +43,7 @@ type HazelcastClient struct {
 	InvocationService    invocationService
 	Config               *config.Config
 	PartitionService     *partitionService
-	SerializationService *serialization.Service
+	SerializationService spi.SerializationService
 	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
 	ListenerService      *listenerService
@@ -187,7 +191,8 @@ func (c *HazelcastClient) init() error {
 	c.ProxyManager = newProxyManager(c)
 	c.LoadBalancer = c.initLoadBalancer(c.Config)
 	c.LoadBalancer.Init(c.ClusterService)
-	c.SerializationService, err = serialization.NewSerializationService(c.Config.SerializationConfig())
+	c.initFactories()
+	c.SerializationService, err = spi.NewSerializationService(c.Config.SerializationConfig())
 	if err != nil {
 		return err
 	}
@@ -213,6 +218,12 @@ func (c *HazelcastClient) initClientName() {
 	} else {
 		c.name = "hz.client_" + strconv.Itoa(int(c.id))
 	}
+}
+func (c *HazelcastClient) initFactories() {
+	c.Config.SerializationConfig().AddDataSerializableFactory(aggregation.FactoryID, aggregation.NewFactory())
+	c.Config.SerializationConfig().AddDataSerializableFactory(predicate.FactoryID, predicate.NewFactory())
+	c.Config.SerializationConfig().AddDataSerializableFactory(projection.FactoryID, projection.NewFactory())
+	c.Config.SerializationConfig().AddDataSerializableFactory(reliabletopic.FactoryID, reliabletopic.NewMessageFactory())
 }
 
 func (c *HazelcastClient) initCredentials(cfg *config.Config) security.Credentials {

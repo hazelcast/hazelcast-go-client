@@ -20,8 +20,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type multiMapProxy struct {
@@ -260,8 +260,8 @@ func (mmp *multiMapProxy) ForceUnlock(key interface{}) (err error) {
 	return
 }
 
-func (mmp *multiMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
-	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
+func (mmp *multiMapProxy) onEntryEvent(keyData serialization.Data, oldValueData serialization.Data,
+	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
 	member := mmp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mmp.toObject(keyData)
@@ -282,8 +282,8 @@ func (mmp *multiMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData
 
 func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
-		proto.MultiMapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+		proto.MultiMapAddEntryListenerHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
@@ -291,8 +291,8 @@ func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMe
 
 func (mmp *multiMapProxy) createEventHandlerToKey(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
-		proto.MultiMapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+		proto.MultiMapAddEntryListenerToKeyHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}

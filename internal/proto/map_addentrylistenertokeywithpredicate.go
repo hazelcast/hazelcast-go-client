@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func mapAddEntryListenerToKeyWithPredicateCalculateSize(name string, key *serialization.Data, predicate *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) int {
+func mapAddEntryListenerToKeyWithPredicateCalculateSize(name string, key serialization.Data, predicate serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -35,7 +35,7 @@ func mapAddEntryListenerToKeyWithPredicateCalculateSize(name string, key *serial
 // MapAddEntryListenerToKeyWithPredicateEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapAddEntryListenerToKeyWithPredicateEncodeRequest(name string, key *serialization.Data, predicate *serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
+func MapAddEntryListenerToKeyWithPredicateEncodeRequest(name string, key serialization.Data, predicate serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, includeValue, listenerFlags, localOnly))
 	clientMessage.SetMessageType(mapAddEntryListenerToKeyWithPredicate)
@@ -61,13 +61,13 @@ func MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage *ClientMe
 }
 
 // MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc is the event handler function.
-type MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
+type MapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(serialization.Data, serialization.Data, serialization.Data, serialization.Data, int32, string, int32)
 
 // MapAddEntryListenerToKeyWithPredicateEventEntryDecode decodes the corresponding event
 // from the given client message.
 // It returns the result parameters for the event.
 func MapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage *ClientMessage) (
-	key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()

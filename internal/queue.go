@@ -20,8 +20,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type queueProxy struct {
@@ -233,7 +233,7 @@ func (qp *queueProxy) ToSlice() (items []interface{}, err error) {
 
 func (qp *queueProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
-		proto.QueueAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid string, eventType int32) {
+		proto.QueueAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
 			onItemEvent := qp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

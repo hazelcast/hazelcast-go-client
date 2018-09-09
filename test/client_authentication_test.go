@@ -18,10 +18,9 @@ import (
 	"testing"
 
 	hazelcast "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/config"
-	serialization2 "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/security"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -90,13 +89,13 @@ func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
 }
 
 func TestSerializationOfCredentials(t *testing.T) {
-	cfg := config.NewSerializationConfig()
+	cfg := serialization.NewConfig()
 	creds := security.NewUsernamePasswordCredentials(
 		"dev",
 		"dev-pass",
 	)
 	cfg.AddPortableFactory(creds.FactoryID(), &portableFactory2{})
-	serializationService, _ := serialization2.NewSerializationService(cfg)
+	serializationService, _ := spi.NewSerializationService(cfg)
 	credsData, err := serializationService.ToData(creds)
 	require.NoError(t, err)
 	retCreds, err := serializationService.ToObject(credsData)

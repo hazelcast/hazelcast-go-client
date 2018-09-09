@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func mapProjectCalculateSize(name string, projection *serialization.Data) int {
+func mapProjectCalculateSize(name string, projection serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func mapProjectCalculateSize(name string, projection *serialization.Data) int {
 // MapProjectEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapProjectEncodeRequest(name string, projection *serialization.Data) *ClientMessage {
+func MapProjectEncodeRequest(name string, projection serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapProjectCalculateSize(name, projection))
 	clientMessage.SetMessageType(mapProject)
@@ -42,14 +42,14 @@ func MapProjectEncodeRequest(name string, projection *serialization.Data) *Clien
 
 // MapProjectDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func MapProjectDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
+func MapProjectDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []*serialization.Data) {
+	return func() (response []serialization.Data) {
 		if clientMessage.IsComplete() {
 			return
 		}
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*serialization.Data, responseSize)
+		response = make([]serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			if !clientMessage.ReadBool() {
 				responseItem := clientMessage.ReadData()

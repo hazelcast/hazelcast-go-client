@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func multimapContainsValueCalculateSize(name string, value *serialization.Data) int {
+func multimapContainsValueCalculateSize(name string, value serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func multimapContainsValueCalculateSize(name string, value *serialization.Data) 
 // MultiMapContainsValueEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MultiMapContainsValueEncodeRequest(name string, value *serialization.Data) *ClientMessage {
+func MultiMapContainsValueEncodeRequest(name string, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, multimapContainsValueCalculateSize(name, value))
 	clientMessage.SetMessageType(multimapContainsValue)

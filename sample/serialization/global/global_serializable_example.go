@@ -34,7 +34,7 @@ type colorGroup struct {
 }
 
 // GlobalSerializer will handle all struct types if all the steps in searching for a serializer fail.
-// If none of custom and global serializers are not added to SerializationConfig,
+// If none of custom and global serializers are not added to serialization config,
 // objects will be serialized by default GoLang Gob Serializer.
 // For example, here JSON package's serialization is used.
 type GlobalSerializer struct {

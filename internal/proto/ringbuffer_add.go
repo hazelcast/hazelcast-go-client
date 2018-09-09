@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ringbufferAddCalculateSize(name string, overflowPolicy int32, value *serialization.Data) int {
+func ringbufferAddCalculateSize(name string, overflowPolicy int32, value serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,7 +32,7 @@ func ringbufferAddCalculateSize(name string, overflowPolicy int32, value *serial
 // RingbufferAddEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func RingbufferAddEncodeRequest(name string, overflowPolicy int32, value *serialization.Data) *ClientMessage {
+func RingbufferAddEncodeRequest(name string, overflowPolicy int32, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ringbufferAddCalculateSize(name, overflowPolicy, value))
 	clientMessage.SetMessageType(ringbufferAdd)

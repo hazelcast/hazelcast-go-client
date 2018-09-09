@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func mapAggregateWithPredicateCalculateSize(name string, aggregator *serialization.Data, predicate *serialization.Data) int {
+func mapAggregateWithPredicateCalculateSize(name string, aggregator serialization.Data, predicate serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -30,7 +30,7 @@ func mapAggregateWithPredicateCalculateSize(name string, aggregator *serializati
 // MapAggregateWithPredicateEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapAggregateWithPredicateEncodeRequest(name string, aggregator *serialization.Data, predicate *serialization.Data) *ClientMessage {
+func MapAggregateWithPredicateEncodeRequest(name string, aggregator serialization.Data, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapAggregateWithPredicateCalculateSize(name, aggregator, predicate))
 	clientMessage.SetMessageType(mapAggregateWithPredicate)
@@ -44,9 +44,9 @@ func MapAggregateWithPredicateEncodeRequest(name string, aggregator *serializati
 
 // MapAggregateWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func MapAggregateWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
+func MapAggregateWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response *serialization.Data) {
+	return func() (response serialization.Data) {
 		if clientMessage.IsComplete() {
 			return
 		}

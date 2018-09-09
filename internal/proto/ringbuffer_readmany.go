@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func ringbufferReadManyCalculateSize(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) int {
+func ringbufferReadManyCalculateSize(name string, startSequence int64, minCount int32, maxCount int32, filter serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -37,7 +37,7 @@ func ringbufferReadManyCalculateSize(name string, startSequence int64, minCount 
 // RingbufferReadManyEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount int32, maxCount int32, filter *serialization.Data) *ClientMessage {
+func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount int32, maxCount int32, filter serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, ringbufferReadManyCalculateSize(name, startSequence, minCount, maxCount, filter))
 	clientMessage.SetMessageType(ringbufferReadMany)
@@ -56,12 +56,12 @@ func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount 
 
 // RingbufferReadManyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (readCount int32, items []*serialization.Data, itemSeqs []int64, nextSeq int64) {
+func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
 	// Decode response from client message
-	return func() (readCount int32, items []*serialization.Data, itemSeqs []int64, nextSeq int64) {
+	return func() (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
 		readCount = clientMessage.ReadInt32()
 		itemsSize := clientMessage.ReadInt32()
-		items = make([]*serialization.Data, itemsSize)
+		items = make([]serialization.Data, itemsSize)
 		for itemsIndex := 0; itemsIndex < int(itemsSize); itemsIndex++ {
 			itemsItem := clientMessage.ReadData()
 			items[itemsIndex] = itemsItem

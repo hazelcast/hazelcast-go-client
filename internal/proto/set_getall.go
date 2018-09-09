@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func setGetAllCalculateSize(name string) int {
@@ -40,11 +40,11 @@ func SetGetAllEncodeRequest(name string) *ClientMessage {
 
 // SetGetAllDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func SetGetAllDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
+func SetGetAllDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []*serialization.Data) {
+	return func() (response []serialization.Data) {
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*serialization.Data, responseSize)
+		response = make([]serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			responseItem := clientMessage.ReadData()
 			response[responseIndex] = responseItem

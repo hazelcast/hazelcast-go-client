@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func queueTakeCalculateSize(name string) int {
@@ -40,9 +40,9 @@ func QueueTakeEncodeRequest(name string) *ClientMessage {
 
 // QueueTakeDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.Data) {
+func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response *serialization.Data) {
+	return func() (response serialization.Data) {
 
 		if !clientMessage.ReadBool() {
 			response = clientMessage.ReadData()

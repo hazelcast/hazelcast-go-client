@@ -16,7 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type setProxy struct {
@@ -149,7 +149,7 @@ func (sp *setProxy) ToSlice() (items []interface{}, err error) {
 
 func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
-		proto.SetAddListenerHandle(clientMessage, func(itemData *serialization.Data, uuid string, eventType int32) {
+		proto.SetAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
 			onItemEvent := sp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

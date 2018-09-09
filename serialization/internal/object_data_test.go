@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"bytes"
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
@@ -237,8 +237,8 @@ func TestObjectDataInput_ReadUTF2(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadObject(t *testing.T) {
-	conf := config.NewSerializationConfig()
-	service, _ := NewSerializationService(conf)
+	conf := serialization.NewConfig()
+	service, _ := NewService(conf)
 	o := NewObjectDataOutput(500, service, false)
 	var a = 6.739
 	var b byte = 125
