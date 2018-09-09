@@ -30,7 +30,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/require"
 )
 
 var mp core.Map
@@ -83,7 +85,8 @@ func TestMapProxy_SinglePutGet(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
-	assert.Equalf(t, err, res, testValue, "get returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, res, testValue, "get returned a wrong value")
 	mp.Clear()
 }
 
@@ -92,21 +95,22 @@ func TestMapProxy_SinglePutGetInt(t *testing.T) {
 	testValue := 25
 	mp.Put(testKey, testValue)
 	res, err := mp.Get(testKey)
-	assert.Equalf(t, err, res, int64(testValue), "get returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, res, int64(testValue), "get returned a wrong value")
 	mp.Clear()
 }
 
 func TestMapProxy_PutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.Put(nil, testValue)
-	assert.ErrorNotNil(t, err, "put did not return an error for nil key")
+	require.Errorf(t, err, "put did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutWithNilValue(t *testing.T) {
 	testKey := "testingKey"
 	_, err := mp.Put(testKey, nil)
-	assert.ErrorNotNil(t, err, "put did not return an error for nil value")
+	require.Errorf(t, err, "put did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -115,7 +119,7 @@ func TestMapProxy_GetWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	_, err := mp.Get(nil)
-	assert.ErrorNotNil(t, err, "get did not return an error for nil key")
+	require.Errorf(t, err, "get did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -130,7 +134,7 @@ func TestMapProxy_TryRemove(t *testing.T) {
 
 func TestMapProxy_TryRemoveWithNilKey(t *testing.T) {
 	_, err := mp.TryRemove(nil, 1*time.Second)
-	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
+	require.Errorf(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -139,7 +143,8 @@ func TestMapProxy_TryPut(t *testing.T) {
 	testValue := "testingValue"
 	mp.TryPut(testKey, testValue)
 	res, err := mp.Get(testKey)
-	assert.Equalf(t, err, res, testValue, "get returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, res, testValue, "get returned a wrong value")
 	mp.Clear()
 }
 
@@ -147,28 +152,29 @@ func TestMapProxy_TryPutWithTimeout(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	ok, err := mp.TryPutWithTimeout(testKey, testValue, 1*time.Second)
-	assert.Equal(t, err, ok, true)
+	require.NoError(t, err)
+	assert.Equal(t, ok, true)
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithTimeoutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.TryPutWithTimeout(nil, testValue, 1*time.Second)
-	assert.ErrorNotNil(t, err, "Map.TryPutWithTimeout should return error for nil key")
+	require.Errorf(t, err, "Map.TryPutWithTimeout should return error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, err := mp.TryPut(nil, testValue)
-	assert.ErrorNotNil(t, err, "tryPut did not return an error for nil key")
+	require.Errorf(t, err, "tryPut did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNilValue(t *testing.T) {
 	testKey := "testingKey"
 	_, err := mp.TryPut(testKey, nil)
-	assert.ErrorNotNil(t, err, "tryPut did not return an error for nil value")
+	require.Errorf(t, err, "tryPut did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -178,7 +184,8 @@ func TestMapProxy_ManyPutGet(t *testing.T) {
 		testValue := "testingValue" + strconv.Itoa(i)
 		mp.Put(testKey, testValue)
 		res, err := mp.Get(testKey)
-		assert.Equalf(t, err, res, testValue, "get returned a wrong value")
+		require.NoError(t, err)
+		assert.Equalf(t, res, testValue, "get returned a wrong value")
 	}
 	mp.Clear()
 }
@@ -188,17 +195,20 @@ func TestMapProxy_Remove(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	removed, err := mp.Remove(testKey)
-	assert.Equalf(t, err, removed, testValue, "remove returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, testValue, "remove returned a wrong value")
 	size, err := mp.Size()
-	assert.Equalf(t, err, size, int32(0), "map size should be 0.")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(0), "map size should be 0.")
 	found, err := mp.ContainsKey(testKey)
-	assert.Equalf(t, err, found, false, "containsKey returned a wrong result")
+	require.NoError(t, err)
+	assert.Equalf(t, found, false, "containsKey returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveWithNilKey(t *testing.T) {
 	_, err := mp.Remove(nil)
-	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
+	require.Errorf(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -228,7 +238,7 @@ func TestMapProxy_RemoveAll(t *testing.T) {
 
 func TestMapProxy_RemoveAllWithNilPredicate(t *testing.T) {
 	err := mp.RemoveAll(nil)
-	assert.ErrorNotNil(t, err, "removeAll did not return an error for nil predicate")
+	require.Errorf(t, err, "removeAll did not return an error for nil predicate")
 	mp.Clear()
 }
 
@@ -237,21 +247,23 @@ func TestMapProxy_RemoveIfSame(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	removed, err := mp.RemoveIfSame(testKey, "testinValue1")
-	assert.Equalf(t, err, removed, false, "removeIfSame returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, false, "removeIfSame returned a wrong value")
 	found, err := mp.ContainsKey(testKey)
-	assert.Equalf(t, err, found, true, "containsKey returned a wrong result")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "containsKey returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNilKey(t *testing.T) {
 	_, err := mp.RemoveIfSame(nil, "test")
-	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
+	require.Errorf(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNilValue(t *testing.T) {
 	_, err := mp.RemoveIfSame("test", nil)
-	assert.ErrorNotNil(t, err, "remove did not return an error for nil key")
+	require.Errorf(t, err, "remove did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -261,7 +273,8 @@ func TestMapProxy_PutTransient(t *testing.T) {
 	mp.Put(testKey, testValue)
 	mp.PutTransient(testKey, "nextValue", 100*time.Second)
 	res, err := mp.Get(testKey)
-	assert.Equalf(t, err, res, "nextValue", "putTransient failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, "nextValue", "putTransient failed")
 	mp.Clear()
 
 }
@@ -273,7 +286,8 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 	mp.PutTransient(testKey, "nextValue", 1*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	res, err := mp.Get(testKey)
-	assert.Nilf(t, err, res, "putTransient failed")
+	require.NoError(t, err)
+	assert.Nilf(t, res, "putTransient failed")
 	mp.Clear()
 
 }
@@ -281,14 +295,14 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 func TestMapProxy_PutTransientWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	err := mp.PutTransient(nil, testValue, 1*time.Millisecond)
-	assert.ErrorNotNil(t, err, "putTransient did not return an error for nil key")
+	require.Errorf(t, err, "putTransient did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNilValue(t *testing.T) {
 	testKey := "testingKey"
 	err := mp.PutTransient(testKey, nil, 1*time.Millisecond)
-	assert.ErrorNotNil(t, err, "putTransient did not return an error for nil value")
+	require.Errorf(t, err, "putTransient did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -297,15 +311,17 @@ func TestMapProxy_ContainsKey(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	found, err := mp.ContainsKey(testKey)
-	assert.Equalf(t, err, found, true, "containsKey returned a wrong result")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "containsKey returned a wrong result")
 	found, err = mp.ContainsKey("testingKey2")
-	assert.Equalf(t, err, found, false, "containsKey returned a wrong result")
+	require.NoError(t, err)
+	assert.Equalf(t, found, false, "containsKey returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsKeyWithNilKey(t *testing.T) {
 	_, err := mp.ContainsKey(nil)
-	assert.ErrorNotNil(t, err, "containsKey did not return an error for nil key")
+	require.Errorf(t, err, "containsKey did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -314,15 +330,17 @@ func TestMapProxy_ContainsValue(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	found, err := mp.ContainsValue(testValue)
-	assert.Equalf(t, err, found, true, "containsValue returned a wrong result")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "containsValue returned a wrong result")
 	found, err = mp.ContainsValue("testingValue2")
-	assert.Equalf(t, err, found, false, "containsValue returned a wrong result")
+	require.NoError(t, err)
+	assert.Equalf(t, found, false, "containsValue returned a wrong result")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsValueWithNilValue(t *testing.T) {
 	_, err := mp.ContainsValue(nil)
-	assert.ErrorNotNil(t, err, "containsValue did not return an error for nil value")
+	require.Errorf(t, err, "containsValue did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -335,7 +353,8 @@ func TestMapProxy_Clear(t *testing.T) {
 		t.Fatal(err)
 	} else {
 		size, err := mp.Size()
-		assert.Equalf(t, err, size, int32(0), "Map clear failed.")
+		require.NoError(t, err)
+		assert.Equalf(t, size, int32(0), "Map clear failed.")
 	}
 }
 
@@ -345,13 +364,14 @@ func TestMapProxy_Delete(t *testing.T) {
 	}
 	mp.Delete("testingKey1")
 	size, err := mp.Size()
-	assert.Equalf(t, err, size, int32(9), "Map Delete failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(9), "Map Delete failed")
 	mp.Clear()
 }
 
 func TestMapProxy_DeleteWithNilKey(t *testing.T) {
 	err := mp.Delete(nil)
-	assert.ErrorNotNil(t, err, "delete did not return an error for nil key")
+	require.Errorf(t, err, "delete did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -360,7 +380,8 @@ func TestMapProxy_IsEmpty(t *testing.T) {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
 	empty, err := mp.IsEmpty()
-	assert.Equalf(t, err, empty, false, "Map IsEmpty returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, empty, false, "Map IsEmpty returned a wrong value")
 	mp.Clear()
 }
 
@@ -370,14 +391,16 @@ func TestMapProxy_Evict(t *testing.T) {
 	}
 	mp.Evict("testingKey1")
 	size, err := mp.Size()
-	assert.Equalf(t, err, size, int32(9), "Map evict failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(9), "Map evict failed.")
 	found, err := mp.ContainsKey("testingKey1")
-	assert.Equalf(t, err, found, false, "Map evict failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, found, false, "Map evict failed.")
 }
 
 func TestMapProxy_EvictWithNilKey(t *testing.T) {
 	_, err := mp.Evict(nil)
-	assert.ErrorNotNil(t, err, "evict did not return an error for nil key")
+	require.Errorf(t, err, "evict did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -387,7 +410,8 @@ func TestMapProxy_EvictAll(t *testing.T) {
 	}
 	mp.EvictAll()
 	size, err := mp.Size()
-	assert.Equalf(t, err, size, int32(0), "Map evict failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(0), "Map evict failed.")
 }
 
 func TestMapProxy_Flush(t *testing.T) {
@@ -404,31 +428,34 @@ func TestMapProxy_Flush(t *testing.T) {
 func TestMapProxy_IsLocked(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	locked, err := mp.IsLocked("testingKey")
-	assert.Equalf(t, err, locked, false, "Key should not be locked.")
+	require.NoError(t, err)
+	assert.Equalf(t, locked, false, "Key should not be locked.")
 	err = mp.Lock("testingKey")
 	if err != nil {
 		t.Fatal(err)
 	}
 	locked, err = mp.IsLocked("testingKey")
-	assert.Equalf(t, err, locked, true, "Key should be locked.")
+	require.NoError(t, err)
+	assert.Equalf(t, locked, true, "Key should be locked.")
 	err = mp.Unlock("testingKey")
 	if err != nil {
 		t.Error(err)
 	}
 	locked, err = mp.IsLocked("testingKey")
-	assert.Equalf(t, err, locked, false, "Key should not be locked.")
+	require.NoError(t, err)
+	assert.Equalf(t, locked, false, "Key should not be locked.")
 
 }
 
 func TestMapProxy_IsLockedWithNilKey(t *testing.T) {
 	_, err := mp.IsLocked(nil)
-	assert.ErrorNotNil(t, err, "isLocked did not return an error for nil key")
+	require.Errorf(t, err, "isLocked did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_UnlockWithNilKey(t *testing.T) {
 	err := mp.Unlock(nil)
-	assert.ErrorNotNil(t, err, "unlock did not return an error for nil key")
+	require.Errorf(t, err, "unlock did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -437,45 +464,50 @@ func TestMapProxy_LockWithLeaseTime(t *testing.T) {
 	mp.LockWithLeaseTime("testingKey", 10*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	locked, err := mp.IsLocked("testingKey")
-	assert.Equalf(t, err, locked, false, "Key should not be locked.")
+	require.NoError(t, err)
+	assert.Equalf(t, locked, false, "Key should not be locked.")
 }
 
 func TestMapProxy_LocktWithNilKey(t *testing.T) {
 	err := mp.Lock(nil)
-	assert.ErrorNotNil(t, err, "lock did not return an error for nil key")
+	require.Errorf(t, err, "lock did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryLock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Second, 2*time.Second)
-	assert.Equalf(t, err, ok, true, "Try Lock failed")
+	require.NoError(t, err)
+	assert.Equalf(t, ok, true, "Try Lock failed")
 	time.Sleep(5 * time.Second)
 	locked, err := mp.IsLocked("testingKey")
-	assert.Equalf(t, err, locked, false, "Key should not be locked.")
+	require.NoError(t, err)
+	assert.Equalf(t, locked, false, "Key should not be locked.")
 	mp.ForceUnlock("testingKey")
 	mp.Clear()
 }
 
 func TestMapProxy_ForceUnlockWithNilKey(t *testing.T) {
 	err := mp.ForceUnlock(nil)
-	assert.ErrorNotNil(t, err, "forceUnlock did not return an error for nil key")
+	require.Errorf(t, err, "forceUnlock did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryLockWithNilKey(t *testing.T) {
 	_, err := mp.TryLock(nil)
-	assert.ErrorNotNil(t, err, "tryLock did not return an error for nil key")
+	require.Errorf(t, err, "tryLock did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_ForceUnlock(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Second, 20*time.Second)
-	assert.Equalf(t, err, ok, true, "Try Lock failed")
+	require.NoError(t, err)
+	assert.Equalf(t, ok, true, "Try Lock failed")
 	mp.ForceUnlock("testingKey")
 	locked, err := mp.IsLocked("testingKey")
-	assert.Equalf(t, err, locked, false, "Key should not be locked.")
+	require.NoError(t, err)
+	assert.Equalf(t, locked, false, "Key should not be locked.")
 	mp.Unlock("testingKey")
 	mp.Clear()
 }
@@ -483,21 +515,23 @@ func TestMapProxy_ForceUnlock(t *testing.T) {
 func TestMapProxy_Replace(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.Replace("testingKey1", "testingValue2")
-	assert.Equalf(t, err, replaced, "testingValue1", "Map Replace returned wrong old value.")
+	require.NoError(t, err)
+	assert.Equalf(t, replaced, "testingValue1", "Map Replace returned wrong old value.")
 	newValue, err := mp.Get("testingKey1")
-	assert.Equalf(t, err, newValue, "testingValue2", "Map Replace failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, "testingValue2", "Map Replace failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNilKey(t *testing.T) {
 	_, err := mp.Replace(nil, "test")
-	assert.ErrorNotNil(t, err, "replace did not return an error for nil key")
+	require.Errorf(t, err, "replace did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNilValue(t *testing.T) {
 	_, err := mp.Replace("test", nil)
-	assert.ErrorNotNil(t, err, "replace did not return an error for nil value")
+	require.Errorf(t, err, "replace did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -506,43 +540,48 @@ func TestMapProxy_Size(t *testing.T) {
 		mp.Put("testingKey"+strconv.Itoa(i), "testingValue"+strconv.Itoa(i))
 	}
 	size, err := mp.Size()
-	assert.Equalf(t, err, size, int32(10), "Map size returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(10), "Map size returned a wrong value")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSame(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue1", "testingValue2")
-	assert.Equalf(t, err, replaced, true, "Map Replace returned wrong old value.")
+	require.NoError(t, err)
+	assert.Equalf(t, replaced, true, "Map Replace returned wrong old value.")
 	newValue, err := mp.Get("testingKey1")
-	assert.Equalf(t, err, newValue, "testingValue2", "Map ReplaceIfSame failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, "testingValue2", "Map ReplaceIfSame failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNilKey(t *testing.T) {
 	_, err := mp.ReplaceIfSame(nil, "test", "test")
-	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nil key")
+	require.Errorf(t, err, "replaceIfSame did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNilOldValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", nil, "test")
-	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nil oldValue")
+	require.Errorf(t, err, "replaceIfSame did not return an error for nil oldValue")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNilNewValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", "test", nil)
-	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nil newValue")
+	require.Errorf(t, err, "replaceIfSame did not return an error for nil newValue")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWhenDifferent(t *testing.T) {
 	mp.Put("testingKey1", "testingValue1")
 	replaced, err := mp.ReplaceIfSame("testingKey1", "testingValue3", "testingValue2")
-	assert.Equalf(t, err, replaced, false, "Map Replace returned wrong old value.")
+	require.NoError(t, err)
+	assert.Equalf(t, replaced, false, "Map Replace returned wrong old value.")
 	newValue, err := mp.Get("testingKey1")
-	assert.Equalf(t, err, newValue, "testingValue1", "Map ReplaceIfSame failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, "testingValue1", "Map ReplaceIfSame failed.")
 	mp.Clear()
 }
 
@@ -552,19 +591,20 @@ func TestMapProxy_Set(t *testing.T) {
 		t.Error(err)
 	}
 	newValue, err := mp.Get("testingKey1")
-	assert.Equalf(t, err, newValue, "testingValue1", "Map Set failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, "testingValue1", "Map Set failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNilKey(t *testing.T) {
 	err := mp.Set(nil, "test")
-	assert.ErrorNotNil(t, err, "Set did not return an error for nil key")
+	require.Errorf(t, err, "Set did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNilValue(t *testing.T) {
 	err := mp.Set("test", nil)
-	assert.ErrorNotNil(t, err, "set did not return an error for nil value")
+	require.Errorf(t, err, "set did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -574,11 +614,12 @@ func TestMapProxy_SetWithTTL(t *testing.T) {
 		t.Error(err)
 	}
 	_, err = mp.Get("testingKey1")
-	assert.ErrorNil(t, err)
+	require.NoError(t, err)
 	mp.SetWithTTL("testingKey1", "testingValue2", 1*time.Millisecond)
 	time.Sleep(5 * time.Second)
 	newValue, err := mp.Get("testingKey1")
-	assert.Nilf(t, err, newValue, "Map SetWithTTL failed.")
+	require.NoError(t, err)
+	assert.Nilf(t, newValue, "Map SetWithTTL failed.")
 	mp.Clear()
 }
 
@@ -588,19 +629,20 @@ func TestMapProxy_PutIfAbsent(t *testing.T) {
 		t.Error(err)
 	}
 	newValue, err := mp.Get("testingKey1")
-	assert.Equalf(t, err, newValue, "testingValue1", "Map Set failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, "testingValue1", "Map Set failed.")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNilKey(t *testing.T) {
 	_, err := mp.PutIfAbsent(nil, "test")
-	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nil key")
+	require.Errorf(t, err, "putIfAbsent did not return an error for nil key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNilValue(t *testing.T) {
 	_, err := mp.PutIfAbsent("test", nil)
-	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nil value")
+	require.Errorf(t, err, "putIfAbsent did not return an error for nil value")
 	mp.Clear()
 }
 
@@ -631,7 +673,7 @@ func TestMapProxy_PutAll(t *testing.T) {
 
 func TestMapProxy_PutAllWithNilMap(t *testing.T) {
 	err := mp.PutAll(nil)
-	assert.ErrorNotNil(t, err, "putAll did not return an error for nil map")
+	require.Errorf(t, err, "putAll did not return an error for nil map")
 	mp.Clear()
 }
 
@@ -665,7 +707,7 @@ func TestMapProxy_KeySetWihPredicate(t *testing.T) {
 
 func TestMapProxy_KeySetWithPredicateWithNilPredicate(t *testing.T) {
 	_, err := mp.KeySetWithPredicate(nil)
-	assert.ErrorNotNil(t, err, "keySetWithPredicate did not return an error for nil predicate")
+	require.Errorf(t, err, "keySetWithPredicate did not return an error for nil predicate")
 	mp.Clear()
 }
 
@@ -699,7 +741,7 @@ func TestMapProxy_ValuesWithPredicate(t *testing.T) {
 
 func TestMapProxy_ValuesWithPredicateWithNilPredicate(t *testing.T) {
 	_, err := mp.ValuesWithPredicate(nil)
-	assert.ErrorNotNil(t, err, "ValuesWithPredicate did not return an error for nil predicate")
+	require.Errorf(t, err, "ValuesWithPredicate did not return an error for nil predicate")
 	mp.Clear()
 }
 
@@ -769,7 +811,7 @@ func TestMapProxy_GetAll(t *testing.T) {
 
 func TestMapProxy_GetAllWithNilKeys(t *testing.T) {
 	_, err := mp.GetAll(nil)
-	assert.ErrorNotNil(t, err, "GetAll did not return an error for nil keys")
+	require.Errorf(t, err, "GetAll did not return an error for nil keys")
 	mp.Clear()
 }
 
@@ -788,11 +830,16 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	mp.Put("key", "newValue")
 
 	entryView, err := mp.GetEntryView("key")
-	assert.Equalf(t, err, entryView.Key(), "key", "Map GetEntryView returned a wrong view.")
-	assert.Equalf(t, err, entryView.Value(), "newValue", "Map GetEntryView returned a wrong view.")
-	assert.Equalf(t, err, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
-	assert.Equalf(t, err, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
-	assert.Equalf(t, err, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
+	require.NoError(t, err)
+	assert.Equalf(t, entryView.Key(), "key", "Map GetEntryView returned a wrong view.")
+	require.NoError(t, err)
+	assert.Equalf(t, entryView.Value(), "newValue", "Map GetEntryView returned a wrong view.")
+	require.NoError(t, err)
+	assert.Equalf(t, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
+	require.NoError(t, err)
+	assert.Equalf(t, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
+	require.NoError(t, err)
+	assert.Equalf(t, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
 	if cost := entryView.Cost(); cost <= 0 {
 		t.Fatal("entryView cost should be greater than 0.")
 	}
@@ -811,13 +858,14 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	if ttl := entryView.TTL(); ttl <= 0 {
 		t.Fatal("entryView ttl should be greater than 0.")
 	}
-	assert.Equalf(t, err, entryView.LastStoredTime(), time.Time{}, "Map GetEntryView returned a wrong view.")
+	require.NoError(t, err)
+	assert.Equalf(t, entryView.LastStoredTime(), time.Time{}, "Map GetEntryView returned a wrong view.")
 	mp.Clear()
 }
 
 func TestMapProxy_GetEntryViewWithNilKey(t *testing.T) {
 	_, err := mp.GetEntryView(nil)
-	assert.ErrorNotNil(t, err, "GetEntryView did not return an error for nil key")
+	require.Errorf(t, err, "GetEntryView did not return an error for nil key")
 	mp.Clear()
 }
 
@@ -864,17 +912,17 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryListener, true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key123", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), "value", "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Value(), "value", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
 
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -884,17 +932,17 @@ func TestMapProxy_AddEntryListenerAddedWithIncludeValueFalse(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryListener, false)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key123", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), nil, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Value(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
 
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -904,12 +952,12 @@ func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryAdded := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryAdded, true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(2)
 	mp.Put("key1", "value")
 	mp.Put("key1", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryUpdated failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryUpdated failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -918,12 +966,12 @@ func TestMapProxy_AddEntryListenerEvicted(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryListener, true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Evict("test")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryEvicted failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryEvicted failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -932,12 +980,12 @@ func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryListener, true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Remove("test")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryRemoved failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryRemoved failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -947,15 +995,15 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryListener, true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.EvictAll()
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryEvictAll failed")
-	assert.Equalf(t, nil, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
-	assert.Equalf(t, nil, entryListener.mapEvent.Name(), "myMap", "AddEntryListener entryEvictAll failed")
-	assert.Equalf(t, nil, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, entryListener.mapEvent.Name(), "myMap", "AddEntryListener entryEvictAll failed")
+	assert.Equalf(t, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -965,12 +1013,12 @@ func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListener(entryListener, true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Clear()
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListener entryClear failed")
+	assert.Equalf(t, false, timeout, "AddEntryListener entryClear failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -986,11 +1034,11 @@ func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListenerWithPredicate(entryListener, predicate.Equal("this", "value"), true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key123", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListenerWithPredicate failed")
+	assert.Equalf(t, false, timeout, "AddEntryListenerWithPredicate failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -1006,15 +1054,15 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key1", "value1")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListenerToKey failed")
+	assert.Equalf(t, false, timeout, "AddEntryListenerToKey failed")
 	wg.Add(1)
 	mp.Put("key2", "value1")
 	timeout = test.WaitTimeout(wg, test.Timeout/20)
-	assert.Equalf(t, nil, true, timeout, "AddEntryListenerToKey failed")
+	assert.Equalf(t, true, timeout, "AddEntryListenerToKey failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -1030,15 +1078,15 @@ func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListenerToKeyWithPredicate(entryListener, predicate.Equal("this", "value1"), "key1", true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key1", "value1")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "AddEntryListenerToKeyWithPredicate failed")
+	assert.Equalf(t, false, timeout, "AddEntryListenerToKeyWithPredicate failed")
 	wg.Add(1)
 	mp.Put("key1", "value2")
 	timeout = test.WaitTimeout(wg, test.Timeout/20)
-	assert.Equalf(t, nil, true, timeout, "AddEntryListenerToKeyWithPredicate failed")
+	assert.Equalf(t, true, timeout, "AddEntryListenerToKeyWithPredicate failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
 }
@@ -1047,7 +1095,7 @@ func TestMapProxy_RemoveEntryListenerToKeyWithInvalidRegistrationID(t *testing.T
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := mp.AddEntryListenerToKey(entryListener, "key1", true)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	invalidRegistrationID := "invalid"
 	removed, _ := mp.RemoveEntryListener(invalidRegistrationID)
 	if removed {
@@ -1068,9 +1116,11 @@ func TestMapProxy_ExecuteOnKey(t *testing.T) {
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
 	value, err := mp2.ExecuteOnKey(testKey, processor)
-	assert.Equalf(t, err, value, expectedValue, "ExecuteOnKey failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, value, expectedValue, "ExecuteOnKey failed.")
 	newValue, err := mp2.Get("testingKey1")
-	assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnKey failed")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, expectedValue, "ExecuteOnKey failed")
 	mp.Clear()
 	client.Shutdown()
 }
@@ -1092,11 +1142,14 @@ func TestMapProxy_ExecuteOnKeys(t *testing.T) {
 	keys[0] = "testingKey1"
 	keys[1] = "testingKey2"
 	result, err := mp2.ExecuteOnKeys(keys, processor)
-	assert.Equalf(t, err, len(result), 2, "ExecuteOnKeys failed.")
+	require.NoError(t, err)
+	assert.Equalf(t, len(result), 2, "ExecuteOnKeys failed.")
 	newValue, err := mp2.Get("testingKey1")
-	assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, expectedValue, "ExecuteOnKeys failed")
 	newValue, err = mp2.Get("testingKey2")
-	assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnKeys failed")
+	require.NoError(t, err)
+	assert.Equalf(t, newValue, expectedValue, "ExecuteOnKeys failed")
 	mp2.Clear()
 	client.Shutdown()
 }
@@ -1115,9 +1168,11 @@ func TestMapProxy_ExecuteOnEntries(t *testing.T) {
 	}
 	result, err := mp2.ExecuteOnEntries(processor)
 	for _, pair := range result {
-		assert.Equalf(t, err, pair.Value(), expectedValue, "ExecuteOnEntries failed")
+		require.NoError(t, err)
+		assert.Equalf(t, pair.Value(), expectedValue, "ExecuteOnEntries failed")
 		newValue, err := mp2.Get(pair.Key())
-		assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnEntries failed")
+		require.NoError(t, err)
+		assert.Equalf(t, newValue, expectedValue, "ExecuteOnEntries failed")
 	}
 	mp.Clear()
 	client.Shutdown()
@@ -1140,9 +1195,11 @@ func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 		t.Fatal("ExecuteOnEntriesWithPredicate failed")
 	}
 	for _, pair := range result {
-		assert.Equalf(t, err, pair.Value(), expectedValue, "ExecuteOnEntriesWithPredicate failed")
+		require.NoError(t, err)
+		assert.Equalf(t, pair.Value(), expectedValue, "ExecuteOnEntriesWithPredicate failed")
 		newValue, err := mp2.Get(pair.Key())
-		assert.Equalf(t, err, newValue, expectedValue, "ExecuteOnEntriesWithPredicate failed")
+		require.NoError(t, err)
+		assert.Equalf(t, newValue, expectedValue, "ExecuteOnEntriesWithPredicate failed")
 	}
 	mp.Clear()
 	client.Shutdown()
@@ -1159,7 +1216,7 @@ func TestMapProxy_ExecuteOnKeyWithNonRegisteredProcessor(t *testing.T) {
 	testValue := "testingValue"
 	mp2.Put(testKey, testValue)
 	_, err := mp2.ExecuteOnKey(testKey, processor)
-	assert.ErrorNotNil(t, err, "non registered processor should return an error")
+	require.Errorf(t, err, "non registered processor should return an error")
 	mp.Clear()
 	client.Shutdown()
 }
@@ -1171,7 +1228,8 @@ func TestMapProxy_Destroy(t *testing.T) {
 	mp.Destroy()
 	mp, _ := client.GetMap("myMap")
 	res, err := mp.Get(testKey)
-	assert.Nilf(t, err, res, "get returned a wrong value")
+	require.NoError(t, err)
+	assert.Nilf(t, res, "get returned a wrong value")
 }
 
 type simpleEntryProcessor struct {
@@ -1226,169 +1284,169 @@ type student struct {
 
 func TestMapProxy_PutWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Put(student{10}, "test")
-	assert.ErrorNotNil(t, err, "put did not return an error for nonserializable key")
+	require.Errorf(t, err, "put did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutWithNonSerializableValue(t *testing.T) {
 	_, err := mp.Put("test", student{10})
-	assert.ErrorNotNil(t, err, "put did not return an error for nonserializable value")
+	require.Errorf(t, err, "put did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNonSerializableKey(t *testing.T) {
 	_, err := mp.TryPut(student{10}, "test")
-	assert.ErrorNotNil(t, err, "tryPut did not return an error for nonserializable key")
+	require.Errorf(t, err, "tryPut did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryPutWithNonSerializableValue(t *testing.T) {
 	_, err := mp.TryPut("test", student{10})
-	assert.ErrorNotNil(t, err, "tryPut did not return an error for nonserializable value")
+	require.Errorf(t, err, "tryPut did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNonSerializableKey(t *testing.T) {
 	err := mp.PutTransient(student{10}, "test", 1*time.Second)
-	assert.ErrorNotNil(t, err, "putTransient did not return an error for nonserializable key")
+	require.Errorf(t, err, "putTransient did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutTransientWithNonSerializableValue(t *testing.T) {
 	err := mp.PutTransient("test", student{10}, 1*time.Second)
-	assert.ErrorNotNil(t, err, "putTransient did not return an error for nonserializable value")
+	require.Errorf(t, err, "putTransient did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_GetWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Get(student{10})
-	assert.ErrorNotNil(t, err, "get did not return an error for nonserializable key")
+	require.Errorf(t, err, "get did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNonSerializableKey(t *testing.T) {
 	_, err := mp.RemoveIfSame(student{10}, "test")
-	assert.ErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable key")
+	require.Errorf(t, err, "removeIfSame did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_RemoveIfSameWithNonSerializableValue(t *testing.T) {
 	_, err := mp.RemoveIfSame("test", student{10})
-	assert.ErrorNotNil(t, err, "removeIfSame did not return an error for nonserializable value")
+	require.Errorf(t, err, "removeIfSame did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_TryRemoveWithNonSerializableKey(t *testing.T) {
 	_, err := mp.TryRemove(student{10}, 1*time.Second)
-	assert.ErrorNotNil(t, err, "tryRemove did not return an error for nonserializable key")
+	require.Errorf(t, err, "tryRemove did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsKeyWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ContainsKey(student{10})
-	assert.ErrorNotNil(t, err, "containsKey did not return an error for nonserializable key")
+	require.Errorf(t, err, "containsKey did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ContainsValueWithNonSerializableValue(t *testing.T) {
 	_, err := mp.ContainsValue(student{})
-	assert.ErrorNotNil(t, err, "containsValue did not return an error for nonserializable value")
+	require.Errorf(t, err, "containsValue did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_DeleteWithNonSerializableKey(t *testing.T) {
 	err := mp.Delete(student{})
-	assert.ErrorNotNil(t, err, "delete did not return an error for nonserializable key")
+	require.Errorf(t, err, "delete did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_EvictWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Evict(student{})
-	assert.ErrorNotNil(t, err, "evict did not return an error for nonserializable key")
+	require.Errorf(t, err, "evict did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_LockWithNonSerializableKey(t *testing.T) {
 	err := mp.Lock(student{})
-	assert.ErrorNotNil(t, err, "lock did not return an error for nonserializable key")
+	require.Errorf(t, err, "lock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_TryLockWithNonSerializableKey(t *testing.T) {
 	_, err := mp.TryLock(student{})
-	assert.ErrorNotNil(t, err, "tryLock did not return an error for nonserializable key")
+	require.Errorf(t, err, "tryLock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_UnlockWithNonSerializableKey(t *testing.T) {
 	err := mp.Unlock(student{})
-	assert.ErrorNotNil(t, err, "unlock did not return an error for nonserializable key")
+	require.Errorf(t, err, "unlock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ForceUnlockWithNonSerializableKey(t *testing.T) {
 	err := mp.ForceUnlock(student{})
-	assert.ErrorNotNil(t, err, "forceUnlock did not return an error for nonserializable key")
+	require.Errorf(t, err, "forceUnlock did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_IsLockedWithNonSerializableKey(t *testing.T) {
 	_, err := mp.IsLocked(student{})
-	assert.ErrorNotNil(t, err, "isLocked did not return an error for nonserializable key")
+	require.Errorf(t, err, "isLocked did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableKey(t *testing.T) {
 	_, err := mp.Replace(student{}, "test")
-	assert.ErrorNotNil(t, err, "replace did not return an error for nonserializable key")
+	require.Errorf(t, err, "replace did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableValue(t *testing.T) {
 	_, err := mp.Replace("test", student{})
-	assert.ErrorNotNil(t, err, "replace did not return an error for nonserializable value")
+	require.Errorf(t, err, "replace did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceIfSameWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ReplaceIfSame(student{}, "test", "test")
-	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable key")
+	require.Errorf(t, err, "replaceIfSame did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableOldValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", student{}, "test")
-	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable oldValue")
+	require.Errorf(t, err, "replaceIfSame did not return an error for nonserializable oldValue")
 	mp.Clear()
 }
 
 func TestMapProxy_ReplaceWithNonSerializableNewValue(t *testing.T) {
 	_, err := mp.ReplaceIfSame("test", "test", student{})
-	assert.ErrorNotNil(t, err, "replaceIfSame did not return an error for nonserializable newValue")
+	require.Errorf(t, err, "replaceIfSame did not return an error for nonserializable newValue")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNonSerializableKey(t *testing.T) {
 	err := mp.Set(student{}, "test")
-	assert.ErrorNotNil(t, err, "set did not return an error for nonserializable key")
+	require.Errorf(t, err, "set did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_SetWithNonSerializableValue(t *testing.T) {
 	err := mp.Set("test", student{})
-	assert.ErrorNotNil(t, err, "set did not return an error for nonserializable value")
+	require.Errorf(t, err, "set did not return an error for nonserializable value")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNonSerializableKey(t *testing.T) {
 	_, err := mp.PutIfAbsent(student{}, "test")
-	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable key")
+	require.Errorf(t, err, "putIfAbsent did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_PutIfAbsentWithNonSerializableValue(t *testing.T) {
 	_, err := mp.PutIfAbsent("test", student{})
-	assert.ErrorNotNil(t, err, "putIfAbsent did not return an error for nonserializable value")
+	require.Errorf(t, err, "putIfAbsent did not return an error for nonserializable value")
 	mp.Clear()
 }
 
@@ -1396,7 +1454,7 @@ func TestMapProxy_PutAllWithNonSerializableMapKey(t *testing.T) {
 	testMap := make(map[interface{}]interface{})
 	testMap[student{}] = 5
 	err := mp.PutAll(testMap)
-	assert.ErrorNotNil(t, err, "putAll did not return an error for nonserializable map key")
+	require.Errorf(t, err, "putAll did not return an error for nonserializable map key")
 	mp.Clear()
 }
 
@@ -1404,7 +1462,7 @@ func TestMapProxy_PutAllWithNonSerializableMapValue(t *testing.T) {
 	testMap := make(map[interface{}]interface{})
 	testMap[5] = student{}
 	err := mp.PutAll(testMap)
-	assert.ErrorNotNil(t, err, "putAll did not return an error for nonserializable map value")
+	require.Errorf(t, err, "putAll did not return an error for nonserializable map value")
 	mp.Clear()
 }
 
@@ -1412,37 +1470,37 @@ func TestMapProxy_GetAllWithNonSerializableKey(t *testing.T) {
 	testSlice := make([]interface{}, 1)
 	testSlice[0] = student{}
 	_, err := mp.GetAll(testSlice)
-	assert.ErrorNotNil(t, err, "getAll did not return an error for nonserializable key")
+	require.Errorf(t, err, "getAll did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_GetEntryViewWithNonSerializableKey(t *testing.T) {
 	_, err := mp.GetEntryView(student{})
-	assert.ErrorNotNil(t, err, "getEntryView did not return an error for nonserializable key")
+	require.Errorf(t, err, "getEntryView did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_AddEntryListenerToKeyWithNonSerializableKey(t *testing.T) {
 	_, err := mp.AddEntryListenerToKey(nil, student{}, false)
-	assert.ErrorNotNil(t, err, "addEntryListenerToKey did not return an error for nonserializable key")
+	require.Errorf(t, err, "addEntryListenerToKey did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_AddEntryListenerToKeyWithPredicateWithNonSerializableKey(t *testing.T) {
 	_, err := mp.AddEntryListenerToKeyWithPredicate(nil, nil, student{}, false)
-	assert.ErrorNotNil(t, err, "addEntryListenerToKeyWithPredicate did not return an error for nonserializable key")
+	require.Errorf(t, err, "addEntryListenerToKeyWithPredicate did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ExecuteOnKeyWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ExecuteOnKey(student{}, nil)
-	assert.ErrorNotNil(t, err, "executeOnKey did not return an error for nonserializable key")
+	require.Errorf(t, err, "executeOnKey did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ExecuteOnEntriesWithNonSerializableKey(t *testing.T) {
 	_, err := mp.ExecuteOnEntries(student{})
-	assert.ErrorNotNil(t, err, "executeOnEntries did not return an error for nonserializable key")
+	require.Errorf(t, err, "executeOnEntries did not return an error for nonserializable key")
 	mp.Clear()
 }
 
@@ -1450,13 +1508,13 @@ func TestMapProxy_ExecuteOnKeysWithNonSerializableKey(t *testing.T) {
 	testSlice := make([]interface{}, 1)
 	testSlice[0] = student{}
 	_, err := mp.ExecuteOnKeys(testSlice, nil)
-	assert.ErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable key")
+	require.Errorf(t, err, "executeOnKeys did not return an error for nonserializable key")
 	mp.Clear()
 }
 
 func TestMapProxy_ExecuteOnKeysWithNonSerializableProcessor(t *testing.T) {
 
 	_, err := mp.ExecuteOnKeys(nil, student{})
-	assert.ErrorNotNil(t, err, "executeOnKeys did not return an error for nonserializable processor")
+	require.Errorf(t, err, "executeOnKeys did not return an error for nonserializable processor")
 	mp.Clear()
 }

@@ -26,9 +26,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var rmp core.ReplicatedMap
@@ -56,7 +58,8 @@ func TestReplicatedMapProxy_Destroy(t *testing.T) {
 	rmp.Destroy()
 	rmp, _ := client.GetReplicatedMap("myReplicatedMap")
 	res, err := rmp.Get(testKey)
-	assert.Nilf(t, err, res, "replicatedMap Destroy() failed")
+	require.NoError(t, err)
+	assert.Nilf(t, res, "replicatedMap Destroy() failed")
 }
 
 func TestReplicatedMapProxy_Put(t *testing.T) {
@@ -65,25 +68,27 @@ func TestReplicatedMapProxy_Put(t *testing.T) {
 	testValue := "testingValue"
 	newValue := "newValue"
 	_, err := rmp.Put(testKey, testValue)
-	assert.ErrorNil(t, err)
+	require.NoError(t, err)
 	res, err := rmp.Get(testKey)
-	assert.Equalf(t, err, res, testValue, "replicatedMap Put() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, testValue, "replicatedMap Put() failed")
 	oldValue, err := rmp.Put(testKey, newValue)
-	assert.Equalf(t, err, oldValue, testValue, "replicatedMap Put()  failed")
+	require.NoError(t, err)
+	assert.Equalf(t, oldValue, testValue, "replicatedMap Put()  failed")
 }
 
 func TestReplicatedMapProxy_PutWithNilKey(t *testing.T) {
 	defer rmp.Clear()
 	testValue := "testingValue"
 	_, err := rmp.Put(nil, testValue)
-	assert.ErrorNotNil(t, err, "replicatedMap Put() failed")
+	require.Errorf(t, err, "replicatedMap Put() failed")
 }
 
 func TestReplicatedMapProxy_PutWithNilValue(t *testing.T) {
 	defer rmp.Clear()
 	testKey := "testingKey"
 	_, err := rmp.Put(testKey, nil)
-	assert.ErrorNotNil(t, err, "replicatedMap Put() failed")
+	require.Errorf(t, err, "replicatedMap Put() failed")
 }
 
 func TestReplicatedMapProxy_PutWithTTL(t *testing.T) {
@@ -92,23 +97,25 @@ func TestReplicatedMapProxy_PutWithTTL(t *testing.T) {
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
 	oldValue, err := rmp.PutWithTTL(testKey, "nextValue", 100*time.Second)
-	assert.Equalf(t, err, oldValue, testValue, "replicatedMap PutWithTTL()  failed")
+	require.NoError(t, err)
+	assert.Equalf(t, oldValue, testValue, "replicatedMap PutWithTTL()  failed")
 	res, err := rmp.Get(testKey)
-	assert.Equalf(t, err, res, "nextValue", "replicatedMap PutWithTTL() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, "nextValue", "replicatedMap PutWithTTL() failed")
 }
 
 func TestReplicatedMapProxy_PutWithTTLWithNilKey(t *testing.T) {
 	defer rmp.Clear()
 	testValue := "testingValue"
 	_, err := rmp.PutWithTTL(nil, testValue, 100*time.Second)
-	assert.ErrorNotNil(t, err, "replicatedMap PutWithTTL() failed")
+	require.Errorf(t, err, "replicatedMap PutWithTTL() failed")
 }
 
 func TestReplicatedMapProxy_PutWithTTLWithNilValue(t *testing.T) {
 	defer rmp.Clear()
 	testKey := "testingKey"
 	_, err := rmp.PutWithTTL(testKey, nil, 100*time.Second)
-	assert.ErrorNotNil(t, err, "replicatedMap PutWithTTL() failed")
+	require.Errorf(t, err, "replicatedMap PutWithTTL() failed")
 }
 
 func TestMapProxy_PutWithTTLWhenExpire(t *testing.T) {
@@ -119,7 +126,8 @@ func TestMapProxy_PutWithTTLWhenExpire(t *testing.T) {
 	rmp.PutWithTTL(testKey, "nextValue", 1*time.Millisecond)
 	time.Sleep(2 * time.Second)
 	res, err := rmp.Get(testKey)
-	assert.Nilf(t, err, res, "replicatedMap PutWithTTL() failed")
+	require.NoError(t, err)
+	assert.Nilf(t, res, "replicatedMap PutWithTTL() failed")
 }
 
 func TestReplicatedMapProxy_PutAll(t *testing.T) {
@@ -129,15 +137,20 @@ func TestReplicatedMapProxy_PutAll(t *testing.T) {
 		testMap["testingKey"+strconv.Itoa(i)] = "testingValue" + strconv.Itoa(i)
 	}
 	err := rmp.PutAll(testMap)
-	assert.ErrorNil(t, err)
+	require.NoError(t, err)
 	entryList, err := rmp.EntrySet()
-	assert.MapEqualPairSlice(t, err, testMap, entryList, "replicatedMap PutAll() failed")
+	require.NoError(t, err)
+	expected := make([]interface{}, 0)
+	for k, v := range testMap {
+		expected = append(expected, proto.NewPair(k, v))
+	}
+	assert.ElementsMatchf(t, entryList, expected, "replicatedMap PutAll() failed")
 }
 
 func TestReplicatedMapProxy_PutAllWithNilEntries(t *testing.T) {
 	defer rmp.Clear()
 	err := rmp.PutAll(nil)
-	assert.ErrorNotNil(t, err, "replicatedMap PutAll() failed")
+	require.Errorf(t, err, "replicatedMap PutAll() failed")
 }
 
 func TestReplicatedMapProxy_Get(t *testing.T) {
@@ -145,9 +158,10 @@ func TestReplicatedMapProxy_Get(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	_, err := rmp.Put(testKey, testValue)
-	assert.ErrorNil(t, err)
+	require.NoError(t, err)
 	res, err := rmp.Get(testKey)
-	assert.Equalf(t, err, res, testValue, "replicatedMap Get() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, testValue, "replicatedMap Get() failed")
 }
 
 func TestReplicatedMapProxy_GetWithNilKey(t *testing.T) {
@@ -156,7 +170,7 @@ func TestReplicatedMapProxy_GetWithNilKey(t *testing.T) {
 	testValue := "testingValue"
 	_, _ = rmp.Put(testKey, testValue)
 	_, err := rmp.Get(nil)
-	assert.ErrorNotNil(t, err, "replicatedMap Get() failed")
+	require.Errorf(t, err, "replicatedMap Get() failed")
 }
 
 func TestReplicatedMapProxy_GetWithNonExistKey(t *testing.T) {
@@ -164,9 +178,10 @@ func TestReplicatedMapProxy_GetWithNonExistKey(t *testing.T) {
 	testKey := "testingKey"
 	testValue := "testingValue"
 	_, err := rmp.Put("key", testValue)
-	assert.ErrorNil(t, err)
+	require.NoError(t, err)
 	res, err := rmp.Get(testKey)
-	assert.Nilf(t, err, res, "replicatedMap Get() failed")
+	require.NoError(t, err)
+	assert.Nilf(t, res, "replicatedMap Get() failed")
 }
 
 func TestReplicatedMapProxy_ContainsKey(t *testing.T) {
@@ -175,7 +190,8 @@ func TestReplicatedMapProxy_ContainsKey(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	res, err := rmp.ContainsKey("testKey5")
-	assert.Equalf(t, err, res, true, "replicatedMap ContainsKey() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, true, "replicatedMap ContainsKey() failed")
 }
 
 func TestReplicatedMapProxy_ContainsKeyWithNilKey(t *testing.T) {
@@ -184,7 +200,7 @@ func TestReplicatedMapProxy_ContainsKeyWithNilKey(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	_, err := rmp.ContainsKey(nil)
-	assert.ErrorNotNil(t, err, "replicatedMap ContainsKey() failed")
+	require.Errorf(t, err, "replicatedMap ContainsKey() failed")
 }
 
 func TestReplicatedMapProxy_ContainsKeyWithNonExistKey(t *testing.T) {
@@ -193,7 +209,8 @@ func TestReplicatedMapProxy_ContainsKeyWithNonExistKey(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	res, err := rmp.ContainsKey("testKey11")
-	assert.Equalf(t, err, res, false, "replicatedMap ContainsKey() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, false, "replicatedMap ContainsKey() failed")
 }
 
 func TestReplicatedMapProxy_ContainsValue(t *testing.T) {
@@ -202,7 +219,8 @@ func TestReplicatedMapProxy_ContainsValue(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	res, err := rmp.ContainsValue("testValue5")
-	assert.Equalf(t, err, res, true, "replicatedMap ContainsValue() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, true, "replicatedMap ContainsValue() failed")
 }
 
 func TestReplicatedMapProxy_ContainsValueWithNilValue(t *testing.T) {
@@ -211,7 +229,7 @@ func TestReplicatedMapProxy_ContainsValueWithNilValue(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	_, err := rmp.ContainsValue(nil)
-	assert.ErrorNotNil(t, err, "replicatedMap ContainsValue() failed")
+	require.Errorf(t, err, "replicatedMap ContainsValue() failed")
 }
 
 func TestReplicatedMapProxy_ContainsWithNonExistValue(t *testing.T) {
@@ -220,7 +238,8 @@ func TestReplicatedMapProxy_ContainsWithNonExistValue(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	res, err := rmp.ContainsValue("testValue11")
-	assert.Equalf(t, err, res, false, "replicatedMap ContainsValue() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, false, "replicatedMap ContainsValue() failed")
 }
 
 func TestReplicatedMapProxy_Clear(t *testing.T) {
@@ -229,7 +248,8 @@ func TestReplicatedMapProxy_Clear(t *testing.T) {
 	}
 	err := rmp.Clear()
 	size, _ := rmp.Size()
-	assert.Equalf(t, err, size, int32(0), "replicatedMap Clear() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(0), "replicatedMap Clear() failed")
 }
 
 func TestReplicatedMapProxy_Remove(t *testing.T) {
@@ -238,9 +258,11 @@ func TestReplicatedMapProxy_Remove(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	value, err := rmp.Remove("testKey5")
-	assert.Equalf(t, err, value, "testValue5", "replicatedMap Remove() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, value, "testValue5", "replicatedMap Remove() failed")
 	size, _ := rmp.Size()
-	assert.Equalf(t, err, size, int32(9), "replicatedMap Remove() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(9), "replicatedMap Remove() failed")
 }
 
 func TestReplicatedMapProxy_RemoveWithNilKey(t *testing.T) {
@@ -249,7 +271,7 @@ func TestReplicatedMapProxy_RemoveWithNilKey(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	_, err := rmp.Remove(nil)
-	assert.ErrorNotNil(t, err, "replicatedMap Remove() failed")
+	require.Errorf(t, err, "replicatedMap Remove() failed")
 }
 
 func TestReplicatedMapProxy_RemoveWithNonExistKey(t *testing.T) {
@@ -258,7 +280,8 @@ func TestReplicatedMapProxy_RemoveWithNonExistKey(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	value, err := rmp.Remove("testKey11")
-	assert.Nilf(t, err, value, "replicatedMap Remove() failed")
+	require.NoError(t, err)
+	assert.Nilf(t, value, "replicatedMap Remove() failed")
 }
 
 func TestReplicatedMapProxy_IsEmpty(t *testing.T) {
@@ -266,10 +289,12 @@ func TestReplicatedMapProxy_IsEmpty(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	empty, err := rmp.IsEmpty()
-	assert.Equalf(t, err, empty, false, "replicatedMap IsEmpty() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, empty, false, "replicatedMap IsEmpty() failed")
 	rmp.Clear()
 	empty, err = rmp.IsEmpty()
-	assert.Equalf(t, err, empty, true, "replicatedMap IsEmpty() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, empty, true, "replicatedMap IsEmpty() failed")
 }
 
 func TestReplicatedMapProxy_Size(t *testing.T) {
@@ -278,7 +303,8 @@ func TestReplicatedMapProxy_Size(t *testing.T) {
 		rmp.Put("testKey"+strconv.Itoa(i), "testValue"+strconv.Itoa(i))
 	}
 	size, err := rmp.Size()
-	assert.Equalf(t, err, size, int32(10), "replicatedMap Size() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(10), "replicatedMap Size() failed")
 }
 
 func TestReplicatedMapProxy_Values(t *testing.T) {
@@ -291,7 +317,8 @@ func TestReplicatedMapProxy_Values(t *testing.T) {
 	}
 	rmp.PutAll(testMap)
 	values, err := rmp.Values()
-	assert.SlicesHaveSameElements(t, err, expected, values, "replicatedMap Values() failed")
+	require.NoError(t, err)
+	assert.ElementsMatchf(t, expected, values, "replicatedMap Values() failed")
 }
 
 func TestReplicatedMapProxy_KeySet(t *testing.T) {
@@ -322,7 +349,12 @@ func TestReplicatedMapProxy_EntrySet(t *testing.T) {
 		testMap[key] = value
 	}
 	entrySet, err := rmp.EntrySet()
-	assert.MapEqualPairSlice(t, err, testMap, entrySet, "replicatedMap EntrySet() failed")
+	require.NoError(t, err)
+	expected := make([]interface{}, 0)
+	for k, v := range testMap {
+		expected = append(expected, proto.NewPair(k, v))
+	}
+	assert.ElementsMatch(t, expected, entrySet, "replicatedMap EntrySet() failed")
 }
 
 func TestReplicatedMapProxy_AddEntryListener_IllegalListener(t *testing.T) {
@@ -338,16 +370,16 @@ func TestReplicatedMapProxy_AddEntryListener(t *testing.T) {
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := rmp.AddEntryListener(entryListener)
 	defer rmp.RemoveEntryListener(registrationID)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key123", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "replicatedMap AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "replicatedMap AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), "value", "replicatedMap AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListener entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListener entryAdded failed")
+	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Key(), "key123", "replicatedMap AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.Value(), "value", "replicatedMap AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListener entryAdded failed")
+	assert.Equalf(t, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListener entryAdded failed")
 }
 
 func TestReplicatedMapProxy_AddEntryListenerWithPredicate_IllegalListener(t *testing.T) {
@@ -363,16 +395,16 @@ func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := rmp.AddEntryListenerWithPredicate(entryListener, predicate.Equal("this", "value"))
 	defer rmp.RemoveEntryListener(registrationID)
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key123", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "replicatedMap AddEntryListenerWithPredicate failed")
-	assert.Equalf(t, nil, entryListener.event.Key(), "key123", "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), "value", "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
+	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListenerWithPredicate failed")
+	assert.Equalf(t, entryListener.event.Key(), "key123", "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
+	assert.Equalf(t, entryListener.event.Value(), "value", "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
+	assert.Equalf(t, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
+	assert.Equalf(t, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
+	assert.Equalf(t, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
 }
 
 func TestReplicatedMapProxy_AddEntryListenerToKey_IllegalListener(t *testing.T) {
@@ -386,20 +418,20 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := rmp.AddEntryListenerToKey(entryListener, "key1")
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key1", "value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "replicatedMap AddEntryListenerToKey failed")
-	assert.Equalf(t, nil, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKey entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), "value", "replicatedMap AddEntryListenerToKey entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerToKey entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListenerToKey entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerToKey entryAdded failed")
+	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListenerToKey failed")
+	assert.Equalf(t, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKey entryAdded failed")
+	assert.Equalf(t, entryListener.event.Value(), "value", "replicatedMap AddEntryListenerToKey entryAdded failed")
+	assert.Equalf(t, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerToKey entryAdded failed")
+	assert.Equalf(t, entryListener.event.MergingValue(), nil, "replicatedMap AddEntryListenerToKey entryAdded failed")
+	assert.Equalf(t, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerToKey entryAdded failed")
 	wg.Add(1)
 	rmp.Put("key2", "value1")
 	timeout = test.WaitTimeout(wg, test.Timeout/20)
-	assert.Equalf(t, nil, true, timeout, "replicatedMap AddEntryListenerToKey failed")
+	assert.Equalf(t, true, timeout, "replicatedMap AddEntryListenerToKey failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
 }
@@ -415,24 +447,24 @@ func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	entryListener := &entryListener{wg: wg}
 	registrationID, err := rmp.AddEntryListenerToKeyWithPredicate(entryListener, predicate.Equal("this", "value1"), "key1")
-	assert.Equal(t, err, nil, nil)
+	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key1", "value1")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
-	assert.Equalf(t, nil, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.Value(), "value1",
+	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
+	assert.Equalf(t, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
+	assert.Equalf(t, entryListener.event.Value(), "value1",
 		"replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.MergingValue(), nil,
+	assert.Equalf(t, entryListener.event.OldValue(), nil, "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
+	assert.Equalf(t, entryListener.event.MergingValue(), nil,
 		"replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
-	assert.Equalf(t, nil, entryListener.event.EventType(), int32(1),
+	assert.Equalf(t, entryListener.event.EventType(), int32(1),
 		"replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
 
 	wg.Add(1)
 	rmp.Put("key1", "value2")
 	timeout = test.WaitTimeout(wg, test.Timeout/20)
-	assert.Equalf(t, nil, true, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
+	assert.Equalf(t, true, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
 }

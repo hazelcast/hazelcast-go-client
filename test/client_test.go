@@ -27,7 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClientGetMapWhenNoMemberUp(t *testing.T) {
@@ -36,7 +37,7 @@ func TestClientGetMapWhenNoMemberUp(t *testing.T) {
 	client, _ := hazelcast.NewClient()
 	remoteController.ShutdownCluster(cluster.ID)
 	_, err := client.GetMap("map")
-	assert.ErrorNotNil(t, err, "getMap should have returned an error when no member is up")
+	assert.Errorf(t, err, "getMap should have returned an error when no member is up")
 	client.Shutdown()
 }
 
@@ -53,7 +54,8 @@ func TestClientShutdownAndReopen(t *testing.T) {
 	client, _ = hazelcast.NewClient()
 	testMp, _ = client.GetMap("test")
 	value, err := testMp.Get("key")
-	assert.Equalf(t, err, value, "value", "Client shutdown and reopen failed")
+	assert.NoError(t, err)
+	assert.Equalf(t, value, "value", "Client shutdown and reopen failed")
 	client.Shutdown()
 }
 
@@ -75,9 +77,7 @@ func TestClientRoutineLeakage(t *testing.T) {
 	client.Shutdown()
 	time.Sleep(4 * time.Second)
 	routineNumAfter := runtime.NumGoroutine()
-	if routineNumBefore != routineNumAfter {
-		t.Fatalf("Expected number of routines %d, found %d", routineNumBefore, routineNumAfter)
-	}
+	assert.Equal(t, routineNumBefore, routineNumAfter)
 }
 
 func TestConnectionTimeout(t *testing.T) {
@@ -88,7 +88,7 @@ func TestConnectionTimeout(t *testing.T) {
 	cfg.NetworkConfig().SetConnectionTimeout(0)
 	client, err := hazelcast.NewClient()
 	defer client.Shutdown()
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestNegativeConnectionTimeoutShouldPanic(t *testing.T) {
@@ -124,7 +124,7 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	waitGroup.Wait()
 	connectionManager := client.(*internal.HazelcastClient).ConnectionManager
 	//There should be 5 connections. Next id will be 6
-	assert.Equal(t, nil, connectionManager.NextConnectionID(), int64(6))
+	assert.Equal(t, connectionManager.NextConnectionID(), int64(6))
 
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -153,33 +153,33 @@ func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
 	name := "test"
 	message := "Distributed object should not be created when client is not active"
 	_, err := client.GetMap(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetTopic(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetReplicatedMap(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetSet(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetQueue(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetList(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetMultiMap(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetPNCounter(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetRingbuffer(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 	_, err = client.GetFlakeIDGenerator(name)
-	assert.ErrorNotNil(t, err, message)
+	assert.Errorf(t, err, message)
 
 }

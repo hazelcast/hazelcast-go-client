@@ -21,7 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type heartbeatListener struct {
@@ -51,11 +51,11 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	client.(*internal.HazelcastClient).HeartBeatService.AddHeartbeatListener(heartbeatListener)
 	remoteController.SuspendMember(cluster.ID, member.UUID)
 	timeout := WaitTimeout(wg, Timeout)
-	assert.Equalf(t, nil, false, timeout, "heartbeatStopped listener failed")
+	assert.Equalf(t, false, timeout, "heartbeatStopped listener failed")
 	remoteController.ResumeMember(cluster.ID, member.UUID)
 	wg.Add(1)
 	timeout = WaitTimeout(wg, Timeout)
-	assert.Equalf(t, nil, false, timeout, "heartbeatRestored listener failed")
+	assert.Equalf(t, false, timeout, "heartbeatRestored listener failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }

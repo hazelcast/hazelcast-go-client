@@ -22,7 +22,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -295,5 +295,5 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	dataOutput.WriteUTF("Furkan")
 	data := &Data{dataOutput.buffer}
 	_, err := s.ToObject(data)
-	assert.ErrorNotNil(t, err, "err should not be nil")
+	require.Errorf(t, err, "err should not be nil")
 }

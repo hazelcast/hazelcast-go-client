@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSetGroupConfig(t *testing.T) {
@@ -46,5 +46,5 @@ func TestSetNetworkConfig(t *testing.T) {
 	nCfg.SetConnectionAttemptLimit(10)
 	cfg.SetNetworkConfig(nCfg)
 	actual := cfg.NetworkConfig().ConnectionAttemptLimit()
-	assert.Equal(t, nil, expected, actual)
+	assert.Equal(t, expected, actual)
 }

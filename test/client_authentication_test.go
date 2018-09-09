@@ -22,7 +22,8 @@ import (
 	serialization2 "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/security"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var samplePortableFactoryID int32 = 666
@@ -47,7 +48,7 @@ func TestCustomAuthentication(t *testing.T) {
 	mp, _ := client.GetMap("myMap")
 	_, err := mp.Put("key", "value")
 
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
@@ -66,7 +67,7 @@ func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
 	})
 
 	_, err := hazelcast.NewClientWithConfig(cfg)
-	assert.ErrorNotNil(t, err, "Client should not connect with invalid password")
+	assert.Errorf(t, err, "Client should not connect with invalid password")
 }
 
 func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
@@ -85,7 +86,7 @@ func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
 	})
 
 	_, err := hazelcast.NewClientWithConfig(cfg)
-	assert.ErrorNotNil(t, err, "Client should not connect with invalid username")
+	assert.Errorf(t, err, "Client should not connect with invalid username")
 }
 
 func TestSerializationOfCredentials(t *testing.T) {
@@ -97,12 +98,11 @@ func TestSerializationOfCredentials(t *testing.T) {
 	cfg.AddPortableFactory(creds.FactoryID(), &portableFactory2{})
 	serializationService, _ := serialization2.NewSerializationService(cfg)
 	credsData, err := serializationService.ToData(creds)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	retCreds, err := serializationService.ToObject(credsData)
-	assert.Equal(t, err, retCreds.(*security.UsernamePasswordCredentials).Username(), "dev")
-	assert.Equal(t, err, retCreds.(*security.UsernamePasswordCredentials).Principal(), "dev")
+	require.NoError(t, err)
+	assert.Equal(t, retCreds.(*security.UsernamePasswordCredentials).Username(), "dev")
+	assert.Equal(t, retCreds.(*security.UsernamePasswordCredentials).Principal(), "dev")
 }
 
 type portableFactory2 struct {

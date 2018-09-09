@@ -19,7 +19,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 var lookup map[string]core.Address
@@ -58,8 +58,8 @@ func testHzCloudAddrTranslatorTranslateNil(t *testing.T) {
 
 func testHzCloudAddrTranslatorTranslatePrivateToPublic(t *testing.T) {
 	actual := translator.Translate(privateAddress)
-	assert.Equal(t, nil, publicAddress.Host(), actual.Host())
-	assert.Equal(t, nil, privateAddress.Port(), actual.Port())
+	assert.Equal(t, publicAddress.Host(), actual.Host())
+	assert.Equal(t, privateAddress.Port(), actual.Port())
 }
 
 func testHzCloudAddrTranslatorTranslateWhenNotFoundReturnNil(t *testing.T) {
@@ -75,7 +75,7 @@ func testHzCloudAddrTranslatorTranslateAfterRefresh(t *testing.T) {
 	translator.Refresh()
 	actual := translator.Translate(privateAddress)
 
-	assert.Equal(t, nil, publicAddress.Host(), actual.Host())
-	assert.Equal(t, nil, privateAddress.Port(), actual.Port())
+	assert.Equal(t, publicAddress.Host(), actual.Host())
+	assert.Equal(t, privateAddress.Port(), actual.Port())
 
 }

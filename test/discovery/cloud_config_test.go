@@ -24,7 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 var testDiscoveryToken = "testDiscoveryToken"
@@ -32,8 +32,8 @@ var testDiscoveryToken = "testDiscoveryToken"
 func TestCloudConfigDefaults(t *testing.T) {
 	cfg := hazelcast.NewConfig()
 	cloudConfig := cfg.NetworkConfig().CloudConfig()
-	assert.Equalf(t, nil, false, cloudConfig.IsEnabled(), "Default cloud config should be disabled.")
-	assert.Equalf(t, nil, "", cloudConfig.DiscoveryToken(), "Default cloud config discovery token"+
+	assert.Equalf(t, false, cloudConfig.IsEnabled(), "Default cloud config should be disabled.")
+	assert.Equalf(t, "", cloudConfig.DiscoveryToken(), "Default cloud config discovery token"+
 		" should be empty.")
 }
 
@@ -44,8 +44,8 @@ func TestCloudConfig(t *testing.T) {
 	cloudConfig.SetDiscoveryToken(testDiscoveryToken)
 	cfg.NetworkConfig().SetCloudConfig(cloudConfig)
 	returnedCloudCfg := cfg.NetworkConfig().CloudConfig()
-	assert.Equalf(t, nil, true, returnedCloudCfg.IsEnabled(), "Cloud discovery should be enabled.")
-	assert.Equalf(t, nil, testDiscoveryToken, returnedCloudCfg.DiscoveryToken(), "Cloud discovery token "+
+	assert.Equalf(t, true, returnedCloudCfg.IsEnabled(), "Cloud discovery should be enabled.")
+	assert.Equalf(t, testDiscoveryToken, returnedCloudCfg.DiscoveryToken(), "Cloud discovery token "+
 		"should be set.")
 }
 
@@ -67,12 +67,12 @@ func TestCloudConfigCustomUrlEndpoint(t *testing.T) {
 	cfg.SetProperty(discovery.CloudURLBaseProperty.Name(), "https://dev.hazelcast.cloud")
 	properties := property.NewHazelcastProperties(cfg.Properties())
 	urlEndpoint := discovery.CreateURLEndpoint(properties, "token")
-	assert.Equal(t, nil, urlEndpoint, "https://dev.hazelcast.cloud/cluster/discovery?token=token")
+	assert.Equal(t, urlEndpoint, "https://dev.hazelcast.cloud/cluster/discovery?token=token")
 }
 
 func TestDefaultCloudUrlEndpoint(t *testing.T) {
 	cfg := hazelcast.NewConfig()
 	properties := property.NewHazelcastProperties(cfg.Properties())
 	urlEndpoint := discovery.CreateURLEndpoint(properties, "token")
-	assert.Equal(t, nil, urlEndpoint, "https://coordinator.hazelcast.cloud/cluster/discovery?token=token")
+	assert.Equal(t, urlEndpoint, "https://coordinator.hazelcast.cloud/cluster/discovery?token=token")
 }

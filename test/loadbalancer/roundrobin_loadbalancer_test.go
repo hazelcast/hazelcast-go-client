@@ -20,6 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRoundRobinLoadBalancer(t *testing.T) {
@@ -46,11 +47,7 @@ func TestRoundRobinLoadBalancer(t *testing.T) {
 	for i := 0; i < expected; i++ {
 		addressMp[lb.Next()] = struct{}{}
 	}
-
-	if len(addressMp) != expected {
-		t.Errorf("RoundRobin loadbalancer is not using members one by one, expected %d got %d",
-			expected, len(addressMp))
-	}
+	assert.Equalf(t, len(addressMp), expected, "RoundRobin loadbalancer is not using members one by one")
 
 }
 
@@ -77,9 +74,7 @@ func TestRoundRobinLoadBalancerOrder(t *testing.T) {
 	for j := 0; j < 50; j++ {
 		for i := 0; i < len(expected); i++ {
 			member := lb.Next()
-			if member.UUID() != expected[i].UUID() {
-				t.Error("RoundRobin loadbalancer is not going in order.")
-			}
+			assert.Equalf(t, member.UUID(), expected[i].UUID(), "RoundRobin loadbalancer is not going in order.")
 		}
 	}
 

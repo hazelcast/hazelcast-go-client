@@ -23,7 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -46,7 +46,7 @@ func TestCloudDiscoveryWithInvalidToken(t *testing.T) {
 
 	_, err := hazelcast.NewClientWithConfig(cfg)
 
-	assert.ErrorNotNil(t, err, "Client should not be created with invalid token.")
+	assert.Errorf(t, err, "Client should not be created with invalid token.")
 
 	if _, ok := err.(*core.HazelcastIllegalStateError); !ok {
 		t.Errorf("Client should not connect with invalid token to hazelcast cloud %s", err.Error())
