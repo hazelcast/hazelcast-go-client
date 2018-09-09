@@ -20,7 +20,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type lifecycleListener struct {
@@ -44,12 +44,12 @@ func TestLifecycleListener(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout)
-	assert.Equalf(t, nil, false, timeout, "LifecycleService listener failed")
-	assert.Equalf(t, nil, lifecycleListener.collector[0], core.LifecycleStateStarting, "LifecycleService listener failed")
-	assert.Equalf(t, nil, lifecycleListener.collector[1], core.LifecycleStateConnected, "LifecycleService listener failed")
-	assert.Equalf(t, nil, lifecycleListener.collector[2], core.LifecycleStateStarted, "LifecycleService listener failed")
-	assert.Equalf(t, nil, lifecycleListener.collector[3], core.LifecycleStateShuttingDown, "LifecycleService listener failed")
-	assert.Equalf(t, nil, lifecycleListener.collector[4], core.LifecycleStateShutdown, "LifecycleService listener failed")
+	assert.Equalf(t, false, timeout, "LifecycleService listener failed")
+	assert.Equalf(t, lifecycleListener.collector[0], core.LifecycleStateStarting, "LifecycleService listener failed")
+	assert.Equalf(t, lifecycleListener.collector[1], core.LifecycleStateConnected, "LifecycleService listener failed")
+	assert.Equalf(t, lifecycleListener.collector[2], core.LifecycleStateStarted, "LifecycleService listener failed")
+	assert.Equalf(t, lifecycleListener.collector[3], core.LifecycleStateShuttingDown, "LifecycleService listener failed")
+	assert.Equalf(t, lifecycleListener.collector[4], core.LifecycleStateShutdown, "LifecycleService listener failed")
 	remoteController.ShutdownCluster(cluster.ID)
 }
 
@@ -65,8 +65,8 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	registrationID := client.LifecycleService().AddLifecycleListener(&lifecycleListener)
 	remoteController.ShutdownCluster(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
-	assert.Equalf(t, nil, false, timeout, "LifecycleService listener failed")
-	assert.Equalf(t, nil, lifecycleListener.collector[0], core.LifecycleStateDisconnected, "LifecycleService listener failed")
+	assert.Equalf(t, false, timeout, "LifecycleService listener failed")
+	assert.Equalf(t, lifecycleListener.collector[0], core.LifecycleStateDisconnected, "LifecycleService listener failed")
 	client.LifecycleService().RemoveLifecycleListener(registrationID)
 	client.Shutdown()
 }
@@ -82,7 +82,7 @@ func TestRemoveListener(t *testing.T) {
 	client.LifecycleService().RemoveLifecycleListener(registrationID)
 	client.Shutdown()
 	timeout := WaitTimeout(wg, Timeout/20)
-	assert.Equalf(t, nil, true, timeout, "LifecycleService listener failed")
-	assert.Equalf(t, nil, len(lifecycleListener.collector), 0, "LifecycleService addListener or removeListener failed")
+	assert.Equalf(t, true, timeout, "LifecycleService listener failed")
+	assert.Equalf(t, len(lifecycleListener.collector), 0, "LifecycleService addListener or removeListener failed")
 	remoteController.ShutdownCluster(cluster.ID)
 }

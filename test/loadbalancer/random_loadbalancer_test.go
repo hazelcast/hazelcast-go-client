@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/stretchr/testify/assert"
 )
 
 var remoteController rc.RemoteController
@@ -60,9 +61,6 @@ func TestRandomLoadBalancer(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		addressMp[lb.Next()] = struct{}{}
 	}
-
-	if len(addressMp) != 2 {
-		t.Error("Random loadbalancer is not using all the members.")
-	}
+	assert.Equalf(t, 2, len(addressMp), "Random loadbalancer is not using all the members.")
 
 }

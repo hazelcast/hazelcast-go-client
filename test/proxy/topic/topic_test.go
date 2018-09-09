@@ -24,7 +24,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/require"
 )
 
 var topic core.Topic
@@ -50,11 +52,11 @@ func TestTopicProxy_AddListener(t *testing.T) {
 	listener := &topicMessageListener{wg: wg}
 	registrationID, err := topic.AddMessageListener(listener)
 	defer topic.RemoveMessageListener(registrationID)
-	assert.Nilf(t, err, nil, "topic AddMembershipListener() failed")
+	require.NoError(t, err)
 	topic.Publish("item-value")
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "topic AddMembershipListener() failed")
-	assert.Equalf(t, nil, listener.msg, "item-value", "topic AddMembershipListener() failed")
+	assert.Equalf(t, false, timeout, "topic AddMembershipListener() failed")
+	assert.Equalf(t, listener.msg, "item-value", "topic AddMembershipListener() failed")
 	if !listener.publishTime.After(time.Time{}) {
 		t.Fatal("publishTime should be greater than 0")
 	}
@@ -65,17 +67,18 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	wg.Add(1)
 	listener := &topicMessageListener{wg: wg}
 	registrationID, err := topic.AddMessageListener(listener)
-	assert.Nilf(t, err, nil, "topic AddMembershipListener() failed")
+	require.NoError(t, err)
 	removed, err := topic.RemoveMessageListener(registrationID)
-	assert.Equalf(t, err, removed, true, "topic RemoveMembershipListener() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, true, "topic RemoveMembershipListener() failed")
 	topic.Publish("item-value")
 	timeout := test.WaitTimeout(wg, test.Timeout/10)
-	assert.Equalf(t, nil, true, timeout, "topic RemoveMembershipListener() failed")
+	assert.Equalf(t, true, timeout, "topic RemoveMembershipListener() failed")
 }
 
 func TestTopicProxy_PublishNilMessage(t *testing.T) {
 	err := topic.Publish(nil)
-	assert.ErrorNotNil(t, err, "nil message should return an error")
+	require.Errorf(t, err, "nil message should return an error")
 }
 
 type topicMessageListener struct {

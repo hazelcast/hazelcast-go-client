@@ -25,7 +25,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
 	"github.com/hazelcast/hazelcast-go-client/core/projection"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var mp3 core.Map
@@ -64,7 +65,8 @@ func testProjection(t *testing.T, typ reflect.Type, result []interface{}, err er
 		resultSlice[i] = result[i].(int64)
 	}
 	sort.Slice(resultSlice, func(i, j int) bool { return resultSlice[i] < resultSlice[j] })
-	assert.Equalf(t, err, resultSlice, expected, fmt.Sprintf("IMap.Project with %v failed", typ))
+	require.NoError(t, err)
+	assert.Equalf(t, resultSlice, expected, fmt.Sprintf("IMap.Project with %v failed", typ))
 }
 
 // The equivalent Student class of this struct is available on server side.

@@ -19,14 +19,14 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProxy_Destroy(t *testing.T) {
 	name := "testMap"
 	serviceName := bufutil.ServiceNameMap
 	testMap, err := client.GetDistributedObject(serviceName, name)
-	assert.ErrorNil(t, err)
+	require.NoError(t, err)
 	res, err := testMap.Destroy()
 
 	if !res || err != nil {

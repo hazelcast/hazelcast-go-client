@@ -21,7 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -78,7 +78,7 @@ func TestHazelcastCloudDiscoverNodes(t *testing.T) {
 func TestHazelcastCloudDiscoveryInvalidURL(t *testing.T) {
 	hzC := NewHazelcastCloud("invalid", 0, nil)
 	_, err := hzC.discoverNodesInternal()
-	assert.ErrorNotNil(t, err, "invalid url should return an error")
+	require.Errorf(t, err, "invalid url should return an error")
 
 }
 
@@ -94,7 +94,7 @@ func TestHazelcastCloudDiscoveryWithoutCertPool(t *testing.T) {
 
 	hzC := NewHazelcastCloud(server.URL, 0, nil)
 	_, err := hzC.discoverNodesInternal()
-	assert.ErrorNotNil(t, err, "Cloud Discovery without certPool should not connect")
+	require.Errorf(t, err, "Cloud Discovery without certPool should not connect")
 }
 
 func TestHazelcastCloudDiscoverNodesInvalidJSON(t *testing.T) {
@@ -117,7 +117,7 @@ func TestHazelcastCloudDiscoverNodesInvalidJSON(t *testing.T) {
 
 	hzC := NewHazelcastCloud(server.URL, 0, certpool)
 	_, err = hzC.discoverNodesInternal()
-	assert.ErrorNotNil(t, err, "non JSON response should return an error")
+	require.Errorf(t, err, "non JSON response should return an error")
 }
 
 func TestHazelcastCloudDiscoverNodesWrongStatusCode(t *testing.T) {
@@ -140,5 +140,5 @@ func TestHazelcastCloudDiscoverNodesWrongStatusCode(t *testing.T) {
 
 	hzC := NewHazelcastCloud(server.URL, 0, certpool)
 	_, err = hzC.discoverNodesInternal()
-	assert.ErrorNotNil(t, err, "HTTP status other than 200 response should return an error")
+	require.Errorf(t, err, "HTTP status other than 200 response should return an error")
 }

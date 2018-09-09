@@ -23,7 +23,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var set core.Set
@@ -48,63 +49,73 @@ func TestMain(m *testing.M) {
 func TestSetProxy_Add(t *testing.T) {
 	defer set.Clear()
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Add() failed")
 	found, err := set.Contains(testElement)
-	assert.Equalf(t, err, found, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "set Add() failed")
 }
 
 func TestSetProxy_AddNil(t *testing.T) {
 	defer set.Clear()
 	_, err := set.Add(nil)
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_AddAll(t *testing.T) {
 	defer set.Clear()
 	all := []interface{}{"1", "2"}
 	added, err := set.AddAll(all)
-	assert.Equalf(t, err, added, true, "set AddAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, added, true, "set AddAll() failed")
 	res1, err := set.Contains("1")
-	assert.Equalf(t, err, res1, true, "set AddAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res1, true, "set AddAll() failed")
 	res2, err := set.Contains("2")
-	assert.Equalf(t, err, res2, true, "set AddAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res2, true, "set AddAll() failed")
 }
 
 func TestSetProxy_AddAllWithNilElement(t *testing.T) {
 	defer set.Clear()
 	all := []interface{}{nil, "2"}
 	_, err := set.AddAll(all)
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_AddAllWithNilSlice(t *testing.T) {
 	defer set.Clear()
 	_, err := set.AddAll(nil)
-	assert.ErrorNotNil(t, err, "nil slice should return an error.")
+	require.Errorf(t, err, "nil slice should return an error.")
 }
 
 func TestSetProxy_Clear(t *testing.T) {
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Add() failed")
 	set.Clear()
 	size, err := set.Size()
-	assert.Equalf(t, err, size, int32(0), "set Clear() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(0), "set Clear() failed")
 }
 
 func TestSetProxy_Contains(t *testing.T) {
 	defer set.Clear()
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Contains() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Contains() failed")
 	found, err := set.Contains(testElement)
-	assert.Equalf(t, err, found, true, "set Contains() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "set Contains() failed")
 }
 
 func TestSetProxy_ContainsNil(t *testing.T) {
 	defer set.Clear()
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Add() failed")
 	_, err = set.Contains(nil)
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_ContainsAll(t *testing.T) {
@@ -112,7 +123,8 @@ func TestSetProxy_ContainsAll(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	set.AddAll(all)
 	foundAll, err := set.ContainsAll(all)
-	assert.Equalf(t, err, foundAll, true, "set ContainsAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, foundAll, true, "set ContainsAll() failed")
 }
 
 func TestSetProxy_ContainsAllNilElement(t *testing.T) {
@@ -120,7 +132,7 @@ func TestSetProxy_ContainsAllNilElement(t *testing.T) {
 	all := []interface{}{nil, "2"}
 	set.AddAll(all)
 	_, err := set.ContainsAll(all)
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_ContainsAllNilSlice(t *testing.T) {
@@ -128,7 +140,7 @@ func TestSetProxy_ContainsAllNilSlice(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	set.AddAll(all)
 	_, err := set.ContainsAll(nil)
-	assert.ErrorNotNil(t, err, "nil slice should return an error.")
+	require.Errorf(t, err, "nil slice should return an error.")
 }
 
 func TestSetProxy_ToSlice(t *testing.T) {
@@ -136,8 +148,10 @@ func TestSetProxy_ToSlice(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	set.AddAll(all)
 	items, err := set.ToSlice()
-	assert.Equalf(t, err, items[0], "2", "set GetAll() failed")
-	assert.Equalf(t, err, items[1], "1", "set GetAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, items[0], "2", "set GetAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, items[1], "1", "set GetAll() failed")
 }
 
 func TestSetProxy_IsEmpty(t *testing.T) {
@@ -145,23 +159,27 @@ func TestSetProxy_IsEmpty(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	set.AddAll(all)
 	isEmpty, err := set.IsEmpty()
-	assert.Equalf(t, err, isEmpty, false, "set IsEmpty() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, isEmpty, false, "set IsEmpty() failed")
 }
 
 func TestSetProxy_Remove(t *testing.T) {
 	defer set.Clear()
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Add() failed")
 	removed, err := set.Remove(testElement)
-	assert.Equalf(t, err, removed, true, "set Remove() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, true, "set Remove() failed")
 }
 
 func TestSetProxy_RemoveNil(t *testing.T) {
 	defer set.Clear()
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Add() failed")
 	_, err = set.Remove(nil)
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_RemoveAll(t *testing.T) {
@@ -169,9 +187,11 @@ func TestSetProxy_RemoveAll(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	set.AddAll(all)
 	removed, err := set.RemoveAll([]interface{}{"1", "2"})
-	assert.Equalf(t, err, removed, true, "set RemoveAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, true, "set RemoveAll() failed")
 	items, err := set.ToSlice()
-	assert.Equalf(t, err, items[0], "3", "set RemoveAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, items[0], "3", "set RemoveAll() failed")
 }
 
 func TestSetProxy_RemoveAllNilElement(t *testing.T) {
@@ -179,7 +199,7 @@ func TestSetProxy_RemoveAllNilElement(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	set.AddAll(all)
 	_, err := set.RemoveAll([]interface{}{nil, "2"})
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_RemoveAllNilSlice(t *testing.T) {
@@ -187,7 +207,7 @@ func TestSetProxy_RemoveAllNilSlice(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	set.AddAll(all)
 	_, err := set.RemoveAll(nil)
-	assert.ErrorNotNil(t, err, "nil slice should return an error")
+	require.Errorf(t, err, "nil slice should return an error")
 }
 
 func TestSetProxy_RetainAll(t *testing.T) {
@@ -195,9 +215,11 @@ func TestSetProxy_RetainAll(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	set.AddAll(all)
 	changed, err := set.RetainAll([]interface{}{"2"})
-	assert.Equalf(t, err, changed, true, "set RetainAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set RetainAll() failed")
 	items, err := set.ToSlice()
-	assert.Equalf(t, err, items[0], "2", "set RetainAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, items[0], "2", "set RetainAll() failed")
 }
 
 func TestSetProxy_RetainAllNilElement(t *testing.T) {
@@ -205,7 +227,7 @@ func TestSetProxy_RetainAllNilElement(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	set.AddAll(all)
 	_, err := set.RetainAll([]interface{}{nil})
-	assert.ErrorNotNil(t, err, "nil element should return an error.")
+	require.Errorf(t, err, "nil element should return an error.")
 }
 
 func TestSetProxy_RetainAllNilSlice(t *testing.T) {
@@ -213,15 +235,17 @@ func TestSetProxy_RetainAllNilSlice(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	set.AddAll(all)
 	_, err := set.RetainAll(nil)
-	assert.ErrorNotNil(t, err, "nil slice should return an error")
+	require.Errorf(t, err, "nil slice should return an error")
 }
 
 func TestSetProxy_Size(t *testing.T) {
 	defer set.Clear()
 	changed, err := set.Add(testElement)
-	assert.Equalf(t, err, changed, true, "set Add() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "set Add() failed")
 	size, err := set.Size()
-	assert.Equalf(t, err, size, int32(1), "set Size() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(1), "set Size() failed")
 }
 
 func TestSetProxy_AddItemListener_IllegalListener(t *testing.T) {
@@ -238,13 +262,13 @@ func TestSetProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	listener := &itemListener{wg: wg}
 	registrationID, err := set.AddItemListener(listener, true)
 	defer set.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "set AddItemListener() failed when item is added")
+	require.NoError(t, err)
 	set.Add(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "set AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.Item(), testElement, "set AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.EventType(), int32(1), "set AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.Name(), "mySet", "set AddItemListener() failed when item is added")
+	assert.Equalf(t, false, timeout, "set AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.Item(), testElement, "set AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.EventType(), int32(1), "set AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.Name(), "mySet", "set AddItemListener() failed when item is added")
 }
 
 func TestSetProxy_AddItemItemAddedListener(t *testing.T) {
@@ -254,11 +278,11 @@ func TestSetProxy_AddItemItemAddedListener(t *testing.T) {
 	listener := &itemListener{wg: wg}
 	registrationID, err := set.AddItemListener(listener, false)
 	defer set.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "set AddItemListener() failed when item is added")
+	require.NoError(t, err)
 	set.Add(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "set AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.Item(), nil, "set AddItemListener() failed when item is added")
+	assert.Equalf(t, false, timeout, "set AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.Item(), nil, "set AddItemListener() failed when item is added")
 }
 
 func TestSetProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
@@ -269,13 +293,13 @@ func TestSetProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	set.Add(testElement)
 	registrationID, err := set.AddItemListener(listener, true)
 	defer set.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "set AddItemListener() failed when item is removed")
+	require.NoError(t, err)
 	set.Remove(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.Item(), testElement, "set AddItemListener() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.EventType(), int32(2), "set AddItemListener() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.Name(), "mySet", "set AddItemListener() failed when item is removed")
+	assert.Equalf(t, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
+	assert.Equalf(t, listener.event.Item(), testElement, "set AddItemListener() failed when item is removed")
+	assert.Equalf(t, listener.event.EventType(), int32(2), "set AddItemListener() failed when item is removed")
+	assert.Equalf(t, listener.event.Name(), "mySet", "set AddItemListener() failed when item is removed")
 }
 
 func TestSetProxy_AddItemListenerItemRemoved(t *testing.T) {
@@ -286,11 +310,11 @@ func TestSetProxy_AddItemListenerItemRemoved(t *testing.T) {
 	set.Add(testElement)
 	registrationID, err := set.AddItemListener(listener, false)
 	defer set.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "set AddItemListener() failed when item is removed")
+	require.NoError(t, err)
 	set.Remove(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.Item(), nil, "set AddItemListener() failed when item is removed")
+	assert.Equalf(t, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
+	assert.Equalf(t, listener.event.Item(), nil, "set AddItemListener() failed when item is removed")
 }
 
 func TestSetProxy_AddItemItemRemovedListener(t *testing.T) {
@@ -300,11 +324,11 @@ func TestSetProxy_AddItemItemRemovedListener(t *testing.T) {
 	listener := &itemListener{wg: wg}
 	registrationID, err := set.AddItemListener(listener, false)
 	defer set.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "set AddItemListener() failed")
+	require.NoError(t, err)
 	set.Add(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "set AddItemListener() failed")
-	assert.Equalf(t, nil, listener.event.Item(), nil, "set AddItemListener() failed")
+	assert.Equalf(t, false, timeout, "set AddItemListener() failed")
+	assert.Equalf(t, listener.event.Item(), nil, "set AddItemListener() failed")
 }
 
 type itemListener struct {

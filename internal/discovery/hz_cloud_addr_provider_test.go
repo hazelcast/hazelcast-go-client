@@ -21,7 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 var expectedAddresses map[string]core.Address
@@ -49,7 +49,7 @@ func TestHzCloudAddrProvider(t *testing.T) {
 
 func testHzCloudAddrProviderLoadAddresses(t *testing.T) {
 	addresses := provider.LoadAddresses()
-	assert.Equal(t, nil, 3, len(addresses))
+	assert.Equal(t, 3, len(addresses))
 	for key := range expectedAddresses {
 		found := false
 		for _, addr := range addresses {
@@ -57,7 +57,7 @@ func testHzCloudAddrProviderLoadAddresses(t *testing.T) {
 				found = true
 			}
 		}
-		assert.Equal(t, nil, true, found)
+		assert.Equal(t, true, found)
 	}
 }
 
@@ -67,5 +67,5 @@ func testHzCloudAddrProviderLoadAddressesNone(t *testing.T) {
 	}
 	provider2.cloudDiscovery.discoverNodes = mockProvider2
 	addresses := provider2.LoadAddresses()
-	assert.Equal(t, nil, 0, len(addresses))
+	assert.Equal(t, 0, len(addresses))
 }

@@ -26,7 +26,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var counter core.PNCounter
@@ -83,7 +84,8 @@ func TestPNCounter_Destroy(t *testing.T) {
 	counter.Destroy()
 	counter, _ = client.GetPNCounter(counterName)
 	res, err := counter.Get()
-	assert.Equalf(t, err, res, int64(0), "PNCounter.Destroy failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res, int64(0), "PNCounter.Destroy failed")
 }
 
 func TestPNCounter_Get(t *testing.T) {
@@ -91,68 +93,81 @@ func TestPNCounter_Get(t *testing.T) {
 	var delta int64 = 5
 	counter.AddAndGet(delta)
 	currentValue, err := counter.Get()
-	assert.Equalf(t, err, currentValue, delta, "PNCounter.Get failed")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, delta, "PNCounter.Get failed")
 }
 
 func TestPNCounter_GetAndAdd(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	previousValue, err := counter.GetAndAdd(delta)
-	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndAdd failed")
+	require.NoError(t, err)
+	assert.Equalf(t, previousValue, int64(0), "PNCounter.GetAndAdd failed")
 	currentValue, err := counter.Get()
-	assert.Equalf(t, err, currentValue, delta, "PNCounter.GetAndAdd failed")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, delta, "PNCounter.GetAndAdd failed")
 }
 
 func TestPNCounter_AddAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	updatedValue, err := counter.AddAndGet(delta)
-	assert.Equalf(t, err, updatedValue, delta, "PNCounter.AddAndGet failed")
+	require.NoError(t, err)
+	assert.Equalf(t, updatedValue, delta, "PNCounter.AddAndGet failed")
 }
 
 func TestPNCounter_GetAndSubtract(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	previousValue, err := counter.GetAndSubtract(delta)
-	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndSubtract failed")
+	require.NoError(t, err)
+	assert.Equalf(t, previousValue, int64(0), "PNCounter.GetAndSubtract failed")
 	currentValue, err := counter.Get()
-	assert.Equalf(t, err, currentValue, -delta, "PNCounter.GetAndAddSubtract failed")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, -delta, "PNCounter.GetAndAddSubtract failed")
 }
 
 func TestPNCounter_SubtractAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	var delta int64 = 5
 	updatedValue, err := counter.SubtractAndGet(delta)
-	assert.Equalf(t, err, updatedValue, -delta, "PNCounter.SubtractAndGet failed")
+	require.NoError(t, err)
+	assert.Equalf(t, updatedValue, -delta, "PNCounter.SubtractAndGet failed")
 }
 
 func TestPNCounter_DecrementAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	updatedValue, err := counter.DecrementAndGet()
-	assert.Equalf(t, err, updatedValue, int64(-1), "PNCounter.DecrementAndGet failed")
+	require.NoError(t, err)
+	assert.Equalf(t, updatedValue, int64(-1), "PNCounter.DecrementAndGet failed")
 }
 
 func TestPNCounter_IncrementAndGet(t *testing.T) {
 	defer destroyAndCreate()
 	updatedValue, err := counter.IncrementAndGet()
-	assert.Equalf(t, err, updatedValue, int64(1), "PNCounter.IncrementAndGet failed")
+	require.NoError(t, err)
+	assert.Equalf(t, updatedValue, int64(1), "PNCounter.IncrementAndGet failed")
 }
 
 func TestPNCounter_GetAndDecrement(t *testing.T) {
 	defer destroyAndCreate()
 	previousValue, err := counter.GetAndDecrement()
-	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndDecrement failed")
+	require.NoError(t, err)
+	assert.Equalf(t, previousValue, int64(0), "PNCounter.GetAndDecrement failed")
 	currentValue, err := counter.Get()
-	assert.Equalf(t, err, currentValue, int64(-1), "PNCounter.GetAndDecrement failed")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, int64(-1), "PNCounter.GetAndDecrement failed")
 
 }
 
 func TestPNCounter_GetAndIncrement(t *testing.T) {
 	defer destroyAndCreate()
 	previousValue, err := counter.GetAndIncrement()
-	assert.Equalf(t, err, previousValue, int64(0), "PNCounter.GetAndIncrement failed")
+	require.NoError(t, err)
+	assert.Equalf(t, previousValue, int64(0), "PNCounter.GetAndIncrement failed")
 	currentValue, err := counter.Get()
-	assert.Equalf(t, err, currentValue, int64(1), "PNCounter.GetAndIncrement failed")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, int64(1), "PNCounter.GetAndIncrement failed")
 }
 
 func TestPNCounter_ManyAdd(t *testing.T) {
@@ -168,7 +183,8 @@ func TestPNCounter_ManyAdd(t *testing.T) {
 	}
 	wg.Wait()
 	currentValue, err := counter.Get()
-	assert.Equalf(t, err, currentValue, int64(delta), "PNCounter has race condition")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, int64(delta), "PNCounter has race condition")
 
 }
 
@@ -225,5 +241,6 @@ func TestPNCounter_Reset(t *testing.T) {
 	remoteController.TerminateMember(cluster.ID, target.UUID())
 	counter.Reset()
 	currentValue, err := counter.AddAndGet(delta)
-	assert.Equalf(t, err, currentValue, int64(delta), "PNCounter.Reset failed")
+	require.NoError(t, err)
+	assert.Equalf(t, currentValue, int64(delta), "PNCounter.Reset failed")
 }

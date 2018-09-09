@@ -24,7 +24,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var queue core.Queue
@@ -52,15 +53,18 @@ func TestQueueProxy_AddAll(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	added, err := queue.AddAll(all)
 	items, err2 := queue.ToSlice()
-	assert.Equalf(t, err, added, true, "queue AddAll() failed")
-	assert.Equalf(t, err2, items[0], all[0], "queue AddAll() failed")
-	assert.Equalf(t, err2, items[1], all[1], "queue AddAll() failed")
+	require.NoError(t, err2)
+	assert.Equalf(t, added, true, "queue AddAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, items[0], all[0], "queue AddAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, items[1], all[1], "queue AddAll() failed")
 }
 
 func TestQueueProxy_AddAllWithNilItems(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.AddAll(nil)
-	assert.ErrorNotNil(t, err, "queue AddAll() did not return an error for nil items")
+	require.Errorf(t, err, "queue AddAll() did not return an error for nil items")
 
 }
 
@@ -69,7 +73,8 @@ func TestQueueProxy_Clear(t *testing.T) {
 	queue.AddAll(all)
 	queue.Clear()
 	size, err := queue.Size()
-	assert.Equalf(t, err, size, int32(0), "queue Clear() should clear the queue")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(0), "queue Clear() should clear the queue")
 }
 
 func TestQueueProxy_Contains(t *testing.T) {
@@ -77,13 +82,14 @@ func TestQueueProxy_Contains(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	queue.AddAll(all)
 	found, err := queue.Contains("1")
-	assert.Equalf(t, err, found, true, "queue Contains() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "queue Contains() failed")
 }
 
 func TestQueueProxy_ContainsWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.Contains(nil)
-	assert.ErrorNotNil(t, err, "queue Contains() should return error for nil element")
+	require.Errorf(t, err, "queue Contains() should return error for nil element")
 }
 
 func TestQueueProxy_ContainsAll(t *testing.T) {
@@ -91,13 +97,14 @@ func TestQueueProxy_ContainsAll(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	queue.AddAll(all)
 	found, err := queue.ContainsAll(all)
-	assert.Equalf(t, err, found, true, "queue ContainsAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "queue ContainsAll() failed")
 }
 
 func TestQueueProxy_ContainsAllNilSlice(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.ContainsAll(nil)
-	assert.ErrorNotNil(t, err, "queue ContainsAll() should return error for nil slice")
+	require.Errorf(t, err, "queue ContainsAll() should return error for nil slice")
 }
 
 func TestQueueProxy_DrainTo(t *testing.T) {
@@ -106,16 +113,20 @@ func TestQueueProxy_DrainTo(t *testing.T) {
 	drainSlice := make([]interface{}, 0)
 	drainSlice = append(drainSlice, "0", "1")
 	movedAmount, err := queue.DrainTo(&drainSlice)
-	assert.Equalf(t, err, movedAmount, int32(1), "queue DrainTo() failed")
-	assert.Equalf(t, err, drainSlice[0], "0", "queue DrainTo() failed")
-	assert.Equalf(t, err, drainSlice[1], "1", "queue DrainTo() failed")
-	assert.Equalf(t, err, drainSlice[2], "2", "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, movedAmount, int32(1), "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, drainSlice[0], "0", "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, drainSlice[1], "1", "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, drainSlice[2], "2", "queue DrainTo() failed")
 }
 
 func TestQueueProxy_DrainToWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.DrainTo(nil)
-	assert.ErrorNotNil(t, err, "queue DrainTo() should return error for nil element")
+	require.Errorf(t, err, "queue DrainTo() should return error for nil element")
 }
 
 func TestQueueProxy_DrainToWithMaxSize(t *testing.T) {
@@ -124,30 +135,37 @@ func TestQueueProxy_DrainToWithMaxSize(t *testing.T) {
 	drainSlice := make([]interface{}, 0)
 	drainSlice = append(drainSlice, "0", "1")
 	movedAmount, err := queue.DrainToWithMaxSize(&drainSlice, 1)
-	assert.Equalf(t, err, movedAmount, int32(1), "queue DrainTo() failed")
-	assert.Equalf(t, err, drainSlice[0], "0", "queue DrainTo() failed")
-	assert.Equalf(t, err, drainSlice[1], "1", "queue DrainTo() failed")
-	assert.Equalf(t, err, drainSlice[2], "2", "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, movedAmount, int32(1), "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, drainSlice[0], "0", "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, drainSlice[1], "1", "queue DrainTo() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, drainSlice[2], "2", "queue DrainTo() failed")
 }
 
 func TestQueueProxy_DrainToWithMaxSizeWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.DrainToWithMaxSize(nil, 5)
-	assert.ErrorNotNil(t, err, "queue DrainToWithMaxSize() should return error for nil element")
+	require.Errorf(t, err, "queue DrainToWithMaxSize() should return error for nil element")
 }
 
 func TestQueueProxy_IsEmpty(t *testing.T) {
 	defer queue.Clear()
 	empty, err := queue.IsEmpty()
-	assert.Equalf(t, err, empty, true, "queue IsEmpty() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, empty, true, "queue IsEmpty() failed")
 }
 
 func TestQueueProxy_Offer(t *testing.T) {
 	defer queue.Clear()
 	changed, err := queue.Offer(testElement)
-	assert.Equalf(t, err, changed, true, "queue Offer() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "queue Offer() failed")
 	result, err := queue.Peek()
-	assert.Equalf(t, err, result, testElement, "queue Offer() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, result, testElement, "queue Offer() failed")
 }
 
 func TestQueueProxy_OfferWithFullCapacity(t *testing.T) {
@@ -155,21 +173,24 @@ func TestQueueProxy_OfferWithFullCapacity(t *testing.T) {
 	all := []interface{}{"1", "2", "3", "4", "5", "6"}
 	queue.AddAll(all)
 	changed, err := queue.Offer(testElement)
-	assert.Equalf(t, err, changed, false, "queue Offer() failed with full capacity")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, false, "queue Offer() failed with full capacity")
 }
 
 func TestQueueProxy_OfferWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.Offer(nil)
-	assert.ErrorNotNil(t, err, "queue Offer() should return error for nil element")
+	require.Errorf(t, err, "queue Offer() should return error for nil element")
 }
 
 func TestQueueProxy_OfferWithTimeout(t *testing.T) {
 	defer queue.Clear()
 	changed, err := queue.OfferWithTimeout(testElement, 0)
-	assert.Equalf(t, err, changed, true, "queue Offer() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "queue Offer() failed")
 	result, err := queue.Peek()
-	assert.Equalf(t, err, result, testElement, "queue Offer() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, result, testElement, "queue Offer() failed")
 }
 
 func TestQueueProxy_OfferWithTimeoutWithFullCapacity(t *testing.T) {
@@ -177,90 +198,103 @@ func TestQueueProxy_OfferWithTimeoutWithFullCapacity(t *testing.T) {
 	all := []interface{}{"1", "2", "3", "4", "5", "6"}
 	queue.AddAll(all)
 	changed, err := queue.OfferWithTimeout(testElement, 100*time.Millisecond)
-	assert.Equalf(t, err, changed, false, "queue Offer() failed with full capacity")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, false, "queue Offer() failed with full capacity")
 }
 
 func TestQueueProxy_OfferWithTimeoutWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.OfferWithTimeout(nil, 0)
-	assert.ErrorNotNil(t, err, "queue OfferWithTimeout() should return error for nil element")
+	require.Errorf(t, err, "queue OfferWithTimeout() should return error for nil element")
 }
 
 func TestQueueProxy_Peek(t *testing.T) {
 	defer queue.Clear()
 	queue.Put(testElement)
 	item, err := queue.Peek()
-	assert.Equalf(t, err, item, testElement, "queue Peek() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, testElement, "queue Peek() failed")
 }
 
 func TestQueueProxy_PeekEMptyQueue(t *testing.T) {
 	defer queue.Clear()
 	item, err := queue.Peek()
-	assert.Equalf(t, err, item, nil, "queue Peek() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, nil, "queue Peek() failed")
 }
 
 func TestQueueProxy_Poll(t *testing.T) {
 	defer queue.Clear()
 	queue.Put(testElement)
 	item, err := queue.Poll()
-	assert.Equalf(t, err, item, testElement, "queue Poll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, testElement, "queue Poll() failed")
 }
 
 func TestQueueProxy_PollEmpty(t *testing.T) {
 	defer queue.Clear()
 	item, err := queue.Poll()
-	assert.Equalf(t, err, item, nil, "queue Poll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, nil, "queue Poll() failed")
 }
 
 func TestQueueProxy_PollWithTimeout(t *testing.T) {
 	defer queue.Clear()
 	queue.Put(testElement)
 	item, err := queue.PollWithTimeout(1000 * time.Millisecond)
-	assert.Equalf(t, err, item, testElement, "queue PollWithTimeout() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, testElement, "queue PollWithTimeout() failed")
 }
 
 func TestQueueProxy_PollWithTimeoutEmpty(t *testing.T) {
 	defer queue.Clear()
 	item, err := queue.PollWithTimeout(1000 * time.Millisecond)
-	assert.Equalf(t, err, item, nil, "queue PollWithTimeout() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, nil, "queue PollWithTimeout() failed")
 }
 
 func TestQueueProxy_Put(t *testing.T) {
 	defer queue.Clear()
 	err := queue.Put(testElement)
-	assert.Equalf(t, err, nil, nil, "queue Put() failed")
+	require.NoError(t, err)
 	result, err := queue.Peek()
-	assert.Equalf(t, err, result, testElement, "queue Put() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, result, testElement, "queue Put() failed")
 }
 
 func TestQueueProxy_RemainingCapacity(t *testing.T) {
 	defer queue.Clear()
 	all := []interface{}{"1", "2", "3"}
-	remainingCapacity1, err1 := queue.RemainingCapacity()
+	remainingCapacity1, err := queue.RemainingCapacity()
+	require.NoError(t, err)
 	queue.AddAll(all)
-	remainingCapacity2, err2 := queue.RemainingCapacity()
-	assert.Equalf(t, err1, remainingCapacity1, int32(6), "queue RemainingCapacity() failed")
-	assert.Equalf(t, err2, remainingCapacity2, int32(3), "queue RemainingCapacity() failed")
+	remainingCapacity2, err := queue.RemainingCapacity()
+	require.NoError(t, err)
+	assert.Equalf(t, remainingCapacity1, int32(6), "queue RemainingCapacity() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, remainingCapacity2, int32(3), "queue RemainingCapacity() failed")
 }
 
 func TestQueueProxy_Remove(t *testing.T) {
 	defer queue.Clear()
 	queue.Put("1")
 	removed, err := queue.Remove("1")
-	assert.Equalf(t, err, removed, true, "queue Remove() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, true, "queue Remove() failed")
 }
 
 func TestQueueProxy_RemoveWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	queue.Put("1")
 	_, err := queue.Remove(nil)
-	assert.ErrorNotNil(t, err, "queue Remove() failed")
+	require.Errorf(t, err, "queue Remove() failed")
 }
 
 func TestQueueProxy_RemoveEmpty(t *testing.T) {
 	defer queue.Clear()
 	removed, err := queue.Remove("1")
-	assert.Equalf(t, err, removed, false, "queue Remove() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removed, false, "queue Remove() failed")
 }
 
 func TestQueueProxy_RemoveAll(t *testing.T) {
@@ -268,21 +302,24 @@ func TestQueueProxy_RemoveAll(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	queue.AddAll(all)
 	removedAll, err := queue.RemoveAll([]interface{}{"2", "3"})
-	assert.Equalf(t, err, removedAll, true, "queue RemoveAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removedAll, true, "queue RemoveAll() failed")
 	found, err := queue.Contains("1")
-	assert.Equalf(t, err, found, true, "queue RemoveAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, found, true, "queue RemoveAll() failed")
 }
 
 func TestQueueProxy_RemoveAllWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.RemoveAll(nil)
-	assert.ErrorNotNil(t, err, "queue RemoveAll() failed")
+	require.Errorf(t, err, "queue RemoveAll() failed")
 }
 
 func TestQueueProxy_RemoveAllEmpty(t *testing.T) {
 	defer queue.Clear()
 	removedAll, err := queue.RemoveAll([]interface{}{"2", "3"})
-	assert.Equalf(t, err, removedAll, false, "queue RemoveAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, removedAll, false, "queue RemoveAll() failed")
 }
 
 func TestQueueProxy_RetainAll(t *testing.T) {
@@ -290,21 +327,23 @@ func TestQueueProxy_RetainAll(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	queue.AddAll(all)
 	changed, err := queue.RetainAll([]interface{}{"2", "3"})
-	assert.Equalf(t, err, changed, true, "queue RetainAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, changed, true, "queue RetainAll() failed")
 	found, err := queue.Contains("1")
-	assert.Equalf(t, err, found, false, "queue RetainAll() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, found, false, "queue RetainAll() failed")
 }
 
 func TestQueueProxy_RetainAllWithNilElement(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.RetainAll([]interface{}{nil, "1", "2"})
-	assert.ErrorNotNil(t, err, "queue RetainAll() should return error with nil element")
+	require.Errorf(t, err, "queue RetainAll() should return error with nil element")
 }
 
 func TestQueueProxy_RetainAllWithNilSlice(t *testing.T) {
 	defer queue.Clear()
 	_, err := queue.RetainAll(nil)
-	assert.ErrorNotNil(t, err, "queue RetainAll() should return error with nil slice")
+	require.Errorf(t, err, "queue RetainAll() should return error with nil slice")
 }
 
 func TestQueueProxy_Size(t *testing.T) {
@@ -312,14 +351,16 @@ func TestQueueProxy_Size(t *testing.T) {
 	all := []interface{}{"1", "2", "3"}
 	queue.AddAll(all)
 	size, err := queue.Size()
-	assert.Equalf(t, err, size, int32(3), "queue Size() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, size, int32(3), "queue Size() failed")
 }
 
 func TestQueueProxy_Take(t *testing.T) {
 	defer queue.Clear()
 	queue.Put(testElement)
 	item, err := queue.Take()
-	assert.Equalf(t, err, item, testElement, "queue Take() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, item, testElement, "queue Take() failed")
 }
 
 func TestQueueProxy_ToSlice(t *testing.T) {
@@ -327,8 +368,10 @@ func TestQueueProxy_ToSlice(t *testing.T) {
 	all := []interface{}{"1", "2"}
 	queue.AddAll(all)
 	res, err := queue.ToSlice()
-	assert.Equalf(t, err, res[0], all[0], "queue ToSlice() failed")
-	assert.Equalf(t, err, res[1], all[1], "queue ToSlice() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res[0], all[0], "queue ToSlice() failed")
+	require.NoError(t, err)
+	assert.Equalf(t, res[1], all[1], "queue ToSlice() failed")
 }
 
 func TestQueueProxy_AddItemListener_IllegalListener(t *testing.T) {
@@ -345,13 +388,13 @@ func TestQueueProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	listener := &itemListener{wg: wg}
 	registrationID, err := queue.AddItemListener(listener, true)
 	defer queue.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "queue AddItemListener() failed when item is added")
+	require.NoError(t, err)
 	queue.Put(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "queue AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.Item(), testElement, "queue AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.EventType(), int32(1), "queue AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.Name(), queueName, "queue AddItemListener() failed when item is added")
+	assert.Equalf(t, false, timeout, "queue AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.Item(), testElement, "queue AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.EventType(), int32(1), "queue AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.Name(), queueName, "queue AddItemListener() failed when item is added")
 }
 
 func TestQueueProxy_AddItemItemAddedListener(t *testing.T) {
@@ -361,11 +404,11 @@ func TestQueueProxy_AddItemItemAddedListener(t *testing.T) {
 	listener := &itemListener{wg: wg}
 	registrationID, err := queue.AddItemListener(listener, false)
 	defer queue.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "queue AddItemListener() failed when item is added")
+	require.NoError(t, err)
 	queue.Put(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "queue AddItemListener() failed when item is added")
-	assert.Equalf(t, nil, listener.event.Item(), nil, "queue AddItemListener() failed when item is added")
+	assert.Equalf(t, false, timeout, "queue AddItemListener() failed when item is added")
+	assert.Equalf(t, listener.event.Item(), nil, "queue AddItemListener() failed when item is added")
 }
 
 func TestQueueProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
@@ -376,13 +419,13 @@ func TestQueueProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	queue.Put(testElement)
 	registrationID, err := queue.AddItemListener(listener, true)
 	defer queue.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "queue AddItemListener() failed when item is removed")
+	require.NoError(t, err)
 	queue.Remove(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "queue AddItemListenerItemRemoved() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.Item(), testElement, "queue AddItemListener() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.EventType(), int32(2), "queue AddItemListener() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.Name(), queueName, "queue AddItemListener() failed when item is removed")
+	assert.Equalf(t, false, timeout, "queue AddItemListenerItemRemoved() failed when item is removed")
+	assert.Equalf(t, listener.event.Item(), testElement, "queue AddItemListener() failed when item is removed")
+	assert.Equalf(t, listener.event.EventType(), int32(2), "queue AddItemListener() failed when item is removed")
+	assert.Equalf(t, listener.event.Name(), queueName, "queue AddItemListener() failed when item is removed")
 }
 
 func TestQueueProxy_AddItemListenerItemRemoved(t *testing.T) {
@@ -393,11 +436,11 @@ func TestQueueProxy_AddItemListenerItemRemoved(t *testing.T) {
 	queue.Put(testElement)
 	registrationID, err := queue.AddItemListener(listener, false)
 	defer queue.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "queue AddItemListener() failed when item is removed")
+	require.NoError(t, err)
 	queue.Remove(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "queue AddItemListenerItemRemoved() failed when item is removed")
-	assert.Equalf(t, nil, listener.event.Item(), nil, "queue AddItemListener() failed when item is removed")
+	assert.Equalf(t, false, timeout, "queue AddItemListenerItemRemoved() failed when item is removed")
+	assert.Equalf(t, listener.event.Item(), nil, "queue AddItemListener() failed when item is removed")
 }
 
 func TestQueueProxy_AddItemItemRemovedListener(t *testing.T) {
@@ -407,11 +450,11 @@ func TestQueueProxy_AddItemItemRemovedListener(t *testing.T) {
 	listener := &itemListener{wg: wg}
 	registrationID, err := queue.AddItemListener(listener, false)
 	defer queue.RemoveItemListener(registrationID)
-	assert.Nilf(t, err, nil, "queue AddItemListener() failed")
+	require.NoError(t, err)
 	queue.Put(testElement)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equalf(t, nil, false, timeout, "queue AddItemListener() failed")
-	assert.Equalf(t, nil, listener.event.Item(), nil, "queue AddItemListener() failed")
+	assert.Equalf(t, false, timeout, "queue AddItemListener() failed")
+	assert.Equalf(t, listener.event.Item(), nil, "queue AddItemListener() failed")
 }
 
 type itemListener struct {
