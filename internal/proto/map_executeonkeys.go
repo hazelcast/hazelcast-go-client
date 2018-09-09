@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func mapExecuteOnKeysCalculateSize(name string, entryProcessor *serialization.Data, keys []*serialization.Data) int {
+func mapExecuteOnKeysCalculateSize(name string, entryProcessor serialization.Data, keys []serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -35,7 +35,7 @@ func mapExecuteOnKeysCalculateSize(name string, entryProcessor *serialization.Da
 // MapExecuteOnKeysEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapExecuteOnKeysEncodeRequest(name string, entryProcessor *serialization.Data, keys []*serialization.Data) *ClientMessage {
+func MapExecuteOnKeysEncodeRequest(name string, entryProcessor serialization.Data, keys []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
 	clientMessage.SetMessageType(mapExecuteOnKeys)

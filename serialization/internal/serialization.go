@@ -12,31 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"fmt"
 	"reflect"
 	"strconv"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
-	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
-	"github.com/hazelcast/hazelcast-go-client/internal/projection"
-	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // Service serializes user objects to Data and back to Object.
-// Data is the internal representation of binary data in Hazelcast.
+// Data is the internal representation of binary Data in Hazelcast.
 type Service struct {
-	serializationConfig *config.SerializationConfig
+	serializationConfig *serialization.Config
 	registry            map[int32]serialization.Serializer
 	nameToID            map[string]int32
 }
 
-func NewSerializationService(serializationConfig *config.SerializationConfig) (*Service, error) {
+func NewService(serializationConfig *serialization.Config) (*Service, error) {
 	v1 := Service{serializationConfig: serializationConfig, nameToID: make(map[string]int32),
 		registry: make(map[int32]serialization.Serializer)}
 	err := v1.registerDefaultSerializers()
@@ -48,7 +43,10 @@ func NewSerializationService(serializationConfig *config.SerializationConfig) (*
 	return &v1, nil
 }
 
-func (s *Service) ToData(object interface{}) (*Data, error) {
+// ToData serializes an object to a Data.
+// It can safely be called with a Data. In that case, that instance is returned.
+// If it is called with nil, nil is returned.
+func (s *Service) ToData(object interface{}) (serialization.Data, error) {
 	if _, ok := object.(*Data); ok {
 		return object.(*Data), nil
 	}
@@ -63,7 +61,11 @@ func (s *Service) ToData(object interface{}) (*Data, error) {
 	return &Data{dataOutput.buffer}, err
 }
 
-func (s *Service) ToObject(data *Data) (interface{}, error) {
+// ToObject deserializes the given Data to an object.
+// It can safely be called on an object that is already deserialized. In that case, that instance
+// is returned.
+// If this is called with nil, nil is returned.
+func (s *Service) ToObject(data serialization.Data) (interface{}, error) {
 	if data == nil {
 		return nil, nil
 	}
@@ -282,13 +284,6 @@ func (s *Service) registerIdentifiedFactories() error {
 		factories[id] = s.serializationConfig.DataSerializableFactories()[id]
 	}
 
-	factories[predicate.FactoryID] = predicate.NewFactory()
-	factories[projection.FactoryID] = projection.NewFactory()
-	factories[aggregation.FactoryID] = aggregation.NewFactory()
-	factories[reliabletopic.FactoryID] = reliabletopic.NewMessageFactory()
-
-	//factories[RELIABLE_TOPIC_MESSAGE_FACTORY_ID] = new ReliableTopicMessageFactory()
-	//factories[CLUSTER_DATA_FACTORY_ID] = new ClusterDataFactory()
 	err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories))
 	if err != nil {
 		return err

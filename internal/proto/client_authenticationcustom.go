@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func clientAuthenticationCustomCalculateSize(credentials *serialization.Data, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
+func clientAuthenticationCustomCalculateSize(credentials serialization.Data, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += dataCalculateSize(credentials)
@@ -42,7 +42,7 @@ func clientAuthenticationCustomCalculateSize(credentials *serialization.Data, uu
 // ClientAuthenticationCustomEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func ClientAuthenticationCustomEncodeRequest(credentials *serialization.Data, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
+func ClientAuthenticationCustomEncodeRequest(credentials serialization.Data, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, clientAuthenticationCustomCalculateSize(credentials, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
 	clientMessage.SetMessageType(clientAuthenticationCustom)

@@ -19,7 +19,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 // ClientMessage is the carrier framed data as defined below.
@@ -169,7 +170,7 @@ func (m *ClientMessage) AppendInt32(v int32) {
 	m.writeIndex += bufutil.Int32SizeInBytes
 }
 
-func (m *ClientMessage) AppendData(v *serialization.Data) {
+func (m *ClientMessage) AppendData(v serialization.Data) {
 	m.AppendByteArray(v.Buffer())
 }
 
@@ -244,8 +245,8 @@ func (m *ClientMessage) ReadString() string {
 	return str
 }
 
-func (m *ClientMessage) ReadData() *serialization.Data {
-	return &serialization.Data{Payload: m.ReadByteArray()}
+func (m *ClientMessage) ReadData() serialization.Data {
+	return spi.NewData(m.ReadByteArray())
 }
 
 func (m *ClientMessage) ReadByteArray() []byte {

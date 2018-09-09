@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
@@ -26,8 +26,8 @@ func replicatedmapPutAllCalculateSize(name string, entries []*Pair) int {
 	dataSize += stringCalculateSize(name)
 	dataSize += bufutil.Int32SizeInBytes
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(*serialization.Data)
-		val := entriesItem.value.(*serialization.Data)
+		key := entriesItem.key.(serialization.Data)
+		val := entriesItem.value.(serialization.Data)
 		dataSize += dataCalculateSize(key)
 		dataSize += dataCalculateSize(val)
 	}
@@ -45,8 +45,8 @@ func ReplicatedMapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessa
 	clientMessage.AppendString(name)
 	clientMessage.AppendInt32(int32(len(entries)))
 	for _, entriesItem := range entries {
-		key := entriesItem.key.(*serialization.Data)
-		val := entriesItem.value.(*serialization.Data)
+		key := entriesItem.key.(serialization.Data)
+		val := entriesItem.value.(serialization.Data)
 		clientMessage.AppendData(key)
 		clientMessage.AppendData(val)
 	}

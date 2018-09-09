@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
@@ -57,13 +57,13 @@ func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (res
 }
 
 // MapAddEntryListenerHandleEventEntryFunc is the event handler function.
-type MapAddEntryListenerHandleEventEntryFunc func(*serialization.Data, *serialization.Data, *serialization.Data, *serialization.Data, int32, string, int32)
+type MapAddEntryListenerHandleEventEntryFunc func(serialization.Data, serialization.Data, serialization.Data, serialization.Data, int32, string, int32)
 
 // MapAddEntryListenerEventEntryDecode decodes the corresponding event
 // from the given client message.
 // It returns the result parameters for the event.
 func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (
-	key *serialization.Data, value *serialization.Data, oldValue *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()

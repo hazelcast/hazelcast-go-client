@@ -21,7 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const partitionUpdateInterval = 10 * time.Second
@@ -73,7 +73,7 @@ func (ps *partitionService) partitionOwner(partitionID int32) (*proto.Address, b
 	return address, ok
 }
 
-func (ps *partitionService) GetPartitionID(keyData *serialization.Data) int32 {
+func (ps *partitionService) GetPartitionID(keyData serialization.Data) int32 {
 	count := ps.getPartitionCount()
 	if count <= 0 {
 		return 0

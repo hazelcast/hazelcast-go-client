@@ -90,7 +90,7 @@ type Serializer interface {
 }
 
 // Data is the basic unit of serialization. It stores binary form of an object serialized
-// by SerializationService's ToData() method.
+// by serialization service's ToData() method.
 type Data interface {
 	// Buffer returns byte array representation of internal binary format.
 	Buffer() []byte

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	internalClassDef "github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
+	internalClassDef "github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
 )
 
 type PortableContext struct {

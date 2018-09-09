@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func setCompareAndRemoveAllCalculateSize(name string, values []*serialization.Data) int {
+func setCompareAndRemoveAllCalculateSize(name string, values []serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -34,7 +34,7 @@ func setCompareAndRemoveAllCalculateSize(name string, values []*serialization.Da
 // SetCompareAndRemoveAllEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func SetCompareAndRemoveAllEncodeRequest(name string, values []*serialization.Data) *ClientMessage {
+func SetCompareAndRemoveAllEncodeRequest(name string, values []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, setCompareAndRemoveAllCalculateSize(name, values))
 	clientMessage.SetMessageType(setCompareAndRemoveAll)

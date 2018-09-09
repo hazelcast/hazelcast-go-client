@@ -20,12 +20,16 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	prd "github.com/hazelcast/hazelcast-go-client/internal/predicate"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
+	"github.com/hazelcast/hazelcast-go-client/internal/projection"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
-var serializationService *serialization.Service
+var serializationService spi.SerializationService
 
 func predicateTestInit() {
 	defineSerializationService()
@@ -33,8 +37,11 @@ func predicateTestInit() {
 }
 
 func defineSerializationService() {
-	config := config.NewSerializationConfig()
-	serializationService, _ = serialization.NewSerializationService(config)
+	config := serialization.NewConfig()
+	config.AddDataSerializableFactory(aggregation.FactoryID, aggregation.NewFactory())
+	config.AddDataSerializableFactory(prd.FactoryID, prd.NewFactory())
+	config.AddDataSerializableFactory(projection.FactoryID, projection.NewFactory())
+	serializationService, _ = spi.NewSerializationService(config)
 }
 
 func fillMapForPredicates() {

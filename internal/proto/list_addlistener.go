@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
@@ -55,13 +55,13 @@ func ListAddListenerDecodeResponse(clientMessage *ClientMessage) func() (respons
 }
 
 // ListAddListenerHandleEventItemFunc is the event handler function.
-type ListAddListenerHandleEventItemFunc func(*serialization.Data, string, int32)
+type ListAddListenerHandleEventItemFunc func(serialization.Data, string, int32)
 
 // ListAddListenerEventItemDecode decodes the corresponding event
 // from the given client message.
 // It returns the result parameters for the event.
 func ListAddListenerEventItemDecode(clientMessage *ClientMessage) (
-	item *serialization.Data, uuid string, eventType int32) {
+	item serialization.Data, uuid string, eventType int32) {
 
 	if !clientMessage.ReadBool() {
 		item = clientMessage.ReadData()

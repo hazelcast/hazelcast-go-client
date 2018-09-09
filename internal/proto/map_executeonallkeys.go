@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func mapExecuteOnAllKeysCalculateSize(name string, entryProcessor *serialization.Data) int {
+func mapExecuteOnAllKeysCalculateSize(name string, entryProcessor serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func mapExecuteOnAllKeysCalculateSize(name string, entryProcessor *serialization
 // MapExecuteOnAllKeysEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapExecuteOnAllKeysEncodeRequest(name string, entryProcessor *serialization.Data) *ClientMessage {
+func MapExecuteOnAllKeysEncodeRequest(name string, entryProcessor serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapExecuteOnAllKeysCalculateSize(name, entryProcessor))
 	clientMessage.SetMessageType(mapExecuteOnAllKeys)

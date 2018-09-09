@@ -15,12 +15,12 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
-func multimapForceUnlockCalculateSize(name string, key *serialization.Data, referenceId int64) int {
+func multimapForceUnlockCalculateSize(name string, key serialization.Data, referenceId int64) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -32,7 +32,7 @@ func multimapForceUnlockCalculateSize(name string, key *serialization.Data, refe
 // MultiMapForceUnlockEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MultiMapForceUnlockEncodeRequest(name string, key *serialization.Data, referenceId int64) *ClientMessage {
+func MultiMapForceUnlockEncodeRequest(name string, key serialization.Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, multimapForceUnlockCalculateSize(name, key, referenceId))
 	clientMessage.SetMessageType(multimapForceUnlock)

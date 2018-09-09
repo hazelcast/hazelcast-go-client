@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 func TestAddressCodecEncodeDecode(t *testing.T) {
@@ -74,8 +74,8 @@ func TestDataEntryViewCodecEncodeDecode(t *testing.T) {
 	key := "test-key"
 	value := "test-value"
 	entryView := DataEntryView{}
-	entryView.keyData = &serialization.Data{Payload: []byte(key)}
-	entryView.valueData = &serialization.Data{Payload: []byte(value)}
+	entryView.keyData = spi.NewData([]byte(key))
+	entryView.valueData = spi.NewData([]byte(value))
 	entryView.cost = 123123
 	entryView.creationTime = 1212
 	entryView.expirationTime = 12

@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization/classdef"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
 )
 
 func TestDefaultPortableReader_ReadByte(t *testing.T) {
@@ -179,10 +178,10 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 
 func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	var expectedRet serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), 0))
 
@@ -202,10 +201,10 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 
 func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	var expectedRet serialization.Portable
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), 0))
 	o := NewPositionalObjectDataOutput(0, service, false)
@@ -387,10 +386,10 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineers", classdef.TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), 0))
 
@@ -410,10 +409,10 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 
 func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	var expectedRet serialization.Portable
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := classdef.NewClassDefinitionImpl(2, 1, 3)
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(0, "engineer", classdef.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), 3))
 	classDef.AddFieldDefinition(classdef.NewFieldDefinitionImpl(1, "name", classdef.TypeUTF,

@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package internal
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -98,10 +97,10 @@ func (*customer) ClassID() int32 {
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 = employee{22, "Furkan Şenharputlu"}
-	c := config.NewSerializationConfig()
+	c := serialization.NewConfig()
 	c.AddDataSerializableFactory(employee1.FactoryID(), factory{})
 
-	service, _ := NewSerializationService(c)
+	service, _ := NewService(c)
 
 	data, _ := service.ToData(&employee1)
 	retEmployee, _ := service.ToObject(data)
@@ -113,16 +112,16 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 
 func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
 	c := &customer{38, "Jack"}
-	config := config.NewSerializationConfig()
+	config := serialization.NewConfig()
 	config.AddDataSerializableFactory(c.FactoryID(), factory{})
 
-	service, _ := NewSerializationService(config)
+	service, _ := NewService(config)
 
 	data, _ := service.ToData(c)
 	_, err := service.ToObject(data)
 
 	if _, ok := err.(*core.HazelcastSerializationError); !ok {
-		t.Error("err should be 'serialization.factory is not able to create an instance for id: 2 on factory id: 4'")
+		t.Error("err should be 'factory is not able to create an instance for id: 2 on factory id: 4'")
 	}
 }
 

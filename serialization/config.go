@@ -12,113 +12,112 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package serialization
 
 import (
 	"reflect"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-// SerializationConfig contains the serialization configuration of a Hazelcast instance.
-type SerializationConfig struct {
+// Config contains the serialization configuration of a Hazelcast instance.
+type Config struct {
 	// isBigEndian is the byte order bool. If true, it means BigEndian, otherwise LittleEndian.
 	isBigEndian bool
 
 	// dataSerializableFactories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-	dataSerializableFactories map[int32]serialization.IdentifiedDataSerializableFactory
+	dataSerializableFactories map[int32]IdentifiedDataSerializableFactory
 
 	// portableFactories is a map of factory IDs and corresponding Portable factories.
-	portableFactories map[int32]serialization.PortableFactory
+	portableFactories map[int32]PortableFactory
 
 	// portableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
 	// like adding/removing a field or changing a type of a field.
 	portableVersion int32
 
 	// customSerializers is a map of object types and corresponding custom serializers.
-	customSerializers map[reflect.Type]serialization.Serializer
+	customSerializers map[reflect.Type]Serializer
 
 	// globalSerializer is the serializer that will be used if no other serializer is applicable.
-	globalSerializer serialization.Serializer
+	globalSerializer Serializer
 
 	// classDefinitions contains ClassDefinitions for portable structs.
-	classDefinitions []serialization.ClassDefinition
+	classDefinitions []ClassDefinition
 }
 
-// NewSerializationConfig returns a SerializationConfig with default values.
-func NewSerializationConfig() *SerializationConfig {
-	return &SerializationConfig{
+// NewConfig returns a Config with default values.
+func NewConfig() *Config {
+	return &Config{
 		isBigEndian:               true,
-		dataSerializableFactories: make(map[int32]serialization.IdentifiedDataSerializableFactory),
-		portableFactories:         make(map[int32]serialization.PortableFactory),
+		dataSerializableFactories: make(map[int32]IdentifiedDataSerializableFactory),
+		portableFactories:         make(map[int32]PortableFactory),
 		portableVersion:           0,
-		customSerializers:         make(map[reflect.Type]serialization.Serializer),
+		customSerializers:         make(map[reflect.Type]Serializer),
 	}
 }
 
 // IsBigEndian returns isBigEndian bool value.
-func (sc *SerializationConfig) IsBigEndian() bool {
+func (sc *Config) IsBigEndian() bool {
 	return sc.isBigEndian
 }
 
 // DataSerializableFactories returns a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-func (sc *SerializationConfig) DataSerializableFactories() map[int32]serialization.IdentifiedDataSerializableFactory {
+func (sc *Config) DataSerializableFactories() map[int32]IdentifiedDataSerializableFactory {
 	return sc.dataSerializableFactories
 }
 
 // PortableFactories returns a map of factory IDs and corresponding Portable factories.
-func (sc *SerializationConfig) PortableFactories() map[int32]serialization.PortableFactory {
+func (sc *Config) PortableFactories() map[int32]PortableFactory {
 	return sc.portableFactories
 }
 
 // PortableVersion returns version of a portable struct.
-func (sc *SerializationConfig) PortableVersion() int32 {
+func (sc *Config) PortableVersion() int32 {
 	return sc.portableVersion
 }
 
 // CustomSerializers returns a map of object types and corresponding custom serializers.
-func (sc *SerializationConfig) CustomSerializers() map[reflect.Type]serialization.Serializer {
+func (sc *Config) CustomSerializers() map[reflect.Type]Serializer {
 	return sc.customSerializers
 }
 
 // GlobalSerializer returns the global serializer.
-func (sc *SerializationConfig) GlobalSerializer() serialization.Serializer {
+func (sc *Config) GlobalSerializer() Serializer {
 	return sc.globalSerializer
 }
 
 // ClassDefinitions returns registered class definitions of portable structs.
-func (sc *SerializationConfig) ClassDefinitions() []serialization.ClassDefinition {
+func (sc *Config) ClassDefinitions() []ClassDefinition {
 	return sc.classDefinitions
 }
 
 // SetByteOrder sets the byte order. If true, it means BigEndian, otherwise LittleEndian.
-func (sc *SerializationConfig) SetByteOrder(isBigEndian bool) {
+func (sc *Config) SetByteOrder(isBigEndian bool) {
 	sc.isBigEndian = isBigEndian
 }
 
 // AddDataSerializableFactory adds an IdentifiedDataSerializableFactory for a given factory ID.
-func (sc *SerializationConfig) AddDataSerializableFactory(factoryID int32, f serialization.IdentifiedDataSerializableFactory) {
+func (sc *Config) AddDataSerializableFactory(factoryID int32, f IdentifiedDataSerializableFactory) {
 	sc.dataSerializableFactories[factoryID] = f
 }
 
 // AddPortableFactory adds a PortableFactory for a given factory ID.
-func (sc *SerializationConfig) AddPortableFactory(factoryID int32, pf serialization.PortableFactory) {
+func (sc *Config) AddPortableFactory(factoryID int32, pf PortableFactory) {
 	sc.portableFactories[factoryID] = pf
 }
 
 // AddClassDefinition registers class definitions explicitly.
-func (sc *SerializationConfig) AddClassDefinition(classDefinition ...serialization.ClassDefinition) {
+func (sc *Config) AddClassDefinition(classDefinition ...ClassDefinition) {
 	sc.classDefinitions = append(sc.classDefinitions, classDefinition...)
 }
 
 // SetPortableVersion sets the portable version.
-func (sc *SerializationConfig) SetPortableVersion(version int32) {
+func (sc *Config) SetPortableVersion(version int32) {
 	sc.portableVersion = version
 }
 
 // AddCustomSerializer adds a custom serializer for a given type. It can be an interface type or a struct type.
-func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer serialization.Serializer) error {
+func (sc *Config) AddCustomSerializer(typ reflect.Type, serializer Serializer) error {
 	if serializer.ID() > 0 {
 		sc.customSerializers[typ] = serializer
 	} else {
@@ -128,7 +127,7 @@ func (sc *SerializationConfig) AddCustomSerializer(typ reflect.Type, serializer 
 }
 
 // SetGlobalSerializer sets the global serializer.
-func (sc *SerializationConfig) SetGlobalSerializer(serializer serialization.Serializer) error {
+func (sc *Config) SetGlobalSerializer(serializer Serializer) error {
 	if serializer.ID() > 0 {
 		sc.globalSerializer = serializer
 	} else {

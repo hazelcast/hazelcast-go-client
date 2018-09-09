@@ -20,8 +20,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type mapProxy struct {
@@ -433,7 +433,7 @@ func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 	if keys == nil {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilKeysAreNotAllowed, nil)
 	}
-	partitions := make(map[int32][]*serialization.Data)
+	partitions := make(map[int32][]serialization.Data)
 	entryMap = make(map[interface{}]interface{})
 	for _, key := range keys {
 		keyData, err := mp.validateAndSerialize(key)
@@ -451,11 +451,11 @@ func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 		}
 		response := proto.MapGetAllDecodeResponse(responseMessage)()
 		for _, pairData := range response {
-			key, err := mp.toObject(pairData.Key().(*serialization.Data))
+			key, err := mp.toObject(pairData.Key().(serialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			value, err := mp.toObject(pairData.Value().(*serialization.Data))
+			value, err := mp.toObject(pairData.Value().(serialization.Data))
 			if err != nil {
 				return nil, err
 			}
@@ -492,8 +492,8 @@ func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (r
 	}
 	request = proto.MapAddEntryListenerEncodeRequest(mp.name, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *proto.ClientMessage) {
-		proto.MapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
+		proto.MapAddEntryListenerHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
@@ -518,8 +518,8 @@ func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 	}
 	request = proto.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, false)
 	eventHandler := func(clientMessage *proto.ClientMessage) {
-		proto.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
+		proto.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
@@ -545,8 +545,8 @@ func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
 	}
 	request = proto.MapAddEntryListenerToKeyEncodeRequest(mp.name, keyData, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *proto.ClientMessage) {
-		proto.MapAddEntryListenerToKeyHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string,
+		proto.MapAddEntryListenerToKeyHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
@@ -576,8 +576,8 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 	request = proto.MapAddEntryListenerToKeyWithPredicateEncodeRequest(mp.name, keyData, predicateData, includeValue,
 		listenerFlags, false)
 	eventHandler := func(clientMessage *proto.ClientMessage) {
-		proto.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+		proto.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
@@ -589,8 +589,8 @@ func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, pre
 		})
 }
 
-func (mp *mapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
-	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
+func (mp *mapProxy) onEntryEvent(keyData serialization.Data, oldValueData serialization.Data,
+	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
 	member := mp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mp.toObject(keyData)
@@ -636,7 +636,7 @@ func (mp *mapProxy) ExecuteOnKey(key interface{}, entryProcessor interface{}) (r
 }
 
 func (mp *mapProxy) ExecuteOnKeys(keys []interface{}, entryProcessor interface{}) (keyToResultPairs []core.Pair, err error) {
-	keysData := make([]*serialization.Data, len(keys))
+	keysData := make([]serialization.Data, len(keys))
 	for index, key := range keys {
 		keyData, err := mp.validateAndSerialize(key)
 		if err != nil {

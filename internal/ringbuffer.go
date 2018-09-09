@@ -19,7 +19,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 type ringbufferProxy struct {
@@ -145,13 +146,13 @@ type LazyReadResultSet struct {
 	// This slice includes both data and de-serialized objects.
 	lazyItems            []interface{}
 	itemSequences        []int64
-	serializationService *serialization.Service
+	serializationService spi.SerializationService
 }
 
 const sequenceUnavailable int64 = -1
 
-func NewLazyReadResultSet(readCount int32, itemsData []*serialization.Data, itemSeqs []int64,
-	ss *serialization.Service) (rs *LazyReadResultSet) {
+func NewLazyReadResultSet(readCount int32, itemsData []serialization.Data, itemSeqs []int64,
+	ss spi.SerializationService) (rs *LazyReadResultSet) {
 	rs = &LazyReadResultSet{readCount: readCount, itemSequences: itemSeqs, serializationService: ss}
 	lazyItems := make([]interface{}, len(itemsData))
 	for i, itemData := range itemsData {
@@ -169,7 +170,7 @@ func (rs *LazyReadResultSet) Get(index int32) (result interface{}, err error) {
 	if err = rs.rangeCheck(index); err != nil {
 		return
 	}
-	if itemData, ok := rs.lazyItems[index].(*serialization.Data); ok {
+	if itemData, ok := rs.lazyItems[index].(serialization.Data); ok {
 		item, err := rs.serializationService.ToObject(itemData)
 		if err != nil {
 			return nil, err

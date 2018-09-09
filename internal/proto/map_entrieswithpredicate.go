@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func mapEntriesWithPredicateCalculateSize(name string, predicate *serialization.Data) int {
+func mapEntriesWithPredicateCalculateSize(name string, predicate serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func mapEntriesWithPredicateCalculateSize(name string, predicate *serialization.
 // MapEntriesWithPredicateEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapEntriesWithPredicateEncodeRequest(name string, predicate *serialization.Data) *ClientMessage {
+func MapEntriesWithPredicateEncodeRequest(name string, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapEntriesWithPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(mapEntriesWithPredicate)

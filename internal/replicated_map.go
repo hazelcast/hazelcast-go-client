@@ -21,8 +21,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type replicatedMapProxy struct {
@@ -228,8 +228,8 @@ func (rmp *replicatedMapProxy) RemoveEntryListener(registrationID string) (remov
 	})
 }
 
-func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValueData *serialization.Data,
-	valueData *serialization.Data, mergingValueData *serialization.Data, eventType int32, uuid string,
+func (rmp *replicatedMapProxy) onEntryEvent(keyData serialization.Data, oldValueData serialization.Data,
+	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid string,
 	numberOfAffectedEntries int32, listener interface{}) {
 	member := rmp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := rmp.toObject(keyData)
@@ -254,8 +254,8 @@ func (rmp *replicatedMapProxy) onEntryEvent(keyData *serialization.Data, oldValu
 
 func (rmp *replicatedMapProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
-		proto.ReplicatedMapAddEntryListenerHandle(clientMessage, func(key *serialization.Data, oldValue *serialization.Data,
-			value *serialization.Data, mergingValue *serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+		proto.ReplicatedMapAddEntryListenerHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
@@ -264,7 +264,7 @@ func (rmp *replicatedMapProxy) createEventHandler(listener interface{}) func(cli
 func (rmp *replicatedMapProxy) createEventHandlerWithPredicate(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
 		proto.ReplicatedMapAddEntryListenerWithPredicateHandle(clientMessage,
-			func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data,
+			func(key serialization.Data, oldValue serialization.Data, value serialization.Data, mergingValue serialization.Data,
 				eventType int32, uuid string, numberOfAffectedEntries int32) {
 				rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 			})
@@ -274,7 +274,7 @@ func (rmp *replicatedMapProxy) createEventHandlerWithPredicate(listener interfac
 func (rmp *replicatedMapProxy) createEventHandlerToKey(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
 		proto.ReplicatedMapAddEntryListenerToKeyHandle(clientMessage,
-			func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data,
+			func(key serialization.Data, oldValue serialization.Data, value serialization.Data, mergingValue serialization.Data,
 				eventType int32, uuid string, numberOfAffectedEntries int32) {
 				rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 			})
@@ -285,7 +285,7 @@ func (rmp *replicatedMapProxy) createEventHandlerToKeyWithPredicate(listener int
 	clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
 		proto.ReplicatedMapAddEntryListenerToKeyWithPredicateHandle(clientMessage,
-			func(key *serialization.Data, oldValue *serialization.Data, value *serialization.Data, mergingValue *serialization.Data,
+			func(key serialization.Data, oldValue serialization.Data, value serialization.Data, mergingValue serialization.Data,
 				eventType int32, uuid string, numberOfAffectedEntries int32) {
 				rmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 			})

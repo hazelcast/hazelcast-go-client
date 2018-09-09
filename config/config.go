@@ -17,6 +17,7 @@ package config
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -41,7 +42,7 @@ type Config struct {
 	networkConfig *NetworkConfig
 
 	// serializationConfig is the serialization configuration of the client.
-	serializationConfig *SerializationConfig
+	serializationConfig *serialization.Config
 
 	securityConfig *SecurityConfig
 
@@ -65,7 +66,7 @@ func New() *Config {
 	return &Config{groupConfig: NewGroupConfig(),
 		networkConfig:             NewNetworkConfig(),
 		membershipListeners:       make([]interface{}, 0),
-		serializationConfig:       NewSerializationConfig(),
+		serializationConfig:       serialization.NewConfig(),
 		lifecycleListeners:        make([]interface{}, 0),
 		flakeIDGeneratorConfigMap: make(map[string]*FlakeIDGeneratorConfig),
 		properties:                make(Properties),
@@ -126,8 +127,8 @@ func (c *Config) NetworkConfig() *NetworkConfig {
 }
 
 // SerializationConfig returns SerializationConfig.
-func (c *Config) SerializationConfig() *SerializationConfig {
-	return c.serializationConfig
+func (cc *Config) SerializationConfig() *serialization.Config {
+	return cc.serializationConfig
 }
 
 // SetProperty sets a new pair of property as (name, value).
@@ -205,7 +206,7 @@ func (c *Config) SetNetworkConfig(networkConfig *NetworkConfig) {
 	c.networkConfig = networkConfig
 }
 
-// SetSerializationConfig sets the SerializationConfig.
-func (c *Config) SetSerializationConfig(serializationConfig *SerializationConfig) {
-	c.serializationConfig = serializationConfig
+// SetSerializationConfig sets the serialization config.
+func (cc *Config) SetSerializationConfig(serializationConfig *serialization.Config) {
+	cc.serializationConfig = serializationConfig
 }

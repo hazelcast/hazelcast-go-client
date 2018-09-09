@@ -20,9 +20,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/internal"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 func TestBinaryCompatibility(t *testing.T) {
@@ -73,11 +74,11 @@ func TestBinaryCompatibility(t *testing.T) {
 		"1-APortable-LITTLE_ENDIAN",
 	}
 
-	var dataMap = make(map[string]*serialization.Data)
+	var dataMap = make(map[string]serialization.Data)
 
 	dat, _ := ioutil.ReadFile("1.serialization.compatibility.binary")
 
-	i := serialization.NewObjectDataInput(dat, 0, nil, true)
+	i := internal.NewObjectDataInput(dat, 0, nil, true)
 	var index int
 	for i.Available() != 0 {
 		objectKey, _ := i.ReadUTF()
@@ -86,7 +87,7 @@ func TestBinaryCompatibility(t *testing.T) {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)
 			if supporteds[index] == objectKey {
-				dataMap[objectKey] = serialization.NewData(payload)
+				dataMap[objectKey] = spi.NewData(payload)
 			}
 		}
 		index++
@@ -123,16 +124,16 @@ func TestBinaryCompatibility(t *testing.T) {
 
 }
 
-func createSerializationService(byteOrder bool) (*serialization.Service, error) {
-	serConfing := config.NewSerializationConfig()
+func createSerializationService(byteOrder bool) (spi.SerializationService, error) {
+	serConfing := serialization.NewConfig()
 	pf := &aPortableFactory{}
 	idf := &aDataSerializableFactory{}
 	serConfing.AddPortableFactory(portableFactoryID, pf)
 	serConfing.AddDataSerializableFactory(identifiedDataSerializableFactoryID, idf)
 
 	if byteOrder {
-		return serialization.NewSerializationService(serConfing)
+		return spi.NewSerializationService(serConfing)
 	}
 	serConfing.SetByteOrder(false)
-	return serialization.NewSerializationService(serConfing)
+	return spi.NewSerializationService(serConfing)
 }

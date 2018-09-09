@@ -15,10 +15,10 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func mapKeySetWithPredicateCalculateSize(name string, predicate *serialization.Data) int {
+func mapKeySetWithPredicateCalculateSize(name string, predicate serialization.Data) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -29,7 +29,7 @@ func mapKeySetWithPredicateCalculateSize(name string, predicate *serialization.D
 // MapKeySetWithPredicateEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func MapKeySetWithPredicateEncodeRequest(name string, predicate *serialization.Data) *ClientMessage {
+func MapKeySetWithPredicateEncodeRequest(name string, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
 	clientMessage := NewClientMessage(nil, mapKeySetWithPredicateCalculateSize(name, predicate))
 	clientMessage.SetMessageType(mapKeySetWithPredicate)
@@ -42,11 +42,11 @@ func MapKeySetWithPredicateEncodeRequest(name string, predicate *serialization.D
 
 // MapKeySetWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func MapKeySetWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*serialization.Data) {
+func MapKeySetWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []*serialization.Data) {
+	return func() (response []serialization.Data) {
 		responseSize := clientMessage.ReadInt32()
-		response = make([]*serialization.Data, responseSize)
+		response = make([]serialization.Data, responseSize)
 		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
 			responseItem := clientMessage.ReadData()
 			response[responseIndex] = responseItem
