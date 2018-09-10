@@ -27,7 +27,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/timeutil"
 )
 
-const BufferSize = 8192 * 2
+const (
+	kb         = 1024
+	bufferSize = 128 * kb
+)
 
 type Connection struct {
 	pending                chan *proto.ClientMessage
@@ -130,7 +133,7 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 }
 
 func (c *Connection) read() {
-	buf := make([]byte, BufferSize)
+	buf := make([]byte, bufferSize)
 	for {
 		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
 		n, err := c.socket.Read(buf)
