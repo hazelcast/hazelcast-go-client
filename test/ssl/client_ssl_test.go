@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
 )
 
@@ -39,29 +38,6 @@ func TestSSLAuthenticationClientRunning(t *testing.T) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
 	assert.Equal(t, err, client.GetLifecycle().IsRunning(), true)
-}
-
-func TestSSLConfigWrongCAFilePath(t *testing.T) {
-	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().SSLConfig()
-	err := sslCfg.SetCaPath("WrongPath.pem")
-	assert.ErrorNotNil(t, err, "ssl configuration should fail with wrong CA path")
-}
-
-func TestSSLConfigWithWrongFormatCAFile(t *testing.T) {
-	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().SSLConfig()
-	err := sslCfg.SetCaPath("invalid-format.txt")
-	if _, ok := err.(*core.HazelcastIOError); !ok {
-		t.Errorf("SSL Config.SetCaPath should return a HazelcastIOError for invalid file format")
-	}
-}
-
-func TestSSLConfigWrongClientCertOrKeyFilePath(t *testing.T) {
-	cfg := hazelcast.NewConfig()
-	sslCfg := cfg.NetworkConfig().SSLConfig()
-	err := sslCfg.AddClientCertAndKeyPath("WrongPath.pem", "WrongPath.pem")
-	assert.ErrorNotNil(t, err, "ssl configuration should fail with wrong client cert or key path")
 }
 
 func TestSSLAuthenticationMapTest(t *testing.T) {

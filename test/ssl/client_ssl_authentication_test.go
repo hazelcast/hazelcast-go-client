@@ -39,6 +39,9 @@ var (
 	serverName    = "foo.bar.com"
 	server1CA     = "server1.pem"
 	server2CA     = "server2.pem"
+	clientCertPw  = "cert.pem"
+	clientKeyPw   = "privkey.pem"
+	password      = "foobar"
 )
 
 func TestMain(m *testing.M) {
