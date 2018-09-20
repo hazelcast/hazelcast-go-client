@@ -230,7 +230,7 @@ type LifecycleListener interface {
 type MessageListener interface {
 	// OnMessage is invoked when a message is received for the added topic. Note that topic guarantees message ordering.
 	// Therefore there is only one thread invoking OnMessage.
-	OnMessage(message Message)
+	OnMessage(message Message) error
 }
 
 // Message is a message for Topic.
