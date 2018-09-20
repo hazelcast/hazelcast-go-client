@@ -203,9 +203,10 @@ func (m *messageProcessor) onFailure(err error) {
 	if m.cancelled.Load() == true {
 		return
 	}
+	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
 	if strings.Contains(err.Error(), "com.hazelcast.ringbuffer.StaleSequenceException") {
+		headSeq, _ := m.proxy.ringBuffer.HeadSequence()
 		if m.listener.IsLossTolerant() {
-			headSeq, _ := m.proxy.ringBuffer.HeadSequence()
 			msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
 				strconv.Itoa(int(m.sequence)) + " " +
 				" to new sequence " + strconv.Itoa(int(headSeq))
@@ -214,10 +215,17 @@ func (m *messageProcessor) onFailure(err error) {
 			go m.next()
 			return
 		}
+		log.Println(baseMsg+"The listener was too slow or the retention period of the message has been violated. ",
+			"Head: ", headSeq, " sequence: ", m.sequence)
 
+	} else if _, ok := err.(*core.HazelcastInstanceNotActiveError); ok {
+		log.Println(baseMsg + "HazelcastInstance is shutting down.")
+	} else if _, ok := err.(*core.HazelcastClientNotActiveError); ok {
+		log.Println(baseMsg + "HazelcastClient is shutting down.")
+	} else {
+		log.Println(baseMsg + "Unhandled error, message:  " + err.Error())
 	}
-	msg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: " + err.Error()
-	log.Println(msg)
+
 	m.proxy.msgProcessorsMu.Lock()
 	m.cancel()
 	m.proxy.msgProcessorsMu.Unlock()
@@ -229,10 +237,10 @@ func (m *messageProcessor) onResponse(readResults core.ReadResultSet) {
 	var i int32
 	for ; i < readResults.Size(); i++ {
 		item, err := readResults.Get(i)
+		if m.cancelled.Load() == true {
+			return
+		}
 		if msg, ok := item.(*reliabletopic.Message); ok && err == nil {
-			if m.cancelled.Load() == true {
-				return
-			}
 			m.listener.StoreSequence(m.sequence)
 			m.process(msg)
 		}
