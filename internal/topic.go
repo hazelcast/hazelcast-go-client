@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"log"
+
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -67,7 +69,10 @@ func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) f
 			member := tp.client.ClusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
 			itemEvent := proto.NewTopicMessage(item, publishTime, member.(*proto.Member))
-			messageListener.OnMessage(itemEvent)
+			err := messageListener.OnMessage(itemEvent)
+			if err != nil {
+				log.Println("Error while handling the message in MessageListener OnMessage: ", err)
+			}
 		})
 	}
 }

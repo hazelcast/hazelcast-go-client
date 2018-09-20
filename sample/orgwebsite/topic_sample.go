@@ -24,8 +24,9 @@ import (
 type topicMessageListener struct {
 }
 
-func (*topicMessageListener) OnMessage(message core.Message) {
+func (*topicMessageListener) OnMessage(message core.Message) error {
 	fmt.Println("Got message: ", message.MessageObject())
+	return nil
 }
 
 func topicSampleRun() {
