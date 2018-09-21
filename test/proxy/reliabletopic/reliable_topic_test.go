@@ -26,6 +26,8 @@ import (
 
 	"runtime"
 
+	"errors"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -34,10 +36,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var client hazelcast.Instance
+var client hazelcast.Client
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
@@ -73,27 +76,28 @@ func TestReliableTopicProxy_AddMessageListener(t *testing.T) {
 	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	id, err := reliableTopic.AddMessageListener(&ReliableMessageListenerMock{})
 	defer reliableTopic.RemoveMessageListener(id)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestReliableTopicProxy_AddMessageListenerNil(t *testing.T) {
 	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	_, err := reliableTopic.AddMessageListener(nil)
-	assert.ErrorNotNil(t, err, "nil message listener should not be added")
+	assert.Errorf(t, err, "nil message listener should not be added")
 }
 
 func TestReliableTopicProxy_RemoveMessageListenerWhenExists(t *testing.T) {
 	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	id, err := reliableTopic.AddMessageListener(&ReliableMessageListenerMock{})
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	removed, err := reliableTopic.RemoveMessageListener(id)
-	assert.Equal(t, err, removed, true)
+	require.NoError(t, err)
+	assert.Equal(t, removed, true)
 }
 
 func TestReliableTopicProxy_RemoveMessageListenerWhenDoesntExist(t *testing.T) {
 	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	removed, err := reliableTopic.RemoveMessageListener("id")
-	assert.ErrorNotNil(t, err, "")
+	assert.Error(t, err, "")
 	if removed {
 		t.Error("nonexisting registration id should return error")
 	}
@@ -102,11 +106,12 @@ func TestReliableTopicProxy_RemoveMessageListenerWhenDoesntExist(t *testing.T) {
 func TestReliableTopicProxy_RemoveMessageListenerWhenAlreadyRemoved(t *testing.T) {
 	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	id, err := reliableTopic.AddMessageListener(&ReliableMessageListenerMock{})
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	removed, err := reliableTopic.RemoveMessageListener(id)
-	assert.Equal(t, err, removed, true)
+	require.NoError(t, err)
+	assert.Equal(t, removed, true)
 	removed, err = reliableTopic.RemoveMessageListener(id)
-	assert.ErrorNotNil(t, err, "")
+	assert.Error(t, err, "")
 	if removed {
 		t.Error("nonexisting registration id should return error")
 	}
@@ -120,9 +125,60 @@ func TestReliableTopicProxy_PublishSingle(t *testing.T) {
 	defer reliableTopic.RemoveMessageListener(id)
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equal(t, err, timeout, false)
+	require.NoError(t, err)
+	assert.Equal(t, timeout, false)
+}
+
+func TestReliableTopicProxy_ErrorOnMessageTerminal(t *testing.T) {
+	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &ReliableMessageListenerMock{wg: wg, storedSeq: -1}
+	listener.err = errors.New("error")
+	listener.isTerminal = true
+	id, _ := reliableTopic.AddMessageListener(listener)
+	defer reliableTopic.RemoveMessageListener(id)
+	msg := "foobar"
+	err := reliableTopic.Publish(msg)
+	assert.NoError(t, err)
+	timeout := test.WaitTimeout(wg, test.Timeout)
+	require.NoError(t, err)
+	assert.Equal(t, timeout, false)
+}
+
+func TestReliableTopicProxy_ErrorOnMessageNotTerminal(t *testing.T) {
+	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &ReliableMessageListenerMock{wg: wg, storedSeq: -1}
+	listener.err = errors.New("error")
+	id, _ := reliableTopic.AddMessageListener(listener)
+	defer reliableTopic.RemoveMessageListener(id)
+	msg := "foobar"
+	err := reliableTopic.Publish(msg)
+	assert.NoError(t, err)
+	timeout := test.WaitTimeout(wg, test.Timeout)
+	require.NoError(t, err)
+	assert.Equal(t, timeout, false)
+}
+
+func TestReliableTopicProxy_ErrorOnMessageErrorOnIsTerminal(t *testing.T) {
+	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &ReliableMessageListenerMock{wg: wg, storedSeq: -1}
+	listener.err = errors.New("error")
+	listener.terminalErr = errors.New("terminal error")
+	id, _ := reliableTopic.AddMessageListener(listener)
+	defer reliableTopic.RemoveMessageListener(id)
+	msg := "foobar"
+	err := reliableTopic.Publish(msg)
+	assert.NoError(t, err)
+	timeout := test.WaitTimeout(wg, test.Timeout)
+	require.NoError(t, err)
+	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_DefaultReliableMessageListener(t *testing.T) {
@@ -133,15 +189,16 @@ func TestReliableTopicProxy_DefaultReliableMessageListener(t *testing.T) {
 	defer reliableTopic.RemoveMessageListener(id)
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equal(t, err, timeout, false)
+	require.NoError(t, err)
+	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_PublishNil(t *testing.T) {
 	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	err := reliableTopic.Publish(nil)
-	assert.ErrorNotNil(t, err, "")
+	assert.Error(t, err, "")
 }
 
 func TestReliableTopicProxy_PublishMany(t *testing.T) {
@@ -154,11 +211,11 @@ func TestReliableTopicProxy_PublishMany(t *testing.T) {
 	msg := "foobar"
 	for i := 0; i < amount; i++ {
 		err := reliableTopic.Publish(msg + strconv.Itoa(i))
-		assert.ErrorNil(t, err)
+		assert.NoError(t, err)
 
 	}
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equal(t, nil, timeout, false)
+	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_MessageFieldSetCorrectly(t *testing.T) {
@@ -172,12 +229,16 @@ func TestReliableTopicProxy_MessageFieldSetCorrectly(t *testing.T) {
 	beforePublishTime := time.Now()
 	err := reliableTopic.Publish(msg)
 	afterPublishTime := time.Now()
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equal(t, err, timeout, false)
-	assert.Equal(t, err, len(listener.messages), 1)
-	assert.Equal(t, err, listener.messages[0].MessageObject(), msg)
-	assert.Equal(t, err, listener.messages[0].PublishingMember(), nil)
+	require.NoError(t, err)
+	assert.Equal(t, timeout, false)
+	require.NoError(t, err)
+	assert.Equal(t, len(listener.messages), 1)
+	require.NoError(t, err)
+	assert.Equal(t, listener.messages[0].MessageObject(), msg)
+	require.NoError(t, err)
+	assert.Equal(t, listener.messages[0].PublishingMember(), nil)
 
 	actualPublishTime := listener.messages[0].PublishTime()
 	log.Println(actualPublishTime, " ", beforePublishTime)
@@ -208,12 +269,12 @@ func TestReliableTopicProxy_AlwaysStartAfterTail(t *testing.T) {
 	reliableTopic.Publish("6")
 
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equal(t, nil, timeout, false)
+	assert.Equal(t, timeout, false)
 
-	assert.Equal(t, nil, len(listener.messages), 3)
-	assert.Equal(t, nil, listener.messages[0].MessageObject(), "4")
-	assert.Equal(t, nil, listener.messages[1].MessageObject(), "5")
-	assert.Equal(t, nil, listener.messages[2].MessageObject(), "6")
+	assert.Equal(t, len(listener.messages), 3)
+	assert.Equal(t, listener.messages[0].MessageObject(), "4")
+	assert.Equal(t, listener.messages[1].MessageObject(), "5")
+	assert.Equal(t, listener.messages[2].MessageObject(), "6")
 }
 
 func TestReliableTopicProxy_Discard(t *testing.T) {
@@ -223,12 +284,12 @@ func TestReliableTopicProxy_Discard(t *testing.T) {
 	topic.Ringbuffer().AddAll(items, core.OverflowPolicyFail)
 	topic.Publish(11)
 	seq, err := topic.Ringbuffer().TailSequence()
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	item, err := topic.Ringbuffer().ReadOne(seq)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	msg := item.(*reliabletopic.Message)
 	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload().(*serialization.Data))
-	assert.Equal(t, nil, obj, int64(10))
+	assert.Equal(t, obj, int64(10))
 }
 
 func TestReliableTopicProxy_Overwrite(t *testing.T) {
@@ -240,12 +301,12 @@ func TestReliableTopicProxy_Overwrite(t *testing.T) {
 	}
 	topic.Publish(11)
 	seq, err := topic.Ringbuffer().TailSequence()
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	item, err := topic.Ringbuffer().ReadOne(seq)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	msg := item.(*reliabletopic.Message)
 	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload().(*serialization.Data))
-	assert.Equal(t, nil, obj, int64(11))
+	assert.Equal(t, obj, int64(11))
 }
 
 func TestReliableTopicProxy_Error(t *testing.T) {
@@ -255,7 +316,7 @@ func TestReliableTopicProxy_Error(t *testing.T) {
 		reliableTopic.Publish(i)
 	}
 	err := reliableTopic.Publish(11)
-	assert.ErrorNotNil(t, err, "topic overflow policy error should cause topic to error when no space")
+	assert.Errorf(t, err, "topic overflow policy error should cause topic to error when no space")
 
 }
 
@@ -271,12 +332,12 @@ func TestReliableTopicProxy_Blocking(t *testing.T) {
 	topic.Publish(11)
 	timeDiff := time.Since(before)
 	seq, err := topic.Ringbuffer().TailSequence()
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	item, err := topic.Ringbuffer().ReadOne(seq)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	msg := item.(*reliabletopic.Message)
 	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload().(*serialization.Data))
-	assert.Equal(t, nil, obj, int64(11))
+	assert.Equal(t, obj, int64(11))
 	if timeDiff <= 2*time.Second {
 		t.Errorf("expected at least 2 seconds delay got %s", timeDiff)
 	}
@@ -287,16 +348,16 @@ func TestReliableTopicProxy_Stale(t *testing.T) {
 	topic := reliableTopic.(*internal.ReliableTopicProxy)
 	items := generateItems(client.(*internal.HazelcastClient), 20)
 	_, err := topic.Ringbuffer().AddAll(items, core.OverflowPolicyOverwrite)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	wg := new(sync.WaitGroup)
 	wg.Add(10)
 	listener := &ReliableMessageListenerMock{wg: wg, isLossTolerant: true, storedSeq: 0}
 	id, err := reliableTopic.AddMessageListener(listener)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	defer reliableTopic.RemoveMessageListener(id)
 	timeout := test.WaitTimeout(wg, test.Timeout)
-	assert.Equal(t, nil, timeout, false)
-	assert.Equal(t, nil, listener.messages[9].MessageObject(), int64(20))
+	assert.Equal(t, timeout, false)
+	assert.Equal(t, listener.messages[9].MessageObject(), int64(20))
 }
 
 func TestReliableTopicProxy_Leakage(t *testing.T) {
@@ -312,7 +373,7 @@ func TestReliableTopicProxy_Leakage(t *testing.T) {
 	id, _ := reliableTopic.AddMessageListener(listener)
 	defer reliableTopic.RemoveMessageListener(id)
 	_, err := topic.Ringbuffer().AddAll(items, core.OverflowPolicyOverwrite)
-	assert.ErrorNil(t, err)
+	assert.NoError(t, err)
 	client2.Shutdown()
 	time.Sleep(4 * time.Second)
 	routineNumAfter := runtime.NumGoroutine()
@@ -326,11 +387,15 @@ type ReliableMessageListenerMock struct {
 	isLossTolerant bool
 	wg             *sync.WaitGroup
 	messages       []core.Message
+	err            error
+	isTerminal     bool
+	terminalErr    error
 }
 
-func (r *ReliableMessageListenerMock) OnMessage(message core.Message) {
+func (r *ReliableMessageListenerMock) OnMessage(message core.Message) error {
 	r.messages = append(r.messages, message)
 	r.wg.Done()
+	return r.err
 }
 
 func (r *ReliableMessageListenerMock) RetrieveInitialSequence() int64 {
@@ -345,12 +410,17 @@ func (r *ReliableMessageListenerMock) IsLossTolerant() bool {
 	return r.isLossTolerant
 }
 
+func (r *ReliableMessageListenerMock) IsTerminal(err error) (bool, error) {
+	return r.isTerminal, r.terminalErr
+}
+
 type messageListenerMock struct {
 	wg *sync.WaitGroup
 }
 
-func (m *messageListenerMock) OnMessage(message core.Message) {
+func (m *messageListenerMock) OnMessage(message core.Message) error {
 	m.wg.Done()
+	return nil
 }
 
 func generateItems(client *internal.HazelcastClient, n int) []interface{} {
