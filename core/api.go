@@ -369,4 +369,8 @@ type ReliableMessageListener interface {
 	// If the ReliableMessageListener is not loss tolerant and the topic detects that there are missing messages, it will
 	// terminate the ReliableMessageListener.
 	IsLossTolerant() bool
+
+	// IsTerminal checks if the ReliableMessageListener should be terminated based on an error returned while calling
+	// MessageListener.OnMessage().
+	IsTerminal(err error) (bool, error)
 }

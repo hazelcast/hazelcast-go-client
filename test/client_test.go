@@ -29,6 +29,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 
+	"log"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -132,7 +134,8 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 }
 
 func TestClientNameSet(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, err := remoteController.CreateCluster("", DefaultServerConfig)
+	log.Println(err)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()

@@ -21,8 +21,6 @@ import (
 
 	"sync"
 
-	"strings"
-
 	"strconv"
 
 	"log"
@@ -48,14 +46,12 @@ type ReliableTopicProxy struct {
 	serializationService *serialization.Service
 	topicOverLoadPolicy  core.TopicOverloadPolicy
 	config               *config.ReliableTopicConfig
-	msgProcessorsMu      *sync.Mutex
-	msgProcessors        map[string]*messageProcessor
+	msgProcessors        *sync.Map
 }
 
 func newReliableTopicProxy(client *HazelcastClient, serviceName string, name string) (*ReliableTopicProxy, error) {
 	proxy := &ReliableTopicProxy{
-		msgProcessors:   make(map[string]*messageProcessor),
-		msgProcessorsMu: new(sync.Mutex),
+		msgProcessors: new(sync.Map),
 		proxy: &proxy{
 			client:      client,
 			serviceName: serviceName,
@@ -77,9 +73,7 @@ func (r *ReliableTopicProxy) AddMessageListener(messageListener core.MessageList
 	uuid, _ := iputil.NewUUID()
 	reliableMsgListener := r.toReliableMessageListener(messageListener)
 	msgProcessor := newMessageProcessor(uuid, reliableMsgListener, r)
-	r.msgProcessorsMu.Lock()
-	r.msgProcessors[uuid] = msgProcessor
-	r.msgProcessorsMu.Unlock()
+	r.msgProcessors.Store(uuid, msgProcessor)
 	go msgProcessor.next()
 	return uuid, nil
 }
@@ -88,13 +82,12 @@ func (r *ReliableTopicProxy) toReliableMessageListener(messageListener core.Mess
 	if listener, ok := messageListener.(core.ReliableMessageListener); ok {
 		return listener
 	}
-	return newDefaultReliableTopicMessageListener(messageListener)
+	return newReliableMessageListenerAdapter(messageListener)
 }
 
 func (r *ReliableTopicProxy) RemoveMessageListener(registrationID string) (removed bool, err error) {
-	r.msgProcessorsMu.Lock()
-	defer r.msgProcessorsMu.Unlock()
-	if msgProcessor, ok := r.msgProcessors[registrationID]; ok {
+	if msgProcessor, ok := r.msgProcessors.Load(registrationID); ok {
+		msgProcessor := msgProcessor.(*messageProcessor)
 		msgProcessor.cancel()
 		return true, nil
 	}
@@ -204,31 +197,55 @@ func (m *messageProcessor) onFailure(err error) {
 		return
 	}
 	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
-	if strings.Contains(err.Error(), "com.hazelcast.ringbuffer.StaleSequenceException") {
-		headSeq, _ := m.proxy.ringBuffer.HeadSequence()
-		if m.listener.IsLossTolerant() {
-			msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
-				strconv.Itoa(int(m.sequence)) + " " +
-				" to new sequence " + strconv.Itoa(int(headSeq))
-			log.Println(msg)
-			m.sequence = headSeq
-			go m.next()
-			return
+	if hzErr, ok := err.(core.HazelcastError); ok {
+		if hzErr.ServerError() != nil && hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeStaleSequence) {
+			headSeq, _ := m.proxy.ringBuffer.HeadSequence()
+			if m.listener.IsLossTolerant() {
+				msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
+					strconv.Itoa(int(m.sequence)) + " " +
+					" to new sequence " + strconv.Itoa(int(headSeq))
+				log.Println(msg)
+				m.sequence = headSeq
+				go m.next()
+				return
+			}
+			log.Println(baseMsg+"The listener was too slow or the retention period of the message has been violated. ",
+				"Head: ", headSeq, " sequence: ", m.sequence)
 		}
-		log.Println(baseMsg+"The listener was too slow or the retention period of the message has been violated. ",
-			"Head: ", headSeq, " sequence: ", m.sequence)
 
 	} else if _, ok := err.(*core.HazelcastInstanceNotActiveError); ok {
 		log.Println(baseMsg + "HazelcastInstance is shutting down.")
 	} else if _, ok := err.(*core.HazelcastClientNotActiveError); ok {
 		log.Println(baseMsg + "HazelcastClient is shutting down.")
+	} else if hzErr, ok := err.(core.HazelcastError); ok {
+		if hzErr.ServerError() != nil &&
+			hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeDistributedObjectDestroyed) {
+			log.Println(baseMsg + "Topic is destroyed.")
+		}
 	} else {
 		log.Println(baseMsg + "Unhandled error, message:  " + err.Error())
 	}
 
-	m.proxy.msgProcessorsMu.Lock()
 	m.cancel()
-	m.proxy.msgProcessorsMu.Unlock()
+}
+
+func (m *messageProcessor) terminate(err error) bool {
+	if m.cancelled.Load() == true {
+		return true
+	}
+	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
+	terminate, terminalErr := m.listener.IsTerminal(err)
+	if terminalErr != nil {
+		log.Println(baseMsg+"Unhandled error while calling ReliableMessageListener.isTerminal() method:", terminalErr)
+		return true
+	}
+	if terminate {
+		log.Println(baseMsg+"Unhandled error:", err)
+	} else {
+		log.Println("MessageListener ", m.id, " on topic:", m.proxy.name, " ran into an error:", err)
+	}
+	return terminate
+
 }
 
 func (m *messageProcessor) onResponse(readResults core.ReadResultSet) {
@@ -242,15 +259,18 @@ func (m *messageProcessor) onResponse(readResults core.ReadResultSet) {
 		}
 		if msg, ok := item.(*reliabletopic.Message); ok && err == nil {
 			m.listener.StoreSequence(m.sequence)
-			m.process(msg)
+			err := m.process(msg)
+			if err != nil && m.terminate(err) {
+				m.cancel()
+			}
 		}
 		m.sequence++
 	}
 	go m.next()
 }
 
-func (m *messageProcessor) process(message *reliabletopic.Message) {
-	m.listener.OnMessage(m.toMessage(message))
+func (m *messageProcessor) process(message *reliabletopic.Message) error {
+	return m.listener.OnMessage(m.toMessage(message))
 }
 
 func (m *messageProcessor) toMessage(message *reliabletopic.Message) core.Message {
@@ -259,34 +279,37 @@ func (m *messageProcessor) toMessage(message *reliabletopic.Message) core.Messag
 	return proto.NewTopicMessage(payload, message.PublishTime(), member)
 }
 
-// This method is already called under msgProcessorMu mutex so no need to lock here.
 func (m *messageProcessor) cancel() {
 	m.cancelled.Store(true)
-	delete(m.proxy.msgProcessors, m.id)
+	m.proxy.msgProcessors.Delete(m.id)
 }
 
-type defaultReliableTopicMessageListener struct {
+type reliableMessageListenerAdapter struct {
 	messageListener core.MessageListener
 }
 
-func newDefaultReliableTopicMessageListener(msgListener core.MessageListener) *defaultReliableTopicMessageListener {
-	return &defaultReliableTopicMessageListener{
+func newReliableMessageListenerAdapter(msgListener core.MessageListener) *reliableMessageListenerAdapter {
+	return &reliableMessageListenerAdapter{
 		messageListener: msgListener,
 	}
 }
 
-func (d *defaultReliableTopicMessageListener) OnMessage(message core.Message) {
-	d.messageListener.OnMessage(message)
+func (d *reliableMessageListenerAdapter) OnMessage(message core.Message) error {
+	return d.messageListener.OnMessage(message)
 }
 
-func (d *defaultReliableTopicMessageListener) RetrieveInitialSequence() int64 {
+func (d *reliableMessageListenerAdapter) RetrieveInitialSequence() int64 {
 	return -1
 }
 
-func (d *defaultReliableTopicMessageListener) StoreSequence(sequence int64) {
+func (d *reliableMessageListenerAdapter) StoreSequence(sequence int64) {
 	// no op
 }
 
-func (d *defaultReliableTopicMessageListener) IsLossTolerant() bool {
+func (d *reliableMessageListenerAdapter) IsLossTolerant() bool {
 	return false
+}
+
+func (d *reliableMessageListenerAdapter) IsTerminal(err error) (bool, error) {
+	return false, nil
 }
