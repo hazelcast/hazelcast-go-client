@@ -404,7 +404,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 	}
 }
 
-func convertToError(clientMessage *proto.ClientMessage) *proto.Error {
+func convertToError(clientMessage *proto.ClientMessage) *proto.ServerError {
 	return proto.ErrorCodecDecode(clientMessage)
 }
 
