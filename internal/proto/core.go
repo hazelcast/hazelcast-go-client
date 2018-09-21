@@ -293,44 +293,44 @@ func (ev DataEntryView) Equal(ev2 DataEntryView) bool {
 	return true
 }
 
-type Error struct {
+type ServerError struct {
 	errorCode      int32
 	className      string
 	message        string
-	stackTrace     []*StackTraceElement
+	stackTrace     []core.StackTraceElement
 	causeErrorCode int32
 	causeClassName string
 }
 
-func (e *Error) Error() string {
+func (e *ServerError) Error() string {
 	return e.message
 }
 
-func (e *Error) ErrorCode() int32 {
+func (e *ServerError) ErrorCode() int32 {
 	return e.errorCode
 }
 
-func (e *Error) ClassName() string {
+func (e *ServerError) ClassName() string {
 	return e.className
 }
 
-func (e *Error) Message() string {
+func (e *ServerError) Message() string {
 	return e.message
 }
 
-func (e *Error) StackTrace() []*StackTraceElement {
-	stackTrace := make([]*StackTraceElement, len(e.stackTrace))
+func (e *ServerError) StackTrace() []core.StackTraceElement {
+	stackTrace := make([]core.StackTraceElement, len(e.stackTrace))
 	for i, v := range e.stackTrace {
 		stackTrace[i] = v
 	}
 	return stackTrace
 }
 
-func (e *Error) CauseErrorCode() int32 {
+func (e *ServerError) CauseErrorCode() int32 {
 	return e.causeErrorCode
 }
 
-func (e *Error) CauseClassName() string {
+func (e *ServerError) CauseClassName() string {
 	return e.causeClassName
 }
 

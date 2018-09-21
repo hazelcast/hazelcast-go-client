@@ -21,6 +21,9 @@ type HazelcastError interface {
 
 	// Cause returns the cause of error.
 	Cause() error
+
+	// ServerError returns error info from server side.
+	ServerError() ServerError
 }
 
 // HazelcastErrorType is the general error struct.
@@ -40,6 +43,16 @@ func (e *HazelcastErrorType) Error() string {
 // Cause returns the cause error.
 func (e *HazelcastErrorType) Cause() error {
 	return e.cause
+}
+
+// ServerError returns error info from server side.
+// It checks if the cause implements ServerError and if it doesnt
+// it return nil.
+func (e *HazelcastErrorType) ServerError() ServerError {
+	if serverErr, ok := e.cause.(ServerError); ok {
+		return serverErr
+	}
+	return nil
 }
 
 // HazelcastEOFError is returned when an EOF error occurs.
@@ -160,22 +173,22 @@ func NewHazelcastTargetDisconnectedError(message string, cause error) *Hazelcast
 
 // NewHazelcastEOFError returns a HazelcastEOFError.
 func NewHazelcastEOFError(message string, cause error) *HazelcastEOFError {
-	return &HazelcastEOFError{&HazelcastErrorType{message, cause}}
+	return &HazelcastEOFError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
 // NewHazelcastSerializationError returns a HazelcastSerializationError.
 func NewHazelcastSerializationError(message string, cause error) *HazelcastSerializationError {
-	return &HazelcastSerializationError{&HazelcastErrorType{message, cause}}
+	return &HazelcastSerializationError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
 // NewHazelcastIllegalArgumentError returns a HazelcastIllegalArgumentError.
 func NewHazelcastIllegalArgumentError(message string, cause error) *HazelcastIllegalArgumentError {
-	return &HazelcastIllegalArgumentError{&HazelcastErrorType{message, cause}}
+	return &HazelcastIllegalArgumentError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
 // NewHazelcastAuthenticationError returns a HazelcastAuthenticationError.
 func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuthenticationError {
-	return &HazelcastAuthenticationError{&HazelcastErrorType{message, cause}}
+	return &HazelcastAuthenticationError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
 // NewHazelcastTimeoutError returns a HazelcastTimeoutError.

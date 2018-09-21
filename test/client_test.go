@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/test/assert"
@@ -181,5 +182,46 @@ func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
 
 	_, err = client.GetFlakeIDGenerator(name)
 	assert.ErrorNotNil(t, err, message)
+
+}
+
+func TestHazelcastError_ServerError(t *testing.T) {
+	crdtReplicationDelayedConfig, _ := Read("./proxy/pncounter/crdt_replication_delayed_config.xml")
+	cluster, err := remoteController.CreateCluster("", crdtReplicationDelayedConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	cfg := hazelcast.NewConfig()
+	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
+	client, _ := hazelcast.NewClientWithConfig(cfg)
+	counter, _ := client.GetPNCounter("myPNCounter")
+	var delta int64 = 5
+	counter.GetAndAdd(delta)
+	target := client.(*internal.HazelcastClient).ClusterService.GetMember(internal.GetCurrentTargetReplicaAddress(counter))
+	remoteController.TerminateMember(cluster.ID, target.UUID())
+	_, err = counter.Get()
+	if _, ok := err.(*core.HazelcastConsistencyLostError); !ok {
+		t.Fatal("PNCounter.Get should return HazelcastConsistencyLostError")
+	}
+
+	cErr, _ := err.(*core.HazelcastConsistencyLostError)
+	if cErr.ServerError() == nil {
+		t.Fatal("Server error should not be nil")
+	}
+	serverErr := cErr.ServerError()
+	if len(serverErr.Message()) == 0 {
+		t.Error("serverError message should be longer than 0.")
+	}
+
+	if len(serverErr.ClassName()) == 0 {
+		t.Error("serverError ClassName should be longer than 0.")
+	}
+
+	if len(serverErr.StackTrace()) == 0 {
+		t.Error("serverError StackTrace should be longer than 0.")
+	}
 
 }

@@ -14,6 +14,8 @@
 
 package proto
 
+import "github.com/hazelcast/hazelcast-go-client/core"
+
 /*
 Address Codec
 */
@@ -86,14 +88,14 @@ func UUIDCodecDecode(msg *ClientMessage) *uuid {
 	Error Codec
 */
 
-func ErrorCodecDecode(msg *ClientMessage) *Error {
-	response := Error{}
+func ErrorCodecDecode(msg *ClientMessage) *ServerError {
+	response := ServerError{}
 	response.errorCode = msg.ReadInt32()
 	response.className = msg.ReadString()
 	if !msg.ReadBool() {
 		response.message = msg.ReadString()
 	}
-	stackTrace := make([]*StackTraceElement, 0)
+	stackTrace := make([]core.StackTraceElement, 0)
 	stackTraceCount := msg.ReadInt32()
 	for i := 0; i < int(stackTraceCount); i++ {
 		stackTrace = append(stackTrace, DecodeStackTrace(msg))
@@ -107,7 +109,7 @@ func ErrorCodecDecode(msg *ClientMessage) *Error {
 
 }
 
-func DecodeStackTrace(msg *ClientMessage) *StackTraceElement {
+func DecodeStackTrace(msg *ClientMessage) core.StackTraceElement {
 	declaringClass := msg.ReadString()
 	methodName := msg.ReadString()
 	fileName := ""
