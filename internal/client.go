@@ -19,6 +19,9 @@ import (
 
 	"time"
 
+	"strconv"
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -27,6 +30,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/security"
 )
+
+// clientID is used as a unique id per client. It will be increased atomically when a new client
+// is created.
+var clientID int64
 
 type HazelcastClient struct {
 	InvocationService    invocationService
@@ -42,6 +49,8 @@ type HazelcastClient struct {
 	HeartBeatService     *heartBeatService
 	properties           *property.HazelcastProperties
 	credentials          security.Credentials
+	name                 string
+	id                   int64
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
@@ -49,6 +58,10 @@ func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
 	client.properties = property.NewHazelcastProperties(config.Properties())
 	err := client.init()
 	return &client, err
+}
+
+func (c *HazelcastClient) Name() string {
+	return c.name
 }
 
 func (c *HazelcastClient) GetMap(name string) (core.Map, error) {
@@ -148,6 +161,8 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
+	c.id = c.nextClientID()
+	c.initClientName()
 
 	c.credentials = c.initCredentials(c.ClientConfig)
 	c.lifecycleService = newLifecycleService(c.ClientConfig)
@@ -173,6 +188,18 @@ func (c *HazelcastClient) init() error {
 	c.HeartBeatService.start()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
+}
+
+func (c *HazelcastClient) nextClientID() int64 {
+	return atomic.AddInt64(&clientID, 1)
+}
+
+func (c *HazelcastClient) initClientName() {
+	if c.ClientConfig.ClientName() != "" {
+		c.name = c.ClientConfig.ClientName()
+	} else {
+		c.name = "hz.client_" + strconv.Itoa(int(c.id))
+	}
 }
 
 func (c *HazelcastClient) initCredentials(cfg *config.Config) security.Credentials {

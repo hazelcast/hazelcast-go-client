@@ -52,6 +52,9 @@ type Config struct {
 
 	// loadBalancer is used to distribute the operations to multiple endpoints.
 	loadBalancer core.LoadBalancer
+
+	// clientName is the name of client with this config.
+	clientName string
 }
 
 // New returns a new Config with default configuration.
@@ -110,6 +113,16 @@ func (cc *Config) SetProperty(name string, value string) {
 // Properties returns the properties of the config.
 func (cc *Config) Properties() Properties {
 	return cc.properties
+}
+
+// SetClientName sets the client name.
+func (cc *Config) SetClientName(name string) {
+	cc.clientName = name
+}
+
+// ClientName returns the client name with this config.
+func (cc *Config) ClientName() string {
+	return cc.clientName
 }
 
 // LoadBalancer returns loadBalancer for this client.
