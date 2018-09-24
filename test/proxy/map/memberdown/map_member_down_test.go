@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var client hazelcast.Instance
+var client hazelcast.Client
 var mp core.Map
 
 func TestMain(m *testing.M) {

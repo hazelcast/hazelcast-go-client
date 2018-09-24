@@ -30,7 +30,7 @@ import (
 )
 
 var multiMap core.MultiMap
-var client hazelcast.Instance
+var client hazelcast.Client
 var testKey = "testKey"
 var testValue = "testValue"
 var testValue2 = "testValue2"

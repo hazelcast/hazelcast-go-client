@@ -29,7 +29,7 @@ import (
 )
 
 var queue core.Queue
-var client hazelcast.Instance
+var client hazelcast.Client
 var testElement = "testElement"
 var queueName = "ClientQueueTest"
 

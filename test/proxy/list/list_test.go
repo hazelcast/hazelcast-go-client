@@ -28,7 +28,7 @@ import (
 )
 
 var list core.List
-var client hazelcast.Instance
+var client hazelcast.Client
 var testElement = "testElement"
 
 func TestMain(m *testing.M) {

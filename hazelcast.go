@@ -21,23 +21,23 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
-// NewClient creates and returns a new Instance.
-// Hazelcast instance enables you to do all Hazelcast operations without
+// NewClient creates and returns a new Client.
+// Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClient() (Instance, error) {
+func NewClient() (Client, error) {
 	return NewClientWithConfig(config.New())
 }
 
-// NewClientWithConfig creates and returns a new Instance with the given config.
-// Hazelcast instance enables you to do all Hazelcast operations without
+// NewClientWithConfig creates and returns a new Client with the given config.
+// Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClientWithConfig(config *config.Config) (Instance, error) {
+func NewClientWithConfig(config *config.Config) (Client, error) {
 	return internal.NewHazelcastClient(config)
 }
 
@@ -46,10 +46,15 @@ func NewConfig() *config.Config {
 	return config.New()
 }
 
-// Instance is a Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
-// Multiple Hazelcast instances can be created.
-// Each Hazelcast instance has its own socket, goroutines.
-type Instance interface {
+// Client is a Hazelcast client.
+// Multiple Hazelcast clients can be created.
+// Each Hazelcast client has its own socket, goroutines.
+// Hazelcast client enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one of the
+// cluster members and delegates all cluster wide operations to it.
+// When the connected cluster member dies, client will
+// automatically switch to another live member.
+type Client interface {
 
 	// GetMap returns the distributed map instance with the specified name.
 	GetMap(name string) (core.Map, error)
@@ -84,7 +89,7 @@ type Instance interface {
 	// GetDistributedObject returns DistributedObject created by the service with the specified name.
 	GetDistributedObject(serviceName string, name string) (core.DistributedObject, error)
 
-	// Shutdown shuts down this Instance.
+	// Shutdown shuts down this Client.
 	Shutdown()
 
 	// Cluster returns the Cluster this instance is part of.
