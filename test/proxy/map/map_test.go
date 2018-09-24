@@ -37,7 +37,7 @@ import (
 
 var mp core.Map
 var mp2 core.Map
-var client hazelcast.Instance
+var client hazelcast.Client
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")

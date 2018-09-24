@@ -34,7 +34,7 @@ import (
 )
 
 var rmp core.ReplicatedMap
-var client hazelcast.Instance
+var client hazelcast.Client
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
