@@ -28,6 +28,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 
+	"strconv"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -129,6 +131,56 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
+
+func TestClientNameSet(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewConfig()
+	config.SetClientName("client1")
+	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	assert.Equal(t, client.Name(), "client1")
+}
+
+func TestClientNameDefault(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewClient()
+	defer client.Shutdown()
+	assert.Equal(t, client.Name(), "hz.client_1")
+}
+
+func TestMultipleClientNameDefault(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	for i := 1; i <= 10; i++ {
+		client, _ := hazelcast.NewClient()
+		defer client.Shutdown()
+		assert.Equal(t, client.Name(), "hz.client_"+strconv.Itoa(i))
+	}
+}
+
+func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+
+	for i := 1; i <= 10; i++ {
+		go func() {
+			client, _ := hazelcast.NewClient()
+			defer client.Shutdown()
+		}()
+	}
+	time.Sleep(time.Second)
+	client, _ := hazelcast.NewClient()
+	defer client.Shutdown()
+	// since 10 clients were opened the next id should be 11.
+	assert.Equal(t, client.Name(), "hz.client_11")
+}
+
 func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)

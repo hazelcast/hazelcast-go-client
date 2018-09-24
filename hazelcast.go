@@ -51,6 +51,9 @@ func NewConfig() *config.Config {
 // Each Hazelcast instance has its own socket, goroutines.
 type Instance interface {
 
+	// Name returns the name of this hazelcast client.
+	Name() string
+
 	// GetMap returns the distributed map instance with the specified name.
 	GetMap(name string) (core.Map, error)
 
