@@ -15,52 +15,37 @@
 package test
 
 import (
-	"sync"
 	"testing"
 
 	"time"
 
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/stretchr/testify/assert"
 )
 
-type heartbeatListener struct {
-	wg *sync.WaitGroup
-}
-
-func (l *heartbeatListener) HeartbeatResumed(connection *internal.Connection) {
-	l.wg.Done()
-
-}
-
-func (l *heartbeatListener) HeartbeatStopped(connection *internal.Connection) {
-	l.wg.Done()
-}
-
 func TestHeartbeatStoppedForConnection(t *testing.T) {
-	var wg = new(sync.WaitGroup)
+	wg := new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
-	heartbeatListener := &heartbeatListener{wg: wg}
+	defer remoteController.ShutdownCluster(cluster.ID)
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
-	config.SetProperty(property.HeartbeatInterval.Name(), "3000")
-	config.SetProperty(property.HeartbeatTimeout.Name(), "5000")
+	config.SetProperty(property.HeartbeatInterval.Name(), "2000")
+	config.SetProperty(property.HeartbeatTimeout.Name(), "4000")
+	listener := &lifecycleListener2{wg: wg, shouldWait: true}
+	config.AddLifecycleListener(listener)
 	client, _ := hazelcast.NewClientWithConfig(config)
 	wg.Add(1)
-	client.(*internal.HazelcastClient).HeartBeatService.AddHeartbeatListener(heartbeatListener)
+	defer client.Shutdown()
 	remoteController.SuspendMember(cluster.ID, member.UUID)
 	timeout := WaitTimeout(wg, Timeout)
-	assert.Equalf(t, false, timeout, "heartbeatStopped listener failed")
 	remoteController.ResumeMember(cluster.ID, member.UUID)
-	wg.Add(1)
-	timeout = WaitTimeout(wg, Timeout)
-	assert.Equalf(t, false, timeout, "heartbeatRestored listener failed")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
+	assert.False(t, timeout)
+	assert.Len(t, listener.collector, 1)
 }
 
 func TestServerShouldNotCloseClientWhenClientOnlyListening(t *testing.T) {
@@ -99,12 +84,16 @@ func (l *topicMessageListener) OnMessage(message core.Message) error {
 }
 
 type lifecycleListener2 struct {
-	collector []string
+	collector  []string
+	wg         *sync.WaitGroup
+	shouldWait bool
 }
 
 func (l *lifecycleListener2) LifecycleStateChanged(newState string) {
 	if newState == core.LifecycleStateDisconnected {
 		l.collector = append(l.collector, newState)
-
+		if l.shouldWait {
+			l.wg.Done()
+		}
 	}
 }

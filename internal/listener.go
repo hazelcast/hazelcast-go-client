@@ -36,7 +36,6 @@ type listenerService struct {
 	deregisterListenerErrChannel               chan removedErr
 	onConnectionClosedChannel                  chan *Connection
 	onConnectionOpenedChannel                  chan *Connection
-	onHeartbeatRestoredChannel                 chan *Connection
 	registerListenerInternalHandleErrorChannel chan registrationIDConnection
 	registerListenerInitChannel                chan *listenerRegistrationKey
 	connectToAllMembersChannel                 chan struct{}
@@ -82,7 +81,6 @@ func newListenerService(client *HazelcastClient) *listenerService {
 		deregisterListenerErrChannel:               make(chan removedErr, 1),
 		onConnectionClosedChannel:                  make(chan *Connection, 1),
 		onConnectionOpenedChannel:                  make(chan *Connection, 1),
-		onHeartbeatRestoredChannel:                 make(chan *Connection, 1),
 		registerListenerInternalHandleErrorChannel: make(chan registrationIDConnection, 1),
 		registerListenerInitChannel:                make(chan *listenerRegistrationKey),
 		connectToAllMembersChannel:                 make(chan struct{}, 1),
@@ -91,7 +89,6 @@ func newListenerService(client *HazelcastClient) *listenerService {
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
 	if service.client.ClientConfig.NetworkConfig().IsSmartRouting() {
-		service.client.HeartBeatService.AddHeartbeatListener(service)
 		go service.connectToAllMembersPeriodically()
 	}
 	return service
@@ -137,8 +134,6 @@ func (ls *listenerService) process() {
 			ls.onConnectionClosedInternal(connection)
 		case connection := <-ls.onConnectionOpenedChannel:
 			ls.onConnectionOpenedInternal(connection)
-		case connection := <-ls.onHeartbeatRestoredChannel:
-			ls.OnHeartbeatRestoredInternal(connection)
 		case registrationIDConnection := <-ls.registerListenerInternalHandleErrorChannel:
 			ls.registerListenerFromInternalHandleError(registrationIDConnection.registrationID, registrationIDConnection.connection)
 		case listenerRegistrationKey := <-ls.registerListenerInitChannel:
@@ -305,21 +300,6 @@ func (ls *listenerService) onConnectionOpened(connection *Connection) {
 func (ls *listenerService) onConnectionOpenedInternal(connection *Connection) {
 	for registrationKey := range ls.registrations {
 		go ls.registerListenerFromInternal(registrationKey, connection)
-	}
-}
-
-func (ls *listenerService) HeartbeatStopped(connection *Connection) {
-	// NO OP
-}
-
-func (ls *listenerService) HeartbeatResumed(connection *Connection) {
-	ls.onHeartbeatRestoredChannel <- connection
-}
-
-func (ls *listenerService) OnHeartbeatRestoredInternal(connection *Connection) {
-	registrationKeys := ls.failedRegistrations[connection.connectionID]
-	for _, registrationKey := range registrationKeys {
-		go ls.registerListenerFromInternal(registrationKey.userRegistrationKey, connection)
 	}
 }
 
