@@ -44,10 +44,7 @@ type Connection struct {
 	lastRead               atomic.Value
 	lastWrite              atomic.Value
 	closedTime             atomic.Value
-	lastHeartbeatRequested atomic.Value
-	lastHeartbeatReceived  atomic.Value
 	serverHazelcastVersion string
-	heartBeating           bool
 	readBuffer             []byte
 	connectionID           int64
 	connectionManager      connectionManager
@@ -61,7 +58,6 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 		received:             make(chan *proto.ClientMessage, 1),
 		closed:               make(chan struct{}),
 		clientMessageBuilder: builder,
-		heartBeating:         true,
 		readBuffer:           make([]byte, 0),
 		connectionID:         connectionID,
 		connectionManager:    connectionManager,
@@ -74,10 +70,8 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 	}
 	connection.socket = socket
 	connection.lastRead.Store(time.Now())
-	connection.lastWrite.Store(time.Time{})              //initialization
-	connection.lastHeartbeatReceived.Store(time.Time{})  //initialization
-	connection.lastHeartbeatRequested.Store(time.Time{}) //initialization
-	connection.closedTime.Store(time.Time{})             //initialization
+	connection.lastWrite.Store(time.Time{})  //initialization
+	connection.closedTime.Store(time.Time{}) //initialization
 	socket.Write([]byte("CB2"))
 	go connection.writePool()
 	go connection.read()
@@ -194,11 +188,8 @@ func (c *Connection) String() string {
 		", lastReadTime=%s"+
 		", lastWriteTime=%s"+
 		", closedTime=%s"+
-		", lastHeartbeatRequested=%s"+
-		", lastHeartbeatReceived=%s"+
 		", connected server version=%s", c.isAlive(), c.connectionID,
 		c.endpoint.Load().(core.Address),
 		c.lastRead.Load().(time.Time), c.lastWrite.Load().(time.Time),
-		c.closedTime.Load().(time.Time), c.lastHeartbeatRequested.Load().(time.Time),
-		c.lastHeartbeatReceived.Load().(time.Time), c.serverHazelcastVersion)
+		c.closedTime.Load().(time.Time), c.serverHazelcastVersion)
 }

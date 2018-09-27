@@ -29,8 +29,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 
-	"strconv"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -150,36 +148,41 @@ func TestClientNameDefault(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	defer client.Shutdown()
-	assert.Equal(t, client.Name(), "hz.client_1")
+	assert.Contains(t, client.Name(), "hz.client_")
 }
 
 func TestMultipleClientNameDefault(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
+	names := make(map[string]struct{})
 	for i := 1; i <= 10; i++ {
 		client, _ := hazelcast.NewClient()
 		defer client.Shutdown()
-		assert.Equal(t, client.Name(), "hz.client_"+strconv.Itoa(i))
+		names[client.Name()] = struct{}{}
 	}
+	assert.Len(t, names, 10)
 }
 
 func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
-
+	mu := sync.Mutex{}
+	names := make(map[string]struct{})
 	for i := 1; i <= 10; i++ {
 		go func() {
 			client, _ := hazelcast.NewClient()
 			defer client.Shutdown()
+			mu.Lock()
+			names[client.Name()] = struct{}{}
+			mu.Unlock()
 		}()
 	}
 	time.Sleep(time.Second)
-	client, _ := hazelcast.NewClient()
-	defer client.Shutdown()
-	// since 10 clients were opened the next id should be 11.
-	assert.Equal(t, client.Name(), "hz.client_11")
+	mu.Lock()
+	assert.Len(t, names, 10)
+	mu.Unlock()
 }
 
 func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
