@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -75,6 +76,9 @@ func (hbs *heartBeatService) start() {
 
 func (hbs *heartBeatService) heartBeat() {
 	for _, connection := range hbs.client.ConnectionManager.getActiveConnections() {
+		if !connection.isAlive() {
+			continue
+		}
 		timeSinceLastRead := time.Since(connection.lastRead.Load().(time.Time))
 		timeSinceLastWrite := time.Since(connection.lastWrite.Load().(time.Time))
 		if timeSinceLastRead > hbs.heartBeatTimeout {
@@ -96,7 +100,7 @@ func (hbs *heartBeatService) heartBeat() {
 				}
 			}()
 		} else {
-			if !connection.heartBeating {
+			if connection.isAlive() && !connection.heartBeating {
 				hbs.HeartbeatResumed(connection)
 			}
 		}
@@ -123,6 +127,8 @@ func (hbs *heartBeatService) HeartbeatStopped(connection *Connection) {
 			listener.(ConnectionHeartbeatListener).HeartbeatStopped(connection)
 		}
 	}
+	connection.close(core.NewHazelcastTargetDisconnectedError("heartbeat timed out to connection "+
+		connection.String(), nil))
 }
 
 func (hbs *heartBeatService) shutdown() {

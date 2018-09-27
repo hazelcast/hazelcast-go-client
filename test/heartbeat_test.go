@@ -43,6 +43,7 @@ func (l *heartbeatListener) HeartbeatStopped(connection *internal.Connection) {
 func TestHeartbeatStoppedForConnection(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
 	heartbeatListener := &heartbeatListener{wg: wg}
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
@@ -50,17 +51,16 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	config.SetProperty(property.HeartbeatInterval.Name(), "3000")
 	config.SetProperty(property.HeartbeatTimeout.Name(), "5000")
 	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
 	wg.Add(1)
 	client.(*internal.HazelcastClient).HeartBeatService.AddHeartbeatListener(heartbeatListener)
 	remoteController.SuspendMember(cluster.ID, member.UUID)
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, false, timeout, "heartbeatStopped listener failed")
-	remoteController.ResumeMember(cluster.ID, member.UUID)
 	wg.Add(1)
+	remoteController.ResumeMember(cluster.ID, member.UUID)
 	timeout = WaitTimeout(wg, Timeout)
 	assert.Equalf(t, false, timeout, "heartbeatRestored listener failed")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestServerShouldNotCloseClientWhenClientOnlyListening(t *testing.T) {
