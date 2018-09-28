@@ -90,8 +90,9 @@ func (c *Connection) writePool() {
 			err := c.write(request)
 			if err != nil {
 				c.clientMessageBuilder.handleResponse(request.CorrelationID())
+			} else {
+				c.lastWrite.Store(time.Now())
 			}
-			c.lastWrite.Store(time.Now())
 		case <-c.closed:
 			return
 		}
