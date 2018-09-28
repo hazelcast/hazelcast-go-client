@@ -55,7 +55,7 @@
                 <property name="trustManagerAlgorithm">SunX509</property>
                 -->
                 <property name="keyManagerAlgorithm">SunX509</property>
-                <property name="protocol">TLS</property>
+                <property name="protocol">TLSv1</property>
             </properties>
         </ssl>
     </network>

@@ -20,7 +20,8 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/test/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSSLAuthenticationClientRunning(t *testing.T) {
@@ -37,7 +38,8 @@ func TestSSLAuthenticationClientRunning(t *testing.T) {
 	sslCfg.ServerName = serverName
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	assert.Equal(t, err, client.GetLifecycle().IsRunning(), true)
+	require.NoError(t, err)
+	assert.Equal(t, client.LifecycleService().IsRunning(), true)
 }
 
 func TestSSLAuthenticationMapTest(t *testing.T) {
@@ -57,5 +59,6 @@ func TestSSLAuthenticationMapTest(t *testing.T) {
 	mp, _ := client.GetMap("testMap")
 	mp.Put("key", "value")
 	val, err := mp.Get("key")
-	assert.Equalf(t, err, val, "value", "mp.Get returned a wrong value")
+	require.NoError(t, err)
+	assert.Equalf(t, val, "value", "mp.Get returned a wrong value")
 }

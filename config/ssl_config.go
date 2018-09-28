@@ -52,7 +52,7 @@ func (sc *SSLConfig) SetCaPath(path string) error {
 	}
 	caCertPool := x509.NewCertPool()
 	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-		return core.NewHazelcastIOError("error while loading the CA file, make sure the path exits "+
+		return core.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
 			"the format is pem", nil)
 	}
 
@@ -73,11 +73,7 @@ func (sc *SSLConfig) AddClientCertAndKeyPath(clientCertPath string, clientPrivat
 	if err != nil {
 		return err
 	}
-	if len(sc.Certificates) == 0 {
-		sc.Certificates = []tls.Certificate{cert}
-	} else {
-		sc.Certificates = append(sc.Certificates, cert)
-	}
+	sc.Certificates = append(sc.Certificates, cert)
 	return nil
 }
 
@@ -116,11 +112,7 @@ func (sc *SSLConfig) AddClientCertAndEncryptedKeyPath(clientCertPath string, cli
 	if err != nil {
 		return err
 	}
-	if len(sc.Certificates) == 0 {
-		sc.Certificates = []tls.Certificate{cert}
-	} else {
-		sc.Certificates = append(sc.Certificates, cert)
-	}
+	sc.Certificates = append(sc.Certificates, cert)
 	return nil
 }
 

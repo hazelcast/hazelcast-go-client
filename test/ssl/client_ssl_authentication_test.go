@@ -25,6 +25,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var remoteController rc.RemoteController
@@ -125,7 +127,7 @@ func TestSSLMutualAuthentication_ServerDoesntKnowClientFail(t *testing.T) {
 	}
 	defer remoteController.ShutdownCluster(clusterID)
 	config, err := createClientConfigWithSSLConfig(client2Cert,
-		client2Key, server2CA)
+		client2Key, server1CA)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +143,7 @@ func TestSSLMutualAuthentication_NeitherServerNorClientKnowsTheOtherFail(t *test
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(clusterID)
-	config, err := createClientConfigWithSSLConfig("client2-cert.pem",
+	config, err := createClientConfigWithSSLConfig(client2Cert,
 		client2Key, server2CA)
 	if err != nil {
 		t.Fatal(err)
@@ -223,4 +225,23 @@ func TestSSLOptionalMutualAuthentication_NeitherServerNorClientKnowsTheOther(t *
 	if _, ok := err.(*core.HazelcastIllegalStateError); !ok {
 		t.Error(err)
 	}
+}
+
+func TestSSLOptionalMutualAuthentication_NoClientCertificates(t *testing.T) {
+	clusterID, err := createMemberWithXML(maOptionalXML)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer remoteController.ShutdownCluster(clusterID)
+	config := hazelcast.NewConfig()
+	sslConfig := config.NetworkConfig().SSLConfig()
+	sslConfig.SetEnabled(true)
+	err = sslConfig.SetCaPath(server1CA)
+	require.NoError(t, err)
+	sslConfig.ServerName = serverName
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = hazelcast.NewClientWithConfig(config)
+	assert.NoError(t, err)
 }
