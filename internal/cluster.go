@@ -74,24 +74,24 @@ func (cs *clusterService) start() error {
 }
 
 func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
-	addresses := make(map[core.Address]struct{})
+	addresses := make(map[proto.Address]struct{})
 	memberList := cs.GetMembers()
 
 	for _, member := range memberList {
-		addresses[member.Address()] = struct{}{}
+		addresses[*member.Address().(*proto.Address)] = struct{}{}
 	}
 
 	for _, provider := range cs.addressProviders {
 		providerAddrs := provider.LoadAddresses()
-		for _, k := range providerAddrs {
-			addresses[k] = struct{}{}
+		for _, addr := range providerAddrs {
+			addresses[*addr.(*proto.Address)] = struct{}{}
 		}
 	}
 
 	addrs := make([]core.Address, len(addresses))
 	index := 0
 	for a := range addresses {
-		addrs[index] = a
+		addrs[index] = &a
 		index++
 	}
 	return addrs
@@ -161,7 +161,7 @@ func (cs *clusterService) connectToCluster() error {
 			}
 			err := cs.connectToAddress(address)
 			if err != nil {
-				log.Println("The following error occurred while trying to connect to cluster. attempt ",
+				log.Println("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
 					currentAttempt, " of ", attempLimit, " error: ", err)
 				if _, ok := err.(*core.HazelcastAuthenticationError); ok {
 					return err
