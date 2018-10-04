@@ -39,8 +39,8 @@ func TestInvocation_ResultWithTimeout(t *testing.T) {
 	timeout := 1 * time.Second
 	_, err := inv.ResultWithTimeout(timeout)
 	passedTime := time.Since(now)
-	if _, ok := err.(*core.HazelcastTimeoutError); !ok {
-		t.Errorf("Invocation should return a HazelcastTimeoutError")
+	if _, ok := err.(*core.HazelcastOperationTimeoutError); !ok {
+		t.Errorf("Invocation should return a HazelcastOperationTimeoutError")
 	}
 
 	if passedTime > 2*time.Second {

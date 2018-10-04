@@ -30,6 +30,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
@@ -41,19 +42,26 @@ import (
 )
 
 var client hazelcast.Client
+var remoteController rc.RemoteController
+var cluster *rc.Cluster
 
 func TestMain(m *testing.M) {
-	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
+	var err error
+	remoteController, err = rc.NewRemoteControllerClient("localhost:9701")
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	config, _ := test.Read("hazelcast_topic.xml")
-	cluster, _ := remoteController.CreateCluster("", config)
-	remoteController.StartMember(cluster.ID)
+	createCluster()
 	client, _ = hazelcast.NewClientWithConfig(initConfig())
 	m.Run()
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func createCluster() {
+	config, _ := test.Read("hazelcast_topic.xml")
+	cluster, _ = remoteController.CreateCluster("", config)
+	remoteController.StartMember(cluster.ID)
 }
 
 func initConfig() *config.Config {
@@ -241,7 +249,6 @@ func TestReliableTopicProxy_MessageFieldSetCorrectly(t *testing.T) {
 	assert.Equal(t, listener.messages[0].PublishingMember(), nil)
 
 	actualPublishTime := listener.messages[0].PublishTime()
-	log.Println(actualPublishTime, " ", beforePublishTime)
 	if actualPublishTime.Second() < beforePublishTime.Second() {
 		t.Error("actualPublish time should be after publish")
 	}
@@ -358,6 +365,25 @@ func TestReliableTopicProxy_Stale(t *testing.T) {
 	timeout := test.WaitTimeout(wg, test.Timeout)
 	assert.Equal(t, timeout, false)
 	assert.Equal(t, listener.messages[9].MessageObject(), int64(20))
+}
+
+func TestReliableTopicProxy_DistributedObjectDestroyed(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().SetConnectionAttemptLimit(10)
+	config.SetProperty(property.InvocationTimeoutSeconds.Name(), "10")
+	client2, _ := hazelcast.NewClientWithConfig(config)
+	reliableTopic, _ := client2.GetReliableTopic("x")
+	var wg = new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &ReliableMessageListenerMock{wg: wg, isLossTolerant: true, storedSeq: 0}
+	id, err := reliableTopic.AddMessageListener(listener)
+	assert.NoError(t, err)
+	defer reliableTopic.RemoveMessageListener(id)
+	remoteController.ShutdownCluster(cluster.ID)
+	createCluster()
+	log.Println(reliableTopic.Publish("aa"))
+	timeout := test.WaitTimeout(wg, test.Timeout)
+	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_DistributedObjectDestroyedError(t *testing.T) {
