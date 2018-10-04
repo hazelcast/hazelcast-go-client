@@ -65,8 +65,8 @@ type HazelcastSerializationError struct {
 	*HazelcastErrorType
 }
 
-// HazelcastTimeoutError is returned when an operation times out.
-type HazelcastTimeoutError struct {
+// HazelcastOperationTimeoutError is returned when an operation times out.
+type HazelcastOperationTimeoutError struct {
 	*HazelcastErrorType
 }
 
@@ -203,9 +203,9 @@ func NewHazelcastAuthenticationError(message string, cause error) *HazelcastAuth
 	return &HazelcastAuthenticationError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastTimeoutError returns a HazelcastTimeoutError.
-func NewHazelcastTimeoutError(message string, cause error) *HazelcastTimeoutError {
-	return &HazelcastTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
+// NewHazelcastOperationTimeoutError returns a HazelcastOperationTimeoutError.
+func NewHazelcastOperationTimeoutError(message string, cause error) *HazelcastOperationTimeoutError {
+	return &HazelcastOperationTimeoutError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
 // NewHazelcastInstanceNotActiveError returns a HazelcastInstanceNotActiveError.

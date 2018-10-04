@@ -324,7 +324,7 @@ func (ls *listenerService) trySyncConnectToAllConnections() error {
 		timeSinceStart := time.Since(start)
 		remainingTime = remainingTime - timeSinceStart
 	}
-	return core.NewHazelcastTimeoutError("registering listeners timed out.", nil)
+	return core.NewHazelcastOperationTimeoutError("registering listeners timed out.", nil)
 
 }
 

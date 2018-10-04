@@ -81,7 +81,7 @@ func TestInvocationTimeout(t *testing.T) {
 	mp, _ := client.GetMap("testMap")
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
 	_, err := mp.Put("a", "b")
-	if _, ok := err.(*core.HazelcastTimeoutError); !ok {
+	if _, ok := err.(*core.HazelcastOperationTimeoutError); !ok {
 		t.Fatal("invocation should have timed out but returned, ", err)
 	}
 	client.Shutdown()

@@ -92,7 +92,7 @@ func (i *invocation) ResultWithTimeout(duration time.Duration) (*proto.ClientMes
 	case response := <-i.response:
 		return i.unwrapResponse(response)
 	case <-time.After(duration):
-		return nil, core.NewHazelcastTimeoutError("invocation timed out after "+duration.String(), nil)
+		return nil, core.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
 	}
 }
 
@@ -421,7 +421,7 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 	if time.Now().After(invocation.deadline) {
 		timeSinceDeadline := time.Since(invocation.deadline)
 		log.Println("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
-		invocation.complete(core.NewHazelcastTimeoutError("invocation timed out by"+timeSinceDeadline.String(), nil))
+		invocation.complete(core.NewHazelcastOperationTimeoutError("invocation timed out by"+timeSinceDeadline.String(), err))
 		return
 	}
 

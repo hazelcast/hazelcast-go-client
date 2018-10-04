@@ -194,7 +194,7 @@ func (c *Connection) close(err error) {
 	//TODO log close message
 	close(c.closed)
 	c.closedTime.Store(time.Now())
-	c.connectionManager.onConnectionClose(c, err)
+	c.connectionManager.onConnectionClose(c, core.NewHazelcastTargetDisconnectedError(err.Error(), err))
 }
 
 func (c *Connection) String() string {

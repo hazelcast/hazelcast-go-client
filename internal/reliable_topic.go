@@ -205,20 +205,17 @@ func (m *messageProcessor) onFailure(err error) {
 		return
 	}
 	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
-	if hzErr, ok := err.(core.HazelcastError); ok &&
+	if _, ok := err.(*core.HazelcastOperationTimeoutError); ok {
+		m.handleOperationTimeoutError()
+		return
+	} else if _, ok := err.(*core.HazelcastIllegalArgumentError); ok && m.listener.IsLossTolerant() {
+		m.handleIllegalArgumentError(err)
+		return
+	} else if hzErr, ok := err.(core.HazelcastError); ok &&
 		hzErr.ServerError() != nil && hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeStaleSequence) {
-		headSeq, _ := m.proxy.ringBuffer.HeadSequence()
-		if m.listener.IsLossTolerant() {
-			msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
-				strconv.Itoa(int(m.sequence)) + " " +
-				" to new sequence " + strconv.Itoa(int(headSeq))
-			log.Println(msg)
-			m.sequence = headSeq
-			go m.next()
+		if m.handleStaleSequenceError() {
 			return
 		}
-		log.Println(baseMsg+"The listener was too slow or the retention period of the message has been violated. ",
-			"Head: ", headSeq, " sequence: ", m.sequence)
 
 	} else if _, ok := err.(*core.HazelcastInstanceNotActiveError); ok {
 		log.Println(baseMsg + "HazelcastInstance is shutting down.")
@@ -232,6 +229,37 @@ func (m *messageProcessor) onFailure(err error) {
 	}
 
 	m.cancel()
+}
+
+func (m *messageProcessor) handleIllegalArgumentError(err error) {
+	headSeq, _ := m.proxy.ringBuffer.HeadSequence()
+	log.Println("MessageListener ", m.id, " on topic ", m.proxy.name,
+		" requested a too large sequence: ", err, ". Jumping from old sequence: ", m.sequence, " to sequence: ", headSeq)
+	m.sequence = headSeq
+	go m.next()
+}
+
+func (m *messageProcessor) handleOperationTimeoutError() {
+	log.Println("Message Listener ", m.id, "on topic: ", m.proxy.name, " timed out. "+
+		"Continuing from the last known sequence ", m.sequence)
+	go m.next()
+}
+
+func (m *messageProcessor) handleStaleSequenceError() bool {
+	headSeq, _ := m.proxy.ringBuffer.HeadSequence()
+	if m.listener.IsLossTolerant() {
+		msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
+			strconv.Itoa(int(m.sequence)) + " " +
+			" to new sequence " + strconv.Itoa(int(headSeq))
+		log.Println(msg)
+		m.sequence = headSeq
+		go m.next()
+		return true
+	}
+	log.Println("Terminating Message Listener: "+m.id+" on topic: "+m.proxy.name+". Reason: "+
+		"The listener was too slow or the retention period of the message has been violated. ",
+		"Head: ", headSeq, " sequence: ", m.sequence)
+	return false
 }
 
 func (m *messageProcessor) terminate(err error) bool {
