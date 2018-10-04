@@ -8,7 +8,7 @@
 
 # Set up environment
 export CLIENT_IMPORT_PATH="github.com/hazelcast/hazelcast-go-client"
-export PACKAGE_LIST=$(go list $CLIENT_IMPORT_PATH/... | grep -vE ".*/test|.*/compatibility|.*/rc|.*/sample" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
+export PACKAGE_LIST=$(go list -tags enterprise $CLIENT_IMPORT_PATH/... | grep -vE ".*/test|.*/compatibility|.*/rc|.*/sample" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
 #run linter
 pushd $GOPATH/src/$CLIENT_IMPORT_PATH
 bash ./linter.sh
@@ -18,8 +18,6 @@ if [ "$?" != "0" ]; then
 fi
 popd
 set -ex
-
-
 
 
 if [ -d $GOPATH/src/github.com/apache/thrift/  ]; then
@@ -47,11 +45,15 @@ go get github.com/tebeka/go2xunit
 # Run tests (JUnit plugin)
 echo "mode: atomic" > coverage.out
 
-for pkg in $(go list $CLIENT_IMPORT_PATH/...);
+for pkg in $(go list -tags enterprise $CLIENT_IMPORT_PATH/...);
 do
     if [[ $pkg != *"vendor"* ]]; then
       echo "testing... $pkg"
-      go test -race -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
+      if [ -n "${ENTERPRISE_TESTS_ENABLED}" ]; then
+        go test -race -tags enterprise -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
+      else
+        go test -race -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
+      fi
       if [ -f tmp.out ]; then
          cat tmp.out | grep -v "mode: atomic" >> coverage.out | echo
       fi

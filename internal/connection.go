@@ -21,6 +21,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"crypto/tls"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -50,11 +53,11 @@ type Connection struct {
 	connectionManager      connectionManager
 }
 
-func newConnection(client *HazelcastClient, address core.Address, handleResponse func(interface{}),
-	connectionID int64, connectionManager connectionManager) (*Connection, error) {
+func newConnection(address core.Address, handleResponse func(interface{}),
+	connectionID int64, connectionManager connectionManager, networkCfg *config.NetworkConfig) (*Connection, error) {
 	builder := &clientMessageBuilder{handleResponse: handleResponse,
 		incompleteMessages: make(map[int64]*proto.ClientMessage)}
-	connection := Connection{pending: make(chan *proto.ClientMessage, 1),
+	connection := &Connection{pending: make(chan *proto.ClientMessage, 1),
 		received:             make(chan *proto.ClientMessage, 1),
 		closed:               make(chan struct{}),
 		clientMessageBuilder: builder,
@@ -63,8 +66,16 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 		connectionManager:    connectionManager,
 		status:               0,
 	}
-	connectionTimeout := timeutil.GetPositiveDurationOrMax(client.ClientConfig.NetworkConfig().ConnectionTimeout())
-	socket, err := net.DialTimeout("tcp", address.String(), connectionTimeout)
+
+	var socket net.Conn
+	var err error
+
+	if networkCfg.SSLConfig().Enabled() {
+		socket, err = connection.OpenTLSConnection(networkCfg.SSLConfig(), address)
+	} else {
+		connectionTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
+		socket, err = net.DialTimeout("tcp", address.String(), connectionTimeout)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +86,12 @@ func newConnection(client *HazelcastClient, address core.Address, handleResponse
 	socket.Write([]byte("CB2"))
 	go connection.writePool()
 	go connection.read()
-	return &connection, nil
+	return connection, nil
+}
+
+func (c *Connection) OpenTLSConnection(sslCfg *config.SSLConfig, address core.Address) (socket net.Conn, err error) {
+	socket, err = tls.Dial("tcp", address.String(), sslCfg.Config)
+	return
 }
 
 func (c *Connection) isAlive() bool {

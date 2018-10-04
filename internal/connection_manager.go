@@ -339,9 +339,9 @@ func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner 
 
 	invocationService := cm.client.InvocationService.(*invocationServiceImpl)
 	connectionID := cm.NextConnectionID()
-	con, err := newConnection(cm.client, address, invocationService.handleResponse, connectionID, cm)
+	con, err := newConnection(address, invocationService.handleResponse, connectionID, cm, cm.client.ClientConfig.NetworkConfig())
 	if err != nil {
-		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), nil)
+		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	}
 	err = cm.authenticate(con, asOwner)
 

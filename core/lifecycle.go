@@ -44,4 +44,7 @@ type LifecycleService interface {
 	// RemoveLifecycleListener removes lifecycle listener with the given registrationID.
 	// RemoveLifecycleListener returns true if the listener is removed successfully, false otherwise.
 	RemoveLifecycleListener(registrationID string) bool
+
+	// IsRunning checks whether or not the client is running.
+	IsRunning() bool
 }
