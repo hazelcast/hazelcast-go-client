@@ -360,6 +360,29 @@ func TestReliableTopicProxy_Stale(t *testing.T) {
 	assert.Equal(t, listener.messages[9].MessageObject(), int64(20))
 }
 
+func TestReliableTopicProxy_DistributedObjectDestroyedError(t *testing.T) {
+	reliableTopic, _ := client.GetReliableTopic("differentReliableTopic")
+	listener := &ReliableMessageListenerMock{shouldSkip: true, isLossTolerant: true, storedSeq: 0}
+	id, err := reliableTopic.AddMessageListener(listener)
+	defer reliableTopic.RemoveMessageListener(id)
+	assert.NoError(t, err)
+	time.Sleep(time.Second)
+	reliableTopic.Destroy()
+	time.Sleep(2 * time.Second)
+	assert.Len(t, listener.messages, 0)
+}
+
+func TestReliableTopicProxy_ClientNotActiveError(t *testing.T) {
+	client2, _ := hazelcast.NewClient()
+	reliableTopic, _ := client2.GetReliableTopic("myReliableTopic")
+	listener := &ReliableMessageListenerMock{wg: new(sync.WaitGroup), isLossTolerant: true, storedSeq: 0}
+	_, err := reliableTopic.AddMessageListener(listener)
+	assert.NoError(t, err)
+	client2.Shutdown()
+	time.Sleep(2 * time.Second)
+	assert.Len(t, listener.messages, 0)
+}
+
 func TestReliableTopicProxy_Leakage(t *testing.T) {
 	routineNumBefore := runtime.NumGoroutine()
 	client2, _ := hazelcast.NewClientWithConfig(initConfig())
@@ -390,11 +413,14 @@ type ReliableMessageListenerMock struct {
 	err            error
 	isTerminal     bool
 	terminalErr    error
+	shouldSkip     bool
 }
 
 func (r *ReliableMessageListenerMock) OnMessage(message core.Message) error {
 	r.messages = append(r.messages, message)
-	r.wg.Done()
+	if !r.shouldSkip {
+		r.wg.Done()
+	}
 	return r.err
 }
 
