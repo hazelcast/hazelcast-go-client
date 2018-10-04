@@ -114,6 +114,14 @@ func (r *ReliableTopicProxy) Publish(message interface{}) (err error) {
 	return err
 }
 
+func (r *ReliableTopicProxy) Destroy() (bool, error) {
+	_, err := r.proxy.Destroy()
+	if err != nil {
+		return false, err
+	}
+	return r.ringBuffer.Destroy()
+}
+
 func (r *ReliableTopicProxy) addOrFail(message *reliabletopic.Message) (err error) {
 	seqID, err := r.ringBuffer.Add(message, core.OverflowPolicyFail)
 	if err != nil {
@@ -197,31 +205,28 @@ func (m *messageProcessor) onFailure(err error) {
 		return
 	}
 	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
-	if hzErr, ok := err.(core.HazelcastError); ok {
-		if hzErr.ServerError() != nil && hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeStaleSequence) {
-			headSeq, _ := m.proxy.ringBuffer.HeadSequence()
-			if m.listener.IsLossTolerant() {
-				msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
-					strconv.Itoa(int(m.sequence)) + " " +
-					" to new sequence " + strconv.Itoa(int(headSeq))
-				log.Println(msg)
-				m.sequence = headSeq
-				go m.next()
-				return
-			}
-			log.Println(baseMsg+"The listener was too slow or the retention period of the message has been violated. ",
-				"Head: ", headSeq, " sequence: ", m.sequence)
+	if hzErr, ok := err.(core.HazelcastError); ok &&
+		hzErr.ServerError() != nil && hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeStaleSequence) {
+		headSeq, _ := m.proxy.ringBuffer.HeadSequence()
+		if m.listener.IsLossTolerant() {
+			msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
+				strconv.Itoa(int(m.sequence)) + " " +
+				" to new sequence " + strconv.Itoa(int(headSeq))
+			log.Println(msg)
+			m.sequence = headSeq
+			go m.next()
+			return
 		}
+		log.Println(baseMsg+"The listener was too slow or the retention period of the message has been violated. ",
+			"Head: ", headSeq, " sequence: ", m.sequence)
 
 	} else if _, ok := err.(*core.HazelcastInstanceNotActiveError); ok {
 		log.Println(baseMsg + "HazelcastInstance is shutting down.")
 	} else if _, ok := err.(*core.HazelcastClientNotActiveError); ok {
 		log.Println(baseMsg + "HazelcastClient is shutting down.")
-	} else if hzErr, ok := err.(core.HazelcastError); ok {
-		if hzErr.ServerError() != nil &&
-			hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeDistributedObjectDestroyed) {
-			log.Println(baseMsg + "Topic is destroyed.")
-		}
+	} else if hzErr, ok := err.(core.HazelcastError); ok && hzErr.ServerError() != nil &&
+		hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeDistributedObjectDestroyed) {
+		log.Println(baseMsg + "Topic is destroyed.")
 	} else {
 		log.Println(baseMsg + "Unhandled error, message:  " + err.Error())
 	}
