@@ -318,12 +318,10 @@ func (cs *clusterService) memberAdded(member *proto.Member) {
 
 func (cs *clusterService) memberRemoved(member *proto.Member) {
 	members := cs.members.Load().([]*proto.Member)
-	copyMembers := make([]*proto.Member, len(members)-1)
-	index := 0
+	copyMembers := make([]*proto.Member, 0, len(members)-1)
 	for _, curMember := range members {
 		if !curMember.Equal(*member) {
-			copyMembers[index] = curMember
-			index++
+			copyMembers = append(copyMembers, curMember)
 		}
 	}
 	cs.members.Store(copyMembers)
