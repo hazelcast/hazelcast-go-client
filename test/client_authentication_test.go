@@ -67,7 +67,7 @@ func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
 	})
 
 	_, err := hazelcast.NewClientWithConfig(cfg)
-	assert.Errorf(t, err, "Client should not connect with invalid password")
+	assert.NoError(t, err)
 }
 
 func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
