@@ -261,8 +261,8 @@ func TestConnectToClusterWithSetAddress(t *testing.T) {
 	config.NetworkConfig().SetAddresses([]string{"127.0.0.1"})
 	client, _ := hazelcast.NewClientWithConfig(config)
 	members := client.Cluster().GetMembers()
-	assert.Equalf(t, members[0].Address().Host(), "127.0.0.1", "connectToClusterWithoutPort returned a wrong member address")
 	assert.Equalf(t, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
+	assert.Equalf(t, members[0].Address().Host(), "127.0.0.1", "connectToClusterWithoutPort returned a wrong member address")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
