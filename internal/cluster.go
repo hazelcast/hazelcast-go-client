@@ -74,25 +74,27 @@ func (cs *clusterService) start() error {
 }
 
 func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
-	addresses := make(map[proto.Address]struct{})
+	seen := make(map[proto.Address]struct{})
+	addrs := make([]core.Address, 0)
 	memberList := cs.GetMembers()
 
 	for _, member := range memberList {
-		addresses[*member.Address().(*proto.Address)] = struct{}{}
+		a := *member.Address().(*proto.Address)
+		if _, found := seen[a]; !found {
+			addrs = append(addrs, member.Address())
+			seen[a] = struct{}{}
+		}
 	}
 
 	for _, provider := range cs.addressProviders {
 		providerAddrs := provider.LoadAddresses()
 		for _, addr := range providerAddrs {
-			addresses[*addr.(*proto.Address)] = struct{}{}
+			a := *addr.(*proto.Address)
+			if _, found := seen[a]; !found {
+				addrs = append(addrs, addr)
+				seen[a] = struct{}{}
+			}
 		}
-	}
-
-	addrs := make([]core.Address, len(addresses))
-	index := 0
-	for a := range addresses {
-		addrs[index] = &a
-		index++
 	}
 	return addrs
 }
