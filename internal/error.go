@@ -44,6 +44,8 @@ func createHazelcastError(err *proto.ServerError) core.HazelcastError {
 		return core.NewHazelcastUnsupportedOperationError(message, err)
 	case bufutil.ErrorCodeConsistencyLostException:
 		return core.NewHazelcastConsistencyLostError(message, err)
+	case bufutil.ErrorCodeIllegalArgument:
+		return core.NewHazelcastIllegalArgumentError(message, err)
 	}
 
 	return core.NewHazelcastErrorType(message, err)

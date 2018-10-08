@@ -100,6 +100,66 @@ func TestReliableTopicProxy_ServerRestartWithInvocationTimeout(t *testing.T) {
 	assert.Equal(t, timeout, false)
 }
 
+func TestReliableTopicProxy_ServerRestartWhenDataLossWithInvocationTimeout(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	member, _ := remoteController.StartMember(cluster.ID)
+	topicName := "topic3"
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().SetConnectionAttemptLimit(10)
+	config.SetProperty(property.InvocationTimeoutSeconds.Name(), "2")
+	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	topic, _ := client.GetReliableTopic(topicName)
+	topic.Publish("message")
+	topic.Publish("message")
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &DurableMessageListenerMock{wg: wg, isLossTolerant: true, storedSeq: -1}
+	//listener := &messageListenerMock{wg: wg}
+	id, err := topic.AddMessageListener(listener)
+	require.NoError(t, err)
+	defer topic.RemoveMessageListener(id)
+	remoteController.ShutdownMember(cluster.ID, member.UUID)
+	time.Sleep(3 * time.Second)
+	remoteController.StartMember(cluster.ID)
+	time.Sleep(time.Second)
+	err = topic.Publish("message")
+	assert.NoError(t, err)
+	timeout := test.WaitTimeout(wg, test.Timeout)
+	assert.Equal(t, timeout, false)
+}
+
+func TestReliableTopicProxy_ServerRestartWhenDataLossWithInvocationTimeoutWhenNotLossTolerant(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	member, _ := remoteController.StartMember(cluster.ID)
+	topicName := "topic3"
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().SetConnectionAttemptLimit(10)
+	config.SetProperty(property.InvocationTimeoutSeconds.Name(), "2")
+	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	topic, _ := client.GetReliableTopic(topicName)
+	topic.Publish("message")
+	topic.Publish("message")
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	listener := &DurableMessageListenerMock{wg: wg, isLossTolerant: false, storedSeq: -1}
+	//listener := &messageListenerMock{wg: wg}
+	id, err := topic.AddMessageListener(listener)
+	require.NoError(t, err)
+	defer topic.RemoveMessageListener(id)
+	remoteController.ShutdownMember(cluster.ID, member.UUID)
+	time.Sleep(3 * time.Second)
+	remoteController.StartMember(cluster.ID)
+	time.Sleep(time.Second)
+	err = topic.Publish("message")
+	assert.NoError(t, err)
+	timeout := test.WaitTimeout(wg, test.Timeout/15)
+	assert.Equal(t, timeout, true)
+}
+
 type messageListenerMock struct {
 	wg *sync.WaitGroup
 }
@@ -107,4 +167,34 @@ type messageListenerMock struct {
 func (m *messageListenerMock) OnMessage(message core.Message) error {
 	m.wg.Done()
 	return nil
+}
+
+type DurableMessageListenerMock struct {
+	storedSeq      int64
+	isLossTolerant bool
+	wg             *sync.WaitGroup
+	messages       []core.Message
+	err            error
+}
+
+func (r *DurableMessageListenerMock) OnMessage(message core.Message) error {
+	r.messages = append(r.messages, message)
+	r.wg.Done()
+	return r.err
+}
+
+func (r *DurableMessageListenerMock) RetrieveInitialSequence() int64 {
+	return r.storedSeq
+}
+
+func (r *DurableMessageListenerMock) StoreSequence(sequence int64) {
+	r.storedSeq = sequence
+}
+
+func (r *DurableMessageListenerMock) IsLossTolerant() bool {
+	return r.isLossTolerant
+}
+
+func (r *DurableMessageListenerMock) IsTerminal(err error) (bool, error) {
+	return false, nil
 }
