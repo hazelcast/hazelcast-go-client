@@ -21,8 +21,6 @@ import (
 
 	"io/ioutil"
 
-	"strings"
-
 	"time"
 
 	"crypto/tls"
@@ -35,15 +33,18 @@ import (
 )
 
 const (
-	cloudURLPath      = "/cluster/discovery?token="
-	privateAddressStr = "private-address"
-	publicAddressStr  = "public-address"
+	cloudURLPath = "/cluster/discovery?token="
 )
 
 var CloudURLBaseProperty = property.NewHazelcastPropertyString("hazelcast.client.cloud.url",
 	"https://coordinator.hazelcast.cloud")
 
 type nodeDiscoverer func() (map[string]core.Address, error)
+
+type addr struct {
+	PrivAddr   string `json:"private-address"`
+	PublicAddr string `json:"public-address"`
+}
 
 type HazelcastCloud struct {
 	client            http.Client
@@ -103,10 +104,7 @@ func (hzC *HazelcastCloud) checkCertificates(response *http.Response) bool {
 }
 
 func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]core.Address, error) {
-	// We could have used a struct instead of an interface that has private-address and public-address
-	// fields to decode the JSON response to make things easier, but those fields names are not valid
-	// because of the '-' in them.
-	var target = make([]interface{}, 0)
+	var target = make([]addr, 0)
 	var privateToPublicAddrs = make(map[string]core.Address)
 	resp, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -116,30 +114,12 @@ func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]co
 		return nil, err
 	}
 
-	// Here target is slice of maps
-	for _, elem := range target {
-		if mp, ok := elem.(map[string]interface{}); ok {
-			var privateAddr string
-			var publicAddr string
-			for k, v := range mp {
-				if strings.Compare(k, privateAddressStr) == 0 {
-					if res, ok := v.(string); ok {
-						privateAddr = res
-					}
-				}
-				if strings.Compare(k, publicAddressStr) == 0 {
-					if res, ok := v.(string); ok {
-						publicAddr = res
-					}
-				}
-			}
-			publicAddress := hzC.createAddress(publicAddr)
-
-			// TODO:: what if privateAddress is not okay ?
-			// TODO:: use addressProvider
-			privateAddress := proto.NewAddressWithParameters(privateAddr, int32(publicAddress.Port()))
-			privateToPublicAddrs[privateAddress.String()] = publicAddress
-		}
+	for _, addr := range target {
+		publicAddress := hzC.createAddress(addr.PublicAddr)
+		// TODO:: what if privateAddress is not okay ?
+		// TODO:: use addressProvider
+		privateAddress := proto.NewAddressWithParameters(addr.PrivAddr, int32(publicAddress.Port()))
+		privateToPublicAddrs[privateAddress.String()] = publicAddress
 	}
 
 	return privateToPublicAddrs, nil
