@@ -229,7 +229,7 @@ func newInvocationService(client *HazelcastClient) *invocationServiceImpl {
 	service.initInvocationTimeout()
 	service.initRetryPause()
 	service.isShutdown.Store(false)
-	if client.ClientConfig.NetworkConfig().IsSmartRouting() {
+	if client.Config.NetworkConfig().IsSmartRouting() {
 		service.invoke = service.invokeSmart
 	} else {
 		service.invoke = service.invokeNonSmart
@@ -435,7 +435,7 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 }
 
 func (is *invocationServiceImpl) isRedoOperation() bool {
-	return is.client.ClientConfig.NetworkConfig().IsRedoOperation()
+	return is.client.Config.NetworkConfig().IsRedoOperation()
 }
 
 func (is *invocationServiceImpl) shouldRetryInvocation(invocation *invocation, err error) bool {

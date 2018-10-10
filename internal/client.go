@@ -37,7 +37,7 @@ var clientID int64
 
 type HazelcastClient struct {
 	InvocationService    invocationService
-	ClientConfig         *config.Config
+	Config               *config.Config
 	PartitionService     *partitionService
 	SerializationService *serialization.Service
 	lifecycleService     *lifecycleService
@@ -54,7 +54,7 @@ type HazelcastClient struct {
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
-	client := HazelcastClient{ClientConfig: config}
+	client := HazelcastClient{Config: config}
 	client.properties = property.NewHazelcastProperties(config.Properties())
 	err := client.init()
 	return &client, err
@@ -172,19 +172,19 @@ func (c *HazelcastClient) init() error {
 	c.id = c.nextClientID()
 	c.initClientName()
 
-	c.credentials = c.initCredentials(c.ClientConfig)
-	c.lifecycleService = newLifecycleService(c.ClientConfig)
+	c.credentials = c.initCredentials(c.Config)
+	c.lifecycleService = newLifecycleService(c.Config)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
 	c.InvocationService = newInvocationService(c)
 	addressProviders := c.createAddressProviders()
-	c.ClusterService = newClusterService(c, c.ClientConfig, addressProviders)
+	c.ClusterService = newClusterService(c, c.Config, addressProviders)
 	c.ListenerService = newListenerService(c)
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
-	c.LoadBalancer = c.initLoadBalancer(c.ClientConfig)
+	c.LoadBalancer = c.initLoadBalancer(c.Config)
 	c.LoadBalancer.Init(c.ClusterService)
-	c.SerializationService, err = serialization.NewSerializationService(c.ClientConfig.SerializationConfig())
+	c.SerializationService, err = serialization.NewSerializationService(c.Config.SerializationConfig())
 	if err != nil {
 		return err
 	}
@@ -205,8 +205,8 @@ func (c *HazelcastClient) nextClientID() int64 {
 }
 
 func (c *HazelcastClient) initClientName() {
-	if c.ClientConfig.ClientName() != "" {
-		c.name = c.ClientConfig.ClientName()
+	if c.Config.ClientName() != "" {
+		c.name = c.Config.ClientName()
 	} else {
 		c.name = "hz.client_" + strconv.Itoa(int(c.id))
 	}
@@ -223,7 +223,7 @@ func (c *HazelcastClient) initCredentials(cfg *config.Config) security.Credentia
 }
 
 func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {
-	cloudConfig := c.ClientConfig.NetworkConfig().CloudConfig()
+	cloudConfig := c.Config.NetworkConfig().CloudConfig()
 	cloudDiscoveryToken := c.properties.GetString(property.HazelcastCloudDiscoveryToken)
 	if cloudDiscoveryToken != "" && cloudConfig.IsEnabled() {
 		return nil, core.NewHazelcastIllegalStateError("ambigious hazelcast.cloud configuration. "+
@@ -249,12 +249,12 @@ func (c *HazelcastClient) createAddressTranslator() (AddressTranslator, error) {
 
 func (c *HazelcastClient) createAddressProviders() []AddressProvider {
 	addressProviders := make([]AddressProvider, 0)
-	cloudConfig := c.ClientConfig.NetworkConfig().CloudConfig()
+	cloudConfig := c.Config.NetworkConfig().CloudConfig()
 	cloudAddressProvider := c.initCloudAddressProvider(cloudConfig)
 	if cloudAddressProvider != nil {
 		addressProviders = append(addressProviders, cloudAddressProvider)
 	}
-	addressProviders = append(addressProviders, newDefaultAddressProvider(c.ClientConfig.NetworkConfig()))
+	addressProviders = append(addressProviders, newDefaultAddressProvider(c.Config.NetworkConfig()))
 
 	return addressProviders
 }
@@ -282,7 +282,7 @@ func (c *HazelcastClient) initCloudAddressProvider(cloudConfig *config.CloudConf
 }
 
 func (c *HazelcastClient) getConnectionTimeout() time.Duration {
-	nc := c.ClientConfig.NetworkConfig()
+	nc := c.Config.NetworkConfig()
 	connTimeout := nc.ConnectionTimeout()
 	if connTimeout == 0 {
 		connTimeout = math.MaxInt64

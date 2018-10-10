@@ -60,7 +60,7 @@ func newClusterService(client *HazelcastClient, config *config.Config, addressPr
 	service.ownerUUID.Store(ownerUUID) //Initialize
 	uuid := ""
 	service.uuid.Store(uuid) //Initialize
-	for _, membershipListener := range client.ClientConfig.MembershipListeners() {
+	for _, membershipListener := range client.Config.MembershipListeners() {
 		service.AddMembershipListener(membershipListener)
 	}
 	service.addressProviders = addressProviders
