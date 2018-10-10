@@ -43,6 +43,8 @@ config.NetworkConfig().AddAddress("192.168.1.9:5701") // change this with your a
     Usage of distributed [PN counter](https://github.com/hazelcast/hazelcast-go-client/blob/master/core/pn_counter.go).
 - [queue](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/queue): 
     Usage of distributed [queue](https://github.com/hazelcast/hazelcast-go-client/blob/master/core/queue.go).
+- [reliable topic](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/reliabletopic):
+    Usage of distributed reliable topic.
 - [replicated map](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/replicatedmap):
     Usage of distributed [replicated map](https://github.com/hazelcast/hazelcast-go-client/blob/master/core/replicated_map.go).
 - [ringbuffer](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/ringbuffer):

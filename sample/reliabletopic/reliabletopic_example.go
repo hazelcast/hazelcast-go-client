@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+
 	"strconv"
 	"sync"
 
@@ -24,7 +25,6 @@ import (
 )
 
 func main() {
-
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().AddAddress("127.0.0.1:5701")
 
@@ -33,32 +33,43 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	topic, _ := client.GetTopic("myTopic")
-
+	reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
 	var wg sync.WaitGroup
 	wg.Add(10)
-	topicMessageListener := &topicMessageListener{wg: &wg}
-	topic.AddMessageListener(topicMessageListener)
+	reliableTopic.AddMessageListener(&reliableTopicMessageListener{wg: &wg})
 
 	go func() {
 		for i := 0; i < 10; i++ {
-			topic.Publish("Message " + strconv.Itoa(i))
+			reliableTopic.Publish("Message " + strconv.Itoa(i))
 		}
 	}()
-
 	wg.Wait()
-
-	topic.Destroy()
+	reliableTopic.Destroy()
 	client.Shutdown()
 }
 
-type topicMessageListener struct {
+type reliableTopicMessageListener struct {
 	wg *sync.WaitGroup
 }
 
-func (l *topicMessageListener) OnMessage(message core.Message) error {
+func (r *reliableTopicMessageListener) OnMessage(message core.Message) error {
 	fmt.Println("Got message: ", message.MessageObject())
 	fmt.Println("Publishing Time: ", message.PublishTime())
-	l.wg.Done()
+	r.wg.Done()
 	return nil
+}
+
+func (r *reliableTopicMessageListener) RetrieveInitialSequence() int64 {
+	return -1
+}
+
+func (r *reliableTopicMessageListener) StoreSequence(sequence int64) {
+}
+
+func (r *reliableTopicMessageListener) IsLossTolerant() bool {
+	return true
+}
+
+func (r *reliableTopicMessageListener) IsTerminal(err error) (bool, error) {
+	return true, nil
 }
