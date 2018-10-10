@@ -59,7 +59,7 @@ func newReliableTopicProxy(client *HazelcastClient, serviceName string, name str
 		},
 	}
 	proxy.serializationService = client.SerializationService
-	proxy.config = client.ClientConfig.GetReliableTopicConfig(name)
+	proxy.config = client.Config.GetReliableTopicConfig(name)
 	proxy.topicOverLoadPolicy = proxy.config.TopicOverloadPolicy()
 	var err error
 	proxy.ringBuffer, err = client.GetRingbuffer(topicRBPrefix + name)

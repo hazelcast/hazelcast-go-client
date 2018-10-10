@@ -41,7 +41,7 @@ func (p *proxy) Destroy() (bool, error) {
 }
 
 func (p *proxy) isSmart() bool {
-	return p.client.ClientConfig.NetworkConfig().IsSmartRouting()
+	return p.client.Config.NetworkConfig().IsSmartRouting()
 }
 
 func (p *proxy) Name() string {

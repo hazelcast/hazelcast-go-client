@@ -88,7 +88,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 	}
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
-	if service.client.ClientConfig.NetworkConfig().IsSmartRouting() {
+	if service.client.Config.NetworkConfig().IsSmartRouting() {
 		go service.connectToAllMembersPeriodically()
 	}
 	return service
@@ -304,7 +304,7 @@ func (ls *listenerService) onConnectionOpenedInternal(connection *Connection) {
 }
 
 func (ls *listenerService) trySyncConnectToAllConnections() error {
-	if !ls.client.ClientConfig.NetworkConfig().IsSmartRouting() {
+	if !ls.client.Config.NetworkConfig().IsSmartRouting() {
 		return nil
 	}
 	remainingTime := ls.client.properties.GetPositiveDuration(property.InvocationTimeoutSeconds)
