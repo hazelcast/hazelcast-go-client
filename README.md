@@ -40,6 +40,7 @@ Hazelcast Go client supports the following data structures and features:
 * Set
 * Queue
 * Topic
+* ReliableTopic
 * ReplicatedMap
 * Ringbuffer
 * Query (Predicates)
