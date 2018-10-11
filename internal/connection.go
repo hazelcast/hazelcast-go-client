@@ -70,11 +70,13 @@ func newConnection(address core.Address, handleResponse func(interface{}),
 	var socket net.Conn
 	var err error
 
+	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
+	socket, err = net.DialTimeout("tcp", address.String(), conTimeout)
+	if err != nil {
+		return nil, err
+	}
 	if networkCfg.SSLConfig().Enabled() {
-		socket, err = connection.OpenTLSConnection(networkCfg.SSLConfig(), address)
-	} else {
-		connectionTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
-		socket, err = net.DialTimeout("tcp", address.String(), connectionTimeout)
+		socket, err = connection.openTLSConnection(networkCfg.SSLConfig(), socket, conTimeout)
 	}
 	if err != nil {
 		return nil, err
@@ -89,9 +91,10 @@ func newConnection(address core.Address, handleResponse func(interface{}),
 	return connection, nil
 }
 
-func (c *Connection) OpenTLSConnection(sslCfg *config.SSLConfig, address core.Address) (socket net.Conn, err error) {
-	socket, err = tls.Dial("tcp", address.String(), sslCfg.Config)
-	return
+func (c *Connection) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn, timeout time.Duration) (net.Conn, error) {
+	tlsCon := tls.Client(conn, sslCfg.Config)
+	err := tlsCon.Handshake()
+	return tlsCon, err
 }
 
 func (c *Connection) isAlive() bool {
