@@ -24,10 +24,13 @@ import (
 func main() {
 
 	cfg := hazelcast.NewConfig()
-	cfg.GroupConfig().SetName("exampleName")
+	cfg.GroupConfig().SetName("name")
+	cfg.GroupConfig().SetPassword("password")
+	cfg.NetworkConfig().SSLConfig().SetEnabled(true)
+	cfg.NetworkConfig().SSLConfig().ServerName = "serverName"
 	discoveryCfg := config.NewCloudConfig()
 	discoveryCfg.SetEnabled(true)
-	discoveryCfg.SetDiscoveryToken("exampleToken")
+	discoveryCfg.SetDiscoveryToken("discoveryToken")
 	cfg.NetworkConfig().SetCloudConfig(discoveryCfg)
 
 	client, _ := hazelcast.NewClientWithConfig(cfg)
