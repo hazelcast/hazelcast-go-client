@@ -331,14 +331,14 @@ type ServerError interface {
 // registered. This makes it possible to create a durable subscription by storing the sequence of the last message and
 // using this sequenceId as the sequenceId to start from.
 //
-//  Exception handling
-// The ReliableMessageListener also gives the ability to deal with exceptions using the {@link #isTerminal(Throwable)}
-// method. If a plain MessageListener is used, then it won't terminate on exceptions and it will keep on running. But in some
+//  Error handling
+// The ReliableMessageListener also gives the ability to deal with errors using the IsTerminal(error)
+// method. If a plain MessageListener is used, then it won't terminate on errors and it will keep on running. But in some
 // cases it is better to stop running.
 //
 //  Global order
 // The ReliableMessageListener will always get all events in order (global order). It will not get duplicates and
-// there will only be gaps if it is too slow. For more information see {@link #isLossTolerant()}.
+// there will only be gaps if it is too slow. For more information see IsLossTolerant().
 //
 //  Delivery guarantees
 // Because the ReliableMessageListener controls which item it wants to continue from upon restart, it is very easy to provide
