@@ -20,7 +20,7 @@
 * [5. Setting Up Client Network](#5-setting-up-client-network)
   * [5.1. Providing the Member Addresses](#51-providing-the-member-addresses)
   * [5.2. Setting Smart Routing](#52-setting-smart-routing)
-  * [5.3. Setting Redo Operation](#53-enabling-redo-operation)
+  * [5.3. Enabling Redo Operation](#53-enabling-redo-operation)
   * [5.4. Setting Connection Timeout](#54-setting-connection-timeout)
   * [5.5. Setting Connection Attempt Limit](#55-setting-connection-attempt-limit)
   * [5.6. Setting Connection Attempt Period](#56-setting-connection-attempt-period)
@@ -50,10 +50,21 @@
       * [7.5.1.2. Listening for Lifecycle Events](#7512-listening-for-lifecycle-events)
     * [7.5.2. Distributed Data Structure Events](#752-distributed-data-structure-events)
       * [7.5.2.1. Listening for Map Events](#7521-listening-for-map-events)
+  * [7.6. Distributed Computing](#76-distributed-computing)
+    * [7.6.1. Using EntryProcessor](#761-using-entryprocessor)
+  * [7.7. Distributed Query](#77-distributed-query)
+    * [7.7.1 How Distributed Query Works](#771-how-distributed-query-works)
+      * [7.7.1.1. Employee Map Query Example](#7711-employee-map-query-example)
+      * [7.7.1.2. Querying by Combining Predicates with AND, OR, NOT](#7712-querying-by-combining-predicates-with-and-or-not)
+      * [7.7.1.3. Querying with SQL](#7713-querying-with-sql)
+      * [7.7.1.4. Filtering with Paging Predicates](#7714-filtering-with-paging-predicates)
 * [8. Development and Testing](#8-development-and-testing)
   * [8.1. Building and Using Client From Sources](#81-building-and-using-client-from-sources)
   * [8.2. Testing](#82-testing)
-* [9. Support, License and Copyright](#9-support-license-and-copyright)
+* [9. Getting Help](#9-getting-help)
+* [10. Contributing](#10-contributing)
+* [11. License](#11-license)
+* [12. Copyright](#12-copyright)
 
 
 # Introduction
@@ -70,7 +81,7 @@ This document explains Go client for Hazelcast which uses Hazelcast's Open Clien
 
 # 1. Getting Started
 
-This chapter explains all the necessary things to start using Hazelcast GO Client including basic Hazelcast IMDG, IMDG and client
+This chapter explains all the necessary things to start using Hazelcast Go client including basic Hazelcast IMDG, IMDG and client
 configuration and how to use distributed data structures with Hazelcast.
 
 ## 1.1. Requirements
@@ -79,11 +90,11 @@ configuration and how to use distributed data structures with Hazelcast.
 - Go 1.9 or newer
 - Java 6 or newer
 - Hazelcast IMDG 3.6 or newer
-- Latest Hazelcast Go Client
+- Latest Hazelcast Go client
 
 ## 1.2. Working with Hazelcast Clusters
 
-Hazelcast Go Client requires a working Hazelcast IMDG cluster to run. IMDG cluster handles storage and manipulation of the user data.
+Hazelcast Go client requires a working Hazelcast IMDG cluster to run. IMDG cluster handles storage and manipulation of the user data.
 Clients are a way to connect to IMDG cluster and access such data.
 
 IMDG cluster consists of one or more Hazelcast IMDG members. These members generally run on multiple virtual or physical machines
@@ -93,7 +104,7 @@ any hardware or software problem causes a crash to any member, the data on that 
 continues to operate without any downtime. Hazelcast clients are an easy way to connect to an IMDG cluster and perform tasks on
 distributed data structures that live on the cluster.
 
-In order to use Hazelcast Go Client, we first need to setup an IMDG cluster.
+In order to use Hazelcast Go client, we first need to setup an IMDG cluster.
 
 ### Setting Up an IMDG Cluster
 There are multiple ways of starting an IMDG cluster easily. You can run standalone IMDG members by downloading and running jar files
@@ -116,6 +127,24 @@ Sep 06, 2018 10:50:23 AM com.hazelcast.core.LifecycleService
 INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
 ```
 
+#### Adding User Library to CLASSPATH
+
+ When you want to use features such as querying and language interoperability, you might need to add your own Java classes to Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the `CLASSPATH`. To do this, compile your code with the `CLASSPATH` and add the compiled files to `user-lib` folder in the extracted `hazelcast-<version>.zip`. Then, you can start your Hazelcast member by using the start scripts in the `bin` folder. The start scripts will automatically add your compiled classes to the `CLASSPATH`.
+ Note that if you are adding an `IdentifiedDataSerializable` or a `Portable` class, you need to add its factory too. Then, you should configure the factory in the `hazelcast.xml` in the `bin` folder like the following:
+ ```xml
+<hazelcast>
+     ...
+     <serialization>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id=<identified-factory-id>>
+                IdentifiedFactoryClassName
+            </data-serializable-factory>
+        </data-serializable-factories>
+    </serialization>
+    ...
+</hazelcast>
+```
+Similarly, use `<portable-factories>` instead of `<data-serializable-factories>` if you are using portables.
 
 #### Using hazelcast-member Tool
 `hazelcast-member` is a tool to make downloading and running IMDG members as easy as it could be. If you have brew installed, run the following commands:
@@ -142,7 +171,7 @@ go get github.com/hazelcast/hazelcast-go-client
 [For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/helloworld)
 
 ## 1.4. Basic Configuration
-If you are using Hazelcast IMDG and Go Client on the same computer, generally default configuration just works. This is great for
+If you are using Hazelcast IMDG and Go client on the same computer, generally default configuration just works. This is great for
 trying out the client. However, if you run the client on a different computer than any of the cluster members, you may
 need to do some simple configuration such as specifying the member addresses.
 
@@ -213,9 +242,9 @@ These configuration elements are enough for most connection scenarios. Now we wi
 ### 1.4.2. Hazelcast Client Configuration
 
 This section describes some network configuration settings to cover common use cases in connecting the client to a cluster. Refer to [Configuration Overview](#configuration-overview)
-and the following sections for information about detailed network configuration and/or additional features of Hazelcast Go Client configuration.
+and the following sections for information about detailed network configuration and/or additional features of Hazelcast Go client configuration.
 
-An easy way to configure your Hazelcast Go Client is to create a `Config` object and set the appropriate options. Then you can
+An easy way to configure your Hazelcast Go client is to create a `Config` object and set the appropriate options. Then you can
 supply this object to your client at the startup.
 
 **Configuration**
@@ -301,7 +330,7 @@ Members {size:2} [
 
 
 ```
-Congratulations, you just started a Hazelcast Go Client.
+Congratulations, you just started a Hazelcast Go client.
 
 **Using a Map**
 
@@ -420,34 +449,42 @@ You can also refer to Hazelcast Go [API Documentation](https://godoc.org/github.
 
 Hazelcast Go client supports the following data structures and features:
 
-* Map (including entry processors and `PartitionAware` keys)
-* MultiMap
+* Map 
+* Multi Map
 * List
 * Set
 * Queue
 * Topic
-* ReliableTopic
-* ReplicatedMap
+* Reliable Topic
+* Replicated Map
 * Ringbuffer
 * Query (Predicates)
+* Built-in Predicates
 * API configuration
 * Event Listeners
+* Entry Processor
 * Flake Id Generator
-* CRDT Counter
-* Aggregations & Projections
+* CRDT PN Counter
+* Aggregations 
+* Projections
 * Lifecycle Service
-* Smart and Unisocket Client operation
-* Hazelcast Serialization (IdentifiedDataSerializable, Portable, Custom Serializers, Global Serializers)
-* SSL/TLS Support With Mutual Authentication(Enterprise)
+* Smart Client
+* Unisocket Client
+* IdentifiedDataSerializable Serialization
+* Portable Serialization
+* Custom Serialization
+* Global Serialization
+* SSL Support (requires Enterprise server)
+* Mutual Authentication (requires Enterprise server)
 * Custom Credentials
 * Hazelcast Cloud Discovery
 * Statistics
 
 # 3. Configuration Overview
 
-You can configure Hazelcast Go Client programmatically (API).
+You can configure Hazelcast Go client programmatically (API).
 
-For programmatic configuration of the Hazelcast Go Client, just instantiate a `ClientConfig` object and configure the
+For programmatic configuration of the Hazelcast Go client, just instantiate a `ClientConfig` object and configure the
 desired aspects. An example is shown below.
 
 ```
@@ -456,7 +493,7 @@ config.NetworkConfig().AddAddress("some-ip-address:port")
 hazelcast.NewClientWithConfig(config)
 ```
 
-Refer to `ClientConfig` class documentation at [Hazelcast Go Client API Docs](https://godoc.org/github.com/hazelcast/hazelcast-go-client/config#Config) for details.
+Refer to `ClientConfig` class documentation at [Hazelcast Go client API Docs](https://godoc.org/github.com/hazelcast/hazelcast-go-client/config#Config) for details.
 
 
 
@@ -695,8 +732,8 @@ config.SerializationConfig().SetGlobalSerializer(&GlobalSerializer{})
 
 # 5. Setting Up Client Network
 
-All network related configuration of Hazelcast Go Client is performed via the `NetworkConfig` class when using programmatic configuration. 
-Here is an example of configuring network for Go Client programmatically.
+All network related configuration of Hazelcast Go client is performed via the `NetworkConfig` class when using programmatic configuration. 
+Here is an example of configuring network for Go client programmatically.
 
 ```go
 config := hazelcast.NewConfig()
@@ -727,7 +764,7 @@ You can specify multiple addresses with or without port information as seen abov
 
 ## 5.2. Setting Smart Routing
 
-Smart routing defines whether the client mode is smart or unisocket. See [Go Client Operation Modes section](#go-client-operation-modes)
+Smart routing defines whether the client mode is smart or unisocket. See [Go client Operation Modes section](#go-client-operation-modes)
 for the description of smart and unisocket modes.
 
 The following are example configurations.
@@ -821,7 +858,7 @@ To be able to connect to the provided IP addresses, you should use secure TLS/SS
 
 # 6. Securing Client Connection
 
-This chapter describes the security features of Hazelcast Go Client. These include using TLS/SSL for connections between members and between clients and members and mutual authentication. These security features require **Hazelcast IMDG Enterprise** edition.
+This chapter describes the security features of Hazelcast Go client. These include using TLS/SSL for connections between members and between clients and members and mutual authentication. These security features require **Hazelcast IMDG Enterprise** edition.
 
 ### 6.1. TLS/SSL
 
@@ -837,7 +874,7 @@ You should set `keyStore` and `trustStore` before starting the members. See the 
 
 Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption. To use it, see [TLS/SSL for Hazelcast Members section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#tls-ssl-for-hazelcast-members).
 
-#### 6.1.2. TLS/SSL for Hazelcast Go Clients
+#### 6.1.2. TLS/SSL for Hazelcast Go clients
 
 Hazelcast Go clients which support TLS/SSL should have the following user supplied SSLConfig
 
@@ -879,9 +916,9 @@ sslConfig.AddClientCertAndKeyPath("yourClientCertPath", "yourClientKeyPath")
 sslConfig.ServerName = "yourServerName"
 ```
 
-# 7. Using Go Client with Hazelcast IMDG
+# 7. Using Go client with Hazelcast IMDG
 
-## 7.1. Go Client API Overview
+## 7.1. Go client API Overview
 
 If you are ready to go, let's start to use Hazelcast Go client!
 
@@ -922,7 +959,7 @@ As a final step, if you are done with your client, you can shut it down as shown
 client.Shutdown()
 ```
 
-## 7.2. Go Client Operation Modes
+## 7.2. Go client Operation Modes
 
 The client has two operation modes because of the distributed nature of the data and cluster.
 
@@ -1158,6 +1195,368 @@ m.Put("3", "Furkan")
 m.Clear()
 ```
 
+## 7.6. Distributed Computing
+
+This chapter explains Hazelcast’s entry processor implementation.
+
+### 7.6.1. Using EntryProcessor
+
+Hazelcast supports entry processing. An entry processor is a function that executes your code on a map entry in an atomic way.
+
+An entry processor is a good option if you perform bulk processing on an `IMap`. Usually you perform a loop of keys-- executing `IMap.get(key)`, mutating the value, and finally putting the entry back in the map using `IMap.put(key,value)`. If you perform this process from a client or from a member where the keys do not exist, you effectively perform two network hops for each update: the first to retrieve the data and the second to update the mutated value.
+
+If you are doing the process described above, you should consider using entry processors. An entry processor executes a read and updates upon the member where the data resides. This eliminates the costly network hops described above.
+
+> **NOTE: Entry processor is meant to process a single entry per call. Processing multiple entries and data structures in an entry processor is not supported as it may result in deadlocks on the server side.**
+
+Hazelcast sends the entry processor to each cluster member and these members apply it to the map entries. Therefore, if you add more members, your processing completes faster.
+
+#### Processing Entries
+
+The `IMap` interface provides the following functions for entry processing:
+
+- `executeOnKey` processes an entry mapped by a key.
+
+- `executeOnKeys` processes entries mapped by a list of keys.
+
+- `executeOnEntries` can process all entries in a map.
+
+- `executeOnEntriesWithPredicate` can process all entries in a map with a defined predicate. 
+
+In the Go client, an `EntryProcessor` should be `IdentifiedDataSerializable` , `Portable` or `Custom Serializable` because the server should be able to deserialize it to process.
+
+The following is an example for `EntryProcessor` which is `IdentifiedDataSerializable`.
+
+```go
+type identifiedEntryProcessor struct {
+	value             string
+}
+
+func (p *identifiedEntryProcessor) ReadData(input serialization.DataInput) error {
+	var err error
+	p.value, err = input.ReadUTF()
+	return err
+}
+
+func (p *identifiedEntryProcessor) WriteData(output serialization.DataOutput) error {
+	output.WriteUTF(p.value)
+	return nil
+}
+
+func (p *identifiedEntryProcessor) FactoryID() int32 {
+	return 5
+}
+
+func (p *identifiedEntryProcessor) ClassID() int32 {
+	return 1
+}
+```
+
+Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, please see [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
+
+The following is an example code which can be the Java equivalent of entry processor in Go client:
+
+```java
+import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import java.io.IOException;
+import java.util.Map;
+
+public class IdentifiedEntryProcessor extends AbstractEntryProcessor<String, String> implements IdentifiedDataSerializable {
+     static final int CLASS_ID = 1;
+     private String value;
+     
+    public IdentifiedEntryProcessor() {
+    }
+    
+     @Override
+    public int getFactoryId() {
+        return IdentifiedFactory.FACTORY_ID;
+    }
+    
+     @Override
+    public int getId() {
+        return CLASS_ID;
+    }
+    
+     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(value);
+    }
+    
+     @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        value = in.readUTF();
+    }
+    
+     @Override
+    public Object process(Map.Entry<String, String> entry) {
+        entry.setValue(value);
+        return value;
+    }
+}
+```
+
+You can implement the above processor’s factory as follows:
+
+```java
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+public class IdentifiedFactory implements DataSerializableFactory {
+    public static final int FACTORY_ID = 5;
+    
+     @Override
+    public IdentifiedDataSerializable create(int typeId) {
+        if (typeId == IdentifiedEntryProcessor.CLASS_ID) {
+            return new IdentifiedEntryProcessor();
+        }
+        return null;
+    }
+}
+```
+
+Note that you need to configure the `hazelcast.xml` to add your factory. And the following is the configuration for the above factory:
+
+```xml
+<hazelcast>
+    <serialization>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="5">
+                IdentifiedFactory
+            </data-serializable-factory>
+        </data-serializable-factories>
+    </serialization>
+</hazelcast>
+```
+
+The code that runs on the entries is implemented in Java on the server side. Client side entry processor is used to specify which entry processor should be called. For more details about the Java implementation of the entry processor, please see [Entry Processor section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#entry-processor) in the Hazelcast IMDG Reference Manual.
+
+After all implementation and starting the server where your library is added to its `CLASSPATH`, you can use the entry processor in the `IMap` functions. Let's take a look at the following example.
+
+```javascript
+config := hazelcast.NewConfig()
+identifiedFactory := &identifiedFactory{}
+config.SerializationConfig().AddDataSerializableFactory(5, identifiedFactory)
+client, _ := hazelcast.NewClientWithConfig(config)
+
+mp, _ := client.GetMap("my-distributed-map")
+mp.Put("key", "not-processed")
+processor := &identifiedEntryProcessor{ value: value}
+value, _ := mp.ExecuteOnKey("key", processor)
+
+fmt.Println("after processing the new value is ", value)
+
+newValue, _ := mp.Get("key")
+fmt.Println("after processing the new value is ", newValue)
+```
+
+## 7.7. Distributed Query
+
+Hazelcast partitions your data and spreads it across cluster of members. You can iterate over the map entries and look for certain entries (specified by predicates) you are interested in. However, this is not very efficient because you will have to bring the entire entry set and iterate locally. Instead, Hazelcast allows you to run distributed queries on your distributed map.
+
+### 7.7.1. How Distributed Query Works
+
+1. The requested predicate is sent to each member in the cluster.
+2. Each member looks at its own local entries and filters them according to the predicate. At this stage, key/value pairs of the entries are deserialized and then passed to the predicate.
+3. The predicate requester merges all the results coming from each member into a single set.
+
+Distributed query is highly scalable. If you add new members to the cluster, the partition count for each member is reduced and thus the time spent by each member on iterating its entries is reduced. In addition, the pool of partition threads evaluates the entries concurrently in each member, and the network traffic is also reduced since only filtered data is sent to the requester.
+
+**Predicates Object Operators**
+
+The `predicate` package offered by the client includes many operators for your query requirements. Some of them are explained below.
+
+- `equal`: Checks if the result of an expression is equal to a given value.
+
+- `notEqual`: Checks if the result of an expression is not equal to a given value.
+
+- `instanceOf`: Checks if the result of an expression has a certain type.
+
+- `like`: Checks if the result of an expression matches some string pattern. `%` (percentage sign) is the placeholder for many characters, `_` (underscore) is placeholder for only one character.
+
+- `greaterThan`: Checks if the result of an expression is greater than a certain value.
+
+- `greaterEqual`: Checks if the result of an expression is greater than or equal to a certain value.
+
+- `lessThan`: Checks if the result of an expression is less than a certain value.
+
+- `lessEqual`: Checks if the result of an expression is less than or equal to a certain value.
+
+- `between`: Checks if the result of an expression is between two values (this is inclusive).
+
+- `in`: Checks if the result of an expression is an element of a certain list.
+
+- `not`: Checks if the result of an expression is false.
+
+- `regex`: Checks if the result of an expression matches some regular expression.
+
+Hazelcast offers the following ways for distributed query purposes:
+
+- Combining Predicates with AND, OR, NOT
+
+- Distributed SQL Query
+
+#### 7.7.1.1. Employee Map Query Example
+
+Assume that you have an `employee` map containing values of `Employee` objects, as coded below. 
+
+```go
+type employee struct {
+	name   string
+	age    int32
+	active bool
+	salary int64
+}
+
+func (e *employee) ReadData(input serialization.DataInput) error {
+	e.name, _ = input.ReadUTF()
+	e.age, _ = input.ReadInt32()
+	e.active, _ = input.ReadBool()
+	e.salary, _ = input.ReadInt64()
+	return nil
+}
+
+func (e *employee) WriteData(output serialization.DataOutput) error {
+	output.WriteUTF(e.name)
+	output.WriteInt32(e.age)
+	output.WriteBool(e.active)
+	output.WriteInt64(e.salary)
+	return nil
+}
+
+func (p *employee) FactoryID() int32 {
+	return 1
+}
+
+func (p *employee) ClassID() int32 {
+	return 1
+}
+
+```
+
+Note that `employee` is an `IdentifiedDataSerializable` object. If you just want to save the `employee ` objects as byte arrays on the map, you don't need to implement its equivalent on the server-side. However, if you want to query on the map, server needs the `employee` objects rather than byte array formats. Therefore, you need to implement its Java equivalent and its data serializable factory on server side for server to reconstitute the objects from binary formats. After implementing the Java class and its factory, you need to add the factory to the data serializable factories or the portable factories by giving a factory `id`. Here is the example XML configuration of the server.
+
+```xml
+<hazelcast>
+    ...
+    <serialization>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="1">
+                mypackage.MyIdentifiedFactory
+            </data-serializable-factory>
+        </data-serializable-factories>
+    </serialization>
+    ...
+</hazelcast>
+```
+
+Note that before starting the server, you need to compile the `Employee` and `MyIdentifiedFactory` classes with server's `CLASSPATH` and add them to the `user-lib` folder in the extracted `hazelcast-<version>.zip`. See [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
+
+> **NOTE: You can also make this object `Portable` and implement its Java equivalent and its portable factory on the server side. Note that querying with `Portable` object is faster as compared to `IdentifiedDataSerializable`.**
+
+#### 7.7.1.2. Querying by Combining Predicates with AND, OR, NOT
+
+You can combine predicates by using the `and`, `or`, and `not` operators, as shown in the below example.
+
+```go
+mp, _ := client.GetMap("emloyees")
+prdct := predicate.And(predicate.Equal("active", true), predicate.LessThan("age", 30))
+value, _ := mp.ValuesWithPredicate(prdct)
+
+```
+
+In the above example code, `predicate` verifies whether the entry is active and its `age` value is less than 30. This `predicate` is applied to the `employee` map using the `map.ValuesWithPredicate(predicate)` method. This method sends the predicate to all cluster members and merges the results coming from them. 
+
+> **NOTE: Predicates can also be applied to `keySet` and `entrySet` of the Hazelcast distributed map.**
+
+#### 7.7.1.3. Querying with SQL
+
+`predicate.SQL` takes the regular SQL `where` clause. Here is an example:
+
+```go
+mp, _ := client.GetMap("emloyees")
+prdct := predicate.And(predicate.SQL("active AND age < 30"))
+value, _ := mp.ValuesWithPredicate(prdct)
+```
+
+##### Supported SQL Syntax
+
+**AND/OR:** `<expression> AND <expression> AND <expression>…`
+   
+- `active AND age > 30`
+- `active = false OR age = 45 OR name = 'Joe'`
+- `active AND ( age > 20 OR salary < 60000 )`
+
+**Equality:** `=, !=, <, ⇐, >, >=`
+
+- `<expression> = value`
+- `age <= 30`
+- `name = 'Joe'`
+- `salary != 50000`
+
+**BETWEEN:** `<attribute> [NOT] BETWEEN <value1> AND <value2>`
+
+- `age BETWEEN 20 AND 33 ( same as age >= 20 AND age ⇐ 33 )`
+- `age NOT BETWEEN 30 AND 40 ( same as age < 30 OR age > 40 )`
+
+**IN:** `<attribute> [NOT] IN (val1, val2,…)`
+
+- `age IN ( 20, 30, 40 )`
+- `age NOT IN ( 60, 70 )`
+- `active AND ( salary >= 50000 OR ( age NOT BETWEEN 20 AND 30 ) )`
+- `age IN ( 20, 30, 40 ) AND salary BETWEEN ( 50000, 80000 )`
+
+**LIKE:** `<attribute> [NOT] LIKE 'expression'`
+
+The `%` (percentage sign) is placeholder for multiple characters, an `_` (underscore) is placeholder for only one character.
+
+- `name LIKE 'Jo%'` (true for 'Joe', 'Josh', 'Joseph' etc.)
+- `name LIKE 'Jo_'` (true for 'Joe'; false for 'Josh')
+- `name NOT LIKE 'Jo_'` (true for 'Josh'; false for 'Joe')
+- `name LIKE 'J_s%'` (true for 'Josh', 'Joseph'; false 'John', 'Joe')
+
+**ILIKE:** `<attribute> [NOT] ILIKE 'expression'`
+
+Similar to LIKE predicate but in a case-insensitive manner.
+
+- `name ILIKE 'Jo%'` (true for 'Joe', 'joe', 'jOe','Josh','joSH', etc.)
+- `name ILIKE 'Jo_'` (true for 'Joe' or 'jOE'; false for 'Josh')
+
+**REGEX:** `<attribute> [NOT] REGEX 'expression'`
+
+- `name REGEX 'abc-.*'` (true for 'abc-123'; false for 'abx-123')
+
+##### Querying Examples with Predicates
+
+You can use `__key` attribute to perform a predicated search for entry keys. Please see the following example:
+
+```go
+personMap, _ := client.GetMap("persons")
+personMap.Put("Ahmet", 28)
+personMap.Put("Ali", 30)
+personMap.Put("Furkan", 23)
+value , _ := personMap.ValuesWithPredicate(predicate.SQL("__key like F%"))
+fmt.Println(value) //[23]
+```
+
+In this example, the code creates a slice with the values whose keys start with the letter "F”.
+
+You can use `this` attribute to perform a predicated search for entry values. Please see the following example:
+
+```go
+personMap, _ := client.GetMap("persons")
+personMap.Put("Ahmet", 28)
+personMap.Put("Ali", 30)
+personMap.Put("Furkan", 23)
+value , _ := personMap.ValuesWithPredicate(predicate.GreaterEqual("this", 27))
+fmt.Println(value) //[28 30]
+```
+
+In this example, the code creates a slice with the values greater than or equal to "27".
+
 # 8. Development and Testing
 
 If you want to help with bug fixes, develop new features or tweak the implementation to your application's needs, 
@@ -1174,7 +1573,7 @@ If you are planning to contribute, please run the style checker, as shown below,
 - `sh linter.sh`
 
 ## 8.2. Testing
-In order to test Hazelcast Go Client locally, you will need the following:
+In order to test Hazelcast Go client locally, you will need the following:
 * Java 6 or newer
 * Maven
 
@@ -1186,19 +1585,23 @@ sh local-test.sh
 
 Test script automatically downloads `hazelcast-remote-controller` and Hazelcast IMDG. The script uses Maven to download those.
 
-# 9. Support, License and Copyright
+# 9. Getting Help
 
-## Mail Group
+You can use the following channels for your questions and development/usage issues:
 
-Please join the mail group if you are interested in using or developing Hazelcast.
+* [This repository](https://github.com/hazelcast/hazelcast-go-client) by opening an issue.
+* Our Google Groups directory: https://groups.google.com/forum/#!forum/hazelcast
+* Stack Overflow: https://stackoverflow.com/questions/tagged/hazelcast
 
-http://groups.google.com/group/hazelcast
+# 10. Contributing
 
-## License
+Besides your development contributions as explained in the [Development and Testing chapter](#8-development-and-testing) above, you can always open a pull request on this repository for your other requests such as documentation changes.
 
-Hazelcast is available under the Apache 2 License. Please see the [Licensing appendix](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#license-questions) for more information.
+# 11. License
 
-## Copyright
+[Apache 2 License](https://github.com/hazelcast/hazelcast-go-client/blob/master/LICENSE).
+
+# 12. Copyright
 
 Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
 
