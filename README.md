@@ -227,7 +227,7 @@ live in the same network without disturbing each other. Note that the cluster na
 purposes. You can remove or leave it as it is if you use Hazelcast 3.9 or later.
 - `<network>`
     - `<port>`: Specifies the port number to be used by the member when it starts. Its default value is 5701 You can specify another port number, and if
-     you set `auto-increment` to `true`, than Hazelcast will try subsequent ports until it finds an available port or `port-count` is reached.
+     you set `auto-increment` to `true`, then Hazelcast will try subsequent ports until it finds an available port or `port-count` is reached.
     - `<join>`: Specifies the strategies to be used by the member to find other cluster members. Choose which strategy you want to
     use by setting its `enabled` attribute to `true` and the others to `false`.
         - `<multicast>`: Members find each other by sending multicast requests to the specified address and port. It is very useful if IP addresses
@@ -249,7 +249,7 @@ supply this object to your client at the startup.
 
 **Configuration**
 
-You need to create a `ClientConfig` object and adjust its properties. Then you can pass this object to the client when starting it.
+You need to create a `Config` object and adjust its properties. Then you can pass this object to the client when starting it.
 
 ```go
 package main
@@ -259,7 +259,7 @@ import "github.com/hazelcast/hazelcast-go-client"
 func main() {
 
 	config := hazelcast.NewConfig()
-	hazelcast.NewClientWithConfig(config)
+	client , _ := hazelcast.NewClientWithConfig(config)
 }
 ```
 ---
@@ -269,7 +269,7 @@ names as explained in the previous section. If you did, then you need to make ce
 
 ### Group Settings
 
-```
+```go
 config := hazelcast.NewConfig()
 config.GroupConfig().SetName("GROUP_NAME_OF_YOUR_CLUSTER")
 ```
@@ -279,7 +279,7 @@ config.GroupConfig().SetName("GROUP_NAME_OF_YOUR_CLUSTER")
 
 You need to provide the ip address and port of at least one member in your cluster so the client finds it.
 
-```
+```go
 config := hazelcast.NewConfig()
 config.NetworkConfig().AddAddress("some-ip-address:port")
 hazelcast.NewClientWithConfig(config)
@@ -484,16 +484,16 @@ Hazelcast Go client supports the following data structures and features:
 
 You can configure Hazelcast Go client programmatically (API).
 
-For programmatic configuration of the Hazelcast Go client, just instantiate a `ClientConfig` object and configure the
+For programmatic configuration of the Hazelcast Go client, just instantiate a `Config` object and configure the
 desired aspects. An example is shown below.
 
-```
+```go
 config := hazelcast.NewConfig()
 config.NetworkConfig().AddAddress("some-ip-address:port")
 hazelcast.NewClientWithConfig(config)
 ```
 
-Refer to `ClientConfig` class documentation at [Hazelcast Go client API Docs](https://godoc.org/github.com/hazelcast/hazelcast-go-client/config#Config) for details.
+Refer to `Config` class documentation at [Hazelcast Go client API Docs](https://godoc.org/github.com/hazelcast/hazelcast-go-client/config#Config) for details.
 
 
 
@@ -549,7 +549,7 @@ func (*address) ClassID() int32 {
 }
 ```
 
-IdentifiedDataSerializable uses `ClassID()` and `FactoryID()` to reconstitute the object. To complete the implementation `IdentifiedDataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `config.SerializationConfig()`. The factory's responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the class id.
+IdentifiedDataSerializable uses `ClassID` and `FactoryID` to reconstitute the object. To complete the implementation `IdentifiedDataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `config.SerializationConfig()`. The factory's responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the classID.
 
 A sample `IdentifiedDataSerializableFactory` could be implemented as following:
 
@@ -696,7 +696,7 @@ From now on, Hazelcast will use `MusicianSerializer` to serialize `Musician` obj
 
 The global serializer is identical to custom serializers from the implementation perspective. The global serializer is registered as a fallback serializer to handle all other objects if a serializer cannot be located for them.
 
-By default, Gob serialization is used if the object is not `IdentifiedDataSerializable` and `Portable` or there is no custom serializer for it. When you configure a global serializer, it is used instead of Gob serialization.
+By default, Gob serialization is used if the object is not `IdentifiedDataSerializable` or `Portable` or there is no custom serializer for it. When you configure a global serializer, it is used instead of Gob serialization.
 
 **Use cases**
 
@@ -792,7 +792,7 @@ Its default value is `false` (disabled).
 ## 5.4. Setting Connection Timeout
 
 Connection timeout is the timeout value in milliseconds for members to accept client connection requests.
-If server does not respond within the timeout, the client will retry to connect as many as `ClientNetworkConfig.connectionAttemptLimit` times.
+If server does not respond within the timeout, the client will retry to connect as many as `NetworkConfig.connectionAttemptLimit` times.
 
 The following are the example configurations.
 
@@ -806,7 +806,7 @@ Its default value is `5000` milliseconds.
 
 ## 5.5. Setting Connection Attempt Limit
 
-While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addresses`, that member might not be available at that moment. Instead of giving up, throwing an error and stopping the client, the client will retry as many as `ClientNetworkConfig.connectionAttemptLimit` times. This is also the case when the previously established connection between the client and that member goes down.
+While the client is trying to connect initially to one of the members in the `NetworkConfig.addresses`, that member might not be available at that moment. Instead of giving up, throwing an error and stopping the client, the client will retry as many as `NetworkConfig.connectionAttemptLimit` times. This is also the case when the previously established connection between the client and that member goes down.
 
 The following are example configurations.
 
@@ -820,7 +820,7 @@ Its default value is `2`.
 
 ## 5.6. Setting Connection Attempt Period
 
-Connection timeout period is the duration in milliseconds between the connection attempts 
+Connection timeout period is the duration in milliseconds between the connection attempts.
 
 The following are example configurations.
 
@@ -883,13 +883,14 @@ config := hazelcast.NewConfig()
 sslConfig := config.NetworkConfig().SSLConfig()
 sslConfig.SetEnabled(true)
 sslConfig.SetCaPath("yourCaPath")
+sslConfig.ServerName="serverName"
 ```
 
 #### 6.1.3. Mutual Authentication
 
 As explained above, Hazelcast members have key stores used to identify themselves (to other members) and Hazelcast clients have trust stores used to define which members they can trust.
 
-Using mutual authentication, the clients also have their key stores and members have their trust stores so that the members can know which clients they can trust.
+Using mutual authentication, the clients also have their key stores and members have their trust stores so that the members can know which clients they can trust to.
 
 To enable mutual authentication, firstly, you need to set the following property at server side by configuring `hazelcast.xml`:
 
@@ -980,7 +981,7 @@ There are two main failure cases you should be aware of, and configurations you 
 
 ### 7.3.1. Handling Client Connection Failure
 
-While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.SetAddresses`, all the members might be not available. Instead of giving up, throwing an error and stopping the client, the client will retry as many as `connectionAttemptLimit` times.
+While the client is trying to connect initially to one of the members in the `NetworkConfig.SetAddresses`, all the members might be not available. Instead of giving up, returning an error and stopping the client, the client will retry as many times as `connectionAttemptLimit`.
 
 You can configure `connectionAttemptLimit` for the number of times you want the client to retry connecting. Please see [Setting Connection Attempt Limit](#5-setting-connection-attempt-limit).
 
@@ -998,8 +999,8 @@ You can set a timeout for retrying the operations sent to a member. This can be 
 
 - Client’s heartbeat requests are timed out.
 
-When a connection problem occurs, an operation is retried if it is certain that it has not run on the member yet or if it is idempotent such as a read-only operation, i.e., retrying does not have a side effect. If it is not certain whether the operation has run on the member, then the non-idempotent operations are not retried. However, as explained in the first paragraph of this section, you can force all client operations to be retried (`redoOperation`) when there is a connection failure between the client and member. But in this case, you should know that some operations may run multiple times causing conflicts. For example, assume that your client sent a `queue.offer` operation to the member, and then the connection is lost. Since there will be no response for this operation, you will not now whether it has run on the member or not. If you enabled `redoOperation`, it means this operation may run again, which may cause two instances of the same object in the queue.
-
+When a connection problem occurs, an operation is retried if it is certain that it has not run on the member yet or if it is idempotent such as a read-only operation, i.e., retrying does not have a side effect. If it is not certain whether the operation has run on the member, then the non-idempotent operations are not retried. However, as explained in the first paragraph of this section, you can force all client operations to be retried (`redoOperation`) when there is a connection failure between the client and member. But in this case, you should know that some operations may run multiple times causing conflicts. For example, assume that your client sent a `queue.offer` operation to the member, and then the connection is lost. Since there will be no response for this operation, you will not know whether it has run on the member or not. If you enabled `redoOperation`, it means this operation may run again, which may cause two instances of the same object in the queue.
+Map
 
 ## 7.4. Using Distributed Data Structures
 
@@ -1108,7 +1109,7 @@ config.AddLifecycleListener(&lifecycleListener{})
 ```
 
 Or it can be added later after client has started
-```
+```go
 registrationID := client.LifecycleService().AddLifecycleListener(&lifecycleListener{})
 ```
 
@@ -1141,7 +1142,7 @@ You can add event listeners to the Distributed Data Structures.
 
 You can listen to map-wide or entry-based events. To listen to these events, you need to implement the relevant interfaces.
 
-An entry-based  event is fired after the operations that affect a specific entry. For example, `IMap.put()`, `IMap.remove()` or `IMap.evict()`. An `EntryEvent` object is passed to the listener function.
+An entry-based  event is fired after the operations that affect a specific entry. For example, `Map.put()`, `Map.remove()` or `Map.evict()`. An `EntryEvent` object is passed to the listener function.
 
 - EntryExpiredListener
 - EntryMergedListener
@@ -1162,14 +1163,14 @@ func (l *entryListener) EntryAdded(event core.EntryEvent) {
 ```
 To add listener and fire an event:
 
-```
+```go
 m, _ := client.GetMap("m")
 m.AddEntryListener(&entryListener{}, true)
 m.Put("1", "Furkan")
 ```
 
 
-A map-wide event is fired as a result of a map-wide operation. For example, `IMap.clear()` or `IMap.evictAll()`. A `MapEvent` object is passed to the listener function.
+A map-wide event is fired as a result of a map-wide operation. For example, `Map.clear()` or `Map.evictAll()`. A `MapEvent` object is passed to the listener function.
 
 - MapEvictedListener
 - MapClearedListener
@@ -1185,7 +1186,7 @@ func (l *mapListener) MapCleared(event core.MapEvent) {
 }
 ```
 To add listener and fire a related event:
-```
+```go
 m, _ := client.GetMap("m")
 m.AddEntryListener(&mapListener{}, true)
 m.Put("1", "Mali")
@@ -1203,7 +1204,7 @@ This chapter explains Hazelcast’s entry processor implementation.
 
 Hazelcast supports entry processing. An entry processor is a function that executes your code on a map entry in an atomic way.
 
-An entry processor is a good option if you perform bulk processing on an `IMap`. Usually you perform a loop of keys-- executing `IMap.get(key)`, mutating the value, and finally putting the entry back in the map using `IMap.put(key,value)`. If you perform this process from a client or from a member where the keys do not exist, you effectively perform two network hops for each update: the first to retrieve the data and the second to update the mutated value.
+An entry processor is a good option if you perform bulk processing on an `Map`. Usually you perform a loop of keys-- executing `Map.get(key)`, mutating the value, and finally putting the entry back in the map using `Map.put(key,value)`. If you perform this process from a client or from a member where the keys do not exist, you effectively perform two network hops for each update: the first to retrieve the data and the second to update the mutated value.
 
 If you are doing the process described above, you should consider using entry processors. An entry processor executes a read and updates upon the member where the data resides. This eliminates the costly network hops described above.
 
@@ -1213,7 +1214,7 @@ Hazelcast sends the entry processor to each cluster member and these members app
 
 #### Processing Entries
 
-The `IMap` interface provides the following functions for entry processing:
+The `Map` interface provides the following functions for entry processing:
 
 - `executeOnKey` processes an entry mapped by a key.
 
@@ -1334,9 +1335,9 @@ Note that you need to configure the `hazelcast.xml` to add your factory. And the
 
 The code that runs on the entries is implemented in Java on the server side. Client side entry processor is used to specify which entry processor should be called. For more details about the Java implementation of the entry processor, please see [Entry Processor section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#entry-processor) in the Hazelcast IMDG Reference Manual.
 
-After all implementation and starting the server where your library is added to its `CLASSPATH`, you can use the entry processor in the `IMap` functions. Let's take a look at the following example.
+After all implementation and starting the server where your library is added to its `CLASSPATH`, you can use the entry processor in the `Map` functions. Let's take a look at the following example.
 
-```javascript
+```go
 config := hazelcast.NewConfig()
 identifiedFactory := &identifiedFactory{}
 config.SerializationConfig().AddDataSerializableFactory(5, identifiedFactory)
