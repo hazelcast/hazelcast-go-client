@@ -1008,6 +1008,8 @@ Most of the Distributed Data Structures are supported by the Go client. In this 
 
 ### 7.4.1. Using Map
 
+Hazelcast Map (`IMap`) is a distributed map. Through Go client, you can  perform operations like reading and writing from/to a Hazelcast Map with the well known get and put methods. For details refer to [Map section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#map) in the Hazelcast IMDG Reference Manual.
+
 A Map usage example is shown below.
 
 ```go
@@ -1018,6 +1020,8 @@ m.Remove(1)
 ```
 
 ### 7.4.2. Using MultiMap
+
+Hazelcast `MultiMap` is a distributed and specialized map where you can store multiple values under a single key. For details refer to [MultiMap section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#multimap) in the Hazelcast IMDG Reference Manual.
 
 A MultiMap usage example is shown below.
 
@@ -1031,6 +1035,8 @@ fmt.Println(values[0], " ", values[1]) //Furkan  Mustafa
 
 ### 7.4.3. Using ReplicatedMap
 
+Hazelcast `ReplicatedMap` is a distributed key-value data structure where the data is replicated to all members in the cluster. It provides full replication of entries to all members for high speed access. For details refer to [Replicated Map section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#replicated-map) in the Hazelcast IMDG Reference Manual.
+
 A ReplicatedMap usage example is shown below.
 
 ```go
@@ -1042,12 +1048,109 @@ fmt.Println(replicatedMap.Get(2)) //Ahmet
 
 ### 7.4.4. Using Queue
 
+Hazelcast Queue(`IQueue`) is a distributed queue which enables all cluster members to interact with it. For details refer to [Queue section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#queue) in the Hazelcast IMDG Reference Manual.
+
 A Queue usage example is shown below.
 
 ```go
 queue, _ := client.GetQueue("myQueue")
 queue.Offer("Furkan")
 fmt.Println(queue.Peek()) //Furkan
+```
+
+### 7.4.5. Using Set
+
+Hazelcast Set(`ISet`) is a distributed set which does not allow duplicate elements. For details refer to [Set section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#set) in the Hazelcast IMDG Reference Manual.
+
+A Set usage example is shown below.
+
+```go
+set, _ := client.GetSet("mySet")
+set.Add("Furkan")
+fmt.Println(set.Contains("Furkan")) // true
+```
+
+### 7.4.6. Using List
+
+Hazelcast List(`IList`) is distributed list which allows duplicate elements and preserves the order of elements. For details refer to [List section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#list) in the Hazelcast IMDG Reference Manual.
+
+A List usage example is shown below.
+
+```go
+list, _ := client.GetList("myList")
+list.Add("Furkan")
+list.Add("Ahmet")
+list.Add("Muhammet Ali")
+fmt.Println(list.Size()) // 3
+```
+
+### 7.4.7. Using Ringbuffer
+
+Hazelcast `Ringbuffer` is a replicated but not partitioned data structure that stores its data in a ring-like structure. You can think of it as a circular array with a given capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where the items are overwritten or expired. You can reach each element in a Ringbuffer using a sequence ID, which is mapped to the elements between the head and tail (inclusive) of the Ringbuffer. For details refer to [Ringbuffer section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#ringbuffer) in the Hazelcast IMDG Reference Manual.
+
+A Ringbuffer usage example is shown below.
+
+
+```go
+ringbuffer, _ := client.GetRingbuffer("myRingbuffer")
+
+go func() {
+    for i := 0; i < 100; i++ {
+        ringbuffer.Add("item "+strconv.Itoa(i), core.OverflowPolicyOverwrite)
+    }
+}()
+
+go func() {
+    sequence, _ := ringbuffer.HeadSequence()
+    for sequence < 100 {
+        item, _ := ringbuffer.ReadOne(sequence)
+        sequence++
+        fmt.Println("Reading value " + item.(string))
+    }
+}()
+```
+
+### 7.4.8. Using Reliable Topic
+
+Hazelcast `ReliableTopic` is a distributed topic implementation backed up by the `Ringbuffer` data structure. For details refer to [Reliable Topic section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#reliable-topic) in the Hazelcast IMDG Reference Manual.
+
+A Reliable Topic usage example is shown below.
+
+```go
+reliableTopic, _ := client.GetReliableTopic("myReliableTopic")
+reliableTopic.AddMessageListener(&reliableTopicMessageListener{})
+
+for i := 0; i < 10; i++ {
+    reliableTopic.Publish("Message " + strconv.Itoa(i))
+}
+```
+
+### 7.4.9. Using PN Counter
+
+Hazelcast `PNCounter` (Positive-Negative Counter) is a CRDT positive-negative counter implementation. It is an eventually consistent counter given there is no member failure. For details refer to [PN Counter section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#pn-counter) in the Hazelcast IMDG Reference Manual.
+
+A PN Counter usage example is shown below.
+
+```go
+counter, _ := client.GetPNCounter("myPNCounter")
+
+currentValue, _ := counter.AddAndGet(5)
+fmt.Printf("added 5 counter, current value is %d\n", currentValue)
+
+currentValue, _ = counter.DecrementAndGet()
+fmt.Printf("decremented counter, current value is %d\n", currentValue)
+```
+
+### 7.4.10. Using Flake ID Generator
+
+Hazelcast `FlakeIdGenerator` is used to generate cluster-wide unique identifiers. Generated identifiers are long primitive values and are k-ordered (roughly ordered). IDs are in the range from 0 to `2^63-1 (maximum signed long value)`. For details refer to [FlakeIdGenerator section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#flakeidgenerator) in the Hazelcast IMDG Reference Manual.
+
+A Flake ID Generator usage example is shown below.
+
+```go
+flakeIDGenerator, _ := client.GetFlakeIDGenerator("generator")
+id, _ := flakeIDGenerator.NewID()
+fmt.Printf("new id : %d", id)
 ```
 
 ## 7.5. Distributed Events
