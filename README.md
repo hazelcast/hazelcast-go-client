@@ -3,11 +3,14 @@
 * [Introduction](#introduction)
 * [1. Getting Started](#1-getting-started)
   * [1.1. Requirements](#11-requirements)
-  * [1.2. Working with Hazelcast Clusters](#12-working-with-hazelcast-clusters)
+  * [1.2. Working with Hazelcast IMDG Clusters](#12-working-with-hazelcast-imdg-clusters)
+     * [1.2.1. Setting Up a Hazelcast IMDG Cluster](#121-setting-up-a-hazelcast-imdg-cluster)
+     * [1.2.2. Running Standalone Jars](#122-running-standalone-jars)
+     * [1.2.3. Adding User Library to CLASSPATH](#123-adding-user-library-to-classpath)
   * [1.3. Downloading and Installing](#13-downloading-and-installing)
   * [1.4. Basic Configuration](#14-basic-configuration)
-    * [1.4.1. IMDG Configuration](#141-imdg-configuration)
-    * [1.4.2. Hazelcast Client Configuration](#142-hazelcast-client-configuration)
+    * [1.4.1. Configuring Hazelcast IMDG](#141-configuring-hazelcast-imdg)
+    * [1.4.2. Configuring Hazelcast Go client](#142-configuring-hazelcast-go-client)
   * [1.5. Basic Usage](#15-basic-usage)
   * [1.6. Code Samples](#16-code-samples)
 * [2. Features](#2-features)
@@ -18,7 +21,7 @@
   * [4.3. Custom Serialization](#43-custom-serialization)
   * [4.4. Global Serialization](#44-global-serialization)
 * [5. Setting Up Client Network](#5-setting-up-client-network)
-  * [5.1. Providing the Member Addresses](#51-providing-the-member-addresses)
+  * [5.1. Providing Member Addresses](#51-providing-the-member-addresses)
   * [5.2. Setting Smart Routing](#52-setting-smart-routing)
   * [5.3. Enabling Redo Operation](#53-enabling-redo-operation)
   * [5.4. Setting Connection Timeout](#54-setting-connection-timeout)
@@ -81,8 +84,8 @@ This document explains Go client for Hazelcast which uses Hazelcast's Open Clien
 
 # 1. Getting Started
 
-This chapter explains all the necessary things to start using Hazelcast Go client including basic Hazelcast IMDG, IMDG and client
-configuration and how to use distributed data structures with Hazelcast.
+This chapter provides information on how to get started with your Hazelcast Go client. It outlines the requirements, 
+installation and configuration of the client, setting up a cluster, and provides a simple application that uses a distributed map in Go client.
 
 ## 1.1. Requirements
 
@@ -92,30 +95,37 @@ configuration and how to use distributed data structures with Hazelcast.
 - Hazelcast IMDG 3.6 or newer
 - Latest Hazelcast Go client
 
-## 1.2. Working with Hazelcast Clusters
+## 1.2. Working with Hazelcast IMDG Clusters
 
-Hazelcast Go client requires a working Hazelcast IMDG cluster to run. IMDG cluster handles storage and manipulation of the user data.
-Clients are a way to connect to IMDG cluster and access such data.
+Hazelcast Go client requires a working Hazelcast IMDG cluster to run. This cluster handles storage and manipulation of the user data.
+Clients are a way to connect to the Hazelcast IMDG cluster and access such data.
 
-IMDG cluster consists of one or more Hazelcast IMDG members. These members generally run on multiple virtual or physical machines
+Hazelcast IMDG cluster consists of one or more cluster members. These members generally run on multiple virtual or physical machines
 and are connected to each other via network. Any data put on the cluster is partitioned to multiple members transparent to the user.
-It is therefore very easy to scale the system by adding new members as the data grows. IMDG cluster also offers resilience. Should
+It is therefore very easy to scale the system by adding new members as the data grows. Hazelcast IMDG cluster also offers resilience. Should
 any hardware or software problem causes a crash to any member, the data on that member is recovered from backups and the cluster
-continues to operate without any downtime. Hazelcast clients are an easy way to connect to an IMDG cluster and perform tasks on
+continues to operate without any downtime. Hazelcast clients are an easy way to connect to a Hazelcast IMDG cluster and perform tasks on
 distributed data structures that live on the cluster.
 
-In order to use Hazelcast Go client, we first need to setup an IMDG cluster.
+In order to use Hazelcast Go client, we first need to setup a Hazelcast IMDG cluster.
+### 1.2.1. Setting Up a Hazelcast IMDG Cluster
+There are following options to start a Hazelcast IMDG cluster easily:
 
-### Setting Up an IMDG Cluster
-There are multiple ways of starting an IMDG cluster easily. You can run standalone IMDG members by downloading and running jar files
-from the website. You can embed IMDG members to your Java projects. The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool)
-if you have brew installed in your computer. We are going to download jars from the website and run a standalone member for this guide.
+* You can run standalone members by downloading and running JAR files from the website.
+* You can embed members to your Java projects. The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool) if you have brew installed in your computer.
 
-#### Running Standalone Jars
-Go to https://hazelcast.org/download/ and download `.zip` or `.tar` distribution of Hazelcast IMDG. Decompress the contents into any directory that you
-want to run IMDG members from. Change into the directory that you decompressed the Hazelcast content. Go into `bin` directory. Use either
-`start.sh` or `start.bat` depending on your operating system. Once you run the start script, you should see IMDG logs on the terminal.
-Once you see some log similar to the following, your 1-member cluster is ready to use:
+We are going to download JARs from the website and run a standalone member for this guide.
+
+#### 1.2.2. Running Standalone Jars
+Follow the instructions below to create a Hazelcast IMDG cluster:
+
+1. Go to Hazelcast's download [page](https://hazelcast.org/download/) and download either the `.zip` or `.tar` distribution of Hazelcast IMDG.
+2. Decompress the contents into any directory that you
+want to run members from.
+3. Change into the directory that you decompressed the Hazelcast content and then into the `bin` directory.
+4. Use either `start.sh` or `start.bat` depending on your operating system. Once you run the start script, you should see the Hazelcast IMDG logs in the terminal.
+
+ You should see a log similar to the following, which means that your 1-member cluster is ready to be used:
 ```
 INFO: [192.168.0.3]:5701 [dev] [3.10.4]
 
@@ -127,10 +137,16 @@ Sep 06, 2018 10:50:23 AM com.hazelcast.core.LifecycleService
 INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
 ```
 
-#### Adding User Library to CLASSPATH
+#### 1.2.3. Adding User Library to CLASSPATH
 
- When you want to use features such as querying and language interoperability, you might need to add your own Java classes to Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the `CLASSPATH`. To do this, compile your code with the `CLASSPATH` and add the compiled files to `user-lib` folder in the extracted `hazelcast-<version>.zip`. Then, you can start your Hazelcast member by using the start scripts in the `bin` folder. The start scripts will automatically add your compiled classes to the `CLASSPATH`.
- Note that if you are adding an `IdentifiedDataSerializable` or a `Portable` class, you need to add its factory too. Then, you should configure the factory in the `hazelcast.xml` in the `bin` folder like the following:
+When you want to use features such as querying and language interoperability, you might need to add your own Java classes
+to the Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the 
+`CLASSPATH`. To do this, compile your code with the `CLASSPATH` and add the compiled files to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). 
+Then, you can start your Hazelcast member by using the start scripts in the `bin` directory. The start scripts will automatically add your compiled classes to the `CLASSPATH`.
+
+Note that if you are adding an `IdentifiedDataSerializable` or a `Portable` class, you need to add its factory too. Then, you should configure the factory in the `hazelcast.xml` configuration file. This file resides in the `bin` directory where you extracted the `hazelcast-<version>.zip` (or `tar`).
+
+The following is an example configuration when you are adding an `IdentifiedDataSerializable` class:
  ```xml
 <hazelcast>
      ...
@@ -144,22 +160,26 @@ INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
     ...
 </hazelcast>
 ```
-Similarly, use `<portable-factories>` instead of `<data-serializable-factories>` if you are using portables.
+If you want to add a `Portable` class, you should use `<portable-factories>` instead of `<data-serializable-factories>` in the above configuration.
 
-#### Using hazelcast-member Tool
-`hazelcast-member` is a tool to make downloading and running IMDG members as easy as it could be. If you have brew installed, run the following commands:
+#### 1.2.4. Using hazelcast-member Tool
+`hazelcast-member` is a tool to download and run Hazelcast IMDG members easily. If you have brew installed, run the following commands to install this tool:
 ```
 brew tap hazelcast/homebrew-hazelcast
 brew install hazelcast-member
+```
+Now, you can start a member by running the following command:
+```
 hazelcast-member start
 ```
-In order to stop the member, run the following command:
+
+To stop a member, run the following command:
 ```
 hazelcast-member stop
 ```
-Find more information about `hazelcast-member` tool at https://github.com/hazelcast/hazelcast-member-tool
+You can find more information about the `hazelcast-member` tool at its GitHub [repo](https://github.com/hazelcast/hazelcast-member-tool).
 
-Refer to the official [Hazelcast IMDG Reference Manual](http://docs.hazelcast.org/docs/3.10.4/manual/html-single/index.html#getting-started) for more information regarding starting clusters.
+See the [Hazelcast IMDG Reference Manual](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#getting-started) for more information on setting up the clusters.
 
 ## 1.3. Downloading and Installing
 
@@ -171,26 +191,28 @@ go get github.com/hazelcast/hazelcast-go-client
 [For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/helloworld)
 
 ## 1.4. Basic Configuration
-If you are using Hazelcast IMDG and Go client on the same computer, generally default configuration just works. This is great for
+If you are using Hazelcast IMDG and Go client on the same computer, generally the default configuration should be fine. This is great for
 trying out the client. However, if you run the client on a different computer than any of the cluster members, you may
 need to do some simple configuration such as specifying the member addresses.
 
-The IMDG members and clients have their own configuration options. You may need to reflect some of the member side configurations on the client side to properly connect to the cluster.
+The Hazelcast IMDG members and clients have their own configuration options. You may need to reflect some of the member side configurations on the client side to properly connect to the cluster.
 This section describes the most common configuration elements to get you started in no time.
-It discusses some member side configuration options to ease understanding Hazelcast's ecosystem. Then, client side configuration options
-regarding cluster connection are discussed. Configuration material regarding data structures are discussed in the following sections.
-You can refer to [IMDG Documentation](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html) and [Configuration Overview](#configuration-overview) for more information.
+It discusses some member side configuration options to ease the understanding of Hazelcast's ecosystem. Then, the client side configuration options
+regarding the cluster connection are discussed. The configurations for the Hazelcast IMDG data structures that can be used in the Node.js client are discussed in the following sections.
 
-### 1.4.1. IMDG Configuration
+See the [Hazelcast IMDG Reference Manual](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html) and [Configuration Overview section](#configuration-overview) for more information.
+### 1.4.1. Configuring Hazelcast IMDG
 Hazelcast IMDG aims to run out of the box for most common scenarios. However if you have limitations on your network such as multicast being disabled,
-you may have to configure your Hazelcast IMDG instances so that they can find each other on the network. Also most data structures are configurable.
-Therefore, you may want to configure your Hazelcast IMDG. We will show you the basics about network configuration here.
+you may have to configure your Hazelcast IMDG members so that they can find each other on the network. Also, since most of the distributed data structures are configurable, you may want to configure them according to your needs. We will show you the basics about network configuration here.
 
-There are two ways to configure Hazelcast IMDG. One is to use a `hazelcast.xml` file and the other is to programmatically configure the
-instance before starting it from Java code. Since we use standalone servers, we will use `hazelcast.xml` to configure our cluster members.
+There are two ways to configure Hazelcast IMDG:
 
-When you download and unzip `hazelcast-<version>.zip`, you see the `hazelcast.xml` in `bin` folder. When a Hazelcast member starts, it looks for
-`hazelcast.xml` file to load configuration from. A sample `hazelcast.xml` is below. We will go over some important elements in the rest of this section.
+* Using the `hazelcast.xml` configuration file.
+* Programmatically configuring the member before starting it from the Java code.
+
+Since we use standalone servers, we will use the `hazelcast.xml` file to configure our cluster members.
+
+When you download and unzip `hazelcast-<version>.zip` (or `tar`), you see the `hazelcast.xml` in the `bin` directory. When a Hazelcast member starts, it looks for the `hazelcast.xml` file to load the configuration from. A sample `hazelcast.xml` is shown below.
 ```xml
 <hazelcast>
     <group>
@@ -219,15 +241,16 @@ When you download and unzip `hazelcast-<version>.zip`, you see the `hazelcast.xm
     </map>
 </hazelcast>
 ```
+We will go over some important configuration elements in the rest of this section.
 
-- `<group>`: Specifies which cluster this member belongs to. A member connects only to other members that are in the same group as
-itself. You will see `<name>` and `<password>` tags with some pre-configured values. You may give your clusters different names so that they can
-live in the same network without disturbing each other. Note that the cluster name should be the same across all members and clients that belong
- to the same cluster. `<password>` tag is not in use since Hazelcast 3.9. It is there for backward compatibility
-purposes. You can remove or leave it as it is if you use Hazelcast 3.9 or later.
+- `<group>`:  Specifies which cluster this member belongs to. A member connects only to the other members that are in the same group as
+              itself. As shown in the above configuration sample, there are `<name>` and `<password>` tags under the `<group>` element with some pre-configured values. You may give your clusters different names so that they can
+              live in the same network without disturbing each other. Note that the cluster name should be the same across all members and clients that belong
+              to the same cluster. The `<password>` tag is not in use since Hazelcast 3.9. It is there for backward compatibility
+              purposes. You can remove or leave it as it is if you use Hazelcast 3.9 or later.
 - `<network>`
-    - `<port>`: Specifies the port number to be used by the member when it starts. Its default value is 5701 You can specify another port number, and if
-     you set `auto-increment` to `true`, then Hazelcast will try subsequent ports until it finds an available port or `port-count` is reached.
+    - `<port>`: Specifies the port number to be used by the member when it starts. Its default value is 5701. You can specify another port number, and if
+     you set `auto-increment` to `true`, then Hazelcast will try the subsequent ports until it finds an available port or the `port-count` is reached.
     - `<join>`: Specifies the strategies to be used by the member to find other cluster members. Choose which strategy you want to
     use by setting its `enabled` attribute to `true` and the others to `false`.
         - `<multicast>`: Members find each other by sending multicast requests to the specified address and port. It is very useful if IP addresses
@@ -237,9 +260,9 @@ purposes. You can remove or leave it as it is if you use Hazelcast 3.9 or later.
         putting multiple known member addresses there to avoid disconnectivity should one of the members in the list is unavailable at the time
         of connection.
 
-These configuration elements are enough for most connection scenarios. Now we will move onto configuration of the Go client.
+These configuration elements are enough for most connection scenarios. Now we will move onto the configuration of the Go client.
 
-### 1.4.2. Hazelcast Client Configuration
+### 1.4.2. Configuring Hazelcast Go Client
 
 This section describes some network configuration settings to cover common use cases in connecting the client to a cluster. Refer to [Configuration Overview](#configuration-overview)
 and the following sections for information about detailed network configuration and/or additional features of Hazelcast Go client configuration.
@@ -264,7 +287,7 @@ func main() {
 ```
 ---
 
-If you run Hazelcast IMDG members in a different server than the client, you most probably have configured the members' ports and cluster
+If you run the Hazelcast IMDG members in a different server than the client, you most probably have configured the members' ports and cluster
 names as explained in the previous section. If you did, then you need to make certain changes to the network settings of your client.
 
 ### Group Settings
@@ -273,11 +296,11 @@ names as explained in the previous section. If you did, then you need to make ce
 config := hazelcast.NewConfig()
 config.GroupConfig().SetName("GROUP_NAME_OF_YOUR_CLUSTER")
 ```
-> **NOTE: If you have a Hazelcast release older than `3.11`, you need to provide also a group password along with the group name.**
+> **NOTE: If you have a Hazelcast IMDG release older than 3.11, you need to provide also a group password along with the group name.**
 
 ### Network Settings
 
-You need to provide the ip address and port of at least one member in your cluster so the client finds it.
+You need to provide the IP address and port of at least one member in your cluster so the client can find it.
 
 ```go
 config := hazelcast.NewConfig()
@@ -286,7 +309,7 @@ hazelcast.NewClientWithConfig(config)
 ```
 ## 1.5. Basic Usage
 
-Now that we have a working cluster and we know how to configure both our cluster and client, we can run a simple program to use a distributed map in Go client.
+Now that we have a working cluster and we know how to configure both our cluster and client, we can run a simple program to use a distributed map in the Go client.
 
 The following example first creates a programmatic configuration object. Then, it starts a client.
 
@@ -313,7 +336,7 @@ func main() {
 }
 
 ```
-This should print logs about the cluster members and information about the client itself such as client type, uuid and address.
+This should print logs about the cluster members and information about the client itself such as the client type, UUID and address.
 
 ```
 2018/10/24 16:16:16 New State :  STARTING
@@ -330,11 +353,11 @@ Members {size:2} [
 
 
 ```
-Congratulations, you just started a Hazelcast Go client.
+Congratulations! You just started a Hazelcast Go client.
 
 **Using a Map**
 
-Let us manipulate a distributed map on a cluster using the client.
+Let's manipulate a distributed map on a cluster using the client.
 
 **IT.go**
 
@@ -441,9 +464,9 @@ You will see this time we add only the sales employees but we get the list all k
 That is because our map lives in the cluster and no matter which client we use, we can access the whole map.
 
 ## 1.6. Code Samples
-Please see Hazelcast Go [code samples](https://github.com/hazelcast/hazelcast-go-client/blob/master/sample) for more examples.
+See the Hazelcast Go [code samples](https://github.com/hazelcast/hazelcast-go-client/blob/master/sample) for more examples.
 
-You can also refer to Hazelcast Go [API Documentation](https://godoc.org/github.com/hazelcast/hazelcast-go-client).
+You can also see the Hazelcast Go [API Documentation](https://godoc.org/github.com/hazelcast/hazelcast-go-client).
 
 # 2. Features
 
@@ -493,14 +516,14 @@ config.NetworkConfig().AddAddress("some-ip-address:port")
 hazelcast.NewClientWithConfig(config)
 ```
 
-Refer to `Config` class documentation at [Hazelcast Go client API Docs](https://godoc.org/github.com/hazelcast/hazelcast-go-client/config#Config) for details.
+See the `Config` class documentation at [Hazelcast Go client API Docs](https://godoc.org/github.com/hazelcast/hazelcast-go-client/config#Config) for details.
 
 
 
 # 4. Serialization
 
 
-Serialization is the process of converting an object into a stream of bytes to store the object in memory, a file or database, or transmit it through network. Its main purpose is to save the state of an object in order to be able to recreate it when needed. The reverse process is called deserialization. Hazelcast offers you its own native serialization methods. You will see these methods throughout the chapter. For primitive types, it uses Hazelcast native serialization. For other complex types (e.g. Go objects), it uses Gob serialization.
+Serialization is the process of converting an object into a stream of bytes to store the object in the memory, a file or database, or transmit it through the network. Its main purpose is to save the state of an object in order to be able to recreate it when needed. The reverse process is called deserialization. Hazelcast offers you its own native serialization methods. You will see these methods throughout this chapter. For primitive types, it uses Hazelcast native serialization. For other complex types (e.g. Go objects), it uses Gob serialization.
 
 > **NOTE: `int` and `[]int` types in Go Language are serialized as `int64` and `[]int64` respectively by Hazelcast Serialization.**
  
@@ -514,7 +537,7 @@ On top of all, if you want to use your own serialization type, you can use a [Cu
 
 For a faster serialization of objects, Hazelcast recommends to implement IdentifiedDataSerializable interface.
 
-Here is an example of an object implementing IdentifiedDataSerializable interface:
+The following is an example of an object implementing this interface:
 
 ```go
 type address struct {
@@ -549,9 +572,9 @@ func (*address) ClassID() int32 {
 }
 ```
 
-IdentifiedDataSerializable uses `ClassID` and `FactoryID` to reconstitute the object. To complete the implementation `IdentifiedDataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `config.SerializationConfig()`. The factory's responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the classID.
+The `IdentifiedDataSerializable` interface uses `ClassID` and `FactoryID` to reconstitute the object. To complete the implementation `IdentifiedDataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `config.SerializationConfig()`. The factory's responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the classID.
 
-A sample `IdentifiedDataSerializableFactory` could be implemented as following:
+A sample `IdentifiedDataSerializableFactory` could be implemented as follows:
 
 ```go
 
@@ -572,23 +595,23 @@ config := hazelcast.NewConfig()
 config.SerializationConfig().AddDataSerializableFactory(1, myIdentifiedFactory{})
 ```
 
-Note that the id that is passed to the `SerializationConfig` is same as the `FactoryID ` that `address` object returns.
+Note that the ID that is passed to the `SerializationConfig` is same as the `FactoryID ` that the `address` object returns.
 
 ## 4.2. Portable Serialization
 
-As an alternative to the existing serialization methods, Hazelcast offers Portable serialization. To use it, you need to implement `Portable` interface. Portable serialization has the following advantages:
+As an alternative to the existing serialization methods, Hazelcast offers portable serialization. To use it, you need to implement the `Portable` interface. Portable serialization has the following advantages:
 
-- Supporting multiversion of the same object type
-- Fetching individual fields without having to rely on reflection
-- Querying and indexing support without de-serialization and/or reflection
+- Supporting multiversion of the same object type.
+- Fetching individual fields without having to rely on the reflection.
+- Querying and indexing support without deserialization and/or reflection.
 
-In order to support these features, a serialized Portable object contains meta information like the version and the concrete location of the each field in the binary data. This way Hazelcast is able to navigate in the binary data and de-serialize only the required field without actually de-serializing the whole object which improves the Query performance.
+In order to support these features, a serialized `Portable` object contains meta information like the version and the concrete location of the each field in the binary data. This way Hazelcast is able to navigate in the binary data and deserialize only the required field without actually deserializing the whole object which improves the query performance.
 
-With multiversion support, you can have two nodes where each of them having different versions of the same object and Hazelcast will store both meta information and use the correct one to serialize and de-serialize Portable objects depending on the node. This is very helpful when you are doing a rolling upgrade without shutting down the cluster.
+With multiversion support, you can have two members where each of them having different versions of the same object, and Hazelcast will store both meta information and use the correct one to serialize and deserialize portable objects depending on the member. This is very helpful when you are doing a rolling upgrade without shutting down the cluster.
 
-Also note that Portable serialization is totally language independent and is used as the binary protocol between Hazelcast server and clients.
+Also note that portable serialization is totally language independent and is used as the binary protocol between Hazelcast server and clients.
 
-A sample Portable implementation of a `Foo` class will look like the following:
+A sample portable implementation of a `Foo` class looks like the following:
 
 ```go
 type foo struct {
@@ -614,9 +637,9 @@ func (*foo) ClassID() int32 {
 }
 ```
 
-Similar to `IdentifiedDataSerializable`, a Portable object must provide `ClassID ` and `FactoryID `. The factory object will be used to create the Portable object given the classId.
+Similar to `IdentifiedDataSerializable`, a `Portable` object must provide `ClassID ` and `FactoryID `. The factory object will be used to create the `Portable` object given the `classId`.
 
-A sample `PortableFactory` could be implemented as following:
+A sample `PortableFactory` could be implemented as follows:
 
 ```go
 type myPortableFactory struct{}
@@ -637,13 +660,13 @@ config := hazelcast.NewConfig()
 config.SerializationConfig().AddPortableFactory(1, myPortableFactory{})
 ```
 
-Note that the id that is passed to the `SerializationConfig` is same as the `FactoryID` that `Foo` object returns.
+Note that the ID that is passed to the `SerializationConfig` is same as the `FactoryID` that `Foo` object returns.
 
 ## 4.3. Custom Serialization
 
 Hazelcast lets you plug a custom serializer to be used for serialization of objects.
 
-Let's say you have an object `Musician` and you would like to customize the serialization. The reason may be you want to use an external serializer for only one object.
+Let's say you have an object `Musician` and you would like to customize the serialization. The reason might be that you want to use an external serializer for only one object.
 
 ```go
 type musician struct{
@@ -698,11 +721,11 @@ The global serializer is identical to custom serializers from the implementation
 
 By default, Gob serialization is used if the object is not `IdentifiedDataSerializable` or `Portable` or there is no custom serializer for it. When you configure a global serializer, it is used instead of Gob serialization.
 
-**Use cases**
+You can use the global serialization for the following cases:
 
-- Third party serialization frameworks can be integrated using the global serializer.
+* Third party serialization frameworks can be integrated using the global serializer.
 
-- For your custom objects, you can implement a single serializer to handle all of them.
+* For your custom objects, you can implement a single serializer to handle all of them.
 
 A sample global serializer that integrates with a third party serializer is shown below.
 
@@ -748,7 +771,7 @@ networkConfig.SetConnectionAttemptLimit(5)
 
 ## 5.1. Providing the Member Addresses
 
-Address list is the initial list of cluster addresses to which the client will connect. The client uses this
+Address list is the initial list of cluster addresses which the client will connect to. The client uses this
 list to find an alive member. Although it may be enough to give only one address of a member in the cluster
 (since all members communicate with each other), it is recommended that you give the addresses for all the members.
 
@@ -758,9 +781,9 @@ networkConfig := config.NetworkConfig()
 networkConfig.AddAddress("10.1.1.21", "10.1.1.22:5703")
 ```
 
-If the port part is omitted, then 5701, 5702 and 5703 will be tried in random order.
+If the port part is omitted, then 5701, 5702 and 5703 will be tried in a random order.
 
-You can specify multiple addresses with or without port information as seen above. The provided list is shuffled and tried in random order. Its default value is `localhost`.
+You can specify multiple addresses with or without the port information as seen above. The provided list is shuffled and tried in a random order. Its default value is `localhost`.
 
 ## 5.2. Setting Smart Routing
 
@@ -779,7 +802,7 @@ Its default value is `true` (smart client mode).
 
 ## 5.3. Enabling Redo Operation
 
-It enables/disables redo-able operations. While sending the requests to related members, operations can fail due to various reasons. Read-only operations are retried by default. If you want to enable retry for the other operations, you can set the `redoOperation` to `true`.
+It enables/disables redo-able operations. While sending the requests to the related members, the operations can fail due to various reasons. Read-only operations are retried by default. If you want to enable retry for the other operations, you can set the `redoOperation` to `true`.
 
 ```go
 config := hazelcast.NewConfig()
@@ -791,8 +814,8 @@ Its default value is `false` (disabled).
 
 ## 5.4. Setting Connection Timeout
 
-Connection timeout is the timeout value in milliseconds for members to accept client connection requests.
-If server does not respond within the timeout, the client will retry to connect as many as `NetworkConfig.connectionAttemptLimit` times.
+Connection timeout is the timeout value in milliseconds for the members to accept the client connection requests.
+If the member does not respond within the timeout, the client will retry to connect as many as `NetworkConfig.connectionAttemptLimit` times.
 
 The following are the example configurations.
 
@@ -834,14 +857,14 @@ Its default value is `3000` milliseconds.
 
 ## 5.7. Enabling Client TLS/SSL
 
-You can use TLS/SSL to secure the connection between the clients and members. If you want TLS/SSL enabled
+You can use TLS/SSL to secure the connection between the clients and members. If you want to enable TLS/SSL
 for the client-cluster connection, you should set an SSL configuration. Please see [TLS/SSL section](#1-tlsssl).
 
-As explained in the [TLS/SSL section](#1-tlsssl), Hazelcast members have key stores used to identify themselves (to other members) and Hazelcast Go clients have certificate authorities used to define which members they can trust. Hazelcast has the mutual authentication feature which allows the Go clients also to have their private keys and public certificates and members to have their certificate authorities so that the members can know which clients they can trust. Please see the [Mutual Authentication section](#13-mutual-authentication).
+As explained in the [TLS/SSL section](#1-tlsssl), Hazelcast members have key stores used to identify themselves (to other members) and Hazelcast Go clients have certificate authorities used to define which members they can trust. Hazelcast has the mutual authentication feature which allows the Go clients also to have their private keys and public certificates and members to have their certificate authorities so that the members can know which clients they can trust. See the [Mutual Authentication section](#13-mutual-authentication).
 
 ## 5.8. Enabling Hazelcast Cloud Discovery
 
-The purpose of Hazelcast Cloud Discovery is to provide clients to use IP addresses provided by `hazelcast orchestrator`. To enable Hazelcast Cloud Discovery, specify a token for the `discoveryToken` field and set the `enabled` field to `true`.
+The purpose of Hazelcast Cloud Discovery is to provide the clients to use IP addresses provided by `hazelcast orchestrator`. To enable Hazelcast Cloud Discovery, specify a token for the `discoveryToken` field and set the `enabled` field to `true`.
 
 The following are example configurations.
 
@@ -858,21 +881,21 @@ To be able to connect to the provided IP addresses, you should use secure TLS/SS
 
 # 6. Securing Client Connection
 
-This chapter describes the security features of Hazelcast Go client. These include using TLS/SSL for connections between members and between clients and members and mutual authentication. These security features require **Hazelcast IMDG Enterprise** edition.
+This chapter describes the security features of Hazelcast Go client. These include using TLS/SSL for connections between members and between clients and members, and mutual authentication. These security features require **Hazelcast IMDG Enterprise** edition.
 
 ### 6.1. TLS/SSL
 
 One of the offers of Hazelcast is the TLS/SSL protocol which you can use to establish an encrypted communication across your cluster with key stores and trust stores.
 
-- A Java `keyStore` is a file that includes a private key and a public certificate. The equivalent of a key store is the combination of `key` and `cert` files at the Go client side.
+* A Java `keyStore` is a file that includes a private key and a public certificate. The equivalent of a key store is the combination of `key` and `cert` files at the Go client side.
 
-- A Java `trustStore` is a file that includes a list of certificates trusted by your application which is named certificate authority. The equivalent of a trust store is a `ca` file at the Go client side.
+* A Java `trustStore` is a file that includes a list of certificates trusted by your application which is named certificate authority. The equivalent of a trust store is a `ca` file at the Go client side.
 
 You should set `keyStore` and `trustStore` before starting the members. See the next section how to set `keyStore` and `trustStore` on the server side.
 
 #### 6.1.1. TLS/SSL for Hazelcast Members
 
-Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption. To use it, see [TLS/SSL for Hazelcast Members section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#tls-ssl-for-hazelcast-members).
+Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption. To use it, see the [TLS/SSL for Hazelcast Members section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#tls-ssl-for-hazelcast-members).
 
 #### 6.1.2. TLS/SSL for Hazelcast Go clients
 
@@ -892,7 +915,7 @@ As explained above, Hazelcast members have key stores used to identify themselve
 
 Using mutual authentication, the clients also have their key stores and members have their trust stores so that the members can know which clients they can trust to.
 
-To enable mutual authentication, firstly, you need to set the following property at server side by configuring `hazelcast.xml`:
+To enable mutual authentication, firstly, you need to set the following property at the server side in the `hazelcast.xml`:
 
 ```xml
 <network>
@@ -904,7 +927,7 @@ To enable mutual authentication, firstly, you need to set the following property
 </network>
 ```
 
-You can see the details of setting mutual authentication on the server side in the [Mutual Authentication section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#mutual-authentication) of the Reference Manual.
+You can see the details of setting mutual authentication on the server side in the [Mutual Authentication section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#mutual-authentication) of the Hazelcast IMDG Reference Manual.
 
 Client side config needs to be set as follows:
 
@@ -919,6 +942,8 @@ sslConfig.ServerName = "yourServerName"
 
 # 7. Using Go client with Hazelcast IMDG
 
+This chapter provides information on how you can use Hazelcast IMDG's data structures in the Go client, after giving some basic information including an overview to the client API, operation modes of the client and how it handles the failures.
+
 ## 7.1. Go client API Overview
 
 If you are ready to go, let's start to use Hazelcast Go client!
@@ -932,7 +957,7 @@ config.GroupConfig().SetPassword("pass")
 config.NetworkConfig().AddAddress("10.1.1.21", "10.1.1.22:5703")
 ```
 
-The second step is to initialize the `HazelcastClient` to be connected to the cluster.
+The second step is initializing the `HazelcastClient` to be connected to the cluster.
 
 ```go
 client, err := hazelcast.NewClientWithConfig(config)
@@ -940,7 +965,7 @@ client, err := hazelcast.NewClientWithConfig(config)
 
 **This client object is your gateway to access all Hazelcast distributed objects.**
 
-Let’s create a map and populate it with some data.
+Let’s create a map and populate it with some data, as shown below.
 
 ```go
 client, err := hazelcast.NewClientWithConfig(config)
@@ -954,7 +979,7 @@ personnelMap.Put("Erwin", "Sales")
 personnelMap.Put("Faith", "Sales")
 ```
 
-As a final step, if you are done with your client, you can shut it down as shown below. This will release all the used resources and will close connections to the cluster.
+As the final step, if you are done with your client, you can shut it down as shown below. This will release all the used resources and will close connections to the cluster.
 
 ```go
 client.Shutdown()
@@ -962,7 +987,7 @@ client.Shutdown()
 
 ## 7.2. Go client Operation Modes
 
-The client has two operation modes because of the distributed nature of the data and cluster.
+The client has two operation modes because of the distributed nature of the data and cluster: smart and unisocket.
 
 ### 7.2.1. Smart Client
 
@@ -971,44 +996,44 @@ In the smart mode, clients connect to each cluster member. Since each data parti
 
 ### 7.2.2. Unisocket Client
 
-For some cases, the clients can be required to connect to a single member instead of each member in the cluster. Firewalls, security, or some custom networking issues can be the reason for these cases.
+For some cases, the clients can be required to connect to a single member instead of each member in the cluster. Firewalls, security or some custom networking issues can be the reason for these cases.
 
 In the unisocket client mode, the client will only connect to one of the configured addresses. This single member will behave as a gateway to the other members. For any operation requested from the client, it will redirect the request to the relevant member and return the response back to the client returned from this member.
 
 ## 7.3. Handling Failures
 
-There are two main failure cases you should be aware of, and configurations you can perform to achieve proper behavior.
+There are two main failure cases you should be aware of. Below sections explain these and the configurations you can perform to achieve proper behavior.
 
 ### 7.3.1. Handling Client Connection Failure
 
-While the client is trying to connect initially to one of the members in the `NetworkConfig.SetAddresses`, all the members might be not available. Instead of giving up, returning an error and stopping the client, the client will retry as many times as `connectionAttemptLimit`.
+While the client is trying to connect initially to one of the members in the `NetworkConfig.SetAddresses`, all the members might not be available. Instead of giving up, returning an error and stopping the client, the client will retry as many times as `connectionAttemptLimit`.
 
-You can configure `connectionAttemptLimit` for the number of times you want the client to retry connecting. Please see [Setting Connection Attempt Limit](#5-setting-connection-attempt-limit).
+You can configure `connectionAttemptLimit` for the number of times you want the client to retry connecting. See the [Setting Connection Attempt Limit section](#5-setting-connection-attempt-limit).
 
 The client executes each operation through the already established connection to the cluster. If this connection(s) disconnects or drops, the client will try to reconnect as configured.
 
 ### 7.3.2. Handling Retry-able Operation Failure
 
-While sending the requests to related members, operations can fail due to various reasons. Read-only operations are retried by default. If you want to enable retry for the other operations, you can set the `redoOperation` to `true`. Please see [Enabling Redo Operation](#3-enabling-redo-operation).
+While sending the requests to tbe related members, the operations can fail due to various reasons. Read-only operations are retried by default. If you want to enable retrying for the other operations, you can set the `redoOperation` to `true`. See [Enabling Redo Operation section](#3-enabling-redo-operation).
 
 You can set a timeout for retrying the operations sent to a member. This can be provided by using the property `hazelcast.client.invocation.timeout.seconds` in `config.SetProperty`. The client will retry an operation within this given period, of course, if it is a read-only operation or you enabled the `redoOperation` as stated in the above paragraph. This timeout value is important when there is a failure resulted by either of the following causes:
 
-- Member throws an exception.
+* Member throws an exception.
 
-- Connection between the client and member is closed.
+* Connection between the client and member is closed.
 
-- Client’s heartbeat requests are timed out.
+* Client’s heartbeat requests are timed out.
 
-When a connection problem occurs, an operation is retried if it is certain that it has not run on the member yet or if it is idempotent such as a read-only operation, i.e., retrying does not have a side effect. If it is not certain whether the operation has run on the member, then the non-idempotent operations are not retried. However, as explained in the first paragraph of this section, you can force all client operations to be retried (`redoOperation`) when there is a connection failure between the client and member. But in this case, you should know that some operations may run multiple times causing conflicts. For example, assume that your client sent a `queue.offer` operation to the member, and then the connection is lost. Since there will be no response for this operation, you will not know whether it has run on the member or not. If you enabled `redoOperation`, it means this operation may run again, which may cause two instances of the same object in the queue.
+When a connection problem occurs, an operation is retried if it is certain that it has not run on the member yet or if it is idempotent such as a read-only operation, i.e., retrying does not have a side effect. If it is not certain whether the operation has run on the member, then the non-idempotent operations are not retried. However, as explained in the first paragraph of this section, you can force all client operations to be retried (`redoOperation`) when there is a connection failure between the client and member. But in this case, you should know that some operations may run multiple times causing conflicts. For example, assume that your client sent a `queue.offer` operation to the member and then the connection is lost. Since there will be no response for this operation, you will not know whether it has run on the member or not. If you enabled `redoOperation`, it means this operation may run again, which may cause two instances of the same object in the queue.
 Map
 
 ## 7.4. Using Distributed Data Structures
 
-Most of the Distributed Data Structures are supported by the Go client. In this chapter, you will learn how to use these distributed data structures.
+Most of the distributed data structures are supported by the Go client. In this chapter, you will learn how to use these distributed data structures.
 
 ### 7.4.1. Using Map
 
-Hazelcast Map (`IMap`) is a distributed map. Through Go client, you can  perform operations like reading and writing from/to a Hazelcast Map with the well known get and put methods. For details refer to [Map section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#map) in the Hazelcast IMDG Reference Manual.
+Hazelcast Map (`IMap`) is a distributed map. Through the Go client, you can  perform operations like reading and writing from/to a Hazelcast Map with the well known get and put methods. For details, see the [Map section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#map) in the Hazelcast IMDG Reference Manual.
 
 A Map usage example is shown below.
 
@@ -1021,7 +1046,7 @@ m.Remove(1)
 
 ### 7.4.2. Using MultiMap
 
-Hazelcast `MultiMap` is a distributed and specialized map where you can store multiple values under a single key. For details refer to [MultiMap section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#multimap) in the Hazelcast IMDG Reference Manual.
+Hazelcast `MultiMap` is a distributed and specialized map where you can store multiple values under a single key. For details, see the [MultiMap section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#multimap) in the Hazelcast IMDG Reference Manual.
 
 A MultiMap usage example is shown below.
 
@@ -1035,7 +1060,7 @@ fmt.Println(values[0], " ", values[1]) //Furkan  Mustafa
 
 ### 7.4.3. Using ReplicatedMap
 
-Hazelcast `ReplicatedMap` is a distributed key-value data structure where the data is replicated to all members in the cluster. It provides full replication of entries to all members for high speed access. For details refer to [Replicated Map section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#replicated-map) in the Hazelcast IMDG Reference Manual.
+Hazelcast `ReplicatedMap` is a distributed key-value data structure where the data is replicated to all members in the cluster. It provides full replication of entries to all members for high speed access. For details, see the [Replicated Map section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#replicated-map) in the Hazelcast IMDG Reference Manual.
 
 A ReplicatedMap usage example is shown below.
 
@@ -1048,7 +1073,7 @@ fmt.Println(replicatedMap.Get(2)) //Ahmet
 
 ### 7.4.4. Using Queue
 
-Hazelcast Queue(`IQueue`) is a distributed queue which enables all cluster members to interact with it. For details refer to [Queue section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#queue) in the Hazelcast IMDG Reference Manual.
+Hazelcast Queue(`IQueue`) is a distributed queue which enables all cluster members to interact with it. For details, see the [Queue section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#queue) in the Hazelcast IMDG Reference Manual.
 
 A Queue usage example is shown below.
 
@@ -1060,7 +1085,7 @@ fmt.Println(queue.Peek()) //Furkan
 
 ### 7.4.5. Using Set
 
-Hazelcast Set(`ISet`) is a distributed set which does not allow duplicate elements. For details refer to [Set section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#set) in the Hazelcast IMDG Reference Manual.
+Hazelcast Set(`ISet`) is a distributed set which does not allow duplicate elements. For details, see the [Set section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#set) in the Hazelcast IMDG Reference Manual.
 
 A Set usage example is shown below.
 
@@ -1072,7 +1097,7 @@ fmt.Println(set.Contains("Furkan")) // true
 
 ### 7.4.6. Using List
 
-Hazelcast List(`IList`) is distributed list which allows duplicate elements and preserves the order of elements. For details refer to [List section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#list) in the Hazelcast IMDG Reference Manual.
+Hazelcast List(`IList`) is distributed list which allows duplicate elements and preserves the order of elements. For details, see the [List section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#list) in the Hazelcast IMDG Reference Manual.
 
 A List usage example is shown below.
 
@@ -1086,7 +1111,7 @@ fmt.Println(list.Size()) // 3
 
 ### 7.4.7. Using Ringbuffer
 
-Hazelcast `Ringbuffer` is a replicated but not partitioned data structure that stores its data in a ring-like structure. You can think of it as a circular array with a given capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where the items are overwritten or expired. You can reach each element in a Ringbuffer using a sequence ID, which is mapped to the elements between the head and tail (inclusive) of the Ringbuffer. For details refer to [Ringbuffer section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#ringbuffer) in the Hazelcast IMDG Reference Manual.
+Hazelcast `Ringbuffer` is a replicated but not partitioned data structure that stores its data in a ring-like structure. You can think of it as a circular array with a given capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where the items are overwritten or expired. You can reach each element in a Ringbuffer using a sequence ID, which is mapped to the elements between the head and tail (inclusive) of the Ringbuffer. For details, see the [Ringbuffer section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#ringbuffer) in the Hazelcast IMDG Reference Manual.
 
 A Ringbuffer usage example is shown below.
 
@@ -1112,7 +1137,7 @@ go func() {
 
 ### 7.4.8. Using Reliable Topic
 
-Hazelcast `ReliableTopic` is a distributed topic implementation backed up by the `Ringbuffer` data structure. For details refer to [Reliable Topic section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#reliable-topic) in the Hazelcast IMDG Reference Manual.
+Hazelcast `ReliableTopic` is a distributed topic implementation backed up by the `Ringbuffer` data structure. For details, see the [Reliable Topic section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#reliable-topic) in the Hazelcast IMDG Reference Manual.
 
 A Reliable Topic usage example is shown below.
 
@@ -1127,7 +1152,7 @@ for i := 0; i < 10; i++ {
 
 ### 7.4.9. Using PN Counter
 
-Hazelcast `PNCounter` (Positive-Negative Counter) is a CRDT positive-negative counter implementation. It is an eventually consistent counter given there is no member failure. For details refer to [PN Counter section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#pn-counter) in the Hazelcast IMDG Reference Manual.
+Hazelcast `PNCounter` (Positive-Negative Counter) is a CRDT positive-negative counter implementation. It is an eventually consistent counter given there is no member failure. For details, see the [PN Counter section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#pn-counter) in the Hazelcast IMDG Reference Manual.
 
 A PN Counter usage example is shown below.
 
@@ -1143,7 +1168,7 @@ fmt.Printf("decremented counter, current value is %d\n", currentValue)
 
 ### 7.4.10. Using Flake ID Generator
 
-Hazelcast `FlakeIdGenerator` is used to generate cluster-wide unique identifiers. Generated identifiers are long primitive values and are k-ordered (roughly ordered). IDs are in the range from 0 to `2^63-1 (maximum signed long value)`. For details refer to [FlakeIdGenerator section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#flakeidgenerator) in the Hazelcast IMDG Reference Manual.
+Hazelcast `FlakeIdGenerator` is used to generate cluster-wide unique identifiers. Generated identifiers are long primitive values and are k-ordered (roughly ordered). IDs are in the range from 0 to `2^63-1 (maximum signed long value)`. For details, see the[FlakeIdGenerator section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#flakeidgenerator) in the Hazelcast IMDG Reference Manual.
 
 A Flake ID Generator usage example is shown below.
 
@@ -1161,18 +1186,18 @@ This chapter explains when various events are fired and describes how you can ad
 
 You can add event listeners to a Hazelcast Go client. You can configure the following listeners to listen to the events on the client side.
 
-`Membership Listener`: Notifies when a member joins to/leaves the cluster, or when an attribute is changed in a member.
+* Membership Listener: Notifies when a member joins to/leaves the cluster, or when an attribute is changed in a member.
 
-`Distributed Object Listener`: Notifies when a distributed object is created or destroyed throughout the cluster.
+* Distributed Object Listener: Notifies when a distributed object is created or destroyed throughout the cluster.
 
-`Lifecycle Listener`: Notifies when the client is starting, started, shutting down, and shutdown.
+* Lifecycle Listener: Notifies when the client is starting, started, shutting down, and shutdown.
 
 #### 7.5.1.1. Listening for Member Events
 
 You can add the following types of member events to the `ClusterService`.
 
-- `memberAdded`: A new member is added to the cluster.
-- `memberRemoved`: An existing member leaves the cluster.
+* `memberAdded`: A new member is added to the cluster.
+* `memberRemoved`: An existing member leaves the cluster.
 
 The following is a membership listener registration by using `client.Cluster().AddMembershipListener(&membershipListener{w})` function.
 
@@ -1191,12 +1216,12 @@ func (l *membershipListener) MemberRemoved(member core.Member) {
 
 The Lifecycle Listener notifies for the following events:
 
-- `STARTING`: A client is starting.
-- `STARTED`: A client has started.
-- `SHUTTING_DOWN`: A client is shutting down.
-- `SHUTDOWN`: A client’s shutdown has completed.
-- `CONNECTED`: A client is connected to cluster
-- `DISCONNECTED`: A client is disconnected from cluster note that this does not imply shutdown
+* `STARTING`: A client is starting.
+* `STARTED`: A client has started.
+* `SHUTTING_DOWN`: A client is shutting down.
+* `SHUTDOWN`: A client’s shutdown has completed.
+* `CONNECTED`: A client is connected to cluster
+* `DISCONNECTED`: A client is disconnected from cluster note that this does not imply shutdown
 
 The following is an example of Lifecycle Listener that is added to config and its output.
 
@@ -1239,7 +1264,7 @@ Lifecycle Event >>>  SHUTDOWN
 
 ### 7.5.2. Distributed Data Structure Events
 
-You can add event listeners to the Distributed Data Structures.
+You can add event listeners to the distributed data structures.
 
 #### 7.5.2.1. Listening for Map Events
 
@@ -1254,7 +1279,7 @@ An entry-based  event is fired after the operations that affect a specific entry
 - EntryRemovedListener
 - EntryAddedListener
 
-Let’s take a look at the following example.
+See the following example.
 
 ```go
 type entryListener struct {
@@ -1275,10 +1300,10 @@ m.Put("1", "Furkan")
 
 A map-wide event is fired as a result of a map-wide operation. For example, `Map.clear()` or `Map.evictAll()`. A `MapEvent` object is passed to the listener function.
 
-- MapEvictedListener
-- MapClearedListener
+* MapEvictedListener
+* MapClearedListener
 
-Let’s take a look at the following example.
+See the following example.
 
 ```go
 type mapListener struct {
@@ -1301,13 +1326,13 @@ m.Clear()
 
 ## 7.6. Distributed Computing
 
-This chapter explains Hazelcast’s entry processor implementation.
+This chapter explains how you can use Hazelcast IMDG's entry processor implementation in the Go client.
 
 ### 7.6.1. Using EntryProcessor
 
 Hazelcast supports entry processing. An entry processor is a function that executes your code on a map entry in an atomic way.
 
-An entry processor is a good option if you perform bulk processing on an `Map`. Usually you perform a loop of keys-- executing `Map.get(key)`, mutating the value, and finally putting the entry back in the map using `Map.put(key,value)`. If you perform this process from a client or from a member where the keys do not exist, you effectively perform two network hops for each update: the first to retrieve the data and the second to update the mutated value.
+An entry processor is a good option if you perform bulk processing on an `Map`. Usually you perform a loop of keys -- executing `Map.get(key)`, mutating the value, and finally putting the entry back in the map using `Map.put(key,value)`. If you perform this process from a client or from a member where the keys do not exist, you effectively perform two network hops for each update: the first to retrieve the data and the second to update the mutated value.
 
 If you are doing the process described above, you should consider using entry processors. An entry processor executes a read and updates upon the member where the data resides. This eliminates the costly network hops described above.
 
@@ -1319,13 +1344,13 @@ Hazelcast sends the entry processor to each cluster member and these members app
 
 The `Map` interface provides the following functions for entry processing:
 
-- `executeOnKey` processes an entry mapped by a key.
+* `executeOnKey` processes an entry mapped by a key.
 
-- `executeOnKeys` processes entries mapped by a list of keys.
+* `executeOnKeys` processes entries mapped by a list of keys.
 
-- `executeOnEntries` can process all entries in a map.
+* `executeOnEntries` can process all entries in a map.
 
-- `executeOnEntriesWithPredicate` can process all entries in a map with a defined predicate. 
+* `executeOnEntriesWithPredicate` can process all entries in a map with a defined predicate. 
 
 In the Go client, an `EntryProcessor` should be `IdentifiedDataSerializable` , `Portable` or `Custom Serializable` because the server should be able to deserialize it to process.
 
@@ -1356,9 +1381,9 @@ func (p *identifiedEntryProcessor) ClassID() int32 {
 }
 ```
 
-Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, please see [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
+Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, see the [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
 
-The following is an example code which can be the Java equivalent of entry processor in Go client:
+The following is the Java equivalent of the entry processor in Go client given above:
 
 ```java
 import com.hazelcast.map.AbstractEntryProcessor;
@@ -1422,7 +1447,7 @@ public class IdentifiedFactory implements DataSerializableFactory {
 }
 ```
 
-Note that you need to configure the `hazelcast.xml` to add your factory. And the following is the configuration for the above factory:
+Now you need to configure the `hazelcast.xml` to add your factory as shown below.
 
 ```xml
 <hazelcast>
@@ -1436,9 +1461,9 @@ Note that you need to configure the `hazelcast.xml` to add your factory. And the
 </hazelcast>
 ```
 
-The code that runs on the entries is implemented in Java on the server side. Client side entry processor is used to specify which entry processor should be called. For more details about the Java implementation of the entry processor, please see [Entry Processor section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#entry-processor) in the Hazelcast IMDG Reference Manual.
+The code that runs on the entries is implemented in Java on the server side. The client side entry processor is used to specify which entry processor should be called. For more details about the Java implementation of the entry processor, see the [Entry Processor section](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#entry-processor) in the Hazelcast IMDG Reference Manual.
 
-After all implementation and starting the server where your library is added to its `CLASSPATH`, you can use the entry processor in the `Map` functions. Let's take a look at the following example.
+After the above implementations and configuration are done and you start the server where your library is added to its `CLASSPATH`, you can use the entry processor in the `Map` functions. Let's take a look at the following example.
 
 ```go
 config := hazelcast.NewConfig()
@@ -1464,48 +1489,48 @@ Hazelcast partitions your data and spreads it across cluster of members. You can
 ### 7.7.1. How Distributed Query Works
 
 1. The requested predicate is sent to each member in the cluster.
-2. Each member looks at its own local entries and filters them according to the predicate. At this stage, key/value pairs of the entries are deserialized and then passed to the predicate.
+2. Each member looks at its own local entries and filters them according to the predicate. At this stage, key-value pairs of the entries are deserialized and then passed to the predicate.
 3. The predicate requester merges all the results coming from each member into a single set.
 
 Distributed query is highly scalable. If you add new members to the cluster, the partition count for each member is reduced and thus the time spent by each member on iterating its entries is reduced. In addition, the pool of partition threads evaluates the entries concurrently in each member, and the network traffic is also reduced since only filtered data is sent to the requester.
 
 **Predicates Object Operators**
 
-The `predicate` package offered by the client includes many operators for your query requirements. Some of them are explained below.
+The `predicate` package offered by the client includes many operators for your query requirements. Some of them are described below.
 
-- `equal`: Checks if the result of an expression is equal to a given value.
+* `equal`: Checks if the result of an expression is equal to a given value.
 
-- `notEqual`: Checks if the result of an expression is not equal to a given value.
+* `notEqual`: Checks if the result of an expression is not equal to a given value.
 
-- `instanceOf`: Checks if the result of an expression has a certain type.
+* `instanceOf`: Checks if the result of an expression has a certain type.
 
-- `like`: Checks if the result of an expression matches some string pattern. `%` (percentage sign) is the placeholder for many characters, `_` (underscore) is placeholder for only one character.
+* `like`: Checks if the result of an expression matches some string pattern. `%` (percentage sign) is the placeholder for many characters, `_` (underscore) is placeholder for only one character.
 
-- `greaterThan`: Checks if the result of an expression is greater than a certain value.
+* `greaterThan`: Checks if the result of an expression is greater than a certain value.
 
-- `greaterEqual`: Checks if the result of an expression is greater than or equal to a certain value.
+* `greaterEqual`: Checks if the result of an expression is greater than or equal to a certain value.
 
-- `lessThan`: Checks if the result of an expression is less than a certain value.
+* `lessThan`: Checks if the result of an expression is less than a certain value.
 
-- `lessEqual`: Checks if the result of an expression is less than or equal to a certain value.
+* `lessEqual`: Checks if the result of an expression is less than or equal to a certain value.
 
-- `between`: Checks if the result of an expression is between two values (this is inclusive).
+* `between`: Checks if the result of an expression is between two values, inclusively.
 
-- `in`: Checks if the result of an expression is an element of a certain list.
+* `in`: Checks if the result of an expression is an element of a certain list.
 
-- `not`: Checks if the result of an expression is false.
+* `not`: Checks if the result of an expression is false.
 
-- `regex`: Checks if the result of an expression matches some regular expression.
+* `regex`: Checks if the result of an expression matches some regular expression.
 
 Hazelcast offers the following ways for distributed query purposes:
 
-- Combining Predicates with AND, OR, NOT
+* Combining Predicates with AND, OR, NOT
 
-- Distributed SQL Query
+* Distributed SQL Query
 
 #### 7.7.1.1. Employee Map Query Example
 
-Assume that you have an `employee` map containing values of `Employee` objects, as coded below. 
+Assume that you have an `employee` map containing the values of `Employee` objects, as coded below. 
 
 ```go
 type employee struct {
@@ -1541,7 +1566,7 @@ func (p *employee) ClassID() int32 {
 
 ```
 
-Note that `employee` is an `IdentifiedDataSerializable` object. If you just want to save the `employee ` objects as byte arrays on the map, you don't need to implement its equivalent on the server-side. However, if you want to query on the map, server needs the `employee` objects rather than byte array formats. Therefore, you need to implement its Java equivalent and its data serializable factory on server side for server to reconstitute the objects from binary formats. After implementing the Java class and its factory, you need to add the factory to the data serializable factories or the portable factories by giving a factory `id`. Here is the example XML configuration of the server.
+Note that `Employee` is an `IdentifiedDataSerializable` object. If you just want to save the `Employee` objects as byte arrays on the map, you don't need to implement its equivalent on the server-side. However, if you want to query on the `employee` map, the server needs the `Employee` objects rather than byte array formats. Therefore, you need to implement its Java equivalent and its data serializable factory on the server side for server to reconstitute the objects from binary formats. After implementing the Java class and its factory, you need to add the factory to the data serializable factories or the portable factories by giving a factory `id`. The following is an example declarative configuration on the server.
 
 ```xml
 <hazelcast>
@@ -1557,13 +1582,13 @@ Note that `employee` is an `IdentifiedDataSerializable` object. If you just want
 </hazelcast>
 ```
 
-Note that before starting the server, you need to compile the `Employee` and `MyIdentifiedFactory` classes with server's `CLASSPATH` and add them to the `user-lib` folder in the extracted `hazelcast-<version>.zip`. See [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
+Note that before starting the server, you need to compile the `Employee` and `MyIdentifiedFactory` classes with server's `CLASSPATH` and add them to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). See the [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
 
 > **NOTE: You can also make this object `Portable` and implement its Java equivalent and its portable factory on the server side. Note that querying with `Portable` object is faster as compared to `IdentifiedDataSerializable`.**
 
 #### 7.7.1.2. Querying by Combining Predicates with AND, OR, NOT
 
-You can combine predicates by using the `and`, `or`, and `not` operators, as shown in the below example.
+You can combine predicates by using the `and`, `or` and `not` operators, as shown in the below example.
 
 ```go
 mp, _ := client.GetMap("emloyees")
@@ -1574,7 +1599,7 @@ value, _ := mp.ValuesWithPredicate(prdct)
 
 In the above example code, `predicate` verifies whether the entry is active and its `age` value is less than 30. This `predicate` is applied to the `employee` map using the `map.ValuesWithPredicate(predicate)` method. This method sends the predicate to all cluster members and merges the results coming from them. 
 
-> **NOTE: Predicates can also be applied to `keySet` and `entrySet` of the Hazelcast distributed map.**
+> **NOTE: Predicates can also be applied to `keySet` and `entrySet` of the Hazelcast IMDG's distributed map.**
 
 #### 7.7.1.3. Querying with SQL
 
@@ -1615,7 +1640,7 @@ value, _ := mp.ValuesWithPredicate(prdct)
 
 **LIKE:** `<attribute> [NOT] LIKE 'expression'`
 
-The `%` (percentage sign) is placeholder for multiple characters, an `_` (underscore) is placeholder for only one character.
+The `%` (percentage sign) is the placeholder for multiple characters, an `_` (underscore) is the placeholder for only one character.
 
 - `name LIKE 'Jo%'` (true for 'Joe', 'Josh', 'Joseph' etc.)
 - `name LIKE 'Jo_'` (true for 'Joe'; false for 'Josh')
@@ -1624,7 +1649,7 @@ The `%` (percentage sign) is placeholder for multiple characters, an `_` (unders
 
 **ILIKE:** `<attribute> [NOT] ILIKE 'expression'`
 
-Similar to LIKE predicate but in a case-insensitive manner.
+ILIKE is similar to the LIKE predicate but in a case-insensitive manner.
 
 - `name ILIKE 'Jo%'` (true for 'Joe', 'joe', 'jOe','Josh','joSH', etc.)
 - `name ILIKE 'Jo_'` (true for 'Joe' or 'jOE'; false for 'Josh')
@@ -1635,7 +1660,7 @@ Similar to LIKE predicate but in a case-insensitive manner.
 
 ##### Querying Examples with Predicates
 
-You can use `__key` attribute to perform a predicated search for entry keys. Please see the following example:
+You can use the `__key` attribute to perform a predicated search for entry keys. Please see the following example:
 
 ```go
 personMap, _ := client.GetMap("persons")
@@ -1648,7 +1673,7 @@ fmt.Println(value) //[23]
 
 In this example, the code creates a slice with the values whose keys start with the letter "F”.
 
-You can use `this` attribute to perform a predicated search for entry values. Please see the following example:
+You can use the `this` attribute to perform a predicated search for entry values. See the following example:
 
 ```go
 personMap, _ := client.GetMap("persons")
