@@ -56,11 +56,12 @@
   * [7.6. Distributed Computing](#76-distributed-computing)
     * [7.6.1. Using EntryProcessor](#761-using-entryprocessor)
   * [7.7. Distributed Query](#77-distributed-query)
-    * [7.7.1 How Distributed Query Works](#771-how-distributed-query-works)
+    * [7.7.1. How Distributed Query Works](#771-how-distributed-query-works)
       * [7.7.1.1. Employee Map Query Example](#7711-employee-map-query-example)
       * [7.7.1.2. Querying by Combining Predicates with AND, OR, NOT](#7712-querying-by-combining-predicates-with-and-or-not)
       * [7.7.1.3. Querying with SQL](#7713-querying-with-sql)
       * [7.7.1.4. Filtering with Paging Predicates](#7714-filtering-with-paging-predicates)
+    * [7.7.2. Fast-Aggregations](#772-fast-aggregations)  
 * [8. Development and Testing](#8-development-and-testing)
   * [8.1. Building and Using Client From Sources](#81-building-and-using-client-from-sources)
   * [8.2. Testing](#82-testing)
@@ -860,7 +861,7 @@ Its default value is `3000` milliseconds.
 You can use TLS/SSL to secure the connection between the clients and members. If you want to enable TLS/SSL
 for the client-cluster connection, you should set an SSL configuration. Please see [TLS/SSL section](#1-tlsssl).
 
-As explained in the [TLS/SSL section](#1-tlsssl), Hazelcast members have key stores used to identify themselves (to other members) and Hazelcast Go clients have certificate authorities used to define which members they can trust. Hazelcast has the mutual authentication feature which allows the Go clients also to have their private keys and public certificates and members to have their certificate authorities so that the members can know which clients they can trust. See the [Mutual Authentication section](#13-mutual-authentication).
+As explained in the [TLS/SSL section](#61-tlsssl), Hazelcast members have key stores used to identify themselves (to other members) and Hazelcast Go clients have certificate authorities used to define which members they can trust. Hazelcast has the mutual authentication feature which allows the Go clients also to have their private keys and public certificates and members to have their certificate authorities so that the members can know which clients they can trust. See the [Mutual Authentication section](#13-mutual-authentication).
 
 ## 5.8. Enabling Hazelcast Cloud Discovery
 
@@ -895,7 +896,7 @@ You should set `keyStore` and `trustStore` before starting the members. See the 
 
 #### 6.1.1. TLS/SSL for Hazelcast Members
 
-Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption. To use it, see the [TLS/SSL for Hazelcast Members section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#tls-ssl-for-hazelcast-members).
+Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption. To use it, see the [TLS/SSL for Hazelcast Members section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#tls-ssl-for-hazelcast-members) in the Hazelcast IMDG Reference Manual.
 
 #### 6.1.2. TLS/SSL for Hazelcast Go clients
 
@@ -1008,13 +1009,13 @@ There are two main failure cases you should be aware of. Below sections explain 
 
 While the client is trying to connect initially to one of the members in the `NetworkConfig.SetAddresses`, all the members might not be available. Instead of giving up, returning an error and stopping the client, the client will retry as many times as `connectionAttemptLimit`.
 
-You can configure `connectionAttemptLimit` for the number of times you want the client to retry connecting. See the [Setting Connection Attempt Limit section](#5-setting-connection-attempt-limit).
+You can configure `connectionAttemptLimit` for the number of times you want the client to retry connecting. See the [Setting Connection Attempt Limit section](#55-setting-connection-attempt-limit).
 
 The client executes each operation through the already established connection to the cluster. If this connection(s) disconnects or drops, the client will try to reconnect as configured.
 
 ### 7.3.2. Handling Retry-able Operation Failure
 
-While sending the requests to tbe related members, the operations can fail due to various reasons. Read-only operations are retried by default. If you want to enable retrying for the other operations, you can set the `redoOperation` to `true`. See [Enabling Redo Operation section](#3-enabling-redo-operation).
+While sending the requests to tbe related members, the operations can fail due to various reasons. Read-only operations are retried by default. If you want to enable retrying for the other operations, you can set the `redoOperation` to `true`. See [Enabling Redo Operation section](#53-enabling-redo-operation).
 
 You can set a timeout for retrying the operations sent to a member. This can be provided by using the property `hazelcast.client.invocation.timeout.seconds` in `config.SetProperty`. The client will retry an operation within this given period, of course, if it is a read-only operation or you enabled the `redoOperation` as stated in the above paragraph. This timeout value is important when there is a failure resulted by either of the following causes:
 
@@ -1685,6 +1686,45 @@ fmt.Println(value) //[28 30]
 ```
 
 In this example, the code creates a slice with the values greater than or equal to "27".
+
+### 7.7.2. Fast-Aggregations
+
+Fast-Aggregations feature provides some aggregate functions, such as `sum`, `average`, `max`, and `min`, on top of Hazelcast `Map` entries. Their performance is perfect since they run in parallel for each partition and are highly optimized for speed and low memory consumption.
+
+The `aggregator` package provides a wide variety of built-in aggregators. The full list is presented below:
+
+- `Count`
+- `Float64Average`
+- `Float64Sum`
+- `FixedPointSum`
+- `FloatingPointSum`
+- `Max`
+- `Min`
+- `Int32Average`
+- `Int32Sum`
+- `Int64Average`
+- `Int64Sum`
+
+You can use these aggregators with the `Map.Aggregate()` and `Map.AggregateWithPredicate()` functions.
+
+See the following example.
+
+```go
+mp, _ := client.GetMap("brothersMap")
+mp.Put("Muhammet Ali", 30)
+mp.Put("Ahmet", 27)
+mp.Put("Furkan", 23)
+agg, _ := aggregator.Count("this")
+count, _ := mp.Aggregate(agg)
+fmt.Println("There are", count, "brothers.") // There are 3 brothers.
+count, _ = mp.AggregateWithPredicate(agg, predicate.GreaterThan("this", 25))
+fmt.Println("There are", count, "brothers older than 25.") // There are 2 brothers older than 25.
+avg, _ := aggregation.NewInt64Average("this")
+avgAge, _ := mp.Aggregate(avg)
+fmt.Println("Average age is", avgAge) // Average age is 26.666666666666668
+```
+
+
 
 # 8. Development and Testing
 
