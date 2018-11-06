@@ -159,7 +159,7 @@ func TestClientStatisticsNonDefaultPeriod(t *testing.T) {
 
 	config := hazelcast.NewConfig()
 	config.SetProperty(property.StatisticsEnabled.Name(), "true")
-	config.SetProperty(property.StatisticsPeriodSeconds.Name(), "6")
+	config.SetProperty(property.StatisticsPeriodSeconds.Name(), "3")
 	client, _ := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
 
