@@ -15,12 +15,12 @@
 package internal
 
 import (
-	"log"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 type heartBeatService struct {
@@ -28,6 +28,7 @@ type heartBeatService struct {
 	heartBeatTimeout  time.Duration
 	heartBeatInterval time.Duration
 	cancel            chan struct{}
+	logger            *log.Logger
 }
 
 func newHeartBeatService(client *HazelcastClient) *heartBeatService {
@@ -35,6 +36,7 @@ func newHeartBeatService(client *HazelcastClient) *heartBeatService {
 		heartBeatInterval: client.properties.GetPositiveDurationOrDef(property.HeartbeatInterval),
 		heartBeatTimeout:  client.properties.GetPositiveDurationOrDef(property.HeartbeatTimeout),
 		cancel:            make(chan struct{}),
+		logger:            client.logger,
 	}
 
 	return &heartBeat
@@ -67,6 +69,7 @@ func (hbs *heartBeatService) heartBeat() {
 		timeSinceLastWrite := time.Since(connection.lastWrite.Load().(time.Time))
 		if timeSinceLastRead > hbs.heartBeatTimeout {
 			if connection.isAlive() {
+				hbs.logger.Warn("Heartbeat failed over the connection: ", connection)
 				hbs.onHeartbeatStopped(connection)
 			}
 		}
@@ -76,7 +79,7 @@ func (hbs *heartBeatService) heartBeat() {
 			go func(con *Connection) {
 				_, err := sentInvocation.Result()
 				if err != nil {
-					log.Println("Error when receiving heartbeat for connection, ", con)
+					hbs.logger.Debug("Error when receiving heartbeat for connection, ", con)
 				}
 			}(connection)
 		}

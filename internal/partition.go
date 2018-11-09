@@ -15,9 +15,10 @@
 package internal
 
 import (
-	"log"
 	"sync/atomic"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -32,11 +33,13 @@ type partitionService struct {
 	cancel  chan struct{}
 	refresh chan struct{}
 	period  time.Duration
+	logger  *log.Logger
 }
 
 func newPartitionService(client *HazelcastClient) *partitionService {
 	service := &partitionService{client: client, cancel: make(chan struct{}), refresh: make(chan struct{}, 1)}
 	service.mp.Store(make(map[int32]*proto.Address))
+	service.logger = client.logger
 	service.period = partitionUpdateInterval
 	return service
 }
@@ -92,15 +95,14 @@ func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error
 func (ps *partitionService) doRefresh() {
 	connection := ps.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
-		// TODO:: log this at debug level
-		//log.Println("Error while fetching cluster partition table!")
+		ps.logger.Debug("Error while fetching cluster partition table!")
 		return
 	}
 	request := proto.ClientGetPartitionsEncodeRequest()
 	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		if ps.client.lifecycleService.isLive.Load() == true {
-			log.Println("Error while fetching cluster partition table! ", err)
+			ps.logger.Debug("Error while fetching cluster partition table! ", err)
 		}
 		return
 	}

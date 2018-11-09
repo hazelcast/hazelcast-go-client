@@ -15,8 +15,9 @@
 package internal
 
 import (
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -40,6 +41,7 @@ type listenerService struct {
 	registerListenerInitChannel                chan *listenerRegistrationKey
 	connectToAllMembersChannel                 chan struct{}
 	cancel                                     chan struct{}
+	logger                                     *log.Logger
 }
 
 type removedErr struct {
@@ -85,6 +87,7 @@ func newListenerService(client *HazelcastClient) *listenerService {
 		registerListenerInitChannel:                make(chan *listenerRegistrationKey),
 		connectToAllMembersChannel:                 make(chan struct{}, 1),
 		cancel: make(chan struct{}),
+		logger: client.logger,
 	}
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
@@ -238,7 +241,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
-				log.Println("Deregistration of listener with ID ", registrationID, " has failed to connection ", connection)
+				ls.logger.Warn("Deregistration of listener with ID ", registrationID, " has failed to connection ", connection)
 				continue
 			}
 		}
@@ -263,7 +266,7 @@ func (ls *listenerService) registerListenerFromInternal(registrationID string, c
 		if _, ok := err.(*core.HazelcastIOError); ok {
 			ls.registerListenerInternalHandleErrorChannel <- registrationIDConnection
 		} else {
-			log.Println("Listener ", registrationID, " cannot be added to a new Connection ", connection, ", reason :", err)
+			ls.logger.Warn("Listener ", registrationID, " cannot be added to a new Connection ", connection, ", reason :", err)
 		}
 	}
 

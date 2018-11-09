@@ -18,7 +18,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -162,6 +162,7 @@ type connectionManagerImpl struct {
 	addressTranslator   AddressTranslator
 	isAlive             atomic.Value
 	credentials         security.Credentials
+	logger              *log.Logger
 }
 
 func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
@@ -170,6 +171,7 @@ func newConnectionManager(client *HazelcastClient, addressTranslator AddressTran
 		connections:       make(map[string]*Connection),
 		addressTranslator: addressTranslator,
 		credentials:       client.credentials,
+		logger:            client.logger,
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0))
 	cm.isAlive.Store(true)
@@ -259,7 +261,7 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
 	if err != nil {
-		log.Panic("Credentials cannot be serialized!")
+		cm.logger.Panic("Credentials cannot be serialized!")
 	}
 	return proto.ClientAuthenticationCustomEncodeRequest(
 		credsData,
@@ -314,6 +316,7 @@ func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connect
 			cm.client.ClusterService.ownerConnectionAddress.Store(address)
 			cm.client.ClusterService.ownerUUID.Store(ownerUUID)
 			cm.client.ClusterService.uuid.Store(uuid)
+			cm.logger.Info("Setting ", connection, " as owner.")
 		}
 	case credentialsFailed:
 		return core.NewHazelcastAuthenticationError("invalid credentials!", nil)

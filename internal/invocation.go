@@ -16,9 +16,10 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"sync/atomic"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"sync"
 
@@ -217,6 +218,7 @@ type invocationServiceImpl struct {
 	responseChannel   chan interface{}
 	invoke            func(*invocation)
 	isShutdown        atomic.Value
+	logger            *log.Logger
 }
 
 func newInvocationService(client *HazelcastClient) *invocationServiceImpl {
@@ -225,6 +227,7 @@ func newInvocationService(client *HazelcastClient) *invocationServiceImpl {
 		invocations:     make(map[int64]*invocation),
 		eventHandlers:   make(map[int64]*invocation),
 		responseChannel: make(chan interface{}, 1),
+		logger:          client.logger,
 	}
 	service.initInvocationTimeout()
 	service.initRetryPause()
@@ -261,7 +264,7 @@ func (is *invocationServiceImpl) process() {
 		case struct{}:
 			return
 		default:
-			panic(fmt.Sprintf("Unexpected command from response channel %s", command))
+			is.logger.Panic("Unexpected command from response channel ", command)
 		}
 	}
 }
@@ -374,7 +377,7 @@ func (is *invocationServiceImpl) handleNotSentInvocation(correlationID int64, ca
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
 		is.handleError(invocation, cause)
 	} else {
-		log.Println("No invocation has been found with the correlation id: ", correlationID)
+		is.logger.Warn("No invocation has been found with the correlation id: ", correlationID)
 	}
 }
 
@@ -385,7 +388,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 		invocation, found := is.eventHandlers[correlationID]
 		is.eventHandlersLock.RUnlock()
 		if !found {
-			log.Println("Got an event message with unknown correlation id.")
+			is.logger.Warn("Got an event message with unknown correlation id: ", correlationID)
 		} else {
 			invocation.eventHandler(response)
 		}
@@ -400,7 +403,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 			invocation.complete(response)
 		}
 	} else {
-		log.Println("handleClientMessage No invocation has been found with the correlation id: ", correlationID)
+		is.logger.Warn("No invocation has been found with the correlation id: ", correlationID)
 	}
 }
 
@@ -420,8 +423,8 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 
 	if time.Now().After(invocation.deadline) {
 		timeSinceDeadline := time.Since(invocation.deadline)
-		log.Println("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
-		invocation.complete(core.NewHazelcastOperationTimeoutError("invocation timed out by"+timeSinceDeadline.String(), err))
+		is.logger.Debug("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
+		invocation.complete(core.NewHazelcastOperationTimeoutError("invocation timed out by "+timeSinceDeadline.String(), err))
 		return
 	}
 	if is.shouldRetryInvocation(invocation, err) {
