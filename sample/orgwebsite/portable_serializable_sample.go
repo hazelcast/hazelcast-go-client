@@ -69,7 +69,7 @@ type SamplePortableFactory struct {
 }
 
 func (pf *SamplePortableFactory) Create(classID int32) serialization.Portable {
-	if classID == samplePortableFactoryID {
+	if classID == customerClassID {
 		return &Customer{}
 	}
 	return nil
