@@ -16,10 +16,11 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -47,6 +48,7 @@ type clusterService struct {
 	initialMemberListWg    *sync.WaitGroup
 	reconnectChan          chan struct{}
 	cancelChan             chan struct{}
+	logger                 *log.Logger
 }
 
 func newClusterService(client *HazelcastClient, addressProviders []AddressProvider) *clusterService {
@@ -54,6 +56,7 @@ func newClusterService(client *HazelcastClient, addressProviders []AddressProvid
 		client: client, config: client.Config, reconnectChan: make(chan struct{}, 1),
 		cancelChan: make(chan struct{}, 1),
 	}
+	service.logger = client.logger
 	service.init()
 	service.registerMembershipListeners()
 	service.addressProviders = addressProviders
@@ -151,7 +154,7 @@ func (cs *clusterService) reconnect() {
 	err := cs.connectToCluster()
 	if err != nil {
 		cs.client.Shutdown()
-		log.Println("Client will shutdown since it could not reconnect.")
+		cs.logger.Error("Client will shutdown since it could not reconnect.")
 	}
 
 }
@@ -185,7 +188,7 @@ func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimi
 		}
 		err := cs.connectToAddress(address)
 		if err != nil {
-			log.Println("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
+			cs.logger.Warn("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
 				currentAttempt, " of ", attemptLimit, " error: ", err)
 			continue
 		}
@@ -218,7 +221,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
 	cs.initialMemberListWg.Wait()
 	cs.logMembers()
-	log.Println("Registered membership listener with ID ", registrationID)
+	cs.logger.Info("Registered membership listener with ID ", registrationID)
 	return nil
 }
 
@@ -242,7 +245,7 @@ func (cs *clusterService) logMembers() {
 		membersInfo += memberInfo
 	}
 	membersInfo += "]\n"
-	log.Println(membersInfo)
+	cs.logger.Info(membersInfo)
 }
 
 func (cs *clusterService) AddMembershipListener(listener interface{}) string {

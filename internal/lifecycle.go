@@ -15,9 +15,10 @@
 package internal
 
 import (
-	"log"
 	"sync"
 	"sync/atomic"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -25,13 +26,16 @@ import (
 )
 
 type lifecycleService struct {
+	client    *HazelcastClient
 	isLive    atomic.Value
 	listeners atomic.Value
 	mu        sync.Mutex
+	logger    *log.Logger
 }
 
-func newLifecycleService(config *config.Config) *lifecycleService {
-	newLifecycle := &lifecycleService{}
+func newLifecycleService(config *config.Config, client *HazelcastClient) *lifecycleService {
+	newLifecycle := &lifecycleService{client: client}
+	newLifecycle.logger = client.logger
 	newLifecycle.isLive.Store(true)
 	newLifecycle.listeners.Store(make(map[string]interface{})) //Initialize
 	for _, listener := range config.LifecycleListeners() {
@@ -83,7 +87,7 @@ func (ls *lifecycleService) fireLifecycleEvent(newState string) {
 			listener.(core.LifecycleListener).LifecycleStateChanged(newState)
 		}
 	}
-	log.Println("New State : ", newState)
+	ls.logger.Info("New State : ", newState)
 }
 
 func (ls *lifecycleService) IsRunning() bool {

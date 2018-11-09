@@ -44,6 +44,9 @@ type Config struct {
 	// serializationConfig is the serialization configuration of the client.
 	serializationConfig *serialization.Config
 
+	// loggerConfig is the configuration for logging.
+	loggerConfig *LoggerConfig
+
 	securityConfig *SecurityConfig
 
 	// flakeIDGeneratorConfigMap is mapping of names to flakeIDGeneratorConfigs.
@@ -72,7 +75,12 @@ func New() *Config {
 		properties:                make(Properties),
 		securityConfig:            new(SecurityConfig),
 		reliableTopicConfigMap:    make(map[string]*ReliableTopicConfig),
+		loggerConfig:              NewLoggerConfig(),
 	}
+}
+
+func (c *Config) LoggerConfig() *LoggerConfig {
+	return c.loggerConfig
 }
 
 // SecurityConfig returns the security config for this client.

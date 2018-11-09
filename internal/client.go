@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"sync/atomic"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -56,6 +58,7 @@ type HazelcastClient struct {
 	name                 string
 	id                   int64
 	statistics           *statistics
+	logger               *log.Logger
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
@@ -178,9 +181,9 @@ func (c *HazelcastClient) init() error {
 	}
 	c.id = c.nextClientID()
 	c.initClientName()
-
+	c.logger = c.Config.LoggerConfig().Logger
 	c.credentials = c.initCredentials(c.Config)
-	c.lifecycleService = newLifecycleService(c.Config)
+	c.lifecycleService = newLifecycleService(c.Config, c)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
 	c.InvocationService = newInvocationService(c)
