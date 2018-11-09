@@ -541,35 +541,37 @@ For a faster serialization of objects, Hazelcast recommends to implement Identif
 The following is an example of an object implementing this interface:
 
 ```go
-type address struct {
-	street  string
-	zipcode int32
-	city    string
-	state   string
+const (
+	employeeClassID                 = 100
+	sampleDataSerializableFactoryID = 1000
+)
+
+type Employee struct {
+	id   int32
+	name string
 }
 
-func (a *address) ReadData(input serialization.DataInput) error {
-	a.street, _ = input.ReadUTF()
-	a.zipcode, _ = input.ReadInt32()
-	a.city, _ = input.ReadUTF()
-	a.state, _ = input.ReadUTF()
-	return nil
+func (e *Employee) ClassID() int32 {
+	return employeeClassID
 }
 
-func (a *address) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(a.street)
-	output.WriteInt32(a.zipcode)
-	output.WriteUTF(a.city)
-	output.WriteUTF(a.state)
-	return nil
+func (e *Employee) FactoryID() int32 {
+	return sampleDataSerializableFactoryID
 }
 
-func (*address) FactoryID() int32 {
-	return 1
+func (e *Employee) ReadData(input serialization.DataInput) (err error) {
+	e.id, err = input.ReadInt32()
+	if err != nil {
+		return
+	}
+	e.name, err = input.ReadUTF()
+	return
 }
 
-func (*address) ClassID() int32 {
-	return 1
+func (e *Employee) WriteData(output serialization.DataOutput) (err error) {
+	output.WriteInt32(e.id)
+	output.WriteUTF(e.name)
+	return
 }
 ```
 
@@ -579,11 +581,12 @@ A sample `IdentifiedDataSerializableFactory` could be implemented as follows:
 
 ```go
 
-type myIdentifiedFactory struct{}
+type SampleDataSerializableFactory struct {
+}
 
-func (myIdentifiedFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
-	if classID == 1 {
-		return &address{}
+func (*SampleDataSerializableFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
+	if classID == employeeClassID {
+		return &Employee{}
 	}
 	return nil
 }
@@ -593,7 +596,7 @@ The last step is to register the `IdentifiedDataSerializableFactory` to the `Ser
 
 ```go
 config := hazelcast.NewConfig()
-config.SerializationConfig().AddDataSerializableFactory(1, myIdentifiedFactory{})
+config.SerializationConfig().AddDataSerializableFactory(sampleDataSerializableFactoryID, SampleDataSerializableFactory{})
 ```
 
 Note that the ID that is passed to the `SerializationConfig` is same as the `FactoryID ` that the `address` object returns.
@@ -615,27 +618,49 @@ Also note that portable serialization is totally language independent and is use
 A sample portable implementation of a `Foo` class looks like the following:
 
 ```go
-type foo struct {
-	foo string
+const (
+	customerClassID         = 1
+	samplePortableFactoryID = 1
+)
+
+type Customer struct {
+	name      string
+	id        int32
+	lastOrder time.Time
 }
 
-func (f *foo) WritePortable(writer serialization.PortableWriter) (err error) {
-	writer.WriteUTF("foo", f.foo)
+func (c *Customer) FactoryID() int32 {
+	return samplePortableFactoryID
+}
+
+func (c *Customer) ClassID() int32 {
+	return customerClassID
+}
+
+func (c *Customer) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteInt32("id", c.id)
+	writer.WriteUTF("name", c.name)
+	writer.WriteInt64("lastOrder", c.lastOrder.UnixNano()/int64(time.Millisecond))
 	return
 }
 
-func (f *foo) ReadPortable(reader serialization.PortableReader) (err error) {
-	f.foo, _ = reader.ReadUTF("foo")
+func (c *Customer) ReadPortable(reader serialization.PortableReader) (err error) {
+	c.id, err = reader.ReadInt32("id")
+	if err != nil {
+		return
+	}
+	c.name, err = reader.ReadUTF("name")
+	if err != nil {
+		return
+	}
+	t, err := reader.ReadInt64("lastOrder")
+	if err != nil {
+		return
+	}
+	c.lastOrder = time.Unix(0, t*int64(time.Millisecond))
 	return
 }
 
-func (*foo) FactoryID() int32 {
-	return 1
-}
-
-func (*foo) ClassID() int32 {
-	return 1
-}
 ```
 
 Similar to `IdentifiedDataSerializable`, a `Portable` object must provide `ClassID ` and `FactoryID `. The factory object will be used to create the `Portable` object given the `classId`.
@@ -643,12 +668,12 @@ Similar to `IdentifiedDataSerializable`, a `Portable` object must provide `Class
 A sample `PortableFactory` could be implemented as follows:
 
 ```go
-type myPortableFactory struct{}
+type SamplePortableFactory struct {
+}
 
-
-func (myPortableFactory) Create(classID int32) serialization.Portable {
-	if classID == 1 {
-		return &foo{}
+func (pf *SamplePortableFactory) Create(classID int32) serialization.Portable {
+	if classID == customerClassID {
+		return &Customer{}
 	}
 	return nil
 }
@@ -658,7 +683,7 @@ The last step is to register the `PortableFactory` to the `SerializationConfig`.
 
 ```go
 config := hazelcast.NewConfig()
-config.SerializationConfig().AddPortableFactory(1, myPortableFactory{})
+config.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &SamplePortableFactory{})
 ```
 
 Note that the ID that is passed to the `SerializationConfig` is same as the `FactoryID` that `Foo` object returns.
@@ -667,54 +692,44 @@ Note that the ID that is passed to the `SerializationConfig` is same as the `Fac
 
 Hazelcast lets you plug a custom serializer to be used for serialization of objects.
 
-Let's say you have an object `Musician` and you would like to customize the serialization. The reason might be that you want to use an external serializer for only one object.
+Let's say you have an object `CustomSerializable` and you would like to customize the serialization. The reason might be that you want to use an external serializer for only one object.
 
 ```go
-type musician struct{
-	name string
+type CustomSerializable struct {
+	value string
 }
 ```
 
-Let's say your custom `MusicianSerializer` will serialize `Musician`.
+Let's say your custom `CustomSerializer` will serialize `CustomSerializable`.
 
 ```go
-type MusicianSerializer struct {
+type CustomSerializer struct {
 }
 
-func (*MusicianSerializer) ID() int32 {
+func (s *CustomSerializer) ID() int32 {
 	return 10
 }
 
-func (s *MusicianSerializer) Read(input serialization.DataInput) (interface{}, error) {
-	l, _ := input.ReadInt64()
-	buffer := make([]byte, l)
-	for i := int64(0); i < l; i++ {
-		buffer[i], _ = input.ReadByte()
-	}
-	name := string(buffer[:l])
-	m := musician{name}
-	return m, nil
+func (s *CustomSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
+	array, err := input.ReadByteArray()
+	return &CustomSerializable{string(array)}, err
 }
 
-func (s *MusicianSerializer) Write(output serialization.DataOutput, obj interface{}) error {
-	m := obj.(musician)
-	l := len(m.name)
-	output.WriteInt64(int64(l))
-	for i := 0; i < l; i++ {
-		output.WriteByte(m.name[i]) 
-	}
-	return nil
+func (s *CustomSerializer) Write(output serialization.DataOutput, obj interface{}) (err error) {
+	array := []byte(obj.(CustomSerializable).value)
+	output.WriteByteArray(array)
+	return
 }
 ```
 
-Note that the serializer `id` must be unique as Hazelcast will use it to lookup the `MusicianSerializer` while it deserializes the object. Now the last required step is to register the `MusicianSerializer` to the configuration.
+Note that the serializer `id` must be unique as Hazelcast will use it to lookup the `CustomSerializer` while it deserializes the object. Now the last required step is to register the `MusicianSerializer` to the configuration.
 
 ```go
 musicianSerializer := &MusicianSerializer{}
-config.SerializationConfig().AddCustomSerializer(reflect.TypeOf((*musician)(nil)).Elem(), musicianSerializer)
+config.SerializationConfig().AddCustomSerializer(reflect.TypeOf((*CustomSerializable)(nil)), &CustomSerializer{})
 ```
 
-From now on, Hazelcast will use `MusicianSerializer` to serialize `Musician` objects.
+From now on, Hazelcast will use `CustomSerializer` to serialize `CustomSerializable` objects.
 
 ## 4.4. Global Serialization
 
@@ -734,17 +749,18 @@ A sample global serializer that integrates with a third party serializer is show
 type GlobalSerializer struct {
 }
 
-func (s *GlobalSerializer) ID() int32 {
+func (*GlobalSerializer) ID() int32 {
 	return 20
 }
 
-func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
-	return SomeThirdPartySerializer.deserialize(input.ReadByteArray())
+func (*GlobalSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
+	// return MyFavoriteSerializer.deserialize(input)
+	return
 }
 
-func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) error {
-	return output.WriteByteArray(SomeThirdPartySerializer.serialize(object))
-	
+func (*GlobalSerializer) Write(output serialization.DataOutput, object interface{}) (err error) {
+	// output.write(MyFavoriteSerializer.serialize(object))
+	return
 }
 ```
 
@@ -1039,10 +1055,14 @@ Hazelcast Map (`IMap`) is a distributed map. Through the Go client, you can  per
 A Map usage example is shown below.
 
 ```go
-m, _ := client.GetMap("myMap")
-m.Put(1, "Furkan")
-m.Get(1)
-m.Remove(1)
+// Get the Distributed Map from Cluster.
+mp, _ := hz.GetMap("myDistributedMap")
+//Standard Put and Get.
+mp.Put("key", "value")
+mp.Get("key")
+//Concurrent Map methods, optimistic updating
+mp.PutIfAbsent("somekey", "somevalue")
+mp.ReplaceIfSame("key", "value", "newvalue")
 ```
 
 ### 7.4.2. Using MultiMap
@@ -1052,11 +1072,17 @@ Hazelcast `MultiMap` is a distributed and specialized map where you can store mu
 A MultiMap usage example is shown below.
 
 ```go
-multiMap, _ := client.GetMultiMap("myMultiMap")
-multiMap.Put(1, "Furkan")
-multiMap.Put(1, "Mustafa")
-values, _ := multiMap.Get(1)
-fmt.Println(values[0], " ", values[1]) //Furkan  Mustafa
+// Get the Distributed MultiMap from Cluster.
+multiMap, _ := hz.GetMultiMap("myDistributedMultimap")
+// Put values in the map against the same key
+multiMap.Put("my-key", "value1")
+multiMap.Put("my-key", "value2")
+multiMap.Put("my-key", "value3")
+// Print out all the values for associated with key called "my-key"
+values, _ := multiMap.Get("my-key")
+fmt.Println(values)
+// remove specific key/value pair
+multiMap.Remove("my-key", "value2")
 ```
 
 ### 7.4.3. Using ReplicatedMap
@@ -1066,10 +1092,13 @@ Hazelcast `ReplicatedMap` is a distributed key-value data structure where the da
 A ReplicatedMap usage example is shown below.
 
 ```go
-replicatedMap, _ := client.GetReplicatedMap("myReplicatedMap")
-replicatedMap.Put(1, "Furkan")
-replicatedMap.Put(2, "Ahmet")
-fmt.Println(replicatedMap.Get(2)) //Ahmet
+// Get a Replicated Map called "my-replicated-map"
+mp, _ := hz.GetReplicatedMap("my-replicated-map")
+// Put and Get a value from the Replicated Map
+replacedValue, _ := mp.Put("key", "value")     // key/value replicated to all members
+fmt.Println("replacedValue = ", replacedValue) // Will be null as its first update
+value, _ := mp.Get("key")                      // the value is retrieved from a random member in the cluster
+fmt.Println("value for key = ", value)
 ```
 
 ### 7.4.4. Using Queue
@@ -1079,9 +1108,18 @@ Hazelcast Queue(`IQueue`) is a distributed queue which enables all cluster membe
 A Queue usage example is shown below.
 
 ```go
-queue, _ := client.GetQueue("myQueue")
-queue.Offer("Furkan")
-fmt.Println(queue.Peek()) //Furkan
+// Get a Blocking Queue called "my-distributed-queue"
+queue, _ := hz.GetQueue("my-distributed-queue")
+// Offer a String into the Distributed Queue
+queue.Offer("item")
+// Poll the Distributed Queue and return the String
+queue.Poll()
+//Timed blocking Operations
+queue.OfferWithTimeout("anotheritem", 500*time.Millisecond)
+queue.PollWithTimeout(5 * time.Second)
+//Indefinitely blocking Operations
+queue.Put("yetanotheritem")
+fmt.Println(queue.Take())
 ```
 
 ### 7.4.5. Using Set
@@ -1091,9 +1129,18 @@ Hazelcast Set(`ISet`) is a distributed set which does not allow duplicate elemen
 A Set usage example is shown below.
 
 ```go
-set, _ := client.GetSet("mySet")
-set.Add("Furkan")
-fmt.Println(set.Contains("Furkan")) // true
+// Get the distributed set from cluster
+set, _ := hz.GetSet("my-distributed-set")
+// Add items to the set with duplicates
+set.Add("item1")
+set.Add("item1")
+set.Add("item2")
+set.Add("item2")
+set.Add("item3")
+set.Add("item3")
+// Get the items. Note that no duplicates
+items, _ := set.ToSlice()
+fmt.Println(items)
 ```
 
 ### 7.4.6. Using List
@@ -1103,11 +1150,17 @@ Hazelcast List(`IList`) is distributed list which allows duplicate elements and 
 A List usage example is shown below.
 
 ```go
-list, _ := client.GetList("myList")
-list.Add("Furkan")
-list.Add("Ahmet")
-list.Add("Muhammet Ali")
-fmt.Println(list.Size()) // 3
+// Get the distributed list from cluster
+list, _ := hz.GetList("my-distributed-list")
+// Add elements to the list
+list.Add("item1")
+list.Add("item2")
+// Remove the first element
+removed, _ := list.RemoveAt(0)
+fmt.Println("removed: ", removed)
+// There is only one element left
+size, _ := list.Size()
+fmt.Println("current size is: ", size)
 ```
 
 ### 7.4.7. Using Ringbuffer
@@ -1118,22 +1171,19 @@ A Ringbuffer usage example is shown below.
 
 
 ```go
-ringbuffer, _ := client.GetRingbuffer("myRingbuffer")
+rb, _ := hz.GetRingbuffer("rb")
+// we start from the oldest item.
+// if you want to start from the next item, call rb.tailSequence()+1
+// add two items into ring buffer
+rb.Add(100, core.OverflowPolicyOverwrite)
+rb.Add(200, core.OverflowPolicyOverwrite)
 
-go func() {
-    for i := 0; i < 100; i++ {
-        ringbuffer.Add("item "+strconv.Itoa(i), core.OverflowPolicyOverwrite)
-    }
-}()
-
-go func() {
-    sequence, _ := ringbuffer.HeadSequence()
-    for sequence < 100 {
-        item, _ := ringbuffer.ReadOne(sequence)
-        sequence++
-        fmt.Println("Reading value " + item.(string))
-    }
-}()
+// we start from the oldest item.
+// if you want to start from the next item, call rb.tailSequence()+1
+sequence, _ := rb.HeadSequence()
+fmt.Println(rb.ReadOne(sequence))
+sequence++
+fmt.Println(rb.ReadOne(sequence))
 ```
 
 ### 7.4.8. Using Reliable Topic
@@ -1158,7 +1208,7 @@ Hazelcast `PNCounter` (Positive-Negative Counter) is a CRDT positive-negative co
 A PN Counter usage example is shown below.
 
 ```go
-counter, _ := client.GetPNCounter("myPNCounter")
+counter, _ := client.GpetPNCounter("myPNCounter")
 
 currentValue, _ := counter.AddAndGet(5)
 fmt.Printf("added 5 counter, current value is %d\n", currentValue)
@@ -1200,16 +1250,18 @@ You can add the following types of member events to the `ClusterService`.
 * `memberAdded`: A new member is added to the cluster.
 * `memberRemoved`: An existing member leaves the cluster.
 
-The following is a membership listener registration by using `client.Cluster().AddMembershipListener(&membershipListener{w})` function.
+The following is a membership listener registration by using `client.Cluster().AddMembershipListener(&membershipListener{})` function.
 
 ```go
 type membershipListener struct {
 }
 
 func (l *membershipListener) MemberAdded(member core.Member) {
+	fmt.Println("New member joined: ", member)
 }
 
 func (l *membershipListener) MemberRemoved(member core.Member) {
+	fmt.Println("Member left: ", member)
 }
 ```
 
@@ -1240,7 +1292,11 @@ config.AddLifecycleListener(&lifecycleListener{})
 Or it can be added later after client has started
 ```go
 registrationID := client.LifecycleService().AddLifecycleListener(&lifecycleListener{})
+
+// Unregister it when you want to stop listening
+client.LifecycleService().RemoveLifecycleListener(registrationID)
 ```
+
 
 **Output:**
 

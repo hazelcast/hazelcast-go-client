@@ -57,7 +57,7 @@ type SampleDataSerializableFactory struct {
 }
 
 func (*SampleDataSerializableFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
-	if classID == classID {
+	if classID == employeeClassID {
 		return &Employee{}
 	}
 	return nil
