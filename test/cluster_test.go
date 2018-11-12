@@ -183,9 +183,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 	config.GroupConfig().SetName("wrongName")
 	config.GroupConfig().SetPassword("wrongPassword")
 	client, err := hazelcast.NewClientWithConfig(config)
-	if _, ok := err.(*core.HazelcastAuthenticationError); !ok {
-		t.Fatal("client should have returned an authentication error")
-	}
+	assert.Error(t, err)
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
@@ -239,6 +237,26 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	assert.Equalf(t, memberList[0].UUID(), newMember.UUID, "client did not use the last member list to reconnect uuid")
 	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
+}
+
+func TestClusterScaleDown(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	member1, _ := remoteController.StartMember(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	var wg = new(sync.WaitGroup)
+	wg.Add(3) // 2 for 2 members, 1 for leaving member
+	config := hazelcast.NewConfig()
+	config.AddMembershipListener(&membershipListener{wg: wg})
+	client, _ := hazelcast.NewClientWithConfig(config)
+	assert.Len(t, client.Cluster().GetMembers(), 2)
+
+	remoteController.ShutdownMember(cluster.ID, member1.UUID)
+	timeout := WaitTimeout(wg, Timeout)
+	assert.False(t, timeout)
+	assert.Len(t, client.Cluster().GetMembers(), 1)
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+
 }
 
 func TestConnectToClusterWithoutPort(t *testing.T) {

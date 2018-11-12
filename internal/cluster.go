@@ -165,9 +165,6 @@ func (cs *clusterService) connectToCluster() error {
 			if err != nil {
 				log.Println("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
 					currentAttempt, " of ", attempLimit, " error: ", err)
-				if _, ok := err.(*core.HazelcastAuthenticationError); ok {
-					return err
-				}
 				continue
 			}
 			return nil

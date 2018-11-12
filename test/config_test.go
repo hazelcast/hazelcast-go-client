@@ -19,7 +19,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,9 +31,7 @@ func TestSetGroupConfig(t *testing.T) {
 	groupCfg.SetPassword("wrongPassword")
 	cfg.SetGroupConfig(groupCfg)
 	client, err := hazelcast.NewClientWithConfig(cfg)
-	if _, ok := err.(*core.HazelcastAuthenticationError); !ok {
-		t.Fatal("client should have returned an authentication error")
-	}
+	assert.Error(t, err)
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 }
