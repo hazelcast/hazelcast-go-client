@@ -157,7 +157,6 @@ func TestInvocationNotSent(t *testing.T) {
 		}
 	}()
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
-	time.Sleep(3 * time.Second)
 	remoteController.StartMember(cluster.ID)
 	timeout := WaitTimeout(wg, Timeout)
 	assert.Equalf(t, timeout, false, "invocationNotSent failed")

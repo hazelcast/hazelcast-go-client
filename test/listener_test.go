@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/stretchr/testify/assert"
@@ -38,9 +37,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 	registrationID, err := mp.AddEntryListener(entryAdded, true)
 	require.NoError(t, err)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
-	time.Sleep(3 * time.Second)
 	remoteController.StartMember(cluster.ID)
-	time.Sleep(4 * time.Second)
 	wg.Add(100)
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)
@@ -91,7 +88,6 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	registrationID, err := mp.AddEntryListener(entryAdded, true)
 	require.NoError(t, err)
 	remoteController.StartMember(cluster.ID)
-	time.Sleep(15 * time.Second) // Wait for partitionTable update
 	wg.Add(100)
 	for i := 0; i < 100; i++ {
 		testKey := "testingKey" + strconv.Itoa(i)

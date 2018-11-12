@@ -17,6 +17,7 @@ package test
 import (
 	"io/ioutil"
 	"sync"
+	"testing"
 	"time"
 )
 
@@ -101,4 +102,15 @@ func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	case <-time.After(timeout):
 		return true // timed out
 	}
+}
+
+func AssertEventually(t *testing.T, assertions func() bool) {
+	startTime := time.Now()
+	for time.Since(startTime) < Timeout {
+		if assertions() {
+			return
+		}
+		time.Sleep(10 * time.Microsecond)
+	}
+	t.Fail()
 }

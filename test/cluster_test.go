@@ -18,7 +18,6 @@ import (
 	"log"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
@@ -223,20 +222,24 @@ func TestRestartMember(t *testing.T) {
 }
 
 func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
+	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
 	oldMember, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
 	config.NetworkConfig().SetSmartRouting(false)
+	config.AddMembershipListener(&membershipListener{wg: wg})
+	wg.Add(3) // 2 for initial members, 1 for leaving member
 	client, _ := hazelcast.NewClientWithConfig(config)
 	newMember, _ := remoteController.StartMember(cluster.ID)
 	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
-	time.Sleep(10 * time.Second)
+	timeout := WaitTimeout(wg, Timeout)
+	assert.False(t, timeout)
 	memberList := client.Cluster().GetMembers()
 	assert.Equalf(t, len(memberList), 1, "client did not use the last member list to reconnect")
 	assert.Equalf(t, memberList[0].UUID(), newMember.UUID, "client did not use the last member list to reconnect uuid")
-	remoteController.ShutdownCluster(cluster.ID)
 	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestClusterScaleDown(t *testing.T) {

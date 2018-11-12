@@ -392,10 +392,10 @@ func TestReliableTopicProxy_DistributedObjectDestroyedError(t *testing.T) {
 	id, err := reliableTopic.AddMessageListener(listener)
 	defer reliableTopic.RemoveMessageListener(id)
 	assert.NoError(t, err)
-	time.Sleep(time.Second)
 	reliableTopic.Destroy()
-	time.Sleep(2 * time.Second)
-	assert.Len(t, listener.messages, 0)
+	test.AssertEventually(t, func() bool {
+		return len(listener.messages) == 0
+	})
 }
 
 func TestReliableTopicProxy_ClientNotActiveError(t *testing.T) {
@@ -405,8 +405,9 @@ func TestReliableTopicProxy_ClientNotActiveError(t *testing.T) {
 	_, err := reliableTopic.AddMessageListener(listener)
 	assert.NoError(t, err)
 	client2.Shutdown()
-	time.Sleep(2 * time.Second)
-	assert.Len(t, listener.messages, 0)
+	test.AssertEventually(t, func() bool {
+		return len(listener.messages) == 0
+	})
 }
 
 func TestReliableTopicProxy_Leakage(t *testing.T) {
@@ -424,11 +425,10 @@ func TestReliableTopicProxy_Leakage(t *testing.T) {
 	_, err := topic.Ringbuffer().AddAll(items, core.OverflowPolicyOverwrite)
 	assert.NoError(t, err)
 	client2.Shutdown()
-	time.Sleep(4 * time.Second)
-	routineNumAfter := runtime.NumGoroutine()
-	if routineNumBefore != routineNumAfter {
-		t.Fatalf("Expected number of routines %d, found %d", routineNumBefore, routineNumAfter)
-	}
+	test.AssertEventually(t, func() bool {
+		routineNumAfter := runtime.NumGoroutine()
+		return routineNumBefore == routineNumAfter
+	})
 }
 
 type ReliableMessageListenerMock struct {
