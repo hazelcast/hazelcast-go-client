@@ -79,7 +79,7 @@ func newConnection(address core.Address, handleResponse func(interface{}),
 		return nil, err
 	}
 	if networkCfg.SSLConfig().Enabled() {
-		socket, err = connection.openTLSConnection(networkCfg.SSLConfig(), socket, conTimeout)
+		socket, err = connection.openTLSConnection(networkCfg.SSLConfig(), socket)
 	}
 	connection.startTime = timeutil.GetCurrentTimeInMilliSeconds()
 	if err != nil {
@@ -95,7 +95,7 @@ func newConnection(address core.Address, handleResponse func(interface{}),
 	return connection, nil
 }
 
-func (c *Connection) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn, timeout time.Duration) (net.Conn, error) {
+func (c *Connection) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn) (net.Conn, error) {
 	tlsCon := tls.Client(conn, sslCfg.Config)
 	err := tlsCon.Handshake()
 	return tlsCon, err
