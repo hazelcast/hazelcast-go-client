@@ -61,7 +61,9 @@
       * [7.7.1.2. Querying by Combining Predicates with AND, OR, NOT](#7712-querying-by-combining-predicates-with-and-or-not)
       * [7.7.1.3. Querying with SQL](#7713-querying-with-sql)
       * [7.7.1.4. Filtering with Paging Predicates](#7714-filtering-with-paging-predicates)
-    * [7.7.2. Fast-Aggregations](#772-fast-aggregations)  
+    * [7.7.2. Fast-Aggregations](#772-fast-aggregations)
+  * [7.8. Monitoring](#78-monitoring)  
+    * [7.8.1. Enabling Client Statistics](#781-enabling-client-statistics)
 * [8. Development and Testing](#8-development-and-testing)
   * [8.1. Building and Using Client From Sources](#81-building-and-using-client-from-sources)
   * [8.2. Testing](#82-testing)
@@ -1725,6 +1727,26 @@ fmt.Println("Average age is", avgAge) // Average age is 26.666666666666668
 ```
 
 
+## 7.8. Monitoring
+
+
+ ### 7.8.1. Enabling Client Statistics
+
+ You can enable the client statistics before starting your clients. There are two properties related to client statistics:
+
+ - `hazelcast.client.statistics.enabled`: If set to `true`, it enables collecting the client statistics and sending them to the cluster. When it is `true` you can monitor the clients that are connected to your Hazelcast cluster, using Hazelcast Management Center. Its default value is `false`.
+
+ - `hazelcast.client.statistics.period.seconds`: Period in seconds the client statistics are collected and sent to the cluster. Its default value is `3`.
+
+ You can enable client statistics and set a non-default period in seconds as follows:
+
+ ```go
+config := hazelcast.NewConfig()
+config.SetProperty(property.StatisticsEnabled.Name(), "true")
+config.SetProperty(property.StatisticsPeriodSeconds.Name(), "4")
+ ```
+
+ After enabling the client statistics, you can monitor your clients using Hazelcast Management Center. See the [Monitoring Clients section](https://docs.hazelcast.org/docs/management-center/latest/manual/html/index.html#monitoring-clients) in the Hazelcast Management Center Reference Manual for more information on the client statistics.
 
 # 8. Development and Testing
 
