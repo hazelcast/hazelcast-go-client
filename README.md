@@ -189,7 +189,7 @@ Following command installs Hazelcast Go client:
 ```
 go get github.com/hazelcast/hazelcast-go-client
 ```
-[For more details](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/helloworld)
+See the Go client's [tutorial](https://github.com/hazelcast/hazelcast-go-client/tree/master/sample/helloworld) for more information on installing and setting up the client.
 
 ## 1.4. Basic Configuration
 If you are using Hazelcast IMDG and Go client on the same computer, generally the default configuration should be fine. This is great for
