@@ -124,10 +124,10 @@ func TestMapProxy_PutWithTTLWhenExpire(t *testing.T) {
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
 	rmp.PutWithTTL(testKey, "nextValue", 1*time.Millisecond)
-	time.Sleep(2 * time.Second)
-	res, err := rmp.Get(testKey)
-	require.NoError(t, err)
-	assert.Nilf(t, res, "replicatedMap PutWithTTL() failed")
+	test.AssertEventually(t, func() bool {
+		res, err := rmp.Get(testKey)
+		return err == nil && res == nil
+	})
 }
 
 func TestReplicatedMapProxy_PutAll(t *testing.T) {

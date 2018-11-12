@@ -367,11 +367,11 @@ func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {
 func TestMultiMapProxy_LockWithLeaseTime(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	multiMap.LockWithLeaseTime(testKey, 10*time.Millisecond)
-	time.Sleep(5 * time.Second)
-	locked, err := multiMap.IsLocked(testKey)
-	require.NoError(t, err)
-	assert.Equalf(t, locked, false, "multiMap LockWithLeaseTime() failed.")
+	multiMap.LockWithLeaseTime(testKey, 1*time.Millisecond)
+	test.AssertEventually(t, func() bool {
+		locked, err := multiMap.IsLocked(testKey)
+		return err == nil && locked == false
+	})
 }
 
 func TestMultiMapProxy_LockWithLeaseTimeWithNilKey(t *testing.T) {
@@ -384,11 +384,11 @@ func TestMultiMapProxy_LockWithLeaseTimeWithNilKey(t *testing.T) {
 func TestMultiMapProxy_Lock(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
-	multiMap.LockWithLeaseTime(testKey, 10*time.Millisecond)
-	time.Sleep(5 * time.Second)
-	locked, err := multiMap.IsLocked(testKey)
-	require.NoError(t, err)
-	assert.Equalf(t, locked, false, "multiMap Lock() failed.")
+	multiMap.LockWithLeaseTime(testKey, 1*time.Millisecond)
+	test.AssertEventually(t, func() bool {
+		locked, err := multiMap.IsLocked(testKey)
+		return err == nil && locked == false
+	})
 }
 
 func TestMultiMapProxy_IsLocked(t *testing.T) {
@@ -423,14 +423,14 @@ func TestMultiMapProxy_IsLockedWithNilKey(t *testing.T) {
 func TestMultiMapProxy_TryLock(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
+	defer multiMap.ForceUnlock(testKey)
 	ok, err := multiMap.TryLockWithTimeoutAndLease(testKey, 1*time.Second, 2*time.Second)
 	require.NoError(t, err)
 	assert.Equalf(t, ok, true, "multiMap TryLock() failed.")
-	time.Sleep(5 * time.Second)
-	locked, err := multiMap.IsLocked(testKey)
-	defer multiMap.ForceUnlock(testKey)
-	require.NoError(t, err)
-	assert.Equalf(t, locked, false, "multiMap TryLock() failed.")
+	test.AssertEventually(t, func() bool {
+		locked, err := multiMap.IsLocked(testKey)
+		return err == nil && locked == false
+	})
 }
 
 func TestMultiMapProxy_TryLockWithNilKey(t *testing.T) {

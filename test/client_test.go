@@ -52,8 +52,6 @@ func TestClientShutdownAndReopen(t *testing.T) {
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
 	client.Shutdown()
-	time.Sleep(2 * time.Second)
-
 	client, _ = hazelcast.NewClient()
 	testMp, _ = client.GetMap("test")
 	value, err := testMp.Get("key")
@@ -72,15 +70,15 @@ func TestClientRoutineLeakage(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer remoteController.ShutdownCluster(cluster.ID)
-	time.Sleep(2 * time.Second)
 	routineNumBefore := runtime.NumGoroutine()
 	client, _ := hazelcast.NewClient()
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
 	client.Shutdown()
-	time.Sleep(4 * time.Second)
-	routineNumAfter := runtime.NumGoroutine()
-	assert.Equal(t, routineNumBefore, routineNumAfter)
+	AssertEventually(t, func() bool {
+		routineNumAfter := runtime.NumGoroutine()
+		return routineNumAfter == routineNumBefore
+	})
 }
 
 func TestConnectionTimeout(t *testing.T) {
@@ -212,10 +210,11 @@ func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
 			mu.Unlock()
 		}()
 	}
-	time.Sleep(time.Second)
-	mu.Lock()
-	assert.Len(t, names, 10)
-	mu.Unlock()
+	AssertEventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return len(names) == 10
+	})
 }
 
 func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
