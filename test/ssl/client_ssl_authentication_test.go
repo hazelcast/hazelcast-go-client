@@ -20,6 +20,8 @@ import (
 	"log"
 	"testing"
 
+	"path/filepath"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -34,6 +36,7 @@ var remoteController rc.RemoteController
 var (
 	maOptionalXML = "hazelcast-ma-optional.xml"
 	maRequiredXML = "hazelcast-ma-required.xml"
+	letsencrypt   = "letsencrypt.jks"
 	client1Cert   = "client1-cert.pem"
 	client2Cert   = "client2-cert.pem"
 	client1Key    = "client1-key.pem"
@@ -60,6 +63,10 @@ func createMemberWithXML(path string) (clusterID string, err error) {
 	if err != nil {
 		return "", err
 	}
+	return createMemberWithConfig(config)
+}
+
+func createMemberWithConfig(config string) (clusterID string, err error) {
 	cluster, err := remoteController.CreateCluster("", config)
 	if err != nil {
 		return "", err
@@ -244,4 +251,58 @@ func TestSSLOptionalMutualAuthentication_NoClientCertificates(t *testing.T) {
 	}
 	_, err = hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
+}
+
+// letsencrypt.jks common name is "member1.hazelcast-test.download".
+func TestSSLOptionalMutualAuthentication_OnlyServerName(t *testing.T) {
+	trustedCAXML, err := generateTrustedCAXML(letsencrypt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clusterID, err := createMemberWithConfig(trustedCAXML)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer remoteController.ShutdownCluster(clusterID)
+	config := hazelcast.NewConfig()
+	sslConfig := config.NetworkConfig().SSLConfig()
+	sslConfig.SetEnabled(true)
+	sslConfig.ServerName = "member1.hazelcast-test.download"
+	_, err = hazelcast.NewClientWithConfig(config)
+	assert.NoError(t, err)
+}
+
+func TestSSLOptionalMutualAuthentication_NoServerName(t *testing.T) {
+	trustedCAXML, err := generateTrustedCAXML(letsencrypt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clusterID, err := createMemberWithConfig(trustedCAXML)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer remoteController.ShutdownCluster(clusterID)
+	config := hazelcast.NewConfig()
+	sslConfig := config.NetworkConfig().SSLConfig()
+	sslConfig.SetEnabled(true)
+	_, err = hazelcast.NewClientWithConfig(config)
+	assert.Error(t, err)
+}
+
+func generateTrustedCAXML(letsEncryptKeystore string) (string, error) {
+	absPath, err := filepath.Abs(letsEncryptKeystore)
+	if err != nil {
+		return "", err
+	}
+	xml := "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+		"    <network>\n" +
+		"        <ssl enabled=\"true\">\r\n" +
+		"          <properties>\r\n" +
+		"            <property name=\"keyStore\">" + absPath + "</property>\r\n" +
+		"            <property name=\"keyStorePassword\">123456</property>\r\n" +
+		"          </properties>\r\n" +
+		"        </ssl>\r\n" +
+		"    </network>\n" +
+		"</hazelcast>\n"
+	return xml, nil
 }
