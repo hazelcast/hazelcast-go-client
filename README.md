@@ -861,7 +861,7 @@ Its default value is `3000` milliseconds.
 ## 5.7. Enabling Client TLS/SSL
 
 You can use TLS/SSL to secure the connection between the clients and members. If you want to enable TLS/SSL
-for the client-cluster connection, you should set an SSL configuration. Please see [TLS/SSL section](#1-tlsssl).
+for the client-cluster connection, you should set an SSL configuration. Please see [TLS/SSL section](#61-tlsssl).
 
 As explained in the [TLS/SSL section](#61-tlsssl), Hazelcast members have key stores used to identify themselves (to other members) and Hazelcast Go clients have certificate authorities used to define which members they can trust. Hazelcast has the mutual authentication feature which allows the Go clients also to have their private keys and public certificates and members to have their certificate authorities so that the members can know which clients they can trust. See the [Mutual Authentication section](#13-mutual-authentication).
 
