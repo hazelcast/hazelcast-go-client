@@ -5,12 +5,15 @@
   * [1.1. Requirements](#11-requirements)
   * [1.2. Working with Hazelcast IMDG Clusters](#12-working-with-hazelcast-imdg-clusters)
      * [1.2.1. Setting Up a Hazelcast IMDG Cluster](#121-setting-up-a-hazelcast-imdg-cluster)
-     * [1.2.2. Running Standalone Jars](#122-running-standalone-jars)
-     * [1.2.3. Adding User Library to CLASSPATH](#123-adding-user-library-to-classpath)
+       * [1.2.1.1. Running Standalone Jars](#1211-running-standalone-jars)
+       * [1.2.1.2. Adding User Library to CLASSPATH](#1212-adding-user-library-to-classpath)
+       * [1.2.1.3. Using hazelcast-member Tool](#1213-using-hazelcast-member-tool)
   * [1.3. Downloading and Installing](#13-downloading-and-installing)
   * [1.4. Basic Configuration](#14-basic-configuration)
     * [1.4.1. Configuring Hazelcast IMDG](#141-configuring-hazelcast-imdg)
-    * [1.4.2. Configuring Hazelcast Go client](#142-configuring-hazelcast-go-client)
+    * [1.4.2. Configuring Hazelcast Go Client](#142-configuring-hazelcast-go-client)
+      * [1.4.2.1. Group Settings](#1421-group-settings)
+      * [1.4.2.2. Network Settings](#1421-network-settings)
   * [1.5. Basic Usage](#15-basic-usage)
   * [1.6. Code Samples](#16-code-samples)
 * [2. Features](#2-features)
@@ -119,7 +122,7 @@ There are following options to start a Hazelcast IMDG cluster easily:
 
 We are going to download JARs from the website and run a standalone member for this guide.
 
-#### 1.2.2. Running Standalone Jars
+#### 1.2.1.1. Running Standalone Jars
 Follow the instructions below to create a Hazelcast IMDG cluster:
 
 1. Go to Hazelcast's download [page](https://hazelcast.org/download/) and download either the `.zip` or `.tar` distribution of Hazelcast IMDG.
@@ -140,7 +143,7 @@ Sep 06, 2018 10:50:23 AM com.hazelcast.core.LifecycleService
 INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
 ```
 
-#### 1.2.3. Adding User Library to CLASSPATH
+#### 1.2.1.2. Adding User Library to CLASSPATH
 
 When you want to use features such as querying and language interoperability, you might need to add your own Java classes
 to the Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the 
@@ -165,7 +168,7 @@ The following is an example configuration when you are adding an `IdentifiedData
 ```
 If you want to add a `Portable` class, you should use `<portable-factories>` instead of `<data-serializable-factories>` in the above configuration.
 
-#### 1.2.4. Using hazelcast-member Tool
+#### 1.2.1.3. Using hazelcast-member Tool
 `hazelcast-member` is a tool to download and run Hazelcast IMDG members easily. If you have brew installed, run the following commands to install this tool:
 ```
 brew tap hazelcast/homebrew-hazelcast
@@ -293,7 +296,7 @@ func main() {
 If you run the Hazelcast IMDG members in a different server than the client, you most probably have configured the members' ports and cluster
 names as explained in the previous section. If you did, then you need to make certain changes to the network settings of your client.
 
-### Group Settings
+#### 1.4.2.1. Group Settings
 
 ```go
 config := hazelcast.NewConfig()
@@ -301,7 +304,7 @@ config.GroupConfig().SetName("GROUP_NAME_OF_YOUR_CLUSTER")
 ```
 > **NOTE: If you have a Hazelcast IMDG release older than 3.11, you need to provide also a group password along with the group name.**
 
-### Network Settings
+#### 1.4.2.2. Network Settings
 
 You need to provide the IP address and port of at least one member in your cluster so the client can find it.
 
@@ -846,7 +849,7 @@ Its default value is `2`.
 
 ## 5.6. Setting Connection Attempt Period
 
-Connection timeout period is the duration in milliseconds between the connection attempts.
+Connection attempt period is the duration in milliseconds between the connection attempts.
 
 The following are example configurations.
 
@@ -1028,7 +1031,14 @@ You can set a timeout for retrying the operations sent to a member. This can be 
 * Client’s heartbeat requests are timed out.
 
 When a connection problem occurs, an operation is retried if it is certain that it has not run on the member yet or if it is idempotent such as a read-only operation, i.e., retrying does not have a side effect. If it is not certain whether the operation has run on the member, then the non-idempotent operations are not retried. However, as explained in the first paragraph of this section, you can force all client operations to be retried (`redoOperation`) when there is a connection failure between the client and member. But in this case, you should know that some operations may run multiple times causing conflicts. For example, assume that your client sent a `queue.offer` operation to the member and then the connection is lost. Since there will be no response for this operation, you will not know whether it has run on the member or not. If you enabled `redoOperation`, it means this operation may run again, which may cause two instances of the same object in the queue.
-Map
+
+When invocation is being retried, the client may wait some time before it retries again. You can configure this duration for waiting using the following property:
+
+```
+config.setProperty(“hazelcast.client.invocation.retry.pause.millis”, “500");
+```
+
+The default retry wait time is 1 second.
 
 ## 7.4. Using Distributed Data Structures
 
@@ -1219,12 +1229,12 @@ func (l *membershipListener) MemberRemoved(member core.Member) {
 
 The Lifecycle Listener notifies for the following events:
 
-* `STARTING`: A client is starting.
-* `STARTED`: A client has started.
-* `SHUTTING_DOWN`: A client is shutting down.
-* `SHUTDOWN`: A client’s shutdown has completed.
-* `CONNECTED`: A client is connected to cluster
-* `DISCONNECTED`: A client is disconnected from cluster note that this does not imply shutdown
+* `STARTING`: The client is starting.
+* `STARTED`: The client has started.
+* `SHUTTING_DOWN`: The client is shutting down.
+* `SHUTDOWN`: The client’s shutdown has completed.
+* `CONNECTED`: The client is connected to cluster
+* `DISCONNECTED`: The client is disconnected from cluster note that this does not imply shutdown
 
 The following is an example of Lifecycle Listener that is added to config and its output.
 
@@ -1384,7 +1394,7 @@ func (p *identifiedEntryProcessor) ClassID() int32 {
 }
 ```
 
-Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, see the [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
+Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, see the [Adding User Library to CLASSPATH section](#1212-adding-user-library-to-classpath).
 
 The following is the Java equivalent of the entry processor in Go client given above:
 
@@ -1497,6 +1507,8 @@ Hazelcast partitions your data and spreads it across cluster of members. You can
 
 Distributed query is highly scalable. If you add new members to the cluster, the partition count for each member is reduced and thus the time spent by each member on iterating its entries is reduced. In addition, the pool of partition threads evaluates the entries concurrently in each member, and the network traffic is also reduced since only filtered data is sent to the requester.
 
+If queried item is Portable, it can be queried for the fields without deserializing the data at the server side and hence no server side implementation of the queried object class will be needed.
+
 **Predicates Object Operators**
 
 The `predicate` package offered by the client includes many operators for your query requirements. Some of them are described below.
@@ -1536,58 +1548,46 @@ Hazelcast offers the following ways for distributed query purposes:
 Assume that you have an `employee` map containing the values of `Employee` objects, as coded below. 
 
 ```go
-type employee struct {
+type Employee struct {
 	name   string
 	age    int32
 	active bool
 	salary int64
 }
 
-func (e *employee) ReadData(input serialization.DataInput) error {
-	e.name, _ = input.ReadUTF()
-	e.age, _ = input.ReadInt32()
-	e.active, _ = input.ReadBool()
-	e.salary, _ = input.ReadInt64()
+func (e *Employee) ReadPortable(reader serialization.PortableReader) error {
+	e.name, _ = reader.ReadUTF("name")
+	e.age, _ = reader.ReadInt32("age")
+	e.active, _ = reader.ReadBool("active")
+	e.salary, _ = reader.ReadInt64("salary")
 	return nil
 }
 
-func (e *employee) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(e.name)
-	output.WriteInt32(e.age)
-	output.WriteBool(e.active)
-	output.WriteInt64(e.salary)
+func (e *Employee) WritePortable(writer serialization.PortableWriter) error {
+	writer.WriteUTF("name", e.name)
+	writer.WriteInt32("age", e.age)
+	writer.WriteBool("active", e.active)
+	writer.WriteInt64("salary", e.salary)
 	return nil
 }
 
-func (p *employee) FactoryID() int32 {
+func (e *Employee) FactoryID() int32 {
 	return 1
 }
 
-func (p *employee) ClassID() int32 {
+func (e *Employee) ClassID() int32 {
 	return 1
 }
 
 ```
 
-Note that `Employee` is an `IdentifiedDataSerializable` object. If you just want to save the `Employee` objects as byte arrays on the map, you don't need to implement its equivalent on the server-side. However, if you want to query on the `employee` map, the server needs the `Employee` objects rather than byte array formats. Therefore, you need to implement its Java equivalent and its data serializable factory on the server side for server to reconstitute the objects from binary formats. After implementing the Java class and its factory, you need to add the factory to the data serializable factories or the portable factories by giving a factory `id`. The following is an example declarative configuration on the server.
+Note that `Employee` is implementing `Portable`. As portable types are not deserialized on the server side for querying, you don't need to implement its Java equivalent on the server side.
 
-```xml
-<hazelcast>
-    ...
-    <serialization>
-        <data-serializable-factories>
-            <data-serializable-factory factory-id="1">
-                mypackage.MyIdentifiedFactory
-            </data-serializable-factory>
-        </data-serializable-factories>
-    </serialization>
-    ...
-</hazelcast>
-```
+ For the non-portable types, you need to implement its Java equivalent and its serializable factory on the server side for server to reconstitute the objects from binary formats. 
+ In this case before starting the server, you need to compile the `Employee` and related factory classes with server's `CLASSPATH` and add them to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). See the [Adding User Library to CLASSPATH section](#1212-adding-user-library-to-classpath).
 
-Note that before starting the server, you need to compile the `Employee` and `MyIdentifiedFactory` classes with server's `CLASSPATH` and add them to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). See the [Adding User Library to CLASSPATH section](#adding-user-library-to-classpath).
+ > **NOTE: Querying with `Portable` object is faster as compared to `IdentifiedDataSerializable`.**
 
-> **NOTE: You can also make this object `Portable` and implement its Java equivalent and its portable factory on the server side. Note that querying with `Portable` object is faster as compared to `IdentifiedDataSerializable`.**
 
 #### 7.7.1.2. Querying by Combining Predicates with AND, OR, NOT
 
