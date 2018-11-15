@@ -174,12 +174,69 @@ The following is an example configuration when you are adding an `IdentifiedData
 If you want to add a `Portable` class, you should use `<portable-factories>` instead of `<data-serializable-factories>` in the above configuration.
 
 #### 1.2.1.3. Using hazelcast-member Tool
-`hazelcast-member` is a tool to download and run Hazelcast IMDG members easily. If you have brew installed, run the following commands to install this tool:
+
+`hazelcast-member` is a tool to download and run Hazelcast IMDG members easily. 
+
+ You can find the installation instructions for various platforms in the following sections.
+
+ ##### Installing on Mac OS X
+
+ If you have brew installed, run the following commands to install this tool:
+ 
 ```
 brew tap hazelcast/homebrew-hazelcast
 brew install hazelcast-member
 ```
-Now, you can start a member by running the following command:
+
+##### Installing on Ubuntu and Debian
+
+ To resolve the `.deb` artifacts from Bintray, follow the below instructions.
+
+ First, you need to import the Bintray's GPG key using the following command:
+
+ ```
+ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+ ```
+
+ Then, run the following commands to add the `.deb` artifact to your system configuration file and update the lists of packages:
+
+ ```
+ echo "deb https://dl.bintray.com/hazelcast/deb stable main" | sudo tee -a /etc/apt/sources.list
+ sudo apt-get update
+ ``` 
+
+ Finally, run the following command to install the `hazelcast-member` tool:
+
+ ```
+ sudo apt-get install hazelcast-member
+ ```
+
+ ##### Installing on Red Hat and CentOS
+
+ To resolve the `RPM` artifacts from Bintray, follow the below instructions.
+
+ First, run the following command to get a generated `.repo` file:
+
+ ```
+ wget https://bintray.com/hazelcast/rpm/rpm -O bintray-hazelcast-rpm.repo
+ ```
+
+ Then, install the `.repo` file using the following command:
+
+
+ ```
+ sudo mv bintray-hazelcast-rpm.repo /etc/yum.repos.d/
+ ```
+
+ Finally, run the following command to install the `hazelcast-member` tool:
+
+ ```
+ sudo yum install hazelcast-member
+ ```
+
+ ---
+
+ After successfully installing the `hazelcast-member` tool, you can start a member by running the following command:
 ```
 hazelcast-member start
 ```
