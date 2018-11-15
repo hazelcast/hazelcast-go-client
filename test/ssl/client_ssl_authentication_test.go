@@ -20,8 +20,6 @@ import (
 	"log"
 	"testing"
 
-	"path/filepath"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -36,6 +34,7 @@ var remoteController rc.RemoteController
 var (
 	maOptionalXML = "hazelcast-ma-optional.xml"
 	maRequiredXML = "hazelcast-ma-required.xml"
+	trustedCAXML  = "hazelcast-trustedCA.xml"
 	letsencrypt   = "letsencrypt.jks"
 	client1Cert   = "client1-cert.pem"
 	client2Cert   = "client2-cert.pem"
@@ -234,7 +233,7 @@ func TestSSLOptionalMutualAuthentication_NeitherServerNorClientKnowsTheOther(t *
 	}
 }
 
-func TestSSLOptionalMutualAuthentication_NoClientCertificates(t *testing.T) {
+func TestSSL_NoClientCertificates(t *testing.T) {
 	clusterID, err := createMemberWithXML(maOptionalXML)
 	if err != nil {
 		t.Fatal(err)
@@ -254,11 +253,8 @@ func TestSSLOptionalMutualAuthentication_NoClientCertificates(t *testing.T) {
 }
 
 // letsencrypt.jks common name is "member1.hazelcast-test.download".
-func TestSSLOptionalMutualAuthentication_OnlyServerName(t *testing.T) {
-	trustedCAXML, err := generateTrustedCAXML(letsencrypt)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestSSL_OnlyServerName(t *testing.T) {
+	trustedCAXML := generateTrustedCAXML()
 	clusterID, err := createMemberWithConfig(trustedCAXML)
 	if err != nil {
 		t.Fatal(err)
@@ -272,11 +268,8 @@ func TestSSLOptionalMutualAuthentication_OnlyServerName(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestSSLOptionalMutualAuthentication_NoServerName(t *testing.T) {
-	trustedCAXML, err := generateTrustedCAXML(letsencrypt)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestSSL_NoServerName(t *testing.T) {
+	trustedCAXML := generateTrustedCAXML()
 	clusterID, err := createMemberWithConfig(trustedCAXML)
 	if err != nil {
 		t.Fatal(err)
@@ -289,20 +282,19 @@ func TestSSLOptionalMutualAuthentication_NoServerName(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func generateTrustedCAXML(letsEncryptKeystore string) (string, error) {
-	absPath, err := filepath.Abs(letsEncryptKeystore)
-	if err != nil {
-		return "", err
-	}
+func generateTrustedCAXML() string {
 	xml := "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
 		"    <network>\n" +
 		"        <ssl enabled=\"true\">\r\n" +
+		"		 <factory-class-name>\n" +
+		"			com.hazelcast.nio.ssl.ClasspathSSLContextFactory\n" +
+		"		 </factory-class-name>" +
 		"          <properties>\r\n" +
-		"            <property name=\"keyStore\">" + absPath + "</property>\r\n" +
+		"            <property name=\"keyStore\">" + "com/hazelcast/nio/ssl/letsencrypt.jks" + "</property>\r\n" +
 		"            <property name=\"keyStorePassword\">123456</property>\r\n" +
 		"          </properties>\r\n" +
 		"        </ssl>\r\n" +
 		"    </network>\n" +
 		"</hazelcast>\n"
-	return xml, nil
+	return xml
 }
