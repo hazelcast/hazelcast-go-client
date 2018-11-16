@@ -124,7 +124,8 @@ In order to use Hazelcast Go client, we first need to setup a Hazelcast IMDG clu
 There are following options to start a Hazelcast IMDG cluster easily:
 
 * You can run standalone members by downloading and running JAR files from the website.
-* You can embed members to your Java projects. The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool) if you have brew installed in your computer.
+* You can embed members to your Java projects. 
+* The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool) if you have brew installed in your computer.
 
 We are going to download JARs from the website and run a standalone member for this guide.
 
