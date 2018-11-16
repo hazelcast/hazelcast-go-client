@@ -14,6 +14,7 @@
     * [1.4.2. Configuring Hazelcast Go Client](#142-configuring-hazelcast-go-client)
       * [1.4.2.1. Group Settings](#1421-group-settings)
       * [1.4.2.2. Network Settings](#1421-network-settings)
+    * [1.4.3. Client System Properties](#143-client-system-properties)
   * [1.5. Basic Usage](#15-basic-usage)
   * [1.6. Code Samples](#16-code-samples)
 * [2. Features](#2-features)
@@ -385,6 +386,53 @@ config := hazelcast.NewConfig()
 config.NetworkConfig().AddAddress("some-ip-address:port")
 hazelcast.NewClientWithConfig(config)
 ```
+
+### 1.4.3. Client System Properties
+
+While configuring your Go client, you can use various system properties provided by Hazelcast to tune its clients. These properties can be set programmatically through `config.SetProperty` or by using an environment variable.
+The value of this property will be:
+
+* the programmatically configured value, if programmatically set,
+* the environment variable value, if the environment variable is set,
+* the default value, if none of the above is set.
+
+See the following for an example client system property:
+
+```go
+InvocationTimeoutSeconds = NewHazelcastPropertyInt64WithTimeUnit("hazelcast.client.invocation.timeout.seconds",
+    120, time.Second)
+```
+
+
+The above property specifies the timeout duration to give up the invocations when a member in the member list is not reachable, and its default value is 120 seconds. You can change this value programmatically or using an environment variable, as shown below.
+
+**Programmatically:**
+
+```go
+config.SetProperty(property.InvocationTimeoutSeconds.Name(), "2") // Sets invocation timeout as 2 seconds
+```
+
+or 
+
+```go
+config.SetProperty("hazelcast.client.invocation.timeout.seconds", "2") // Sets invocation timeout as 2 seconds
+```
+
+**By using an environment variable:** 
+
+```go
+os.Setenv(property.InvocationTimeoutSeconds.Name(), "2")
+```
+
+
+If you set a property both programmatically and via an environment variable, the programmatically
+set value will be used.
+
+See the [complete list](https://github.com/hazelcast/hazelcast-go-client/blob/master/config/property/client_properties.go) of client system properties, along with their descriptions, which can be used to configure your Hazelcast Go client.
+
+
+
+
 ## 1.5. Basic Usage
 
 Now that we have a working cluster and we know how to configure both our cluster and client, we can run a simple program to use a distributed map in the Go client.
