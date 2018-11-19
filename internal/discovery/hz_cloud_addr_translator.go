@@ -15,34 +15,36 @@
 package discovery
 
 import (
-	"log"
-
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
+	log "github.com/sirupsen/logrus"
 )
 
 // HzCloudAddrTranslator is used to translate private addresses to public addresses.
 type HzCloudAddrTranslator struct {
 	cloudDiscovery  *HazelcastCloud
 	privateToPublic map[string]core.Address
+	logger          *log.Logger
 }
 
 // NewHzCloudAddrTranslator returns a HzCloudAddrTranslator with the given parameters.
-func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duration) *HzCloudAddrTranslator {
+func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duration, logger *log.Logger) *HzCloudAddrTranslator {
 	return NewHzCloudAddrTranslatorWithCloudDisc(
 		NewHazelcastCloud(
 			endpointURL,
 			connectionTimeout,
 			nil,
 		),
+		logger,
 	)
 }
 
 // NewHzCloudAddrTranslatorWithCloudDisc returns a HzCloudAddrTranslator with the given parameters.
-func NewHzCloudAddrTranslatorWithCloudDisc(cloudDisc *HazelcastCloud) *HzCloudAddrTranslator {
+func NewHzCloudAddrTranslatorWithCloudDisc(cloudDisc *HazelcastCloud, logger *log.Logger) *HzCloudAddrTranslator {
 	return &HzCloudAddrTranslator{
 		cloudDiscovery: cloudDisc,
+		logger:         logger,
 	}
 }
 
@@ -69,7 +71,7 @@ func (at *HzCloudAddrTranslator) Translate(addr core.Address) core.Address {
 func (at *HzCloudAddrTranslator) Refresh() {
 	privateToPublic, err := at.cloudDiscovery.discoverNodes()
 	if err != nil {
-		log.Println("Failed to load addresses from hazelcast.cloud ", err)
+		at.logger.Warn("Failed to load addresses from hazelcast.cloud ", err)
 	} else {
 		at.privateToPublic = privateToPublic
 	}

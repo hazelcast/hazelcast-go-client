@@ -336,7 +336,7 @@ func (is *invocationServiceImpl) sendToConnection(invocation *invocation, connec
 func (is *invocationServiceImpl) sendToAddress(invocation *invocation, address core.Address) {
 	connection, err := is.client.ConnectionManager.getOrTriggerConnect(address)
 	if err != nil {
-		// TODO:: add the error to debugging level logging
+		is.logger.Debug("Sending invocation to ", address, " failed, err: ", err)
 		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(), err)
 		return
 	}

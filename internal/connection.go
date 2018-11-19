@@ -21,6 +21,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"crypto/tls"
 
 	"github.com/hazelcast/hazelcast-go-client/config"
@@ -55,11 +57,12 @@ type Connection struct {
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64
+	logger                    *log.Logger
 }
 
 func newConnection(address core.Address, cm connectionManager, handleResponse func(interface{}),
-	networkCfg *config.NetworkConfig) (*Connection, error) {
-	connection := createDefaultConnection(cm, handleResponse)
+	networkCfg *config.NetworkConfig, logger *log.Logger) (*Connection, error) {
+	connection := createDefaultConnection(cm, handleResponse, logger)
 	socket, err := connection.createSocket(networkCfg, address)
 	if err != nil {
 		return nil, err
@@ -72,7 +75,7 @@ func newConnection(address core.Address, cm connectionManager, handleResponse fu
 	return connection, nil
 }
 
-func createDefaultConnection(cm connectionManager, handleResponse func(interface{})) *Connection {
+func createDefaultConnection(cm connectionManager, handleResponse func(interface{}), logger *log.Logger) *Connection {
 
 	builder := &clientMessageBuilder{
 		handleResponse:     handleResponse,
@@ -87,6 +90,7 @@ func createDefaultConnection(cm connectionManager, handleResponse func(interface
 		connectionID:         cm.NextConnectionID(),
 		connectionManager:    cm,
 		status:               0,
+		logger:               logger,
 	}
 }
 
@@ -227,7 +231,7 @@ func (c *Connection) close(err error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	//TODO log close message
+	c.logger.Debug("Connection :", c, " closed, err: ", err)
 	close(c.closed)
 	c.closedTime.Store(time.Now())
 	c.connectionManager.onConnectionClose(c, core.NewHazelcastTargetDisconnectedError(err.Error(), err))

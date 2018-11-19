@@ -15,8 +15,6 @@
 package internal
 
 import (
-	"log"
-
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -71,7 +69,7 @@ func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) f
 			itemEvent := proto.NewTopicMessage(item, publishTime, member)
 			err := messageListener.OnMessage(itemEvent)
 			if err != nil {
-				log.Println("Error while handling the message in MessageListener OnMessage: ", err)
+				tp.client.logger.Warn("Error while handling the message in MessageListener OnMessage: ", err)
 			}
 		})
 	}

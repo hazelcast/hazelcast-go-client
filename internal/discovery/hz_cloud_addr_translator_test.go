@@ -40,7 +40,7 @@ func TestHzCloudAddrTranslator_Translate(t *testing.T) {
 	hazelcastCloudDiscovery := NewHazelcastCloud("", 0, nil)
 	hazelcastCloudDiscovery.discoverNodes = mockProvider // mock the discoverNode function
 
-	translator = NewHzCloudAddrTranslator("", 0)
+	translator = NewHzCloudAddrTranslator("", 0, nil)
 	translator.cloudDiscovery = hazelcastCloudDiscovery
 
 	testHzCloudAddrTranslatorTranslateNil(t)

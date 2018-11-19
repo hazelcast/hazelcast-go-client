@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"log"
 	"math"
 	"math/rand"
 	"sync"
@@ -158,7 +157,8 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]s
 		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*proto.Address))
 	response, lastError = pn.invokeOnAddress(request, target.(*proto.Address))
 	if lastError != nil {
-		log.Printf("error occurred while invoking operation on target %v, choosing different target", target)
+		pn.client.logger.Warn("Error occurred while invoking operation on target ", target,
+			", choosing different target, err: ", lastError)
 		excludedAddresses[target] = struct{}{}
 		newTarget, err := pn.getCRDTOperationTarget(excludedAddresses)
 		if err != nil {
@@ -186,7 +186,8 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*proto.Address))
 	response, lastError = pn.invokeOnAddress(request, target.(*proto.Address))
 	if lastError != nil {
-		log.Printf("unable to provide session guarantees when sending operations to %v, choosing different target", target)
+		pn.client.logger.Warn("Unable to provide session guarantees when sending operations to, ", target,
+			"choosing different target, err: ", lastError)
 		excludedAddresses[target] = struct{}{}
 		newTarget, err := pn.getCRDTOperationTarget(excludedAddresses)
 		if err != nil {
