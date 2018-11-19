@@ -444,6 +444,7 @@ func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
 
 func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
 	if cs.shouldReconnect(connection) {
+		cs.logger.Debug("Owner connection: ", cs.getOwnerConnectionAddress(), " is closed, client will try to reconnect.")
 		cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateDisconnected)
 		cs.clearOwnerConnectionAddress()
 		cs.reconnectChan <- struct{}{}

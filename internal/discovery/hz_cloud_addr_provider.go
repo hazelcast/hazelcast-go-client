@@ -15,7 +15,7 @@
 package discovery
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"time"
 
@@ -27,23 +27,26 @@ import (
 // HzCloudAddrProvider provides initial addresses for hazelcast.cloud
 type HzCloudAddrProvider struct {
 	cloudDiscovery *HazelcastCloud
+	logger         *log.Logger
 }
 
 // NewHzCloudAddrProvider returns a HzCloudAddrProvider with the given parameters.
-func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration) *HzCloudAddrProvider {
+func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration, logger *log.Logger) *HzCloudAddrProvider {
 	return NewHzCloudAddrProviderWithCloudDisc(
 		NewHazelcastCloud(
 			endpointURL,
 			connectionTimeout,
 			nil,
 		),
+		logger,
 	)
 }
 
 // NewHzCloudAddrProviderWithCloudDisc returns a HzCloudAddrProvider with the given parameters.
-func NewHzCloudAddrProviderWithCloudDisc(cloudDisc *HazelcastCloud) *HzCloudAddrProvider {
+func NewHzCloudAddrProviderWithCloudDisc(cloudDisc *HazelcastCloud, logger *log.Logger) *HzCloudAddrProvider {
 	return &HzCloudAddrProvider{
 		cloudDiscovery: cloudDisc,
+		logger:         logger,
 	}
 }
 
@@ -51,7 +54,7 @@ func NewHzCloudAddrProviderWithCloudDisc(cloudDisc *HazelcastCloud) *HzCloudAddr
 func (ap *HzCloudAddrProvider) LoadAddresses() []core.Address {
 	privateToPublicAddrs, err := ap.cloudDiscovery.discoverNodes()
 	if err != nil {
-		log.Println("Failed to load addresses from hazelcast.cloud ", err)
+		ap.logger.Warn("Failed to load addresses from hazelcast.cloud ", err)
 	}
 	addrSlice := make([]core.Address, 0)
 	// Appends private keys

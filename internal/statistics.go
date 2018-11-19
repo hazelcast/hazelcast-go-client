@@ -17,8 +17,6 @@ package internal
 import (
 	"sync/atomic"
 
-	"log"
-
 	"runtime"
 	"strconv"
 
@@ -70,13 +68,14 @@ func (s *statistics) start() {
 	if period <= 0 {
 		// This will return the default value since we have a non-positive value now
 		defaultPeriod := s.client.properties.GetPositiveDurationOrDef(property.StatisticsPeriodSeconds)
-		log.Println("Provided client statistics ", property.StatisticsPeriodSeconds.Name(),
+		s.client.logger.Warn("Provided client statistics ", property.StatisticsPeriodSeconds.Name(),
 			" cannot be less than or equal to 0.",
 			" You provided ", period, " as the configuration. Client will use the default value ", defaultPeriod,
 			" instead.")
 		period = defaultPeriod
 	}
 	go s.schedulePeriodicStatisticsSendTask(period)
+	s.client.logger.Info("Client statistics is enabled with period ", period)
 }
 
 func (s *statistics) schedulePeriodicStatisticsSendTask(period time.Duration) {
@@ -103,7 +102,7 @@ func (s *statistics) getOwnerConnection() *Connection {
 		// do not print too many logs if connected to an old version server
 		cachedOwnerAddress, ok := s.ownerAddress.Load().(*proto.Address)
 		if !ok || (ownerConnectionAddress != cachedOwnerAddress) {
-			log.Println("Client statistics cannot be sent to server ", ownerConnectionAddress,
+			s.client.logger.Debug("Client statistics cannot be sent to server ", ownerConnectionAddress,
 				" since connected server version is less than the minimum supported server version ",
 				sinceVersionString)
 		}
@@ -118,7 +117,7 @@ func (s *statistics) getOwnerConnection() *Connection {
 func (s *statistics) sendStatistics() {
 	ownerConnection := s.getOwnerConnection()
 	if ownerConnection == nil {
-		log.Println("Cannot send client statistics to the server. No owner connection")
+		s.client.logger.Debug("Cannot send client statistics to the server. No owner connection")
 		return
 	}
 
@@ -133,7 +132,7 @@ func (s *statistics) sendStatsToOwner(stats *bytes.Buffer) {
 	ownerConnection := s.getOwnerConnection()
 	_, err := s.client.InvocationService.invokeOnConnection(request, ownerConnection).Result()
 	if err != nil {
-		log.Println("Could not send the statistics, ", err)
+		s.client.logger.Debug("Could not send the statistics, ", err)
 	}
 }
 
@@ -181,7 +180,7 @@ func (s *statistics) addStatWithKeyPrefix(stats *bytes.Buffer, keyPrefix *string
 	case int64:
 		stats.WriteString(strconv.Itoa(int(value.(int64))))
 	default:
-		log.Println("Unexcepted type in addStat: ", reflect.TypeOf(value))
+		s.client.logger.Error("Unexcepted type in addStat: ", reflect.TypeOf(value))
 	}
 }
 

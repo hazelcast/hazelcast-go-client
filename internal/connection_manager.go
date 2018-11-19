@@ -339,7 +339,8 @@ func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner 
 	if err := cm.canCreateConnection(asOwner); err != nil {
 		return nil, err
 	}
-	con, err := newConnection(address, cm, cm.client.InvocationService.handleResponse, cm.client.Config.NetworkConfig())
+	con, err := newConnection(address, cm, cm.client.InvocationService.handleResponse, cm.client.Config.NetworkConfig(),
+		cm.logger)
 	if err != nil {
 		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	}

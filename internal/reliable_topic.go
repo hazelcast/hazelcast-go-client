@@ -23,8 +23,6 @@ import (
 
 	"strconv"
 
-	"log"
-
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -218,14 +216,14 @@ func (m *messageProcessor) onFailure(err error) {
 		}
 
 	} else if _, ok := err.(*core.HazelcastInstanceNotActiveError); ok {
-		log.Println(baseMsg + "HazelcastInstance is shutting down.")
+		m.proxy.client.logger.Debug(baseMsg + "HazelcastInstance is shutting down.")
 	} else if _, ok := err.(*core.HazelcastClientNotActiveError); ok {
-		log.Println(baseMsg + "HazelcastClient is shutting down.")
+		m.proxy.client.logger.Debug(baseMsg + "HazelcastClient is shutting down.")
 	} else if hzErr, ok := err.(core.HazelcastError); ok && hzErr.ServerError() != nil &&
 		hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeDistributedObjectDestroyed) {
-		log.Println(baseMsg + "Topic is destroyed.")
+		m.proxy.client.logger.Debug(baseMsg + "Topic is destroyed.")
 	} else {
-		log.Println(baseMsg + "Unhandled error, message:  " + err.Error())
+		m.proxy.client.logger.Warn(baseMsg + "Unhandled error, message:  " + err.Error())
 	}
 
 	m.cancel()
@@ -233,14 +231,14 @@ func (m *messageProcessor) onFailure(err error) {
 
 func (m *messageProcessor) handleIllegalArgumentError(err error) {
 	headSeq, _ := m.proxy.ringBuffer.HeadSequence()
-	log.Println("MessageListener ", m.id, " on topic ", m.proxy.name,
+	m.proxy.client.logger.Warn("MessageListener ", m.id, " on topic ", m.proxy.name,
 		" requested a too large sequence: ", err, ". Jumping from old sequence: ", m.sequence, " to sequence: ", headSeq)
 	m.sequence = headSeq
 	go m.next()
 }
 
 func (m *messageProcessor) handleOperationTimeoutError() {
-	log.Println("Message Listener ", m.id, "on topic: ", m.proxy.name, " timed out. "+
+	m.proxy.client.logger.Debug("Message Listener ", m.id, "on topic: ", m.proxy.name, " timed out. "+
 		"Continuing from the last known sequence ", m.sequence)
 	go m.next()
 }
@@ -251,12 +249,12 @@ func (m *messageProcessor) handleStaleSequenceError() bool {
 		msg := "Topic " + m.proxy.name + " ran into a stale sequence. Jumping from old sequence " +
 			strconv.Itoa(int(m.sequence)) + " " +
 			" to new sequence " + strconv.Itoa(int(headSeq))
-		log.Println(msg)
+		m.proxy.client.logger.Warn(msg)
 		m.sequence = headSeq
 		go m.next()
 		return true
 	}
-	log.Println("Terminating Message Listener: "+m.id+" on topic: "+m.proxy.name+". Reason: "+
+	m.proxy.client.logger.Warn("Terminating Message Listener: "+m.id+" on topic: "+m.proxy.name+". Reason: "+
 		"The listener was too slow or the retention period of the message has been violated. ",
 		"Head: ", headSeq, " sequence: ", m.sequence)
 	return false
@@ -269,13 +267,13 @@ func (m *messageProcessor) terminate(err error) bool {
 	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
 	terminate, terminalErr := m.listener.IsTerminal(err)
 	if terminalErr != nil {
-		log.Println(baseMsg+"Unhandled error while calling ReliableMessageListener.isTerminal() method:", terminalErr)
+		m.proxy.client.logger.Warn(baseMsg+"Unhandled error while calling ReliableMessageListener.isTerminal() method:", terminalErr)
 		return true
 	}
 	if terminate {
-		log.Println(baseMsg+"Unhandled error:", err)
+		m.proxy.client.logger.Warn(baseMsg+"Unhandled error:", err)
 	} else {
-		log.Println("MessageListener ", m.id, " on topic:", m.proxy.name, " ran into an error:", err)
+		m.proxy.client.logger.Debug("MessageListener ", m.id, " on topic:", m.proxy.name, " ran into an error:", err)
 	}
 	return terminate
 

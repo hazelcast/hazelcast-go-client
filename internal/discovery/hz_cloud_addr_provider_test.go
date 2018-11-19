@@ -40,9 +40,9 @@ func TestHzCloudAddrProvider(t *testing.T) {
 	hazelcastCloudDiscovery := NewHazelcastCloud("", 0, nil)
 	hazelcastCloudDiscovery.discoverNodes = mockProvider // mock the discoverNode function
 
-	provider = NewHzCloudAddrProvider("", 0)
+	provider = NewHzCloudAddrProvider("", 0, nil)
 	provider.cloudDiscovery = hazelcastCloudDiscovery
-	provider2 = NewHzCloudAddrProviderWithCloudDisc(hazelcastCloudDiscovery)
+	provider2 = NewHzCloudAddrProviderWithCloudDisc(hazelcastCloudDiscovery, nil)
 	testHzCloudAddrProviderLoadAddresses(t)
 	testHzCloudAddrProviderLoadAddressesNone(t)
 }
