@@ -5,9 +5,9 @@
   * [1.1. Requirements](#11-requirements)
   * [1.2. Working with Hazelcast IMDG Clusters](#12-working-with-hazelcast-imdg-clusters)
      * [1.2.1. Setting Up a Hazelcast IMDG Cluster](#121-setting-up-a-hazelcast-imdg-cluster)
-       * [1.2.1.1. Running Standalone JARs](#1211-running-standalone-jars)
-       * [1.2.1.2. Adding User Library to CLASSPATH](#1212-adding-user-library-to-classpath)
-       * [1.2.1.3. Using hazelcast-member Tool](#1213-using-hazelcast-member-tool)
+       * [1.2.1.1. Using hazelcast-member Tool](#1211-using-hazelcast-member-tool)
+       * [1.2.1.2. Running Standalone JARs](#1212-running-standalone-jars)
+       * [1.2.1.3. Adding User Library to CLASSPATH](#1213-adding-user-library-to-classpath)
   * [1.3. Downloading and Installing](#13-downloading-and-installing)
   * [1.4. Basic Configuration](#14-basic-configuration)
     * [1.4.1. Configuring Hazelcast IMDG](#141-configuring-hazelcast-imdg)
@@ -123,61 +123,14 @@ In order to use Hazelcast Go client, we first need to setup a Hazelcast IMDG clu
 
 There are following options to start a Hazelcast IMDG cluster easily:
 
+* The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool) if you have brew installed in your computer.
 * You can run standalone members by downloading and running JAR files from the website.
 * You can embed members to your Java projects. 
-* The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool) if you have brew installed in your computer.
 
 We are going to download JARs from the website and run a standalone member for this guide.
 
-#### 1.2.1.1. Running Standalone JARs
 
-Follow the instructions below to create a Hazelcast IMDG cluster:
-
-1. Go to Hazelcast's download [page](https://hazelcast.org/download/) and download either the `.zip` or `.tar` distribution of Hazelcast IMDG.
-2. Decompress the contents into any directory that you
-want to run members from.
-3. Change into the directory that you decompressed the Hazelcast content and then into the `bin` directory.
-4. Use either `start.sh` or `start.bat` depending on your operating system. Once you run the start script, you should see the Hazelcast IMDG logs in the terminal.
-
- You should see a log similar to the following, which means that your 1-member cluster is ready to be used:
-```
-INFO: [192.168.0.3]:5701 [dev] [3.10.4]
-
-Members {size:1, ver:1} [
-	Member [192.168.0.3]:5701 - 65dac4d1-2559-44bb-ba2e-ca41c56eedd6 this
-]
-
-Sep 06, 2018 10:50:23 AM com.hazelcast.core.LifecycleService
-INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
-```
-
-#### 1.2.1.2. Adding User Library to CLASSPATH
-
-When you want to use features such as querying and language interoperability, you might need to add your own Java classes
-to the Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the 
-`CLASSPATH`. To do this, compile your code with the `CLASSPATH` and add the compiled files to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). 
-Then, you can start your Hazelcast member by using the start scripts in the `bin` directory. The start scripts will automatically add your compiled classes to the `CLASSPATH`.
-
-Note that if you are adding an `IdentifiedDataSerializable` or a `Portable` class, you need to add its factory too. Then, you should configure the factory in the `hazelcast.xml` configuration file. This file resides in the `bin` directory where you extracted the `hazelcast-<version>.zip` (or `tar`).
-
-The following is an example configuration when you are adding an `IdentifiedDataSerializable` class:
-
- ```xml
-<hazelcast>
-     ...
-     <serialization>
-        <data-serializable-factories>
-            <data-serializable-factory factory-id=<identified-factory-id>>
-                IdentifiedFactoryClassName
-            </data-serializable-factory>
-        </data-serializable-factories>
-    </serialization>
-    ...
-</hazelcast>
-```
-If you want to add a `Portable` class, you should use `<portable-factories>` instead of `<data-serializable-factories>` in the above configuration.
-
-#### 1.2.1.3. Using hazelcast-member Tool
+#### 1.2.1.1. Using hazelcast-member Tool
 
 `hazelcast-member` is a tool to download and run Hazelcast IMDG members easily. You can find the installation instructions for various platforms in the following sections.
 
@@ -253,6 +206,54 @@ hazelcast-member stop
 You can find more information about the `hazelcast-member` tool at its GitHub [repo](https://github.com/hazelcast/hazelcast-member-tool).
 
 See the [Hazelcast IMDG Reference Manual](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#getting-started) for more information on setting up the clusters.
+
+#### 1.2.1.2. Running Standalone JARs
+
+Follow the instructions below to create a Hazelcast IMDG cluster:
+
+1. Go to Hazelcast's download [page](https://hazelcast.org/download/) and download either the `.zip` or `.tar` distribution of Hazelcast IMDG.
+2. Decompress the contents into any directory that you
+want to run members from.
+3. Change into the directory that you decompressed the Hazelcast content and then into the `bin` directory.
+4. Use either `start.sh` or `start.bat` depending on your operating system. Once you run the start script, you should see the Hazelcast IMDG logs in the terminal.
+
+ You should see a log similar to the following, which means that your 1-member cluster is ready to be used:
+```
+INFO: [192.168.0.3]:5701 [dev] [3.10.4]
+
+Members {size:1, ver:1} [
+	Member [192.168.0.3]:5701 - 65dac4d1-2559-44bb-ba2e-ca41c56eedd6 this
+]
+
+Sep 06, 2018 10:50:23 AM com.hazelcast.core.LifecycleService
+INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
+```
+
+#### 1.2.1.3. Adding User Library to CLASSPATH
+
+When you want to use features such as querying and language interoperability, you might need to add your own Java classes
+to the Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the 
+`CLASSPATH`. To do this, compile your code with the `CLASSPATH` and add the compiled files to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). 
+Then, you can start your Hazelcast member by using the start scripts in the `bin` directory. The start scripts will automatically add your compiled classes to the `CLASSPATH`.
+
+Note that if you are adding an `IdentifiedDataSerializable` or a `Portable` class, you need to add its factory too. Then, you should configure the factory in the `hazelcast.xml` configuration file. This file resides in the `bin` directory where you extracted the `hazelcast-<version>.zip` (or `tar`).
+
+The following is an example configuration when you are adding an `IdentifiedDataSerializable` class:
+
+ ```xml
+<hazelcast>
+     ...
+     <serialization>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id=<identified-factory-id>>
+                IdentifiedFactoryClassName
+            </data-serializable-factory>
+        </data-serializable-factories>
+    </serialization>
+    ...
+</hazelcast>
+```
+If you want to add a `Portable` class, you should use `<portable-factories>` instead of `<data-serializable-factories>` in the above configuration.
 
 ## 1.3. Downloading and Installing
 
@@ -1569,7 +1570,7 @@ func (p *identifiedEntryProcessor) ClassID() int32 {
 }
 ```
 
-Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, see the [Adding User Library to CLASSPATH section](#1212-adding-user-library-to-classpath).
+Now, you need to make sure that the Hazelcast member recognizes the entry processor. For this, you need to implement the Java equivalent of your entry processor and its factory and create your own compiled class or JAR files. For adding your own compiled class or JAR files to the server's `CLASSPATH`, see the [Adding User Library to CLASSPATH section](#1213-adding-user-library-to-classpath).
 
 The following is the Java equivalent of the entry processor in Go client given above:
 
@@ -1759,7 +1760,7 @@ func (e *Employee) ClassID() int32 {
 Note that `Employee` is implementing `Portable`. As portable types are not deserialized on the server side for querying, you don't need to implement its Java equivalent on the server side.
 
  For the non-portable types, you need to implement its Java equivalent and its serializable factory on the server side for server to reconstitute the objects from binary formats. 
- In this case before starting the server, you need to compile the `Employee` and related factory classes with server's `CLASSPATH` and add them to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). See the [Adding User Library to CLASSPATH section](#1212-adding-user-library-to-classpath).
+ In this case before starting the server, you need to compile the `Employee` and related factory classes with server's `CLASSPATH` and add them to the `user-lib` directory in the extracted `hazelcast-<version>.zip` (or `tar`). See the [Adding User Library to CLASSPATH section](#1213-adding-user-library-to-classpath).
 
  > **NOTE: Querying with `Portable` object is faster as compared to `IdentifiedDataSerializable`.**
 
