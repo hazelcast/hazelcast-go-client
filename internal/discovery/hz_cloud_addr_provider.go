@@ -15,11 +15,10 @@
 package discovery
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
 )
@@ -27,11 +26,11 @@ import (
 // HzCloudAddrProvider provides initial addresses for hazelcast.cloud
 type HzCloudAddrProvider struct {
 	cloudDiscovery *HazelcastCloud
-	logger         *log.Logger
+	logger         logger.Logger
 }
 
 // NewHzCloudAddrProvider returns a HzCloudAddrProvider with the given parameters.
-func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration, logger *log.Logger) *HzCloudAddrProvider {
+func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration, logger logger.Logger) *HzCloudAddrProvider {
 	return NewHzCloudAddrProviderWithCloudDisc(
 		NewHazelcastCloud(
 			endpointURL,
@@ -43,7 +42,7 @@ func NewHzCloudAddrProvider(endpointURL string, connectionTimeout time.Duration,
 }
 
 // NewHzCloudAddrProviderWithCloudDisc returns a HzCloudAddrProvider with the given parameters.
-func NewHzCloudAddrProviderWithCloudDisc(cloudDisc *HazelcastCloud, logger *log.Logger) *HzCloudAddrProvider {
+func NewHzCloudAddrProviderWithCloudDisc(cloudDisc *HazelcastCloud, logger logger.Logger) *HzCloudAddrProvider {
 	return &HzCloudAddrProvider{
 		cloudDiscovery: cloudDisc,
 		logger:         logger,

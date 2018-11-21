@@ -20,10 +20,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
 )
@@ -48,7 +47,7 @@ type clusterService struct {
 	initialMemberListWg    *sync.WaitGroup
 	reconnectChan          chan struct{}
 	cancelChan             chan struct{}
-	logger                 *log.Logger
+	logger                 logger.Logger
 }
 
 func newClusterService(client *HazelcastClient, addressProviders []AddressProvider) *clusterService {

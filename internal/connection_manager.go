@@ -18,9 +18,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/security"
 )
@@ -162,7 +161,7 @@ type connectionManagerImpl struct {
 	addressTranslator   AddressTranslator
 	isAlive             atomic.Value
 	credentials         security.Credentials
-	logger              *log.Logger
+	logger              logger.Logger
 }
 
 func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {

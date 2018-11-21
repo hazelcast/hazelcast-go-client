@@ -21,12 +21,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"crypto/tls"
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
@@ -57,7 +56,7 @@ type Connection struct {
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64
-	logger                    *log.Logger
+	logger                    logger.Logger
 }
 
 func newConnection(address core.Address, cm connectionManager, handleResponse func(interface{}),

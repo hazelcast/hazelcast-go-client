@@ -17,10 +17,9 @@ package internal
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
 )
@@ -41,7 +40,7 @@ type listenerService struct {
 	registerListenerInitChannel                chan *listenerRegistrationKey
 	connectToAllMembersChannel                 chan struct{}
 	cancel                                     chan struct{}
-	logger                                     *log.Logger
+	logger                                     logger.Logger
 }
 
 type removedErr struct {

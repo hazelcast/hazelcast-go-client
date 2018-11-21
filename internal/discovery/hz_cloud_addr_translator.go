@@ -18,18 +18,18 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	log "github.com/sirupsen/logrus"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 )
 
 // HzCloudAddrTranslator is used to translate private addresses to public addresses.
 type HzCloudAddrTranslator struct {
 	cloudDiscovery  *HazelcastCloud
 	privateToPublic map[string]core.Address
-	logger          *log.Logger
+	logger          logger.Logger
 }
 
 // NewHzCloudAddrTranslator returns a HzCloudAddrTranslator with the given parameters.
-func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duration, logger *log.Logger) *HzCloudAddrTranslator {
+func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duration, logger logger.Logger) *HzCloudAddrTranslator {
 	return NewHzCloudAddrTranslatorWithCloudDisc(
 		NewHazelcastCloud(
 			endpointURL,
@@ -41,7 +41,7 @@ func NewHzCloudAddrTranslator(endpointURL string, connectionTimeout time.Duratio
 }
 
 // NewHzCloudAddrTranslatorWithCloudDisc returns a HzCloudAddrTranslator with the given parameters.
-func NewHzCloudAddrTranslatorWithCloudDisc(cloudDisc *HazelcastCloud, logger *log.Logger) *HzCloudAddrTranslator {
+func NewHzCloudAddrTranslatorWithCloudDisc(cloudDisc *HazelcastCloud, logger logger.Logger) *HzCloudAddrTranslator {
 	return &HzCloudAddrTranslator{
 		cloudDiscovery: cloudDisc,
 		logger:         logger,

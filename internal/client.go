@@ -22,11 +22,10 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
@@ -58,7 +57,7 @@ type HazelcastClient struct {
 	name                 string
 	id                   int64
 	statistics           *statistics
-	logger               *log.Logger
+	logger               logger.Logger
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
@@ -175,13 +174,13 @@ func (c *HazelcastClient) LifecycleService() core.LifecycleService {
 }
 
 func (c *HazelcastClient) init() error {
+	c.logger = c.Config.LoggerConfig().Logger()
 	addressTranslator, err := c.createAddressTranslator()
 	if err != nil {
 		return err
 	}
 	c.id = c.nextClientID()
 	c.initClientName()
-	c.logger = c.Config.LoggerConfig().Logger
 	c.credentials = c.initCredentials(c.Config)
 	c.lifecycleService = newLifecycleService(c.Config, c)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
