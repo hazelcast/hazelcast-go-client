@@ -15,40 +15,27 @@
 package config
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 )
 
-// These are the different logging levels. You can set the logging level to log
-// on your instance of logger, obtained with `logrus.New()`.
-const (
-	// PanicLevel level, highest level of severity. Logs and then calls panic with the
-	// message passed to Debug, Info, ...
-	PanicLevel log.Level = iota
-	// FatalLevel level. Logs and then calls `logger.Exit(1)`. It will exit even if the
-	// logging level is set to Panic.
-	FatalLevel
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
-	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel
-	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel
-	// InfoLevel level. General operational entries about what's going on inside the
-	// application.
-	InfoLevel
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
-	DebugLevel
-	// TraceLevel level. Designates finer-grained informational events than the Debug.
-	TraceLevel
-)
-
+// LoggerConfig is used for configuring client's logging.
 type LoggerConfig struct {
-	*log.Logger
+	logger logger.Logger
 }
 
+// NewLoggerConfig returns a LoggerConfig with default logger.
 func NewLoggerConfig() *LoggerConfig {
-	return &LoggerConfig{Logger: log.New()}
+	l := &LoggerConfig{}
+	l.SetLogger(logger.New())
+	return l
 }
 
-func (l *LoggerConfig) SetLogLevel(level log.Level) {
-	l.SetLevel(level)
+// SetLogger sets the loggerConfig's logger as the given one.
+func (l *LoggerConfig) SetLogger(logger logger.Logger) {
+	l.logger = logger
+}
+
+// Logger returns the loggerConfig's logger.
+func (l *LoggerConfig) Logger() logger.Logger {
+	return l.logger
 }

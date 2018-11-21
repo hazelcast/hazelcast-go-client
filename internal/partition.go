@@ -18,8 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -33,7 +32,7 @@ type partitionService struct {
 	cancel  chan struct{}
 	refresh chan struct{}
 	period  time.Duration
-	logger  *log.Logger
+	logger  logger.Logger
 }
 
 func newPartitionService(client *HazelcastClient) *partitionService {

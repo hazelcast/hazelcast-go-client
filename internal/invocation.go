@@ -19,12 +19,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -218,7 +217,7 @@ type invocationServiceImpl struct {
 	responseChannel   chan interface{}
 	invoke            func(*invocation)
 	isShutdown        atomic.Value
-	logger            *log.Logger
+	logger            logger.Logger
 }
 
 func newInvocationService(client *HazelcastClient) *invocationServiceImpl {

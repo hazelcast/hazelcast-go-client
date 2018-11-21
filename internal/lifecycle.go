@@ -18,10 +18,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
 )
 
@@ -30,7 +29,7 @@ type lifecycleService struct {
 	isLive    atomic.Value
 	listeners atomic.Value
 	mu        sync.Mutex
-	logger    *log.Logger
+	logger    logger.Logger
 }
 
 func newLifecycleService(config *config.Config, client *HazelcastClient) *lifecycleService {

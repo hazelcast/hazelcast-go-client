@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/sirupsen/logrus"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 )
 
 func TestInvocation_UnwrapResponseWithUnknownType(t *testing.T) {
@@ -61,7 +61,7 @@ func TestInvocationService_Process(t *testing.T) {
 	}()
 	is := &invocationServiceImpl{
 		responseChannel: make(chan interface{}, 1),
-		logger:          logrus.New(),
+		logger:          logger.New(),
 	}
 	go func() {
 		// send dummy to make sure it wont fail in the future

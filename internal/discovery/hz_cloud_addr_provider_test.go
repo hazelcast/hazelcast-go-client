@@ -20,6 +20,7 @@ import (
 	"errors"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,9 +41,9 @@ func TestHzCloudAddrProvider(t *testing.T) {
 	hazelcastCloudDiscovery := NewHazelcastCloud("", 0, nil)
 	hazelcastCloudDiscovery.discoverNodes = mockProvider // mock the discoverNode function
 
-	provider = NewHzCloudAddrProvider("", 0, nil)
+	provider = NewHzCloudAddrProvider("", 0, logger.New())
 	provider.cloudDiscovery = hazelcastCloudDiscovery
-	provider2 = NewHzCloudAddrProviderWithCloudDisc(hazelcastCloudDiscovery, nil)
+	provider2 = NewHzCloudAddrProviderWithCloudDisc(hazelcastCloudDiscovery, logger.New())
 	testHzCloudAddrProviderLoadAddresses(t)
 	testHzCloudAddrProviderLoadAddressesNone(t)
 }

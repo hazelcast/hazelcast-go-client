@@ -79,6 +79,7 @@ func New() *Config {
 	}
 }
 
+// LoggerConfig returns loggerConfig.
 func (c *Config) LoggerConfig() *LoggerConfig {
 	return c.loggerConfig
 }

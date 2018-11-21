@@ -19,8 +19,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	log "github.com/sirupsen/logrus"
 )
 
 type heartBeatService struct {
@@ -28,7 +28,7 @@ type heartBeatService struct {
 	heartBeatTimeout  time.Duration
 	heartBeatInterval time.Duration
 	cancel            chan struct{}
-	logger            *log.Logger
+	logger            logger.Logger
 }
 
 func newHeartBeatService(client *HazelcastClient) *heartBeatService {
