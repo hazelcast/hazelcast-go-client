@@ -173,8 +173,30 @@ func (c *HazelcastClient) LifecycleService() core.LifecycleService {
 	return c.lifecycleService
 }
 
+func (c *HazelcastClient) getLogLevel() int {
+	logLevel := c.properties.GetString(property.LoggingLevel)
+	logLevelInt, err := logger.GetLogLevel(logLevel)
+	if err != nil {
+		logLevelInt, _ = logger.GetLogLevel(property.LoggingLevel.DefaultValue())
+	}
+	return logLevelInt
+}
+
+func (c *HazelcastClient) initLogger() {
+	setLogger := c.Config.LoggerConfig().Logger()
+	logLevel := c.getLogLevel()
+	if setLogger == nil {
+		l := logger.New()
+		l.Level = logLevel
+		setLogger = l
+	} else if setLoggerImpl, ok := setLogger.(*logger.DefaultLogger); ok {
+		setLoggerImpl.Level = logLevel
+	}
+	c.logger = setLogger
+}
+
 func (c *HazelcastClient) init() error {
-	c.logger = c.Config.LoggerConfig().Logger()
+	c.initLogger()
 	addressTranslator, err := c.createAddressTranslator()
 	if err != nil {
 		return err

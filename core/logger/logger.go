@@ -14,6 +14,12 @@
 
 package logger
 
+import (
+	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client/core"
+)
+
 const (
 	// PanicLevel level, highest level of severity. Logs and then calls panic with the
 	// message passed to Debug, Info, ...
@@ -35,6 +41,17 @@ const (
 	TraceLevel
 )
 
+// nameToLevel is used to get corresponding level for log level strings.
+var nameToLevel = map[string]int{
+	"panic": PanicLevel,
+	"fatal": FatalLevel,
+	"error": ErrorLevel,
+	"warn":  WarnLevel,
+	"info":  InfoLevel,
+	"debug": DebugLevel,
+	"trace": TraceLevel,
+}
+
 // Logger is the interface that is used by client for logging.
 type Logger interface {
 	// Debug logs the given args at debug level.
@@ -51,4 +68,20 @@ type Logger interface {
 	Fatal(args ...interface{})
 	// Panic logs the given args at panic level.
 	Panic(args ...interface{})
+}
+
+// isValidLogLevel returns true if the given log level is valid.
+// The check is done case insensitive.
+func isValidLogLevel(logLevel string) bool {
+	logLevel = strings.ToLower(logLevel)
+	_, found := nameToLevel[logLevel]
+	return found
+}
+
+// GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
+func GetLogLevel(logLevel string) (int, error) {
+	if !isValidLogLevel(logLevel) {
+		return 0, core.NewHazelcastIllegalArgumentError("no log level found for "+logLevel, nil)
+	}
+	return nameToLevel[logLevel], nil
 }

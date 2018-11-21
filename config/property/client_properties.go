@@ -52,4 +52,8 @@ var (
 
 	// StatisticsEnabled is used to enable the client statistics collection.
 	StatisticsEnabled = NewHazelcastPropertyBool("hazelcast.client.statistics.enabled", false)
+
+	// LoggingLevel is used to configure logging level in the client.
+	// This is used only for default logging, if you use other loggers this has no effect.
+	LoggingLevel = NewHazelcastPropertyString("hazelcast.client.logging.level", "info")
 )
