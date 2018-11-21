@@ -29,14 +29,14 @@ const (
 // DefaultLogger has Go's built in log embedded in it. It adds level logging.
 type DefaultLogger struct {
 	*log.Logger
-	level int
+	Level int
 }
 
 // New returns a Default Logger with defaultLogLevel.
 func New() *DefaultLogger {
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
-		level:  defaultLogLevel,
+		Level:  defaultLogLevel,
 	}
 }
 
@@ -100,34 +100,30 @@ func (l *DefaultLogger) Panic(args ...interface{}) {
 	}
 }
 
-func (l *DefaultLogger) SetLogLevel(level int) {
-	l.level = level
-}
-
 func (l *DefaultLogger) canLogTrace() bool {
-	return l.level >= TraceLevel
+	return l.Level >= TraceLevel
 }
 
 func (l *DefaultLogger) canLogInfo() bool {
-	return l.level >= InfoLevel
+	return l.Level >= InfoLevel
 }
 
 func (l *DefaultLogger) canLogWarn() bool {
-	return l.level >= WarnLevel
+	return l.Level >= WarnLevel
 }
 
 func (l *DefaultLogger) canLogError() bool {
-	return l.level >= ErrorLevel
+	return l.Level >= ErrorLevel
 }
 
 func (l *DefaultLogger) canLogPanic() bool {
-	return l.level >= PanicLevel
+	return l.Level >= PanicLevel
 }
 
 func (l *DefaultLogger) canLogFatal() bool {
-	return l.level >= FatalLevel
+	return l.Level >= FatalLevel
 }
 
 func (l *DefaultLogger) canLogDebug() bool {
-	return l.level >= DebugLevel
+	return l.Level >= DebugLevel
 }

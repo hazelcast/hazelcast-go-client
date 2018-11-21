@@ -25,9 +25,7 @@ type LoggerConfig struct {
 
 // NewLoggerConfig returns a LoggerConfig with default logger.
 func NewLoggerConfig() *LoggerConfig {
-	l := &LoggerConfig{}
-	l.SetLogger(logger.New())
-	return l
+	return &LoggerConfig{}
 }
 
 // SetLogger sets the loggerConfig's logger as the given one.
