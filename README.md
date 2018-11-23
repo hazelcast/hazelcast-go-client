@@ -62,7 +62,10 @@
       * [7.5.1.1. Listening for Member Events](#7511-listening-for-member-events)
       * [7.5.1.2. Listening for Lifecycle Events](#7512-listening-for-lifecycle-events)
     * [7.5.2. Distributed Data Structure Events](#752-distributed-data-structure-events)
-      * [7.5.2.1. Listening for Map Events](#7521-listening-for-map-events)
+      * [7.5.2.1. Map Listener](#7521-map-listener)
+      * [7.5.2.2. Entry Listener](#7522-entry-listener)
+      * [7.5.2.3. Item Listener](#7523-item-listener)           
+      * [7.5.2.4. Message Listener](#7524-message-listener) 
   * [7.6. Distributed Computing](#76-distributed-computing)
     * [7.6.1. Using EntryProcessor](#761-using-entryprocessor)
   * [7.7. Distributed Query](#77-distributed-query)
@@ -1455,11 +1458,13 @@ Lifecycle Event >>>  SHUTDOWN
 
 You can add event listeners to the distributed data structures.
 
-#### 7.5.2.1. Listening for Map Events
+#### 7.5.2.1. Map Listener
+
+The Map Listener is used by the Hazelcast `Map`.
 
 You can listen to map-wide or entry-based events. To listen to these events, you need to implement the relevant interfaces.
 
-An entry-based  event is fired after the operations that affect a specific entry. For example, `Map.put()`, `Map.remove()` or `Map.evict()`. An `EntryEvent` object is passed to the listener function.
+An entry-based  event is fired after the operations that affect a specific entry. For example, `Map.Put()`, `Map.Remove()` or `Map.Evict()`. An `EntryEvent` object is passed to the listener function. You can use the following listeners to listen to entry-based events.
 
 - EntryExpiredListener
 - EntryMergedListener
@@ -1487,7 +1492,7 @@ m.Put("1", "Furkan")
 ```
 
 
-A map-wide event is fired as a result of a map-wide operation. For example, `Map.clear()` or `Map.evictAll()`. A `MapEvent` object is passed to the listener function.
+A map-wide event is fired as a result of a map-wide operation. For example, `Map.Clear()` or `Map.EvictAll()`. A `MapEvent` object is passed to the listener function. You can use the following listeners to listen to map-wide events.
 
 * MapEvictedListener
 * MapClearedListener
@@ -1511,6 +1516,113 @@ m.Put("2", "Ahmet")
 m.Put("3", "Furkan")
 
 m.Clear()
+```
+As you see, there is a parameter in the `AddEntryListener` function: `includeValue`. It is a boolean parameter, and if it is `true`, the map event contains the entry value.
+
+#### 7.5.2.2. Entry Listener
+
+The Entry Listener is used by the Hazelcast `MultiMap` and `Replicated Map`.
+
+You can listen to map-wide or entry-based events by implementing the corresponding interface such as `EntryAddedListener`.
+
+An entry-based event is fired after the operations that affect a specific entry. For example, `MultiMap.Put()`, `MultiMap.Remove()`. You should implement the corresponding type to listen to these events such as `EntryAddedListener`. An `EntryEvent` object is passed to the listener function.
+
+```go
+type EntryListener struct {
+}
+
+func (l *EntryListener) EntryAdded(event core.EntryEvent) {
+	log.Println("Entry Added:", event.Key(), event.Value()) // Entry Added: 1 Furkan
+}
+
+multiMap.AddEntryListener(&EntryListener{}, true)
+multiMap.Put("1", "Furkan")
+
+```
+
+A map-wide event is fired as a result of a map-wide operation. For example, `MultiMap.Clear()`. You should implement the `MapClearedListener` interface to listen to these events. A `MapEvent` object is passed to the listener function.
+
+See the following example.
+
+```go
+type EntryListener struct {
+}
+
+func (l *EntryListener) MapCleared(event core.MapEvent) {
+	log.Println("Map Cleared:", event.NumberOfAffectedEntries()) // Map Cleared: 1
+}
+multiMap.AddEntryListener(&EntryListener{}, true)
+multiMap.Put("1", "Muhammet Ali")
+multiMap.Put("1", "Ahmet")
+multiMap.Put("1", "Furkan")
+multiMap.Clear()
+```
+
+See the following headings to see supported listener functions for each data structure.
+
+**Entry Listener Functions Supported by MultiMap**
+
+- `EntryAdded`
+- `EntryRemoved`
+- `EntryEvicted`
+- `MapCleared`
+
+**Entry Listener Functions Supported by Replicated Map**
+
+- `EntryAdded`
+- `EntryUpdated`
+- `EntryRemoved`
+- `EntryEvicted`
+- `MapCleared`
+
+As you see, there is a parameter in the `AddEntryListener` function: `includeValue`. It is a boolean parameter, and if it is `true`, the entry event contains the entry value.
+
+#### 7.5.2.3. Item Listener
+
+The Item Listener is used by the Hazelcast `Queue`, `Set` and `List`.
+
+You can listen to item events by implementing the `ItemAddedListener` or `ItemRemovedListener` interface. Their functions are invoked when an item is added or removed.
+
+The following is an example of item listener object and its registration to the `Set`. It also applies to `Queue` and `List`.
+
+```go
+type itemListener struct {
+}
+
+func (l *itemListener) ItemAdded(event core.ItemEvent) {
+	log.Println("Item added:", event.Item()) // Item added: Furkan
+}
+
+func (l *itemListener) ItemRemoved(event core.ItemEvent) {
+	log.Println("Item removed:", event.Item()) // Item removed: Furkan
+}
+
+set.AddItemListener(&itemListener{}, true)
+set.Add("Furkan")
+set.Remove("Furkan")
+```
+
+As you see, there is a parameter in the `AddItemListener` function: `includeValue`. It is a boolean parameter, and if it is `true`, the item event contains the item value.
+
+#### 7.5.2.4. Message Listener
+
+The Message Listener is used by the Hazelcast `Reliable Topic` and `Topic`.
+
+You can listen to message events. To listen to these events, you need to implement the `MessageListener` interface.
+
+See the following example.
+
+```go
+type topicMessageListener struct {
+}
+
+func (l *topicMessageListener) OnMessage(message core.Message) error {
+	log.Println(message.MessageObject()) // furkan
+	return nil
+}
+
+topic.AddMessageListener(&topicMessageListener{})
+topic.Publish("furkan")
 ```
 
 ## 7.6. Distributed Computing
