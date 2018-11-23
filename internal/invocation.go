@@ -376,7 +376,7 @@ func (is *invocationServiceImpl) handleNotSentInvocation(correlationID int64, ca
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
 		is.handleError(invocation, cause)
 	} else {
-		is.logger.Warn("No invocation has been found with the correlation id: ", correlationID)
+		is.logger.Debug("No invocation has been found with the correlation id: ", correlationID)
 	}
 }
 
@@ -387,7 +387,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 		invocation, found := is.eventHandlers[correlationID]
 		is.eventHandlersLock.RUnlock()
 		if !found {
-			is.logger.Warn("Got an event message with unknown correlation id: ", correlationID)
+			is.logger.Debug("Got an event message with unknown correlation id: ", correlationID)
 		} else {
 			invocation.eventHandler(response)
 		}
@@ -402,7 +402,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 			invocation.complete(response)
 		}
 	} else {
-		is.logger.Warn("No invocation has been found with the correlation id: ", correlationID)
+		is.logger.Debug("No invocation has been found with the correlation id: ", correlationID)
 	}
 }
 
@@ -410,7 +410,13 @@ func convertToError(clientMessage *proto.ClientMessage) *proto.ServerError {
 	return proto.ErrorCodecDecode(clientMessage)
 }
 
+func (is *invocationServiceImpl) logError(invocation *invocation, err error) {
+	correlationID := invocation.request.Load().(*proto.ClientMessage).CorrelationID()
+	is.logger.Debug("Invocation with correlation id: ", correlationID, " got an error: ", err)
+}
+
 func (is *invocationServiceImpl) handleError(invocation *invocation, err error) {
+	is.logError(invocation, err)
 	if !is.client.lifecycleService.isLive.Load().(bool) {
 		invocation.complete(core.NewHazelcastClientNotActiveError("client is shutdown", err))
 		return

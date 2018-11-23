@@ -27,7 +27,6 @@ type customLogger struct {
 }
 
 func (c *customLogger) Debug(args ...interface{}) {
-
 }
 
 func (c *customLogger) Trace(args ...interface{}) {
