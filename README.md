@@ -1907,7 +1907,21 @@ fmt.Println("Average age is", avgAge) // Average age is 26.666666666666668
 
  ### 7.8.1. Enabling Client Statistics
 
- You can enable the client statistics before starting your clients. There are two properties related to client statistics:
+You can monitor your clients using Hazelcast Management Center.
+
+ As a prerequisite, you need to enable the client statistics before starting your clients. This can be done by setting the `hazelcast.client.statistics.enabled` system property to `true` on the **member** as the following:
+
+ ```xml
+ <hazelcast>
+     ...
+     <properties>
+         <property name="hazelcast.client.statistics.enabled">true</property>
+     </properties>
+     ...
+ </hazelcast>
+ ```
+
+ Also, you need to enable the client statistics in the Go client. There are two properties related to client statistics:
 
  - `hazelcast.client.statistics.enabled`: If set to `true`, it enables collecting the client statistics and sending them to the cluster. When it is `true` you can monitor the clients that are connected to your Hazelcast cluster, using Hazelcast Management Center. Its default value is `false`.
 
