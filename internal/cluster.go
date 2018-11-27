@@ -44,29 +44,37 @@ type clusterService struct {
 	listeners              atomic.Value
 	addressProviders       []AddressProvider
 	mu                     sync.Mutex
-	wg                     *sync.WaitGroup
+	memberWg               *sync.WaitGroup
 	reconnectChan          chan struct{}
 	cancelChan             chan struct{}
 }
 
-func newClusterService(client *HazelcastClient, config *config.Config, addressProviders []AddressProvider) *clusterService {
-	service := &clusterService{client: client, config: config, reconnectChan: make(chan struct{}, 1),
-		cancelChan: make(chan struct{}, 1)}
-	service.ownerConnectionAddress.Store(&proto.Address{})
-	service.members.Store(make([]*proto.Member, 0))       //Initialize
-	service.listeners.Store(make(map[string]interface{})) //Initialize
-	service.wg = new(sync.WaitGroup)
-	ownerUUID := ""
-	service.ownerUUID.Store(ownerUUID) //Initialize
-	uuid := ""
-	service.uuid.Store(uuid) //Initialize
-	for _, membershipListener := range client.Config.MembershipListeners() {
-		service.AddMembershipListener(membershipListener)
+func newClusterService(client *HazelcastClient, addressProviders []AddressProvider) *clusterService {
+	service := &clusterService{
+		client: client, config: client.Config, reconnectChan: make(chan struct{}, 1),
+		cancelChan: make(chan struct{}, 1),
 	}
+	service.init()
+	service.registerMembershipListeners()
 	service.addressProviders = addressProviders
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
 	return service
+}
+
+func (cs *clusterService) init() {
+	cs.ownerConnectionAddress.Store(&proto.Address{})
+	cs.members.Store(make([]*proto.Member, 0))       //Initialize
+	cs.listeners.Store(make(map[string]interface{})) //Initialize
+	cs.memberWg = new(sync.WaitGroup)
+	cs.ownerUUID.Store("") //Initialize
+	cs.uuid.Store("")      //Initialize
+}
+
+func (cs *clusterService) registerMembershipListeners() {
+	for _, membershipListener := range cs.config.MembershipListeners() {
+		cs.AddMembershipListener(membershipListener)
+	}
 }
 
 func (cs *clusterService) start() error {
@@ -191,7 +199,7 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 }
 
 func (cs *clusterService) initMembershipListener(connection *Connection) error {
-	cs.wg.Add(1)
+	cs.memberWg.Add(1)
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *proto.ClientMessage) {
 		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList, cs.handleMemberAttributeChange)
@@ -203,7 +211,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 		return err
 	}
 	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
-	cs.wg.Wait() // Wait until the initial member list is fetched.
+	cs.memberWg.Wait() // Wait until the initial member list is fetched.
 	cs.logMembers()
 	log.Println("Registered membership listener with ID ", registrationID)
 	return nil
@@ -292,7 +300,7 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 		}
 	}
 	cs.client.PartitionService.refresh <- struct{}{}
-	cs.wg.Done() //initial member list is fetched
+	cs.memberWg.Done() //initial member list is fetched
 }
 
 func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {

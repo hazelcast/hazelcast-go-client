@@ -181,7 +181,7 @@ func (c *HazelcastClient) init() error {
 	c.HeartBeatService = newHeartBeatService(c)
 	c.InvocationService = newInvocationService(c)
 	addressProviders := c.createAddressProviders()
-	c.ClusterService = newClusterService(c, c.Config, addressProviders)
+	c.ClusterService = newClusterService(c, addressProviders)
 	c.ListenerService = newListenerService(c)
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
