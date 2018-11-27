@@ -309,11 +309,35 @@ func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, o
 }
 
 func (cs *clusterService) memberAdded(member *proto.Member) {
-	members := cs.members.Load().([]*proto.Member)
-	copyMembers := make([]*proto.Member, len(members))
-	copy(copyMembers, members)
-	copyMembers = append(copyMembers, member)
-	cs.members.Store(copyMembers)
+	cs.addMemberToMembers(member)
+	cs.notifyListenersForNewMember(member)
+}
+
+func (cs *clusterService) memberRemoved(member *proto.Member) {
+	cs.removeMemberFromMembers(member)
+	cs.closeRemovedMembersConnection(member)
+	cs.notifyListenersForMemberRemoval(member)
+}
+
+func (cs *clusterService) closeRemovedMembersConnection(member *proto.Member) {
+	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address))
+	if connection != nil {
+		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
+			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
+	}
+}
+
+func (cs *clusterService) notifyListenersForMemberRemoval(member *proto.Member) {
+	rangeFunc := func(id, listener interface{}) bool {
+		if _, ok := listener.(core.MemberRemovedListener); ok {
+			listener.(core.MemberRemovedListener).MemberRemoved(member)
+		}
+		return true
+	}
+	cs.listeners.Range(rangeFunc)
+}
+
+func (cs *clusterService) notifyListenersForNewMember(member *proto.Member) {
 	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberAddedListener); ok {
 			listener.(core.MemberAddedListener).MemberAdded(member)
@@ -323,7 +347,7 @@ func (cs *clusterService) memberAdded(member *proto.Member) {
 	cs.listeners.Range(rangeFunc)
 }
 
-func (cs *clusterService) memberRemoved(member *proto.Member) {
+func (cs *clusterService) removeMemberFromMembers(member *proto.Member) {
 	members := cs.members.Load().([]*proto.Member)
 	copyMembers := make([]*proto.Member, 0, len(members)-1)
 	for _, curMember := range members {
@@ -332,18 +356,14 @@ func (cs *clusterService) memberRemoved(member *proto.Member) {
 		}
 	}
 	cs.members.Store(copyMembers)
-	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address))
-	if connection != nil {
-		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
-			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
-	}
-	rangeFunc := func(id, listener interface{}) bool {
-		if _, ok := listener.(core.MemberRemovedListener); ok {
-			listener.(core.MemberRemovedListener).MemberRemoved(member)
-		}
-		return true
-	}
-	cs.listeners.Range(rangeFunc)
+}
+
+func (cs *clusterService) addMemberToMembers(member *proto.Member) {
+	members := cs.members.Load().([]*proto.Member)
+	copyMembers := make([]*proto.Member, len(members))
+	copy(copyMembers, members)
+	copyMembers = append(copyMembers, member)
+	cs.members.Store(copyMembers)
 }
 
 func (cs *clusterService) GetMembers() []core.Member {
