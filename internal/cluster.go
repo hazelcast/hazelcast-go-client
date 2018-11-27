@@ -156,30 +156,41 @@ func (cs *clusterService) reconnect() {
 }
 
 func (cs *clusterService) connectToCluster() error {
-
 	currentAttempt := int32(0)
-	attempLimit := cs.config.NetworkConfig().ConnectionAttemptLimit()
+	attemptLimit := cs.config.NetworkConfig().ConnectionAttemptLimit()
 	retryDelay := cs.config.NetworkConfig().ConnectionAttemptPeriod()
-	for currentAttempt < attempLimit {
+	for currentAttempt < attemptLimit {
 		currentAttempt++
-		addresses := cs.getPossibleMemberAddresses()
-		for _, address := range addresses {
-			if !cs.client.lifecycleService.isLive.Load().(bool) {
-				return core.NewHazelcastIllegalStateError("giving up on retrying to connect to cluster since client is shutdown.", nil)
-			}
-			err := cs.connectToAddress(address)
-			if err != nil {
-				log.Println("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
-					currentAttempt, " of ", attempLimit, " error: ", err)
-				continue
-			}
+		shouldTerminate, err := cs.connectToPossibleAddresses(currentAttempt, attemptLimit)
+		if err == nil {
 			return nil
 		}
-		if currentAttempt <= attempLimit {
+		if shouldTerminate {
+			return err
+		}
+		if currentAttempt <= attemptLimit {
 			time.Sleep(retryDelay)
 		}
 	}
 	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
+}
+
+func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimit int32) (bool, error) {
+	addresses := cs.getPossibleMemberAddresses()
+	for _, address := range addresses {
+		if !cs.client.lifecycleService.isLive.Load().(bool) {
+			return true, core.NewHazelcastIllegalStateError("giving up on retrying to connect to "+
+				"cluster since client is shutdown.", nil)
+		}
+		err := cs.connectToAddress(address)
+		if err != nil {
+			log.Println("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
+				currentAttempt, " of ", attemptLimit, " error: ", err)
+			continue
+		}
+		return false, nil
+	}
+	return false, core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 
 func (cs *clusterService) connectToAddress(address core.Address) error {
@@ -271,15 +282,18 @@ func (cs *clusterService) updatePartitionTable() {
 }
 
 func (cs *clusterService) handleMemberList(members []*proto.Member) {
-	if len(members) == 0 {
-		return
-	}
 	previousMembers := cs.members.Load().([]*proto.Member)
-	//TODO:: This loop is O(n^2), it is better to store members in a map to speed it up.
+	cs.handleMemberListRemovals(previousMembers, members)
+	cs.handleMemberListAdditions(previousMembers, members)
+	cs.updatePartitionTable()
+	cs.initialMemberListRelease()
+}
+
+func (cs *clusterService) handleMemberListRemovals(previousMembers []*proto.Member, members []*proto.Member) {
 	for _, member := range previousMembers {
 		found := false
 		for _, newMember := range members {
-			if *member.Address().(*proto.Address) == *newMember.Address().(*proto.Address) {
+			if member.HasEqualAddress(newMember) {
 				found = true
 				break
 			}
@@ -288,10 +302,13 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 			cs.memberRemoved(member)
 		}
 	}
+}
+
+func (cs *clusterService) handleMemberListAdditions(previousMembers []*proto.Member, members []*proto.Member) {
 	for _, member := range members {
 		found := false
 		for _, previousMember := range previousMembers {
-			if *member.Address().(*proto.Address) == *previousMember.Address().(*proto.Address) {
+			if member.HasEqualAddress(previousMember) {
 				found = true
 				break
 			}
@@ -300,8 +317,6 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 			cs.memberAdded(member)
 		}
 	}
-	cs.updatePartitionTable()
-	cs.initialMemberListRelease()
 }
 
 func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {

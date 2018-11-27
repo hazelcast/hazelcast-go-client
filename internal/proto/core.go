@@ -88,6 +88,10 @@ func (m *Member) String() string {
 	return memberInfo
 }
 
+func (m *Member) HasEqualAddress(member *Member) bool {
+	return m.address == member.address
+}
+
 type Pair struct {
 	key, value interface{}
 }
