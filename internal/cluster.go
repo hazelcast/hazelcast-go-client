@@ -43,7 +43,7 @@ type clusterService struct {
 	ownerConnectionAddress atomic.Value
 	listeners              sync.Map
 	addressProviders       []AddressProvider
-	memberWg               *sync.WaitGroup
+	initialMemberListWg    *sync.WaitGroup
 	reconnectChan          chan struct{}
 	cancelChan             chan struct{}
 }
@@ -64,7 +64,7 @@ func newClusterService(client *HazelcastClient, addressProviders []AddressProvid
 func (cs *clusterService) init() {
 	cs.ownerConnectionAddress.Store(&proto.Address{})
 	cs.members.Store(make([]*proto.Member, 0)) //Initialize
-	cs.memberWg = new(sync.WaitGroup)
+	cs.initialMemberListWg = new(sync.WaitGroup)
 	cs.ownerUUID.Store("") //Initialize
 	cs.uuid.Store("")      //Initialize
 }
@@ -197,22 +197,39 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 }
 
 func (cs *clusterService) initMembershipListener(connection *Connection) error {
-	cs.memberWg.Add(1)
+	cs.initialMemberListAcquire()
+	invocation := cs.createMembershipInvocation(connection)
+	response, err := cs.client.InvocationService.sendInvocation(invocation).Result()
+	if err != nil {
+		return err
+	}
+	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
+	cs.waitInitialMemberList()
+	cs.logMembers()
+	log.Println("Registered membership listener with ID ", registrationID)
+	return nil
+}
+
+func (cs *clusterService) initialMemberListAcquire() {
+	cs.initialMemberListWg.Add(1)
+}
+
+func (cs *clusterService) waitInitialMemberList() {
+	cs.initialMemberListWg.Wait()
+}
+
+func (cs *clusterService) initialMemberListRelease() {
+	cs.initialMemberListWg.Done()
+}
+
+func (cs *clusterService) createMembershipInvocation(connection *Connection) *invocation {
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *proto.ClientMessage) {
 		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList, cs.handleMemberAttributeChange)
 	}
 	invocation := newInvocation(request, -1, nil, connection, cs.client)
 	invocation.eventHandler = eventHandler
-	response, err := cs.client.InvocationService.sendInvocation(invocation).Result()
-	if err != nil {
-		return err
-	}
-	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
-	cs.memberWg.Wait() // Wait until the initial member list is fetched.
-	cs.logMembers()
-	log.Println("Registered membership listener with ID ", registrationID)
-	return nil
+	return invocation
 }
 
 func (cs *clusterService) logMembers() {
@@ -246,6 +263,10 @@ func (cs *clusterService) handleMember(member *proto.Member, eventType int32) {
 		cs.memberRemoved(member)
 	}
 	cs.logMembers()
+	cs.updatePartitionTable()
+}
+
+func (cs *clusterService) updatePartitionTable() {
 	cs.client.PartitionService.refresh <- struct{}{}
 }
 
@@ -279,8 +300,8 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 			cs.memberAdded(member)
 		}
 	}
-	cs.client.PartitionService.refresh <- struct{}{}
-	cs.memberWg.Done() //initial member list is fetched
+	cs.updatePartitionTable()
+	cs.initialMemberListRelease()
 }
 
 func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {
@@ -379,14 +400,23 @@ func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
 }
 
 func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
-	address, ok := connection.endpoint.Load().(*proto.Address)
-	ownerConnectionAddress := cs.getOwnerConnectionAddress()
-	if ok && ownerConnectionAddress != nil &&
-		*address == *ownerConnectionAddress && cs.client.lifecycleService.isLive.Load().(bool) {
+	if cs.shouldReconnect(connection) {
 		cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateDisconnected)
-		cs.ownerConnectionAddress.Store(&proto.Address{})
+		cs.clearOwnerConnectionAddress()
 		cs.reconnectChan <- struct{}{}
 	}
+}
+
+func (cs *clusterService) shouldReconnect(connection *Connection) bool {
+	address, ok := connection.endpoint.Load().(*proto.Address)
+	ownerConnectionAddress := cs.getOwnerConnectionAddress()
+	return ok && ownerConnectionAddress != nil &&
+		*address == *ownerConnectionAddress && cs.client.lifecycleService.isLive.Load().(bool)
+
+}
+
+func (cs *clusterService) clearOwnerConnectionAddress() {
+	cs.ownerConnectionAddress.Store(&proto.Address{})
 }
 
 func (cs *clusterService) onConnectionOpened(connection *Connection) {
