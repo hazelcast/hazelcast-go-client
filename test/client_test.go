@@ -134,7 +134,7 @@ func TestClientUniqueNames(t *testing.T) {
 
 func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 2; i++ {
 		remoteController.StartMember(cluster.ID)
 	}
 	client, _ := hazelcast.NewClient()
@@ -154,8 +154,8 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 
 	waitGroup.Wait()
 	connectionManager := client.(*internal.HazelcastClient).ConnectionManager
-	//There should be 5 connections. Next id will be 6
-	assert.Equal(t, connectionManager.NextConnectionID(), int64(6))
+	//There should be 2 connections. Next id will be 3
+	assert.Equal(t, connectionManager.NextConnectionID(), int64(3))
 
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
