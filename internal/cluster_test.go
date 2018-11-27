@@ -29,7 +29,7 @@ func Test_getPossibleAddresses(t *testing.T) {
 		"132.63.211.12:5010",
 		"12.63.31.12:501",
 	}
-	addresses := createAddressFromString(configAddresses)
+	addresses := createAddressesFromString(configAddresses)
 	if len(addresses) != 4 {
 		t.Fatalf("createAddressFromString failed expected %d got %d", 4, len(addresses))
 	}
@@ -46,7 +46,7 @@ func Test_getPossibleAddresses(t *testing.T) {
 }
 
 func Test_getPossibleAddressesWithEmptyParamters(t *testing.T) {
-	addresses := createAddressFromString(nil)
+	addresses := createAddressesFromString(nil)
 	if len(addresses) != 1 {
 		t.Fatal("createAddressFromString failed")
 	}
