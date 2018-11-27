@@ -35,7 +35,7 @@ func newDefaultAddressProvider(networkConfig *config.NetworkConfig) *defaultAddr
 
 func (dap *defaultAddressProvider) LoadAddresses() []core.Address {
 	addresses := dap.networkConfig.Addresses()
-	possibleAddrs := createAddressFromString(addresses)
+	possibleAddrs := createAddressesFromString(addresses)
 	addrs := make([]core.Address, len(possibleAddrs))
 	for i := 0; i < len(possibleAddrs); i++ {
 		addrs[i] = core.Address(&possibleAddrs[i])

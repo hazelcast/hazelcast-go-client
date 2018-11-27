@@ -41,9 +41,8 @@ type clusterService struct {
 	ownerUUID              atomic.Value
 	uuid                   atomic.Value
 	ownerConnectionAddress atomic.Value
-	listeners              atomic.Value
+	listeners              sync.Map
 	addressProviders       []AddressProvider
-	mu                     sync.Mutex
 	memberWg               *sync.WaitGroup
 	reconnectChan          chan struct{}
 	cancelChan             chan struct{}
@@ -64,8 +63,7 @@ func newClusterService(client *HazelcastClient, addressProviders []AddressProvid
 
 func (cs *clusterService) init() {
 	cs.ownerConnectionAddress.Store(&proto.Address{})
-	cs.members.Store(make([]*proto.Member, 0))       //Initialize
-	cs.listeners.Store(make(map[string]interface{})) //Initialize
+	cs.members.Store(make([]*proto.Member, 0)) //Initialize
 	cs.memberWg = new(sync.WaitGroup)
 	cs.ownerUUID.Store("") //Initialize
 	cs.uuid.Store("")      //Initialize
@@ -107,27 +105,27 @@ func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
 	return addrs
 }
 
-func createAddressFromString(addressList []string) []proto.Address {
-	if addressList == nil {
-		addressList = make([]string, 0)
+func createAddressesFromString(addressesInString []string) []proto.Address {
+	if addressesInString == nil {
+		addressesInString = make([]string, 0)
 	}
-	allAddresses := make(map[proto.Address]struct{}, len(addressList))
-	for _, address := range addressList {
+	addressesSet := make(map[proto.Address]struct{}, len(addressesInString))
+	for _, address := range addressesInString {
 		ip, port := iputil.GetIPAndPort(address)
 		if iputil.IsValidIPAddress(ip) {
 			if port == -1 {
-				allAddresses[*proto.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
-				allAddresses[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
-				allAddresses[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
+				addressesSet[*proto.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
+				addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
+				addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
 			} else {
-				allAddresses[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
+				addressesSet[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
 			}
 
 		}
 	}
-	addresses := make([]proto.Address, len(allAddresses))
+	addresses := make([]proto.Address, len(addressesSet))
 	index := 0
-	for k := range allAddresses {
+	for k := range addressesSet {
 		addresses[index] = k
 		index++
 	}
@@ -231,31 +229,13 @@ func (cs *clusterService) logMembers() {
 
 func (cs *clusterService) AddMembershipListener(listener interface{}) string {
 	registrationID, _ := iputil.NewUUID()
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	listeners := cs.listeners.Load().(map[string]interface{})
-	copyListeners := make(map[string]interface{}, len(listeners)+1)
-	for k, v := range listeners {
-		copyListeners[k] = v
-	}
-	copyListeners[registrationID] = listener
-	cs.listeners.Store(copyListeners)
+	cs.listeners.Store(registrationID, listener)
 	return registrationID
 }
 
 func (cs *clusterService) RemoveMembershipListener(registrationID string) bool {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-	listeners := cs.listeners.Load().(map[string]interface{})
-	copyListeners := make(map[string]interface{}, len(listeners)-1)
-	for k, v := range listeners {
-		copyListeners[k] = v
-	}
-	_, found := copyListeners[registrationID]
-	if found {
-		delete(copyListeners, registrationID)
-	}
-	cs.listeners.Store(copyListeners)
+	_, found := cs.listeners.Load(registrationID)
+	cs.listeners.Delete(registrationID)
 	return found
 }
 
@@ -313,12 +293,13 @@ func (cs *clusterService) memberAdded(member *proto.Member) {
 	copy(copyMembers, members)
 	copyMembers = append(copyMembers, member)
 	cs.members.Store(copyMembers)
-	listeners := cs.listeners.Load().(map[string]interface{})
-	for _, listener := range listeners {
+	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberAddedListener); ok {
 			listener.(core.MemberAddedListener).MemberAdded(member)
 		}
+		return true
 	}
+	cs.listeners.Range(rangeFunc)
 }
 
 func (cs *clusterService) memberRemoved(member *proto.Member) {
@@ -335,12 +316,13 @@ func (cs *clusterService) memberRemoved(member *proto.Member) {
 		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
 			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
 	}
-	listeners := cs.listeners.Load().(map[string]interface{})
-	for _, listener := range listeners {
+	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberRemovedListener); ok {
 			listener.(core.MemberRemovedListener).MemberRemoved(member)
 		}
+		return true
 	}
+	cs.listeners.Range(rangeFunc)
 }
 
 func (cs *clusterService) GetMembers() []core.Member {
