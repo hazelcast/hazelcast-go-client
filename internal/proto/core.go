@@ -88,7 +88,7 @@ func (m *Member) String() string {
 	return memberInfo
 }
 
-func (m *Member) HasEqualAddress(member *Member) bool {
+func (m *Member) HasSameAddress(member *Member) bool {
 	return m.address == member.address
 }
 

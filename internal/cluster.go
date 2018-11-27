@@ -42,6 +42,7 @@ type clusterService struct {
 	uuid                   atomic.Value
 	ownerConnectionAddress atomic.Value
 	listeners              sync.Map
+	removeListenerMu       sync.Mutex
 	addressProviders       []AddressProvider
 	initialMemberListWg    *sync.WaitGroup
 	reconnectChan          chan struct{}
@@ -208,25 +209,17 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 }
 
 func (cs *clusterService) initMembershipListener(connection *Connection) error {
-	cs.initialMemberListAcquire()
+	cs.initialMemberListWg.Add(1)
 	invocation := cs.createMembershipInvocation(connection)
 	response, err := cs.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}
 	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
-	cs.waitInitialMemberList()
+	cs.initialMemberListWg.Wait()
 	cs.logMembers()
 	log.Println("Registered membership listener with ID ", registrationID)
 	return nil
-}
-
-func (cs *clusterService) initialMemberListAcquire() {
-	cs.initialMemberListWg.Add(1)
-}
-
-func (cs *clusterService) waitInitialMemberList() {
-	cs.initialMemberListWg.Wait()
 }
 
 func (cs *clusterService) initialMemberListRelease() {
@@ -262,6 +255,8 @@ func (cs *clusterService) AddMembershipListener(listener interface{}) string {
 }
 
 func (cs *clusterService) RemoveMembershipListener(registrationID string) bool {
+	cs.removeListenerMu.Lock()
+	defer cs.removeListenerMu.Unlock()
 	_, found := cs.listeners.Load(registrationID)
 	cs.listeners.Delete(registrationID)
 	return found
@@ -286,14 +281,14 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 	cs.handleMemberListRemovals(previousMembers, members)
 	cs.handleMemberListAdditions(previousMembers, members)
 	cs.updatePartitionTable()
-	cs.initialMemberListRelease()
+	cs.initialMemberListWg.Done()
 }
 
 func (cs *clusterService) handleMemberListRemovals(previousMembers []*proto.Member, members []*proto.Member) {
 	for _, member := range previousMembers {
 		found := false
 		for _, newMember := range members {
-			if member.HasEqualAddress(newMember) {
+			if member.HasSameAddress(newMember) {
 				found = true
 				break
 			}
@@ -308,7 +303,7 @@ func (cs *clusterService) handleMemberListAdditions(previousMembers []*proto.Mem
 	for _, member := range members {
 		found := false
 		for _, previousMember := range previousMembers {
-			if member.HasEqualAddress(previousMember) {
+			if member.HasSameAddress(previousMember) {
 				found = true
 				break
 			}
