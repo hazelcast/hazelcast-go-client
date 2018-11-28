@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	kb         = 1024
-	bufferSize = 128 * kb
+	kb              = 1024
+	bufferSize      = 128 * kb
+	protocolStarter = "CB2"
 )
 
 type Connection struct {
@@ -56,43 +57,63 @@ type Connection struct {
 	startTime                 int64
 }
 
-func newConnection(address core.Address, handleResponse func(interface{}),
-	connectionID int64, connectionManager connectionManager, networkCfg *config.NetworkConfig) (*Connection, error) {
-	builder := &clientMessageBuilder{handleResponse: handleResponse,
-		incompleteMessages: make(map[int64]*proto.ClientMessage)}
-	connection := &Connection{pending: make(chan *proto.ClientMessage, 1),
-		received:             make(chan *proto.ClientMessage, 1),
-		closed:               make(chan struct{}),
-		clientMessageBuilder: builder,
-		readBuffer:           make([]byte, 0),
-		connectionID:         connectionID,
-		connectionManager:    connectionManager,
-		status:               0,
-	}
-
-	var socket net.Conn
-	var err error
-
-	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
-	socket, err = net.DialTimeout("tcp", address.String(), conTimeout)
-	if err != nil {
-		return nil, err
-	}
-	if networkCfg.SSLConfig().Enabled() {
-		socket, err = connection.openTLSConnection(networkCfg.SSLConfig(), socket)
-	}
-	connection.startTime = timeutil.GetCurrentTimeInMilliSeconds()
+func newConnection(address core.Address, client *HazelcastClient) (*Connection, error) {
+	connection := createDefaultConnection(client)
+	socket, err := connection.createSocket(client.Config.NetworkConfig(), address)
 	if err != nil {
 		return nil, err
 	}
 	connection.socket = socket
-	connection.lastRead.Store(time.Now())
-	connection.lastWrite.Store(time.Time{})  //initialization
-	connection.closedTime.Store(time.Time{}) //initialization
-	socket.Write([]byte("CB2"))
+	connection.init()
+	connection.sendProtocolStarter()
 	go connection.writePool()
-	go connection.read()
+	go connection.readPool()
 	return connection, nil
+}
+
+func createDefaultConnection(client *HazelcastClient) *Connection {
+	invService := client.InvocationService.(*invocationServiceImpl)
+
+	builder := &clientMessageBuilder{
+		handleResponse:     invService.handleResponse,
+		incompleteMessages: make(map[int64]*proto.ClientMessage),
+	}
+	return &Connection{pending: make(chan *proto.ClientMessage, 1),
+		received:             make(chan *proto.ClientMessage, 1),
+		closed:               make(chan struct{}),
+		clientMessageBuilder: builder,
+		readBuffer:           make([]byte, 0),
+		connectionID:         client.ConnectionManager.NextConnectionID(),
+		connectionManager:    client.ConnectionManager,
+		status:               0,
+	}
+}
+
+func (c *Connection) sendProtocolStarter() {
+	c.socket.Write([]byte(protocolStarter))
+}
+
+func (c *Connection) createSocket(networkCfg *config.NetworkConfig, address core.Address) (net.Conn, error) {
+	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
+	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
+	if err != nil {
+		return nil, err
+	}
+	if networkCfg.SSLConfig().Enabled() {
+		socket, err = c.openTLSConnection(networkCfg.SSLConfig(), socket)
+	}
+	return socket, err
+}
+
+func (c *Connection) dialToAddressWithTimeout(address core.Address, conTimeout time.Duration) (net.Conn, error) {
+	return net.DialTimeout("tcp", address.String(), conTimeout)
+}
+
+func (c *Connection) init() {
+	c.lastWrite.Store(time.Time{})
+	c.closedTime.Store(time.Time{})
+	c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
+	c.lastRead.Store(time.Now())
 }
 
 func (c *Connection) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn) (net.Conn, error) {
@@ -150,7 +171,7 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	return nil
 }
 
-func (c *Connection) read() {
+func (c *Connection) readPool() {
 	buf := make([]byte, bufferSize)
 	for {
 		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
