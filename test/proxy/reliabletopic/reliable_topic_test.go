@@ -34,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/stretchr/testify/assert"
@@ -295,7 +294,7 @@ func TestReliableTopicProxy_Discard(t *testing.T) {
 	item, err := topic.Ringbuffer().ReadOne(seq)
 	assert.NoError(t, err)
 	msg := item.(*reliabletopic.Message)
-	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload().(*serialization.Data))
+	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload())
 	assert.Equal(t, obj, int64(10))
 }
 
@@ -312,7 +311,7 @@ func TestReliableTopicProxy_Overwrite(t *testing.T) {
 	item, err := topic.Ringbuffer().ReadOne(seq)
 	assert.NoError(t, err)
 	msg := item.(*reliabletopic.Message)
-	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload().(*serialization.Data))
+	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload())
 	assert.Equal(t, obj, int64(11))
 }
 
@@ -343,7 +342,7 @@ func TestReliableTopicProxy_Blocking(t *testing.T) {
 	item, err := topic.Ringbuffer().ReadOne(seq)
 	assert.NoError(t, err)
 	msg := item.(*reliabletopic.Message)
-	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload().(*serialization.Data))
+	obj, _ := client.(*internal.HazelcastClient).SerializationService.ToObject(msg.Payload())
 	assert.Equal(t, obj, int64(11))
 	if timeDiff <= 2*time.Second {
 		t.Errorf("expected at least 2 seconds delay got %s", timeDiff)

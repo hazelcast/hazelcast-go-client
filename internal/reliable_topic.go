@@ -30,8 +30,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 const (
@@ -43,7 +43,7 @@ const (
 type ReliableTopicProxy struct {
 	*proxy
 	ringBuffer           core.Ringbuffer
-	serializationService *serialization.Service
+	serializationService spi.SerializationService
 	topicOverLoadPolicy  core.TopicOverloadPolicy
 	config               *config.ReliableTopicConfig
 	msgProcessors        *sync.Map
@@ -307,7 +307,7 @@ func (m *messageProcessor) process(message *reliabletopic.Message) error {
 }
 
 func (m *messageProcessor) toMessage(message *reliabletopic.Message) core.Message {
-	payload, _ := m.proxy.serializationService.ToObject(message.Payload().(*serialization.Data))
+	payload, _ := m.proxy.serializationService.ToObject(message.Payload())
 	member := m.proxy.client.ClusterService.GetMember(message.PublisherAddress())
 	return proto.NewTopicMessage(payload, message.PublishTime(), member)
 }
