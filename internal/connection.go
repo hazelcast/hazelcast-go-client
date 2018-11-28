@@ -78,7 +78,8 @@ func createDefaultConnection(client *HazelcastClient) *Connection {
 		handleResponse:     invService.handleResponse,
 		incompleteMessages: make(map[int64]*proto.ClientMessage),
 	}
-	return &Connection{pending: make(chan *proto.ClientMessage, 1),
+	return &Connection{
+		pending:              make(chan *proto.ClientMessage, 1),
 		received:             make(chan *proto.ClientMessage, 1),
 		closed:               make(chan struct{}),
 		clientMessageBuilder: builder,
@@ -144,9 +145,6 @@ func (c *Connection) writePool() {
 }
 
 func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
-	if !c.isAlive() {
-		return false
-	}
 	select {
 	case <-c.closed:
 		return false

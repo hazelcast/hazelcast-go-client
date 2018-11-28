@@ -338,9 +338,7 @@ func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner 
 		return nil, core.NewHazelcastClientNotActiveError("Connection Manager is not active", nil)
 	}
 
-	invocationService := cm.client.InvocationService.(*invocationServiceImpl)
-	connectionID := cm.NextConnectionID()
-	con, err := newConnection(address, invocationService.handleResponse, connectionID, cm, cm.client.Config.NetworkConfig())
+	con, err := newConnection(address, cm.client)
 	if err != nil {
 		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	}
