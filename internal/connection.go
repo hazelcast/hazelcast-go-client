@@ -176,19 +176,11 @@ func (c *Connection) readPool() {
 	for {
 		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
 		n, err := c.socket.Read(buf)
-
-		select {
-		// Check if the connection is closed
-		case <-c.closed:
+		if !c.isAlive() {
 			return
-		default:
-			// If the connection is still open continue as normal
 		}
-
 		if err != nil {
-			netErr, ok := err.(net.Error)
-			// Check if we got a timeout error, if so we will try again instead of closing the connection
-			if ok && netErr.Timeout() {
+			if c.isTimeoutError(err) {
 				continue
 			}
 			c.close(err)
@@ -202,6 +194,11 @@ func (c *Connection) readPool() {
 	}
 }
 
+func (c *Connection) isTimeoutError(err error) bool {
+	netErr, ok := err.(net.Error)
+	return ok && netErr.Timeout()
+}
+
 func (c *Connection) StartTime() int64 {
 	return c.startTime
 }
@@ -209,7 +206,7 @@ func (c *Connection) StartTime() int64 {
 func (c *Connection) receiveMessage() {
 	c.lastRead.Store(time.Now())
 	for len(c.readBuffer) > bufutil.Int32SizeInBytes {
-		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:4])
+		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:bufutil.Int32SizeInBytes])
 		if frameLength > uint32(len(c.readBuffer)) {
 			return
 		}
