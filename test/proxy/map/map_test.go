@@ -463,7 +463,7 @@ func TestMapProxy_LockWithLeaseTime(t *testing.T) {
 	mp.LockWithLeaseTime("testingKey", 10*time.Millisecond)
 	test.AssertEventually(t, func() bool {
 		locked, err := mp.IsLocked("testingKey")
-		return err == nil && locked == false
+		return err == nil && !locked
 	})
 }
 
@@ -480,7 +480,7 @@ func TestMapProxy_TryLock(t *testing.T) {
 	assert.Equalf(t, ok, true, "Try Lock failed")
 	test.AssertEventually(t, func() bool {
 		locked, err := mp.IsLocked("testingKey")
-		return err == nil && locked == false
+		return err == nil && !locked
 	})
 	mp.ForceUnlock("testingKey")
 	mp.Clear()
