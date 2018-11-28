@@ -127,8 +127,8 @@ func (c *Config) NetworkConfig() *NetworkConfig {
 }
 
 // SerializationConfig returns SerializationConfig.
-func (cc *Config) SerializationConfig() *serialization.Config {
-	return cc.serializationConfig
+func (c *Config) SerializationConfig() *serialization.Config {
+	return c.serializationConfig
 }
 
 // SetProperty sets a new pair of property as (name, value).
@@ -207,6 +207,6 @@ func (c *Config) SetNetworkConfig(networkConfig *NetworkConfig) {
 }
 
 // SetSerializationConfig sets the serialization config.
-func (cc *Config) SetSerializationConfig(serializationConfig *serialization.Config) {
-	cc.serializationConfig = serializationConfig
+func (c *Config) SetSerializationConfig(serializationConfig *serialization.Config) {
+	c.serializationConfig = serializationConfig
 }

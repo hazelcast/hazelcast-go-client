@@ -370,7 +370,7 @@ func TestMultiMapProxy_LockWithLeaseTime(t *testing.T) {
 	multiMap.LockWithLeaseTime(testKey, 1*time.Millisecond)
 	test.AssertEventually(t, func() bool {
 		locked, err := multiMap.IsLocked(testKey)
-		return err == nil && locked == false
+		return err == nil && !locked
 	})
 }
 
@@ -387,7 +387,7 @@ func TestMultiMapProxy_Lock(t *testing.T) {
 	multiMap.LockWithLeaseTime(testKey, 1*time.Millisecond)
 	test.AssertEventually(t, func() bool {
 		locked, err := multiMap.IsLocked(testKey)
-		return err == nil && locked == false
+		return err == nil && !locked
 	})
 }
 
@@ -429,7 +429,7 @@ func TestMultiMapProxy_TryLock(t *testing.T) {
 	assert.Equalf(t, ok, true, "multiMap TryLock() failed.")
 	test.AssertEventually(t, func() bool {
 		locked, err := multiMap.IsLocked(testKey)
-		return err == nil && locked == false
+		return err == nil && !locked
 	})
 }
 
