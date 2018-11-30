@@ -24,7 +24,7 @@ import (
 const (
 	// logCallDepth is used for removing the last two method names from call trace when logging file names.
 	logCallDepth    = 2
-	defaultLogLevel = InfoLevel
+	defaultLogLevel = infoLevel
 )
 
 // DefaultLogger has Go's built in log embedded in it. It adds level logging.
@@ -42,6 +42,8 @@ func New() *DefaultLogger {
 	}
 }
 
+// NewWithVersion returns a Default Logger with versionMessage set as a combination of
+// groupName clientName and clientVersion to be used in logging.
 func NewWithVersion(groupName string, clientName string, clientVersion string) *DefaultLogger {
 	versionMessage := clientName + " [" + groupName + "]" + " [" + clientVersion + "] "
 	return &DefaultLogger{
@@ -71,7 +73,6 @@ func (l *DefaultLogger) Trace(args ...interface{}) {
 
 // Info logs the given arguments at info level if the level is greater than or equal to info level.
 func (l *DefaultLogger) Info(args ...interface{}) {
-
 	if l.canLogInfo() {
 		callerName := l.findCallerFuncName()
 		s := callerName + "\n" + "INFO: " + " " + l.versionMessage + fmt.Sprintln(args...)
@@ -103,21 +104,21 @@ func (l *DefaultLogger) findCallerFuncName() string {
 }
 
 func (l *DefaultLogger) canLogTrace() bool {
-	return l.Level >= TraceLevel
+	return l.Level >= traceLevel
 }
 
 func (l *DefaultLogger) canLogInfo() bool {
-	return l.Level >= InfoLevel
+	return l.Level >= infoLevel
 }
 
 func (l *DefaultLogger) canLogWarn() bool {
-	return l.Level >= WarnLevel
+	return l.Level >= warnLevel
 }
 
 func (l *DefaultLogger) canLogError() bool {
-	return l.Level >= ErrorLevel
+	return l.Level >= errorLevel
 }
 
 func (l *DefaultLogger) canLogDebug() bool {
-	return l.Level >= DebugLevel
+	return l.Level >= debugLevel
 }

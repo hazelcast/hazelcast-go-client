@@ -21,27 +21,37 @@ import (
 )
 
 const (
+	// OffLevel disables logging.
+	OffLevel = "off"
 	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = iota
+	ErrorLevel = "error"
 	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel
+	WarnLevel = "warn"
 	// InfoLevel level. General operational entries about what's going on inside the
 	// application.
-	InfoLevel
+	InfoLevel = "info"
 	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
-	DebugLevel
+	DebugLevel = "debug"
 	// TraceLevel level. Designates finer-grained informational events than the Debug.
-	TraceLevel
+	TraceLevel = "trace"
+
+	offLevel = iota * 100
+	errorLevel
+	warnLevel
+	infoLevel
+	debugLevel
+	traceLevel
 )
 
 // nameToLevel is used to get corresponding level for log level strings.
 var nameToLevel = map[string]int{
-	"error": ErrorLevel,
-	"warn":  WarnLevel,
-	"info":  InfoLevel,
-	"debug": DebugLevel,
-	"trace": TraceLevel,
+	ErrorLevel: errorLevel,
+	WarnLevel:  warnLevel,
+	InfoLevel:  infoLevel,
+	DebugLevel: debugLevel,
+	TraceLevel: traceLevel,
+	OffLevel:   offLevel,
 }
 
 // Logger is the interface that is used by client for logging.

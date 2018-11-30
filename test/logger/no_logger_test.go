@@ -16,10 +16,10 @@ package logger
 
 import (
 	"bytes"
-	"log"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/stretchr/testify/assert"
@@ -30,10 +30,11 @@ func TestNoLogger(t *testing.T) {
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	buf := new(bytes.Buffer)
-	log.SetOutput(buf)
+	l := logger.New()
+	l.SetOutput(buf)
 	config := hazelcast.NewConfig()
-	noLogger := logger.NewNoLogger()
-	config.LoggerConfig().SetLogger(noLogger)
+	config.SetProperty(property.LoggingLevel.Name(), logger.OffLevel)
+	config.LoggerConfig().SetLogger(l)
 	client, err := hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
 	assert.Zero(t, buf.Len())
