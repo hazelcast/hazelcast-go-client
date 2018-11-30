@@ -263,7 +263,7 @@ func (is *invocationServiceImpl) process() {
 		case struct{}:
 			return
 		default:
-			is.logger.Panic("Unexpected command from response channel ", command)
+			panic(fmt.Sprintf("Unexpected command from response channel %s", command))
 		}
 	}
 }

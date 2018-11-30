@@ -260,7 +260,8 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
 	if err != nil {
-		cm.logger.Panic("Credentials cannot be serialized!")
+		cm.logger.Error("Credentials cannot be serialized!")
+		return nil
 	}
 	return proto.ClientAuthenticationCustomEncodeRequest(
 		credsData,

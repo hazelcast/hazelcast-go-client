@@ -36,9 +36,3 @@ func (*NoLogger) Warn(args ...interface{}) {
 
 func (*NoLogger) Error(args ...interface{}) {
 }
-
-func (*NoLogger) Fatal(args ...interface{}) {
-}
-
-func (*NoLogger) Panic(args ...interface{}) {
-}

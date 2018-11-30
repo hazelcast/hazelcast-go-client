@@ -39,10 +39,10 @@ func TestIsValidLogLevelInvalidLevel(t *testing.T) {
 }
 
 func TestGetLogLevel(t *testing.T) {
-	logLevel := "panic"
+	logLevel := "error"
 	level, err := GetLogLevel(logLevel)
 	assert.NoError(t, err)
-	assert.Equal(t, level, PanicLevel)
+	assert.Equal(t, level, ErrorLevel)
 }
 
 func TestGetLogLevelError(t *testing.T) {

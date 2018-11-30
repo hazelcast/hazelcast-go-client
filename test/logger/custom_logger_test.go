@@ -42,12 +42,6 @@ func (c *customLogger) Warn(args ...interface{}) {
 func (c *customLogger) Error(args ...interface{}) {
 }
 
-func (c *customLogger) Fatal(args ...interface{}) {
-}
-
-func (c *customLogger) Panic(args ...interface{}) {
-}
-
 func TestCustomLogger(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)

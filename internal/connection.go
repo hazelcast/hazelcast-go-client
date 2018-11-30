@@ -60,7 +60,7 @@ type Connection struct {
 }
 
 func newConnection(address core.Address, cm connectionManager, handleResponse func(interface{}),
-	networkCfg *config.NetworkConfig, logger *log.Logger) (*Connection, error) {
+	networkCfg *config.NetworkConfig, logger logger.Logger) (*Connection, error) {
 	connection := createDefaultConnection(cm, handleResponse, logger)
 	socket, err := connection.createSocket(networkCfg, address)
 	if err != nil {
@@ -74,7 +74,7 @@ func newConnection(address core.Address, cm connectionManager, handleResponse fu
 	return connection, nil
 }
 
-func createDefaultConnection(cm connectionManager, handleResponse func(interface{}), logger *log.Logger) *Connection {
+func createDefaultConnection(cm connectionManager, handleResponse func(interface{}), logger logger.Logger) *Connection {
 
 	builder := &clientMessageBuilder{
 		handleResponse:     handleResponse,

@@ -80,26 +80,6 @@ func (l *DefaultLogger) Error(args ...interface{}) {
 	}
 }
 
-// Fatal logs the given arguments at fatal level if the level is greater than or equal to fatal level.
-// It calls os.Exit() after logging.
-func (l *DefaultLogger) Fatal(args ...interface{}) {
-	if l.canLogFatal() {
-		s := "[fatal] " + fmt.Sprintln(args...)
-		l.Output(logCallDepth, s)
-		os.Exit(1)
-	}
-}
-
-// Panic logs the given arguments at panic level if the level is greater than or equal to panic level.
-// It panics after logging.
-func (l *DefaultLogger) Panic(args ...interface{}) {
-	if l.canLogPanic() {
-		s := "[panic] " + fmt.Sprintln(args...)
-		l.Output(logCallDepth, s)
-		panic(s)
-	}
-}
-
 func (l *DefaultLogger) canLogTrace() bool {
 	return l.Level >= TraceLevel
 }
@@ -114,14 +94,6 @@ func (l *DefaultLogger) canLogWarn() bool {
 
 func (l *DefaultLogger) canLogError() bool {
 	return l.Level >= ErrorLevel
-}
-
-func (l *DefaultLogger) canLogPanic() bool {
-	return l.Level >= PanicLevel
-}
-
-func (l *DefaultLogger) canLogFatal() bool {
-	return l.Level >= FatalLevel
 }
 
 func (l *DefaultLogger) canLogDebug() bool {
