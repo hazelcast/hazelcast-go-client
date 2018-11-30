@@ -42,7 +42,7 @@ func TestGetLogLevel(t *testing.T) {
 	logLevel := "error"
 	level, err := GetLogLevel(logLevel)
 	assert.NoError(t, err)
-	assert.Equal(t, level, ErrorLevel)
+	assert.Equal(t, level, errorLevel)
 }
 
 func TestGetLogLevelError(t *testing.T) {
