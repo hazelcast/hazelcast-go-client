@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 )
 
 const (
@@ -29,7 +30,8 @@ const (
 // DefaultLogger has Go's built in log embedded in it. It adds level logging.
 type DefaultLogger struct {
 	*log.Logger
-	Level int
+	Level          int
+	versionMessage string
 }
 
 // New returns a Default Logger with defaultLogLevel.
@@ -40,10 +42,20 @@ func New() *DefaultLogger {
 	}
 }
 
+func NewWithVersion(groupName string, clientName string, clientVersion string) *DefaultLogger {
+	versionMessage := clientName + " [" + groupName + "]" + " [" + clientVersion + "] "
+	return &DefaultLogger{
+		Logger:         log.New(os.Stderr, "", log.LstdFlags),
+		Level:          defaultLogLevel,
+		versionMessage: versionMessage,
+	}
+}
+
 // Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
 func (l *DefaultLogger) Debug(args ...interface{}) {
 	if l.canLogDebug() {
-		s := "[debug] " + fmt.Sprintln(args...)
+		callerName := l.findCallerFuncName()
+		s := callerName + "\n" + "DEBUG: " + " " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -51,15 +63,18 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 // Trace logs the given arguments at trace level if the level is greater than or equal to trace level.
 func (l *DefaultLogger) Trace(args ...interface{}) {
 	if l.canLogTrace() {
-		s := "[trace] " + fmt.Sprintln(args...)
+		callerName := l.findCallerFuncName()
+		s := callerName + "\n" + "TRACE: " + " " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
 
 // Info logs the given arguments at info level if the level is greater than or equal to info level.
 func (l *DefaultLogger) Info(args ...interface{}) {
+
 	if l.canLogInfo() {
-		s := "[info] " + fmt.Sprintln(args...)
+		callerName := l.findCallerFuncName()
+		s := callerName + "\n" + "INFO: " + " " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -67,7 +82,8 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 // Warn logs the given arguments at warn level if the level is greater than or equal to warn level.
 func (l *DefaultLogger) Warn(args ...interface{}) {
 	if l.canLogWarn() {
-		s := "[warn] " + fmt.Sprintln(args...)
+		callerName := l.findCallerFuncName()
+		s := callerName + "\n" + "WARN: " + " " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -75,9 +91,15 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 // Error logs the given arguments at error level if the level is greater than or equal to error level.
 func (l *DefaultLogger) Error(args ...interface{}) {
 	if l.canLogError() {
-		s := "[error] " + fmt.Sprintln(args...)
+		callerName := l.findCallerFuncName()
+		s := callerName + "\n" + "ERROR: " + " " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
+}
+
+func (l *DefaultLogger) findCallerFuncName() string {
+	pc, _, _, _ := runtime.Caller(2)
+	return runtime.FuncForPC(pc).Name()
 }
 
 func (l *DefaultLogger) canLogTrace() bool {

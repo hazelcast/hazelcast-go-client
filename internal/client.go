@@ -186,7 +186,7 @@ func (c *HazelcastClient) initLogger() {
 	setLogger := c.Config.LoggerConfig().Logger()
 	logLevel := c.getLogLevel()
 	if setLogger == nil {
-		l := logger.New()
+		l := logger.NewWithVersion(c.Config.GroupConfig().Name(), c.name, ClientVersion)
 		l.Level = logLevel
 		setLogger = l
 	} else if setLoggerImpl, ok := setLogger.(*logger.DefaultLogger); ok {
@@ -196,13 +196,12 @@ func (c *HazelcastClient) initLogger() {
 }
 
 func (c *HazelcastClient) init() error {
+	c.initClientName()
 	c.initLogger()
 	addressTranslator, err := c.createAddressTranslator()
 	if err != nil {
 		return err
 	}
-	c.id = c.nextClientID()
-	c.initClientName()
 	c.credentials = c.initCredentials(c.Config)
 	c.lifecycleService = newLifecycleService(c.Config, c)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
