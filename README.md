@@ -80,8 +80,9 @@
         * [Supported SQL Syntax](#supported-sql-syntax)
         * [Querying Examples with Predicates](#querying-examples-with-predicates)
     * [7.7.2. Fast-Aggregations](#772-fast-aggregations)
-  * [7.8. Monitoring](#78-monitoring)  
+  * [7.8. Monitoring and Logging](#78-monitoring-and-logging)  
     * [7.8.1. Enabling Client Statistics](#781-enabling-client-statistics)
+    * [7.8.2. Logging Configuration](#782-logging-configuration)
 * [8. Development and Testing](#8-development-and-testing)
   * [8.1. Building and Using Client From Sources](#81-building-and-using-client-from-sources)
   * [8.2. Testing](#82-testing)
@@ -2054,6 +2055,214 @@ config.SetProperty(property.StatisticsPeriodSeconds.Name(), "4")
  ```
 
  After enabling the client statistics, you can monitor your clients using Hazelcast Management Center. See the [Monitoring Clients section](https://docs.hazelcast.org/docs/management-center/latest/manual/html/index.html#monitoring-clients) in the Hazelcast Management Center Reference Manual for more information on the client statistics.
+ 
+### 7.8.2. Logging Configuration
+
+By default Hazelcast Go client uses DefaultLogger for logging. The default logging level is
+`info`. If you want to change the logging level for the client, you should use `LoggingLevel` property:
+
+```go
+config := hazelcast.NewConfig()
+config.SetProperty(property.LoggingLevel.Name(), logger.ErrorLevel)
+``` 
+
+As described in [Client System Properties Section](#143-client-system-properties) you can also 
+set the log level via an environment variable with this property:
+
+```go
+os.Setenv(property.LoggingLevel.Name(), logger.ErrorLevel)
+```
+
+If you are using a custom logger, `LoggingLevel` property will not be used.
+
+Possible log levels are as follows:
+```go
+// OffLevel disables logging.
+OffLevel = "off"
+// ErrorLevel level. Logs. Used for errors that should definitely be noted.
+// Commonly used for hooks to send errors to an error tracking service.
+ErrorLevel = "error"
+// WarnLevel level. Non-critical entries that deserve eyes.
+WarnLevel = "warn"
+// InfoLevel level. General operational entries about what's going on inside the
+// application.
+InfoLevel = "info"
+// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+DebugLevel = "debug"
+// TraceLevel level. Designates finer-grained informational events than the Debug.
+TraceLevel = "trace"
+```
+
+The Default Logger's format is as follows:
+
+```
+[Time] [caller method name]
+[Log level] [Client Name] [Group Name] [Client Version] [Log Message]
+```
+
+An example default log message is as follows:
+```
+2018/11/30 17:48:52 github.com/hazelcast/hazelcast-go-client/internal.(*lifecycleService).fireLifecycleEvent
+INFO:  hz.client_1 [dev] [0.4] New State :  STARTED
+```
+
+If you want to modify the Default Logger for your convenience, you can do so by accessing the embedded built-in go logger:
+```go
+l := logger.New()
+l.SetPrefix("myPrefix ")
+config := hazelcast.NewConfig()
+config.LoggerConfig().SetLogger(l)
+``` 
+
+The same log message will now be as follows:
+
+```
+myPrefix 2018/11/30 17:55:40 github.com/hazelcast/hazelcast-go-client/internal.(*lifecycleService).fireLifecycleEvent
+INFO:  hz.client_1 [dev] [0.4] New State :  CONNECTED
+```
+
+
+If you want to set a custom logger, you can do so by implementing `Logger` interface:
+
+```go
+type customLogger struct {
+}
+
+func (c *customLogger) Debug(args ...interface{}) {
+}
+
+func (c *customLogger) Trace(args ...interface{}) {
+}
+
+func (c *customLogger) Info(args ...interface{}) {
+	log.Println(args)
+}
+
+func (c *customLogger) Warn(args ...interface{}) {
+}
+
+func (c *customLogger) Error(args ...interface{}) {
+}
+```
+
+Note that the `customLogger` only logs `Info` level to console. This way users can
+implement only the levels they need in the format they want to.
+
+After implementing the `Logger` interface, you need to set it as the client's logger:
+
+```go
+customLogger := &customLogger{}
+config := hazelcast.NewConfig()
+config.LoggerConfig().SetLogger(customLogger)
+```
+
+You can also integrate any third party logger with `Logger` interface:
+
+#### Logrus
+
+```go
+logger := logrus.New()
+logger.SetLevel(logrus.DebugLevel)
+config := hazelcast.NewConfig()
+config.LoggerConfig().SetLogger(logger)
+```
+
+The same log message will now be:
+
+```
+time="2018-11-30T18:09:52+03:00" level=info msg="New State : CONNECTED"
+```
+
+Note that Logrus already implements the `Logger` interface, therefore we did not need to do any extra work.
+
+
+#### Zap
+
+```go
+type zapLogger struct {
+	*zap.Logger
+}
+
+func (z *zapLogger) Debug(args ...interface{}) {
+	message := fmt.Sprintln(args)
+	z.Logger.Debug(message)
+}
+
+func (z *zapLogger) Trace(args ...interface{}) {
+	// NO OP
+}
+
+func (z *zapLogger) Info(args ...interface{}) {
+	message := fmt.Sprintln(args)
+	z.Logger.Info(message)
+}
+
+func (z *zapLogger) Warn(args ...interface{}) {
+	message := fmt.Sprintln(args)
+	z.Logger.Warn(message)
+}
+
+func (z *zapLogger) Error(args ...interface{}) {
+	message := fmt.Sprintln(args)
+	z.Logger.Error(message)
+}
+```
+
+Then, you need to set it as the client's logger:
+
+```go
+opt := zap.AddCallerSkip(1)
+logger, _ := zap.NewProduction(opt)
+zapLogger := &zapLogger{logger}
+config := hazelcast.NewConfig()
+config.LoggerConfig().SetLogger(zapLogger)
+```
+
+Note that we call `zap.AddCallerSkip(1)` to skip our wrapper method.
+
+The same log message will now be:
+
+```
+{"level":"info","ts":1543594846.9142249,"caller":"internal/lifecycle.go:89","msg":"[New State :  CONNECTED]\n"}
+```
+
+
+
+#### Glog
+
+```go
+type gLogger struct {
+}
+
+func (*gLogger) Debug(args ...interface{}) {
+	// NO OP
+}
+
+func (*gLogger) Trace(args ...interface{}) {
+	// NO OP
+}
+
+func (*gLogger) Info(args ...interface{}) {
+	glog.Info(args)
+}
+
+func (*gLogger) Warn(args ...interface{}) {
+	glog.Warning(args)
+}
+
+func (*gLogger) Error(args ...interface{}) {
+	glog.Error(args)
+}
+```
+
+Then, you need to set it as the client's logger:
+
+```go
+config := hazelcast.NewConfig()
+config.LoggerConfig().SetLogger(&gLogger{})
+```
+
+
 
 # 8. Development and Testing
 

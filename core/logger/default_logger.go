@@ -42,15 +42,9 @@ func New() *DefaultLogger {
 	}
 }
 
-// NewWithVersion returns a Default Logger with versionMessage set as a combination of
-// groupName clientName and clientVersion to be used in logging.
-func NewWithVersion(groupName string, clientName string, clientVersion string) *DefaultLogger {
-	versionMessage := clientName + " [" + groupName + "]" + " [" + clientVersion + "] "
-	return &DefaultLogger{
-		Logger:         log.New(os.Stderr, "", log.LstdFlags),
-		Level:          defaultLogLevel,
-		versionMessage: versionMessage,
-	}
+// SetVersionMessage sets the versionMessage to be logged with each log message as the given one.
+func (l *DefaultLogger) SetVersionMessage(versionMessage string) {
+	l.versionMessage = versionMessage
 }
 
 // Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
