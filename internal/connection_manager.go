@@ -95,18 +95,11 @@ func (cm *connectionManagerImpl) getActiveConnections() map[string]*Connection {
 
 func (cm *connectionManagerImpl) onConnectionClose(connection *Connection, cause error) {
 	//If Connection was authenticated fire event
-	address, ok := connection.endpoint.Load().(core.Address)
-	if ok {
+	if address, ok := connection.endpoint.Load().(core.Address); ok {
 		cm.connectionsMutex.Lock()
 		delete(cm.connections, address.String())
 		cm.connectionsMutex.Unlock()
-
-		listeners := cm.connectionListeners.Load().([]connectionListener)
-		for _, listener := range listeners {
-			if _, ok := listener.(connectionListener); ok {
-				listener.(connectionListener).onConnectionClosed(connection, cause)
-			}
-		}
+		cm.notifyListenersForClose(connection, cause)
 	} else {
 		//Clean up unauthenticated Connection
 		cm.client.InvocationService.cleanupConnection(connection, cause)
@@ -183,6 +176,15 @@ func newConnectionManager(client *HazelcastClient, addressTranslator AddressTran
 	return &cm
 }
 
+func (cm *connectionManagerImpl) notifyListenersForClose(connection *Connection, cause error) {
+	listeners := cm.connectionListeners.Load().([]connectionListener)
+	for _, listener := range listeners {
+		if _, ok := listener.(connectionListener); ok {
+			listener.(connectionListener).onConnectionClosed(connection, cause)
+		}
+	}
+}
+
 func (cm *connectionManagerImpl) getConnection(address core.Address, asOwner bool) *Connection {
 	cm.connectionsMutex.RLock()
 	conn, found := cm.connections[address.String()]
@@ -191,7 +193,7 @@ func (cm *connectionManagerImpl) getConnection(address core.Address, asOwner boo
 	if !found {
 		return nil
 	}
-	if cm.shouldAuthenticateConn(asOwner, conn) {
+	if cm.doesMeetOwnerRequirement(asOwner, conn) {
 		return nil
 	}
 	return conn
@@ -213,15 +215,14 @@ func (cm *connectionManagerImpl) getOrCreateConnectionInternal(address core.Addr
 		}
 		return cm.createConnection(addr, asOwner)
 	}
-	if cm.shouldAuthenticateConn(asOwner, conn) {
+	if cm.doesMeetOwnerRequirement(asOwner, conn) {
 		err := cm.authenticate(conn, asOwner)
 		return conn, err
-	} else {
-		return conn, nil
 	}
+	return conn, nil
 }
 
-func (cm *connectionManagerImpl) shouldAuthenticateConn(asOwner bool, conn *Connection) bool {
+func (cm *connectionManagerImpl) doesMeetOwnerRequirement(asOwner bool, conn *Connection) bool {
 	return asOwner && !conn.isOwnerConnection
 }
 
@@ -232,9 +233,9 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
 	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
 		return cm.createAuthenticationRequest(asOwner, creds)
-	} else {
-		return cm.createCustomAuthenticationRequest(asOwner)
 	}
+	return cm.createCustomAuthenticationRequest(asOwner)
+
 }
 
 func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
@@ -294,6 +295,11 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 	if err != nil {
 		return err
 	}
+	return cm.processAuthenticationResult(connection, asOwner, result)
+}
+
+func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool,
+	result *proto.ClientMessage) error {
 	authenticationDecoder := cm.getAuthenticationDecoder()
 	//status, address, uuid, ownerUUID, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
 	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := authenticationDecoder(result)()
@@ -314,7 +320,6 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 	case serializationVersionMismatch:
 		return core.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
 	}
-
 	return nil
 }
 
