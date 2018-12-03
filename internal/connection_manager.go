@@ -226,8 +226,7 @@ func (cm *connectionManagerImpl) shouldAuthenticateConn(asOwner bool, conn *Conn
 }
 
 func (cm *connectionManagerImpl) NextConnectionID() int64 {
-	cm.nextConnectionID = cm.nextConnectionID + 1
-	return cm.nextConnectionID
+	return atomic.AddInt64(&cm.nextConnectionID, 1)
 }
 
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
