@@ -191,16 +191,10 @@ func (cm *connectionManagerImpl) getConnection(address core.Address, asOwner boo
 	if !found {
 		return nil
 	}
-
-	if !asOwner {
-		return conn
+	if cm.shouldAuthenticateConn(asOwner, conn) {
+		return nil
 	}
-
-	if conn.isOwnerConnection {
-		return conn
-	}
-
-	return nil
+	return conn
 }
 
 // following methods are called under same connectionsMutex writeLock
@@ -219,20 +213,16 @@ func (cm *connectionManagerImpl) getOrCreateConnectionInternal(address core.Addr
 		}
 		return cm.createConnection(addr, asOwner)
 	}
-
-	if !asOwner {
+	if cm.shouldAuthenticateConn(asOwner, conn) {
+		err := cm.authenticate(conn, asOwner)
+		return conn, err
+	} else {
 		return conn, nil
 	}
+}
 
-	if conn.isOwnerConnection {
-		return conn, nil
-	}
-	err := cm.authenticate(conn, asOwner)
-
-	if err == nil {
-		return conn, nil
-	}
-	return nil, err
+func (cm *connectionManagerImpl) shouldAuthenticateConn(asOwner bool, conn *Connection) bool {
+	return asOwner && !conn.isOwnerConnection
 }
 
 func (cm *connectionManagerImpl) NextConnectionID() int64 {
@@ -241,37 +231,45 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 }
 
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
+	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
+		return cm.createAuthenticationRequest(asOwner, creds)
+	} else {
+		return cm.createCustomAuthenticationRequest(asOwner)
+	}
+}
+
+func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
+	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	uuid := cm.client.ClusterService.uuid.Load().(string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
-	clientType := proto.ClientType
-	var request *proto.ClientMessage
-	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		request = proto.ClientAuthenticationEncodeRequest(
-			creds.Username(),
-			creds.Password(),
-			uuid,
-			ownerUUID,
-			asOwner,
-			clientType,
-			serializationVersion,
-			ClientVersion,
-		)
-	} else {
-		credsData, err := cm.client.SerializationService.ToData(cm.credentials)
-		if err != nil {
-			log.Panic("Credentials cannot be serialized!")
-		}
-		request = proto.ClientAuthenticationCustomEncodeRequest(
-			credsData,
-			uuid,
-			ownerUUID,
-			asOwner,
-			clientType,
-			serializationVersion,
-			ClientVersion,
-		)
+	return proto.ClientAuthenticationEncodeRequest(
+		creds.Username(),
+		creds.Password(),
+		uuid,
+		ownerUUID,
+		asOwner,
+		proto.ClientType,
+		serializationVersion,
+		ClientVersion,
+	)
+}
+
+func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
+	uuid := cm.client.ClusterService.uuid.Load().(string)
+	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
+	if err != nil {
+		log.Panic("Credentials cannot be serialized!")
 	}
-	return request
+	return proto.ClientAuthenticationCustomEncodeRequest(
+		credsData,
+		uuid,
+		ownerUUID,
+		asOwner,
+		proto.ClientType,
+		serializationVersion,
+		ClientVersion,
+	)
 }
 
 func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *proto.ClientMessage) func() (
@@ -331,23 +329,25 @@ func (cm *connectionManagerImpl) fireConnectionAddedEvent(connection *Connection
 }
 
 func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner bool) (*Connection, error) {
-	if !asOwner && cm.client.ClusterService.getOwnerConnectionAddress() == nil {
-		return nil, core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
+	if err := cm.canCreateConnection(asOwner); err != nil {
+		return nil, err
 	}
-	if cm.isAlive.Load() == false {
-		return nil, core.NewHazelcastClientNotActiveError("Connection Manager is not active", nil)
-	}
-
 	con, err := newConnection(address, cm, cm.client.InvocationService.handleResponse, cm.client.Config.NetworkConfig())
 	if err != nil {
 		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	}
 	err = cm.authenticate(con, asOwner)
+	return con, err
+}
 
-	if err != nil {
-		return nil, err
+func (cm *connectionManagerImpl) canCreateConnection(asOwner bool) error {
+	if !asOwner && cm.client.ClusterService.getOwnerConnectionAddress() == nil {
+		return core.NewHazelcastIllegalStateError("ownerConnection is not active", nil)
 	}
-	return con, nil
+	if cm.isAlive.Load() == false {
+		return core.NewHazelcastClientNotActiveError("Connection Manager is not active", nil)
+	}
+	return nil
 }
 
 type connectionListener interface {
