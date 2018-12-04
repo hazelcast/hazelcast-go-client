@@ -14,19 +14,5 @@
 
 package nearcache
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
-
-type RecordStore interface {
-	Get(key interface{}) interface{}
-	Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data)
-	TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool)
-	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
-	Invalidate(key interface{})
-	Clear()
-	Destroy()
-	Size() int
-	Record() Record
-	DoExpiration()
-	DoEviction(withoutMaxSizeCheck bool)
-	Initialize()
+type Record interface {
 }
