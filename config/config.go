@@ -47,6 +47,8 @@ type Config struct {
 	// loggerConfig is the configuration for logging.
 	loggerConfig *LoggerConfig
 
+	nearCacheConfig *NearCacheConfig
+
 	securityConfig *SecurityConfig
 
 	// flakeIDGeneratorConfigMap is mapping of names to flakeIDGeneratorConfigs.
@@ -76,6 +78,7 @@ func New() *Config {
 		securityConfig:            new(SecurityConfig),
 		reliableTopicConfigMap:    make(map[string]*ReliableTopicConfig),
 		loggerConfig:              NewLoggerConfig(),
+		nearCacheConfig:           new(NearCacheConfig),
 	}
 }
 
@@ -87,6 +90,11 @@ func (c *Config) LoggerConfig() *LoggerConfig {
 // SecurityConfig returns the security config for this client.
 func (c *Config) SecurityConfig() *SecurityConfig {
 	return c.securityConfig
+}
+
+// NearCacheConfig returns near cache configuration for this client.
+func (c *Config) NearCacheConfig() *NearCacheConfig {
+	return c.nearCacheConfig
 }
 
 // GetReliableTopicConfig returns the reliable topic config for this client.
