@@ -12,23 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package nearcache
 
-type InMemoryFormat int32
+import "github.com/hazelcast/hazelcast-go-client/serialization"
 
-const (
-	InMemoryFormatBinary InMemoryFormat = iota
-	InMemoryFormatObject
-)
-
-type NearCacheConfig struct {
-	inMemoryFormat InMemoryFormat
-}
-
-func (n *NearCacheConfig) IsSerializeKeys() bool {
-	return true
-}
-
-func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {
-	return n.inMemoryFormat
+type RecordStore interface {
+	Get(key interface{}) interface{}
+	Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data)
+	Initialize()
 }

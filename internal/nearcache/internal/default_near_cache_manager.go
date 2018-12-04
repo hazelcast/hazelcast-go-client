@@ -84,5 +84,5 @@ func (d *DefaultNearCacheManager) ListAllNearCaches() []nearcache.NearCache {
 }
 
 func (d *DefaultNearCacheManager) createNearCache(name string, config *config.NearCacheConfig) nearcache.NearCache {
-	return nil
+	return NewDefaultNearCache(name, config, d.serializationService, d.properties)
 }
