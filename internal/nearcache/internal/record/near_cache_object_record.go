@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nearcache
+package record
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"time"
 )
 
-type RecordStore interface {
-	Get(key interface{}) interface{}
-	Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data)
-	TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool)
-	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
-	Invalidate(key interface{})
-	Clear()
-	Destroy()
-	Size() int
-	Record() Record
-	DoExpiration()
-	DoEviction(withoutMaxSizeCheck bool)
-	Initialize()
+type NearCacheObjectRecord struct {
+	*AbstractNearCacheRecord
+}
+
+func NewNearCacheObjectRecord(value interface{}, creationTime time.Duration,
+	expirationTime time.Duration) *NearCacheObjectRecord {
+	return &NearCacheObjectRecord{
+		NewAbstractNearCacheRecord(value, creationTime, expirationTime),
+	}
 }

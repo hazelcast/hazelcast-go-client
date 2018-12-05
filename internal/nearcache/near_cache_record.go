@@ -14,5 +14,31 @@
 
 package nearcache
 
+import (
+	"time"
+)
+
+const (
+	TimeNotSet    = -1
+	NotReserved   = -1
+	Reserved      = -2
+	UpdateStarted = -3
+	ReadPermitted = -4
+)
+
 type Record interface {
+	Value() interface{}
+	SetValue(value interface{})
+	SetCreationTime(time time.Duration)
+	SetAccessTime(time time.Duration)
+	IsIdleAt(maxIdle time.Duration, now time.Duration) bool
+	IncrementAccessHit()
+	RecordState() int64
+	CasRecordState(expect int64, update int64)
+	PartitionID() int32
+	SetPartitionID(partitionID int32)
+	InvalidationSequence() int64
+	SetInvalidationSequence(sequence int64)
+	SetUUID(UUID string)
+	HasSameUUID(UUID string) bool
 }
