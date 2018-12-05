@@ -16,10 +16,13 @@ package nearcache
 
 import (
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/eviction"
 )
 
+var TimeNotSet = time.Time{-1, -1, nil}
+
 const (
-	TimeNotSet    = -1
 	NotReserved   = -1
 	Reserved      = -2
 	UpdateStarted = -3
@@ -27,11 +30,12 @@ const (
 )
 
 type Record interface {
-	Value() interface{}
+	eviction.Evictable
+	eviction.Expirable
 	SetValue(value interface{})
-	SetCreationTime(time time.Duration)
-	SetAccessTime(time time.Duration)
-	IsIdleAt(maxIdle time.Duration, now time.Duration) bool
+	SetCreationTime(time time.Time)
+	SetAccessTime(time time.Time)
+	IsIdleAt(maxIdle time.Duration, now time.Time) bool
 	IncrementAccessHit()
 	RecordState() int64
 	CasRecordState(expect int64, update int64)

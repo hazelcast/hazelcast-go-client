@@ -27,7 +27,7 @@ type RecordStore interface {
 	Clear()
 	Destroy()
 	Size() int
-	Record() Record
+	Record(key interface{}) Record
 	DoExpiration()
 	DoEviction(withoutMaxSizeCheck bool)
 	Initialize()

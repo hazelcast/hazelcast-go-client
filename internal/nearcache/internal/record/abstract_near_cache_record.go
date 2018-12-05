@@ -28,21 +28,46 @@ type AbstractNearCacheRecord struct {
 	value          atomic.Value
 	expirationTime atomic.Value
 	creationTime   atomic.Value
-	accessTime     atomic.Value
+	lastAccessTime atomic.Value
 	recordState    int64
-	accessHit      int64
+	accessHit      int32
 }
 
-func NewAbstractNearCacheRecord(value interface{}, creationTime time.Duration,
-	expirationTime time.Duration) *AbstractNearCacheRecord {
+func NewAbstractNearCacheRecord(value interface{}, creationTime time.Time,
+	expirationTime time.Time) *AbstractNearCacheRecord {
 	a := &AbstractNearCacheRecord{}
 	a.value.Store(value)
 	a.creationTime.Store(creationTime)
 	a.expirationTime.Store(expirationTime)
-	a.accessTime.Store(nearcache.TimeNotSet)
+	a.lastAccessTime.Store(nearcache.TimeNotSet)
 	a.uuid.Store("")
 	atomic.StoreInt64(&a.recordState, nearcache.ReadPermitted)
 	return a
+}
+
+func (a *AbstractNearCacheRecord) CreationTime() time.Time {
+	return a.creationTime.Load().(time.Time)
+}
+
+func (a *AbstractNearCacheRecord) LastAccessTime() time.Time {
+	return a.lastAccessTime.Load().(time.Time)
+}
+
+func (a *AbstractNearCacheRecord) AccessHit() int32 {
+	return atomic.LoadInt32(&a.accessHit)
+}
+
+func (a *AbstractNearCacheRecord) ExpirationTime() time.Time {
+	return a.expirationTime.Load().(time.Time)
+}
+
+func (a *AbstractNearCacheRecord) SetExpirationTime(time time.Time) {
+	a.expirationTime.Store(time)
+}
+
+func (a *AbstractNearCacheRecord) IsExpiredAt(time time.Time) bool {
+	expirationTime := a.expirationTime.Load().(time.Time)
+	return !expirationTime.Equal(nearcache.TimeNotSet) && expirationTime.Before(time)
 }
 
 func (a *AbstractNearCacheRecord) Value() interface{} {
@@ -53,29 +78,29 @@ func (a *AbstractNearCacheRecord) SetValue(value interface{}) {
 	a.value.Store(value)
 }
 
-func (a *AbstractNearCacheRecord) SetCreationTime(time time.Duration) {
+func (a *AbstractNearCacheRecord) SetCreationTime(time time.Time) {
 	a.creationTime.Store(time)
 }
 
-func (a *AbstractNearCacheRecord) SetAccessTime(time time.Duration) {
-	a.accessTime.Store(time)
+func (a *AbstractNearCacheRecord) SetAccessTime(time time.Time) {
+	a.lastAccessTime.Store(time)
 }
 
-func (a *AbstractNearCacheRecord) IsIdleAt(maxIdleTime time.Duration, now time.Duration) bool {
+func (a *AbstractNearCacheRecord) IsIdleAt(maxIdleTime time.Duration, now time.Time) bool {
 	if maxIdleTime > 0 {
-		accessTime := a.accessTime.Load().(time.Duration)
-		creationTime := a.creationTime.Load().(time.Duration)
-		if accessTime > nearcache.TimeNotSet {
-			return accessTime+maxIdleTime < now
+		accessTime := a.lastAccessTime.Load().(time.Time)
+		creationTime := a.creationTime.Load().(time.Time)
+		if !accessTime.Equal(nearcache.TimeNotSet) {
+			return accessTime.Add(maxIdleTime).Before(now)
 		}
-		return creationTime+maxIdleTime < now
+		return creationTime.Add(maxIdleTime).Before(now)
 
 	}
 	return false
 }
 
 func (a *AbstractNearCacheRecord) IncrementAccessHit() {
-	atomic.AddInt64(&a.accessHit, 1)
+	atomic.AddInt32(&a.accessHit, 1)
 }
 
 func (a *AbstractNearCacheRecord) RecordState() int64 {
