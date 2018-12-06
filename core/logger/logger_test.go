@@ -21,15 +21,31 @@ import (
 )
 
 func TestIsValidLogLevel(t *testing.T) {
-	logLevel := "debug"
-	isValid := isValidLogLevel(logLevel)
-	assert.True(t, isValid)
+	logLevels := []string{
+		"debug",
+		"error",
+		"info",
+		"trace",
+		"warn",
+	}
+	for _, logLevel := range logLevels {
+		isValid := isValidLogLevel(logLevel)
+		assert.True(t, isValid)
+	}
 }
 
 func TestIsValidLogLevelCaseInsensitive(t *testing.T) {
-	logLevel := "deBUg"
-	isValid := isValidLogLevel(logLevel)
-	assert.True(t, isValid)
+	logLevels := []string{
+		"deBUg",
+		"erRor",
+		"Info",
+		"traCe",
+		"WARN",
+	}
+	for _, logLevel := range logLevels {
+		isValid := isValidLogLevel(logLevel)
+		assert.True(t, isValid)
+	}
 }
 
 func TestIsValidLogLevelInvalidLevel(t *testing.T) {
@@ -39,10 +55,21 @@ func TestIsValidLogLevelInvalidLevel(t *testing.T) {
 }
 
 func TestGetLogLevel(t *testing.T) {
-	logLevel := "error"
-	level, err := GetLogLevel(logLevel)
-	assert.NoError(t, err)
-	assert.Equal(t, level, errorLevel)
+	logLevels := []struct {
+		level    string
+		levelInt int
+	}{
+		{"error", errorLevel},
+		{"trace", traceLevel},
+		{"warn", warnLevel},
+		{"debug", debugLevel},
+		{"info", infoLevel},
+	}
+	for _, logLevel := range logLevels {
+		level, err := GetLogLevel(logLevel.level)
+		assert.NoError(t, err)
+		assert.Equal(t, level, logLevel.levelInt)
+	}
 }
 
 func TestGetLogLevelError(t *testing.T) {

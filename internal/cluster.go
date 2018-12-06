@@ -152,8 +152,8 @@ func (cs *clusterService) process() {
 func (cs *clusterService) reconnect() {
 	err := cs.connectToCluster()
 	if err != nil {
-		cs.client.Shutdown()
 		cs.logger.Error("Client will shutdown since it could not reconnect.")
+		cs.client.Shutdown()
 	}
 
 }
@@ -197,8 +197,10 @@ func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimi
 }
 
 func (cs *clusterService) connectToAddress(address core.Address) error {
+	cs.logger.Info("Trying to connect to", address, "as owner member.")
 	connection, err := cs.client.ConnectionManager.getOrConnect(address, true)
 	if err != nil {
+		cs.logger.Warn("Error during initial connection to", address, "error:", err)
 		return err
 	}
 
@@ -220,7 +222,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
 	cs.initialMemberListWg.Wait()
 	cs.logMembers()
-	cs.logger.Info("Registered membership listener with ID ", registrationID)
+	cs.logger.Info("Registered membership listener with ID", registrationID)
 	return nil
 }
 

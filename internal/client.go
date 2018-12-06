@@ -206,7 +206,7 @@ func (c *HazelcastClient) init() error {
 		return err
 	}
 	c.credentials = c.initCredentials(c.Config)
-	c.lifecycleService = newLifecycleService(c.Config, c)
+	c.lifecycleService = newLifecycleService(c)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
 	c.InvocationService = newInvocationService(c)

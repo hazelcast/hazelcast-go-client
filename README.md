@@ -2189,7 +2189,8 @@ func (z *zapLogger) Debug(args ...interface{}) {
 }
 
 func (z *zapLogger) Trace(args ...interface{}) {
-	// NO OP
+	message := fmt.Sprintln(args)
+	z.Logger.Debug(message)
 }
 
 func (z *zapLogger) Info(args ...interface{}) {

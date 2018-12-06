@@ -88,3 +88,27 @@ func TestDefaultLogger(t *testing.T) {
 	client.Shutdown()
 	assert.NotZero(t, buf.Len())
 }
+
+func TestDefaultLoggerContent(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	l := logger.New()
+	buf := new(bytes.Buffer)
+	l.SetOutput(buf)
+	config := hazelcast.NewConfig()
+	config.LoggerConfig().SetLogger(l)
+	client, err := hazelcast.NewClientWithConfig(config)
+	assert.NoError(t, err)
+
+	clientName := client.Name()
+	groupName := config.GroupConfig().Name()
+
+	client.Shutdown()
+	logMessage := buf.String()
+
+	log.Println(logMessage)
+	assert.Contains(t, logMessage, clientName)
+	assert.Contains(t, logMessage, groupName)
+	assert.Contains(t, logMessage, "INFO")
+}
