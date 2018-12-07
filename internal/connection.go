@@ -230,7 +230,7 @@ func (c *Connection) close(err error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	c.logger.Debug("Connection :", c, " closed, err: ", err)
+	c.logger.Warn("Connection :", c, " closed, err: ", err)
 	close(c.closed)
 	c.closedTime.Store(time.Now())
 	c.connectionManager.onConnectionClose(c, core.NewHazelcastTargetDisconnectedError(err.Error(), err))

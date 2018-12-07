@@ -94,14 +94,14 @@ func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error
 func (ps *partitionService) doRefresh() {
 	connection := ps.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
-		ps.logger.Debug("Error while fetching cluster partition table!")
+		ps.logger.Trace("Error while fetching cluster partition table!")
 		return
 	}
 	request := proto.ClientGetPartitionsEncodeRequest()
 	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		if ps.client.lifecycleService.isLive.Load() == true {
-			ps.logger.Debug("Error while fetching cluster partition table! ", err)
+			ps.logger.Trace("Error while fetching cluster partition table! ", err)
 		}
 		return
 	}

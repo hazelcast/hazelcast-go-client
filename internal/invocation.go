@@ -335,7 +335,7 @@ func (is *invocationServiceImpl) sendToConnection(invocation *invocation, connec
 func (is *invocationServiceImpl) sendToAddress(invocation *invocation, address core.Address) {
 	connection, err := is.client.ConnectionManager.getOrTriggerConnect(address)
 	if err != nil {
-		is.logger.Debug("Sending invocation to ", address, " failed, err: ", err)
+		is.logger.Trace("Sending invocation to ", address, " failed, err: ", err)
 		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(), err)
 		return
 	}
@@ -376,7 +376,7 @@ func (is *invocationServiceImpl) handleNotSentInvocation(correlationID int64, ca
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
 		is.handleError(invocation, cause)
 	} else {
-		is.logger.Debug("No invocation has been found with the correlation id: ", correlationID)
+		is.logger.Trace("No invocation has been found with the correlation id: ", correlationID)
 	}
 }
 
@@ -387,7 +387,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 		invocation, found := is.eventHandlers[correlationID]
 		is.eventHandlersLock.RUnlock()
 		if !found {
-			is.logger.Debug("Got an event message with unknown correlation id: ", correlationID)
+			is.logger.Trace("Got an event message with unknown correlation id: ", correlationID)
 		} else {
 			invocation.eventHandler(response)
 		}
@@ -402,7 +402,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 			invocation.complete(response)
 		}
 	} else {
-		is.logger.Debug("No invocation has been found with the correlation id: ", correlationID)
+		is.logger.Trace("No invocation has been found with the correlation id: ", correlationID)
 	}
 }
 
@@ -412,7 +412,7 @@ func convertToError(clientMessage *proto.ClientMessage) *proto.ServerError {
 
 func (is *invocationServiceImpl) logError(invocation *invocation, err error) {
 	correlationID := invocation.request.Load().(*proto.ClientMessage).CorrelationID()
-	is.logger.Debug("Invocation with correlation id: ", correlationID, " got an error: ", err)
+	is.logger.Trace("Invocation with correlation id: ", correlationID, " got an error: ", err)
 }
 
 func (is *invocationServiceImpl) handleError(invocation *invocation, err error) {
@@ -428,7 +428,7 @@ func (is *invocationServiceImpl) handleError(invocation *invocation, err error) 
 
 	if time.Now().After(invocation.deadline) {
 		timeSinceDeadline := time.Since(invocation.deadline)
-		is.logger.Debug("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
+		is.logger.Trace("Invocation will not be retried because it timed out by ", timeSinceDeadline.String())
 		invocation.complete(core.NewHazelcastOperationTimeoutError("invocation timed out by "+timeSinceDeadline.String(), err))
 		return
 	}

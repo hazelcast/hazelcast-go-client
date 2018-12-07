@@ -107,7 +107,6 @@ func TestDefaultLoggerContent(t *testing.T) {
 	client.Shutdown()
 	logMessage := buf.String()
 
-	log.Println(logMessage)
 	assert.Contains(t, logMessage, clientName)
 	assert.Contains(t, logMessage, groupName)
 	assert.Contains(t, logMessage, "INFO")

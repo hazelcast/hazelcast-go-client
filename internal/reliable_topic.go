@@ -216,12 +216,12 @@ func (m *messageProcessor) onFailure(err error) {
 		}
 
 	} else if _, ok := err.(*core.HazelcastInstanceNotActiveError); ok {
-		m.proxy.client.logger.Debug(baseMsg + "HazelcastInstance is shutting down.")
+		m.proxy.client.logger.Trace(baseMsg + "HazelcastInstance is shutting down.")
 	} else if _, ok := err.(*core.HazelcastClientNotActiveError); ok {
-		m.proxy.client.logger.Debug(baseMsg + "HazelcastClient is shutting down.")
+		m.proxy.client.logger.Trace(baseMsg + "HazelcastClient is shutting down.")
 	} else if hzErr, ok := err.(core.HazelcastError); ok && hzErr.ServerError() != nil &&
 		hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeDistributedObjectDestroyed) {
-		m.proxy.client.logger.Debug(baseMsg + "Topic is destroyed.")
+		m.proxy.client.logger.Trace(baseMsg + "Topic is destroyed.")
 	} else {
 		m.proxy.client.logger.Warn(baseMsg + "Unhandled error, message:  " + err.Error())
 	}
@@ -238,7 +238,7 @@ func (m *messageProcessor) handleIllegalArgumentError(err error) {
 }
 
 func (m *messageProcessor) handleOperationTimeoutError() {
-	m.proxy.client.logger.Debug("Message Listener ", m.id, "on topic: ", m.proxy.name, " timed out. "+
+	m.proxy.client.logger.Trace("Message Listener ", m.id, "on topic: ", m.proxy.name, " timed out. "+
 		"Continuing from the last known sequence ", m.sequence)
 	go m.next()
 }
@@ -273,7 +273,7 @@ func (m *messageProcessor) terminate(err error) bool {
 	if terminate {
 		m.proxy.client.logger.Warn(baseMsg+"Unhandled error:", err)
 	} else {
-		m.proxy.client.logger.Debug("MessageListener ", m.id, " on topic:", m.proxy.name, " ran into an error:", err)
+		m.proxy.client.logger.Trace("MessageListener ", m.id, " on topic:", m.proxy.name, " ran into an error:", err)
 	}
 	return terminate
 

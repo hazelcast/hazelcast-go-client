@@ -55,9 +55,9 @@ func newClusterService(client *HazelcastClient, addressProviders []AddressProvid
 		client: client, config: client.Config, reconnectChan: make(chan struct{}, 1),
 		cancelChan: make(chan struct{}, 1),
 	}
-	service.logger = client.logger
 	service.init()
 	service.registerMembershipListeners()
+	service.logger = client.logger
 	service.addressProviders = addressProviders
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
@@ -187,7 +187,7 @@ func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimi
 		}
 		err := cs.connectToAddress(address)
 		if err != nil {
-			cs.logger.Warn("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
+			cs.logger.Debug("The following error occurred while trying to connect to:", address, "in cluster. attempt ",
 				currentAttempt, " of ", attemptLimit, " error: ", err)
 			continue
 		}
