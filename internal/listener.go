@@ -240,7 +240,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
-				ls.logger.Warn("Deregistration of listener with ID ", registrationID, " has failed to connection ", connection)
+				ls.logger.Debug("Deregistration of listener with ID ", registrationID, " has failed to connection ", connection)
 				continue
 			}
 		}
@@ -265,7 +265,7 @@ func (ls *listenerService) registerListenerFromInternal(registrationID string, c
 		if _, ok := err.(*core.HazelcastIOError); ok {
 			ls.registerListenerInternalHandleErrorChannel <- registrationIDConnection
 		} else {
-			ls.logger.Warn("Listener ", registrationID, " cannot be added to a new Connection ", connection, ", reason :", err)
+			ls.logger.Debug("Listener ", registrationID, " cannot be added to a new Connection ", connection, ", reason :", err)
 		}
 	}
 

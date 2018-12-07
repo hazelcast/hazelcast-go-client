@@ -25,6 +25,11 @@ const (
 	// logCallDepth is used for removing the last two method names from call trace when logging file names.
 	logCallDepth    = 2
 	defaultLogLevel = infoLevel
+	tracePrefix     = "TRACE"
+	warnPrefix      = "WARN"
+	debugPrefix     = "DEBUG"
+	errorPrefix     = "ERROR"
+	infoPrefix      = "INFO"
 )
 
 // DefaultLogger has Go's built in log embedded in it. It adds level logging.
@@ -51,7 +56,7 @@ func (l *DefaultLogger) SetVersionMessage(versionMessage string) {
 func (l *DefaultLogger) Debug(args ...interface{}) {
 	if l.canLogDebug() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + "DEBUG: " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + debugPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -60,7 +65,7 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 func (l *DefaultLogger) Trace(args ...interface{}) {
 	if l.canLogTrace() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + "TRACE: " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + tracePrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -69,7 +74,7 @@ func (l *DefaultLogger) Trace(args ...interface{}) {
 func (l *DefaultLogger) Info(args ...interface{}) {
 	if l.canLogInfo() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + "INFO: " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + infoPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -78,7 +83,7 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 func (l *DefaultLogger) Warn(args ...interface{}) {
 	if l.canLogWarn() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + "WARN: " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + warnPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -87,7 +92,7 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 func (l *DefaultLogger) Error(args ...interface{}) {
 	if l.canLogError() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + "ERROR: " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + errorPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }

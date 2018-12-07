@@ -102,7 +102,7 @@ func (s *statistics) getOwnerConnection() *Connection {
 		// do not print too many logs if connected to an old version server
 		cachedOwnerAddress, ok := s.ownerAddress.Load().(*proto.Address)
 		if !ok || (ownerConnectionAddress != cachedOwnerAddress) {
-			s.client.logger.Debug("Client statistics cannot be sent to server ", ownerConnectionAddress,
+			s.client.logger.Trace("Client statistics cannot be sent to server ", ownerConnectionAddress,
 				" since connected server version is less than the minimum supported server version ",
 				sinceVersionString)
 		}
@@ -117,7 +117,7 @@ func (s *statistics) getOwnerConnection() *Connection {
 func (s *statistics) sendStatistics() {
 	ownerConnection := s.getOwnerConnection()
 	if ownerConnection == nil {
-		s.client.logger.Debug("Cannot send client statistics to the server. No owner connection")
+		s.client.logger.Trace("Cannot send client statistics to the server. No owner connection")
 		return
 	}
 
@@ -132,7 +132,7 @@ func (s *statistics) sendStatsToOwner(stats *bytes.Buffer) {
 	ownerConnection := s.getOwnerConnection()
 	_, err := s.client.InvocationService.invokeOnConnection(request, ownerConnection).Result()
 	if err != nil {
-		s.client.logger.Debug("Could not send the statistics, ", err)
+		s.client.logger.Trace("Could not send the statistics, ", err)
 	}
 }
 
