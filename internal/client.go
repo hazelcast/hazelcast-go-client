@@ -189,13 +189,11 @@ func (c *HazelcastClient) initLogger() {
 	if setLogger == nil {
 		l := logger.New()
 		l.Level = logLevel
-		l.SetVersionMessage(versionMessage)
 		setLogger = l
 	} else if setLoggerImpl, ok := setLogger.(*logger.DefaultLogger); ok {
 		setLoggerImpl.Level = logLevel
-		setLoggerImpl.SetVersionMessage(versionMessage)
 	}
-	c.logger = setLogger
+	c.logger = newHazelcastLogger(setLogger, versionMessage)
 }
 
 func (c *HazelcastClient) init() error {
