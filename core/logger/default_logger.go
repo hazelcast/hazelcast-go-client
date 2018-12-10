@@ -23,7 +23,7 @@ import (
 
 const (
 	// logCallDepth is used for removing the last two method names from call trace when logging file names.
-	logCallDepth    = 2
+	logCallDepth    = 3
 	defaultLogLevel = infoLevel
 	tracePrefix     = "TRACE"
 	warnPrefix      = "WARN"
@@ -35,8 +35,7 @@ const (
 // DefaultLogger has Go's built in log embedded in it. It adds level logging.
 type DefaultLogger struct {
 	*log.Logger
-	Level          int
-	versionMessage string
+	Level int
 }
 
 // New returns a Default Logger with defaultLogLevel.
@@ -47,16 +46,11 @@ func New() *DefaultLogger {
 	}
 }
 
-// SetVersionMessage sets the versionMessage to be logged with each log message as the given one.
-func (l *DefaultLogger) SetVersionMessage(versionMessage string) {
-	l.versionMessage = versionMessage
-}
-
 // Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
 func (l *DefaultLogger) Debug(args ...interface{}) {
 	if l.canLogDebug() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + debugPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + debugPrefix + ": " + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -65,7 +59,7 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 func (l *DefaultLogger) Trace(args ...interface{}) {
 	if l.canLogTrace() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + tracePrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + tracePrefix + ": " + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -74,7 +68,7 @@ func (l *DefaultLogger) Trace(args ...interface{}) {
 func (l *DefaultLogger) Info(args ...interface{}) {
 	if l.canLogInfo() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + infoPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + infoPrefix + ": " + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -83,7 +77,7 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 func (l *DefaultLogger) Warn(args ...interface{}) {
 	if l.canLogWarn() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + warnPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + warnPrefix + ": " + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -92,13 +86,13 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 func (l *DefaultLogger) Error(args ...interface{}) {
 	if l.canLogError() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + errorPrefix + ": " + l.versionMessage + fmt.Sprintln(args...)
+		s := callerName + "\n" + errorPrefix + ": " + fmt.Sprintln(args...)
 		l.Output(logCallDepth, s)
 	}
 }
 
 func (l *DefaultLogger) findCallerFuncName() string {
-	pc, _, _, _ := runtime.Caller(2)
+	pc, _, _, _ := runtime.Caller(logCallDepth)
 	return runtime.FuncForPC(pc).Name()
 }
 
