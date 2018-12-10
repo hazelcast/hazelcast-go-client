@@ -27,6 +27,8 @@ import (
 
 	"log"
 
+	"sort"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -226,6 +228,58 @@ func TestClientStatisticsContent(t *testing.T) {
 	assert.Equal(t, true, strings.Contains(res, "runtime.freeMemory="))
 	assert.Equal(t, true, strings.Contains(res, "runtime.totalMemory="))
 	assert.Equal(t, true, strings.Contains(res, "runtime.usedMemory="))
+
+}
+
+func TestClientStatisticsContentChanges(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	defer remoteController.ShutdownCluster(cluster.ID)
+
+	config := hazelcast.NewConfig()
+	config.SetProperty(property.StatisticsEnabled.Name(), "true")
+	config.SetProperty(property.StatisticsPeriodSeconds.Name(), "1")
+
+	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	var stats string
+	test.AssertEventually(t, func() bool {
+		stats = GetClientStatsFromServer(t, cluster.ID)
+		return len(stats) > 0
+	})
+
+	runTimeMetrics := getRuntimeMetrics(stats)
+	test.AssertEventually(t, func() bool {
+		nextStats := GetClientStatsFromServer(t, cluster.ID)
+		if stats == nextStats {
+			return false
+		}
+		nextRuntimeMetrics := getRuntimeMetrics(nextStats)
+		return isRuntimeMetricsDifferent(runTimeMetrics, nextRuntimeMetrics)
+	})
+
+}
+
+func isRuntimeMetricsDifferent(runtimeMetrics []string, nextRuntimeMetrics []string) bool {
+	isDifferent := false
+	for index, nextRuntimeMetric := range nextRuntimeMetrics {
+		if runtimeMetrics[index] != nextRuntimeMetric {
+			isDifferent = true
+		}
+	}
+	return isDifferent
+}
+
+func getRuntimeMetrics(stats string) []string {
+	metrics := strings.Split(stats, ",")
+	runtimeMetrics := make([]string, 0)
+	for _, metric := range metrics {
+		if strings.Contains(metric, "runtime.") {
+			runtimeMetrics = append(runtimeMetrics, metric)
+		}
+	}
+	sort.Strings(runtimeMetrics)
+	return runtimeMetrics
 
 }
 
