@@ -48,7 +48,7 @@ type statistics struct {
 	client       *HazelcastClient
 	enabled      bool
 	ownerAddress atomic.Value
-	gauges       map[string]func() string
+	gauges       map[string]string
 	cancel       chan struct{}
 }
 
@@ -58,7 +58,7 @@ func newStatistics(client *HazelcastClient) *statistics {
 		cancel: make(chan struct{}),
 	}
 	stats.enabled = client.properties.GetBoolean(property.StatisticsEnabled)
-	stats.gauges = make(map[string]func() string)
+	stats.gauges = make(map[string]string)
 	stats.ownerAddress.Store(&proto.Address{}) // initialize
 	return &stats
 }
@@ -68,7 +68,6 @@ func (s *statistics) start() {
 	if !s.enabled {
 		return
 	}
-	s.registerMetrics()
 	period := s.client.properties.GetDuration(property.StatisticsPeriodSeconds)
 	if period <= 0 {
 		// This will return the default value since we have a non-positive value now
@@ -140,38 +139,30 @@ func (s *statistics) sendStatsToOwner(stats *bytes.Buffer) {
 	}
 }
 
-func (s *statistics) registerMetrics() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	var limit syscall.Rlimit
-	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit); err == nil {
-		s.registerGauge("os.maxFileDescriptorCount", func() string {
-			return strconv.Itoa(int(limit.Max))
-		})
-		s.registerGauge("os.openFileDescriptorCount", func() string {
-			return strconv.Itoa(int(limit.Cur))
-		})
-	}
-	s.registerGauge("runtime.availableProcessors",
-		func() string {
-			return strconv.Itoa(runtime.NumCPU())
-		})
-
-	s.registerGauge("runtime.freeMemory",
-		func() string {
-			return strconv.Itoa(int(m.HeapIdle))
-		})
-	s.registerGauge("runtime.totalMemory", func() string {
-		return strconv.Itoa(int(m.HeapSys))
-	})
-	s.registerGauge("runtime.usedMemory", func() string {
-		return strconv.Itoa(int(m.HeapInuse))
-	})
+func (s *statistics) collectMetrics() {
+	s.collectOSMetrics()
+	s.collectRuntimeMetrics()
 }
 
-func (s *statistics) registerGauge(gaugeName string, gaugeFunc func() string) {
-	// TODO:: what if gaugeFunc fails ?
-	s.gauges[gaugeName] = gaugeFunc
+func (s *statistics) collectRuntimeMetrics() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	s.registerGauge("runtime.availableProcessors", strconv.Itoa(runtime.NumCPU()))
+	s.registerGauge("runtime.freeMemory", strconv.Itoa(int(m.HeapIdle)))
+	s.registerGauge("runtime.totalMemory", strconv.Itoa(int(m.HeapSys)))
+	s.registerGauge("runtime.usedMemory", strconv.Itoa(int(m.HeapInuse)))
+}
+
+func (s *statistics) collectOSMetrics() {
+	var limit syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit); err == nil {
+		s.registerGauge("os.maxFileDescriptorCount", strconv.Itoa(int(limit.Max)))
+		s.registerGauge("os.openFileDescriptorCount", strconv.Itoa(int(limit.Cur)))
+	}
+}
+
+func (s *statistics) registerGauge(gaugeName string, gaugeValue string) {
+	s.gauges[gaugeName] = gaugeValue
 }
 
 func (s *statistics) addStat(stats *bytes.Buffer, name string, value interface{}) {
@@ -201,6 +192,7 @@ func (s *statistics) addStatWithKeyPrefix(stats *bytes.Buffer, keyPrefix *string
 }
 
 func (s *statistics) fillMetrics(stats *bytes.Buffer, ownerConnection *Connection) {
+	s.collectMetrics()
 	s.addStat(stats, "lastStatisticsCollectionTime", timeutil.GetCurrentTimeInMilliSeconds())
 	s.addStat(stats, "enterprise", "false")
 	s.addStat(stats, "clientType", "GO")
@@ -210,8 +202,7 @@ func (s *statistics) fillMetrics(stats *bytes.Buffer, ownerConnection *Connectio
 	s.addStat(stats, "clientName", s.client.Name())
 
 	s.addStat(stats, "credentials.principal", s.client.Config.GroupConfig().Name())
-	for gaugeKey, gaugeValueFunc := range s.gauges {
-		gaugeValue := gaugeValueFunc()
+	for gaugeKey, gaugeValue := range s.gauges {
 		s.addStat(stats, gaugeKey, gaugeValue)
 	}
 }
