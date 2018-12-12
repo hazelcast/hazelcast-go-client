@@ -18,6 +18,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/store"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
@@ -57,8 +58,10 @@ func (d *DefaultNearCache) createNearCacheRecordStore(name string, cfg *config.N
 	inMemoryFormat := d.config.InMemoryFormat()
 	switch inMemoryFormat {
 	case config.InMemoryFormatBinary:
+		return store.NewNearCacheDataRecordStore(cfg, d.serializationService)
 	case config.InMemoryFormatObject:
+		return store.NewNearCacheObjectRecordStore(cfg, d.serializationService)
 	default:
-
+		return nil
 	}
 }

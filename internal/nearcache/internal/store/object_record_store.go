@@ -23,24 +23,24 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
-type NearCacheDataRecordStore struct {
+type NearCacheObjectRecordStore struct {
 	*AbstractNearCacheRecordStore
 }
 
-func NewNearCacheDataRecordStore(nearCacheCfg *config.NearCacheConfig,
-	service spi.SerializationService) *NearCacheDataRecordStore {
-	dataRecordStore := &NearCacheDataRecordStore{}
+func NewNearCacheObjectRecordStore(nearCacheCfg *config.NearCacheConfig,
+	service spi.SerializationService) *NearCacheObjectRecordStore {
+	objectRecordStore := &NearCacheObjectRecordStore{}
 	abstractStore := newAbstractNearCacheRecordStore(nearCacheCfg, service)
-	abstractStore.ValueToRecord = dataRecordStore.ValueToRecord
-	dataRecordStore.AbstractNearCacheRecordStore = abstractStore
-	return dataRecordStore
+	abstractStore.ValueToRecord = objectRecordStore.ValueToRecord
+	objectRecordStore.AbstractNearCacheRecordStore = abstractStore
+	return objectRecordStore
 }
 
-func (n *NearCacheDataRecordStore) ValueToRecord(value interface{}) nearcache.Record {
-	dataValue := n.toData(value)
+func (n *NearCacheObjectRecordStore) ValueToRecord(value interface{}) nearcache.Record {
+	value = n.toValue(value)
 	creationTime := time.Now()
 	if n.timeToLiveDuration > 0 {
-		return record.NewNearCacheDataRecord(dataValue, creationTime, creationTime.Add(n.timeToLiveDuration))
+		return record.NewNearCacheObjectRecord(value, creationTime, creationTime.Add(n.timeToLiveDuration))
 	}
-	return record.NewAbstractNearCacheRecord(dataValue, creationTime, nearcache.TimeNotSet)
+	return record.NewNearCacheObjectRecord(value, creationTime, nearcache.TimeNotSet)
 }

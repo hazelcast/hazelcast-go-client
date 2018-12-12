@@ -22,8 +22,8 @@ type NearCacheObjectRecord struct {
 	*AbstractNearCacheRecord
 }
 
-func NewNearCacheObjectRecord(value interface{}, creationTime time.Duration,
-	expirationTime time.Duration) *NearCacheObjectRecord {
+func NewNearCacheObjectRecord(value interface{}, creationTime time.Time,
+	expirationTime time.Time) *NearCacheObjectRecord {
 	return &NearCacheObjectRecord{
 		NewAbstractNearCacheRecord(value, creationTime, expirationTime),
 	}

@@ -24,8 +24,8 @@ type NearCacheDataRecord struct {
 	*AbstractNearCacheRecord
 }
 
-func NewNearCacheDataRecord(value serialization.Data, creationTime time.Duration,
-	expirationTime time.Duration) *NearCacheDataRecord {
+func NewNearCacheDataRecord(value serialization.Data, creationTime time.Time,
+	expirationTime time.Time) *NearCacheDataRecord {
 	return &NearCacheDataRecord{
 		NewAbstractNearCacheRecord(value, creationTime, expirationTime),
 	}

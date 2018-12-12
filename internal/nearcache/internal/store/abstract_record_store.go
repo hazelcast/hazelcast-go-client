@@ -20,22 +20,26 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
-type RecordToValueConverter interface {
-	RecordToValue(record nearcache.Record) interface{}
-}
-
-type ValueToRecordConverter interface {
-	ValueToRecord(value interface{}) nearcache.Record
-}
-
 type AbstractNearCacheRecordStore struct {
-	RecordToValueConverter
-	ValueToRecordConverter
-	records         map[interface{}]nearcache.Record
-	config          *config.NearCacheConfig
-	maxIdleDuration time.Duration
+	RecordToValue        func(record nearcache.Record) interface{}
+	ValueToRecord        func(value interface{}) nearcache.Record
+	records              map[interface{}]nearcache.Record
+	config               *config.NearCacheConfig
+	serializationService spi.SerializationService
+	maxIdleDuration      time.Duration
+	timeToLiveDuration   time.Duration
+}
+
+func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
+	service spi.SerializationService) *AbstractNearCacheRecordStore {
+	return &AbstractNearCacheRecordStore{
+		records:              make(map[interface{}]nearcache.Record),
+		config:               nearCacheCfg,
+		serializationService: service,
+	}
 }
 
 func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
@@ -146,4 +150,17 @@ func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcac
 	oldRecord := a.records[key]
 	a.records[key] = record
 	return oldRecord
+}
+
+func (a *AbstractNearCacheRecordStore) toData(value interface{}) serialization.Data {
+	data, _ := a.serializationService.ToData(value)
+	return data
+}
+
+func (a *AbstractNearCacheRecordStore) toValue(obj interface{}) interface{} {
+	if data, ok := obj.(serialization.Data); ok {
+		value, _ := a.serializationService.ToObject(data)
+		return value
+	}
+	return obj
 }
