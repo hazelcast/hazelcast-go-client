@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/eviction"
 )
 
-var TimeNotSet = time.Time{-1, -1, nil}
+var TimeNotSet = time.Now()
 
 const (
 	NotReserved   = -1

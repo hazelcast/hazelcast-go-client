@@ -65,9 +65,9 @@ func (a *AbstractNearCacheRecord) SetExpirationTime(time time.Time) {
 	a.expirationTime.Store(time)
 }
 
-func (a *AbstractNearCacheRecord) IsExpiredAt(time time.Time) bool {
+func (a *AbstractNearCacheRecord) IsExpiredAt(atTime time.Time) bool {
 	expirationTime := a.expirationTime.Load().(time.Time)
-	return !expirationTime.Equal(nearcache.TimeNotSet) && expirationTime.Before(time)
+	return !expirationTime.Equal(nearcache.TimeNotSet) && expirationTime.Before(atTime)
 }
 
 func (a *AbstractNearCacheRecord) Value() interface{} {

@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nearcache
+package store
 
 import (
+	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+	"github.com/stretchr/testify/assert"
 )
 
-type RecordStore interface {
-	Get(key interface{}) interface{}
-	Put(key interface{}, value interface{})
-	TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool)
-	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
-	Invalidate(key interface{})
-	Clear()
-	Destroy()
-	Size() int
-	Record(key interface{}) Record
-	DoExpiration()
-	DoEviction(withoutMaxSizeCheck bool)
-	Initialize()
+func TestAbstractNearCacheRecordStore_Put(t *testing.T) {
+	nearCacheConfig := &config.NearCacheConfig{}
+	service, _ := spi.NewSerializationService(serialization.NewConfig())
+	abstractStore := NewNearCacheObjectRecordStore(nearCacheConfig, service)
+	expectedValue := "value"
+	abstractStore.Put("key", expectedValue)
+	actualValue := abstractStore.Get("key")
+	assert.Equal(t, expectedValue, actualValue)
 }

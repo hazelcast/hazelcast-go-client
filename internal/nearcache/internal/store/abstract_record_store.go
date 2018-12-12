@@ -24,13 +24,12 @@ import (
 )
 
 type AbstractNearCacheRecordStore struct {
-	RecordToValue        func(record nearcache.Record) interface{}
-	ValueToRecord        func(value interface{}) nearcache.Record
-	records              map[interface{}]nearcache.Record
-	config               *config.NearCacheConfig
-	serializationService spi.SerializationService
-	maxIdleDuration      time.Duration
-	timeToLiveDuration   time.Duration
+	createRecordFromValue func(value interface{}) nearcache.Record
+	records               map[interface{}]nearcache.Record
+	config                *config.NearCacheConfig
+	serializationService  spi.SerializationService
+	maxIdleDuration       time.Duration
+	timeToLiveDuration    time.Duration
 }
 
 func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
@@ -55,19 +54,19 @@ func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
 			return nil
 		}
 		a.onRecordAccess(record)
-		value := a.RecordToValue(record)
+		value := a.recordToValue(record)
 		return value
 	}
 	return nil
 }
 
-func (a *AbstractNearCacheRecordStore) Put(key interface{}, keyData serialization.Data, value interface{},
-	valueData serialization.Data) {
+func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
 
 	if !a.isAvailable() {
 		return
 	}
-	record := a.ValueToRecord(value)
+	keyData := a.toData(key)
+	record := a.createRecordFromValue(value)
 	a.onRecordCreate(key, keyData, record)
 	a.putRecord(key, record)
 }
@@ -81,7 +80,7 @@ func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{}, value
 }
 
 func (a *AbstractNearCacheRecordStore) Invalidate(key interface{}) {
-	panic("implement me")
+	delete(a.records, key)
 }
 
 func (a *AbstractNearCacheRecordStore) Clear() {
@@ -163,4 +162,8 @@ func (a *AbstractNearCacheRecordStore) toValue(obj interface{}) interface{} {
 		return value
 	}
 	return obj
+}
+
+func (a *AbstractNearCacheRecordStore) recordToValue(record nearcache.Record) interface{} {
+	return a.toValue(record.Value())
 }

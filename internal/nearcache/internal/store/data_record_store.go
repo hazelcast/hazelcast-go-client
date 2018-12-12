@@ -31,12 +31,12 @@ func NewNearCacheDataRecordStore(nearCacheCfg *config.NearCacheConfig,
 	service spi.SerializationService) *NearCacheDataRecordStore {
 	dataRecordStore := &NearCacheDataRecordStore{}
 	abstractStore := newAbstractNearCacheRecordStore(nearCacheCfg, service)
-	abstractStore.ValueToRecord = dataRecordStore.ValueToRecord
+	abstractStore.createRecordFromValue = dataRecordStore.createRecordFromValue
 	dataRecordStore.AbstractNearCacheRecordStore = abstractStore
 	return dataRecordStore
 }
 
-func (n *NearCacheDataRecordStore) ValueToRecord(value interface{}) nearcache.Record {
+func (n *NearCacheDataRecordStore) createRecordFromValue(value interface{}) nearcache.Record {
 	dataValue := n.toData(value)
 	creationTime := time.Now()
 	if n.timeToLiveDuration > 0 {
