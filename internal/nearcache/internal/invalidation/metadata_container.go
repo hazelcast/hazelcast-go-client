@@ -69,7 +69,7 @@ func (m *MetaDataContainer) StaleSequence() int64 {
 	return atomic.LoadInt64(&m.staleSequence)
 }
 
-func (m *MetaDataContainer) CompareAndSetLastSequence(lastKnownStaleSeq int64, lastReceivedSeq int64) bool {
+func (m *MetaDataContainer) CompareAndSetStaleSequence(lastKnownStaleSeq int64, lastReceivedSeq int64) bool {
 	if currentStaleSeq := atomic.LoadInt64(&m.staleSequence); currentStaleSeq == lastKnownStaleSeq {
 		atomic.StoreInt64(&m.staleSequence, lastReceivedSeq)
 		return true

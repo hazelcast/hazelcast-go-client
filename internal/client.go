@@ -43,7 +43,7 @@ var clientID int64
 type HazelcastClient struct {
 	InvocationService    invocationService
 	Config               *config.Config
-	PartitionService     *partitionService
+	PartitionService     *PartitionService
 	SerializationService spi.SerializationService
 	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
