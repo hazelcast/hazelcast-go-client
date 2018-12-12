@@ -57,9 +57,10 @@ type Connection struct {
 	startTime                 int64
 }
 
-func newConnection(address core.Address, client *HazelcastClient) (*Connection, error) {
-	connection := createDefaultConnection(client)
-	socket, err := connection.createSocket(client.Config.NetworkConfig(), address)
+func newConnection(address core.Address, cm connectionManager, handleResponse func(interface{}),
+	networkCfg *config.NetworkConfig) (*Connection, error) {
+	connection := createDefaultConnection(cm, handleResponse)
+	socket, err := connection.createSocket(networkCfg, address)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +72,10 @@ func newConnection(address core.Address, client *HazelcastClient) (*Connection, 
 	return connection, nil
 }
 
-func createDefaultConnection(client *HazelcastClient) *Connection {
-	invService := client.InvocationService.(*invocationServiceImpl)
+func createDefaultConnection(cm connectionManager, handleResponse func(interface{})) *Connection {
 
 	builder := &clientMessageBuilder{
-		handleResponse:     invService.handleResponse,
+		handleResponse:     handleResponse,
 		incompleteMessages: make(map[int64]*proto.ClientMessage),
 	}
 	return &Connection{
@@ -84,8 +84,8 @@ func createDefaultConnection(client *HazelcastClient) *Connection {
 		closed:               make(chan struct{}),
 		clientMessageBuilder: builder,
 		readBuffer:           make([]byte, 0),
-		connectionID:         client.ConnectionManager.NextConnectionID(),
-		connectionManager:    client.ConnectionManager,
+		connectionID:         cm.NextConnectionID(),
+		connectionManager:    cm,
 		status:               0,
 	}
 }
