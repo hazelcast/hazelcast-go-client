@@ -55,5 +55,13 @@ var (
 
 	// LoggingLevel is used to configure logging level in the client.
 	// This is used only for default logging, if you use other loggers this has no effect.
-	LoggingLevel = NewHazelcastPropertyString("hazelcast.client.logging.level", "info")
+	LoggingLevel          = NewHazelcastPropertyString("hazelcast.client.logging.level", "info")
+	MaxToleratedMissCount = NewHazelcastPropertyInt(
+		"hazelcast.invalidation.max.tolerated.miss.count", 10)
+
+	ReconciliationIntervalSeconds = NewHazelcastPropertyInt64WithTimeUnit(
+		"hazelcast.invalidation.reconciliation.interval.seconds", 60, time.Second)
+
+	MinReconciliationIntervalSeconds = NewHazelcastPropertyInt64WithTimeUnit(
+		"hazelcast.invalidation.min.reconciliation.interval.seconds", 30, time.Second)
 )

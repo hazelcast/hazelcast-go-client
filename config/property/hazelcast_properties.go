@@ -59,7 +59,18 @@ func (hp *HazelcastProperties) GetString(property *HazelcastProperty) string {
 		return prop
 	}
 	return property.DefaultValue()
+}
 
+// GetIntOrDefault returns the set integer value for the property if it can be
+// parsed to an integer, otherwise it returns its default value.
+func (hp *HazelcastProperties) GetIntOrDefault(property *HazelcastProperty) int {
+	str := hp.GetString(property)
+	if number, err := strconv.Atoi(str); err == nil {
+		return number
+	} else {
+		number, _ = strconv.Atoi(property.defaultValue)
+		return number
+	}
 }
 
 // GetBoolean returns the boolean value of the given property.

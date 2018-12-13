@@ -58,6 +58,10 @@ func (r *RepairingHandler) createMetadataContainers(partitionCount int32) []*Met
 	return metaDataContainers
 }
 
+func (r *RepairingHandler) Name() string {
+	return r.name
+}
+
 func (r *RepairingHandler) InitUUID(partitionID int32, partitionUUID string) {
 	metaData := r.MetaDataContainer(partitionID)
 	metaData.SetUUID(partitionUUID)

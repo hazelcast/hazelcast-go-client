@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHazelcastProperties_GetStringWithConfig(t *testing.T) {
@@ -169,4 +170,12 @@ func TestHazelcastProperty_SetNameAndString(t *testing.T) {
 	if actual != expected {
 		t.Errorf("expected %s got %s", expected, actual)
 	}
+}
+
+func TestHazelcastProperties_GetIntOrDefault(t *testing.T) {
+	expected := 10
+	property := NewHazelcastPropertyInt("name", expected)
+	properties := NewHazelcastProperties(nil)
+	actual := properties.GetIntOrDefault(property)
+	assert.Equal(t, expected, actual)
 }
