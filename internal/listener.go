@@ -197,7 +197,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 	registrationKey := ls.registrationIDToListenerRegistration[registrationID]
 	invocation := newInvocation(registrationKey.request, -1, nil, connection, ls.client)
 	invocation.eventHandler = registrationKey.eventHandler
-	responseMessage, err := ls.client.InvocationService.sendInvocation(invocation).Result()
+	responseMessage, err := ls.client.invocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 		connection := registration.connection
 		serverRegistrationID := registration.serverRegistrationID
 		request := requestEncoder(serverRegistrationID)
-		_, err = ls.client.InvocationService.invokeOnConnection(request, connection).Result()
+		_, err = ls.client.invocationService.invokeOnConnection(request, connection).Result()
 		if err != nil {
 			if connection.isAlive() {
 				successful = false
@@ -244,7 +244,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 				continue
 			}
 		}
-		ls.client.InvocationService.removeEventHandler(registration.correlationID)
+		ls.client.invocationService.removeEventHandler(registration.correlationID)
 		delete(registrationMap, connection.connectionID)
 	}
 	if successful {
@@ -290,7 +290,7 @@ func (ls *listenerService) onConnectionClosedInternal(connection *Connection) {
 		registration, found := registrationMap[connection.connectionID]
 		if found {
 			delete(registrationMap, connection.connectionID)
-			ls.client.InvocationService.removeEventHandler(registration.correlationID)
+			ls.client.invocationService.removeEventHandler(registration.correlationID)
 		}
 	}
 }

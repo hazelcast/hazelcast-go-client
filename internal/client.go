@@ -41,14 +41,14 @@ import (
 var clientID int64
 
 type HazelcastClient struct {
-	InvocationService    invocationService
+	invocationService    InvocationService
 	Config               *config.Config
 	PartitionService     *PartitionService
 	SerializationService spi.SerializationService
 	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
 	ListenerService      *listenerService
-	ClusterService       *clusterService
+	ClusterService       *ClusterService
 	ProxyManager         *proxyManager
 	LoadBalancer         core.LoadBalancer
 	HeartBeatService     *heartBeatService
@@ -67,6 +67,10 @@ func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
 	client.statistics = newStatistics(client)
 	err := client.init()
 	return client, err
+}
+
+func (c *HazelcastClient) InvocationService() InvocationService {
+	return c.invocationService
 }
 
 func (c *HazelcastClient) Name() string {
@@ -205,7 +209,7 @@ func (c *HazelcastClient) init() error {
 	c.lifecycleService = newLifecycleService(c)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
-	c.InvocationService = newInvocationService(c)
+	c.invocationService = newInvocationService(c)
 	addressProviders := c.createAddressProviders()
 	c.ClusterService = newClusterService(c, addressProviders)
 	c.ListenerService = newListenerService(c)
@@ -332,7 +336,7 @@ func (c *HazelcastClient) Shutdown() {
 		c.ConnectionManager.shutdown()
 		c.PartitionService.shutdown()
 		c.ClusterService.shutdown()
-		c.InvocationService.shutdown()
+		c.invocationService.shutdown()
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
 		c.statistics.shutdown()

@@ -34,7 +34,7 @@ const (
 	memberRemoved  int32 = 2
 )
 
-type clusterService struct {
+type ClusterService struct {
 	client                 *HazelcastClient
 	config                 *config.Config
 	members                atomic.Value
@@ -50,8 +50,8 @@ type clusterService struct {
 	logger                 logger.Logger
 }
 
-func newClusterService(client *HazelcastClient, addressProviders []AddressProvider) *clusterService {
-	service := &clusterService{
+func newClusterService(client *HazelcastClient, addressProviders []AddressProvider) *ClusterService {
+	service := &ClusterService{
 		client: client, config: client.Config, reconnectChan: make(chan struct{}, 1),
 		cancelChan: make(chan struct{}, 1),
 	}
@@ -64,7 +64,7 @@ func newClusterService(client *HazelcastClient, addressProviders []AddressProvid
 	return service
 }
 
-func (cs *clusterService) init() {
+func (cs *ClusterService) init() {
 	cs.ownerConnectionAddress.Store(&proto.Address{})
 	cs.members.Store(make([]*proto.Member, 0)) //Initialize
 	cs.initialMemberListWg = new(sync.WaitGroup)
@@ -72,17 +72,17 @@ func (cs *clusterService) init() {
 	cs.uuid.Store("")      //Initialize
 }
 
-func (cs *clusterService) registerMembershipListeners() {
+func (cs *ClusterService) registerMembershipListeners() {
 	for _, membershipListener := range cs.config.MembershipListeners() {
 		cs.AddMembershipListener(membershipListener)
 	}
 }
 
-func (cs *clusterService) start() error {
+func (cs *ClusterService) start() error {
 	return cs.connectToCluster()
 }
 
-func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
+func (cs *ClusterService) getPossibleMemberAddresses() []core.Address {
 	seen := make(map[proto.Address]struct{})
 	addrs := make([]core.Address, 0)
 	memberList := cs.GetMembers()
@@ -135,7 +135,7 @@ func createAddressesFromString(addressesInString []string) []proto.Address {
 	return addresses
 }
 
-func (cs *clusterService) process() {
+func (cs *ClusterService) process() {
 	for {
 		select {
 		case <-cs.reconnectChan:
@@ -146,7 +146,7 @@ func (cs *clusterService) process() {
 	}
 }
 
-func (cs *clusterService) reconnect() {
+func (cs *ClusterService) reconnect() {
 	err := cs.connectToCluster()
 	if err != nil {
 		cs.logger.Error("Client will shutdown since it could not reconnect.")
@@ -155,7 +155,7 @@ func (cs *clusterService) reconnect() {
 
 }
 
-func (cs *clusterService) connectToCluster() error {
+func (cs *ClusterService) connectToCluster() error {
 	currentAttempt := int32(0)
 	attemptLimit := cs.config.NetworkConfig().ConnectionAttemptLimit()
 	retryDelay := cs.config.NetworkConfig().ConnectionAttemptPeriod()
@@ -175,7 +175,7 @@ func (cs *clusterService) connectToCluster() error {
 	return core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 
-func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimit int32) (bool, error) {
+func (cs *ClusterService) connectToPossibleAddresses(currentAttempt, attemptLimit int32) (bool, error) {
 	addresses := cs.getPossibleMemberAddresses()
 	for _, address := range addresses {
 		if !cs.client.lifecycleService.isLive.Load().(bool) {
@@ -193,7 +193,7 @@ func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimi
 	return false, core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 
-func (cs *clusterService) connectToAddress(address core.Address) error {
+func (cs *ClusterService) connectToAddress(address core.Address) error {
 	cs.logger.Info("Trying to connect to", address, "as owner member.")
 	connection, err := cs.client.ConnectionManager.getOrConnect(address, true)
 	if err != nil {
@@ -209,10 +209,10 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 	return nil
 }
 
-func (cs *clusterService) initMembershipListener(connection *Connection) error {
+func (cs *ClusterService) initMembershipListener(connection *Connection) error {
 	cs.initialMemberListWg.Add(1)
 	invocation := cs.createMembershipInvocation(connection)
-	response, err := cs.client.InvocationService.sendInvocation(invocation).Result()
+	response, err := cs.client.invocationService.sendInvocation(invocation).Result()
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,11 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	return nil
 }
 
-func (cs *clusterService) createMembershipInvocation(connection *Connection) *invocation {
+func (cs *ClusterService) initialMemberListRelease() {
+	cs.initialMemberListWg.Done()
+}
+
+func (cs *ClusterService) createMembershipInvocation(connection *Connection) *invocation {
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *proto.ClientMessage) {
 		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList,
@@ -234,7 +238,7 @@ func (cs *clusterService) createMembershipInvocation(connection *Connection) *in
 	return invocation
 }
 
-func (cs *clusterService) logMembers() {
+func (cs *ClusterService) logMembers() {
 	members := cs.members.Load().([]*proto.Member)
 	membersInfo := fmt.Sprintf("\n\nMembers {size:%d} [\n", len(members))
 	for _, member := range members {
@@ -246,13 +250,13 @@ func (cs *clusterService) logMembers() {
 	cs.logger.Info(membersInfo)
 }
 
-func (cs *clusterService) AddMembershipListener(listener interface{}) string {
+func (cs *ClusterService) AddMembershipListener(listener interface{}) string {
 	registrationID, _ := iputil.NewUUID()
 	cs.listeners.Store(registrationID, listener)
 	return registrationID
 }
 
-func (cs *clusterService) RemoveMembershipListener(registrationID string) bool {
+func (cs *ClusterService) RemoveMembershipListener(registrationID string) bool {
 	cs.removeListenerMu.Lock()
 	defer cs.removeListenerMu.Unlock()
 	_, found := cs.listeners.Load(registrationID)
@@ -260,7 +264,7 @@ func (cs *clusterService) RemoveMembershipListener(registrationID string) bool {
 	return found
 }
 
-func (cs *clusterService) handleMember(member *proto.Member, eventType int32) {
+func (cs *ClusterService) handleMember(member *proto.Member, eventType int32) {
 	if eventType == memberAdded {
 		cs.memberAdded(member)
 	} else if eventType == memberRemoved {
@@ -270,11 +274,11 @@ func (cs *clusterService) handleMember(member *proto.Member, eventType int32) {
 	cs.updatePartitionTable()
 }
 
-func (cs *clusterService) updatePartitionTable() {
+func (cs *ClusterService) updatePartitionTable() {
 	cs.client.PartitionService.refresh <- struct{}{}
 }
 
-func (cs *clusterService) handleMemberList(members []*proto.Member) {
+func (cs *ClusterService) handleMemberList(members []*proto.Member) {
 	previousMembers := cs.members.Load().([]*proto.Member)
 	cs.handleMemberListRemovals(previousMembers, members)
 	cs.handleMemberListAdditions(previousMembers, members)
@@ -282,7 +286,7 @@ func (cs *clusterService) handleMemberList(members []*proto.Member) {
 	cs.initialMemberListWg.Done()
 }
 
-func (cs *clusterService) handleMemberListRemovals(previousMembers []*proto.Member, members []*proto.Member) {
+func (cs *ClusterService) handleMemberListRemovals(previousMembers []*proto.Member, members []*proto.Member) {
 	for _, member := range previousMembers {
 		found := false
 		for _, newMember := range members {
@@ -297,7 +301,7 @@ func (cs *clusterService) handleMemberListRemovals(previousMembers []*proto.Memb
 	}
 }
 
-func (cs *clusterService) handleMemberListAdditions(previousMembers []*proto.Member, members []*proto.Member) {
+func (cs *ClusterService) handleMemberListAdditions(previousMembers []*proto.Member, members []*proto.Member) {
 	for _, member := range members {
 		found := false
 		for _, previousMember := range previousMembers {
@@ -312,22 +316,22 @@ func (cs *clusterService) handleMemberListAdditions(previousMembers []*proto.Mem
 	}
 }
 
-func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {
+func (cs *ClusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {
 	cs.notifyListenersForMemberAttributeChange(uuid, key, operationType, value)
 }
 
-func (cs *clusterService) memberAdded(member *proto.Member) {
+func (cs *ClusterService) memberAdded(member *proto.Member) {
 	cs.addMemberToMembers(member)
 	cs.notifyListenersForNewMember(member)
 }
 
-func (cs *clusterService) memberRemoved(member *proto.Member) {
+func (cs *ClusterService) memberRemoved(member *proto.Member) {
 	cs.removeMemberFromMembers(member)
 	cs.closeRemovedMembersConnection(member)
 	cs.notifyListenersForMemberRemoval(member)
 }
 
-func (cs *clusterService) closeRemovedMembersConnection(member *proto.Member) {
+func (cs *ClusterService) closeRemovedMembersConnection(member *proto.Member) {
 	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address))
 	if connection != nil {
 		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
@@ -335,7 +339,7 @@ func (cs *clusterService) closeRemovedMembersConnection(member *proto.Member) {
 	}
 }
 
-func (cs *clusterService) notifyListenersForMemberAttributeChange(uuid string, key string,
+func (cs *ClusterService) notifyListenersForMemberAttributeChange(uuid string, key string,
 	operationType int32, value string) {
 	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberAttributeChangedListener); ok {
@@ -348,7 +352,7 @@ func (cs *clusterService) notifyListenersForMemberAttributeChange(uuid string, k
 	cs.listeners.Range(rangeFunc)
 }
 
-func (cs *clusterService) notifyListenersForMemberRemoval(member *proto.Member) {
+func (cs *ClusterService) notifyListenersForMemberRemoval(member *proto.Member) {
 	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberRemovedListener); ok {
 			listener.(core.MemberRemovedListener).MemberRemoved(member)
@@ -358,7 +362,7 @@ func (cs *clusterService) notifyListenersForMemberRemoval(member *proto.Member) 
 	cs.listeners.Range(rangeFunc)
 }
 
-func (cs *clusterService) notifyListenersForNewMember(member *proto.Member) {
+func (cs *ClusterService) notifyListenersForNewMember(member *proto.Member) {
 	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberAddedListener); ok {
 			listener.(core.MemberAddedListener).MemberAdded(member)
@@ -368,7 +372,7 @@ func (cs *clusterService) notifyListenersForNewMember(member *proto.Member) {
 	cs.listeners.Range(rangeFunc)
 }
 
-func (cs *clusterService) removeMemberFromMembers(member *proto.Member) {
+func (cs *ClusterService) removeMemberFromMembers(member *proto.Member) {
 	members := cs.members.Load().([]*proto.Member)
 	copyMembers := make([]*proto.Member, 0, len(members)-1)
 	for _, curMember := range members {
@@ -379,7 +383,7 @@ func (cs *clusterService) removeMemberFromMembers(member *proto.Member) {
 	cs.members.Store(copyMembers)
 }
 
-func (cs *clusterService) addMemberToMembers(member *proto.Member) {
+func (cs *ClusterService) addMemberToMembers(member *proto.Member) {
 	members := cs.members.Load().([]*proto.Member)
 	copyMembers := make([]*proto.Member, len(members))
 	copy(copyMembers, members)
@@ -387,7 +391,7 @@ func (cs *clusterService) addMemberToMembers(member *proto.Member) {
 	cs.members.Store(copyMembers)
 }
 
-func (cs *clusterService) GetMembers() []core.Member {
+func (cs *ClusterService) GetMembers() []core.Member {
 	membersList := cs.members.Load().([]*proto.Member)
 	members := make([]core.Member, len(membersList))
 	for index := 0; index < len(membersList); index++ {
@@ -396,7 +400,7 @@ func (cs *clusterService) GetMembers() []core.Member {
 	return members
 }
 
-func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (members []core.Member) {
+func (cs *ClusterService) GetMembersWithSelector(selector core.MemberSelector) (members []core.Member) {
 	if selector == nil {
 		return cs.GetMembers()
 	}
@@ -409,7 +413,7 @@ func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (
 	return
 }
 
-func (cs *clusterService) GetMember(address core.Address) core.Member {
+func (cs *ClusterService) GetMember(address core.Address) core.Member {
 	if address == nil {
 		return nil
 	}
@@ -422,7 +426,7 @@ func (cs *clusterService) GetMember(address core.Address) core.Member {
 	return nil
 }
 
-func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
+func (cs *ClusterService) GetMemberByUUID(uuid string) core.Member {
 	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
 		if member.UUID() == uuid {
@@ -432,7 +436,7 @@ func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
 	return nil
 }
 
-func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
+func (cs *ClusterService) getOwnerConnectionAddress() *proto.Address {
 	address, ok := cs.ownerConnectionAddress.Load().(*proto.Address)
 	if ok {
 		return address
@@ -440,7 +444,7 @@ func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
 	return nil
 }
 
-func (cs *clusterService) onConnectionClosed(connection *Connection, cause error) {
+func (cs *ClusterService) onConnectionClosed(connection *Connection, cause error) {
 	if cs.shouldReconnect(connection) {
 		cs.logger.Debug("Owner connection: ", cs.getOwnerConnectionAddress(), " is closed, client will try to reconnect.")
 		cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateDisconnected)
@@ -449,7 +453,7 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 	}
 }
 
-func (cs *clusterService) shouldReconnect(connection *Connection) bool {
+func (cs *ClusterService) shouldReconnect(connection *Connection) bool {
 	address, ok := connection.endpoint.Load().(*proto.Address)
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
 	return ok && ownerConnectionAddress != nil &&
@@ -457,14 +461,14 @@ func (cs *clusterService) shouldReconnect(connection *Connection) bool {
 
 }
 
-func (cs *clusterService) clearOwnerConnectionAddress() {
+func (cs *ClusterService) clearOwnerConnectionAddress() {
 	cs.ownerConnectionAddress.Store(&proto.Address{})
 }
 
-func (cs *clusterService) onConnectionOpened(connection *Connection) {
+func (cs *ClusterService) onConnectionOpened(connection *Connection) {
 
 }
 
-func (cs *clusterService) shutdown() {
+func (cs *ClusterService) shutdown() {
 	cs.cancelChan <- struct{}{}
 }

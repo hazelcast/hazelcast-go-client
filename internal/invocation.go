@@ -54,7 +54,7 @@ func newInvocation(request *proto.ClientMessage, partitionID int32, address core
 		boundConnection: connection,
 		response:        make(chan interface{}, 1),
 		isComplete:      0,
-		deadline:        time.Now().Add(client.InvocationService.InvocationTimeout()),
+		deadline:        time.Now().Add(client.invocationService.InvocationTimeout()),
 	}
 	invocation.request.Store(request)
 	return invocation
@@ -96,11 +96,11 @@ func (i *invocation) ResultWithTimeout(duration time.Duration) (*proto.ClientMes
 	}
 }
 
-type invocationService interface {
+type InvocationService interface {
 	invokeOnPartitionOwner(message *proto.ClientMessage, partitionID int32) invocationResult
 	invokeOnRandomTarget(message *proto.ClientMessage) invocationResult
 	invokeOnKeyOwner(message *proto.ClientMessage, data serialization.Data) invocationResult
-	invokeOnTarget(message *proto.ClientMessage, address core.Address) invocationResult
+	InvokeOnTarget(message *proto.ClientMessage, address core.Address) invocationResult
 	invokeOnConnection(message *proto.ClientMessage, connection *Connection) invocationResult
 	cleanupConnection(connection *Connection, e error)
 	removeEventHandler(correlationID int64)
@@ -125,7 +125,7 @@ func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, 
 	return is.invokeOnPartitionOwner(request, partitionID)
 }
 
-func (is *invocationServiceImpl) invokeOnTarget(request *proto.ClientMessage, target core.Address) invocationResult {
+func (is *invocationServiceImpl) InvokeOnTarget(request *proto.ClientMessage, target core.Address) invocationResult {
 	invocation := newInvocation(request, -1, target, nil, is.client)
 	return is.sendInvocation(invocation)
 }

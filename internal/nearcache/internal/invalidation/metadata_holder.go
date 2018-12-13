@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package invalidation
 
-import (
-	"testing"
+import "github.com/hazelcast/hazelcast-go-client/internal/proto"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-)
+type metaDataHolder struct {
+	namePartitionSequenceList []*proto.Pair
+	partitionUUIDList         []*proto.Pair
+}
 
-func TestRandomLoadBalancer_NextAddressWithNoMembers(t *testing.T) {
-	cs := &ClusterService{}
-	cs.members.Store(make([]*proto.Member, 0)) // initialize with empty member slice
-	lb := core.NewRandomLoadBalancer()
-	lb.Init(cs)
-	member := lb.Next()
-	if member != nil {
-		t.Errorf("RandomLoadBalancer should return nil when there are no members.")
+func newMetaDataHolder(namePartitionSequenceList []*proto.Pair, partitionUUIDList []*proto.Pair) *metaDataHolder {
+	return &metaDataHolder{
+		namePartitionSequenceList: namePartitionSequenceList,
+		partitionUUIDList:         partitionUUIDList,
 	}
 }

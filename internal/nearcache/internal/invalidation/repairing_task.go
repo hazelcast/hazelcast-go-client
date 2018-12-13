@@ -31,12 +31,15 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
+const asyncResultWaitTimeout = time.Duration(1 * time.Second)
+
 type RepairingTask struct {
 	partitionCount         int32
 	localUUID              string
 	reconciliationInterval time.Duration
 	serializationService   spi.SerializationService
 	partitionService       *internal.PartitionService
+	client                 *internal.HazelcastClient
 	maxToleratedMissCount  int64
 	lastAntiEntropyRun     atomic.Value
 	handlers               sync.Map

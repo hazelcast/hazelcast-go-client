@@ -75,7 +75,7 @@ func (hbs *heartBeatService) heartBeat() {
 		}
 		if timeSinceLastWrite > hbs.heartBeatInterval {
 			request := proto.ClientPingEncodeRequest()
-			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)
+			sentInvocation := hbs.client.invocationService.invokeOnConnection(request, connection)
 			go func(con *Connection) {
 				_, err := sentInvocation.Result()
 				if err != nil {

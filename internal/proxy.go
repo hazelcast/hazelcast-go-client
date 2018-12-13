@@ -170,19 +170,19 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 }
 
 func (p *proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnKeyOwner(request, keyData).Result()
+	return p.client.invocationService.invokeOnKeyOwner(request, keyData).Result()
 }
 
 func (p *proxy) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnRandomTarget(request).Result()
+	return p.client.invocationService.invokeOnRandomTarget(request).Result()
 }
 
 func (p *proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionID).Result()
+	return p.client.invocationService.invokeOnPartitionOwner(request, partitionID).Result()
 }
 
 func (p *proxy) invokeOnAddress(request *proto.ClientMessage, address *proto.Address) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnTarget(request, address).Result()
+	return p.client.invocationService.InvokeOnTarget(request, address).Result()
 }
 
 func (p *proxy) toObject(data serialization.Data) (interface{}, error) {
