@@ -392,7 +392,7 @@ func TestReliableTopicProxy_DistributedObjectDestroyedError(t *testing.T) {
 	defer reliableTopic.RemoveMessageListener(id)
 	assert.NoError(t, err)
 	reliableTopic.Destroy()
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		return len(listener.messages) == 0
 	})
 }
@@ -404,7 +404,7 @@ func TestReliableTopicProxy_ClientNotActiveError(t *testing.T) {
 	_, err := reliableTopic.AddMessageListener(listener)
 	assert.NoError(t, err)
 	client2.Shutdown()
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		return len(listener.messages) == 0
 	})
 }
@@ -424,7 +424,7 @@ func TestReliableTopicProxy_Leakage(t *testing.T) {
 	_, err := topic.Ringbuffer().AddAll(items, core.OverflowPolicyOverwrite)
 	assert.NoError(t, err)
 	client2.Shutdown()
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumBefore == routineNumAfter
 	})

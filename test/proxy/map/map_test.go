@@ -284,7 +284,7 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	mp.PutTransient(testKey, "nextValue", 1*time.Millisecond)
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		res, err := mp.Get(testKey)
 		return err == nil && res == nil
 	})
@@ -461,7 +461,7 @@ func TestMapProxy_UnlockWithNilKey(t *testing.T) {
 func TestMapProxy_LockWithLeaseTime(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	mp.LockWithLeaseTime("testingKey", 10*time.Millisecond)
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		locked, err := mp.IsLocked("testingKey")
 		return err == nil && !locked
 	})
@@ -478,7 +478,7 @@ func TestMapProxy_TryLock(t *testing.T) {
 	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Millisecond, 2*time.Millisecond)
 	require.NoError(t, err)
 	assert.Equalf(t, ok, true, "Try Lock failed")
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		locked, err := mp.IsLocked("testingKey")
 		return err == nil && !locked
 	})
@@ -615,7 +615,7 @@ func TestMapProxy_SetWithTTL(t *testing.T) {
 	_, err = mp.Get("testingKey1")
 	require.NoError(t, err)
 	mp.SetWithTTL("testingKey1", "testingValue2", 1*time.Millisecond)
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		newValue, err := mp.Get("testingKey1")
 		return err == nil && newValue == nil
 	})

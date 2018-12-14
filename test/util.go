@@ -104,7 +104,7 @@ func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	}
 }
 
-func AssertEventually(t *testing.T, assertions func() bool) {
+func AssertTrueEventually(t *testing.T, assertions func() bool) {
 	startTime := time.Now()
 	for time.Since(startTime) < Timeout {
 		if assertions() {
