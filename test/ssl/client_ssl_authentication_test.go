@@ -264,8 +264,9 @@ func TestSSL_OnlyServerName(t *testing.T) {
 	sslConfig := config.NetworkConfig().SSLConfig()
 	sslConfig.SetEnabled(true)
 	sslConfig.ServerName = "member1.hazelcast-test.download"
-	_, err = hazelcast.NewClientWithConfig(config)
+	client, err := hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
+	client.Shutdown()
 }
 
 func TestSSL_NoServerName(t *testing.T) {

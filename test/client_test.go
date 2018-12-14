@@ -284,6 +284,7 @@ func TestHazelcastError_ServerError(t *testing.T) {
 	cfg := hazelcast.NewConfig()
 	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
 	client, _ := hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
 	counter, _ := client.GetPNCounter("myPNCounter")
 	var delta int64 = 5
 	counter.GetAndAdd(delta)

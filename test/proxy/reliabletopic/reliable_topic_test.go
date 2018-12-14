@@ -371,6 +371,7 @@ func TestReliableTopicProxy_DistributedObjectDestroyed(t *testing.T) {
 	config.NetworkConfig().SetConnectionAttemptLimit(10)
 	config.SetProperty(property.InvocationTimeoutSeconds.Name(), "10")
 	client2, _ := hazelcast.NewClientWithConfig(config)
+	defer client2.Shutdown()
 	reliableTopic, _ := client2.GetReliableTopic("x")
 	var wg = new(sync.WaitGroup)
 	wg.Add(1)

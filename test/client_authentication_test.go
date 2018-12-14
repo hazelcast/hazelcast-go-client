@@ -65,8 +65,9 @@ func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
 		),
 	})
 
-	_, err := hazelcast.NewClientWithConfig(cfg)
+	client, err := hazelcast.NewClientWithConfig(cfg)
 	assert.NoError(t, err)
+	client.Shutdown()
 }
 
 func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {

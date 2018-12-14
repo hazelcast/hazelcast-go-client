@@ -213,6 +213,7 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	cfg := hazelcast.NewConfig()
 	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
 	client, _ = hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
@@ -234,6 +235,7 @@ func TestPNCounter_Reset(t *testing.T) {
 	cfg := hazelcast.NewConfig()
 	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
 	client, _ = hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
 	counter, _ = client.GetPNCounter(counterName)
 	var delta int64 = 5
 	counter.GetAndAdd(delta)
