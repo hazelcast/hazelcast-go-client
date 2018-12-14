@@ -6,6 +6,9 @@
   * [1.2. Working with Hazelcast IMDG Clusters](#12-working-with-hazelcast-imdg-clusters)
      * [1.2.1. Setting Up a Hazelcast IMDG Cluster](#121-setting-up-a-hazelcast-imdg-cluster)
        * [1.2.1.1. Using hazelcast-member Tool](#1211-using-hazelcast-member-tool)
+          * [Installing on Mac OS X](#installing-on-mac-os-x)
+          * [Installing on Ubuntu and Debian](#installing-on-ubuntu-and-debian)
+          * [Installing on Red Hat and CentOS](#installing-on-red-hat-and-centos)
        * [1.2.1.2. Running Standalone JARs](#1212-running-standalone-jars)
        * [1.2.1.3. Adding User Library to CLASSPATH](#1213-adding-user-library-to-classpath)
   * [1.3. Downloading and Installing](#13-downloading-and-installing)
@@ -13,7 +16,7 @@
     * [1.4.1. Configuring Hazelcast IMDG](#141-configuring-hazelcast-imdg)
     * [1.4.2. Configuring Hazelcast Go Client](#142-configuring-hazelcast-go-client)
       * [1.4.2.1. Group Settings](#1421-group-settings)
-      * [1.4.2.2. Network Settings](#1421-network-settings)
+      * [1.4.2.2. Network Settings](#1422-network-settings)
     * [1.4.3. Client System Properties](#143-client-system-properties)
   * [1.5. Basic Usage](#15-basic-usage)
   * [1.6. Code Samples](#16-code-samples)
@@ -25,7 +28,7 @@
   * [4.3. Custom Serialization](#43-custom-serialization)
   * [4.4. Global Serialization](#44-global-serialization)
 * [5. Setting Up Client Network](#5-setting-up-client-network)
-  * [5.1. Providing Member Addresses](#51-providing-the-member-addresses)
+  * [5.1. Providing the Member Addresses](#51-providing-the-member-addresses)
   * [5.2. Setting Smart Routing](#52-setting-smart-routing)
   * [5.3. Enabling Redo Operation](#53-enabling-redo-operation)
   * [5.4. Setting Connection Timeout](#54-setting-connection-timeout)
@@ -68,11 +71,14 @@
       * [7.5.2.4. Message Listener](#7524-message-listener) 
   * [7.6. Distributed Computing](#76-distributed-computing)
     * [7.6.1. Using EntryProcessor](#761-using-entryprocessor)
+        * [Processing Entries](#processing-entries)
   * [7.7. Distributed Query](#77-distributed-query)
     * [7.7.1. How Distributed Query Works](#771-how-distributed-query-works)
       * [7.7.1.1. Employee Map Query Example](#7711-employee-map-query-example)
       * [7.7.1.2. Querying by Combining Predicates with AND, OR, NOT](#7712-querying-by-combining-predicates-with-and-or-not)
       * [7.7.1.3. Querying with SQL](#7713-querying-with-sql)
+        * [Supported SQL Syntax](#supported-sql-syntax)
+        * [Querying Examples with Predicates](#querying-examples-with-predicates)
     * [7.7.2. Fast-Aggregations](#772-fast-aggregations)
   * [7.8. Monitoring](#78-monitoring)  
     * [7.8.1. Enabling Client Statistics](#781-enabling-client-statistics)
@@ -1085,11 +1091,11 @@ sslConfig.AddClientCertAndKeyPath("yourClientCertPath", "yourClientKeyPath")
 sslConfig.ServerName = "yourServerName"
 ```
 
-# 7. Using Go client with Hazelcast IMDG
+# 7. Using Go Client with Hazelcast IMDG
 
 This chapter provides information on how you can use Hazelcast IMDG's data structures in the Go client, after giving some basic information including an overview to the client API, operation modes of the client and how it handles the failures.
 
-## 7.1. Go client API Overview
+## 7.1. Go Client API Overview
 
 If you are ready to go, let's start to use Hazelcast Go client!
 
@@ -1130,7 +1136,7 @@ As the final step, if you are done with your client, you can shut it down as sho
 client.Shutdown()
 ```
 
-## 7.2. Go client Operation Modes
+## 7.2. Go Client Operation Modes
 
 The client has two operation modes because of the distributed nature of the data and cluster: smart and unisocket.
 
