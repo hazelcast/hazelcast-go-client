@@ -261,13 +261,15 @@ func TestClientStatisticsContentChanges(t *testing.T) {
 }
 
 func isRuntimeMetricsDifferent(runtimeMetrics []string, nextRuntimeMetrics []string) bool {
-	isDifferent := false
+	if len(runtimeMetrics) != len(nextRuntimeMetrics) {
+		return false
+	}
 	for index, nextRuntimeMetric := range nextRuntimeMetrics {
 		if runtimeMetrics[index] != nextRuntimeMetric {
-			isDifferent = true
+			return true
 		}
 	}
-	return isDifferent
+	return false
 }
 
 func getRuntimeMetrics(stats string) []string {

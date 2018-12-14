@@ -222,10 +222,6 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	return nil
 }
 
-func (cs *clusterService) initialMemberListRelease() {
-	cs.initialMemberListWg.Done()
-}
-
 func (cs *clusterService) createMembershipInvocation(connection *Connection) *invocation {
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *proto.ClientMessage) {
