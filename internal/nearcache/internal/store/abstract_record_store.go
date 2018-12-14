@@ -19,6 +19,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/invalidation"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
@@ -30,6 +31,8 @@ type AbstractNearCacheRecordStore struct {
 	serializationService  spi.SerializationService
 	maxIdleDuration       time.Duration
 	timeToLiveDuration    time.Duration
+	staleReadDetector     invalidation.StaleReadDetector
+	evictionDisabled      bool
 }
 
 func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
@@ -38,6 +41,7 @@ func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
 		records:              make(map[interface{}]nearcache.Record),
 		config:               nearCacheCfg,
 		serializationService: service,
+		staleReadDetector:    invalidation.AlwaysFresh,
 	}
 }
 
@@ -142,7 +146,15 @@ func (a *AbstractNearCacheRecordStore) isAvailable() bool {
 
 func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
 	keyData serialization.Data, record nearcache.Record) {
+	if a.staleReadDetector == invalidation.AlwaysFresh {
+		return
+	}
 
+	partitionID := a.staleReadDetector.PartitionID(keyData)
+	metaDataContainer := a.staleReadDetector.MetaDataContainer(partitionID)
+	record.SetPartitionID(partitionID)
+	record.SetInvalidationSequence(metaDataContainer.Sequence())
+	record.SetUUID(metaDataContainer.UUID())
 }
 
 func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcache.Record) nearcache.Record {
