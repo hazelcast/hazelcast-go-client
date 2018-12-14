@@ -75,7 +75,7 @@ func TestClientRoutineLeakage(t *testing.T) {
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
 	client.Shutdown()
-	AssertEventually(t, func() bool {
+	AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumAfter == routineNumBefore
 	})
@@ -210,7 +210,7 @@ func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
 			mu.Unlock()
 		}()
 	}
-	AssertEventually(t, func() bool {
+	AssertTrueEventually(t, func() bool {
 		mu.Lock()
 		defer mu.Unlock()
 		return len(names) == 10

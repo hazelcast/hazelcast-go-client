@@ -243,13 +243,13 @@ func TestClientStatisticsContentChanges(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
 	var stats string
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		stats = GetClientStatsFromServer(t, cluster.ID)
 		return len(stats) > 0
 	})
 
 	runTimeMetrics := getRuntimeMetrics(stats)
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		nextStats := GetClientStatsFromServer(t, cluster.ID)
 		if stats == nextStats {
 			return false

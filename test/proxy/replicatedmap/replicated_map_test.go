@@ -124,7 +124,7 @@ func TestMapProxy_PutWithTTLWhenExpire(t *testing.T) {
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
 	rmp.PutWithTTL(testKey, "nextValue", 1*time.Millisecond)
-	test.AssertEventually(t, func() bool {
+	test.AssertTrueEventually(t, func() bool {
 		res, err := rmp.Get(testKey)
 		return err == nil && res == nil
 	})
