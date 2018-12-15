@@ -42,6 +42,18 @@ func NewDefaultNearCache(name string, config *config.NearCacheConfig,
 	}
 }
 
+func (d *DefaultNearCache) Get(key interface{}) interface{} {
+	return d.nearCacheRecordStore.Get(key)
+}
+
+func (d *DefaultNearCache) Clear() {
+	panic("implement me")
+}
+
+func (d *DefaultNearCache) Invalidate(key interface{}) {
+	panic("implement me")
+}
+
 func (d *DefaultNearCache) Put(key interface{}, value interface{}) {
 	d.nearCacheRecordStore.DoEviction(false)
 	d.nearCacheRecordStore.Put(key, value)

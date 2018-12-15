@@ -34,10 +34,11 @@ type AbstractNearCacheRecord struct {
 	accessHit      int32
 }
 
-func NewAbstractNearCacheRecord(value interface{}, creationTime time.Time,
+func NewAbstractNearCacheRecord(key interface{}, value interface{}, creationTime time.Time,
 	expirationTime time.Time) *AbstractNearCacheRecord {
 	a := &AbstractNearCacheRecord{}
 	a.value.Store(value)
+	a.key = key
 	a.creationTime.Store(creationTime)
 	a.expirationTime.Store(expirationTime)
 	a.lastAccessTime.Store(nearcache.TimeNotSet)

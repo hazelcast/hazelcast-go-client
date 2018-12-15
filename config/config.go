@@ -78,7 +78,7 @@ func New() *Config {
 		securityConfig:            new(SecurityConfig),
 		reliableTopicConfigMap:    make(map[string]*ReliableTopicConfig),
 		loggerConfig:              NewLoggerConfig(),
-		nearCacheConfig:           new(NearCacheConfig),
+		nearCacheConfig:           NewNearCacheConfig(),
 	}
 }
 

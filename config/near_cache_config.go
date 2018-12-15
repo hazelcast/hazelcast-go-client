@@ -28,8 +28,40 @@ const (
 	EvictionPolicyLfu
 )
 
+const (
+	defaultEvictionPolicy       = EvictionPolicyLru
+	defaultMaxEntryCount  int32 = 10000
+	defaultMemoryFormat         = InMemoryFormatBinary
+)
+
 type NearCacheConfig struct {
 	inMemoryFormat InMemoryFormat
+	evictionPolicy EvictionPolicy
+	maxEntryCount  int32
+}
+
+func NewNearCacheConfig() *NearCacheConfig {
+	return &NearCacheConfig{
+		inMemoryFormat: defaultMemoryFormat,
+		evictionPolicy: defaultEvictionPolicy,
+		maxEntryCount:  defaultMaxEntryCount,
+	}
+}
+
+func (n *NearCacheConfig) SetMaxEntryCount(size int32) {
+	n.maxEntryCount = size
+}
+
+func (n *NearCacheConfig) MaxEntryCount() int32 {
+	return n.maxEntryCount
+}
+
+func (n *NearCacheConfig) SetEvictionPolicy(policy EvictionPolicy) {
+	n.evictionPolicy = policy
+}
+
+func (n *NearCacheConfig) EvictionPolicy() EvictionPolicy {
+	return n.evictionPolicy
 }
 
 func (n *NearCacheConfig) IsSerializeKeys() bool {

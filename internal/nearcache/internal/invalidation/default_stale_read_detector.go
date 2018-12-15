@@ -15,29 +15,25 @@
 package invalidation
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-type StaleReadDetector interface {
-	IsStaleRead(key interface{}, record nearcache.Record) bool
-	PartitionID(keyData serialization.Data) int32
-	MetaDataContainer(partitionID int32) *MetaDataContainer
+type DefaultStaleReadDetector struct {
+	repairingHandler *RepairingHandler
+	partitionService *internal.PartitionService
 }
 
-var AlwaysFresh = &alwaysFresh{}
-
-type alwaysFresh struct {
+func (d *DefaultStaleReadDetector) IsStaleRead(key interface{}, record nearcache.Record) bool {
+	latestMetadata := d.repairingHandler.MetaDataContainer(record.PartitionID())
+	return !record.HasSameUUID(latestMetadata.UUID()) || record.InvalidationSequence() < latestMetadata.StaleSequence()
 }
 
-func (a *alwaysFresh) IsStaleRead(key interface{}, record nearcache.Record) bool {
-	return false
+func (d *DefaultStaleReadDetector) PartitionID(keyData serialization.Data) int32 {
+	return d.partitionService.GetPartitionID(keyData)
 }
 
-func (a *alwaysFresh) PartitionID(keyData serialization.Data) int32 {
-	return 0
-}
-
-func (a *alwaysFresh) MetaDataContainer(partitionID int32) *MetaDataContainer {
-	return nil
+func (d *DefaultStaleReadDetector) MetaDataContainer(partitionID int32) *MetaDataContainer {
+	return d.repairingHandler.MetaDataContainer(partitionID)
 }

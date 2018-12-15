@@ -36,11 +36,11 @@ func NewNearCacheDataRecordStore(nearCacheCfg *config.NearCacheConfig,
 	return dataRecordStore
 }
 
-func (n *NearCacheDataRecordStore) createRecordFromValue(value interface{}) nearcache.Record {
+func (n *NearCacheDataRecordStore) createRecordFromValue(key interface{}, value interface{}) nearcache.Record {
 	dataValue := n.toData(value)
 	creationTime := time.Now()
 	if n.timeToLiveDuration > 0 {
-		return record.NewNearCacheDataRecord(dataValue, creationTime, creationTime.Add(n.timeToLiveDuration))
+		return record.NewNearCacheDataRecord(key, dataValue, creationTime, creationTime.Add(n.timeToLiveDuration))
 	}
-	return record.NewAbstractNearCacheRecord(dataValue, creationTime, nearcache.TimeNotSet)
+	return record.NewAbstractNearCacheRecord(key, dataValue, creationTime, nearcache.TimeNotSet)
 }
