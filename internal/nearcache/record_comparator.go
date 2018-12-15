@@ -12,30 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package nearcache
 
-type InMemoryFormat int32
-type EvictionPolicy int32
-
-const (
-	InMemoryFormatBinary InMemoryFormat = iota
-	InMemoryFormatObject
-)
-
-const (
-	EvictionPolicyNone EvictionPolicy = iota
-	EvictionPolicyLru
-	EvictionPolicyLfu
-)
-
-type NearCacheConfig struct {
-	inMemoryFormat InMemoryFormat
-}
-
-func (n *NearCacheConfig) IsSerializeKeys() bool {
-	return true
-}
-
-func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {
-	return n.inMemoryFormat
+type RecordComparator interface {
+	CompareRecords(record1 Record, record2 Record) bool
 }

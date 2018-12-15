@@ -32,6 +32,8 @@ const (
 type Record interface {
 	eviction.Evictable
 	eviction.Expirable
+	SetKey(key interface{})
+	Key() interface{}
 	SetValue(value interface{})
 	SetCreationTime(time time.Time)
 	SetAccessTime(time time.Time)
@@ -45,4 +47,5 @@ type Record interface {
 	SetInvalidationSequence(sequence int64)
 	SetUUID(UUID string)
 	HasSameUUID(UUID string) bool
+	LessThan(comparator RecordComparator, record Record) bool
 }

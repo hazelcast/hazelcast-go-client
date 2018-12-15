@@ -15,6 +15,7 @@
 package nearcache
 
 type NearCache interface {
+	Put(key interface{}, value interface{})
 	Initialize()
 	Destroy()
 	Clear()

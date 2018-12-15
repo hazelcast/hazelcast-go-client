@@ -17,12 +17,30 @@ package store
 import (
 	"time"
 
+	"sort"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/invalidation"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
+
+const evictionPercentage = 20
+
+type recordsSlice []nearcache.Record
+
+func (r recordsSlice) Len() int {
+	return len(r)
+}
+
+func (r recordsSlice) Less(i, j int) bool {
+	return r[i].LessThan(r[j])
+}
+
+func (r recordsSlice) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}
 
 type AbstractNearCacheRecordStore struct {
 	createRecordFromValue func(value interface{}) nearcache.Record
@@ -33,6 +51,8 @@ type AbstractNearCacheRecordStore struct {
 	timeToLiveDuration    time.Duration
 	staleReadDetector     invalidation.StaleReadDetector
 	evictionDisabled      bool
+	evictionPolicy        config.EvictionPolicy
+	maxSize               int
 }
 
 func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
@@ -69,10 +89,20 @@ func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
 	if !a.isAvailable() {
 		return
 	}
+
+	if a.evictionPolicy == config.EvictionPolicyNone && len(a.records) >= a.maxSize && !a.containsKey(key) {
+		return
+	}
+
 	keyData := a.toData(key)
 	record := a.createRecordFromValue(value)
 	a.onRecordCreate(key, keyData, record)
 	a.putRecord(key, record)
+}
+
+func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
+	_, found := a.records[key]
+	return found
 }
 
 func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool) {
@@ -114,7 +144,37 @@ func (a *AbstractNearCacheRecordStore) DoExpiration() {
 }
 
 func (a *AbstractNearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
-	panic("implement me")
+	if !a.evictionDisabled {
+		recordsToBeEvicted := a.findRecordsToBeEvicted()
+		a.removeRecords(recordsToBeEvicted)
+	}
+}
+
+func (a *AbstractNearCacheRecordStore) removeRecords(records recordsSlice) {
+	for _, record := range records {
+		delete(a.records, record.Key())
+	}
+}
+
+func (a *AbstractNearCacheRecordStore) findRecordsToBeEvicted() recordsSlice {
+	records := a.createRecordsSlice()
+	sort.Sort(records)
+	evictionSize := a.calculateEvictionSize()
+	return records[:evictionSize]
+}
+
+func (a *AbstractNearCacheRecordStore) calculateEvictionSize() int {
+	return evictionPercentage * len(a.records) / 100
+}
+
+func (a *AbstractNearCacheRecordStore) createRecordsSlice() recordsSlice {
+	records := make([]nearcache.Record, len(a.records))
+	index := 0
+	for _, record := range a.records {
+		records[index] = record
+		index++
+	}
+	return records
 }
 
 func (a *AbstractNearCacheRecordStore) Initialize() {

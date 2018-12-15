@@ -12,30 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package comparator
 
-type InMemoryFormat int32
-type EvictionPolicy int32
-
-const (
-	InMemoryFormatBinary InMemoryFormat = iota
-	InMemoryFormatObject
+import (
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 )
 
-const (
-	EvictionPolicyNone EvictionPolicy = iota
-	EvictionPolicyLru
-	EvictionPolicyLfu
-)
-
-type NearCacheConfig struct {
-	inMemoryFormat InMemoryFormat
+type LRUComparator struct {
 }
 
-func (n *NearCacheConfig) IsSerializeKeys() bool {
-	return true
-}
-
-func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {
-	return n.inMemoryFormat
+func (l *LRUComparator) CompareRecords(record1 nearcache.Record, record2 nearcache.Record) bool {
+	if record1.LastAccessTime() == record2.LastAccessTime() {
+		return record1.CreationTime().Before(record2.CreationTime())
+	}
+	return record1.LastAccessTime().Before(record2.LastAccessTime())
 }

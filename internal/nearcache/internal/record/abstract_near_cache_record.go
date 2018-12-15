@@ -26,6 +26,7 @@ type AbstractNearCacheRecord struct {
 	sequence       int64
 	uuid           atomic.Value
 	value          atomic.Value
+	key            interface{}
 	expirationTime atomic.Value
 	creationTime   atomic.Value
 	lastAccessTime atomic.Value
@@ -68,6 +69,14 @@ func (a *AbstractNearCacheRecord) SetExpirationTime(time time.Time) {
 func (a *AbstractNearCacheRecord) IsExpiredAt(atTime time.Time) bool {
 	expirationTime := a.expirationTime.Load().(time.Time)
 	return !expirationTime.Equal(nearcache.TimeNotSet) && expirationTime.Before(atTime)
+}
+
+func (a *AbstractNearCacheRecord) SetKey(key interface{}) {
+	a.key = key
+}
+
+func (a *AbstractNearCacheRecord) Key() interface{} {
+	return a.key
 }
 
 func (a *AbstractNearCacheRecord) Value() interface{} {
@@ -134,4 +143,8 @@ func (a *AbstractNearCacheRecord) SetUUID(UUID string) {
 func (a *AbstractNearCacheRecord) HasSameUUID(UUID string) bool {
 	uuid := a.uuid.Load().(string)
 	return uuid != "" && UUID != "" && uuid == UUID
+}
+
+func (a *AbstractNearCacheRecord) LessThan(comparator nearcache.RecordComparator, record nearcache.Record) bool {
+	return comparator.CompareRecords(a, record)
 }

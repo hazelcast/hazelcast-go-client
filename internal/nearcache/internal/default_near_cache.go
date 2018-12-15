@@ -42,6 +42,11 @@ func NewDefaultNearCache(name string, config *config.NearCacheConfig,
 	}
 }
 
+func (d *DefaultNearCache) Put(key interface{}, value interface{}) {
+	d.nearCacheRecordStore.DoEviction(false)
+	d.nearCacheRecordStore.Put(key, value)
+}
+
 func (d *DefaultNearCache) Initialize() {
 	if d.nearCacheRecordStore == nil {
 		d.nearCacheRecordStore = d.createNearCacheRecordStore(d.name, d.config)
