@@ -30,6 +30,15 @@ type DefaultNearCacheManager struct {
 	properties           *property.HazelcastProperties
 }
 
+func NewDefaultNearCacheManager(service spi.SerializationService,
+	properties *property.HazelcastProperties) *DefaultNearCacheManager {
+	return &DefaultNearCacheManager{
+		nearCaches:           make(map[string]nearcache.NearCache),
+		properties:           properties,
+		serializationService: service,
+	}
+}
+
 func (d *DefaultNearCacheManager) NearCache(name string) (nearcache.NearCache, bool) {
 	d.nearCachesMu.RLock()
 	defer d.nearCachesMu.RUnlock()

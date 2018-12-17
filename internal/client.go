@@ -28,6 +28,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/nearcachespi"
 	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
 	"github.com/hazelcast/hazelcast-go-client/internal/projection"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -53,6 +55,7 @@ type HazelcastClient struct {
 	LoadBalancer         core.LoadBalancer
 	HeartBeatService     *heartBeatService
 	properties           *property.HazelcastProperties
+	nearcacheManager     nearcache.Manager
 	credentials          security.Credentials
 	name                 string
 	id                   int64
@@ -227,7 +230,7 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
-
+	c.nearcacheManager = c.createNearCacheManager()
 	c.HeartBeatService.start()
 	c.statistics.start()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
@@ -328,6 +331,10 @@ func (c *HazelcastClient) getConnectionTimeout() time.Duration {
 		connTimeout = math.MaxInt64
 	}
 	return connTimeout
+}
+
+func (c *HazelcastClient) createNearCacheManager() nearcache.Manager {
+	return nearcachespi.NewDefaultNearCacheManager(c.SerializationService, c.properties)
 }
 
 func (c *HazelcastClient) Shutdown() {

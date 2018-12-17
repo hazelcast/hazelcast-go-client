@@ -14,6 +14,8 @@
 
 package config
 
+import "time"
+
 type InMemoryFormat int32
 type EvictionPolicy int32
 
@@ -35,9 +37,11 @@ const (
 )
 
 type NearCacheConfig struct {
-	inMemoryFormat InMemoryFormat
-	evictionPolicy EvictionPolicy
-	maxEntryCount  int32
+	inMemoryFormat  InMemoryFormat
+	evictionPolicy  EvictionPolicy
+	maxEntryCount   int32
+	maxIdleDuration time.Duration
+	timeToLive      time.Duration
 }
 
 func NewNearCacheConfig() *NearCacheConfig {
@@ -70,4 +74,12 @@ func (n *NearCacheConfig) IsSerializeKeys() bool {
 
 func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {
 	return n.inMemoryFormat
+}
+
+func (n *NearCacheConfig) MaxIdleDuration() time.Duration {
+	return n.maxIdleDuration
+}
+
+func (n *NearCacheConfig) TimeToLive() time.Duration {
+	return n.timeToLive
 }

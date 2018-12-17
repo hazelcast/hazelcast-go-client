@@ -15,11 +15,23 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/store"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+)
+
+var (
+	ExpirationTaskInitialDelaySeconds = property.NewHazelcastPropertyInt64WithTimeUnit(
+		"hazelcast.internal.nearcache.expiration.task.initial.delay.seconds", 5, time.Second,
+	)
+	ExpirationTaskPeriodSeconds = property.NewHazelcastPropertyInt64WithTimeUnit(
+		"hazelcast.internal.nearcache.expiration.task.period.seconds", 5, time.Second,
+	)
 )
 
 type DefaultNearCache struct {
@@ -29,6 +41,7 @@ type DefaultNearCache struct {
 	properties           *property.HazelcastProperties
 	serializeKeys        bool
 	nearCacheRecordStore nearcache.RecordStore
+	closed               chan struct{}
 }
 
 func NewDefaultNearCache(name string, config *config.NearCacheConfig,
@@ -39,7 +52,18 @@ func NewDefaultNearCache(name string, config *config.NearCacheConfig,
 		properties:           properties,
 		serializationService: service,
 		serializeKeys:        config.IsSerializeKeys(),
+		closed:               make(chan struct{}, 0),
 	}
+}
+
+func (d *DefaultNearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data) (int64, bool) {
+	d.nearCacheRecordStore.DoEviction(false)
+	return d.nearCacheRecordStore.TryReserveForUpdate(key, keyData)
+}
+
+func (d *DefaultNearCache) TryPublishReserved(key interface{}, value interface{}, reservationID int64,
+	deserialize bool) (interface{}, bool) {
+	return d.nearCacheRecordStore.TryPublishReserved(key, value, reservationID, deserialize)
 }
 
 func (d *DefaultNearCache) Get(key interface{}) interface{} {
@@ -47,11 +71,11 @@ func (d *DefaultNearCache) Get(key interface{}) interface{} {
 }
 
 func (d *DefaultNearCache) Clear() {
-	panic("implement me")
+	d.nearCacheRecordStore.Clear()
 }
 
 func (d *DefaultNearCache) Invalidate(key interface{}) {
-	panic("implement me")
+	d.nearCacheRecordStore.Invalidate(key)
 }
 
 func (d *DefaultNearCache) Put(key interface{}, value interface{}) {
@@ -64,11 +88,29 @@ func (d *DefaultNearCache) Initialize() {
 		d.nearCacheRecordStore = d.createNearCacheRecordStore(d.name, d.config)
 	}
 	d.nearCacheRecordStore.Initialize()
-	// TODO:: schedule expiration task
+	go d.doExpirationPeriodically()
+}
+
+func (d *DefaultNearCache) doExpirationPeriodically() {
+	if d.config.MaxIdleDuration() > 0 || d.config.TimeToLive() > 0 {
+		initialWait := d.properties.GetPositiveDurationOrDef(ExpirationTaskInitialDelaySeconds)
+		time.Sleep(initialWait)
+		period := d.properties.GetPositiveDurationOrDef(ExpirationTaskPeriodSeconds)
+		ticker := time.Tick(period)
+		for {
+			select {
+			case <-ticker:
+				d.nearCacheRecordStore.DoExpiration()
+			case <-d.closed:
+				return
+			}
+		}
+	}
 }
 
 func (d *DefaultNearCache) Destroy() {
-	panic("implement me")
+	close(d.closed)
+	d.nearCacheRecordStore.Destroy()
 }
 
 func (d *DefaultNearCache) createNearCacheRecordStore(name string, cfg *config.NearCacheConfig) nearcache.RecordStore {

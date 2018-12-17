@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nearcache
+package nearcachespi
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
+import (
+	"github.com/hazelcast/hazelcast-go-client/config/property"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+)
 
-type NearCache interface {
-	Get(key interface{}) interface{}
-	Put(key interface{}, value interface{})
-	TryReserveForUpdate(key interface{}, keyData serialization.Data) (int64, bool)
-	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
-	Initialize()
-	Destroy()
-	Clear()
-	Invalidate(key interface{})
+func NewDefaultNearCacheManager(service spi.SerializationService,
+	properties *property.HazelcastProperties) *internal.DefaultNearCacheManager {
+	return internal.NewDefaultNearCacheManager(service, properties)
 }

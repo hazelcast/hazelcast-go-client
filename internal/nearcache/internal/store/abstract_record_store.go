@@ -129,11 +129,13 @@ func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
 	return found
 }
 
-func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool) {
+func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
+	keyData serialization.Data) (reservationID int64, reserved bool) {
 	panic("implement me")
 }
 
-func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
+func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
+	value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
 	panic("implement me")
 }
 
@@ -172,10 +174,14 @@ func (a *AbstractNearCacheRecordStore) DoExpiration() {
 }
 
 func (a *AbstractNearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
-	if !a.evictionDisabled {
+	if !a.evictionDisabled && a.shouldEvict() {
 		recordsToBeEvicted := a.findRecordsToBeEvicted()
 		a.removeRecords(recordsToBeEvicted)
 	}
+}
+
+func (a *AbstractNearCacheRecordStore) shouldEvict() bool {
+	return len(a.records) >= int(a.maxSize)
 }
 
 func (a *AbstractNearCacheRecordStore) removeRecords(records []nearcache.Record) {
