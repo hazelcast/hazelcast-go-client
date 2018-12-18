@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nearcache
+package clientspi
 
-import (
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-)
+import "github.com/hazelcast/hazelcast-go-client/serialization"
 
-type RecordStore interface {
-	Get(key interface{}) interface{}
-	Put(key interface{}, value interface{})
-	TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool)
-	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
-	Invalidate(key interface{})
-	Clear()
-	Destroy()
-	Size() int
-	Record(key interface{}) Record
-	DoExpiration()
-	DoEviction(withoutMaxSizeCheck bool)
+type PartitionService interface {
+	GetPartitionID(keyData serialization.Data) int32
+	GetPartitionIDForObject(key interface{}) int32
+	GetPartitionCount() int32
 }

@@ -92,6 +92,10 @@ func (c *Config) SecurityConfig() *SecurityConfig {
 	return c.securityConfig
 }
 
+func (c *Config) SetNearCacheConfig(config *NearCacheConfig) {
+	c.nearCacheConfig = config
+}
+
 // NearCacheConfig returns near cache configuration for this client.
 func (c *Config) NearCacheConfig() *NearCacheConfig {
 	return c.nearCacheConfig

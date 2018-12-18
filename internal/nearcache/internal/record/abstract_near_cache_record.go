@@ -117,8 +117,8 @@ func (a *AbstractNearCacheRecord) RecordState() int64 {
 	return atomic.LoadInt64(&a.recordState)
 }
 
-func (a *AbstractNearCacheRecord) CasRecordState(expect int64, update int64) {
-	atomic.CompareAndSwapInt64(&a.recordState, expect, update)
+func (a *AbstractNearCacheRecord) CasRecordState(expect int64, update int64) bool {
+	return atomic.CompareAndSwapInt64(&a.recordState, expect, update)
 }
 
 func (a *AbstractNearCacheRecord) PartitionID() int32 {

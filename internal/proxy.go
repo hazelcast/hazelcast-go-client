@@ -163,7 +163,7 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 			return nil, err
 		}
 		pair := proto.NewPair(keyData, valueData)
-		partitionID := p.client.PartitionService.GetPartitionID(keyData)
+		partitionID := p.client.partitionService.GetPartitionID(keyData)
 		partitions[partitionID] = append(partitions[partitionID], pair)
 	}
 	return partitions, nil
@@ -248,9 +248,8 @@ type partitionSpecificProxy struct {
 
 func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name string) *partitionSpecificProxy {
 	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
-	parSpecProxy.partitionID, _ = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
+	parSpecProxy.partitionID, _ = parSpecProxy.client.partitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
 	return parSpecProxy
-
 }
 
 func (parSpecProxy *partitionSpecificProxy) invoke(request *proto.ClientMessage) (*proto.ClientMessage, error) {

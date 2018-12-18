@@ -69,7 +69,7 @@ func (n *NearCacheConfig) EvictionPolicy() EvictionPolicy {
 }
 
 func (n *NearCacheConfig) IsSerializeKeys() bool {
-	return true
+	return false
 }
 
 func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {

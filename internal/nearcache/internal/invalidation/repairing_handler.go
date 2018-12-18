@@ -19,7 +19,7 @@ import (
 
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
@@ -32,12 +32,12 @@ type RepairingHandler struct {
 	name                 string
 	nearCache            nearcache.NearCache
 	serializationService spi.SerializationService
-	partitionService     *internal.PartitionService
+	partitionService     clientspi.PartitionService
 	metaDataContainers   []*MetaDataContainer
 }
 
 func NewRepairingHandler(localUUID string, name string, nearCache nearcache.NearCache, service spi.SerializationService,
-	partitionService *internal.PartitionService) *RepairingHandler {
+	partitionService clientspi.PartitionService) *RepairingHandler {
 	r := &RepairingHandler{
 		localUUID:            localUUID,
 		name:                 name,

@@ -440,7 +440,7 @@ func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interfa
 		if err != nil {
 			return nil, err
 		}
-		partitionID := mp.client.PartitionService.GetPartitionID(keyData)
+		partitionID := mp.client.partitionService.GetPartitionID(keyData)
 		partitions[partitionID] = append(partitions[partitionID], keyData)
 	}
 	for partitionID, keyList := range partitions {

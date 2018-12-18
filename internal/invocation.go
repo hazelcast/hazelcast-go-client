@@ -24,6 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -39,11 +40,6 @@ type invocation struct {
 	sentConnection  atomic.Value
 	eventHandler    func(clientMessage *proto.ClientMessage)
 	deadline        time.Time
-}
-
-type invocationResult interface {
-	Result() (*proto.ClientMessage, error)
-	ResultWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 }
 
 func newInvocation(request *proto.ClientMessage, partitionID int32, address core.Address,
@@ -97,40 +93,40 @@ func (i *invocation) ResultWithTimeout(duration time.Duration) (*proto.ClientMes
 }
 
 type InvocationService interface {
-	invokeOnPartitionOwner(message *proto.ClientMessage, partitionID int32) invocationResult
-	invokeOnRandomTarget(message *proto.ClientMessage) invocationResult
-	invokeOnKeyOwner(message *proto.ClientMessage, data serialization.Data) invocationResult
-	InvokeOnTarget(message *proto.ClientMessage, address core.Address) invocationResult
-	invokeOnConnection(message *proto.ClientMessage, connection *Connection) invocationResult
+	invokeOnPartitionOwner(message *proto.ClientMessage, partitionID int32) clientspi.InvocationResult
+	invokeOnRandomTarget(message *proto.ClientMessage) clientspi.InvocationResult
+	invokeOnKeyOwner(message *proto.ClientMessage, data serialization.Data) clientspi.InvocationResult
+	InvokeOnTarget(message *proto.ClientMessage, address core.Address) clientspi.InvocationResult
+	invokeOnConnection(message *proto.ClientMessage, connection *Connection) clientspi.InvocationResult
 	cleanupConnection(connection *Connection, e error)
 	removeEventHandler(correlationID int64)
-	sendInvocation(invocation *invocation) invocationResult
+	sendInvocation(invocation *invocation) clientspi.InvocationResult
 	InvocationTimeout() time.Duration
 	handleResponse(response interface{})
 	shutdown()
 }
 
-func (is *invocationServiceImpl) invokeOnPartitionOwner(request *proto.ClientMessage, partitionID int32) invocationResult {
+func (is *invocationServiceImpl) invokeOnPartitionOwner(request *proto.ClientMessage, partitionID int32) clientspi.InvocationResult {
 	invocation := newInvocation(request, partitionID, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnRandomTarget(request *proto.ClientMessage) invocationResult {
+func (is *invocationServiceImpl) invokeOnRandomTarget(request *proto.ClientMessage) clientspi.InvocationResult {
 	invocation := newInvocation(request, -1, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData serialization.Data) invocationResult {
-	partitionID := is.client.PartitionService.GetPartitionID(keyData)
+func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData serialization.Data) clientspi.InvocationResult {
+	partitionID := is.client.partitionService.GetPartitionID(keyData)
 	return is.invokeOnPartitionOwner(request, partitionID)
 }
 
-func (is *invocationServiceImpl) InvokeOnTarget(request *proto.ClientMessage, target core.Address) invocationResult {
+func (is *invocationServiceImpl) InvokeOnTarget(request *proto.ClientMessage, target core.Address) clientspi.InvocationResult {
 	invocation := newInvocation(request, -1, target, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnConnection(request *proto.ClientMessage, connection *Connection) invocationResult {
+func (is *invocationServiceImpl) invokeOnConnection(request *proto.ClientMessage, connection *Connection) clientspi.InvocationResult {
 	invocation := newInvocation(request, -1, nil, connection, is.client)
 	return is.sendInvocation(invocation)
 }
@@ -155,7 +151,7 @@ func (is *invocationServiceImpl) removeEventHandler(correlationID int64) {
 	}
 }
 
-func (is *invocationServiceImpl) sendInvocation(invocation *invocation) invocationResult {
+func (is *invocationServiceImpl) sendInvocation(invocation *invocation) clientspi.InvocationResult {
 	if is.isShutdown.Load() == true {
 		invocation.complete(core.NewHazelcastClientNotActiveError("client is shut down", nil))
 	}
@@ -294,7 +290,7 @@ func (is *invocationServiceImpl) invokeSmart(invocation *invocation) {
 	if invocation.boundConnection != nil {
 		is.sendToConnection(invocation, invocation.boundConnection)
 	} else if invocation.partitionID != -1 {
-		if target, ok := is.client.PartitionService.partitionOwner(invocation.partitionID); ok {
+		if target, ok := is.client.partitionService.partitionOwner(invocation.partitionID); ok {
 			is.sendToAddress(invocation, target)
 		} else {
 			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),

@@ -87,7 +87,6 @@ func (d *DefaultNearCache) Initialize() {
 	if d.nearCacheRecordStore == nil {
 		d.nearCacheRecordStore = d.createNearCacheRecordStore(d.name, d.config)
 	}
-	d.nearCacheRecordStore.Initialize()
 	go d.doExpirationPeriodically()
 }
 

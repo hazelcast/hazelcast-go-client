@@ -23,10 +23,10 @@ import (
 var TimeNotSet = time.Now()
 
 const (
-	NotReserved   = -1
-	Reserved      = -2
-	UpdateStarted = -3
-	ReadPermitted = -4
+	NotReserved   int64 = -1
+	Reserved      int64 = -2
+	UpdateStarted int64 = -3
+	ReadPermitted int64 = -4
 )
 
 type Record interface {
@@ -40,7 +40,7 @@ type Record interface {
 	IsIdleAt(maxIdle time.Duration, now time.Time) bool
 	IncrementAccessHit()
 	RecordState() int64
-	CasRecordState(expect int64, update int64)
+	CasRecordState(expect int64, update int64) bool
 	PartitionID() int32
 	SetPartitionID(partitionID int32)
 	InvalidationSequence() int64

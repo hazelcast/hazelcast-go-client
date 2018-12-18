@@ -19,6 +19,8 @@ import (
 
 	"sort"
 
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/invalidation"
@@ -48,6 +50,7 @@ func (r recordsHolder) Swap(i, j int) {
 
 type AbstractNearCacheRecordStore struct {
 	createRecordFromValue func(key, value interface{}) nearcache.Record
+	updateRecordValue     func(record nearcache.Record, value interface{})
 	records               map[interface{}]nearcache.Record
 	config                *config.NearCacheConfig
 	serializationService  spi.SerializationService
@@ -58,6 +61,7 @@ type AbstractNearCacheRecordStore struct {
 	evictionPolicy        config.EvictionPolicy
 	maxSize               int32
 	recordComparator      nearcache.RecordComparator
+	reservationID         int64
 }
 
 func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
@@ -82,6 +86,10 @@ func (a *AbstractNearCacheRecordStore) initRecordComparator() {
 	if a.evictionPolicy == config.EvictionPolicyLfu {
 		a.recordComparator = &comparator.LFUComparator{}
 	}
+}
+
+func (a *AbstractNearCacheRecordStore) nextReservationID() int64 {
+	return atomic.AddInt64(&a.reservationID, 1)
 }
 
 func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
@@ -131,12 +139,37 @@ func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
 
 func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
 	keyData serialization.Data) (reservationID int64, reserved bool) {
-	panic("implement me")
+	if a.evictionPolicy == config.EvictionPolicyNone && len(a.records) >= int(a.maxSize) && !a.containsKey(key) {
+		return 0, false
+	}
+	reservedRecord := a.getOrCreateToReserve(key)
+	reservationID = a.nextReservationID()
+	if reservedRecord.CasRecordState(nearcache.Reserved, reservationID) {
+		return reservationID, true
+	}
+	return 0, false
+}
+
+func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nearcache.Record {
+	if record, found := a.records[key]; found {
+		return record
+	}
+	record := a.createRecordFromValue(key, nil)
+	record.CasRecordState(nearcache.ReadPermitted, nearcache.Reserved)
+	a.records[key] = record
+	return record
 }
 
 func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 	value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
-	panic("implement me")
+	reservedRecord := a.records[key]
+	if !reservedRecord.CasRecordState(reservationID, nearcache.UpdateStarted) {
+		return reservedRecord, false
+	}
+	a.updateRecordValue(reservedRecord, value)
+	reservedRecord.CasRecordState(nearcache.UpdateStarted, nearcache.ReadPermitted)
+	cachedValue := reservedRecord.Value()
+	return a.toValue(cachedValue), true
 }
 
 func (a *AbstractNearCacheRecordStore) Invalidate(key interface{}) {
@@ -210,10 +243,6 @@ func (a *AbstractNearCacheRecordStore) createRecordsSlice() []nearcache.Record {
 		index++
 	}
 	return records
-}
-
-func (a *AbstractNearCacheRecordStore) Initialize() {
-	panic("implement me")
 }
 
 func (a *AbstractNearCacheRecordStore) isRecordExpired(record nearcache.Record) bool {

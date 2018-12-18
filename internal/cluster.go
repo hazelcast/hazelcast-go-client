@@ -275,7 +275,7 @@ func (cs *ClusterService) handleMember(member *proto.Member, eventType int32) {
 }
 
 func (cs *ClusterService) updatePartitionTable() {
-	cs.client.PartitionService.refresh <- struct{}{}
+	cs.client.partitionService.refresh <- struct{}{}
 }
 
 func (cs *ClusterService) handleMemberList(members []*proto.Member) {

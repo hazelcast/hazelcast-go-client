@@ -20,18 +20,19 @@ import (
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type MetaDataFetcher struct {
-	client   *internal.HazelcastClient
-	handlers sync.Map
+	invocationService clientspi.InvocationService
+	clusterService    core.Cluster
+	handlers          sync.Map
 }
 
 func (i *MetaDataFetcher) fetchMetaData() {
 
-	members := i.client.ClusterService.GetMembers()
+	members := i.clusterService.GetMembers()
 	names := i.dataStructureNames(i.handlers)
 	for _, member := range members {
 		if member.IsLiteMember() {
@@ -44,7 +45,7 @@ func (i *MetaDataFetcher) fetchMetaData() {
 func (i *MetaDataFetcher) fetchMetaDataFor(names []string, member core.Member) {
 	address := member.Address()
 	request := proto.MapFetchNearCacheInvalidationMetadataEncodeRequest(names, address.(*proto.Address))
-	responseMessage, err := i.client.InvocationService().InvokeOnTarget(
+	responseMessage, err := i.invocationService.InvokeOnTarget(
 		request, address).ResultWithTimeout(asyncResultWaitTimeout)
 	if err != nil {
 		// TODO:: log at warning level

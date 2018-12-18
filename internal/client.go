@@ -27,6 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
+	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/nearcachespi"
@@ -45,7 +46,7 @@ var clientID int64
 type HazelcastClient struct {
 	invocationService    InvocationService
 	Config               *config.Config
-	PartitionService     *PartitionService
+	partitionService     *PartitionService
 	SerializationService spi.SerializationService
 	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
@@ -201,6 +202,10 @@ func (c *HazelcastClient) initLogger() {
 	c.logger = newHazelcastLogger(setLogger, hazelcastPrefix)
 }
 
+func (c *HazelcastClient) PartitionService() clientspi.PartitionService {
+	return c.partitionService
+}
+
 func (c *HazelcastClient) init() error {
 	c.initClientName()
 	c.initLogger()
@@ -216,7 +221,7 @@ func (c *HazelcastClient) init() error {
 	addressProviders := c.createAddressProviders()
 	c.ClusterService = newClusterService(c, addressProviders)
 	c.ListenerService = newListenerService(c)
-	c.PartitionService = newPartitionService(c)
+	c.partitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
 	c.LoadBalancer = c.initLoadBalancer(c.Config)
 	c.LoadBalancer.Init(c.ClusterService)
@@ -225,7 +230,7 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
-	c.PartitionService.start()
+	c.partitionService.start()
 	err = c.ClusterService.start()
 	if err != nil {
 		return err
@@ -341,7 +346,7 @@ func (c *HazelcastClient) Shutdown() {
 	if c.lifecycleService.isLive.Load().(bool) {
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
 		c.ConnectionManager.shutdown()
-		c.PartitionService.shutdown()
+		c.partitionService.shutdown()
 		c.ClusterService.shutdown()
 		c.invocationService.shutdown()
 		c.HeartBeatService.shutdown()

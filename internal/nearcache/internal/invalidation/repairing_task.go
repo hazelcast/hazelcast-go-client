@@ -27,7 +27,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
@@ -38,8 +38,7 @@ type RepairingTask struct {
 	localUUID              string
 	reconciliationInterval time.Duration
 	serializationService   spi.SerializationService
-	partitionService       *internal.PartitionService
-	client                 *internal.HazelcastClient
+	partitionService       clientspi.PartitionService
 	maxToleratedMissCount  int64
 	lastAntiEntropyRun     atomic.Value
 	handlers               sync.Map
@@ -47,7 +46,7 @@ type RepairingTask struct {
 }
 
 func NewRepairingTask(properties *property.HazelcastProperties, service spi.SerializationService,
-	partitionService *internal.PartitionService, localUUID string) *RepairingTask {
+	partitionService clientspi.PartitionService, localUUID string) *RepairingTask {
 	r := &RepairingTask{
 		localUUID:            localUUID,
 		serializationService: service,
