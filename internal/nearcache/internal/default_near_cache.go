@@ -70,6 +70,10 @@ func (d *DefaultNearCache) Get(key interface{}) interface{} {
 	return d.nearCacheRecordStore.Get(key)
 }
 
+func (d *DefaultNearCache) Size() int {
+	return d.nearCacheRecordStore.Size()
+}
+
 func (d *DefaultNearCache) Clear() {
 	d.nearCacheRecordStore.Clear()
 }
@@ -95,10 +99,12 @@ func (d *DefaultNearCache) doExpirationPeriodically() {
 		initialWait := d.properties.GetPositiveDurationOrDef(ExpirationTaskInitialDelaySeconds)
 		time.Sleep(initialWait)
 		period := d.properties.GetPositiveDurationOrDef(ExpirationTaskPeriodSeconds)
-		ticker := time.Tick(period)
+		ticker := time.NewTicker(period)
+		defer ticker.Stop()
+		d.nearCacheRecordStore.DoExpiration()
 		for {
 			select {
-			case <-ticker:
+			case <-ticker.C:
 				d.nearCacheRecordStore.DoExpiration()
 			case <-d.closed:
 				return

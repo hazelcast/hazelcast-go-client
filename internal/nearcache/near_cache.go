@@ -23,6 +23,7 @@ type NearCache interface {
 	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
 	Initialize()
 	Destroy()
+	Size() int
 	Clear()
 	Invalidate(key interface{})
 }

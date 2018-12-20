@@ -24,6 +24,10 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/stretchr/testify/assert"
@@ -40,16 +44,20 @@ func TestMain(m *testing.M) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 
-func TestNearCache(t *testing.T) {
+func createConfigWithDefaultNearCache() *config.Config {
 	nearCacheCfg := config.NewNearCacheConfig()
 	config := hazelcast.NewConfig()
 	config.SetNearCacheConfig(nearCacheCfg)
-	client, err := hazelcast.NewClientWithConfig(config)
+	return config
+}
+
+func TestNearCacheEachGetFasterFromCache(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
 	defer client.Shutdown()
 	mp, err := client.GetMap("testName")
 	assert.NoError(t, err)
 
-	limit := 1
+	limit := 1000
 	for i := 0; i < limit; i++ {
 		key := "key" + strconv.Itoa(i)
 		value := "value" + strconv.Itoa(i)
@@ -72,4 +80,374 @@ func TestNearCache(t *testing.T) {
 			t.Error("remote operation takes less time than reading from cache", remoteGetTime, cacheGetTime)
 		}
 	}
+}
+
+func TestNearCacheContainsKey(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	mp.Get("invalidKey")
+
+	found, err := mp.ContainsKey("key")
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	found, err = mp.ContainsKey("invalidKey")
+	assert.NoError(t, err)
+	assert.False(t, found)
+}
+
+func TestNearCacheGet(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	value := cache.Get("key")
+	assert.Equal(t, value, "value")
+}
+
+func TestNearCacheGetAll(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	size := 100
+	keys := make([]interface{}, 0)
+	for i := 0; i < size; i++ {
+		mp.Put("key"+strconv.Itoa(i), "value"+strconv.Itoa(i))
+		keys = append(keys, "key"+strconv.Itoa(i))
+	}
+
+	mp.GetAll(keys)
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 100)
+}
+
+func getNearCacheFromMap(mp core.Map) nearcache.NearCache {
+	return mp.(*internal.NearCachedMapProxy).NearCache()
+}
+
+func TestNearCacheIdleKeysExpire(t *testing.T) {
+	config := createConfigWithDefaultNearCache()
+	config.NearCacheConfig().SetMaxIdleDuration(2 * time.Second)
+
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	keys := make([]interface{}, 0)
+	for i := int32(0); i < 10; i++ {
+		keys = append(keys, i)
+		mp.Put(keys[i], keys[i])
+	}
+
+	nonIdleKey := int64(100)
+	mp.Put(nonIdleKey, nonIdleKey)
+
+	mp.GetAll(keys)
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), len(keys))
+
+	test.AssertEventually(t, func() bool {
+		preventFromBeingIdle(nonIdleKey, mp)
+		cacheSize := cache.Size()
+		if cacheSize != 1 {
+			return false
+		}
+		nonIdleValue := cache.Get(nonIdleKey)
+		return nonIdleValue == nonIdleKey
+	})
+}
+
+func TestInvalidateOnPut(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.Put("key", "value2")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnRemove(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.Remove("key")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnDelete(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.Delete("key")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnEvict(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.Evict("key")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnRemoveIfSame(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.RemoveIfSame("key", "value")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnTryRemove(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.TryRemove("key", 10*time.Second)
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnTryPut(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.TryPut("key", "value2")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnTryPutWithTimeout(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.TryPutWithTimeout("key", "value2", 10*time.Second)
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnRemoveAll(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Put("key2", "value")
+	mp.Get("key")
+	mp.Get("key2")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 2)
+
+	mp.RemoveAll(predicate.NewEqual("this", "key"))
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnClear(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Put("key2", "value")
+	mp.Get("key")
+	mp.Get("key2")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 2)
+
+	mp.Clear()
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnEvictAll(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Put("key2", "value")
+	mp.Get("key")
+	mp.Get("key2")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 2)
+
+	mp.Clear()
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnReplace(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.Replace("key", "value2")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnReplaceIfSame(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.ReplaceIfSame("key", "value2", "value")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnSet(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.Set("key", "value2")
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnSetWithTTL(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.SetWithTTL("key", "value2", 10*time.Second)
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnPutAll(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Put("key2", "value")
+	mp.Get("key")
+	mp.Get("key2")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 2)
+	entries := make(map[interface{}]interface{})
+	entries["key"] = "value3"
+	mp.PutAll(entries)
+	assert.Equal(t, cache.Size(), 1)
+}
+
+func TestInvalidateOnPutTransient(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.PutTransient("key", "value2", 10*time.Second)
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func TestInvalidateOnExecuteOnKey(t *testing.T) {
+	client, err := hazelcast.NewClientWithConfig(createConfigWithDefaultNearCache())
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := getNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.ExecuteOnKey("key", nil)
+	assert.Equal(t, cache.Size(), 0)
+}
+
+func preventFromBeingIdle(key interface{}, mp core.Map) {
+	mp.Get(key)
 }

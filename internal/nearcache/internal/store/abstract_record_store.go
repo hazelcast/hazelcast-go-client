@@ -74,6 +74,7 @@ func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
 		maxSize:              nearCacheCfg.MaxEntryCount(),
 		evictionPolicy:       nearCacheCfg.EvictionPolicy(),
 		evictionDisabled:     nearCacheCfg.EvictionPolicy() == config.EvictionPolicyNone,
+		maxIdleDuration:      nearCacheCfg.MaxIdleDuration(),
 	}
 	a.initRecordComparator()
 	return a
@@ -107,6 +108,7 @@ func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
 			return nil
 		}
 		if a.isRecordExpired(record) {
+			a.Invalidate(key)
 			return nil
 		}
 		a.onRecordAccess(record)
@@ -154,7 +156,9 @@ func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nea
 	if record, found := a.records[key]; found {
 		return record
 	}
+	keyData, _ := a.serializationService.ToData(key)
 	record := a.createRecordFromValue(key, nil)
+	a.onRecordCreate(key, keyData, record)
 	record.CasRecordState(nearcache.ReadPermitted, nearcache.Reserved)
 	a.records[key] = record
 	return record
@@ -162,7 +166,10 @@ func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nea
 
 func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 	value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
-	reservedRecord := a.records[key]
+	reservedRecord, found := a.records[key]
+	if !found {
+		return nil, false
+	}
 	if !reservedRecord.CasRecordState(reservationID, nearcache.UpdateStarted) {
 		return reservedRecord, false
 	}

@@ -76,6 +76,10 @@ func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {
 	return n.inMemoryFormat
 }
 
+func (n *NearCacheConfig) SetMaxIdleDuration(maxIdleDuration time.Duration) {
+	n.maxIdleDuration = maxIdleDuration
+}
+
 func (n *NearCacheConfig) MaxIdleDuration() time.Duration {
 	return n.maxIdleDuration
 }

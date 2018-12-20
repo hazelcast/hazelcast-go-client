@@ -43,7 +43,7 @@ func (n *NearCacheDataRecordStore) createRecordFromValue(key interface{}, value 
 	if n.timeToLiveDuration > 0 {
 		return record.NewNearCacheDataRecord(key, dataValue, creationTime, creationTime.Add(n.timeToLiveDuration))
 	}
-	return record.NewAbstractNearCacheRecord(key, dataValue, creationTime, nearcache.TimeNotSet)
+	return record.NewNearCacheDataRecord(key, dataValue, creationTime, nearcache.TimeNotSet)
 }
 
 func (n *NearCacheDataRecordStore) updateRecordValue(record nearcache.Record, value interface{}) {
