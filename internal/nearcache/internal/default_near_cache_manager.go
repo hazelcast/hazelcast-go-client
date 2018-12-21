@@ -20,6 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/invalidation"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
@@ -28,6 +29,7 @@ type DefaultNearCacheManager struct {
 	nearCaches           map[string]nearcache.NearCache
 	serializationService spi.SerializationService
 	properties           *property.HazelcastProperties
+	repairingTask        *invalidation.RepairingTask
 }
 
 func NewDefaultNearCacheManager(service spi.SerializationService,

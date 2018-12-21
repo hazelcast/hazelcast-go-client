@@ -31,24 +31,27 @@ const (
 )
 
 const (
-	defaultEvictionPolicy       = EvictionPolicyLru
-	defaultMaxEntryCount  int32 = 10000
-	defaultMemoryFormat         = InMemoryFormatBinary
+	defaultEvictionPolicy           = EvictionPolicyLru
+	defaultMaxEntryCount      int32 = 10000
+	defaultMemoryFormat             = InMemoryFormatBinary
+	defaultInvalidateOnChange       = true
 )
 
 type NearCacheConfig struct {
-	inMemoryFormat  InMemoryFormat
-	evictionPolicy  EvictionPolicy
-	maxEntryCount   int32
-	maxIdleDuration time.Duration
-	timeToLive      time.Duration
+	inMemoryFormat     InMemoryFormat
+	evictionPolicy     EvictionPolicy
+	maxEntryCount      int32
+	maxIdleDuration    time.Duration
+	timeToLive         time.Duration
+	invalidateOnChange bool
 }
 
 func NewNearCacheConfig() *NearCacheConfig {
 	return &NearCacheConfig{
-		inMemoryFormat: defaultMemoryFormat,
-		evictionPolicy: defaultEvictionPolicy,
-		maxEntryCount:  defaultMaxEntryCount,
+		inMemoryFormat:     defaultMemoryFormat,
+		evictionPolicy:     defaultEvictionPolicy,
+		maxEntryCount:      defaultMaxEntryCount,
+		invalidateOnChange: defaultInvalidateOnChange,
 	}
 }
 
@@ -70,6 +73,14 @@ func (n *NearCacheConfig) EvictionPolicy() EvictionPolicy {
 
 func (n *NearCacheConfig) IsSerializeKeys() bool {
 	return false
+}
+
+func (n *NearCacheConfig) InvalidateOnChange() bool {
+	return n.invalidateOnChange
+}
+
+func (n *NearCacheConfig) SetInvalidateOnChange(invalidateOnChange bool) {
+	n.invalidateOnChange = invalidateOnChange
 }
 
 func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {

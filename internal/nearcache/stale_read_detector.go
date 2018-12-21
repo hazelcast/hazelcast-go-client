@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package invalidation
+package nearcache
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type StaleReadDetector interface {
-	IsStaleRead(key interface{}, record nearcache.Record) bool
+	IsStaleRead(key interface{}, record Record) bool
 	PartitionID(keyData serialization.Data) int32
-	MetaDataContainer(partitionID int32) *MetaDataContainer
+	MetaDataContainer(partitionID int32) MetaDataContainer
 }
 
 var AlwaysFresh = &alwaysFresh{}
@@ -30,7 +29,7 @@ var AlwaysFresh = &alwaysFresh{}
 type alwaysFresh struct {
 }
 
-func (a *alwaysFresh) IsStaleRead(key interface{}, record nearcache.Record) bool {
+func (a *alwaysFresh) IsStaleRead(key interface{}, record Record) bool {
 	return false
 }
 
@@ -38,6 +37,6 @@ func (a *alwaysFresh) PartitionID(keyData serialization.Data) int32 {
 	return 0
 }
 
-func (a *alwaysFresh) MetaDataContainer(partitionID int32) *MetaDataContainer {
+func (a *alwaysFresh) MetaDataContainer(partitionID int32) MetaDataContainer {
 	return nil
 }

@@ -23,7 +23,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
-	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/invalidation"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/record/comparator"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
@@ -56,7 +55,7 @@ type AbstractNearCacheRecordStore struct {
 	serializationService  spi.SerializationService
 	maxIdleDuration       time.Duration
 	timeToLiveDuration    time.Duration
-	staleReadDetector     invalidation.StaleReadDetector
+	staleReadDetector     nearcache.StaleReadDetector
 	evictionDisabled      bool
 	evictionPolicy        config.EvictionPolicy
 	maxSize               int32
@@ -70,12 +69,13 @@ func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
 		records:              make(map[interface{}]nearcache.Record),
 		config:               nearCacheCfg,
 		serializationService: service,
-		staleReadDetector:    invalidation.AlwaysFresh,
+		staleReadDetector:    nearcache.AlwaysFresh,
 		maxSize:              nearCacheCfg.MaxEntryCount(),
 		evictionPolicy:       nearCacheCfg.EvictionPolicy(),
 		evictionDisabled:     nearCacheCfg.EvictionPolicy() == config.EvictionPolicyNone,
 		maxIdleDuration:      nearCacheCfg.MaxIdleDuration(),
 	}
+
 	a.initRecordComparator()
 	return a
 }
@@ -137,6 +137,10 @@ func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
 func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
 	_, found := a.records[key]
 	return found
+}
+
+func (a *AbstractNearCacheRecordStore) SetStaleReadDetector(detector nearcache.StaleReadDetector) {
+	a.staleReadDetector = detector
 }
 
 func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
@@ -277,7 +281,7 @@ func (a *AbstractNearCacheRecordStore) isAvailable() bool {
 
 func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
 	keyData serialization.Data, record nearcache.Record) {
-	if a.staleReadDetector == invalidation.AlwaysFresh {
+	if a.staleReadDetector == nearcache.AlwaysFresh {
 		return
 	}
 

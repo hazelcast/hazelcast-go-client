@@ -15,20 +15,20 @@
 package nearcache
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 )
 
-type RecordStore interface {
-	Get(key interface{}) interface{}
-	Put(key interface{}, value interface{})
-	TryReserveForUpdate(key interface{}, keyData serialization.Data) (reservationID int64, reserved bool)
-	TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, bool)
-	Invalidate(key interface{})
-	Clear()
-	Destroy()
-	Size() int
-	Record(key interface{}) Record
-	DoExpiration()
-	DoEviction(withoutMaxSizeCheck bool)
-	SetStaleReadDetector(detector StaleReadDetector)
+func CreateConfigWithDefaultNearCache() *config.Config {
+	nearCacheCfg := config.NewNearCacheConfig()
+	config := hazelcast.NewConfig()
+	config.SetNearCacheConfig(nearCacheCfg)
+	return config
+}
+
+func GetNearCacheFromMap(mp core.Map) nearcache.NearCache {
+	return mp.(*internal.NearCachedMapProxy).NearCache()
 }

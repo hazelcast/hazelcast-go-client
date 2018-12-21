@@ -72,6 +72,10 @@ func (cs *ClusterService) init() {
 	cs.uuid.Store("")      //Initialize
 }
 
+func (cs *ClusterService) localUUID() string {
+	return cs.uuid.Load().(string)
+}
+
 func (cs *ClusterService) registerMembershipListeners() {
 	for _, membershipListener := range cs.config.MembershipListeners() {
 		cs.AddMembershipListener(membershipListener)

@@ -23,8 +23,9 @@ import (
 
 type NearCachedMapProxy struct {
 	*mapProxy
-	nearCache     nearcache.NearCache
-	serializeKeys bool
+	nearCache        nearcache.NearCache
+	serializeKeys    bool
+	repairingHandler nearcache.RepairingHandler
 }
 
 func newNearCachedMapProxy(client *HazelcastClient, serviceName string, name string) (*NearCachedMapProxy, error) {
@@ -42,7 +43,10 @@ func (n *NearCachedMapProxy) init() {
 	nearCacheManager := n.client.nearcacheManager
 	n.nearCache = nearCacheManager.GetOrCreateNearCache(n.Name(), nearCacheCfg)
 
-	// TODO:: registerInvalidationListener
+	if nearCacheCfg.InvalidateOnChange() {
+		// TODO:: registerInvalidationListener
+
+	}
 
 }
 

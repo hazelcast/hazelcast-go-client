@@ -87,6 +87,10 @@ func (d *DefaultNearCache) Put(key interface{}, value interface{}) {
 	d.nearCacheRecordStore.Put(key, value)
 }
 
+func (d *DefaultNearCache) SetStaleReadDetector(detector nearcache.StaleReadDetector) {
+	d.nearCacheRecordStore.SetStaleReadDetector(detector)
+}
+
 func (d *DefaultNearCache) Initialize() {
 	if d.nearCacheRecordStore == nil {
 		d.nearCacheRecordStore = d.createNearCacheRecordStore(d.name, d.config)

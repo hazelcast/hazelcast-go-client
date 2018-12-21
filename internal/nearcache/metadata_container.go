@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nearcachespi
+package nearcache
 
-import (
-	"github.com/hazelcast/hazelcast-go-client/config/property"
-	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
-)
-
-func NewDefaultNearCacheManager(service spi.SerializationService,
-	properties *property.HazelcastProperties) *internal.DefaultNearCacheManager {
-	return internal.NewDefaultNearCacheManager(service, properties)
+type MetaDataContainer interface {
+	UUID() string
+	SetUUID(uuid string)
+	CompareAndSetUUID(prevUUID string, newUUID string) bool
+	SetSequence(sequence int64)
+	Sequence() int64
+	CompareAndSetSequence(prevSequence int64, newSequence int64) bool
+	ResetSequence()
+	StaleSequence() int64
+	CompareAndSetStaleSequence(lastKnownStaleSeq int64, lastReceivedSeq int64) bool
+	ResetStaleSequence()
+	AddAndGetMissedSequenceCount(missCount int64) int64
+	MissedSequenceCount() int64
 }

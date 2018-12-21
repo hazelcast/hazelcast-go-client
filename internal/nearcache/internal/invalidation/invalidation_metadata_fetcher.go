@@ -30,6 +30,14 @@ type MetaDataFetcher struct {
 	handlers          sync.Map
 }
 
+func NewMetaDataFetcher(service clientspi.InvocationService, cluster core.Cluster, handlers sync.Map) *MetaDataFetcher {
+	return &MetaDataFetcher{
+		invocationService: service,
+		clusterService:    cluster,
+		handlers:          handlers,
+	}
+}
+
 func (i *MetaDataFetcher) fetchMetaData() {
 
 	members := i.clusterService.GetMembers()
@@ -39,6 +47,50 @@ func (i *MetaDataFetcher) fetchMetaData() {
 			continue
 		}
 		i.fetchMetaDataFor(names, member)
+	}
+}
+
+func (i *MetaDataFetcher) init(handler *RepairingHandler) {
+	names := []string{handler.Name()}
+	members := i.clusterService.GetMembers()
+	for _, member := range members {
+		if member.IsLiteMember() {
+			continue
+		}
+		i.fetchInitialMetaDataFor(names, member, handler)
+	}
+}
+
+func (i *MetaDataFetcher) fetchInitialMetaDataFor(names []string, member core.Member, handler *RepairingHandler) {
+	address := member.Address()
+	request := proto.MapFetchNearCacheInvalidationMetadataEncodeRequest(names, address.(*proto.Address))
+	responseMessage, err := i.invocationService.InvokeOnTarget(
+		request, address).ResultWithTimeout(asyncResultWaitTimeout)
+	if err != nil {
+		// TODO:: log at warning level
+		log.Println(fmt.Sprintf("Cannot fetch invalidation meta-data from address %s, %s", address, err))
+	} else {
+		namePartitionSequenceList, partitionUUIDList :=
+			proto.MapFetchNearCacheInvalidationMetadataDecodeResponse(responseMessage)()
+		i.initUUID(partitionUUIDList, handler)
+		i.initSequence(namePartitionSequenceList, handler)
+	}
+}
+
+func (i *MetaDataFetcher) initUUID(partitionUUIDList []*proto.Pair, handler *RepairingHandler) {
+	for _, UUID := range partitionUUIDList {
+		partitionID := UUID.Key().(int32)
+		partitionUUID := UUID.Value().(string)
+		handler.InitUUID(partitionID, partitionUUID)
+	}
+}
+
+func (i *MetaDataFetcher) initSequence(namePartitionSequenceList []*proto.Pair, handler *RepairingHandler) {
+	for _, namePartitionPair := range namePartitionSequenceList {
+		partitionSequenceList := namePartitionPair.Value().([]*proto.Pair)
+		for _, partitionSequencePair := range partitionSequenceList {
+			handler.InitSequence(partitionSequencePair.Key().(int32), partitionSequencePair.Value().(int64))
+		}
 	}
 }
 

@@ -58,6 +58,7 @@ type HazelcastClient struct {
 	properties           *property.HazelcastProperties
 	nearcacheManager     nearcache.Manager
 	credentials          security.Credentials
+	repairingTask        nearcache.RepairingTask
 	name                 string
 	id                   int64
 	statistics           *statistics
@@ -206,6 +207,11 @@ func (c *HazelcastClient) PartitionService() clientspi.PartitionService {
 	return c.partitionService
 }
 
+func (c *HazelcastClient) initNearCacheRepairingTask() {
+	c.repairingTask = nearcachespi.NewRepairingTask(c.properties, c.SerializationService, c.partitionService,
+		c.invocationService, c.ClusterService, c.ClusterService.localUUID())
+}
+
 func (c *HazelcastClient) init() error {
 	c.initClientName()
 	c.initLogger()
@@ -238,6 +244,7 @@ func (c *HazelcastClient) init() error {
 	c.nearcacheManager = c.createNearCacheManager()
 	c.HeartBeatService.start()
 	c.statistics.start()
+	c.initNearCacheRepairingTask()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
 }
@@ -352,6 +359,7 @@ func (c *HazelcastClient) Shutdown() {
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
 		c.statistics.shutdown()
+		c.repairingTask.Shutdown()
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
 }

@@ -25,6 +25,13 @@ type DefaultStaleReadDetector struct {
 	partitionService clientspi.PartitionService
 }
 
+func NewDefaultStaleReadDetector(handler *RepairingHandler, service clientspi.PartitionService) *DefaultStaleReadDetector {
+	return &DefaultStaleReadDetector{
+		repairingHandler: handler,
+		partitionService: service,
+	}
+}
+
 func (d *DefaultStaleReadDetector) IsStaleRead(key interface{}, record nearcache.Record) bool {
 	latestMetadata := d.repairingHandler.MetaDataContainer(record.PartitionID())
 	return !record.HasSameUUID(latestMetadata.UUID()) || record.InvalidationSequence() < latestMetadata.StaleSequence()
@@ -34,6 +41,6 @@ func (d *DefaultStaleReadDetector) PartitionID(keyData serialization.Data) int32
 	return d.partitionService.GetPartitionID(keyData)
 }
 
-func (d *DefaultStaleReadDetector) MetaDataContainer(partitionID int32) *MetaDataContainer {
+func (d *DefaultStaleReadDetector) MetaDataContainer(partitionID int32) nearcache.MetaDataContainer {
 	return d.repairingHandler.MetaDataContainer(partitionID)
 }

@@ -14,7 +14,9 @@
 
 package nearcache
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
+import (
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+)
 
 type NearCache interface {
 	Get(key interface{}) interface{}
@@ -26,4 +28,5 @@ type NearCache interface {
 	Size() int
 	Clear()
 	Invalidate(key interface{})
+	SetStaleReadDetector(detector StaleReadDetector)
 }

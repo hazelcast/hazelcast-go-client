@@ -28,6 +28,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
@@ -42,17 +43,22 @@ type RepairingTask struct {
 	maxToleratedMissCount  int64
 	lastAntiEntropyRun     atomic.Value
 	handlers               sync.Map
+	metaDataFetcher        *MetaDataFetcher
 	closed                 chan struct{}
 }
 
 func NewRepairingTask(properties *property.HazelcastProperties, service spi.SerializationService,
-	partitionService clientspi.PartitionService, localUUID string) *RepairingTask {
+	partitionService clientspi.PartitionService, invocationService clientspi.InvocationService,
+	cluster core.Cluster, localUUID string) *RepairingTask {
 	r := &RepairingTask{
 		localUUID:            localUUID,
 		serializationService: service,
 		partitionService:     partitionService,
 		partitionCount:       partitionService.GetPartitionCount(),
+		closed:               make(chan struct{}, 0),
 	}
+	r.initMetaDataFetcher(invocationService, cluster)
+	r.lastAntiEntropyRun.Store(time.Now())
 	r.initMaxToleratedMissCount(properties)
 	err := r.initReconciliationInterval(properties)
 	if err != nil {
@@ -60,6 +66,10 @@ func NewRepairingTask(properties *property.HazelcastProperties, service spi.Seri
 	}
 	go r.process()
 	return r
+}
+
+func (r *RepairingTask) initMetaDataFetcher(service clientspi.InvocationService, cluster core.Cluster) {
+	r.metaDataFetcher = NewMetaDataFetcher(service, cluster, r.handlers)
 }
 
 func (r *RepairingTask) initMaxToleratedMissCount(properties *property.HazelcastProperties) {
@@ -93,6 +103,23 @@ func (r *RepairingTask) process() {
 			return
 		}
 	}
+}
+
+func (r *RepairingTask) RegisterAndGetHandler(dataStructureName string, cache nearcache.NearCache) nearcache.RepairingHandler {
+	if handler, found := r.handlers.Load(dataStructureName); found {
+		return handler.(*RepairingHandler)
+	}
+	handler := r.createNewHandler(dataStructureName, cache)
+	r.handlers.Store(dataStructureName, handler)
+	return handler
+}
+
+func (r *RepairingTask) createNewHandler(dataStructureName string, cache nearcache.NearCache) *RepairingHandler {
+	handler := NewRepairingHandler(r.localUUID, dataStructureName, cache, r.serializationService, r.partitionService)
+	staleReadDetector := NewDefaultStaleReadDetector(handler, r.partitionService)
+	cache.SetStaleReadDetector(staleReadDetector)
+	r.initRepairingHandler(handler)
+	return handler
 }
 
 func (r *RepairingTask) isAboveMaxToleratedMissCount(handler *RepairingHandler) bool {
@@ -133,6 +160,7 @@ func (r *RepairingTask) fixSequenceGaps() {
 }
 
 func (r *RepairingTask) runAntiEntropy() {
+	r.metaDataFetcher.fetchMetaData()
 	r.lastAntiEntropyRun.Store(time.Now())
 }
 
@@ -141,4 +169,12 @@ func (r *RepairingTask) isAntiEntropyNeeded() bool {
 		return false
 	}
 	return time.Since(r.lastAntiEntropyRun.Load().(time.Time)) >= r.reconciliationInterval
+}
+
+func (r *RepairingTask) initRepairingHandler(handler *RepairingHandler) {
+	r.metaDataFetcher.init(handler)
+}
+
+func (r *RepairingTask) Shutdown() {
+	close(r.closed)
 }
