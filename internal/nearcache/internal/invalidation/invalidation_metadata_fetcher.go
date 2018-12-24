@@ -68,7 +68,7 @@ func (i *MetaDataFetcher) fetchInitialMetaDataFor(names []string, member core.Me
 		request, address).ResultWithTimeout(asyncResultWaitTimeout)
 	if err != nil {
 		// TODO:: log at warning level
-		log.Println(fmt.Sprintf("Cannot fetch invalidation meta-data from address %s, %s", address, err))
+		log.Println(fmt.Sprintf("Cannot fetch initial invalidation meta-data from address %s, %s", address, err))
 	} else {
 		namePartitionSequenceList, partitionUUIDList :=
 			proto.MapFetchNearCacheInvalidationMetadataDecodeResponse(responseMessage)()

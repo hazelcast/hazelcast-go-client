@@ -21,6 +21,8 @@ import (
 
 	"sync/atomic"
 
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/record/comparator"
@@ -50,6 +52,7 @@ func (r recordsHolder) Swap(i, j int) {
 type AbstractNearCacheRecordStore struct {
 	createRecordFromValue func(key, value interface{}) nearcache.Record
 	updateRecordValue     func(record nearcache.Record, value interface{})
+	recordsMu             sync.RWMutex
 	records               map[interface{}]nearcache.Record
 	config                *config.NearCacheConfig
 	serializationService  spi.SerializationService
@@ -94,9 +97,6 @@ func (a *AbstractNearCacheRecordStore) nextReservationID() int64 {
 }
 
 func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
-	if !a.isAvailable() {
-		return nil
-	}
 	if record, found := a.Record(key); found {
 		if record.RecordState() != nearcache.ReadPermitted {
 			return nil
@@ -118,12 +118,7 @@ func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
 }
 
 func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
-
-	if !a.isAvailable() {
-		return
-	}
-
-	if a.evictionPolicy == config.EvictionPolicyNone && len(a.records) >= int(a.maxSize) && !a.containsKey(key) {
+	if a.evictionPolicy == config.EvictionPolicyNone && a.Size() >= int(a.maxSize) && !a.containsKey(key) {
 		return
 	}
 
@@ -134,6 +129,8 @@ func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
 }
 
 func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
+	a.recordsMu.RLock()
+	defer a.recordsMu.RUnlock()
 	_, found := a.records[key]
 	return found
 }
@@ -144,7 +141,7 @@ func (a *AbstractNearCacheRecordStore) SetStaleReadDetector(detector nearcache.S
 
 func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
 	keyData serialization.Data) (reservationID int64, reserved bool) {
-	if a.evictionPolicy == config.EvictionPolicyNone && len(a.records) >= int(a.maxSize) && !a.containsKey(key) {
+	if a.evictionPolicy == config.EvictionPolicyNone && a.Size() >= int(a.maxSize) && !a.containsKey(key) {
 		return 0, false
 	}
 	reservedRecord := a.getOrCreateToReserve(key)
@@ -156,20 +153,27 @@ func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
 }
 
 func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nearcache.Record {
+	a.recordsMu.RLock()
 	if record, found := a.records[key]; found {
+		defer a.recordsMu.RUnlock()
 		return record
 	}
+	a.recordsMu.RUnlock()
 	keyData, _ := a.serializationService.ToData(key)
 	record := a.createRecordFromValue(key, nil)
 	a.onRecordCreate(key, keyData, record)
 	record.CasRecordState(nearcache.ReadPermitted, nearcache.Reserved)
+	a.recordsMu.Lock()
 	a.records[key] = record
+	a.recordsMu.Unlock()
 	return record
 }
 
 func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 	value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
+	a.recordsMu.RLock()
 	reservedRecord, found := a.records[key]
+	a.recordsMu.RUnlock()
 	if !found {
 		return nil, false
 	}
@@ -183,13 +187,18 @@ func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 }
 
 func (a *AbstractNearCacheRecordStore) Invalidate(key interface{}) {
+	a.recordsMu.Lock()
+	defer a.recordsMu.Unlock()
+	delete(a.records, key)
+}
+
+func (a *AbstractNearCacheRecordStore) invalidateWithoutLock(key interface{}) {
 	delete(a.records, key)
 }
 
 func (a *AbstractNearCacheRecordStore) Clear() {
-	if !a.isAvailable() {
-		return
-	}
+	a.recordsMu.Lock()
+	defer a.recordsMu.Unlock()
 	a.records = make(map[interface{}]nearcache.Record)
 }
 
@@ -198,21 +207,24 @@ func (a *AbstractNearCacheRecordStore) Destroy() {
 }
 
 func (a *AbstractNearCacheRecordStore) Size() int {
-	if !a.isAvailable() {
-		return -1
-	}
+	a.recordsMu.RLock()
+	defer a.recordsMu.RUnlock()
 	return len(a.records)
 }
 
 func (a *AbstractNearCacheRecordStore) Record(key interface{}) (nearcache.Record, bool) {
+	a.recordsMu.RLock()
+	defer a.recordsMu.RUnlock()
 	record, found := a.records[key]
 	return record, found
 }
 
 func (a *AbstractNearCacheRecordStore) DoExpiration() {
+	a.recordsMu.Lock()
+	defer a.recordsMu.Unlock()
 	for key, record := range a.records {
 		if a.isRecordExpired(record) {
-			a.Invalidate(key)
+			a.invalidateWithoutLock(key)
 		}
 	}
 }
@@ -225,10 +237,14 @@ func (a *AbstractNearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
 }
 
 func (a *AbstractNearCacheRecordStore) shouldEvict() bool {
+	a.recordsMu.RLock()
+	defer a.recordsMu.RUnlock()
 	return len(a.records) >= int(a.maxSize)
 }
 
 func (a *AbstractNearCacheRecordStore) removeRecords(records []nearcache.Record) {
+	a.recordsMu.Lock()
+	defer a.recordsMu.Unlock()
 	for _, record := range records {
 		delete(a.records, record.Key())
 	}
@@ -243,11 +259,13 @@ func (a *AbstractNearCacheRecordStore) findRecordsToBeEvicted() []nearcache.Reco
 }
 
 func (a *AbstractNearCacheRecordStore) calculateEvictionSize() int {
+	a.recordsMu.RLock()
+	defer a.recordsMu.RUnlock()
 	return evictionPercentage * len(a.records) / 100
 }
 
 func (a *AbstractNearCacheRecordStore) createRecordsSlice() []nearcache.Record {
-	records := make([]nearcache.Record, len(a.records))
+	records := make([]nearcache.Record, a.Size())
 	index := 0
 	for _, record := range a.records {
 		records[index] = record
@@ -275,10 +293,6 @@ func (a *AbstractNearCacheRecordStore) onRecordCreate(key interface{},
 	a.initInvalidationMetaData(key, keyData, record)
 }
 
-func (a *AbstractNearCacheRecordStore) isAvailable() bool {
-	return a.records != nil
-}
-
 func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
 	keyData serialization.Data, record nearcache.Record) {
 	if a.staleReadDetector == nearcache.AlwaysFresh {
@@ -293,6 +307,8 @@ func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
 }
 
 func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcache.Record) nearcache.Record {
+	a.recordsMu.Lock()
+	defer a.recordsMu.Unlock()
 	oldRecord := a.records[key]
 	a.records[key] = record
 	return oldRecord
