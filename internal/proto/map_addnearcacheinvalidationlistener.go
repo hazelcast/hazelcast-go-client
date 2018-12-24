@@ -58,16 +58,16 @@ func MapAddNearCacheInvalidationListenerDecodeResponse(clientMessage *ClientMess
 }
 
 // MapAddNearCacheInvalidationListenerHandleEventIMapInvalidationFunc is the event handler function.
-type MapAddNearCacheInvalidationListenerHandleEventIMapInvalidationFunc func(serialization.Data, string, *uuid, int64)
+type MapAddNearCacheInvalidationListenerHandleEventIMapInvalidationFunc func(serialization.Data, string, *UUID, int64)
 
 // MapAddNearCacheInvalidationListenerHandleEventIMapBatchInvalidationFunc is the event handler function.
-type MapAddNearCacheInvalidationListenerHandleEventIMapBatchInvalidationFunc func([]serialization.Data, []string, []*uuid, []int64)
+type MapAddNearCacheInvalidationListenerHandleEventIMapBatchInvalidationFunc func([]serialization.Data, []string, []*UUID, []int64)
 
 // MapAddNearCacheInvalidationListenerEventIMapInvalidationDecode decodes the corresponding event
 // from the given client message.
 // It returns the result parameters for the event.
 func MapAddNearCacheInvalidationListenerEventIMapInvalidationDecode(clientMessage *ClientMessage) (
-	key serialization.Data, sourceUuid string, partitionUuid *uuid, sequence int64) {
+	key serialization.Data, sourceUuid string, partitionUuid *UUID, sequence int64) {
 	if clientMessage.IsComplete() {
 		return
 	}
@@ -85,7 +85,7 @@ func MapAddNearCacheInvalidationListenerEventIMapInvalidationDecode(clientMessag
 // from the given client message.
 // It returns the result parameters for the event.
 func MapAddNearCacheInvalidationListenerEventIMapBatchInvalidationDecode(clientMessage *ClientMessage) (
-	keys []serialization.Data, sourceUuids []string, partitionUuids []*uuid, sequences []int64) {
+	keys []serialization.Data, sourceUuids []string, partitionUuids []*UUID, sequences []int64) {
 	if clientMessage.IsComplete() {
 		return
 	}
@@ -102,7 +102,7 @@ func MapAddNearCacheInvalidationListenerEventIMapBatchInvalidationDecode(clientM
 		sourceUuids[sourceUuidsIndex] = sourceUuidsItem
 	}
 	partitionUuidsSize := clientMessage.ReadInt32()
-	partitionUuids = make([]*uuid, partitionUuidsSize)
+	partitionUuids = make([]*UUID, partitionUuidsSize)
 	for partitionUuidsIndex := 0; partitionUuidsIndex < int(partitionUuidsSize); partitionUuidsIndex++ {
 		partitionUuidsItem := UUIDCodecDecode(clientMessage)
 		partitionUuids[partitionUuidsIndex] = partitionUuidsItem

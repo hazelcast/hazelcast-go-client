@@ -117,6 +117,10 @@ func (d *DefaultNearCache) doExpirationPeriodically() {
 	}
 }
 
+func (d *DefaultNearCache) Store() nearcache.RecordStore {
+	return d.nearCacheRecordStore
+}
+
 func (d *DefaultNearCache) Destroy() {
 	close(d.closed)
 	d.nearCacheRecordStore.Destroy()

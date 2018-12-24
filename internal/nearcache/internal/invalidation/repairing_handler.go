@@ -21,6 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
@@ -139,7 +140,7 @@ func (r *RepairingHandler) UpdateLastKnownStaleSequence(metaData *MetaDataContai
 }
 
 func (r *RepairingHandler) HandleSingleInvalidation(key serialization.Data, sourceUUID string,
-	partitionUUID string, sequence int64) {
+	partitionUUID *proto.UUID, sequence int64) {
 	if !r.isOriginatedFromLocalClient(sourceUUID) {
 		if key == nil {
 			r.nearCache.Clear()
@@ -153,8 +154,23 @@ func (r *RepairingHandler) HandleSingleInvalidation(key serialization.Data, sour
 		}
 	}
 	partitionID := r.GetPartitionIDOrDefault(key)
-	r.CheckOrRepairUUID(partitionID, partitionUUID)
+	r.CheckOrRepairUUID(partitionID, partitionUUID.String())
 	r.CheckOrRepairSequence(partitionID, sequence, false)
+}
+
+func (r *RepairingHandler) HandleBatchInvalidation(keys []serialization.Data, sourceUUIDs []string,
+	partitionUUIDs []*proto.UUID, sequences []int64) {
+	minSize := min(len(keys), min(len(sourceUUIDs), min(len(partitionUUIDs), len(sequences))))
+	for i := 0; i < minSize; i++ {
+		r.HandleSingleInvalidation(keys[i], sourceUUIDs[i], partitionUUIDs[i], sequences[i])
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (r *RepairingHandler) isOriginatedFromLocalClient(sourceUUID string) bool {

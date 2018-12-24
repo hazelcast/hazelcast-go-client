@@ -27,10 +27,10 @@ import (
 type MetaDataFetcher struct {
 	invocationService clientspi.InvocationService
 	clusterService    core.Cluster
-	handlers          sync.Map
+	handlers          *sync.Map
 }
 
-func NewMetaDataFetcher(service clientspi.InvocationService, cluster core.Cluster, handlers sync.Map) *MetaDataFetcher {
+func NewMetaDataFetcher(service clientspi.InvocationService, cluster core.Cluster, handlers *sync.Map) *MetaDataFetcher {
 	return &MetaDataFetcher{
 		invocationService: service,
 		clusterService:    cluster,
@@ -80,8 +80,8 @@ func (i *MetaDataFetcher) fetchInitialMetaDataFor(names []string, member core.Me
 func (i *MetaDataFetcher) initUUID(partitionUUIDList []*proto.Pair, handler *RepairingHandler) {
 	for _, UUID := range partitionUUIDList {
 		partitionID := UUID.Key().(int32)
-		partitionUUID := UUID.Value().(string)
-		handler.InitUUID(partitionID, partitionUUID)
+		partitionUUID := UUID.Value().(*proto.UUID)
+		handler.InitUUID(partitionID, partitionUUID.String())
 	}
 }
 
@@ -110,7 +110,7 @@ func (i *MetaDataFetcher) fetchMetaDataFor(names []string, member core.Member) {
 	}
 }
 
-func (i *MetaDataFetcher) dataStructureNames(handlers sync.Map) []string {
+func (i *MetaDataFetcher) dataStructureNames(handlers *sync.Map) []string {
 	names := make([]string, 0)
 	nameFinder := func(_, handler interface{}) bool {
 		repairHandler := handler.(*RepairingHandler)
@@ -125,7 +125,7 @@ func (i *MetaDataFetcher) repairUUIDs(partitionUUIDList []*proto.Pair) {
 	for _, UUID := range partitionUUIDList {
 		handlerFunc := func(_, handler interface{}) bool {
 			repairHandler := handler.(*RepairingHandler)
-			repairHandler.CheckOrRepairUUID(UUID.Key().(int32), UUID.Value().(string))
+			repairHandler.CheckOrRepairUUID(UUID.Key().(int32), UUID.Value().(*proto.UUID).String())
 			return true
 		}
 		i.handlers.Range(handlerFunc)

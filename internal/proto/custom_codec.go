@@ -75,13 +75,13 @@ func DataEntryViewCodecDecode(msg *ClientMessage) *DataEntryView {
 	return &dataEntryView
 }
 
-func UUIDCodecEncode(msg *ClientMessage, uuid uuid) {
+func UUIDCodecEncode(msg *ClientMessage, uuid UUID) {
 	msg.AppendInt64(uuid.msb)
 	msg.AppendInt64(uuid.lsb)
 }
 
-func UUIDCodecDecode(msg *ClientMessage) *uuid {
-	return &uuid{msg.ReadInt64(), msg.ReadInt64()}
+func UUIDCodecDecode(msg *ClientMessage) *UUID {
+	return &UUID{msg.ReadInt64(), msg.ReadInt64()}
 }
 
 /*

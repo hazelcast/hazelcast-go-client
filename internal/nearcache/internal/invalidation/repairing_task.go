@@ -42,7 +42,7 @@ type RepairingTask struct {
 	partitionService       clientspi.PartitionService
 	maxToleratedMissCount  int64
 	lastAntiEntropyRun     atomic.Value
-	handlers               sync.Map
+	handlers               *sync.Map
 	metaDataFetcher        *MetaDataFetcher
 	closed                 chan struct{}
 }
@@ -56,6 +56,7 @@ func NewRepairingTask(properties *property.HazelcastProperties, service spi.Seri
 		partitionService:     partitionService,
 		partitionCount:       partitionService.GetPartitionCount(),
 		closed:               make(chan struct{}, 0),
+		handlers:             new(sync.Map),
 	}
 	r.initMetaDataFetcher(invocationService, cluster)
 	r.lastAntiEntropyRun.Store(time.Now())
@@ -91,15 +92,16 @@ func (r *RepairingTask) initReconciliationInterval(properties *property.Hazelcas
 
 func (r *RepairingTask) process() {
 
-	ticker := time.Tick(time.Second)
+	ticker := time.NewTicker(time.Second)
 	for {
 		select {
-		case <-ticker:
+		case <-ticker.C:
 			r.fixSequenceGaps()
 			if r.isAntiEntropyNeeded() {
 				r.runAntiEntropy()
 			}
 		case <-r.closed:
+			ticker.Stop()
 			return
 		}
 	}

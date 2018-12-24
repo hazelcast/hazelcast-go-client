@@ -17,15 +17,21 @@ package internal
 import (
 	"time"
 
+	"log"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+const invalidationEventType = 1 << 8
 
 type NearCachedMapProxy struct {
 	*mapProxy
 	nearCache        nearcache.NearCache
 	serializeKeys    bool
 	repairingHandler nearcache.RepairingHandler
+	registrationID   string
 }
 
 func newNearCachedMapProxy(client *HazelcastClient, serviceName string, name string) (*NearCachedMapProxy, error) {
@@ -44,10 +50,44 @@ func (n *NearCachedMapProxy) init() {
 	n.nearCache = nearCacheManager.GetOrCreateNearCache(n.Name(), nearCacheCfg)
 
 	if nearCacheCfg.InvalidateOnChange() {
-		// TODO:: registerInvalidationListener
-
+		n.beforeRegisterListener()
+		n.registerInvalidationListener()
 	}
 
+}
+
+func (n *NearCachedMapProxy) beforeRegisterListener() {
+	repairingTask := n.client.repairingTask
+	n.repairingHandler = repairingTask.RegisterAndGetHandler(n.name, n.nearCache)
+}
+
+func (n *NearCachedMapProxy) registerInvalidationListener() {
+	request := proto.MapAddNearCacheInvalidationListenerEncodeRequest(n.Name(), invalidationEventType, false)
+	eventHandler := func(message *proto.ClientMessage) {
+		proto.MapAddNearCacheInvalidationListenerHandle(message, n.HandleMapInvalidationEventV14,
+			n.HandleMapBatchInvalidationEventV14)
+	}
+	var err error
+	n.registrationID, err = n.client.ListenerService.registerListener(request, eventHandler,
+		func(registrationID string) *proto.ClientMessage {
+			return proto.MapRemoveEntryListenerEncodeRequest(n.name, registrationID)
+		}, func(clientMessage *proto.ClientMessage) string {
+			return proto.MapAddNearCacheInvalidationListenerDecodeResponse(clientMessage)()
+		})
+	if err != nil {
+		// TODO:: Log at error level
+		log.Println("Near cache is not initialized!!!", err)
+	}
+}
+
+func (n *NearCachedMapProxy) HandleMapInvalidationEventV14(key serialization.Data,
+	sourceUUID string, partitionUUID *proto.UUID, sequence int64) {
+	n.repairingHandler.HandleSingleInvalidation(key, sourceUUID, partitionUUID, sequence)
+}
+
+func (n *NearCachedMapProxy) HandleMapBatchInvalidationEventV14(keys []serialization.Data, sourceUUIDs []string,
+	partitionUUIDs []*proto.UUID, sequences []int64) {
+	n.repairingHandler.HandleBatchInvalidation(keys, sourceUUIDs, partitionUUIDs, sequences)
 }
 
 func (n *NearCachedMapProxy) cachedValue(key interface{}) interface{} {

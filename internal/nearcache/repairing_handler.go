@@ -14,9 +14,15 @@
 
 package nearcache
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
+import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+)
 
 type RepairingHandler interface {
 	HandleSingleInvalidation(key serialization.Data, sourceUUID string,
-		partitionUUID string, sequence int64)
+		partitionUUID *proto.UUID, sequence int64)
+
+	HandleBatchInvalidation(keys []serialization.Data, sourceUUIDs []string,
+		partitionUUIDs []*proto.UUID, sequences []int64)
 }

@@ -153,6 +153,7 @@ func TestNearCacheIdleKeysExpire(t *testing.T) {
 		nonIdleValue := cache.Get(nonIdleKey)
 		return nonIdleValue == nonIdleKey
 	})
+	time.Sleep(100 * time.Second)
 }
 
 func TestInvalidateOnPut(t *testing.T) {

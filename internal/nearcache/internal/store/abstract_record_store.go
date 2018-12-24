@@ -97,8 +97,7 @@ func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
 	if !a.isAvailable() {
 		return nil
 	}
-	record := a.Record(key)
-	if record != nil {
+	if record, found := a.Record(key); found {
 		if record.RecordState() != nearcache.ReadPermitted {
 			return nil
 		}
@@ -205,8 +204,9 @@ func (a *AbstractNearCacheRecordStore) Size() int {
 	return len(a.records)
 }
 
-func (a *AbstractNearCacheRecordStore) Record(key interface{}) nearcache.Record {
-	return a.records[key]
+func (a *AbstractNearCacheRecordStore) Record(key interface{}) (nearcache.Record, bool) {
+	record, found := a.records[key]
+	return record, found
 }
 
 func (a *AbstractNearCacheRecordStore) DoExpiration() {
@@ -296,6 +296,10 @@ func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcac
 	oldRecord := a.records[key]
 	a.records[key] = record
 	return oldRecord
+}
+
+func (a *AbstractNearCacheRecordStore) StaleReadDetector() nearcache.StaleReadDetector {
+	return a.staleReadDetector
 }
 
 func (a *AbstractNearCacheRecordStore) toData(value interface{}) serialization.Data {

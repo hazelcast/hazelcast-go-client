@@ -55,16 +55,16 @@ func MapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) fu
 }
 
 // MapAddNearCacheEntryListenerHandleEventIMapInvalidationFunc is the event handler function.
-type MapAddNearCacheEntryListenerHandleEventIMapInvalidationFunc func(serialization.Data, string, *uuid, int64)
+type MapAddNearCacheEntryListenerHandleEventIMapInvalidationFunc func(serialization.Data, string, *UUID, int64)
 
 // MapAddNearCacheEntryListenerHandleEventIMapBatchInvalidationFunc is the event handler function.
-type MapAddNearCacheEntryListenerHandleEventIMapBatchInvalidationFunc func([]serialization.Data, []string, []*uuid, []int64)
+type MapAddNearCacheEntryListenerHandleEventIMapBatchInvalidationFunc func([]serialization.Data, []string, []*UUID, []int64)
 
 // MapAddNearCacheEntryListenerEventIMapInvalidationDecode decodes the corresponding event
 // from the given client message.
 // It returns the result parameters for the event.
 func MapAddNearCacheEntryListenerEventIMapInvalidationDecode(clientMessage *ClientMessage) (
-	key serialization.Data, sourceUuid string, partitionUuid *uuid, sequence int64) {
+	key serialization.Data, sourceUuid string, partitionUuid *UUID, sequence int64) {
 
 	if !clientMessage.ReadBool() {
 		key = clientMessage.ReadData()
@@ -82,7 +82,7 @@ func MapAddNearCacheEntryListenerEventIMapInvalidationDecode(clientMessage *Clie
 // from the given client message.
 // It returns the result parameters for the event.
 func MapAddNearCacheEntryListenerEventIMapBatchInvalidationDecode(clientMessage *ClientMessage) (
-	keys []serialization.Data, sourceUuids []string, partitionUuids []*uuid, sequences []int64) {
+	keys []serialization.Data, sourceUuids []string, partitionUuids []*UUID, sequences []int64) {
 	keysSize := clientMessage.ReadInt32()
 	keys = make([]serialization.Data, keysSize)
 	for keysIndex := 0; keysIndex < int(keysSize); keysIndex++ {
@@ -99,7 +99,7 @@ func MapAddNearCacheEntryListenerEventIMapBatchInvalidationDecode(clientMessage 
 		sourceUuids[sourceUuidsIndex] = sourceUuidsItem
 	}
 	partitionUuidsSize := clientMessage.ReadInt32()
-	partitionUuids = make([]*uuid, partitionUuidsSize)
+	partitionUuids = make([]*UUID, partitionUuidsSize)
 	for partitionUuidsIndex := 0; partitionUuidsIndex < int(partitionUuidsSize); partitionUuidsIndex++ {
 		partitionUuidsItem := UUIDCodecDecode(clientMessage)
 		partitionUuids[partitionUuidsIndex] = partitionUuidsItem

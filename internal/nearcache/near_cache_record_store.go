@@ -27,7 +27,7 @@ type RecordStore interface {
 	Clear()
 	Destroy()
 	Size() int
-	Record(key interface{}) Record
+	Record(key interface{}) (Record, bool)
 	DoExpiration()
 	DoEviction(withoutMaxSizeCheck bool)
 	SetStaleReadDetector(detector StaleReadDetector)
