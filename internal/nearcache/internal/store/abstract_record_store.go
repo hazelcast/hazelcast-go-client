@@ -178,7 +178,7 @@ func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 		return nil, false
 	}
 	if !reservedRecord.CasRecordState(reservationID, nearcache.UpdateStarted) {
-		return reservedRecord, false
+		return nil, false
 	}
 	a.updateRecordValue(reservedRecord, value)
 	reservedRecord.CasRecordState(nearcache.UpdateStarted, nearcache.ReadPermitted)

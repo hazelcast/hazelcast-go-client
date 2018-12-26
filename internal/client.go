@@ -359,7 +359,9 @@ func (c *HazelcastClient) Shutdown() {
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
 		c.statistics.shutdown()
-		c.repairingTask.Shutdown()
+		if c.repairingTask != nil {
+			c.repairingTask.Shutdown()
+		}
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
 }

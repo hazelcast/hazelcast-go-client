@@ -109,27 +109,26 @@ func (n *NearCachedMapProxy) Get(key interface{}) (interface{}, error) {
 	if cachedValue := n.cachedValueInObject(nearCacheKey); cachedValue != nil {
 		return cachedValue, nil
 	}
-
-	value, err := n.mapProxy.Get(nearCacheKey)
-	if err != nil {
-		return nil, err
-	}
-
-	if value != nil {
-		return n.tryReserveAndPublishReserved(nearCacheKey, value)
-	}
-
-	return value, nil
-}
-
-func (n *NearCachedMapProxy) tryReserveAndPublishReserved(nearCacheKey interface{}, value interface{}) (interface{}, error) {
 	keyData, err := n.toData(nearCacheKey)
 	if err != nil {
 		return nil, err
 	}
 	reservationID, reserved := n.nearCache.TryReserveForUpdate(nearCacheKey, keyData)
+	value, err := n.mapProxy.Get(nearCacheKey)
+	if err != nil {
+		return nil, err
+	}
+
 	if reserved {
-		value, _ = n.tryPublishReserved(nearCacheKey, value, reservationID)
+		if value == nil {
+			n.invalidateNearCacheKey(nearCacheKey)
+		} else {
+			if publishedValue, published := n.tryPublishReserved(nearCacheKey, value, reservationID); !published {
+				n.invalidateNearCacheKey(nearCacheKey)
+			} else {
+				value = publishedValue
+			}
+		}
 	}
 	return value, nil
 }
@@ -201,7 +200,7 @@ func (n *NearCachedMapProxy) ExecuteOnKey(key interface{}, entryProcessor interf
 }
 
 func (n *NearCachedMapProxy) invalidateAllFromMap(entries map[interface{}]interface{}) {
-	for key, _ := range entries {
+	for key := range entries {
 		n.invalidateNearCacheKey(key)
 	}
 }
@@ -340,7 +339,7 @@ func (n *NearCachedMapProxy) invalidateNearCacheKey(key interface{}) {
 	n.nearCache.Invalidate(key)
 }
 
-// For testing
+// NearCache is used for testing
 func (n *NearCachedMapProxy) NearCache() nearcache.NearCache {
 	return n.nearCache
 }

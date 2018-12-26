@@ -54,7 +54,6 @@ var rcMutex = new(sync.Mutex)
 
 func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 
@@ -83,7 +82,7 @@ func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
 	distortSequence := func() {
 		for testRunning.Load() == true {
 			rcMutex.Lock()
-			err = distortRandomPartitionSequence(cluster.ID, mapName)
+			err := distortRandomPartitionSequence(cluster.ID, mapName)
 			rcMutex.Unlock()
 			assert.NoError(t, err)
 			time.Sleep(1 * time.Second)
@@ -94,7 +93,7 @@ func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
 	distortUUID := func() {
 		for testRunning.Load() == true {
 			rcMutex.Lock()
-			err = distortRandomPartitionUuid(cluster.ID)
+			err := distortRandomPartitionUuid(cluster.ID)
 			rcMutex.Unlock()
 			assert.NoError(t, err)
 			time.Sleep(5 * time.Second)
@@ -132,6 +131,9 @@ func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
 		}
 		return true
 	})
+	rcMutex.Lock()
+	remoteController.ShutdownCluster(cluster.ID)
+	rcMutex.Unlock()
 
 }
 

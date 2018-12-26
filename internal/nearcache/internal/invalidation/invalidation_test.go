@@ -52,7 +52,6 @@ func configureConfig(config *config.Config) {
 }
 func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 
@@ -89,6 +88,9 @@ func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 		seq := metaDataContainer.Sequence()
 		return seq == int64(2)
 	})
+	rcMutex.Lock()
+	remoteController.ShutdownCluster(cluster.ID)
+	rcMutex.Unlock()
 
 }
 
@@ -130,7 +132,9 @@ func TestSequenceUpdateIfKeyRemovedAtServer(t *testing.T) {
 
 func removeKeyAtServer(clusterID string, mapName string, key string) error {
 	script := "map=instance_0.getMap('" + mapName + "');map.remove('" + key + "')"
+	rcMutex.Lock()
 	res, err := remoteController.ExecuteOnController(clusterID, script, rc.Lang_PYTHON)
+	rcMutex.Unlock()
 	if !res.Success {
 		return errors.New(res.String())
 	}

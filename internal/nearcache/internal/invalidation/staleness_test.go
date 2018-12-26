@@ -39,7 +39,6 @@ func configureStalenessConfig(config *config.Config) {
 
 func TestNearCache_NotContainsStaleValue_WhenUpdatedByMultipleRoutines(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 
 	nearCacheInvalidatorThreadCount := 1
@@ -81,6 +80,9 @@ func TestNearCache_NotContainsStaleValue_WhenUpdatedByMultipleRoutines(t *testin
 	test.AssertEventually(t, func() bool {
 		return AssertNoStaleDataExistInNearCache(t, entryCount, mp, valuesFromMember)
 	})
+	rcMutex.Lock()
+	remoteController.ShutdownCluster(cluster.ID)
+	rcMutex.Unlock()
 
 }
 

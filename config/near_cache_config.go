@@ -20,13 +20,18 @@ type InMemoryFormat int32
 type EvictionPolicy int32
 
 const (
+	// InMemoryFormatBinary stores near cache records in binary(serialized) format in memory.
 	InMemoryFormatBinary InMemoryFormat = iota
+	// InMemoryFormatObject stores near cache records in object format in memory.
 	InMemoryFormatObject
 )
 
 const (
+	// EvictionPolicyNone is used in near cache when no entry should be evicted because of size.
 	EvictionPolicyNone EvictionPolicy = iota
+	// EvictionPolicyLru is used when least recently used entries are evicted.
 	EvictionPolicyLru
+	// EvictionPolicyLfu is used when least frequently used entries are evicted.
 	EvictionPolicyLfu
 )
 

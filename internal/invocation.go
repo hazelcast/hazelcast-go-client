@@ -106,7 +106,8 @@ type InvocationService interface {
 	shutdown()
 }
 
-func (is *invocationServiceImpl) invokeOnPartitionOwner(request *proto.ClientMessage, partitionID int32) clientspi.InvocationResult {
+func (is *invocationServiceImpl) invokeOnPartitionOwner(request *proto.ClientMessage,
+	partitionID int32) clientspi.InvocationResult {
 	invocation := newInvocation(request, partitionID, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
@@ -116,17 +117,20 @@ func (is *invocationServiceImpl) invokeOnRandomTarget(request *proto.ClientMessa
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData serialization.Data) clientspi.InvocationResult {
+func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage,
+	keyData serialization.Data) clientspi.InvocationResult {
 	partitionID := is.client.partitionService.GetPartitionID(keyData)
 	return is.invokeOnPartitionOwner(request, partitionID)
 }
 
-func (is *invocationServiceImpl) InvokeOnTarget(request *proto.ClientMessage, target core.Address) clientspi.InvocationResult {
+func (is *invocationServiceImpl) InvokeOnTarget(request *proto.ClientMessage,
+	target core.Address) clientspi.InvocationResult {
 	invocation := newInvocation(request, -1, target, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnConnection(request *proto.ClientMessage, connection *Connection) clientspi.InvocationResult {
+func (is *invocationServiceImpl) invokeOnConnection(request *proto.ClientMessage,
+	connection *Connection) clientspi.InvocationResult {
 	invocation := newInvocation(request, -1, nil, connection, is.client)
 	return is.sendInvocation(invocation)
 }

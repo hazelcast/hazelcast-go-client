@@ -65,12 +65,13 @@ func (hp *HazelcastProperties) GetString(property *HazelcastProperty) string {
 // parsed to an integer, otherwise it returns its default value.
 func (hp *HazelcastProperties) GetIntOrDefault(property *HazelcastProperty) int {
 	str := hp.GetString(property)
+	var number int
 	if number, err := strconv.Atoi(str); err == nil {
 		return number
-	} else {
-		number, _ = strconv.Atoi(property.defaultValue)
-		return number
 	}
+	number, _ = strconv.Atoi(property.defaultValue)
+	return number
+
 }
 
 // GetBoolean returns the boolean value of the given property.

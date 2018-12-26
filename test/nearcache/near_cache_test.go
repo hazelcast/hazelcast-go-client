@@ -48,6 +48,10 @@ func TestNearCacheEachGetFasterFromCache(t *testing.T) {
 	assert.NoError(t, err)
 
 	limit := 1000
+	getRemoteTotal := int64(0)
+	getCacheTotal := int64(0)
+
+	bucketSize := 10
 	for i := 0; i < limit; i++ {
 		key := "key" + strconv.Itoa(i)
 		value := "value" + strconv.Itoa(i)
@@ -65,9 +69,14 @@ func TestNearCacheEachGetFasterFromCache(t *testing.T) {
 		cacheGetTime := time.Since(now)
 		assert.NoError(t, err)
 		assert.Equal(t, actualValue, value)
-
-		if remoteGetTime < cacheGetTime {
-			t.Error("remote operation takes less time than reading from cache", remoteGetTime, cacheGetTime)
+		getRemoteTotal += remoteGetTime.Nanoseconds()
+		getCacheTotal += cacheGetTime.Nanoseconds()
+		if i%bucketSize == 0 {
+			if getRemoteTotal < getCacheTotal {
+				t.Error("remote operation takes less time than reading from cache", getRemoteTotal, getCacheTotal)
+			}
+			getRemoteTotal = 0
+			getCacheTotal = 0
 		}
 	}
 }
@@ -153,7 +162,6 @@ func TestNearCacheIdleKeysExpire(t *testing.T) {
 		nonIdleValue := cache.Get(nonIdleKey)
 		return nonIdleValue == nonIdleKey
 	})
-	time.Sleep(100 * time.Second)
 }
 
 func TestInvalidateOnPut(t *testing.T) {
