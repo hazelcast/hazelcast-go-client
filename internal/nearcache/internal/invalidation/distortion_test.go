@@ -50,6 +50,7 @@ func configureDistortionConfig(config *config.Config) {
 }
 
 var expectedKeyValues = make(map[int]int)
+var rcMutex = new(sync.Mutex)
 
 func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
@@ -201,7 +202,9 @@ func getValueFromMember(clusterID, mapName string, key int, service spi.Serializ
 	script := "from java.util import ArrayList\n" +
 		"map=instance_0.getMap('" + mapName + "')\n" +
 		"result=instance_0.getSerializationService().toBytes(map.get(" + strconv.Itoa(key) + "))"
+	rcMutex.Lock()
 	resp, err := remoteController.ExecuteOnController(clusterID, script, rc.Lang_PYTHON)
+	rcMutex.Unlock()
 	if err != nil {
 		return 0, err
 	}
@@ -215,7 +218,9 @@ func getValueFromMember(clusterID, mapName string, key int, service spi.Serializ
 }
 
 func runScript(clusterID, script string) error {
+	rcMutex.Lock()
 	resp, err := remoteController.ExecuteOnController(clusterID, script, rc.Lang_PYTHON)
+	rcMutex.Unlock()
 	if err != nil {
 		return err
 	}
