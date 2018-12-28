@@ -37,7 +37,7 @@ type AbstractNearCacheRecord struct {
 func NewAbstractNearCacheRecord(key interface{}, value interface{}, creationTime time.Time,
 	expirationTime time.Time) *AbstractNearCacheRecord {
 	a := &AbstractNearCacheRecord{}
-	a.value.Store(value)
+	a.SetValue(value)
 	a.key = key
 	a.creationTime.Store(creationTime)
 	a.expirationTime.Store(expirationTime)
@@ -85,7 +85,9 @@ func (a *AbstractNearCacheRecord) Value() interface{} {
 }
 
 func (a *AbstractNearCacheRecord) SetValue(value interface{}) {
-	a.value.Store(value)
+	if value != nil {
+		a.value.Store(value)
+	}
 }
 
 func (a *AbstractNearCacheRecord) SetCreationTime(time time.Time) {

@@ -25,6 +25,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
+type shutdownAble interface {
+	onShutdown()
+}
+
 type proxyManager struct {
 	ReferenceID int64
 	client      *HazelcastClient
@@ -124,6 +128,16 @@ func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (co
 	}
 	return nil, core.NewHazelcastClientServiceNotFoundError(fmt.Sprintf("no factory registered for service: %s",
 		serviceName), nil)
+}
+
+func (pm *proxyManager) destroy() {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	for _, distributedObj := range pm.proxies {
+		if proxy, ok := distributedObj.(shutdownAble); ok {
+			proxy.onShutdown()
+		}
+	}
 }
 
 func (pm *proxyManager) createMapProxy(serviceName, name string) (core.DistributedObject, error) {

@@ -88,6 +88,10 @@ func (n *NearCacheConfig) SetInvalidateOnChange(invalidateOnChange bool) {
 	n.invalidateOnChange = invalidateOnChange
 }
 
+func (n *NearCacheConfig) SetInMemoryFormat(format InMemoryFormat) {
+	n.inMemoryFormat = format
+}
+
 func (n *NearCacheConfig) InMemoryFormat() InMemoryFormat {
 	return n.inMemoryFormat
 }
@@ -102,4 +106,8 @@ func (n *NearCacheConfig) MaxIdleDuration() time.Duration {
 
 func (n *NearCacheConfig) TimeToLive() time.Duration {
 	return n.timeToLive
+}
+
+func (n *NearCacheConfig) SetTimeToLive(ttl time.Duration) {
+	n.timeToLive = ttl
 }

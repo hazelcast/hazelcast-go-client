@@ -56,6 +56,10 @@ func (p *proxy) ServiceName() string {
 	return p.serviceName
 }
 
+func (p *proxy) onShutdown() {
+
+}
+
 func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if arg1 == nil {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)

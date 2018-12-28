@@ -443,6 +443,27 @@ func TestInvalidateOnExecuteOnKey(t *testing.T) {
 	assert.Equal(t, cache.Size(), 0)
 }
 
+func TestNearCacheStoreIsAlwaysLessThanMaxSize(t *testing.T) {
+	nearCacheSize := 20
+	config := CreateConfigWithDefaultNearCache()
+	config.NearCacheConfig().SetMaxEntryCount(int32(nearCacheSize))
+	client, err := hazelcast.NewClientWithConfig(config)
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+	cache := GetNearCacheFromMap(mp)
+	for i := 0; i < nearCacheSize*10; i++ {
+		mp.Put(strconv.Itoa(i), i)
+		mp.Get(strconv.Itoa(i))
+		mp.Get(strconv.Itoa(i))
+		currentSize := cache.Size()
+		if currentSize > nearCacheSize {
+			t.Error("currentSize of near cache is greater than max size", currentSize, nearCacheSize)
+		}
+	}
+
+	client.Shutdown()
+}
+
 func preventFromBeingIdle(key interface{}, mp core.Map) {
 	mp.Get(key)
 }

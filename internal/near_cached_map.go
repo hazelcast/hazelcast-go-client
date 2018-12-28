@@ -56,6 +56,10 @@ func (n *NearCachedMapProxy) init() {
 
 }
 
+func (n *NearCachedMapProxy) onShutdown() {
+	n.client.nearcacheManager.DestroyNearCache(n.name)
+}
+
 func (n *NearCachedMapProxy) beforeRegisterListener() {
 	repairingTask := n.client.repairingTask
 	n.repairingHandler = repairingTask.RegisterAndGetHandler(n.name, n.nearCache)

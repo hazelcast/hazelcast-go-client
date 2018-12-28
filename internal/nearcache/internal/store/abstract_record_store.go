@@ -163,9 +163,7 @@ func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nea
 	record := a.createRecordFromValue(key, nil)
 	a.onRecordCreate(key, keyData, record)
 	record.CasRecordState(nearcache.ReadPermitted, nearcache.Reserved)
-	a.recordsMu.Lock()
-	a.records[key] = record
-	a.recordsMu.Unlock()
+	a.putRecord(key, record)
 	return record
 }
 

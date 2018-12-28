@@ -352,6 +352,7 @@ func (c *HazelcastClient) createNearCacheManager() nearcache.Manager {
 func (c *HazelcastClient) Shutdown() {
 	if c.lifecycleService.isLive.Load().(bool) {
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
+		c.ProxyManager.destroy()
 		c.ConnectionManager.shutdown()
 		c.partitionService.shutdown()
 		c.ClusterService.shutdown()

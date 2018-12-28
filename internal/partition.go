@@ -18,7 +18,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
@@ -140,13 +139,12 @@ func (ps *PartitionService) shutdown() {
 	close(ps.cancel)
 }
 
-func (ps *PartitionService) waitForPartitionsFetchedOnce() error {
+func (ps *PartitionService) waitForPartitionsFetchedOnce() {
 	for len(ps.mp.Load().(map[int32]*proto.Address)) == 0 && ps.client.ConnectionManager.IsAlive() {
 		if ps.isClusterFormedByOnlyLiteMembers() {
-			return core.NewHazelcastIllegalStateError("Partitions cannot be assigned since all nodes in the "+
-				"cluster are lite members", nil)
+			ps.logger.Warn("Partitions cannot be assigned since all nodes in the cluster are lite members")
+			return
 		}
 		ps.doRefresh()
 	}
-	return nil
 }
