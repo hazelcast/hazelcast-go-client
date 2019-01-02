@@ -464,6 +464,24 @@ func TestNearCacheStoreIsAlwaysLessThanMaxSize(t *testing.T) {
 	client.Shutdown()
 }
 
+func TestNearCacheGetWhenRecordExpired(t *testing.T) {
+	config := CreateConfigWithDefaultNearCache()
+	config.NearCacheConfig().SetTimeToLive(10 * time.Millisecond)
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+	mp.Put("key", "value")
+	mp.Get("key")
+
+	cache := GetNearCacheFromMap(mp)
+	test.AssertEventually(t, func() bool {
+		value := cache.Get("key")
+		return value == nil
+	})
+
+}
+
 func preventFromBeingIdle(key interface{}, mp core.Map) {
 	mp.Get(key)
 }

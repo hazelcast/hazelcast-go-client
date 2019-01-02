@@ -57,7 +57,7 @@ func NewDefaultNearCache(name string, config *config.NearCacheConfig,
 }
 
 func (d *DefaultNearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data) (int64, bool) {
-	d.nearCacheRecordStore.DoEviction(false)
+	d.nearCacheRecordStore.DoEviction()
 	return d.nearCacheRecordStore.TryReserveForUpdate(key, keyData)
 }
 
@@ -83,7 +83,7 @@ func (d *DefaultNearCache) Invalidate(key interface{}) {
 }
 
 func (d *DefaultNearCache) Put(key interface{}, value interface{}) {
-	d.nearCacheRecordStore.DoEviction(false)
+	d.nearCacheRecordStore.DoEviction()
 	d.nearCacheRecordStore.Put(key, value)
 }
 

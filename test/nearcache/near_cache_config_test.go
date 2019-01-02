@@ -18,8 +18,11 @@ import (
 	"strconv"
 	"testing"
 
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	config2 "github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +44,71 @@ func TestObjectMemoryFormat(t *testing.T) {
 	}
 
 	client.Shutdown()
+}
+
+func TestNearCacheExpirationWithIdleKeys(t *testing.T) {
+	config := CreateConfigWithDefaultNearCache()
+	config.NearCacheConfig().SetMaxIdleDuration(1 * time.Second)
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	for i := 0; i < 100; i++ {
+		mp.Put(strconv.Itoa(i), i)
+		mp.Get(strconv.Itoa(i))
+		mp.Get(strconv.Itoa(i))
+	}
+
+	cache := GetNearCacheFromMap(mp)
+	test.AssertEventually(t, func() bool {
+		return cache.Size() == 0
+	})
+
+}
+
+func TestNearCacheEvictionPolicyNone(t *testing.T) {
+	config := CreateConfigWithDefaultNearCache()
+	config.NearCacheConfig().SetEvictionPolicy(config2.EvictionPolicyNone)
+	config.NearCacheConfig().SetMaxEntryCount(10)
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	for i := 0; i < 100; i++ {
+		mp.Put(strconv.Itoa(i), i)
+		mp.Get(strconv.Itoa(i))
+		mp.Get(strconv.Itoa(i))
+	}
+
+	cache := GetNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 10)
+	for i := 0; i < 10; i++ {
+		value := cache.Get(strconv.Itoa(i))
+		assert.Equal(t, value, int64(i))
+	}
+
+}
+
+func TestNearCacheMaxIdleDuration(t *testing.T) {
+	config := CreateConfigWithDefaultNearCache()
+	config.NearCacheConfig().SetMaxIdleDuration(100 * time.Millisecond)
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	for i := 0; i < 100; i++ {
+		mp.Put(strconv.Itoa(i), i)
+		mp.Get(strconv.Itoa(i))
+		mp.Get(strconv.Itoa(i))
+	}
+	cache := GetNearCacheFromMap(mp)
+	test.AssertAlwaysTrueFor(t, 5*time.Second, func() bool {
+		preventFromBeingIdle("0", mp)
+		value := cache.Get("0")
+		return value != nil && value == int64(0)
+	})
+
 }

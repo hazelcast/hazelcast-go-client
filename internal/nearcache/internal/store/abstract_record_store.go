@@ -77,6 +77,7 @@ func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
 		evictionPolicy:       nearCacheCfg.EvictionPolicy(),
 		evictionDisabled:     nearCacheCfg.EvictionPolicy() == config.EvictionPolicyNone,
 		maxIdleDuration:      nearCacheCfg.MaxIdleDuration(),
+		timeToLiveDuration:   nearCacheCfg.TimeToLive(),
 	}
 
 	a.initRecordComparator()
@@ -101,7 +102,6 @@ func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
 		if record.RecordState() != nearcache.ReadPermitted {
 			return nil
 		}
-
 		if a.staleReadDetector.IsStaleRead(key, record) {
 			a.Invalidate(key)
 			return nil
@@ -227,7 +227,7 @@ func (a *AbstractNearCacheRecordStore) DoExpiration() {
 	}
 }
 
-func (a *AbstractNearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
+func (a *AbstractNearCacheRecordStore) DoEviction() {
 	if !a.evictionDisabled && a.shouldEvict() {
 		recordsToBeEvicted := a.findRecordsToBeEvicted()
 		a.removeRecords(recordsToBeEvicted)

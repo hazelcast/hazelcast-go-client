@@ -29,6 +29,6 @@ type RecordStore interface {
 	Size() int
 	Record(key interface{}) (Record, bool)
 	DoExpiration()
-	DoEviction(withoutMaxSizeCheck bool)
+	DoEviction()
 	SetStaleReadDetector(detector StaleReadDetector)
 }

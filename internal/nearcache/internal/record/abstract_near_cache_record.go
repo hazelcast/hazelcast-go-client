@@ -38,9 +38,9 @@ func NewAbstractNearCacheRecord(key interface{}, value interface{}, creationTime
 	expirationTime time.Time) *AbstractNearCacheRecord {
 	a := &AbstractNearCacheRecord{}
 	a.SetValue(value)
-	a.key = key
+	a.SetKey(key)
 	a.creationTime.Store(creationTime)
-	a.expirationTime.Store(expirationTime)
+	a.SetExpirationTime(expirationTime)
 	a.lastAccessTime.Store(nearcache.TimeNotSet)
 	a.uuid.Store("")
 	atomic.StoreInt64(&a.recordState, nearcache.ReadPermitted)
@@ -68,7 +68,7 @@ func (a *AbstractNearCacheRecord) SetExpirationTime(time time.Time) {
 }
 
 func (a *AbstractNearCacheRecord) IsExpiredAt(atTime time.Time) bool {
-	expirationTime := a.expirationTime.Load().(time.Time)
+	expirationTime := a.ExpirationTime()
 	return !expirationTime.Equal(nearcache.TimeNotSet) && expirationTime.Before(atTime)
 }
 

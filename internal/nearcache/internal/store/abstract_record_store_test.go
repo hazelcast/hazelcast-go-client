@@ -42,12 +42,12 @@ func TestAbstractNearCacheRecordStore_Put(t *testing.T) {
 func TestAbstractNearCacheRecordStore_DoEvictionLFU(t *testing.T) {
 	records := createRecordsWithIncreasingHit(20)
 	nearCacheCfg := config.NewNearCacheConfig()
-	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLru)
+	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLfu)
 	nearCacheCfg.SetMaxEntryCount(10)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 	abstractStore := NewNearCacheObjectRecordStore(nearCacheCfg, service)
 	abstractStore.records = records
-	abstractStore.DoEviction(false)
+	abstractStore.DoEviction()
 	expectedRemainingSize := 20 * (100 - evictionPercentage) / 100
 	assert.Len(t, abstractStore.records, expectedRemainingSize)
 	evictedSize := 20 * (evictionPercentage) / 100
@@ -76,7 +76,7 @@ func TestAbstractNearCacheRecordStore_DoEvictionLRU(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 	abstractStore := NewNearCacheObjectRecordStore(nearCacheCfg, service)
 	abstractStore.records = records
-	abstractStore.DoEviction(false)
+	abstractStore.DoEviction()
 	expectedRemainingSize := 20 * (100 - evictionPercentage) / 100
 	assert.Len(t, abstractStore.records, expectedRemainingSize)
 	evictedSize := 20 * (evictionPercentage) / 100
