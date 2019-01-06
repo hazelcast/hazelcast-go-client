@@ -479,7 +479,7 @@ func TestInvalidateOnReplaceIfSame(t *testing.T) {
 func testInvalidateOnReplaceIfSame(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap("testName2")
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -578,6 +578,27 @@ func testInvalidateOnPutTransient(t *testing.T, cfg *config.Config) {
 	assert.Equal(t, cache.Size(), 0)
 }
 
+func TestInvalidateOnPutIfAbsent(t *testing.T) {
+	for _, cfg := range CreateNearCacheConfigs() {
+		testInvalidateOnPutIfAbsent(t, cfg)
+	}
+}
+
+func testInvalidateOnPutIfAbsent(t *testing.T, cfg *config.Config) {
+	client, err := hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	mp.Put("key", "value")
+	mp.Get("key")
+	cache := GetNearCacheFromMap(mp)
+	assert.Equal(t, cache.Size(), 1)
+
+	mp.PutIfAbsent("key", "value2")
+	assert.Equal(t, cache.Size(), 0)
+}
+
 func TestInvalidateOnExecuteOnKey(t *testing.T) {
 	for _, cfg := range CreateNearCacheConfigs() {
 		testInvalidateOnExecuteOnKey(t, cfg)
@@ -635,6 +656,53 @@ func TestNearCacheGetWhenRecordExpired(t *testing.T) {
 		value := cache.Get("key")
 		return value == nil
 	})
+
+}
+
+type dummy struct {
+	d int32
+}
+
+func TestNonserializableKey(t *testing.T) {
+	cfg := CreateConfigWithDefaultNearCache()
+	cfg.NearCacheConfig().SetSerializeKeys(true)
+	client, err := hazelcast.NewClientWithConfig(cfg)
+	defer client.Shutdown()
+	mp, err := client.GetMap("testName")
+	assert.NoError(t, err)
+
+	_, err = mp.Put(dummy{}, "0")
+	assert.Error(t, err)
+	_, err = mp.Get(dummy{})
+	assert.Error(t, err)
+	_, err = mp.PutIfAbsent(dummy{}, "0")
+	assert.Error(t, err)
+	err = mp.PutTransient(dummy{}, "0", 1*time.Second)
+	assert.Error(t, err)
+	_, err = mp.Replace(dummy{}, "0")
+	assert.Error(t, err)
+	_, err = mp.ReplaceIfSame(dummy{}, "0", "")
+	assert.Error(t, err)
+	_, err = mp.Remove(dummy{})
+	assert.Error(t, err)
+	_, err = mp.RemoveIfSame(dummy{}, "0")
+	assert.Error(t, err)
+	_, err = mp.ContainsKey(dummy{})
+	assert.Error(t, err)
+	_, err = mp.Evict(dummy{})
+	assert.Error(t, err)
+	err = mp.Set(dummy{}, "0")
+	assert.Error(t, err)
+	err = mp.SetWithTTL(dummy{}, "0", time.Second)
+	assert.Error(t, err)
+	_, err = mp.ExecuteOnKey(dummy{}, "0")
+	assert.Error(t, err)
+	_, err = mp.TryRemove(dummy{}, time.Second)
+	assert.Error(t, err)
+	_, err = mp.TryPut(dummy{}, "0")
+	assert.Error(t, err)
+	_, err = mp.TryPutWithTimeout(dummy{}, "0", time.Second)
+	assert.Error(t, err)
 
 }
 
