@@ -49,6 +49,7 @@ type NearCacheConfig struct {
 	maxIdleDuration    time.Duration
 	timeToLive         time.Duration
 	invalidateOnChange bool
+	serializeKeys      bool
 }
 
 func NewNearCacheConfig() *NearCacheConfig {
@@ -77,7 +78,11 @@ func (n *NearCacheConfig) EvictionPolicy() EvictionPolicy {
 }
 
 func (n *NearCacheConfig) IsSerializeKeys() bool {
-	return false
+	return n.serializeKeys
+}
+
+func (n *NearCacheConfig) SetSerializeKeys(serializeKeys bool) {
+	n.serializeKeys = serializeKeys
 }
 
 func (n *NearCacheConfig) InvalidateOnChange() bool {

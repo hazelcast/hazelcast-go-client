@@ -131,7 +131,7 @@ func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
 func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
-	_, found := a.records[key]
+	_, found := a.records[a.nearcacheKey(key)]
 	return found
 }
 
@@ -154,7 +154,7 @@ func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
 
 func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nearcache.Record {
 	a.recordsMu.RLock()
-	if record, found := a.records[key]; found {
+	if record, found := a.records[a.nearcacheKey(key)]; found {
 		defer a.recordsMu.RUnlock()
 		return record
 	}
@@ -170,7 +170,7 @@ func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nea
 func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 	value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
 	a.recordsMu.RLock()
-	reservedRecord, found := a.records[key]
+	reservedRecord, found := a.records[a.nearcacheKey(key)]
 	a.recordsMu.RUnlock()
 	if !found {
 		return nil, false
@@ -184,14 +184,18 @@ func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 	return a.toValue(cachedValue), true
 }
 
+func (a *AbstractNearCacheRecordStore) delete(key interface{}) {
+	delete(a.records, a.nearcacheKey(key))
+}
+
 func (a *AbstractNearCacheRecordStore) Invalidate(key interface{}) {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
-	delete(a.records, key)
+	a.delete(key)
 }
 
 func (a *AbstractNearCacheRecordStore) invalidateWithoutLock(key interface{}) {
-	delete(a.records, key)
+	a.delete(key)
 }
 
 func (a *AbstractNearCacheRecordStore) Clear() {
@@ -213,7 +217,7 @@ func (a *AbstractNearCacheRecordStore) Size() int {
 func (a *AbstractNearCacheRecordStore) Record(key interface{}) (nearcache.Record, bool) {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
-	record, found := a.records[key]
+	record, found := a.records[a.nearcacheKey(key)]
 	return record, found
 }
 
@@ -244,7 +248,7 @@ func (a *AbstractNearCacheRecordStore) removeRecords(records []nearcache.Record)
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
 	for _, record := range records {
-		delete(a.records, record.Key())
+		a.delete(record.Key())
 	}
 }
 
@@ -307,8 +311,8 @@ func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
 func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcache.Record) nearcache.Record {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
-	oldRecord := a.records[key]
-	a.records[key] = record
+	oldRecord := a.records[a.nearcacheKey(key)]
+	a.records[a.nearcacheKey(key)] = record
 	return oldRecord
 }
 
@@ -331,4 +335,12 @@ func (a *AbstractNearCacheRecordStore) toValue(obj interface{}) interface{} {
 
 func (a *AbstractNearCacheRecordStore) recordToValue(record nearcache.Record) interface{} {
 	return a.toValue(record.Value())
+}
+
+func (a *AbstractNearCacheRecordStore) nearcacheKey(key interface{}) interface{} {
+	if a.config.IsSerializeKeys() {
+		keyData := a.toData(key)
+		return string(keyData.Buffer())
+	}
+	return key
 }

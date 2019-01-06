@@ -29,6 +29,41 @@ func CreateConfigWithDefaultNearCache() *config.Config {
 	return config
 }
 
+func CreateNearCacheConfigs() []*config.Config {
+	configs := make([]*config.Config, 0)
+
+	nearCacheCfg := config.NewNearCacheConfig()
+	nearCacheCfg.SetSerializeKeys(false)
+	cfg := hazelcast.NewConfig()
+	cfg.SetNearCacheConfig(nearCacheCfg)
+
+	configs = append(configs, cfg)
+
+	nearCacheCfg = config.NewNearCacheConfig()
+	nearCacheCfg.SetSerializeKeys(true)
+	cfg = hazelcast.NewConfig()
+	cfg.SetNearCacheConfig(nearCacheCfg)
+
+	configs = append(configs, cfg)
+
+	nearCacheCfg = config.NewNearCacheConfig()
+	nearCacheCfg.SetInMemoryFormat(config.InMemoryFormatBinary)
+	cfg = hazelcast.NewConfig()
+	cfg.SetNearCacheConfig(nearCacheCfg)
+
+	configs = append(configs, cfg)
+
+	nearCacheCfg = config.NewNearCacheConfig()
+	nearCacheCfg.SetInMemoryFormat(config.InMemoryFormatObject)
+	cfg = hazelcast.NewConfig()
+	cfg.SetNearCacheConfig(nearCacheCfg)
+
+	configs = append(configs, cfg)
+
+	return configs
+
+}
+
 func GetNearCacheFromMap(mp core.Map) nearcache.NearCache {
 	return mp.(*internal.NearCachedMapProxy).NearCache()
 }
