@@ -152,6 +152,21 @@ type ItemEvent interface {
 	Member() Member
 }
 
+// MemberAttributeEvent is an event for member attribute changes.
+type MemberAttributeEvent interface {
+	// OperationType returns the type of member attribute change for this MemberAttributeEvent
+	OperationType() int32
+
+	// Key returns the key for this MemberAttributeEvent.
+	Key() string
+
+	// Value returns the value for this MemberAttributeEvent
+	Value() string
+
+	// Member returns the member for this MemberAttributeEvent.
+	Member() Member
+}
+
 // EntryAddedListener is invoked upon addition of an entry.
 type EntryAddedListener interface {
 	// EntryAdded is invoked upon addition of an entry.
@@ -214,6 +229,20 @@ type MemberAddedListener interface {
 type MemberRemovedListener interface {
 	// MemberRemoved is invoked when an existing member leaves the cluster.
 	MemberRemoved(member Member)
+}
+
+const (
+	// MemberAttributeOperationTypePut indicates an attribute being put.
+	MemberAttributeOperationTypePut int32 = 1
+
+	// MemberAttributeOperationTypeRemove indicates an attribute being removed.
+	MemberAttributeOperationTypeRemove int32 = 2
+)
+
+// MemberAttributeChangedListener is invoked when attribute of a member has changed.
+type MemberAttributeChangedListener interface {
+	// MemberAttributeChanged is invoked when attribute of a member has changed.
+	MemberAttributeChanged(event MemberAttributeEvent)
 }
 
 // LifecycleListener is a listener object for listening to lifecycle events of the Hazelcast instance.

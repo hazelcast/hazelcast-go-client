@@ -225,7 +225,8 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 func (cs *clusterService) createMembershipInvocation(connection *Connection) *invocation {
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *proto.ClientMessage) {
-		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList, cs.handleMemberAttributeChange)
+		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList,
+			cs.handleMemberAttributeChange)
 	}
 	invocation := newInvocation(request, -1, nil, connection, cs.client)
 	invocation.eventHandler = eventHandler
@@ -311,7 +312,7 @@ func (cs *clusterService) handleMemberListAdditions(previousMembers []*proto.Mem
 }
 
 func (cs *clusterService) handleMemberAttributeChange(uuid string, key string, operationType int32, value string) {
-	//TODO :: implement this.
+	cs.notifyListenersForMemberAttributeChange(uuid, key, operationType, value)
 }
 
 func (cs *clusterService) memberAdded(member *proto.Member) {
@@ -331,6 +332,19 @@ func (cs *clusterService) closeRemovedMembersConnection(member *proto.Member) {
 		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
 			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
 	}
+}
+
+func (cs *clusterService) notifyListenersForMemberAttributeChange(uuid string, key string,
+	operationType int32, value string) {
+	rangeFunc := func(id, listener interface{}) bool {
+		if _, ok := listener.(core.MemberAttributeChangedListener); ok {
+			member := cs.GetMemberByUUID(uuid)
+			event := proto.NewMemberAttributeEvent(operationType, key, value, member)
+			listener.(core.MemberAttributeChangedListener).MemberAttributeChanged(event)
+		}
+		return true
+	}
+	cs.listeners.Range(rangeFunc)
 }
 
 func (cs *clusterService) notifyListenersForMemberRemoval(member *proto.Member) {

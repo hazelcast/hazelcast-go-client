@@ -19,6 +19,8 @@ import (
 	"sync"
 	"testing"
 
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -29,7 +31,13 @@ import (
 )
 
 type membershipListener struct {
-	wg *sync.WaitGroup
+	wg    *sync.WaitGroup
+	event atomic.Value
+}
+
+func (l *membershipListener) MemberAttributeChanged(event core.MemberAttributeEvent) {
+	l.wg.Done()
+	l.event.Store(event)
 }
 
 func (l *membershipListener) MemberAdded(member core.Member) {
@@ -113,6 +121,31 @@ func TestAddMembershipListener(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 }
 
+func TestAddMembershipListenerMemberAttributeChanged(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	member, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewConfig()
+	listener := &membershipListener{wg: wg}
+	config.AddMembershipListener(listener)
+	wg.Add(2) // 1 for initial member and 1 for attribute change
+	client, _ := hazelcast.NewClientWithConfig(config)
+	script := "function attrs() { " +
+		" return instance_0.getCluster().getLocalMember().setIntAttribute(\"test\", 123); }; result=attrs();"
+	res, err := remoteController.ExecuteOnController(cluster.ID, script, rc.Lang_JAVASCRIPT)
+	assert.NoError(t, err)
+	assert.True(t, res.Success)
+	timeout := WaitTimeout(wg, Timeout)
+	assert.False(t, timeout)
+	event := listener.event.Load().(core.MemberAttributeEvent)
+	assert.Equal(t, event.Key(), "test")
+	assert.Equal(t, event.Value(), "123")
+	assert.Equal(t, event.Member().UUID(), member.UUID)
+	assert.Equal(t, event.OperationType(), core.MemberAttributeOperationTypePut)
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+
 func TestAddMembershipListeners(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
@@ -136,6 +169,7 @@ func TestGetMembers(t *testing.T) {
 	member2, _ := remoteController.StartMember(cluster.ID)
 	member3, _ := remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
+
 	members := client.Cluster().GetMembers()
 	assert.Equalf(t, len(members), 3, "GetMembers returned wrong number of members")
 	for _, member := range members {
