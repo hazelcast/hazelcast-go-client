@@ -124,6 +124,38 @@ func (m *Member) Equal(member2 Member) bool {
 	return true
 }
 
+type MemberAttributeEvent struct {
+	operationType int32
+	key           string
+	value         string
+	member        core.Member
+}
+
+func NewMemberAttributeEvent(operationType int32, key string, value string, member core.Member) *MemberAttributeEvent {
+	return &MemberAttributeEvent{
+		operationType: operationType,
+		key:           key,
+		value:         value,
+		member:        member,
+	}
+}
+
+func (m *MemberAttributeEvent) OperationType() int32 {
+	return m.operationType
+}
+
+func (m *MemberAttributeEvent) Key() string {
+	return m.key
+}
+
+func (m *MemberAttributeEvent) Value() string {
+	return m.value
+}
+
+func (m *MemberAttributeEvent) Member() core.Member {
+	return m.member
+}
+
 type DistributedObjectInfo struct {
 	name        string
 	serviceName string
