@@ -943,6 +943,7 @@ func TestMapProxy_AddEntryListenerAddedWithIncludeValueFalse(t *testing.T) {
 	assert.Equalf(t, entryListener.event.OldValue(), nil, "AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.MergingValue(), nil, "AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.EventType(), int32(1), "AddEntryListener entryAdded failed")
+	assert.Equal(t, entryListener.event.Member().UUID(), member.UUID)
 
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()

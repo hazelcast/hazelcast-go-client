@@ -297,16 +297,8 @@ func TestHazelcastError_ServerError(t *testing.T) {
 		t.Fatal("Server error should not be nil")
 	}
 	serverErr := cErr.ServerError()
-	if len(serverErr.Message()) == 0 {
-		t.Error("serverError message should be longer than 0.")
-	}
-
-	if len(serverErr.ClassName()) == 0 {
-		t.Error("serverError ClassName should be longer than 0.")
-	}
-
-	if len(serverErr.StackTrace()) == 0 {
-		t.Error("serverError StackTrace should be longer than 0.")
-	}
+	assert.NotEmpty(t, serverErr.Message())
+	assert.NotEmpty(t, serverErr.ClassName())
+	assert.NotEmpty(t, serverErr.StackTrace())
 
 }
