@@ -38,6 +38,7 @@ import (
 var mp core.Map
 var mp2 core.Map
 var client hazelcast.Client
+var member *rc.Member
 
 func TestMain(m *testing.M) {
 	remoteController, err := rc.NewRemoteControllerClient("localhost:9701")
@@ -46,7 +47,7 @@ func TestMain(m *testing.M) {
 	}
 
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
+	member, _ = remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.SerializationConfig().AddPortableFactory(666, &portableFactory{})
 	client, _ = hazelcast.NewClientWithConfig(config)
@@ -1002,6 +1003,8 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 	assert.Equalf(t, false, timeout, "AddEntryListener entryEvictAll failed")
 	assert.Equalf(t, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
 	assert.Equalf(t, entryListener.mapEvent.Name(), "myMap", "AddEntryListener entryEvictAll failed")
+	assert.NotEmpty(t, entryListener.mapEvent.String())
+	assert.Equal(t, entryListener.mapEvent.Member().UUID(), member.UUID)
 	assert.Equalf(t, entryListener.mapEvent.NumberOfAffectedEntries(), int32(1), "AddEntryListener entryEvictAll failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
