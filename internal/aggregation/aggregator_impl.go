@@ -15,7 +15,7 @@
 package aggregation
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/precond"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/precond"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
