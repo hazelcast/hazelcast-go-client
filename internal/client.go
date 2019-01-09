@@ -185,7 +185,7 @@ func (c *HazelcastClient) getLogLevel() int {
 func (c *HazelcastClient) initLogger() {
 	setLogger := c.Config.LoggerConfig().Logger()
 	logLevel := c.getLogLevel()
-	versionMessage := c.name + " [" + c.Config.GroupConfig().Name() + "]" + " [" + ClientVersion + "] "
+	hazelcastPrefix := c.name + " [" + c.Config.GroupConfig().Name() + "]" + " [" + ClientVersion + "] "
 	if setLogger == nil {
 		l := logger.New()
 		l.Level = logLevel
@@ -193,7 +193,7 @@ func (c *HazelcastClient) initLogger() {
 	} else if setLoggerImpl, ok := setLogger.(*logger.DefaultLogger); ok {
 		setLoggerImpl.Level = logLevel
 	}
-	c.logger = newHazelcastLogger(setLogger, versionMessage)
+	c.logger = newHazelcastLogger(setLogger, hazelcastPrefix)
 }
 
 func (c *HazelcastClient) init() error {

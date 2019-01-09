@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 )
 
@@ -31,21 +33,26 @@ func newHazelcastLogger(logger logger.Logger, hazelcastPrefix string) *hazelcast
 }
 
 func (h *hazelcastLogger) Debug(args ...interface{}) {
-	h.logger.Debug(h.hazelcastPrefix, args)
+	msg := h.hazelcastPrefix + "" + fmt.Sprintln(args...)
+	h.logger.Debug(msg)
 }
 
 func (h *hazelcastLogger) Trace(args ...interface{}) {
-	h.logger.Trace(h.hazelcastPrefix, args)
+	msg := h.hazelcastPrefix + "" + fmt.Sprintln(args...)
+	h.logger.Trace(msg)
 }
 
 func (h *hazelcastLogger) Info(args ...interface{}) {
-	h.logger.Info(h.hazelcastPrefix, args)
+	msg := h.hazelcastPrefix + "" + fmt.Sprintln(args...)
+	h.logger.Info(msg)
 }
 
 func (h *hazelcastLogger) Warn(args ...interface{}) {
-	h.logger.Warn(h.hazelcastPrefix, args)
+	msg := h.hazelcastPrefix + "" + fmt.Sprintln(args...)
+	h.logger.Warn(msg)
 }
 
 func (h *hazelcastLogger) Error(args ...interface{}) {
-	h.logger.Error(h.hazelcastPrefix, args)
+	msg := h.hazelcastPrefix + "" + fmt.Sprintln(args...)
+	h.logger.Error(msg)
 }
