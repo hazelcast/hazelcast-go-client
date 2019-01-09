@@ -17,13 +17,17 @@ package logger
 import (
 	"testing"
 
+	"fmt"
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/stretchr/testify/assert"
 )
 
 type customLogger struct {
-	logged bool
+	logged        bool
+	loggedMessage atomic.Value
 }
 
 func (c *customLogger) Debug(args ...interface{}) {
@@ -34,6 +38,7 @@ func (c *customLogger) Trace(args ...interface{}) {
 
 func (c *customLogger) Info(args ...interface{}) {
 	c.logged = true
+	c.loggedMessage.Store(fmt.Sprint(args...))
 }
 
 func (c *customLogger) Warn(args ...interface{}) {
@@ -52,5 +57,22 @@ func TestCustomLogger(t *testing.T) {
 	client, err := hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
 	assert.True(t, customLogger.logged)
+	client.Shutdown()
+}
+
+func TestCustomLoggerHasHazelcastPrefix(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	customLogger := &customLogger{}
+	config := hazelcast.NewConfig()
+	config.LoggerConfig().SetLogger(customLogger)
+	client, err := hazelcast.NewClientWithConfig(config)
+	assert.NoError(t, err)
+	groupName := config.GroupConfig().Name()
+	clientName := client.Name()
+	loggedMessage := customLogger.loggedMessage.Load()
+	assert.Contains(t, loggedMessage, groupName)
+	assert.Contains(t, loggedMessage, clientName)
 	client.Shutdown()
 }

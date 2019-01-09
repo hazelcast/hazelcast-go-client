@@ -111,3 +111,28 @@ func TestDefaultLoggerContent(t *testing.T) {
 	assert.Contains(t, logMessage, groupName)
 	assert.Contains(t, logMessage, "INFO")
 }
+
+func TestDefaultLoggerFormat(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	l := logger.New()
+	buf := new(bytes.Buffer)
+	l.SetOutput(buf)
+	config := hazelcast.NewConfig()
+	config.LoggerConfig().SetLogger(l)
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	assert.NoError(t, err)
+
+	logMessage := buf.String()
+	dateRegex := "\\d{1,4}/\\d{1,4}/\\d{1,4}"
+	timeRegex := "\\d{1,4}:\\d{1,4}:\\d{1,4}"
+	functionNameRegex := "github.com/hazelcast.*"
+	clientNameRegex := "hz.client_\\d+"
+	groupNameRegex := "\\[" + config.GroupConfig().Name() + "\\]"
+	clientVersionRegex := "\\[\\d+.\\d+(-SNAPSHOT)?\\]"
+	messageRegex := ".+"
+	assert.Regexp(t, "^"+dateRegex+" "+timeRegex+" "+functionNameRegex+"\nINFO: "+clientNameRegex+
+		" "+groupNameRegex+" "+clientVersionRegex+" "+messageRegex+"", logMessage)
+}
