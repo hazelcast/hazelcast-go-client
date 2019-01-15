@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package internal
 
 import (
 	"testing"
@@ -31,7 +31,7 @@ import (
 func TestAbstractNearCacheRecordStore_Put(t *testing.T) {
 	nearCacheConfig := &config.NearCacheConfig{}
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := New(nearCacheConfig, service)
+	abstractStore := NewNearCache("name", nearCacheConfig, service, nil)
 	abstractStore.maxSize = 10
 	expectedValue := "value"
 	abstractStore.Put("key", expectedValue)
@@ -45,9 +45,9 @@ func TestAbstractNearCacheRecordStore_DoEvictionLFU(t *testing.T) {
 	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLfu)
 	nearCacheCfg.SetMaxEntryCount(10)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := New(nearCacheCfg, service)
+	abstractStore := NewNearCache("name", nearCacheCfg, service, nil)
 	abstractStore.records = records
-	abstractStore.DoEviction()
+	abstractStore.doEviction()
 	expectedRemainingSize := 20 * (100 - evictionPercentage) / 100
 	assert.Len(t, abstractStore.records, expectedRemainingSize)
 	evictedSize := 20 * (evictionPercentage) / 100
@@ -74,9 +74,9 @@ func TestAbstractNearCacheRecordStore_DoEvictionLRU(t *testing.T) {
 	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLru)
 	nearCacheCfg.SetMaxEntryCount(10)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := New(nearCacheCfg, service)
+	abstractStore := NewNearCache("name", nearCacheCfg, service, nil)
 	abstractStore.records = records
-	abstractStore.DoEviction()
+	abstractStore.doEviction()
 	expectedRemainingSize := 20 * (100 - evictionPercentage) / 100
 	assert.Len(t, abstractStore.records, expectedRemainingSize)
 	evictedSize := 20 * (evictionPercentage) / 100
@@ -102,9 +102,9 @@ func TestAbstractNearCacheRecordStore_DoExpiration(t *testing.T) {
 	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLru)
 	nearCacheCfg.SetMaxEntryCount(50)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := New(nearCacheCfg, service)
+	abstractStore := NewNearCache("name", nearCacheCfg, service, nil)
 	abstractStore.records = records
-	abstractStore.DoExpiration()
+	abstractStore.doExpiration()
 	expectedRemainingSize := size / 2
 	assert.Len(t, abstractStore.records, expectedRemainingSize)
 	expiredSize := size - expectedRemainingSize

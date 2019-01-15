@@ -30,7 +30,6 @@ import (
 
 	internal2 "github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal"
-	store2 "github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,7 +67,7 @@ func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 	mp.Put(theKey, "value1")
 	cache := nearcache.GetNearCacheFromMap(mp)
 
-	store := cache.(*internal.DefaultNearCache).Store().(*store2.NearCacheRecordStore)
+	store := cache.(*internal.NearCache)
 	clientImpl := client.(*internal2.HazelcastClient)
 
 	theKeyData, _ := clientImpl.SerializationService.ToData(theKey)
@@ -112,7 +111,7 @@ func TestSequenceUpdateIfKeyRemovedAtServer(t *testing.T) {
 	mp.Put(theKey, "value1")
 	cache := nearcache.GetNearCacheFromMap(mp)
 
-	store := cache.(*internal.DefaultNearCache).Store().(*store2.NearCacheRecordStore)
+	store := cache.(*internal.NearCache)
 	clientImpl := client.(*internal2.HazelcastClient)
 
 	theKeyData, _ := clientImpl.SerializationService.ToData(theKey)
