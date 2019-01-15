@@ -24,8 +24,8 @@ import (
 )
 
 func TestLRUComparator_CompareRecords(t *testing.T) {
-	record1 := record.NewAbstractNearCacheRecord("key1", "value1", time.Now(), time.Now())
-	record2 := record.NewAbstractNearCacheRecord("key2", "value2", time.Now(), time.Now())
+	record1 := record.New("key1", "value1", time.Now(), time.Now())
+	record2 := record.New("key2", "value2", time.Now(), time.Now())
 	lruComp := &comparator.LRUComparator{}
 	record1.SetAccessTime(time.Now())
 	record1ComesFirst := lruComp.CompareRecords(record1, record2)
@@ -37,8 +37,8 @@ func TestLRUComparator_CompareRecords(t *testing.T) {
 }
 
 func TestLRUComparator_CompareRecordsSameAccessTime(t *testing.T) {
-	record1 := record.NewAbstractNearCacheRecord("key1", "value1", time.Now(), time.Now())
-	record2 := record.NewAbstractNearCacheRecord("key2", "value2", time.Now(), time.Now())
+	record1 := record.New("key1", "value1", time.Now(), time.Now())
+	record2 := record.New("key2", "value2", time.Now(), time.Now())
 	lruComp := &comparator.LRUComparator{}
 	now := time.Now()
 	record1.SetAccessTime(now)

@@ -21,7 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 )
 
-type AbstractNearCacheRecord struct {
+type NearCacheRecord struct {
 	partitionID    int32
 	sequence       int64
 	uuid           atomic.Value
@@ -34,9 +34,9 @@ type AbstractNearCacheRecord struct {
 	accessHit      int32
 }
 
-func NewAbstractNearCacheRecord(key interface{}, value interface{}, creationTime time.Time,
-	expirationTime time.Time) *AbstractNearCacheRecord {
-	a := &AbstractNearCacheRecord{}
+func New(key interface{}, value interface{}, creationTime time.Time,
+	expirationTime time.Time) *NearCacheRecord {
+	a := &NearCacheRecord{}
 	a.SetValue(value)
 	a.SetKey(key)
 	a.creationTime.Store(creationTime)
@@ -47,58 +47,58 @@ func NewAbstractNearCacheRecord(key interface{}, value interface{}, creationTime
 	return a
 }
 
-func (a *AbstractNearCacheRecord) CreationTime() time.Time {
+func (a *NearCacheRecord) CreationTime() time.Time {
 	return a.creationTime.Load().(time.Time)
 }
 
-func (a *AbstractNearCacheRecord) LastAccessTime() time.Time {
+func (a *NearCacheRecord) LastAccessTime() time.Time {
 	return a.lastAccessTime.Load().(time.Time)
 }
 
-func (a *AbstractNearCacheRecord) AccessHit() int32 {
+func (a *NearCacheRecord) AccessHit() int32 {
 	return atomic.LoadInt32(&a.accessHit)
 }
 
-func (a *AbstractNearCacheRecord) ExpirationTime() time.Time {
+func (a *NearCacheRecord) ExpirationTime() time.Time {
 	return a.expirationTime.Load().(time.Time)
 }
 
-func (a *AbstractNearCacheRecord) SetExpirationTime(time time.Time) {
+func (a *NearCacheRecord) SetExpirationTime(time time.Time) {
 	a.expirationTime.Store(time)
 }
 
-func (a *AbstractNearCacheRecord) IsExpiredAt(atTime time.Time) bool {
+func (a *NearCacheRecord) IsExpiredAt(atTime time.Time) bool {
 	expirationTime := a.ExpirationTime()
 	return !expirationTime.Equal(nearcache.TimeNotSet) && expirationTime.Before(atTime)
 }
 
-func (a *AbstractNearCacheRecord) SetKey(key interface{}) {
+func (a *NearCacheRecord) SetKey(key interface{}) {
 	a.key = key
 }
 
-func (a *AbstractNearCacheRecord) Key() interface{} {
+func (a *NearCacheRecord) Key() interface{} {
 	return a.key
 }
 
-func (a *AbstractNearCacheRecord) Value() interface{} {
+func (a *NearCacheRecord) Value() interface{} {
 	return a.value.Load()
 }
 
-func (a *AbstractNearCacheRecord) SetValue(value interface{}) {
+func (a *NearCacheRecord) SetValue(value interface{}) {
 	if value != nil {
 		a.value.Store(value)
 	}
 }
 
-func (a *AbstractNearCacheRecord) SetCreationTime(time time.Time) {
+func (a *NearCacheRecord) SetCreationTime(time time.Time) {
 	a.creationTime.Store(time)
 }
 
-func (a *AbstractNearCacheRecord) SetAccessTime(time time.Time) {
+func (a *NearCacheRecord) SetAccessTime(time time.Time) {
 	a.lastAccessTime.Store(time)
 }
 
-func (a *AbstractNearCacheRecord) IsIdleAt(maxIdleTime time.Duration, now time.Time) bool {
+func (a *NearCacheRecord) IsIdleAt(maxIdleTime time.Duration, now time.Time) bool {
 	if maxIdleTime > 0 {
 		accessTime := a.lastAccessTime.Load().(time.Time)
 		creationTime := a.creationTime.Load().(time.Time)
@@ -111,43 +111,43 @@ func (a *AbstractNearCacheRecord) IsIdleAt(maxIdleTime time.Duration, now time.T
 	return false
 }
 
-func (a *AbstractNearCacheRecord) IncrementAccessHit() {
+func (a *NearCacheRecord) IncrementAccessHit() {
 	atomic.AddInt32(&a.accessHit, 1)
 }
 
-func (a *AbstractNearCacheRecord) RecordState() int64 {
+func (a *NearCacheRecord) RecordState() int64 {
 	return atomic.LoadInt64(&a.recordState)
 }
 
-func (a *AbstractNearCacheRecord) CasRecordState(expect int64, update int64) bool {
+func (a *NearCacheRecord) CasRecordState(expect int64, update int64) bool {
 	return atomic.CompareAndSwapInt64(&a.recordState, expect, update)
 }
 
-func (a *AbstractNearCacheRecord) PartitionID() int32 {
+func (a *NearCacheRecord) PartitionID() int32 {
 	return atomic.LoadInt32(&a.partitionID)
 }
 
-func (a *AbstractNearCacheRecord) SetPartitionID(partitionID int32) {
+func (a *NearCacheRecord) SetPartitionID(partitionID int32) {
 	atomic.StoreInt32(&a.partitionID, partitionID)
 }
 
-func (a *AbstractNearCacheRecord) InvalidationSequence() int64 {
+func (a *NearCacheRecord) InvalidationSequence() int64 {
 	return atomic.LoadInt64(&a.sequence)
 }
 
-func (a *AbstractNearCacheRecord) SetInvalidationSequence(sequence int64) {
+func (a *NearCacheRecord) SetInvalidationSequence(sequence int64) {
 	atomic.StoreInt64(&a.sequence, sequence)
 }
 
-func (a *AbstractNearCacheRecord) SetUUID(UUID string) {
+func (a *NearCacheRecord) SetUUID(UUID string) {
 	a.uuid.Store(UUID)
 }
 
-func (a *AbstractNearCacheRecord) HasSameUUID(UUID string) bool {
+func (a *NearCacheRecord) HasSameUUID(UUID string) bool {
 	uuid := a.uuid.Load().(string)
 	return uuid != "" && UUID != "" && uuid == UUID
 }
 
-func (a *AbstractNearCacheRecord) LessThan(comparator nearcache.RecordComparator, record nearcache.Record) bool {
+func (a *NearCacheRecord) LessThan(comparator nearcache.RecordComparator, record nearcache.Record) bool {
 	return comparator.CompareRecords(a, record)
 }

@@ -25,6 +25,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/record"
 	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/internal/record/comparator"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
@@ -49,26 +50,24 @@ func (r recordsHolder) Swap(i, j int) {
 	r.records[i], r.records[j] = r.records[j], r.records[i]
 }
 
-type AbstractNearCacheRecordStore struct {
-	createRecordFromValue func(key, value interface{}) nearcache.Record
-	updateRecordValue     func(record nearcache.Record, value interface{})
-	recordsMu             sync.RWMutex
-	records               map[interface{}]nearcache.Record
-	config                *config.NearCacheConfig
-	serializationService  spi.SerializationService
-	maxIdleDuration       time.Duration
-	timeToLiveDuration    time.Duration
-	staleReadDetector     nearcache.StaleReadDetector
-	evictionDisabled      bool
-	evictionPolicy        config.EvictionPolicy
-	maxSize               int32
-	recordComparator      nearcache.RecordComparator
-	reservationID         int64
+type NearCacheRecordStore struct {
+	recordsMu            sync.RWMutex
+	records              map[interface{}]nearcache.Record
+	config               *config.NearCacheConfig
+	serializationService spi.SerializationService
+	maxIdleDuration      time.Duration
+	timeToLiveDuration   time.Duration
+	staleReadDetector    nearcache.StaleReadDetector
+	evictionDisabled     bool
+	evictionPolicy       config.EvictionPolicy
+	maxSize              int32
+	recordComparator     nearcache.RecordComparator
+	reservationID        int64
 }
 
-func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
-	service spi.SerializationService) *AbstractNearCacheRecordStore {
-	a := &AbstractNearCacheRecordStore{
+func New(nearCacheCfg *config.NearCacheConfig,
+	service spi.SerializationService) *NearCacheRecordStore {
+	a := &NearCacheRecordStore{
 		records:              make(map[interface{}]nearcache.Record),
 		config:               nearCacheCfg,
 		serializationService: service,
@@ -84,7 +83,7 @@ func newAbstractNearCacheRecordStore(nearCacheCfg *config.NearCacheConfig,
 	return a
 }
 
-func (a *AbstractNearCacheRecordStore) initRecordComparator() {
+func (a *NearCacheRecordStore) initRecordComparator() {
 	if a.evictionPolicy == config.EvictionPolicyLru {
 		a.recordComparator = &comparator.LRUComparator{}
 	}
@@ -93,11 +92,11 @@ func (a *AbstractNearCacheRecordStore) initRecordComparator() {
 	}
 }
 
-func (a *AbstractNearCacheRecordStore) nextReservationID() int64 {
+func (a *NearCacheRecordStore) nextReservationID() int64 {
 	return atomic.AddInt64(&a.reservationID, 1)
 }
 
-func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
+func (a *NearCacheRecordStore) Get(key interface{}) interface{} {
 	if record, found := a.Record(key); found {
 		if record.RecordState() != nearcache.ReadPermitted {
 			return nil
@@ -117,7 +116,7 @@ func (a *AbstractNearCacheRecordStore) Get(key interface{}) interface{} {
 	return nil
 }
 
-func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
+func (a *NearCacheRecordStore) Put(key interface{}, value interface{}) {
 	if a.evictionPolicy == config.EvictionPolicyNone && a.Size() >= int(a.maxSize) && !a.containsKey(key) {
 		return
 	}
@@ -128,18 +127,18 @@ func (a *AbstractNearCacheRecordStore) Put(key interface{}, value interface{}) {
 	a.putRecord(key, record)
 }
 
-func (a *AbstractNearCacheRecordStore) containsKey(key interface{}) bool {
+func (a *NearCacheRecordStore) containsKey(key interface{}) bool {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
 	_, found := a.records[a.nearcacheKey(key)]
 	return found
 }
 
-func (a *AbstractNearCacheRecordStore) SetStaleReadDetector(detector nearcache.StaleReadDetector) {
+func (a *NearCacheRecordStore) SetStaleReadDetector(detector nearcache.StaleReadDetector) {
 	a.staleReadDetector = detector
 }
 
-func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
+func (a *NearCacheRecordStore) TryReserveForUpdate(key interface{},
 	keyData serialization.Data) (reservationID int64, reserved bool) {
 	if a.evictionPolicy == config.EvictionPolicyNone && a.Size() >= int(a.maxSize) && !a.containsKey(key) {
 		return 0, false
@@ -152,7 +151,7 @@ func (a *AbstractNearCacheRecordStore) TryReserveForUpdate(key interface{},
 	return 0, false
 }
 
-func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nearcache.Record {
+func (a *NearCacheRecordStore) getOrCreateToReserve(key interface{}) nearcache.Record {
 	a.recordsMu.RLock()
 	if record, found := a.records[a.nearcacheKey(key)]; found {
 		defer a.recordsMu.RUnlock()
@@ -167,7 +166,7 @@ func (a *AbstractNearCacheRecordStore) getOrCreateToReserve(key interface{}) nea
 	return record
 }
 
-func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
+func (a *NearCacheRecordStore) TryPublishReserved(key interface{},
 	value interface{}, reservationID int64, deserialize bool) (interface{}, bool) {
 	a.recordsMu.RLock()
 	reservedRecord, found := a.records[a.nearcacheKey(key)]
@@ -184,44 +183,52 @@ func (a *AbstractNearCacheRecordStore) TryPublishReserved(key interface{},
 	return a.toValue(cachedValue), true
 }
 
-func (a *AbstractNearCacheRecordStore) delete(key interface{}) {
+func (a *NearCacheRecordStore) updateRecordValue(record nearcache.Record, value interface{}) {
+	if a.config.InMemoryFormat() == config.InMemoryFormatObject {
+		record.SetValue(a.toValue(value))
+	} else {
+		record.SetValue(a.toData(value))
+	}
+}
+
+func (a *NearCacheRecordStore) delete(key interface{}) {
 	delete(a.records, a.nearcacheKey(key))
 }
 
-func (a *AbstractNearCacheRecordStore) Invalidate(key interface{}) {
+func (a *NearCacheRecordStore) Invalidate(key interface{}) {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
 	a.delete(key)
 }
 
-func (a *AbstractNearCacheRecordStore) invalidateWithoutLock(key interface{}) {
+func (a *NearCacheRecordStore) invalidateWithoutLock(key interface{}) {
 	a.delete(key)
 }
 
-func (a *AbstractNearCacheRecordStore) Clear() {
+func (a *NearCacheRecordStore) Clear() {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
 	a.records = make(map[interface{}]nearcache.Record)
 }
 
-func (a *AbstractNearCacheRecordStore) Destroy() {
+func (a *NearCacheRecordStore) Destroy() {
 	a.Clear()
 }
 
-func (a *AbstractNearCacheRecordStore) Size() int {
+func (a *NearCacheRecordStore) Size() int {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
 	return len(a.records)
 }
 
-func (a *AbstractNearCacheRecordStore) Record(key interface{}) (nearcache.Record, bool) {
+func (a *NearCacheRecordStore) Record(key interface{}) (nearcache.Record, bool) {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
 	record, found := a.records[a.nearcacheKey(key)]
 	return record, found
 }
 
-func (a *AbstractNearCacheRecordStore) DoExpiration() {
+func (a *NearCacheRecordStore) DoExpiration() {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
 	for key, record := range a.records {
@@ -231,20 +238,20 @@ func (a *AbstractNearCacheRecordStore) DoExpiration() {
 	}
 }
 
-func (a *AbstractNearCacheRecordStore) DoEviction() {
+func (a *NearCacheRecordStore) DoEviction() {
 	if !a.evictionDisabled && a.shouldEvict() {
 		recordsToBeEvicted := a.findRecordsToBeEvicted()
 		a.removeRecords(recordsToBeEvicted)
 	}
 }
 
-func (a *AbstractNearCacheRecordStore) shouldEvict() bool {
+func (a *NearCacheRecordStore) shouldEvict() bool {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
 	return len(a.records) >= int(a.maxSize)
 }
 
-func (a *AbstractNearCacheRecordStore) removeRecords(records []nearcache.Record) {
+func (a *NearCacheRecordStore) removeRecords(records []nearcache.Record) {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
 	for _, record := range records {
@@ -252,7 +259,7 @@ func (a *AbstractNearCacheRecordStore) removeRecords(records []nearcache.Record)
 	}
 }
 
-func (a *AbstractNearCacheRecordStore) findRecordsToBeEvicted() []nearcache.Record {
+func (a *NearCacheRecordStore) findRecordsToBeEvicted() []nearcache.Record {
 	records := a.createRecordsSlice()
 	recordsHolder := recordsHolder{records: records, comparator: a.recordComparator}
 	sort.Sort(recordsHolder)
@@ -260,13 +267,26 @@ func (a *AbstractNearCacheRecordStore) findRecordsToBeEvicted() []nearcache.Reco
 	return recordsHolder.records[:evictionSize]
 }
 
-func (a *AbstractNearCacheRecordStore) calculateEvictionSize() int {
+func (a *NearCacheRecordStore) calculateEvictionSize() int {
 	a.recordsMu.RLock()
 	defer a.recordsMu.RUnlock()
 	return evictionPercentage * len(a.records) / 100
 }
 
-func (a *AbstractNearCacheRecordStore) createRecordsSlice() []nearcache.Record {
+func (n *NearCacheRecordStore) createRecordFromValue(key interface{}, value interface{}) nearcache.Record {
+	if n.config.InMemoryFormat() == config.InMemoryFormatObject {
+		value = n.toValue(value)
+	} else {
+		value = n.toData(value)
+	}
+	creationTime := time.Now()
+	if n.timeToLiveDuration > 0 {
+		return record.New(key, value, creationTime, creationTime.Add(n.timeToLiveDuration))
+	}
+	return record.New(key, value, creationTime, nearcache.TimeNotSet)
+}
+
+func (a *NearCacheRecordStore) createRecordsSlice() []nearcache.Record {
 	records := make([]nearcache.Record, a.Size())
 	index := 0
 	for _, record := range a.records {
@@ -276,7 +296,7 @@ func (a *AbstractNearCacheRecordStore) createRecordsSlice() []nearcache.Record {
 	return records
 }
 
-func (a *AbstractNearCacheRecordStore) isRecordExpired(record nearcache.Record) bool {
+func (a *NearCacheRecordStore) isRecordExpired(record nearcache.Record) bool {
 	now := time.Now()
 	if record.IsExpiredAt(now) {
 		return true
@@ -284,18 +304,18 @@ func (a *AbstractNearCacheRecordStore) isRecordExpired(record nearcache.Record) 
 	return record.IsIdleAt(a.maxIdleDuration, now)
 }
 
-func (a *AbstractNearCacheRecordStore) onRecordAccess(record nearcache.Record) {
+func (a *NearCacheRecordStore) onRecordAccess(record nearcache.Record) {
 	record.SetAccessTime(time.Now())
 	record.IncrementAccessHit()
 }
 
-func (a *AbstractNearCacheRecordStore) onRecordCreate(key interface{},
+func (a *NearCacheRecordStore) onRecordCreate(key interface{},
 	keyData serialization.Data, record nearcache.Record) {
 	record.SetCreationTime(time.Now())
 	a.initInvalidationMetaData(key, keyData, record)
 }
 
-func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
+func (a *NearCacheRecordStore) initInvalidationMetaData(key interface{},
 	keyData serialization.Data, record nearcache.Record) {
 	if a.staleReadDetector == nearcache.AlwaysFresh {
 		return
@@ -308,7 +328,7 @@ func (a *AbstractNearCacheRecordStore) initInvalidationMetaData(key interface{},
 	record.SetUUID(metaDataContainer.UUID())
 }
 
-func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcache.Record) nearcache.Record {
+func (a *NearCacheRecordStore) putRecord(key interface{}, record nearcache.Record) nearcache.Record {
 	a.recordsMu.Lock()
 	defer a.recordsMu.Unlock()
 	oldRecord := a.records[a.nearcacheKey(key)]
@@ -316,16 +336,16 @@ func (a *AbstractNearCacheRecordStore) putRecord(key interface{}, record nearcac
 	return oldRecord
 }
 
-func (a *AbstractNearCacheRecordStore) StaleReadDetector() nearcache.StaleReadDetector {
+func (a *NearCacheRecordStore) StaleReadDetector() nearcache.StaleReadDetector {
 	return a.staleReadDetector
 }
 
-func (a *AbstractNearCacheRecordStore) toData(value interface{}) serialization.Data {
+func (a *NearCacheRecordStore) toData(value interface{}) serialization.Data {
 	data, _ := a.serializationService.ToData(value)
 	return data
 }
 
-func (a *AbstractNearCacheRecordStore) toValue(obj interface{}) interface{} {
+func (a *NearCacheRecordStore) toValue(obj interface{}) interface{} {
 	if data, ok := obj.(serialization.Data); ok {
 		value, _ := a.serializationService.ToObject(data)
 		return value
@@ -333,11 +353,11 @@ func (a *AbstractNearCacheRecordStore) toValue(obj interface{}) interface{} {
 	return obj
 }
 
-func (a *AbstractNearCacheRecordStore) recordToValue(record nearcache.Record) interface{} {
+func (a *NearCacheRecordStore) recordToValue(record nearcache.Record) interface{} {
 	return a.toValue(record.Value())
 }
 
-func (a *AbstractNearCacheRecordStore) nearcacheKey(key interface{}) interface{} {
+func (a *NearCacheRecordStore) nearcacheKey(key interface{}) interface{} {
 	if a.config.IsSerializeKeys() {
 		keyData := a.toData(key)
 		return string(keyData.Buffer())

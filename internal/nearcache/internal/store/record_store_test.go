@@ -31,7 +31,7 @@ import (
 func TestAbstractNearCacheRecordStore_Put(t *testing.T) {
 	nearCacheConfig := &config.NearCacheConfig{}
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := NewNearCacheObjectRecordStore(nearCacheConfig, service)
+	abstractStore := New(nearCacheConfig, service)
 	abstractStore.maxSize = 10
 	expectedValue := "value"
 	abstractStore.Put("key", expectedValue)
@@ -45,7 +45,7 @@ func TestAbstractNearCacheRecordStore_DoEvictionLFU(t *testing.T) {
 	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLfu)
 	nearCacheCfg.SetMaxEntryCount(10)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := NewNearCacheObjectRecordStore(nearCacheCfg, service)
+	abstractStore := New(nearCacheCfg, service)
 	abstractStore.records = records
 	abstractStore.DoEviction()
 	expectedRemainingSize := 20 * (100 - evictionPercentage) / 100
@@ -59,7 +59,7 @@ func TestAbstractNearCacheRecordStore_DoEvictionLFU(t *testing.T) {
 func createRecordsWithIncreasingHit(size int) map[interface{}]nearcache.Record {
 	records := make(map[interface{}]nearcache.Record, 0)
 	for i := 0; i < size; i++ {
-		rec := record.NewAbstractNearCacheRecord("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(), time.Now())
+		rec := record.New("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(), time.Now())
 		for j := 0; j < i; j++ {
 			rec.IncrementAccessHit()
 		}
@@ -74,7 +74,7 @@ func TestAbstractNearCacheRecordStore_DoEvictionLRU(t *testing.T) {
 	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLru)
 	nearCacheCfg.SetMaxEntryCount(10)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := NewNearCacheObjectRecordStore(nearCacheCfg, service)
+	abstractStore := New(nearCacheCfg, service)
 	abstractStore.records = records
 	abstractStore.DoEviction()
 	expectedRemainingSize := 20 * (100 - evictionPercentage) / 100
@@ -88,7 +88,7 @@ func TestAbstractNearCacheRecordStore_DoEvictionLRU(t *testing.T) {
 func createRecordsWithIncreasingLastAccess(size int) map[interface{}]nearcache.Record {
 	records := make(map[interface{}]nearcache.Record, 0)
 	for i := 0; i < size; i++ {
-		rec := record.NewAbstractNearCacheRecord("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(), time.Now())
+		rec := record.New("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(), time.Now())
 		rec.SetAccessTime(time.Now().Add(time.Duration(i) * time.Second))
 		records["key"+strconv.Itoa(i)] = rec
 	}
@@ -102,7 +102,7 @@ func TestAbstractNearCacheRecordStore_DoExpiration(t *testing.T) {
 	nearCacheCfg.SetEvictionPolicy(config.EvictionPolicyLru)
 	nearCacheCfg.SetMaxEntryCount(50)
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	abstractStore := NewNearCacheObjectRecordStore(nearCacheCfg, service)
+	abstractStore := New(nearCacheCfg, service)
 	abstractStore.records = records
 	abstractStore.DoExpiration()
 	expectedRemainingSize := size / 2
@@ -116,11 +116,11 @@ func TestAbstractNearCacheRecordStore_DoExpiration(t *testing.T) {
 func createRecordsWithHalfExpired(size int) map[interface{}]nearcache.Record {
 	records := make(map[interface{}]nearcache.Record, 0)
 	for i := 0; i < size/2; i++ {
-		rec := record.NewAbstractNearCacheRecord("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(), time.Now())
+		rec := record.New("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(), time.Now())
 		records["key"+strconv.Itoa(i)] = rec
 	}
 	for i := size / 2; i < size; i++ {
-		rec := record.NewAbstractNearCacheRecord("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(),
+		rec := record.New("key"+strconv.Itoa(i), "value"+strconv.Itoa(i), time.Now(),
 			time.Now().Add(time.Hour))
 		records["key"+strconv.Itoa(i)] = rec
 	}

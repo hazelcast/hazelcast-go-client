@@ -68,7 +68,7 @@ func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 	mp.Put(theKey, "value1")
 	cache := nearcache.GetNearCacheFromMap(mp)
 
-	store := cache.(*internal.DefaultNearCache).Store().(*store2.NearCacheDataRecordStore)
+	store := cache.(*internal.DefaultNearCache).Store().(*store2.NearCacheRecordStore)
 	clientImpl := client.(*internal2.HazelcastClient)
 
 	theKeyData, _ := clientImpl.SerializationService.ToData(theKey)
@@ -112,7 +112,7 @@ func TestSequenceUpdateIfKeyRemovedAtServer(t *testing.T) {
 	mp.Put(theKey, "value1")
 	cache := nearcache.GetNearCacheFromMap(mp)
 
-	store := cache.(*internal.DefaultNearCache).Store().(*store2.NearCacheDataRecordStore)
+	store := cache.(*internal.DefaultNearCache).Store().(*store2.NearCacheRecordStore)
 	clientImpl := client.(*internal2.HazelcastClient)
 
 	theKeyData, _ := clientImpl.SerializationService.ToData(theKey)

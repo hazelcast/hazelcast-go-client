@@ -127,13 +127,5 @@ func (d *DefaultNearCache) Destroy() {
 }
 
 func (d *DefaultNearCache) createNearCacheRecordStore(name string, cfg *config.NearCacheConfig) nearcache.RecordStore {
-	inMemoryFormat := d.config.InMemoryFormat()
-	switch inMemoryFormat {
-	case config.InMemoryFormatBinary:
-		return store.NewNearCacheDataRecordStore(cfg, d.serializationService)
-	case config.InMemoryFormatObject:
-		return store.NewNearCacheObjectRecordStore(cfg, d.serializationService)
-	default:
-		return nil
-	}
+	return store.New(cfg, d.serializationService)
 }

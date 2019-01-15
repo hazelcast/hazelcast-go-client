@@ -24,8 +24,8 @@ import (
 )
 
 func TestLFUComparator_CompareRecords(t *testing.T) {
-	record1 := record.NewAbstractNearCacheRecord("key1", "value1", time.Now(), time.Now())
-	record2 := record.NewAbstractNearCacheRecord("key2", "value2", time.Now(), time.Now())
+	record1 := record.New("key1", "value1", time.Now(), time.Now())
+	record2 := record.New("key2", "value2", time.Now(), time.Now())
 	record1.IncrementAccessHit()
 	lfuComp := &comparator.LFUComparator{}
 	record1ComesFirst := lfuComp.CompareRecords(record1, record2)
@@ -38,8 +38,8 @@ func TestLFUComparator_CompareRecords(t *testing.T) {
 }
 
 func TestLFUComparator_CompareRecordsWithSameAccessHit(t *testing.T) {
-	record1 := record.NewAbstractNearCacheRecord("key1", "value1", time.Now(), time.Now())
-	record2 := record.NewAbstractNearCacheRecord("key2", "value2", time.Now(), time.Now())
+	record1 := record.New("key1", "value1", time.Now(), time.Now())
+	record2 := record.New("key2", "value2", time.Now(), time.Now())
 	record1.IncrementAccessHit()
 	record2.IncrementAccessHit()
 	lfuComp := &comparator.LFUComparator{}
