@@ -23,14 +23,14 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNearCacheLeakageWhenDefault(t *testing.T) {
 	routineNumBefore := runtime.NumGoroutine()
 	client, err := hazelcast.NewClientWithConfig(CreateConfigWithDefaultNearCache())
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	for i := 0; i < 100; i++ {
@@ -40,7 +40,7 @@ func TestNearCacheLeakageWhenDefault(t *testing.T) {
 	}
 
 	client.Shutdown()
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumAfter == routineNumBefore
 	})
@@ -51,7 +51,7 @@ func TestNearCacheLeakageWhenEvictionDone(t *testing.T) {
 	config := CreateConfigWithDefaultNearCache()
 	config.NearCacheConfig().SetMaxEntryCount(10)
 	client, err := hazelcast.NewClientWithConfig(config)
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	for i := 0; i < 100; i++ {
@@ -61,7 +61,7 @@ func TestNearCacheLeakageWhenEvictionDone(t *testing.T) {
 	}
 
 	client.Shutdown()
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumAfter == routineNumBefore
 	})
@@ -72,7 +72,7 @@ func TestNearCacheLeakageWhenExpirationDone(t *testing.T) {
 	config := CreateConfigWithDefaultNearCache()
 	config.NearCacheConfig().SetTimeToLive(1 * time.Second)
 	client, err := hazelcast.NewClientWithConfig(config)
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	for i := 0; i < 100; i++ {
@@ -82,7 +82,7 @@ func TestNearCacheLeakageWhenExpirationDone(t *testing.T) {
 	}
 
 	client.Shutdown()
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumAfter == routineNumBefore
 	})

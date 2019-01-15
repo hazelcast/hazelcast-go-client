@@ -33,12 +33,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
-	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
-	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/hazelcast/hazelcast-go-client/test/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,7 +53,7 @@ var expectedKeyValues = make(map[int]int)
 var rcMutex = new(sync.Mutex)
 
 func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 
@@ -121,7 +121,7 @@ func TestInvalidationDistortionSequenceAndUUID(t *testing.T) {
 	time.Sleep(30 * time.Second)
 	testRunning.Store(false)
 
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		for i := 0; i < mapSize; i++ {
 			actualValue, _ := mp.Get(int32(i))
 			value := expectedKeyValues[i]

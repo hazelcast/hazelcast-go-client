@@ -27,7 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	m.Run()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -51,7 +51,7 @@ func TestNearCacheEachGetFasterFromCache(t *testing.T) {
 func testNearCacheEachGetFasterFromCache(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	limit := 1000
@@ -98,7 +98,7 @@ func TestNearCacheContainsKey(t *testing.T) {
 func testNearCacheContainsKey(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -141,7 +141,7 @@ func TestNearCacheGetObjectValue(t *testing.T) {
 func testNearCacheGet(t *testing.T, config *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -160,7 +160,7 @@ func TestNearCacheGetAll(t *testing.T) {
 func testNearCacheGetAll(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	size := 100
@@ -186,7 +186,7 @@ func TestNearCacheIdleKeysExpire(t *testing.T) {
 
 	client, err := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	keys := make([]interface{}, 0)
@@ -202,7 +202,7 @@ func TestNearCacheIdleKeysExpire(t *testing.T) {
 	cache := GetNearCacheFromMap(mp)
 	assert.Equal(t, cache.Size(), len(keys))
 
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		preventFromBeingIdle(nonIdleKey, mp)
 		cacheSize := cache.Size()
 		if cacheSize != 1 {
@@ -221,7 +221,7 @@ func TestInvalidateOnPut(t *testing.T) {
 func testInvalidateOnPut(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -242,7 +242,7 @@ func TestInvalidateOnRemove(t *testing.T) {
 func testInvalidateOnRemove(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -263,7 +263,7 @@ func TestInvalidateOnDelete(t *testing.T) {
 func testInvalidateOnDelete(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -284,7 +284,7 @@ func TestInvalidateOnEvict(t *testing.T) {
 func testInvalidateOnEvict(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -305,7 +305,7 @@ func TestInvalidateOnRemoveIfSame(t *testing.T) {
 func testInvalidateOnRemoveIfSame(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -326,7 +326,7 @@ func TestInvalidateOnTryRemove(t *testing.T) {
 func testInvalidateOnTryRemove(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -347,7 +347,7 @@ func TestInvalidateOnTryPut(t *testing.T) {
 func testInvalidateOnTryPut(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -368,7 +368,7 @@ func TestInvalidateOnTryPutWithTimeout(t *testing.T) {
 func testInvalidateOnTryPutWithTimeout(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -389,7 +389,7 @@ func TestInvalidateOnRemoveAll(t *testing.T) {
 func testInvalidateOnRemoveAll(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -412,7 +412,7 @@ func TestInvalidateOnClear(t *testing.T) {
 func testInvalidateOnClear(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -435,7 +435,7 @@ func TestInvalidateOnEvictAll(t *testing.T) {
 func testInvalidateOnEvictAll(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -458,7 +458,7 @@ func TestInvalidateOnReplace(t *testing.T) {
 func testInvalidateOnReplace(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -500,7 +500,7 @@ func TestInvalidateOnSet(t *testing.T) {
 func testInvalidateOnSet(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -521,7 +521,7 @@ func TestInvalidateOnSetWithTTL(t *testing.T) {
 func testInvalidateOnSetWithTTL(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -542,7 +542,7 @@ func TestInvalidateOnPutAll(t *testing.T) {
 func testInvalidateOnPutAll(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -566,7 +566,7 @@ func TestInvalidateOnPutTransient(t *testing.T) {
 func testInvalidateOnPutTransient(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -587,7 +587,7 @@ func TestInvalidateOnPutIfAbsent(t *testing.T) {
 func testInvalidateOnPutIfAbsent(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -608,7 +608,7 @@ func TestInvalidateOnExecuteOnKey(t *testing.T) {
 func testInvalidateOnExecuteOnKey(t *testing.T, cfg *config.Config) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	mp.Put("key", "value")
@@ -625,7 +625,7 @@ func TestNearCacheStoreIsAlwaysLessThanMaxSize(t *testing.T) {
 	config := CreateConfigWithDefaultNearCache()
 	config.NearCacheConfig().SetMaxEntryCount(int32(nearCacheSize))
 	client, err := hazelcast.NewClientWithConfig(config)
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 	cache := GetNearCacheFromMap(mp)
 	for i := 0; i < nearCacheSize*10; i++ {
@@ -646,13 +646,13 @@ func TestNearCacheGetWhenRecordExpired(t *testing.T) {
 	config.NearCacheConfig().SetTimeToLive(10 * time.Millisecond)
 	client, err := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 	mp.Put("key", "value")
 	mp.Get("key")
 
 	cache := GetNearCacheFromMap(mp)
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		value := cache.Get("key")
 		return value == nil
 	})
@@ -668,7 +668,7 @@ func TestNonserializableKey(t *testing.T) {
 	cfg.NearCacheConfig().SetSerializeKeys(true)
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
-	mp, err := client.GetMap("testName")
+	mp, err := client.GetMap(testutil.RandomString())
 	assert.NoError(t, err)
 
 	_, err = mp.Put(dummy{}, "0")

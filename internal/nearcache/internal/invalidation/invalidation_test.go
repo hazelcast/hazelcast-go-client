@@ -23,8 +23,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/hazelcast/hazelcast-go-client/test/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 
 	"errors"
 
@@ -51,7 +51,7 @@ func configureConfig(config *config.Config) {
 	config.SetProperty(property.MinReconciliationIntervalSeconds.Name(), "10")
 }
 func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 
@@ -74,7 +74,7 @@ func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 	theKeyData, _ := clientImpl.SerializationService.ToData(theKey)
 	partitionID := store.StaleReadDetector().PartitionID(theKeyData)
 	metaDataContainer := store.StaleReadDetector().MetaDataContainer(partitionID)
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		seq := metaDataContainer.Sequence()
 		return seq == int64(1)
 	})
@@ -84,7 +84,7 @@ func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 
 	metaDataContainer.SetSequence(-2)
 
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		seq := metaDataContainer.Sequence()
 		return seq == int64(2)
 	})
@@ -95,7 +95,7 @@ func TestSequenceFixIfKeyRemoveAtServer(t *testing.T) {
 }
 
 func TestSequenceUpdateIfKeyRemovedAtServer(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 
@@ -124,7 +124,7 @@ func TestSequenceUpdateIfKeyRemovedAtServer(t *testing.T) {
 	err := removeKeyAtServer(cluster.ID, "name", theKey)
 	assert.NoError(t, err)
 
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		seq := metaDataContainer.Sequence()
 		return seq > initialSeq
 	})

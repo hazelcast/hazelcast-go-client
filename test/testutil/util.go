@@ -16,6 +16,7 @@ package testutil
 
 import (
 	"io/ioutil"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -195,4 +196,27 @@ func CreateClientAndClusterWithMembers(controller *rc.RemoteControllerClient, me
 		client.Shutdown()
 		controller.ShutdownCluster(cluster.ID)
 	}
+}
+
+func AssertAlwaysTrueFor(t *testing.T, duration time.Duration, assertions func() bool) {
+	startTime := time.Now()
+	for time.Since(startTime) < duration {
+		if !assertions() {
+			t.Fail()
+		}
+	}
+}
+
+var seededRand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
+
+const charset = "abcdefghijklmnopqrstuvwxyz" +
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func RandomString() string {
+	b := make([]byte, len(charset))
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }

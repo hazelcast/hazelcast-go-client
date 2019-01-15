@@ -28,8 +28,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
-	"github.com/hazelcast/hazelcast-go-client/test"
 	"github.com/hazelcast/hazelcast-go-client/test/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +38,7 @@ func configureStalenessConfig(config *config.Config) {
 }
 
 func TestNearCache_NotContainsStaleValue_WhenUpdatedByMultipleRoutines(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 
 	nearCacheInvalidatorThreadCount := 1
@@ -77,7 +77,7 @@ func TestNearCache_NotContainsStaleValue_WhenUpdatedByMultipleRoutines(t *testin
 	service := client.(*internal.HazelcastClient).SerializationService
 
 	valuesFromMember := allValuesFromMember(t, cluster.ID, entryCount, mp.Name(), service)
-	test.AssertEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		return AssertNoStaleDataExistInNearCache(t, entryCount, mp, valuesFromMember)
 	})
 	rcMutex.Lock()

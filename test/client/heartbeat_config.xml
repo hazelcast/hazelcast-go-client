@@ -1,3 +1,33 @@
+<<<<<<< HEAD:test/client/heartbeat_config.xml
+=======
+// Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package test
+
+import (
+	"io/ioutil"
+	"math/rand"
+	"sync"
+	"testing"
+	"time"
+)
+
+var Timeout = 1 * time.Minute
+
+const DefaultServerConfig = `
+>>>>>>> Use random string in map names:test/util.go
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -60,3 +90,60 @@
         <time-to-live-seconds>180</time-to-live-seconds>
     </ringbuffer>
 </hazelcast>
+<<<<<<< HEAD:test/client/heartbeat_config.xml
+=======
+`
+
+func Read(filename string) (string, error) {
+	bytes, err := ioutil.ReadFile(filename)
+	return string(bytes), err
+}
+
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false // completed normally
+	case <-time.After(timeout):
+		return true // timed out
+	}
+}
+
+func AssertEventually(t *testing.T, assertions func() bool) {
+	startTime := time.Now()
+	for time.Since(startTime) < Timeout {
+		if assertions() {
+			return
+		}
+		time.Sleep(10 * time.Microsecond)
+	}
+	t.Fail()
+}
+
+func AssertAlwaysTrueFor(t *testing.T, duration time.Duration, assertions func() bool) {
+	startTime := time.Now()
+	for time.Since(startTime) < duration {
+		if !assertions() {
+			t.Fail()
+		}
+	}
+}
+
+var seededRand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
+
+const charset = "abcdefghijklmnopqrstuvwxyz" +
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func RandomString() string {
+	b := make([]byte, len(charset))
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+>>>>>>> Use random string in map names:test/util.go
