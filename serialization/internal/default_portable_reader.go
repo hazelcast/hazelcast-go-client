@@ -29,7 +29,6 @@ type DefaultPortableReader struct {
 	classDefinition serialization.ClassDefinition
 	offset          int32
 	finalPos        int32
-	raw             bool
 }
 
 func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
@@ -37,7 +36,8 @@ func NewDefaultPortableReader(serializer *PortableSerializer, input serializatio
 	finalPos, _ := input.ReadInt32()
 	input.ReadInt32()
 	offset := input.Position()
-	return &DefaultPortableReader{serializer, input, classdefinition, offset, finalPos, false}
+	return &DefaultPortableReader{serializer, input,
+		classdefinition, offset, finalPos}
 }
 
 func TypeByID(fieldType int32) string {
@@ -90,11 +90,6 @@ func TypeByID(fieldType int32) string {
 
 func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int32) (int32, error) {
 	field := pr.classDefinition.Field(fieldName)
-	if pr.raw {
-		return 0, core.NewHazelcastSerializationError("cannot read portable fields after getRawDataInput called", nil)
-
-	}
-
 	if field.Type() != fieldType {
 		return 0, core.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil)
 	}
