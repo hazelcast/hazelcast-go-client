@@ -36,6 +36,13 @@ func TestGetIpAndPort(t *testing.T) {
 	}
 }
 
+func TestGetIpAndInvalidPort(t *testing.T) {
+	testAddress := "121.1.23.3:aa"
+	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != int32(defaultPort) {
+		t.Fatal("GetIPAndPort failed.")
+	}
+}
+
 func TestGetIpWithoutPort(t *testing.T) {
 	testAddress := "121.1.23.3"
 	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != -1 {
