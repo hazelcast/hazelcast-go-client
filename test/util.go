@@ -19,6 +19,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
 var Timeout = 1 * time.Minute
@@ -113,4 +116,35 @@ func AssertTrueEventually(t *testing.T, assertions func() bool) {
 		time.Sleep(10 * time.Microsecond)
 	}
 	t.Fail()
+}
+
+type NonSerializable struct {
+	dummy int
+}
+
+func NewNonSerializableObject() interface{} {
+	return &NonSerializable{}
+}
+
+func NewNonSerializableObjectSlice() []interface{} {
+	return []interface{}{
+		NewNonSerializableObject(), NewNonSerializableObject(),
+	}
+}
+
+func NewNonDeserializableData() serialization.Data {
+	return spi.NewData([]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})
+}
+
+func NewSerializableData() serialization.Data {
+	service, _ := spi.NewSerializationService(serialization.NewConfig())
+	data, _ := service.ToData("1")
+	return data
+}
+
+func NewNonDeserializableDataSlice() []serialization.Data {
+	return []serialization.Data{
+		NewNonDeserializableData(),
+	}
+
 }
