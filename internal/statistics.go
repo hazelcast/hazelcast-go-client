@@ -36,8 +36,8 @@ import (
 
 const (
 	sinceVersionString = "3.9"
-	statSeperator      = ','
-	keyValueSeparator  = '='
+	statSeperator      = ","
+	keyValueSeparator  = "="
 )
 
 var sinceVersion = versionutil.CalculateVersion(sinceVersionString)
@@ -159,20 +159,12 @@ func (s *statistics) collectOSMetrics(stats *bytes.Buffer) {
 }
 
 func (s *statistics) addStat(stats *bytes.Buffer, name string, value interface{}) {
-	s.addStatWithKeyPrefix(stats, nil, name, value)
-}
-
-func (s *statistics) addStatWithKeyPrefix(stats *bytes.Buffer, keyPrefix *string, name string, value interface{}) {
 	if stats.Len() != 0 {
-		stats.WriteString(string(statSeperator))
-	}
-
-	if keyPrefix != nil {
-		stats.WriteString(*keyPrefix)
+		stats.WriteString(statSeperator)
 	}
 
 	stats.WriteString(name)
-	stats.WriteString(string(keyValueSeparator))
+	stats.WriteString(keyValueSeparator)
 
 	switch value.(type) {
 	case string:
