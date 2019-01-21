@@ -74,21 +74,12 @@ func (r *Message) WriteData(output serialization.DataOutput) (err error) {
 
 func (r *Message) ReadData(input serialization.DataInput) (err error) {
 	r.publishTime, err = input.ReadInt64()
-	if err != nil {
-		return
-	}
 	addrObj, err := input.ReadObject()
-	if err != nil {
-		return
-	}
 	if addr, ok := addrObj.(core.Address); ok {
 		r.publisherAddress = addr
 	}
 	r.payload, err = input.ReadData()
-	if err != nil {
-		return err
-	}
-	return
+	return err
 }
 
 type MessageFactory struct {

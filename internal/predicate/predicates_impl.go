@@ -75,9 +75,6 @@ func NewAnd(predicates []interface{}) *And {
 func (ap *And) ReadData(input serialization.DataInput) error {
 	ap.predicate = newPredicate(andID)
 	length, err := input.ReadInt32()
-	if err != nil {
-		return err
-	}
 	ap.predicates = make([]interface{}, length)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
@@ -86,7 +83,7 @@ func (ap *And) ReadData(input serialization.DataInput) error {
 		}
 		ap.predicates[i] = pred
 	}
-	return nil
+	return err
 }
 
 func (ap *And) WriteData(output serialization.DataOutput) error {
@@ -115,15 +112,8 @@ func (bp *Between) ReadData(input serialization.DataInput) error {
 	var err error
 	bp.predicate = newPredicate(betweenID)
 	bp.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	bp.to, err = input.ReadObject()
-	if err != nil {
-		return err
-	}
 	bp.from, err = input.ReadObject()
-
 	return err
 }
 
@@ -150,11 +140,7 @@ func (ep *Equal) ReadData(input serialization.DataInput) error {
 	var err error
 	ep.predicate = newPredicate(equalID)
 	ep.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	ep.value, err = input.ReadObject()
-
 	return err
 }
 
@@ -179,17 +165,8 @@ func (glp *GreaterLess) ReadData(input serialization.DataInput) error {
 	var err error
 	glp.predicate = newPredicate(greaterlessID)
 	glp.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	glp.value, err = input.ReadObject()
-	if err != nil {
-		return err
-	}
 	glp.equal, err = input.ReadBool()
-	if err != nil {
-		return err
-	}
 	glp.less, err = input.ReadBool()
 	return err
 }
@@ -219,9 +196,6 @@ func (lp *Like) ReadData(input serialization.DataInput) error {
 	var err error
 	lp.predicate = newPredicate(likeID)
 	lp.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	lp.expr, err = input.ReadUTF()
 	return err
 }
@@ -244,9 +218,6 @@ func (ilp *ILike) ReadData(input serialization.DataInput) error {
 	var err error
 	ilp.Like = &Like{predicate: newPredicate(ilikeID)}
 	ilp.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	ilp.expr, err = input.ReadUTF()
 	return err
 }
@@ -265,13 +236,7 @@ func (ip *In) ReadData(input serialization.DataInput) error {
 	var err error
 	ip.predicate = newPredicate(inID)
 	ip.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	length, err := input.ReadInt32()
-	if err != nil {
-		return err
-	}
 	ip.values = make([]interface{}, length)
 	for i := int32(0); i < length; i++ {
 		ip.values[i], err = input.ReadObject()
@@ -279,7 +244,7 @@ func (ip *In) ReadData(input serialization.DataInput) error {
 			return err
 		}
 	}
-	return nil
+	return err
 }
 
 func (ip *In) WriteData(output serialization.DataOutput) error {
@@ -327,9 +292,6 @@ func (nep *NotEqual) ReadData(input serialization.DataInput) error {
 	var err error
 	nep.Equal = &Equal{predicate: newPredicate(notEqualID)}
 	nep.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	nep.value, err = input.ReadObject()
 
 	return err
@@ -368,9 +330,6 @@ func (or *Or) ReadData(input serialization.DataInput) error {
 	var err error
 	or.predicate = newPredicate(orID)
 	length, err := input.ReadInt32()
-	if err != nil {
-		return err
-	}
 	or.predicates = make([]interface{}, length)
 	for i := 0; i < int(length); i++ {
 		pred, err := input.ReadObject()
@@ -407,9 +366,6 @@ func (rp *Regex) ReadData(input serialization.DataInput) error {
 	var err error
 	rp.predicate = newPredicate(regexID)
 	rp.field, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
 	rp.regex, err = input.ReadUTF()
 	return err
 }

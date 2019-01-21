@@ -214,71 +214,97 @@ type PositionalDataOutput interface {
 }
 
 // DataInput provides deserialization methods.
+// If any of its methods return an error, every following call
+// will return the same error. This provides ease of use as follows:
+//  field1, err = input.ReadUTF()
+//  field2, err = input.ReadUTF()
+//  return err
 type DataInput interface {
 	// Position returns the head position in the byte array.
 	Position() int32
 
 	// SetPosition sets the head position in the byte array.
+	// If any of previous methods returned an error, this method will return the same error immediately
 	SetPosition(pos int32)
 
 	// ReadByte returns byte read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadByte() (byte, error)
 
 	// ReadBool returns bool read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadBool() (bool, error)
 
 	// ReadUInt16 returns uint16 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadUInt16() (uint16, error)
 
 	// ReadInt16 returns int16 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadInt16() (int16, error)
 
 	// ReadInt32 returns int32 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadInt32() (int32, error)
 
 	// ReadInt64 returns int64 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadInt64() (int64, error)
 
 	// ReadFloat32 returns float32 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadFloat32() (float32, error)
 
 	// ReadFloat64 returns float64 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadFloat64() (float64, error)
 
 	// ReadUTF returns string read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadUTF() (string, error)
 
 	// ReadObject returns object read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadObject() (interface{}, error)
 
 	// ReadData returns Data read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadData() (Data, error)
 
 	// ReadByteArray returns []byte read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadByteArray() ([]byte, error)
 
 	// ReadBoolArray returns []bool read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadBoolArray() ([]bool, error)
 
 	// ReadUInt16Array returns []uint16 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadUInt16Array() ([]uint16, error)
 
 	// ReadInt16Array returns []int16 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadInt16Array() ([]int16, error)
 
 	// ReadInt32Array returns []int32 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadInt32Array() ([]int32, error)
 
 	// ReadInt64Array returns []int64 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadInt64Array() ([]int64, error)
 
 	// ReadFloat32Array returns []float32 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadFloat32Array() ([]float32, error)
 
 	// ReadFloat64Array returns []float64 read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadFloat64Array() ([]float64, error)
 
 	// ReadUTFArray returns []string read and error.
+	// If any of previous methods returned an error, this method will return the same error immediately.
 	ReadUTFArray() ([]string, error)
 }
 
