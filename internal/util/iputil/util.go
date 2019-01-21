@@ -23,6 +23,8 @@ import (
 	"strings"
 )
 
+var defaultPort = 5701
+
 func IsValidIPAddress(addr string) bool {
 	return net.ParseIP(addr) != nil
 }
@@ -34,7 +36,7 @@ func GetIPAndPort(addr string) (string, int32) {
 	if len(parts) == 2 {
 		port, err = strconv.Atoi(parts[1])
 		if err != nil {
-			port = 5701 // Default port
+			port = defaultPort // Default port
 		}
 	} else {
 		port = -1
