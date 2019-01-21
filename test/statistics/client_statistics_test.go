@@ -154,6 +154,24 @@ func TestClientStatisticsPeriod(t *testing.T) {
 
 }
 
+func TestClientStatisticsNegativePeriodShouldSendStatistics(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+	defer remoteController.ShutdownCluster(cluster.ID)
+
+	config := hazelcast.NewConfig()
+	config.SetProperty(property.StatisticsEnabled.Name(), "true")
+	config.SetProperty(property.StatisticsPeriodSeconds.Name(), "-1")
+
+	client, _ := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+
+	test.AssertTrueEventually(t, func() bool {
+		stats1 := GetClientStatsFromServer(t, cluster.ID)
+		return len(stats1) > 0
+	})
+}
+
 func TestClientStatisticsNonDefaultPeriod(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
