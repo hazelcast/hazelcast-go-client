@@ -22,9 +22,6 @@ type AddressTranslator interface {
 	// Translate translates the given address to another address specific
 	// to network or service
 	Translate(address core.Address) core.Address
-
-	// Refresh refreshes the internal lookup table if necessary.
-	Refresh()
 }
 
 // defaultAddressTranslator is a no-op. It always returns the given address.
@@ -37,8 +34,4 @@ func newDefaultAddressTranslator() *defaultAddressTranslator {
 
 func (dat *defaultAddressTranslator) Translate(address core.Address) core.Address {
 	return address
-}
-
-func (dat *defaultAddressTranslator) Refresh() {
-
 }
