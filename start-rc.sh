@@ -8,8 +8,8 @@ HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
 HAZELCAST_RC_VERSION="0.4-SNAPSHOT"
 SNAPSHOT_REPO="https://oss.sonatype.org/content/repositories/snapshots"
 RELEASE_REPO="http://repo1.maven.apache.org/maven2"
-ENTERPRISE_RELEASE_REPO="https://repository-hazelcast-l337.forge.cloudbees.com/release/"
-ENTERPRISE_SNAPSHOT_REPO="https://repository-hazelcast-l337.forge.cloudbees.com/snapshot/"
+ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
+ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
 
 if [[ ${HZ_VERSION} == *-SNAPSHOT ]]
