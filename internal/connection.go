@@ -232,6 +232,7 @@ func (c *Connection) close(err error) {
 	}
 	c.logger.Warn("Connection :", c, " closed, err: ", err)
 	close(c.closed)
+	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.connectionManager.onConnectionClose(c, core.NewHazelcastTargetDisconnectedError(err.Error(), err))
 }
