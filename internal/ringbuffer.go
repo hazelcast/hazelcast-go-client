@@ -28,12 +28,9 @@ type ringbufferProxy struct {
 	capacity int64
 }
 
-func newRingbufferProxy(client *HazelcastClient, serviceName string, name string) (*ringbufferProxy, error) {
-	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
-	if err != nil {
-		return nil, err
-	}
-	return &ringbufferProxy{parSpecProxy, -1}, nil
+func newRingbufferProxy(client *HazelcastClient, serviceName string, name string) *ringbufferProxy {
+	parSpecProxy := newPartitionSpecificProxy(client, serviceName, name)
+	return &ringbufferProxy{parSpecProxy, -1}
 }
 
 func (rp *ringbufferProxy) Capacity() (capacity int64, err error) {
@@ -182,7 +179,7 @@ func (rs *LazyReadResultSet) Get(index int32) (result interface{}, err error) {
 
 func (rs *LazyReadResultSet) Sequence(index int32) (sequence int64, err error) {
 	if rs.itemSequences == nil {
-		return sequenceUnavailable, nil
+		return sequenceUnavailable, core.NewHazelcastIllegalStateError("sequence unavailable", nil)
 	}
 	if err = rs.rangeCheck(index); err != nil {
 		return

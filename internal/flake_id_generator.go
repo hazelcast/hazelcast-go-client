@@ -24,6 +24,14 @@ type flakeIDGeneratorProxy struct {
 	batcher *flakeid.AutoBatcher
 }
 
+func newFlakeIDGenerator(client *HazelcastClient, serviceName string, name string) *flakeIDGeneratorProxy {
+	config := client.Config.GetFlakeIDGeneratorConfig(name)
+	flakeIDGenerator := &flakeIDGeneratorProxy{}
+	flakeIDGenerator.proxy = &proxy{client: client, serviceName: serviceName, name: name}
+	flakeIDGenerator.batcher = flakeid.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIDGenerator)
+	return flakeIDGenerator
+}
+
 func (fp *flakeIDGeneratorProxy) NewID() (id int64, err error) {
 	return fp.batcher.NewID()
 }
@@ -36,12 +44,4 @@ func (fp *flakeIDGeneratorProxy) NewIDBatch(batchSize int32) (*flakeid.IDBatch, 
 	}
 	base, increment, newBatchSize := proto.FlakeIDGeneratorNewIDBatchDecodeResponse(responseMessage)()
 	return flakeid.NewIDBatch(base, increment, newBatchSize), nil
-}
-
-func newFlakeIDGenerator(client *HazelcastClient, serviceName string, name string) (*flakeIDGeneratorProxy, error) {
-	config := client.Config.GetFlakeIDGeneratorConfig(name)
-	flakeIDGenerator := &flakeIDGeneratorProxy{}
-	flakeIDGenerator.proxy = &proxy{client: client, serviceName: serviceName, name: name}
-	flakeIDGenerator.batcher = flakeid.NewAutoBatcher(config.PrefetchCount(), config.PrefetchValidityMillis(), flakeIDGenerator)
-	return flakeIDGenerator, nil
 }

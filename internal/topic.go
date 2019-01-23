@@ -24,12 +24,9 @@ type topicProxy struct {
 	*partitionSpecificProxy
 }
 
-func newTopicProxy(client *HazelcastClient, serviceName string, name string) (*topicProxy, error) {
-	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
-	if err != nil {
-		return nil, err
-	}
-	return &topicProxy{parSpecProxy}, nil
+func newTopicProxy(client *HazelcastClient, serviceName string, name string) *topicProxy {
+	parSpecProxy := newPartitionSpecificProxy(client, serviceName, name)
+	return &topicProxy{parSpecProxy}
 }
 
 func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID string, err error) {

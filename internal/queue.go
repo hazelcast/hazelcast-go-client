@@ -28,12 +28,9 @@ type queueProxy struct {
 	*partitionSpecificProxy
 }
 
-func newQueueProxy(client *HazelcastClient, serviceName string, name string) (*queueProxy, error) {
-	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
-	if err != nil {
-		return nil, err
-	}
-	return &queueProxy{parSpecProxy}, nil
+func newQueueProxy(client *HazelcastClient, serviceName string, name string) *queueProxy {
+	parSpecProxy := newPartitionSpecificProxy(client, serviceName, name)
+	return &queueProxy{parSpecProxy}
 }
 
 func (qp *queueProxy) AddAll(items []interface{}) (changed bool, err error) {

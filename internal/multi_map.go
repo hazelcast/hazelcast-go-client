@@ -28,8 +28,8 @@ type multiMapProxy struct {
 	*proxy
 }
 
-func newMultiMapProxy(client *HazelcastClient, serviceName string, name string) (*multiMapProxy, error) {
-	return &multiMapProxy{&proxy{client, serviceName, name}}, nil
+func newMultiMapProxy(client *HazelcastClient, serviceName string, name string) *multiMapProxy {
+	return &multiMapProxy{&proxy{client, serviceName, name}}
 }
 
 func (mmp *multiMapProxy) Put(key interface{}, value interface{}) (increased bool, err error) {

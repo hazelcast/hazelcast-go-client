@@ -36,14 +36,14 @@ type pnCounterProxy struct {
 	random                      *rand.Rand
 }
 
-func newPNCounterProxy(client *HazelcastClient, serviceName string, name string) (*pnCounterProxy, error) {
+func newPNCounterProxy(client *HazelcastClient, serviceName string, name string) *pnCounterProxy {
 	pn := &pnCounterProxy{
 		proxy:          &proxy{client, serviceName, name},
 		emptyAddresses: make(map[core.Address]struct{}),
 	}
 	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 	pn.random = rand.New(rand.NewSource(time.Now().UnixNano()))
-	return pn, nil
+	return pn
 }
 
 func (pn *pnCounterProxy) Get() (currentValue int64, err error) {
