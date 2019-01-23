@@ -23,12 +23,9 @@ type listProxy struct {
 	*partitionSpecificProxy
 }
 
-func newListProxy(client *HazelcastClient, serviceName string, name string) (*listProxy, error) {
-	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
-	if err != nil {
-		return nil, err
-	}
-	return &listProxy{parSpecProxy}, nil
+func newListProxy(client *HazelcastClient, serviceName string, name string) *listProxy {
+	parSpecProxy := newPartitionSpecificProxy(client, serviceName, name)
+	return &listProxy{parSpecProxy}
 }
 
 func (lp *listProxy) Add(element interface{}) (changed bool, err error) {

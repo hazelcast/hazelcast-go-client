@@ -28,8 +28,8 @@ type mapProxy struct {
 	*proxy
 }
 
-func newMapProxy(client *HazelcastClient, serviceName string, name string) (*mapProxy, error) {
-	return &mapProxy{&proxy{client, serviceName, name}}, nil
+func newMapProxy(client *HazelcastClient, serviceName string, name string) *mapProxy {
+	return &mapProxy{&proxy{client, serviceName, name}}
 }
 
 func (mp *mapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {

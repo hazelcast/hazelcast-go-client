@@ -246,11 +246,10 @@ type partitionSpecificProxy struct {
 	partitionID int32
 }
 
-func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name string) (*partitionSpecificProxy, error) {
-	var err error
+func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name string) *partitionSpecificProxy {
 	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
-	parSpecProxy.partitionID, err = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
-	return parSpecProxy, err
+	parSpecProxy.partitionID, _ = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
+	return parSpecProxy
 
 }
 

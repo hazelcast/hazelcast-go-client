@@ -100,25 +100,25 @@ func (pm *proxyManager) findNextProxyAddress() core.Address {
 
 func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (core.DistributedObject, error) {
 	if bufutil.ServiceNameMap == serviceName {
-		return newMapProxy(pm.client, serviceName, name)
+		return newMapProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameList == serviceName {
-		return newListProxy(pm.client, serviceName, name)
+		return newListProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameSet == serviceName {
-		return newSetProxy(pm.client, serviceName, name)
+		return newSetProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameTopic == serviceName {
-		return newTopicProxy(pm.client, serviceName, name)
+		return newTopicProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameMultiMap == serviceName {
-		return newMultiMapProxy(pm.client, serviceName, name)
+		return newMultiMapProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameReplicatedMap == serviceName {
-		return newReplicatedMapProxy(pm.client, serviceName, name)
+		return newReplicatedMapProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameQueue == serviceName {
-		return newQueueProxy(pm.client, serviceName, name)
+		return newQueueProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameRingbufferService == serviceName {
-		return newRingbufferProxy(pm.client, serviceName, name)
+		return newRingbufferProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNamePNCounter == serviceName {
-		return newPNCounterProxy(pm.client, serviceName, name)
+		return newPNCounterProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameIDGenerator == serviceName {
-		return newFlakeIDGenerator(pm.client, serviceName, name)
+		return newFlakeIDGenerator(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameReliableTopic == serviceName {
 		return newReliableTopicProxy(pm.client, serviceName, name)
 	}

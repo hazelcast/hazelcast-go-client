@@ -23,12 +23,9 @@ type setProxy struct {
 	*partitionSpecificProxy
 }
 
-func newSetProxy(client *HazelcastClient, serviceName string, name string) (*setProxy, error) {
-	parSpecProxy, err := newPartitionSpecificProxy(client, serviceName, name)
-	if err != nil {
-		return nil, err
-	}
-	return &setProxy{parSpecProxy}, nil
+func newSetProxy(client *HazelcastClient, serviceName string, name string) *setProxy {
+	parSpecProxy := newPartitionSpecificProxy(client, serviceName, name)
+	return &setProxy{parSpecProxy}
 }
 
 func (sp *setProxy) Add(item interface{}) (added bool, err error) {
