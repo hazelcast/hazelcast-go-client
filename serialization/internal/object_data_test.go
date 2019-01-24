@@ -21,6 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
@@ -403,5 +404,84 @@ func TestObjectDataInput_ReadData(t *testing.T) {
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Error("There is a problem in WriteData() or ReadData()!")
 	}
+}
 
+func TestPositionalObjectDataOutput_PWriteByte(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = byte(32)
+	o.PWriteByte(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadByteWithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteInt16(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = int16(32)
+	o.PWriteInt16(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadInt16WithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteInt32(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = int32(32)
+	o.PWriteInt32(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadInt32WithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteInt64(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = int64(32)
+	o.PWriteInt64(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadInt64WithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteFloat64(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = float64(32)
+	o.PWriteFloat64(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadFloat64WithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteFloat32(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = float32(32)
+	o.PWriteFloat32(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadFloat32WithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteUint16(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = uint16(32)
+	o.PWriteUInt16(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadUInt16WithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func TestPositionalObjectDataOutput_PWriteBool(t *testing.T) {
+	o := NewPositionalObjectDataOutput(100, nil, false)
+	var expected = bool(true)
+	o.PWriteBool(15, expected)
+	i := NewObjectDataInput(o.buffer, 0, nil, false)
+	res, err := i.ReadBoolWithPosition(15)
+	assert.NoError(t, err)
+	assert.Equal(t, res, expected)
 }
