@@ -31,7 +31,7 @@ type pnCounterProxy struct {
 	targetSelectionMutex        sync.RWMutex // guards currentTargetReplicaAddress
 	currentTargetReplicaAddress core.Address
 	maxConfiguredReplicaCount   int32
-	emptyAddresses              map[core.Address]struct{}
+	emptyAddresses              *sync.Map
 	observedClock               unsafe.Pointer
 	random                      *rand.Rand
 }
@@ -39,7 +39,7 @@ type pnCounterProxy struct {
 func newPNCounterProxy(client *HazelcastClient, serviceName string, name string) *pnCounterProxy {
 	pn := &pnCounterProxy{
 		proxy:          &proxy{client, serviceName, name},
-		emptyAddresses: make(map[core.Address]struct{}),
+		emptyAddresses: new(sync.Map),
 	}
 	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 	pn.random = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -120,16 +120,16 @@ func (pn *pnCounterProxy) Reset() {
 	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 }
 
-func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.Address]struct{}) (core.Address, error) {
+func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses *sync.Map) (core.Address, error) {
 	pn.targetSelectionMutex.RLock()
 	localCurrentTargetReplicaAddress := pn.currentTargetReplicaAddress
 	pn.targetSelectionMutex.RUnlock()
-	_, isExcluded := excludedAddresses[localCurrentTargetReplicaAddress]
+	_, isExcluded := excludedAddresses.Load(localCurrentTargetReplicaAddress)
 	if localCurrentTargetReplicaAddress != nil && !isExcluded {
 		return localCurrentTargetReplicaAddress, nil
 	}
 	var err error
-	_, isExcluded = excludedAddresses[localCurrentTargetReplicaAddress]
+	_, isExcluded = excludedAddresses.Load(localCurrentTargetReplicaAddress)
 	if localCurrentTargetReplicaAddress == nil || isExcluded {
 		pn.targetSelectionMutex.Lock()
 		pn.currentTargetReplicaAddress, err = pn.chooseTargetReplica(excludedAddresses)
@@ -142,7 +142,7 @@ func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses map[core.Addr
 	return localCurrentTargetReplicaAddress, nil
 }
 
-func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]struct{}, lastError error,
+func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses *sync.Map, lastError error,
 	target core.Address) (response *proto.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
@@ -159,7 +159,7 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]s
 	if lastError != nil {
 		pn.client.logger.Warn("Error occurred while invoking operation on target ", target,
 			", choosing different target, err: ", lastError)
-		excludedAddresses[target] = struct{}{}
+		excludedAddresses.Store(target, struct{}{})
 		newTarget, err := pn.getCRDTOperationTarget(excludedAddresses)
 		if err != nil {
 			return nil, err
@@ -171,7 +171,7 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses map[core.Address]s
 }
 
 func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
-	excludedAddresses map[core.Address]struct{}, lastError error,
+	excludedAddresses *sync.Map, lastError error,
 	target core.Address) (response *proto.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
@@ -188,7 +188,7 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	if lastError != nil {
 		pn.client.logger.Warn("Unable to provide session guarantees when sending operations to, ", target,
 			"choosing different target, err: ", lastError)
-		excludedAddresses[target] = struct{}{}
+		excludedAddresses.Store(target, struct{}{})
 		newTarget, err := pn.getCRDTOperationTarget(excludedAddresses)
 		if err != nil {
 			return nil, err
@@ -198,7 +198,7 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	return response, nil
 }
 
-func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.Address]struct{}) (core.Address, error) {
+func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses *sync.Map) (core.Address, error) {
 	replicaAddresses, err := pn.getReplicaAddresses(excludedAddresses)
 	if err != nil || len(replicaAddresses) == 0 {
 		return nil, err
@@ -206,7 +206,7 @@ func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses map[core.Address
 	return replicaAddresses[pn.random.Intn(len(replicaAddresses))], nil
 }
 
-func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.Address]struct{}) ([]core.Address, error) {
+func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses *sync.Map) ([]core.Address, error) {
 	dataMembers := pn.client.ClusterService.GetMembersWithSelector(core.MemberSelectors.DataMemberSelector)
 	maxConfiguredReplicaCount, err := pn.getMaxConfiguredReplicaCount()
 	if err != nil {
@@ -216,7 +216,7 @@ func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses map[core.Address
 	var replicaAdresses []core.Address
 	for i := 0; i < currentReplicaCount; i++ {
 		dataMemberAddress := dataMembers[i].Address()
-		_, ok := excludedAddresses[dataMemberAddress]
+		_, ok := excludedAddresses.Load(dataMemberAddress)
 		if !ok {
 			replicaAdresses = append(replicaAdresses, dataMemberAddress)
 		}

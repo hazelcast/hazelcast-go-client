@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
@@ -46,7 +47,9 @@ func TestMain(m *testing.M) {
 	}
 	cluster, err = remoteController.CreateCluster("", test.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
-	client, _ = hazelcast.NewClient()
+	config := hazelcast.NewConfig()
+	config.SetProperty(property.LoggingLevel.Name(), logger.OffLevel)
+	client, _ = hazelcast.NewClientWithConfig(config)
 	counter, _ = client.GetPNCounter(counterName)
 	m.Run()
 	counter.Destroy()
@@ -95,6 +98,17 @@ func TestPNCounter_Get(t *testing.T) {
 	currentValue, err := counter.Get()
 	require.NoError(t, err)
 	assert.Equalf(t, currentValue, delta, "PNCounter.Get failed")
+}
+
+func TestPNCounter_GetAsync(t *testing.T) {
+	defer destroyAndCreate()
+	var delta int64 = 5
+	counter.AddAndGet(delta)
+	for i := 0; i < 1000; i++ {
+		go func() {
+			counter.Get()
+		}()
+	}
 }
 
 func TestPNCounter_GetAndAdd(t *testing.T) {
