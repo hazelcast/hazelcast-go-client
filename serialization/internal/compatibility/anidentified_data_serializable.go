@@ -97,37 +97,37 @@ func (i *anIdentifiedDataSerializable) WriteData(output serialization.DataOutput
 }
 
 func (i *anIdentifiedDataSerializable) ReadData(input serialization.DataInput) error {
-	i.bool, _ = input.ReadBool()
-	i.b, _ = input.ReadByte()
-	i.c, _ = input.ReadUInt16()
-	i.d, _ = input.ReadFloat64()
-	i.s, _ = input.ReadInt16()
-	i.f, _ = input.ReadFloat32()
-	i.i, _ = input.ReadInt32()
-	i.l, _ = input.ReadInt64()
-	i.str, _ = input.ReadUTF()
+	i.bool = input.ReadBool()
+	i.b = input.ReadByte()
+	i.c = input.ReadUInt16()
+	i.d = input.ReadFloat64()
+	i.s = input.ReadInt16()
+	i.f = input.ReadFloat32()
+	i.i = input.ReadInt32()
+	i.l = input.ReadInt64()
+	i.str = input.ReadUTF()
 
-	i.booleans, _ = input.ReadBoolArray()
-	i.bytes, _ = input.ReadByteArray()
-	i.chars, _ = input.ReadUInt16Array()
-	i.doubles, _ = input.ReadFloat64Array()
-	i.shorts, _ = input.ReadInt16Array()
-	i.floats, _ = input.ReadFloat32Array()
-	i.ints, _ = input.ReadInt32Array()
-	i.longs, _ = input.ReadInt64Array()
-	i.strings, _ = input.ReadUTFArray()
+	i.booleans = input.ReadBoolArray()
+	i.bytes = input.ReadByteArray()
+	i.chars = input.ReadUInt16Array()
+	i.doubles = input.ReadFloat64Array()
+	i.shorts = input.ReadInt16Array()
+	i.floats = input.ReadFloat32Array()
+	i.ints = input.ReadInt32Array()
+	i.longs = input.ReadInt64Array()
+	i.strings = input.ReadUTFArray()
 
-	i.booleansNull, _ = input.ReadBoolArray()
-	i.bytesNull, _ = input.ReadByteArray()
-	i.charsNull, _ = input.ReadUInt16Array()
-	i.doublesNull, _ = input.ReadFloat64Array()
-	i.shortsNull, _ = input.ReadInt16Array()
-	i.floatsNull, _ = input.ReadFloat32Array()
-	i.intsNull, _ = input.ReadInt32Array()
-	i.longsNull, _ = input.ReadInt64Array()
-	i.stringsNull, _ = input.ReadUTFArray()
+	i.booleansNull = input.ReadBoolArray()
+	i.bytesNull = input.ReadByteArray()
+	i.charsNull = input.ReadUInt16Array()
+	i.doublesNull = input.ReadFloat64Array()
+	i.shortsNull = input.ReadInt16Array()
+	i.floatsNull = input.ReadFloat32Array()
+	i.intsNull = input.ReadInt32Array()
+	i.longsNull = input.ReadInt64Array()
+	i.stringsNull = input.ReadUTFArray()
 
-	temp, _ := input.ReadObject()
+	temp := input.ReadObject()
 
 	if temp != nil {
 		i.portableObject = temp.(serialization.Portable)
@@ -135,12 +135,12 @@ func (i *anIdentifiedDataSerializable) ReadData(input serialization.DataInput) e
 		i.portableObject = nil
 	}
 
-	temp, _ = input.ReadObject()
+	temp = input.ReadObject()
 	if temp != nil {
 		i.identifiedDataSerializableObject = temp.(serialization.IdentifiedDataSerializable)
 	} else {
 		i.identifiedDataSerializableObject = nil
 	}
 
-	return nil
+	return input.Error()
 }

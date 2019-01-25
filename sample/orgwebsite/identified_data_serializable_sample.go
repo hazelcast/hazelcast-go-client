@@ -38,13 +38,10 @@ func (e *Employee) FactoryID() int32 {
 	return sampleDataSerializableFactoryID
 }
 
-func (e *Employee) ReadData(input serialization.DataInput) (err error) {
-	e.id, err = input.ReadInt32()
-	if err != nil {
-		return
-	}
-	e.name, err = input.ReadUTF()
-	return
+func (e *Employee) ReadData(input serialization.DataInput) error {
+	e.id = input.ReadInt32()
+	e.name = input.ReadUTF()
+	return input.Error()
 }
 
 func (e *Employee) WriteData(output serialization.DataOutput) (err error) {

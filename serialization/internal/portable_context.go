@@ -40,10 +40,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 	register := true
 	classDefBuilder := classdef.NewClassDefinitionBuilder(factoryID, classID, version)
 	input.ReadInt32()
-	fieldCount, err := input.ReadInt32()
-	if err != nil {
-		return nil, err
-	}
+	fieldCount := input.ReadInt32()
 	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
 		pos, err := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
@@ -52,88 +49,57 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 		}
 		input.SetPosition(pos)
 
-		length, err := input.ReadInt16()
-		if err != nil {
-			return nil, err
-		}
+		length := input.ReadInt16()
 		var temp = make([]rune, length)
 		for i := int16(0); i < length; i++ {
-			char, err := input.ReadByte()
-			if err != nil {
-				return nil, err
-			}
+			char := input.ReadByte()
 			temp[i] = int32(char)
 		}
-		fieldType, err := input.ReadByte()
-		if err != nil {
-			return nil, err
-		}
+		fieldType := input.ReadByte()
 		name := string(temp)
 		var fieldFactoryID int32
 		var fieldClassID int32
 		fieldVersion := version
 		if fieldType == internalClassDef.TypePortable {
-			temp, err := input.ReadBool()
-			if err != nil {
-				return nil, err
-			}
+			temp := input.ReadBool()
 			if temp {
 				register = false
 			}
-			fieldFactoryID, err = input.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
-			fieldClassID, err = input.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
-
+			fieldFactoryID = input.ReadInt32()
+			fieldClassID = input.ReadInt32()
 			if register {
-				fieldVersion, err = input.ReadInt32()
-				if err != nil {
-					return nil, err
-				}
+				fieldVersion = input.ReadInt32()
 				_, err = c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
 				if err != nil {
 					return nil, err
 				}
 			}
 		} else if fieldType == internalClassDef.TypePortableArray {
-			k, err := input.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
-			fieldFactoryID, err = input.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
-			fieldClassID, err = input.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
+			k := input.ReadInt32()
+			fieldFactoryID = input.ReadInt32()
+			fieldClassID = input.ReadInt32()
 			if k > 0 {
-				p, err := input.ReadInt32()
-				if err != nil {
-					return nil, err
-				}
+				p := input.ReadInt32()
 				input.SetPosition(p)
-				fieldVersion, err = input.ReadInt32()
-				if err != nil {
-					return nil, err
-				}
+				fieldVersion = input.ReadInt32()
 				c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
 			} else {
 				register = false
 			}
 		}
+		if input.Error() != nil {
+			return nil, input.Error()
+		}
 		classDefBuilder.AddField(internalClassDef.NewFieldDefinitionImpl(i, name, int32(fieldType),
 			fieldFactoryID, fieldClassID, fieldVersion))
 	}
-
+	if input.Error() != nil {
+		return nil, input.Error()
+	}
 	classDefinition := classDefBuilder.Build()
 
 	if register {
+		var err error
 		classDefinition, err = c.RegisterClassDefinition(classDefinition)
 		if err != nil {
 			return nil, err

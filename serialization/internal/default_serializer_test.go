@@ -51,8 +51,8 @@ type employee struct {
 }
 
 func (e *employee) ReadData(input serialization.DataInput) error {
-	e.age, _ = input.ReadInt32()
-	e.name, _ = input.ReadUTF()
+	e.age = input.ReadInt32()
+	e.name = input.ReadUTF()
 	return nil
 }
 
@@ -76,8 +76,8 @@ type customer struct {
 }
 
 func (c *customer) ReadData(input serialization.DataInput) error {
-	c.age, _ = input.ReadInt32()
-	c.name, _ = input.ReadUTF()
+	c.age = input.ReadInt32()
+	c.name = input.ReadUTF()
 	return nil
 }
 

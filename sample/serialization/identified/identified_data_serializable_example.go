@@ -37,21 +37,11 @@ type student struct {
 }
 
 func (s *student) ReadData(input serialization.DataInput) error {
-	var err error
-	s.id, err = input.ReadInt16()
-	if err != nil {
-		return err
-	}
-	s.name, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
-	s.surname, err = input.ReadUTF()
-	if err != nil {
-		return err
-	}
-	s.gpa, err = input.ReadFloat32()
-	return err
+	s.id = input.ReadInt16()
+	s.name = input.ReadUTF()
+	s.surname = input.ReadUTF()
+	s.gpa = input.ReadFloat32()
+	return input.Error()
 }
 
 func (s *student) WriteData(output serialization.DataOutput) error {

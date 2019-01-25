@@ -74,9 +74,8 @@ func (idf *identifiedFactory) Create(id int32) serialization.IdentifiedDataSeria
 }
 
 func (p *simpleEntryProcessor) ReadData(input serialization.DataInput) error {
-	var err error
-	p.value, err = input.ReadUTF()
-	return err
+	p.value = input.ReadUTF()
+	return input.Error()
 }
 
 func (p *simpleEntryProcessor) WriteData(output serialization.DataOutput) error {

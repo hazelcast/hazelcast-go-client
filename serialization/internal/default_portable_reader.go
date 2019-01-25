@@ -33,7 +33,7 @@ type DefaultPortableReader struct {
 
 func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
 	classdefinition serialization.ClassDefinition) *DefaultPortableReader {
-	finalPos, _ := input.ReadInt32()
+	finalPos := input.ReadInt32()
 	input.ReadInt32()
 	offset := input.Position()
 	return &DefaultPortableReader{serializer, input,
@@ -184,17 +184,11 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) (serialization.P
 		return nil, err
 	}
 	pr.input.SetPosition(pos)
-	isNil, err := pr.input.ReadBool()
-	if err != nil {
-		return nil, err
-	}
-	factoryID, err := pr.input.ReadInt32()
-	if err != nil {
-		return nil, err
-	}
-	classID, err := pr.input.ReadInt32()
-	if err != nil {
-		return nil, err
+	isNil := pr.input.ReadBool()
+	factoryID := pr.input.ReadInt32()
+	classID := pr.input.ReadInt32()
+	if pr.input.Error() != nil {
+		return nil, pr.input.Error()
 	}
 	if isNil {
 		return nil, nil
@@ -283,17 +277,11 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]serializ
 		return nil, err
 	}
 	pr.input.SetPosition(pos)
-	length, err := pr.input.ReadInt32()
-	if err != nil || length == bufutil.NilArrayLength {
-		return nil, err
-	}
-	factoryID, err := pr.input.ReadInt32()
-	if err != nil {
-		return nil, err
-	}
-	classID, err := pr.input.ReadInt32()
-	if err != nil {
-		return nil, err
+	length := pr.input.ReadInt32()
+	factoryID := pr.input.ReadInt32()
+	classID := pr.input.ReadInt32()
+	if pr.input.Error() != nil || length == bufutil.NilArrayLength {
+		return nil, pr.input.Error()
 	}
 	var portables = make([]serialization.Portable, length)
 	if length > 0 {

@@ -44,16 +44,13 @@ func (*CustomSerializer) ID() int32 {
 
 func (s *CustomSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	obj := &timeOfDay{}
-	unit, err := input.ReadInt32()
-	if err != nil {
-		return nil, err
-	}
+	unit := input.ReadInt32()
 	obj.second = unit % 60
 	unit = (unit - obj.second) / 60
 	obj.minute = unit % 60
 	unit = (unit - obj.minute) / 60
 	obj.hour = unit
-	return obj, nil
+	return obj, input.Error()
 }
 
 func (s *CustomSerializer) Write(output serialization.DataOutput, obj interface{}) error {

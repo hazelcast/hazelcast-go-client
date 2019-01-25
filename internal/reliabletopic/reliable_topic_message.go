@@ -73,13 +73,13 @@ func (r *Message) WriteData(output serialization.DataOutput) (err error) {
 }
 
 func (r *Message) ReadData(input serialization.DataInput) (err error) {
-	r.publishTime, err = input.ReadInt64()
-	addrObj, err := input.ReadObject()
+	r.publishTime = input.ReadInt64()
+	addrObj := input.ReadObject()
 	if addr, ok := addrObj.(core.Address); ok {
 		r.publisherAddress = addr
 	}
-	r.payload, err = input.ReadData()
-	return err
+	r.payload = input.ReadData()
+	return input.Error()
 }
 
 type MessageFactory struct {
