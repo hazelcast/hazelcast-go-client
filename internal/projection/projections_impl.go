@@ -46,7 +46,7 @@ func (sa *SingleAttribute) WriteData(output serialization.DataOutput) (err error
 	return
 }
 
-func (sa *SingleAttribute) ReadData(input serialization.DataInput) (err error) {
-	sa.attributePath, err = input.ReadUTF()
-	return
+func (sa *SingleAttribute) ReadData(input serialization.DataInput) error {
+	sa.attributePath = input.ReadUTF()
+	return input.Error()
 }

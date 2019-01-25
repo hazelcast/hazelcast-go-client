@@ -98,7 +98,7 @@ func TestObjectDataInput_ReadByte(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 1, nil, false)
 	var expectedRet = b
 	var ret byte
-	ret, _ = i.ReadByte()
+	ret = i.ReadByte()
 	if ret != expectedRet {
 		t.Errorf("ReadByte() returns %v expected %v", ret, expectedRet)
 	}
@@ -111,7 +111,7 @@ func TestObjectDataInput_ReadBool(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 8, &Service{}, false)
 	var expectedRet = true
 	var ret bool
-	ret, _ = i.ReadBool()
+	ret = i.ReadBool()
 	if ret != expectedRet {
 		t.Errorf("ReadBool() returns %v expected %v", ret, expectedRet)
 	}
@@ -138,7 +138,7 @@ func TestObjectDataInput_ReadUInt16(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 
 	i.ReadInt32()
-	ret, _ := i.ReadUInt16()
+	ret := i.ReadUInt16()
 
 	if ret != expectedRet {
 		t.Errorf("ReadUInt16() returns %v expected %v", ret, expectedRet)
@@ -162,7 +162,7 @@ func TestObjectDataInput_ReadUInt16WithPosition(t *testing.T) {
 func TestObjectDataInput_ReadInt32(t *testing.T) {
 	o := NewObjectDataInput([]byte{0, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0}, 4, nil, false)
 	expectedRet := 4
-	ret, _ := o.ReadInt32()
+	ret := o.ReadInt32()
 
 	if ret != int32(expectedRet) {
 		t.Errorf("ReadInt32() returns %v expected %v", ret, expectedRet)
@@ -187,7 +187,7 @@ func TestObjectDataInput_ReadFloat64(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 16, nil, false)
 	var expectedRet = 3.432
 	var ret float64
-	ret, _ = i.ReadFloat64()
+	ret = i.ReadFloat64()
 	if ret != expectedRet {
 		t.Errorf("ReadFloat64() returns %v expected %v", ret, expectedRet)
 	}
@@ -216,7 +216,7 @@ func TestObjectDataInput_ReadUTF(t *testing.T) {
 	expectedRet := "Dani"
 	i.ReadUTF()
 	i.ReadUTF()
-	ret, _ := i.ReadUTF()
+	ret := i.ReadUTF()
 	if ret != expectedRet {
 		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
 	}
@@ -231,7 +231,7 @@ func TestObjectDataInput_ReadUTF2(t *testing.T) {
 	expectedRet := "⚐中💦2😭‍🙆😔"
 	i.ReadUTF()
 	i.ReadUTF()
-	ret, _ := i.ReadUTF()
+	ret := i.ReadUTF()
 	if ret != expectedRet {
 		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
 	}
@@ -264,16 +264,16 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 
 	i := NewObjectDataInput(o.buffer, 0, service, false)
 
-	retA, _ := i.ReadObject()
-	retB, _ := i.ReadObject()
-	retC, _ := i.ReadObject()
-	retD, _ := i.ReadObject()
-	retE, _ := i.ReadObject()
-	retF, _ := i.ReadObject()
-	retG, _ := i.ReadObject()
-	retH, _ := i.ReadObject()
-	retJ, _ := i.ReadObject()
-	retK, _ := i.ReadObject()
+	retA := i.ReadObject()
+	retB := i.ReadObject()
+	retC := i.ReadObject()
+	retD := i.ReadObject()
+	retE := i.ReadObject()
+	retF := i.ReadObject()
+	retG := i.ReadObject()
+	retH := i.ReadObject()
+	retJ := i.ReadObject()
+	retK := i.ReadObject()
 
 	if a != retA || b != retB || c != retC || d != retD ||
 		e != retE || !reflect.DeepEqual(f, retF) || !reflect.DeepEqual(g, retG) ||
@@ -287,7 +287,7 @@ func TestObjectDataInput_ReadByteArray(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteByteArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadByteArray()
+	retArray := i.ReadByteArray()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteByteArray() or ReadByteArray()!")
@@ -299,7 +299,7 @@ func TestObjectDataInput_ReadBoolArray(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteBoolArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadBoolArray()
+	retArray := i.ReadBoolArray()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteBoolArray() or ReadBoolArray()!")
@@ -311,7 +311,7 @@ func TestObjectDataInput_ReadUInt16Array(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteUInt16Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadUInt16Array()
+	retArray := i.ReadUInt16Array()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteUInt16Array() or ReadUInt16Array()!")
@@ -323,7 +323,7 @@ func TestObjectDataInput_ReadInt16Array(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteInt16Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadInt16Array()
+	retArray := i.ReadInt16Array()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteInt16Array() or ReadInt16Array()!")
@@ -335,7 +335,7 @@ func TestObjectDataInput_ReadInt32Array(t *testing.T) {
 	o := NewObjectDataOutput(50, nil, false)
 	o.WriteInt32Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadInt32Array()
+	retArray := i.ReadInt32Array()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteInt32Array() or ReadInt32Array()!")
@@ -347,7 +347,7 @@ func TestObjectDataInput_ReadInt64Array(t *testing.T) {
 	o := NewObjectDataOutput(50, nil, false)
 	o.WriteInt64Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadInt64Array()
+	retArray := i.ReadInt64Array()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteInt64Array() or ReadInt64Array()!")
@@ -360,7 +360,7 @@ func TestObjectDataInput_ReadFloat32Array(t *testing.T) {
 	o.WriteFloat32Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 
-	retArray, _ := i.ReadFloat32Array()
+	retArray := i.ReadFloat32Array()
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteFloat32Array() or ReadFloat32Array()!")
 	}
@@ -371,7 +371,7 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 	o := NewObjectDataOutput(50, nil, false)
 	o.WriteFloat64Array(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadFloat64Array()
+	retArray := i.ReadFloat64Array()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteFloat64Array() or ReadFloat64Array()!")
@@ -383,7 +383,7 @@ func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteUTFArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray, _ := i.ReadUTFArray()
+	retArray := i.ReadUTFArray()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteUTFArray() or ReadUTFArray()!")
@@ -400,7 +400,7 @@ func TestObjectDataInput_ReadData(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	i.ReadUTF()
 	i.ReadUTF()
-	ret, _ := i.ReadData()
+	ret := i.ReadData()
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Error("There is a problem in WriteData() or ReadData()!")
 	}
@@ -494,45 +494,45 @@ func TestObjectDataInput_ReadingAfterError(t *testing.T) {
 	o.WriteByte(b)
 
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	_, err := i.ReadBoolArray()
-	assert.Error(t, err)
-	_, err = i.ReadByte()
-	assert.Error(t, err)
-	_, err = i.ReadBoolArray()
-	assert.Error(t, err)
-	_, err = i.ReadBool()
-	assert.Error(t, err)
-	_, err = i.ReadByteArray()
-	assert.Error(t, err)
-	_, err = i.ReadUTF()
-	assert.Error(t, err)
-	_, err = i.ReadInt32()
-	assert.Error(t, err)
-	_, err = i.ReadObject()
-	assert.Error(t, err)
-	_, err = i.ReadData()
-	assert.Error(t, err)
-	_, err = i.ReadInt64()
-	assert.Error(t, err)
-	_, err = i.ReadFloat64()
-	assert.Error(t, err)
-	_, err = i.ReadFloat32()
-	assert.Error(t, err)
-	_, err = i.ReadFloat32Array()
-	assert.Error(t, err)
-	_, err = i.ReadUTFArray()
-	assert.Error(t, err)
-	_, err = i.ReadUInt16Array()
-	assert.Error(t, err)
-	_, err = i.ReadFloat64Array()
-	assert.Error(t, err)
-	_, err = i.ReadInt32Array()
-	assert.Error(t, err)
-	_, err = i.ReadInt16Array()
-	assert.Error(t, err)
-	_, err = i.ReadInt16()
-	assert.Error(t, err)
-	_, err = i.ReadInt64Array()
-	assert.Error(t, err)
+	i.ReadBoolArray()
+	assert.Error(t, i.Error())
+	i.ReadByte()
+	assert.Error(t, i.Error())
+	i.ReadBoolArray()
+	assert.Error(t, i.Error())
+	i.ReadBool()
+	assert.Error(t, i.Error())
+	i.ReadByteArray()
+	assert.Error(t, i.Error())
+	i.ReadUTF()
+	assert.Error(t, i.Error())
+	i.ReadInt32()
+	assert.Error(t, i.Error())
+	i.ReadObject()
+	assert.Error(t, i.Error())
+	i.ReadData()
+	assert.Error(t, i.Error())
+	i.ReadInt64()
+	assert.Error(t, i.Error())
+	i.ReadFloat64()
+	assert.Error(t, i.Error())
+	i.ReadFloat32()
+	assert.Error(t, i.Error())
+	i.ReadFloat32Array()
+	assert.Error(t, i.Error())
+	i.ReadUTFArray()
+	assert.Error(t, i.Error())
+	i.ReadUInt16Array()
+	assert.Error(t, i.Error())
+	i.ReadFloat64Array()
+	assert.Error(t, i.Error())
+	i.ReadInt32Array()
+	assert.Error(t, i.Error())
+	i.ReadInt16Array()
+	assert.Error(t, i.Error())
+	i.ReadInt16()
+	assert.Error(t, i.Error())
+	i.ReadInt64Array()
+	assert.Error(t, i.Error())
 
 }

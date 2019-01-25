@@ -52,10 +52,9 @@ func NewSQL(sql string) *SQL {
 }
 
 func (sp *SQL) ReadData(input serialization.DataInput) error {
-	var err error
 	sp.predicate = newPredicate(sqlID)
-	sp.sql, err = input.ReadUTF()
-	return err
+	sp.sql = input.ReadUTF()
+	return input.Error()
 }
 
 func (sp *SQL) WriteData(output serialization.DataOutput) error {
@@ -74,16 +73,13 @@ func NewAnd(predicates []interface{}) *And {
 
 func (ap *And) ReadData(input serialization.DataInput) error {
 	ap.predicate = newPredicate(andID)
-	length, err := input.ReadInt32()
+	length := input.ReadInt32()
 	ap.predicates = make([]interface{}, length)
 	for i := 0; i < int(length); i++ {
-		pred, err := input.ReadObject()
-		if err != nil {
-			return err
-		}
+		pred := input.ReadObject()
 		ap.predicates[i] = pred
 	}
-	return err
+	return input.Error()
 }
 
 func (ap *And) WriteData(output serialization.DataOutput) error {
@@ -109,12 +105,11 @@ func NewBetween(field string, from interface{}, to interface{}) *Between {
 }
 
 func (bp *Between) ReadData(input serialization.DataInput) error {
-	var err error
 	bp.predicate = newPredicate(betweenID)
-	bp.field, err = input.ReadUTF()
-	bp.to, err = input.ReadObject()
-	bp.from, err = input.ReadObject()
-	return err
+	bp.field = input.ReadUTF()
+	bp.to = input.ReadObject()
+	bp.from = input.ReadObject()
+	return input.Error()
 }
 
 func (bp *Between) WriteData(output serialization.DataOutput) error {
@@ -137,11 +132,10 @@ func NewEqual(field string, value interface{}) *Equal {
 }
 
 func (ep *Equal) ReadData(input serialization.DataInput) error {
-	var err error
 	ep.predicate = newPredicate(equalID)
-	ep.field, err = input.ReadUTF()
-	ep.value, err = input.ReadObject()
-	return err
+	ep.field = input.ReadUTF()
+	ep.value = input.ReadObject()
+	return input.Error()
 }
 
 func (ep *Equal) WriteData(output serialization.DataOutput) error {
@@ -162,13 +156,12 @@ func NewGreaterLess(field string, value interface{}, equal bool, less bool) *Gre
 }
 
 func (glp *GreaterLess) ReadData(input serialization.DataInput) error {
-	var err error
 	glp.predicate = newPredicate(greaterlessID)
-	glp.field, err = input.ReadUTF()
-	glp.value, err = input.ReadObject()
-	glp.equal, err = input.ReadBool()
-	glp.less, err = input.ReadBool()
-	return err
+	glp.field = input.ReadUTF()
+	glp.value = input.ReadObject()
+	glp.equal = input.ReadBool()
+	glp.less = input.ReadBool()
+	return input.Error()
 }
 
 func (glp *GreaterLess) WriteData(output serialization.DataOutput) error {
@@ -193,11 +186,10 @@ func NewLike(field string, expr string) *Like {
 }
 
 func (lp *Like) ReadData(input serialization.DataInput) error {
-	var err error
 	lp.predicate = newPredicate(likeID)
-	lp.field, err = input.ReadUTF()
-	lp.expr, err = input.ReadUTF()
-	return err
+	lp.field = input.ReadUTF()
+	lp.expr = input.ReadUTF()
+	return input.Error()
 }
 
 func (lp *Like) WriteData(output serialization.DataOutput) error {
@@ -215,11 +207,10 @@ func NewILike(field string, expr string) *ILike {
 }
 
 func (ilp *ILike) ReadData(input serialization.DataInput) error {
-	var err error
 	ilp.Like = &Like{predicate: newPredicate(ilikeID)}
-	ilp.field, err = input.ReadUTF()
-	ilp.expr, err = input.ReadUTF()
-	return err
+	ilp.field = input.ReadUTF()
+	ilp.expr = input.ReadUTF()
+	return input.Error()
 }
 
 type In struct {
@@ -233,18 +224,14 @@ func NewIn(field string, values []interface{}) *In {
 }
 
 func (ip *In) ReadData(input serialization.DataInput) error {
-	var err error
 	ip.predicate = newPredicate(inID)
-	ip.field, err = input.ReadUTF()
-	length, err := input.ReadInt32()
+	ip.field = input.ReadUTF()
+	length := input.ReadInt32()
 	ip.values = make([]interface{}, length)
 	for i := int32(0); i < length; i++ {
-		ip.values[i], err = input.ReadObject()
-		if err != nil {
-			return err
-		}
+		ip.values[i] = input.ReadObject()
 	}
-	return err
+	return input.Error()
 }
 
 func (ip *In) WriteData(output serialization.DataOutput) error {
@@ -269,10 +256,9 @@ func NewInstanceOf(className string) *InstanceOf {
 }
 
 func (iop *InstanceOf) ReadData(input serialization.DataInput) error {
-	var err error
 	iop.predicate = newPredicate(instanceOfID)
-	iop.className, err = input.ReadUTF()
-	return err
+	iop.className = input.ReadUTF()
+	return input.Error()
 }
 
 func (iop *InstanceOf) WriteData(output serialization.DataOutput) error {
@@ -289,12 +275,10 @@ func NewNotEqual(field string, value interface{}) *NotEqual {
 }
 
 func (nep *NotEqual) ReadData(input serialization.DataInput) error {
-	var err error
 	nep.Equal = &Equal{predicate: newPredicate(notEqualID)}
-	nep.field, err = input.ReadUTF()
-	nep.value, err = input.ReadObject()
-
-	return err
+	nep.field = input.ReadUTF()
+	nep.value = input.ReadObject()
+	return input.Error()
 }
 
 type Not struct {
@@ -308,9 +292,9 @@ func NewNot(pred interface{}) *Not {
 
 func (np *Not) ReadData(input serialization.DataInput) error {
 	np.predicate = newPredicate(notID)
-	i, err := input.ReadObject()
+	i := input.ReadObject()
 	np.pred = i.(interface{})
-	return err
+	return input.Error()
 }
 
 func (np *Not) WriteData(output serialization.DataOutput) error {
@@ -327,18 +311,14 @@ func NewOr(predicates []interface{}) *Or {
 }
 
 func (or *Or) ReadData(input serialization.DataInput) error {
-	var err error
 	or.predicate = newPredicate(orID)
-	length, err := input.ReadInt32()
+	length := input.ReadInt32()
 	or.predicates = make([]interface{}, length)
 	for i := 0; i < int(length); i++ {
-		pred, err := input.ReadObject()
-		if err != nil {
-			return err
-		}
+		pred := input.ReadObject()
 		or.predicates[i] = pred.(interface{})
 	}
-	return err
+	return input.Error()
 }
 
 func (or *Or) WriteData(output serialization.DataOutput) error {
@@ -363,11 +343,10 @@ func NewRegex(field string, regex string) *Regex {
 }
 
 func (rp *Regex) ReadData(input serialization.DataInput) error {
-	var err error
 	rp.predicate = newPredicate(regexID)
-	rp.field, err = input.ReadUTF()
-	rp.regex, err = input.ReadUTF()
-	return err
+	rp.field = input.ReadUTF()
+	rp.regex = input.ReadUTF()
+	return input.Error()
 }
 
 func (rp *Regex) WriteData(output serialization.DataOutput) error {

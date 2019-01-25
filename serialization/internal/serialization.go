@@ -91,9 +91,9 @@ func (s *Service) WriteObject(output serialization.DataOutput, object interface{
 }
 
 func (s *Service) ReadObject(input serialization.DataInput) (interface{}, error) {
-	serializerID, err := input.ReadInt32()
-	if err != nil {
-		return nil, err
+	serializerID := input.ReadInt32()
+	if input.Error() != nil {
+		return nil, input.Error()
 	}
 	serializer := s.registry[serializerID]
 	return serializer.Read(input)

@@ -33,7 +33,10 @@ func (s *CustomSerializer) ID() int32 {
 }
 
 func (s *CustomSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
-	array, err := input.ReadByteArray()
+	array := input.ReadByteArray()
+	if input.Error() != nil {
+		return nil, input.Error()
+	}
 	return &CustomSerializable{string(array)}, err
 }
 

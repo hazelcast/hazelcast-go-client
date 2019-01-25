@@ -39,24 +39,20 @@ func (ps *PortableSerializer) ID() int32 {
 }
 
 func (ps *PortableSerializer) Read(input serialization.DataInput) (interface{}, error) {
-	factoryID, err := input.ReadInt32()
-	if err != nil {
-		return nil, err
-	}
-	classID, err := input.ReadInt32()
-	if err != nil {
-		return nil, err
+	factoryID := input.ReadInt32()
+	classID := input.ReadInt32()
+	if input.Error() != nil {
+		return nil, input.Error()
 	}
 	return ps.ReadObject(input, factoryID, classID)
 }
 
 func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryID int32, classID int32) (
 	serialization.Portable, error) {
-	version, err := input.ReadInt32()
-	if err != nil {
-		return nil, err
+	version := input.ReadInt32()
+	if input.Error() != nil {
+		return nil, input.Error()
 	}
-
 	portable, err := ps.createNewPortableInstance(factoryID, classID)
 	if err != nil {
 		return nil, err

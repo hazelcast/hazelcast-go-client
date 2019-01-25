@@ -214,98 +214,80 @@ type PositionalDataOutput interface {
 }
 
 // DataInput provides deserialization methods.
-// If any of its methods return an error, every following call
-// will return the same error. This provides ease of use as follows:
-//  field1, err = input.ReadUTF()
-//  field2, err = input.ReadUTF()
-//  return err
+// If any of the methods results in an error, all following methods will return immediately.
+// Example usage:
+//  field1 = input.ReadUTF()
+//  field2 = input.ReadUTF()
+//  return input.Error()
 type DataInput interface {
+	// Error returns the first error encountered by DataInput.
+	Error() error
+
 	// Position returns the head position in the byte array.
 	Position() int32
 
 	// SetPosition sets the head position in the byte array.
-	// If any of previous methods returned an error, this method will return the same error immediately
 	SetPosition(pos int32)
 
 	// ReadByte returns byte read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadByte() (byte, error)
+	ReadByte() byte
 
 	// ReadBool returns bool read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadBool() (bool, error)
+	ReadBool() bool
 
 	// ReadUInt16 returns uint16 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadUInt16() (uint16, error)
+	ReadUInt16() uint16
 
 	// ReadInt16 returns int16 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadInt16() (int16, error)
+	ReadInt16() int16
 
 	// ReadInt32 returns int32 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadInt32() (int32, error)
+	ReadInt32() int32
 
 	// ReadInt64 returns int64 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadInt64() (int64, error)
+	ReadInt64() int64
 
 	// ReadFloat32 returns float32 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadFloat32() (float32, error)
+	ReadFloat32() float32
 
 	// ReadFloat64 returns float64 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadFloat64() (float64, error)
+	ReadFloat64() float64
 
 	// ReadUTF returns string read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadUTF() (string, error)
+	ReadUTF() string
 
 	// ReadObject returns object read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadObject() (interface{}, error)
+	ReadObject() interface{}
 
 	// ReadData returns Data read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadData() (Data, error)
+	ReadData() Data
 
 	// ReadByteArray returns []byte read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadByteArray() ([]byte, error)
+	ReadByteArray() []byte
 
 	// ReadBoolArray returns []bool read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadBoolArray() ([]bool, error)
+	ReadBoolArray() []bool
 
 	// ReadUInt16Array returns []uint16 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadUInt16Array() ([]uint16, error)
+	ReadUInt16Array() []uint16
 
 	// ReadInt16Array returns []int16 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadInt16Array() ([]int16, error)
+	ReadInt16Array() []int16
 
 	// ReadInt32Array returns []int32 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadInt32Array() ([]int32, error)
+	ReadInt32Array() []int32
 
 	// ReadInt64Array returns []int64 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadInt64Array() ([]int64, error)
+	ReadInt64Array() []int64
 
 	// ReadFloat32Array returns []float32 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadFloat32Array() ([]float32, error)
+	ReadFloat32Array() []float32
 
 	// ReadFloat64Array returns []float64 read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadFloat64Array() ([]float64, error)
+	ReadFloat64Array() []float64
 
 	// ReadUTFArray returns []string read and error.
-	// If any of previous methods returned an error, this method will return the same error immediately.
-	ReadUTFArray() ([]string, error)
+	ReadUTFArray() []string
 }
 
 // PortableWriter provides a mean of writing portable fields to a binary in form of go primitives

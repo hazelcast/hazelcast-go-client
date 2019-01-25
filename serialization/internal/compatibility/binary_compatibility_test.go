@@ -81,8 +81,8 @@ func TestBinaryCompatibility(t *testing.T) {
 	i := internal.NewObjectDataInput(dat, 0, nil, true)
 	var index int
 	for i.Available() != 0 {
-		objectKey, _ := i.ReadUTF()
-		length, _ := i.ReadInt32()
+		objectKey := i.ReadUTF()
+		length := i.ReadInt32()
 		if length != bufutil.NilArrayLength {
 			payload := dat[i.Position() : i.Position()+length]
 			i.SetPosition(i.Position() + length)

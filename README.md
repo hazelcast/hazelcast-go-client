@@ -614,13 +614,10 @@ func (e *Employee) FactoryID() int32 {
 	return sampleDataSerializableFactoryID
 }
 
-func (e *Employee) ReadData(input serialization.DataInput) (err error) {
-	e.id, err = input.ReadInt32()
-	if err != nil {
-		return
-	}
-	e.name, err = input.ReadUTF()
-	return
+func (e *Employee) ReadData(input serialization.DataInput) error {
+	e.id = input.ReadInt32()
+	e.name = input.ReadUTF()
+	return input.Error()
 }
 
 func (e *Employee) WriteData(output serialization.DataOutput) (err error) {
@@ -766,8 +763,8 @@ func (s *CustomSerializer) ID() int32 {
 }
 
 func (s *CustomSerializer) Read(input serialization.DataInput) (obj interface{}, err error) {
-	array, err := input.ReadByteArray()
-	return &CustomSerializable{string(array)}, err
+	array = input.ReadByteArray()
+	return &CustomSerializable{string(array)}, input.Error()
 }
 
 func (s *CustomSerializer) Write(output serialization.DataOutput, obj interface{}) (err error) {
@@ -1590,9 +1587,8 @@ type identifiedEntryProcessor struct {
 }
 
 func (p *identifiedEntryProcessor) ReadData(input serialization.DataInput) error {
-	var err error
-	p.value, err = input.ReadUTF()
-	return err
+	p.value = input.ReadUTF()
+	return input.Error()
 }
 
 func (p *identifiedEntryProcessor) WriteData(output serialization.DataOutput) error {

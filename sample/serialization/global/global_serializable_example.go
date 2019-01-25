@@ -45,17 +45,13 @@ func (s *GlobalSerializer) ID() int32 {
 }
 
 func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
-	var err error
-	jsonBlob, err := input.ReadByteArray()
-	if err != nil {
-		return nil, err
-	}
+	jsonBlob := input.ReadByteArray()
 	var ret colorGroup
-	err = json.Unmarshal(jsonBlob, &ret)
-	if err != nil {
-		return nil, err
+	if input.Error() != nil {
+		return nil, input.Error()
 	}
-	return ret, nil
+	err := json.Unmarshal(jsonBlob, &ret)
+	return ret, err
 }
 
 func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) error {

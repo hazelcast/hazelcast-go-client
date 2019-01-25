@@ -61,8 +61,8 @@ func (*CustomArtistSerializer) ID() int32 {
 
 func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
-	typ, _ := input.ReadInt32()
-	data, _ := input.ReadData()
+	typ := input.ReadInt32()
+	data := input.ReadData()
 	network.Write(data.Buffer())
 	dec := gob.NewDecoder(&network)
 	var v artist
@@ -103,7 +103,7 @@ func (s *GlobalSerializer) ID() int32 {
 
 func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
-	data, _ := input.ReadData()
+	data := input.ReadData()
 	network.Write(data.Buffer())
 	dec := gob.NewDecoder(&network)
 	v := &customObject{}
