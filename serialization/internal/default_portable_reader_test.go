@@ -18,8 +18,11 @@ import (
 	"reflect"
 	"testing"
 
+	"errors"
+
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultPortableReader_ReadByte(t *testing.T) {
@@ -33,7 +36,7 @@ func TestDefaultPortableReader_ReadByte(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadByte("type")
+	ret := pr.ReadByte("type")
 	if expectedRet != ret {
 		t.Errorf("ReadByte() returns %v expected %v", ret, expectedRet)
 	}
@@ -50,7 +53,7 @@ func TestDefaultPortableReader_ReadBool(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadBool("isReady")
+	ret := pr.ReadBool("isReady")
 
 	if expectedRet != ret {
 		t.Errorf("ReadBool() returns %v expected %v", ret, expectedRet)
@@ -68,7 +71,7 @@ func TestDefaultPortableReader_ReadUInt16(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadUInt16("char")
+	ret := pr.ReadUInt16("char")
 	if expectedRet != ret {
 		t.Errorf("ReadUInt16() returns %d expected %d", ret, expectedRet)
 	}
@@ -85,7 +88,7 @@ func TestDefaultPortableReader_ReadInt16(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadInt16("age")
+	ret := pr.ReadInt16("age")
 	if expectedRet != ret {
 		t.Errorf("ReadInt16() returns %d expected %d", ret, expectedRet)
 	}
@@ -102,7 +105,7 @@ func TestDefaultPortableReader_ReadInt32(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadInt32("age")
+	ret := pr.ReadInt32("age")
 	if expectedRet != ret {
 		t.Errorf("ReadInt32() returns %d expected %d", ret, expectedRet)
 	}
@@ -119,7 +122,7 @@ func TestDefaultPortableReader_ReadInt64(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadInt64("score")
+	ret := pr.ReadInt64("score")
 	if expectedRet != ret {
 		t.Errorf("ReadInt64() returns %d expected %d", ret, expectedRet)
 	}
@@ -136,7 +139,7 @@ func TestDefaultPortableReader_ReadFloat32(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadFloat32("rate")
+	ret := pr.ReadFloat32("rate")
 	if expectedRet != ret {
 		t.Errorf("ReadFloat32() returns %v expected %v", ret, expectedRet)
 	}
@@ -153,7 +156,7 @@ func TestDefaultPortableReader_ReadFloat64(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadFloat64("velocity")
+	ret := pr.ReadFloat64("velocity")
 	if expectedRet != ret {
 		t.Errorf("ReadFloat64() returns %v expected %v", ret, expectedRet)
 	}
@@ -170,7 +173,7 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadUTF("engineer")
+	ret := pr.ReadUTF("engineer")
 	if ret != expectedRet {
 		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
 	}
@@ -192,7 +195,7 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
 
 	pr := NewDefaultPortableReader(serializer.(*PortableSerializer), i, pw.classDefinition)
-	ret, _ := pr.ReadPortable("engineer")
+	ret := pr.ReadPortable("engineer")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
@@ -214,7 +217,7 @@ func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadPortable("engineer")
+	ret := pr.ReadPortable("engineer")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
@@ -232,7 +235,7 @@ func TestDefaultPortableReader_ReadByteArray(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadByteArray("types")
+	ret := pr.ReadByteArray("types")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadByteArray() returns %v expected %v", ret, expectedRet)
@@ -250,7 +253,7 @@ func TestDefaultPortableReader_ReadBoolArray(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadBoolArray("areReady")
+	ret := pr.ReadBoolArray("areReady")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadBoolArray() returns %v expected %v", ret, expectedRet)
@@ -268,7 +271,7 @@ func TestDefaultPortableReader_ReadUInt16Array(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadUInt16Array("scores")
+	ret := pr.ReadUInt16Array("scores")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadUInt16Array() returns %v expected %v", ret, expectedRet)
@@ -286,7 +289,7 @@ func TestDefaultPortableReader_ReadInt16Array(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadInt16Array("scores")
+	ret := pr.ReadInt16Array("scores")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadInt16Array() returns %v expected %v", ret, expectedRet)
@@ -304,7 +307,7 @@ func TestDefaultPortableReader_ReadInt32Array(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadInt32Array("scores")
+	ret := pr.ReadInt32Array("scores")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadInt32Array() returns %v expected %v", ret, expectedRet)
@@ -322,7 +325,7 @@ func TestDefaultPortableReader_ReadInt64Array(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadInt64Array("scores")
+	ret := pr.ReadInt64Array("scores")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadInt64Array() returns %v expected %v", ret, expectedRet)
@@ -340,7 +343,7 @@ func TestDefaultPortableReader_ReadFloat32Array(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadFloat32Array("longitude")
+	ret := pr.ReadFloat32Array("longitude")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadFloat32Array() returns %v expected %v", ret, expectedRet)
@@ -358,7 +361,7 @@ func TestDefaultPortableReader_ReadFloat64Array(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadFloat64Array("longitude")
+	ret := pr.ReadFloat64Array("longitude")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadFloat64Array() returns %v expected %v", ret, expectedRet)
@@ -376,7 +379,7 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadUTFArray("words")
+	ret := pr.ReadUTFArray("words")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadUTFArray() returns %v expected %v", ret, expectedRet)
@@ -400,7 +403,7 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(serializer, i, pw.classDefinition)
-	ret, _ := pr.ReadPortableArray("engineers")
+	ret := pr.ReadPortableArray("engineers")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadPortableArray() returns %v expected %v", ret, expectedRet)
@@ -453,20 +456,111 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret, _ := pr.ReadPortable("engineer")
-	ret1, _ := pr.ReadUTF("name")
-	ret2, _ := pr.ReadByteArray("a1")
-	ret3, _ := pr.ReadBoolArray("a2")
-	ret4, _ := pr.ReadUInt16Array("a3")
-	ret5, _ := pr.ReadInt16Array("a4")
-	ret6, _ := pr.ReadInt32Array("a5")
-	ret7, _ := pr.ReadInt64Array("a6")
-	ret8, _ := pr.ReadFloat32Array("a7")
-	ret9, _ := pr.ReadFloat64Array("a8")
-	ret10, _ := pr.ReadUTFArray("a9")
+	ret := pr.ReadPortable("engineer")
+	ret1 := pr.ReadUTF("name")
+	ret2 := pr.ReadByteArray("a1")
+	ret3 := pr.ReadBoolArray("a2")
+	ret4 := pr.ReadUInt16Array("a3")
+	ret5 := pr.ReadInt16Array("a4")
+	ret6 := pr.ReadInt32Array("a5")
+	ret7 := pr.ReadInt64Array("a6")
+	ret8 := pr.ReadFloat32Array("a7")
+	ret9 := pr.ReadFloat64Array("a8")
+	ret10 := pr.ReadUTFArray("a9")
 
 	if ret != nil || ret1 != "" || ret2 != nil || ret3 != nil || ret4 != nil || ret5 != nil ||
 		ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
 	}
+}
+
+func TestDefaultPortableReader_SameErrorIsReturned(t *testing.T) {
+
+	pr := &DefaultPortableReader{}
+	expectedError := errors.New("error")
+	pr.err = expectedError
+	pr.ReadBool("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadByte("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt64Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt64("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt16Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt16Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt32Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt32("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadFloat64Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadFloat64("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadUTF("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadByteArray("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadBoolArray("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadUInt16Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadUInt16("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadUTFArray("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadPortable("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadPortableArray("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadInt16("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadFloat32("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
+	pr.ReadFloat32Array("dummy")
+	assert.Error(t, pr.Error())
+	assert.Equal(t, pr.Error(), expectedError)
+
 }

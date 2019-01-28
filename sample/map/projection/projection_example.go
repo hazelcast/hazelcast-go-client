@@ -41,8 +41,8 @@ func (s *student) WritePortable(writer serialization.PortableWriter) (err error)
 }
 
 func (s *student) ReadPortable(reader serialization.PortableReader) (err error) {
-	s.id, err = reader.ReadInt32("id")
-	return
+	s.id = reader.ReadInt32("id")
+	return reader.Error()
 }
 
 func main() {

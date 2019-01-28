@@ -68,9 +68,9 @@ func (s *student) WritePortable(writer serialization.PortableWriter) error {
 }
 
 func (s *student) ReadPortable(reader serialization.PortableReader) error {
-	s.id, _ = reader.ReadInt16("id")
-	s.age, _ = reader.ReadInt32("age")
-	s.name, _ = reader.ReadUTF("name")
+	s.id = reader.ReadInt16("id")
+	s.age = reader.ReadInt32("age")
+	s.name = reader.ReadUTF("name")
 	return nil
 }
 
@@ -100,9 +100,9 @@ func (s *student2) WritePortable(writer serialization.PortableWriter) error {
 }
 
 func (s *student2) ReadPortable(reader serialization.PortableReader) error {
-	s.id, _ = reader.ReadInt32("id")
-	s.age, _ = reader.ReadInt32("age")
-	s.name, _ = reader.ReadUTF("name")
+	s.id = reader.ReadInt32("id")
+	s.age = reader.ReadInt32("age")
+	s.name = reader.ReadUTF("name")
 	return nil
 }
 
@@ -240,26 +240,26 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) error {
 }
 
 func (f *fake) ReadPortable(reader serialization.PortableReader) error {
-	f.byt, _ = reader.ReadByte("byt")
-	f.boo, _ = reader.ReadBool("boo")
-	f.ui16, _ = reader.ReadUInt16("ui16")
-	f.i16, _ = reader.ReadInt16("i16")
-	f.i32, _ = reader.ReadInt32("i32")
-	f.i64, _ = reader.ReadInt64("i64")
-	f.f32, _ = reader.ReadFloat32("f32")
-	f.f64, _ = reader.ReadFloat64("f64")
-	f.utf, _ = reader.ReadUTF("utf")
-	f.portable, _ = reader.ReadPortable("portable")
-	f.bytArr, _ = reader.ReadByteArray("bytArr")
-	f.boolArr, _ = reader.ReadBoolArray("boolArr")
-	f.ui16Arr, _ = reader.ReadUInt16Array("ui16Arr")
-	f.i16Arr, _ = reader.ReadInt16Array("i16Arr")
-	f.i32Arr, _ = reader.ReadInt32Array("i32Arr")
-	f.i64Arr, _ = reader.ReadInt64Array("i64Arr")
-	f.f32Arr, _ = reader.ReadFloat32Array("f32Arr")
-	f.f64Arr, _ = reader.ReadFloat64Array("f64Arr")
-	f.utfArr, _ = reader.ReadUTFArray("utfArr")
-	f.portableArr, _ = reader.ReadPortableArray("portableArr")
+	f.byt = reader.ReadByte("byt")
+	f.boo = reader.ReadBool("boo")
+	f.ui16 = reader.ReadUInt16("ui16")
+	f.i16 = reader.ReadInt16("i16")
+	f.i32 = reader.ReadInt32("i32")
+	f.i64 = reader.ReadInt64("i64")
+	f.f32 = reader.ReadFloat32("f32")
+	f.f64 = reader.ReadFloat64("f64")
+	f.utf = reader.ReadUTF("utf")
+	f.portable = reader.ReadPortable("portable")
+	f.bytArr = reader.ReadByteArray("bytArr")
+	f.boolArr = reader.ReadBoolArray("boolArr")
+	f.ui16Arr = reader.ReadUInt16Array("ui16Arr")
+	f.i16Arr = reader.ReadInt16Array("i16Arr")
+	f.i32Arr = reader.ReadInt32Array("i32Arr")
+	f.i64Arr = reader.ReadInt64Array("i64Arr")
+	f.f32Arr = reader.ReadFloat32Array("f32Arr")
+	f.f64Arr = reader.ReadFloat64Array("f64Arr")
+	f.utfArr = reader.ReadUTFArray("utfArr")
+	f.portableArr = reader.ReadPortableArray("portableArr")
 	return nil
 }
 
@@ -399,7 +399,7 @@ func (c *child) WritePortable(writer serialization.PortableWriter) (err error) {
 }
 
 func (c *child) ReadPortable(reader serialization.PortableReader) (err error) {
-	c.name, _ = reader.ReadUTF("name")
+	c.name = reader.ReadUTF("name")
 	return
 }
 
@@ -420,7 +420,7 @@ func (p *parent) WritePortable(writer serialization.PortableWriter) (err error) 
 }
 
 func (p *parent) ReadPortable(reader serialization.PortableReader) (err error) {
-	obj, _ := reader.ReadPortable("child")
+	obj := reader.ReadPortable("child")
 	p.child = obj.(*child)
 	return
 }

@@ -43,10 +43,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 	fieldCount := input.ReadInt32()
 	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
-		pos, err := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
-		if err != nil {
-			return nil, err
-		}
+		pos := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
 		input.SetPosition(pos)
 
 		length := input.ReadInt16()
@@ -69,7 +66,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 			fieldClassID = input.ReadInt32()
 			if register {
 				fieldVersion = input.ReadInt32()
-				_, err = c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
+				_, err := c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
 				if err != nil {
 					return nil, err
 				}

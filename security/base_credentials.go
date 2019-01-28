@@ -42,12 +42,9 @@ func (bc *BaseCredentials) WritePortable(writer serialization.PortableWriter) (e
 }
 
 func (bc *BaseCredentials) ReadPortable(reader serialization.PortableReader) (err error) {
-	bc.endpoint, err = reader.ReadUTF("endpoint")
-	if err != nil {
-		return
-	}
-	bc.principal, err = reader.ReadUTF("principal")
-	return
+	bc.endpoint = reader.ReadUTF("endpoint")
+	bc.principal = reader.ReadUTF("principal")
+	return reader.Error()
 }
 
 func (bc *BaseCredentials) Endpoint() string {

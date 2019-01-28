@@ -697,20 +697,11 @@ func (c *Customer) WritePortable(writer serialization.PortableWriter) (err error
 }
 
 func (c *Customer) ReadPortable(reader serialization.PortableReader) (err error) {
-	c.id, err = reader.ReadInt32("id")
-	if err != nil {
-		return
-	}
-	c.name, err = reader.ReadUTF("name")
-	if err != nil {
-		return
-	}
-	t, err := reader.ReadInt64("lastOrder")
-	if err != nil {
-		return
-	}
+	c.id = reader.ReadInt32("id")
+	c.name = reader.ReadUTF("name")
+	t := reader.ReadInt64("lastOrder")
 	c.lastOrder = time.Unix(0, t*int64(time.Millisecond))
-	return
+	return reader.Error()
 }
 
 ```
@@ -1767,11 +1758,11 @@ type Employee struct {
 }
 
 func (e *Employee) ReadPortable(reader serialization.PortableReader) error {
-	e.name, _ = reader.ReadUTF("name")
-	e.age, _ = reader.ReadInt32("age")
-	e.active, _ = reader.ReadBool("active")
-	e.salary, _ = reader.ReadInt64("salary")
-	return nil
+	e.name = reader.ReadUTF("name")
+	e.age = reader.ReadInt32("age")
+	e.active = reader.ReadBool("active")
+	e.salary = reader.ReadInt64("salary")
+	return reader.Error()
 }
 
 func (e *Employee) WritePortable(writer serialization.PortableWriter) error {

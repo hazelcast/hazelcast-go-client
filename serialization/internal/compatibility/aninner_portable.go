@@ -36,7 +36,7 @@ func (ip *AnInnerPortable) WritePortable(writer serialization.PortableWriter) er
 }
 
 func (ip *AnInnerPortable) ReadPortable(reader serialization.PortableReader) error {
-	ip.anInt, _ = reader.ReadInt32("i")
-	ip.aFloat, _ = reader.ReadFloat32("f")
-	return nil
+	ip.anInt = reader.ReadInt32("i")
+	ip.aFloat = reader.ReadFloat32("f")
+	return reader.Error()
 }
