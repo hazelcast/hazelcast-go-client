@@ -59,6 +59,6 @@ func (upc *UsernamePasswordCredentials) ReadPortable(reader serialization.Portab
 		return
 	}
 	upc.username = upc.BaseCredentials.principal
-	upc.password, err = reader.ReadByteArray("pwd")
-	return
+	upc.password = reader.ReadByteArray("pwd")
+	return reader.Error()
 }

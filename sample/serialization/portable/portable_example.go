@@ -37,21 +37,11 @@ type engineer struct {
 }
 
 func (e *engineer) ReadPortable(reader serialization.PortableReader) error {
-	var err error
-	e.name, err = reader.ReadUTF("name")
-	if err != nil {
-		return err
-	}
-	e.surname, err = reader.ReadUTF("surname")
-	if err != nil {
-		return err
-	}
-	e.age, err = reader.ReadInt32("age")
-	if err != nil {
-		return err
-	}
-	e.languages, err = reader.ReadUTFArray("languages")
-	return err
+	e.name = reader.ReadUTF("name")
+	e.surname = reader.ReadUTF("surname")
+	e.age = reader.ReadInt32("age")
+	e.languages = reader.ReadUTFArray("languages")
+	return reader.Error()
 }
 
 func (e *engineer) WritePortable(writer serialization.PortableWriter) error {

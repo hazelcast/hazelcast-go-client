@@ -360,65 +360,69 @@ type PortableWriter interface {
 // PortableReader provides a mean of reading portable fields from a binary in form of go primitives
 // arrays of go primitives, nested portable fields and array of portable fields.
 type PortableReader interface {
+
+	// Error returns the first error encountered by Portable Reader.
+	Error() error
+
 	// ReadByte takes fieldName name of the field and returns the byte value read and error.
-	ReadByte(fieldName string) (byte, error)
+	ReadByte(fieldName string) byte
 
 	// ReadBool takes fieldName name of the field and returns the bool value read and error.
-	ReadBool(fieldName string) (bool, error)
+	ReadBool(fieldName string) bool
 
 	// ReadUInt16 takes fieldName name of the field and returns the uint16 value read and error.
-	ReadUInt16(fieldName string) (uint16, error)
+	ReadUInt16(fieldName string) uint16
 
 	// ReadInt16 takes fieldName name of the field and returns the int16 value read and error.
-	ReadInt16(fieldName string) (int16, error)
+	ReadInt16(fieldName string) int16
 
 	// ReadInt32 takes fieldName name of the field and returns the int32 value read and error.
-	ReadInt32(fieldName string) (int32, error)
+	ReadInt32(fieldName string) int32
 
 	// ReadInt64 takes fieldName name of the field and returns the int64 value read and error.
-	ReadInt64(fieldName string) (int64, error)
+	ReadInt64(fieldName string) int64
 
 	// ReadFloat32 takes fieldName name of the field and returns the float32 value read and error.
-	ReadFloat32(fieldName string) (float32, error)
+	ReadFloat32(fieldName string) float32
 
 	// ReadFloat64 takes fieldName name of the field and returns the float64 value read and error.
-	ReadFloat64(fieldName string) (float64, error)
+	ReadFloat64(fieldName string) float64
 
 	// ReadUTF takes fieldName name of the field and returns the string value read and error.
-	ReadUTF(fieldName string) (string, error)
+	ReadUTF(fieldName string) string
 
 	// ReadPortable takes fieldName name of the field and returns the Portable value read and error.
-	ReadPortable(fieldName string) (Portable, error)
+	ReadPortable(fieldName string) Portable
 
 	// ReadByteArray takes fieldName name of the field and returns the []byte value read and error.
-	ReadByteArray(fieldName string) ([]byte, error)
+	ReadByteArray(fieldName string) []byte
 
 	// ReadBoolArray takes fieldName name of the field and returns the []bool value read and error.
-	ReadBoolArray(fieldName string) ([]bool, error)
+	ReadBoolArray(fieldName string) []bool
 
 	// ReadUInt16Array takes fieldName name of the field and returns the []uint16 value read and error.
-	ReadUInt16Array(fieldName string) ([]uint16, error)
+	ReadUInt16Array(fieldName string) []uint16
 
 	// ReadInt16Array takes fieldName name of the field and returns the []int16 value read and error.
-	ReadInt16Array(fieldName string) ([]int16, error)
+	ReadInt16Array(fieldName string) []int16
 
 	// ReadInt32Array takes fieldName name of the field and returns the []int32 value read and error.
-	ReadInt32Array(fieldName string) ([]int32, error)
+	ReadInt32Array(fieldName string) []int32
 
 	// ReadInt64Array takes fieldName name of the field and returns the []int64 value read and error.
-	ReadInt64Array(fieldName string) ([]int64, error)
+	ReadInt64Array(fieldName string) []int64
 
 	// ReadFloat32Array takes fieldName name of the field and returns the []float32 value read and error.
-	ReadFloat32Array(fieldName string) ([]float32, error)
+	ReadFloat32Array(fieldName string) []float32
 
 	// ReadFloat64Array takes fieldName name of the field and returns the []float64 value read and error.
-	ReadFloat64Array(fieldName string) ([]float64, error)
+	ReadFloat64Array(fieldName string) []float64
 
 	// ReadUTFArray takes fieldName name of the field and returns the []string value read and error.
-	ReadUTFArray(fieldName string) ([]string, error)
+	ReadUTFArray(fieldName string) []string
 
 	// ReadPortableArray takes fieldName name of the field and returns the []Portable value read and error.
-	ReadPortableArray(fieldName string) ([]Portable, error)
+	ReadPortableArray(fieldName string) []Portable
 }
 
 // ClassDefinition defines a class schema for Portable structs.

@@ -124,7 +124,7 @@ func TestObjectDataInput_ReadBoolWithPosition(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 7, &Service{}, false)
 	var expectedRet = true
 	var ret bool
-	ret, _ = i.ReadBoolWithPosition(8)
+	ret = i.ReadBoolWithPosition(8)
 	if ret != expectedRet {
 		t.Errorf("ReadBoolWithPosition() returns %v expected %v", ret, expectedRet)
 	}
@@ -152,7 +152,7 @@ func TestObjectDataInput_ReadUInt16WithPosition(t *testing.T) {
 	o.WriteUInt16(expectedRet)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 
-	ret, _ := i.ReadUInt16WithPosition(4)
+	ret := i.ReadUInt16WithPosition(4)
 
 	if ret != expectedRet {
 		t.Errorf("ReadUInt16WithPosition() returns %v expected %v", ret, expectedRet)
@@ -172,7 +172,7 @@ func TestObjectDataInput_ReadInt32(t *testing.T) {
 func TestObjectDataInput_ReadInt32WithPosition(t *testing.T) {
 	o := NewObjectDataInput([]byte{0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0}, 4, nil, false)
 	expectedRet := 2
-	ret, _ := o.ReadInt32WithPosition(8)
+	ret := o.ReadInt32WithPosition(8)
 
 	if ret != int32(expectedRet) {
 		t.Errorf("ReadInt32WithPosition() returns %v expected %v", ret, expectedRet)
@@ -201,7 +201,7 @@ func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 16, nil, false)
 	var expectedRet = 2.544
 	var ret float64
-	ret, _ = i.ReadFloat64WithPosition(8)
+	ret = i.ReadFloat64WithPosition(8)
 	if ret != expectedRet {
 		t.Errorf("ReadFloat64WithPosition() returns %v expected %v", ret, expectedRet)
 	}
@@ -533,6 +533,43 @@ func TestObjectDataInput_ReadingAfterError(t *testing.T) {
 	i.ReadInt16()
 	assert.Error(t, i.Error())
 	i.ReadInt64Array()
+	assert.Error(t, i.Error())
+
+	i.ReadBoolArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadByteWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadBoolArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadBoolWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadByteArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadUTFWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadInt32WithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadInt64WithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadFloat64WithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadFloat32WithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadFloat32ArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadUTFArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadUInt16ArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadFloat64ArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadInt32ArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadInt16ArrayWithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadInt16WithPosition(0)
+	assert.Error(t, i.Error())
+	i.ReadInt64ArrayWithPosition(0)
 	assert.Error(t, i.Error())
 
 }

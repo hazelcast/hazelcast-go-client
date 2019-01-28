@@ -29,6 +29,7 @@ type DefaultPortableReader struct {
 	classDefinition serialization.ClassDefinition
 	offset          int32
 	finalPos        int32
+	err             error
 }
 
 func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
@@ -37,7 +38,11 @@ func NewDefaultPortableReader(serializer *PortableSerializer, input serializatio
 	input.ReadInt32()
 	offset := input.Position()
 	return &DefaultPortableReader{serializer, input,
-		classdefinition, offset, finalPos}
+		classdefinition, offset, finalPos, nil}
+}
+
+func (pr *DefaultPortableReader) Error() error {
+	return pr.err
 }
 
 func TypeByID(fieldType int32) string {
@@ -93,90 +98,174 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	if field.Type() != fieldType {
 		return 0, core.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil)
 	}
-	pos, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*bufutil.Int32SizeInBytes)
-	if err != nil {
-		return 0, err
-	}
-	length, err := pr.input.(*ObjectDataInput).ReadInt16WithPosition(pos)
-	if err != nil {
-		return 0, err
-	}
-	return pos + bufutil.Int16SizeInBytes + int32(length) + 1, nil
+	pos := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*bufutil.Int32SizeInBytes)
+	length := pr.input.(*ObjectDataInput).ReadInt16WithPosition(pos)
+	return pos + bufutil.Int16SizeInBytes + int32(length) + 1, pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadByte(fieldName string) (byte, error) {
+func (pr *DefaultPortableReader) ReadByte(fieldName string) byte {
+	if pr.err != nil {
+		return 0
+	}
+	var res byte
+	res, pr.err = pr.readByte(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readByte(fieldName string) (byte, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeByte)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadByteWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadByteWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadBool(fieldName string) (bool, error) {
+func (pr *DefaultPortableReader) ReadBool(fieldName string) bool {
+	if pr.err != nil {
+		return false
+	}
+	var res bool
+	res, pr.err = pr.readBool(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readBool(fieldName string) (bool, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeBool)
 	if err != nil {
 		return false, err
 	}
-	return pr.input.(*ObjectDataInput).ReadBoolWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadBoolWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadUInt16(fieldName string) (uint16, error) {
+func (pr *DefaultPortableReader) ReadUInt16(fieldName string) uint16 {
+	if pr.err != nil {
+		return 0
+	}
+	var res uint16
+	res, pr.err = pr.readUInt16(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readUInt16(fieldName string) (uint16, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeUint16)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadUInt16WithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadUInt16WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadInt16(fieldName string) (int16, error) {
+func (pr *DefaultPortableReader) ReadInt16(fieldName string) int16 {
+	if pr.err != nil {
+		return 0
+	}
+	var res int16
+	res, pr.err = pr.readInt16(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readInt16(fieldName string) (int16, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeInt16)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadInt16WithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadInt16WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadInt32(fieldName string) (int32, error) {
+func (pr *DefaultPortableReader) ReadInt32(fieldName string) int32 {
+	if pr.err != nil {
+		return 0
+	}
+	var res int32
+	res, pr.err = pr.readInt32(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readInt32(fieldName string) (int32, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeInt32)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadInt32WithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadInt32WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadInt64(fieldName string) (int64, error) {
+func (pr *DefaultPortableReader) ReadInt64(fieldName string) int64 {
+	if pr.err != nil {
+		return 0
+	}
+	var res int64
+	res, pr.err = pr.readInt64(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readInt64(fieldName string) (int64, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeInt64)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadInt64WithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadInt64WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadFloat32(fieldName string) (float32, error) {
+func (pr *DefaultPortableReader) ReadFloat32(fieldName string) float32 {
+	if pr.err != nil {
+		return 0
+	}
+	var res float32
+	res, pr.err = pr.readFloat32(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readFloat32(fieldName string) (float32, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeFloat32)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadFloat32WithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadFloat32WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadFloat64(fieldName string) (float64, error) {
+func (pr *DefaultPortableReader) ReadFloat64(fieldName string) float64 {
+	if pr.err != nil {
+		return 0
+	}
+	var res float64
+	res, pr.err = pr.readFloat64(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readFloat64(fieldName string) (float64, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeFloat64)
 	if err != nil {
 		return 0, err
 	}
-	return pr.input.(*ObjectDataInput).ReadFloat64WithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadFloat64WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadUTF(fieldName string) (string, error) {
+func (pr *DefaultPortableReader) ReadUTF(fieldName string) string {
+	if pr.err != nil {
+		return ""
+	}
+	var res string
+	res, pr.err = pr.readUTF(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readUTF(fieldName string) (string, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeUTF)
 	if err != nil {
 		return "", err
 	}
-	return pr.input.(*ObjectDataInput).ReadUTFWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadUTFWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadPortable(fieldName string) (serialization.Portable, error) {
+func (pr *DefaultPortableReader) ReadPortable(fieldName string) serialization.Portable {
+	if pr.err != nil {
+		return nil
+	}
+	var res serialization.Portable
+	res, pr.err = pr.readPortable(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readPortable(fieldName string) (serialization.Portable, error) {
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 	pos, err := pr.positionByField(fieldName, classdef.TypePortable)
@@ -196,79 +285,168 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) (serialization.P
 	return pr.serializer.ReadObject(pr.input, factoryID, classID)
 }
 
-func (pr *DefaultPortableReader) ReadByteArray(fieldName string) ([]byte, error) {
+func (pr *DefaultPortableReader) ReadByteArray(fieldName string) []byte {
+	if pr.err != nil {
+		return nil
+	}
+	var res []byte
+	res, pr.err = pr.readByteArray(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readByteArray(fieldName string) ([]byte, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeByteArray)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadByteArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadByteArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadBoolArray(fieldName string) ([]bool, error) {
+func (pr *DefaultPortableReader) ReadBoolArray(fieldName string) []bool {
+	if pr.err != nil {
+		return nil
+	}
+	var res []bool
+	res, pr.err = pr.readBoolArray(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readBoolArray(fieldName string) ([]bool, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeBoolArray)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadBoolArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadBoolArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadUInt16Array(fieldName string) ([]uint16, error) {
+func (pr *DefaultPortableReader) ReadUInt16Array(fieldName string) []uint16 {
+	if pr.err != nil {
+		return nil
+	}
+	var res []uint16
+	res, pr.err = pr.readUInt16Array(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readUInt16Array(fieldName string) ([]uint16, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeUint16Array)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadUInt16ArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadUInt16ArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadInt16Array(fieldName string) ([]int16, error) {
+func (pr *DefaultPortableReader) ReadInt16Array(fieldName string) []int16 {
+	if pr.err != nil {
+		return nil
+	}
+	var res []int16
+	res, pr.err = pr.readInt16Array(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readInt16Array(fieldName string) ([]int16, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeInt16Array)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadInt16ArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadInt16ArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadInt32Array(fieldName string) ([]int32, error) {
+func (pr *DefaultPortableReader) ReadInt32Array(fieldName string) []int32 {
+	if pr.err != nil {
+		return nil
+	}
+	var res []int32
+	res, pr.err = pr.readInt32Array(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readInt32Array(fieldName string) ([]int32, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeInt32Array)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadInt32ArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadInt32ArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadInt64Array(fieldName string) ([]int64, error) {
+func (pr *DefaultPortableReader) ReadInt64Array(fieldName string) []int64 {
+	if pr.err != nil {
+		return nil
+	}
+	var res []int64
+	res, pr.err = pr.readInt64Array(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readInt64Array(fieldName string) ([]int64, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeInt64Array)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadInt64ArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadInt64ArrayWithPosition(pos), pr.input.Error()
+}
+func (pr *DefaultPortableReader) ReadFloat32Array(fieldName string) []float32 {
+	if pr.err != nil {
+		return nil
+	}
+	var res []float32
+	res, pr.err = pr.readFloat32Array(fieldName)
+	return res
 }
 
-func (pr *DefaultPortableReader) ReadFloat32Array(fieldName string) ([]float32, error) {
+func (pr *DefaultPortableReader) readFloat32Array(fieldName string) ([]float32, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeFloat32Array)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadFloat32ArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadFloat32ArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadFloat64Array(fieldName string) ([]float64, error) {
+func (pr *DefaultPortableReader) ReadFloat64Array(fieldName string) []float64 {
+	if pr.err != nil {
+		return nil
+	}
+	var res []float64
+	res, pr.err = pr.readFloat64Array(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readFloat64Array(fieldName string) ([]float64, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeFloat64Array)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadFloat64ArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadFloat64ArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) ([]string, error) {
+func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) []string {
+	if pr.err != nil {
+		return nil
+	}
+	var res []string
+	res, pr.err = pr.readUTFArray(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readUTFArray(fieldName string) ([]string, error) {
 	pos, err := pr.positionByField(fieldName, classdef.TypeUTFArray)
 	if err != nil {
 		return nil, err
 	}
-	return pr.input.(*ObjectDataInput).ReadUTFArrayWithPosition(pos)
+	return pr.input.(*ObjectDataInput).ReadUTFArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]serialization.Portable, error) {
+func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) []serialization.Portable {
+	if pr.err != nil {
+		return nil
+	}
+	var res []serialization.Portable
+	res, pr.err = pr.readPortableArray(fieldName)
+	return res
+}
+
+func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]serialization.Portable, error) {
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 
@@ -287,9 +465,9 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) ([]serializ
 	if length > 0 {
 		offset := pr.input.Position()
 		for i := int32(0); i < length; i++ {
-			start, err := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
-			if err != nil {
-				return nil, err
+			start := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
+			if pr.input.Error() != nil {
+				return nil, pr.input.Error()
 			}
 			pr.input.SetPosition(start)
 			portables[i], err = pr.serializer.ReadObject(pr.input, factoryID, classID)

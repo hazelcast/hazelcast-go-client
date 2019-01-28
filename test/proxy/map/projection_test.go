@@ -90,9 +90,9 @@ func (h *student2) WritePortable(writer serialization.PortableWriter) (err error
 }
 
 func (h *student2) ReadPortable(reader serialization.PortableReader) (err error) {
-	h.age, _ = reader.ReadInt64("age")
-	h.height, err = reader.ReadFloat32("height")
-	return
+	h.age = reader.ReadInt64("age")
+	h.height = reader.ReadFloat32("height")
+	return reader.Error()
 }
 
 type portableFactory struct {

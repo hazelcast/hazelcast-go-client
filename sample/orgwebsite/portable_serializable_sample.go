@@ -49,20 +49,11 @@ func (c *Customer) WritePortable(writer serialization.PortableWriter) (err error
 }
 
 func (c *Customer) ReadPortable(reader serialization.PortableReader) (err error) {
-	c.id, err = reader.ReadInt32("id")
-	if err != nil {
-		return
-	}
-	c.name, err = reader.ReadUTF("name")
-	if err != nil {
-		return
-	}
-	t, err := reader.ReadInt64("lastOrder")
-	if err != nil {
-		return
-	}
+	c.id = reader.ReadInt32("id")
+	c.name = reader.ReadUTF("name")
+	t := reader.ReadInt64("lastOrder")
 	c.lastOrder = time.Unix(0, t*int64(time.Millisecond))
-	return
+	return reader.Error()
 }
 
 type SamplePortableFactory struct {

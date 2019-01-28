@@ -58,17 +58,10 @@ func (u *User) WritePortable(writer serialization.PortableWriter) error {
 }
 
 func (u *User) ReadPortable(reader serialization.PortableReader) error {
-	var err error
-	u.username, err = reader.ReadUTF("username")
-	if err != nil {
-		return err
-	}
-	u.age, err = reader.ReadInt32("age")
-	if err != nil {
-		return err
-	}
-	u.active, err = reader.ReadBool("active")
-	return err
+	u.username = reader.ReadUTF("username")
+	u.age = reader.ReadInt32("age")
+	u.active = reader.ReadBool("active")
+	return reader.Error()
 }
 
 type ThePortableFactory struct {
