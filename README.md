@@ -5,12 +5,8 @@
   * [1.1. Requirements](#11-requirements)
   * [1.2. Working with Hazelcast IMDG Clusters](#12-working-with-hazelcast-imdg-clusters)
      * [1.2.1. Setting Up a Hazelcast IMDG Cluster](#121-setting-up-a-hazelcast-imdg-cluster)
-       * [1.2.1.1. Using hazelcast-member Tool](#1211-using-hazelcast-member-tool)
-          * [Installing on Mac OS X](#installing-on-mac-os-x)
-          * [Installing on Ubuntu and Debian](#installing-on-ubuntu-and-debian)
-          * [Installing on Red Hat and CentOS](#installing-on-red-hat-and-centos)
-       * [1.2.1.2. Running Standalone JARs](#1212-running-standalone-jars)
-       * [1.2.1.3. Adding User Library to CLASSPATH](#1213-adding-user-library-to-classpath)
+       * [1.2.1.1. Running Standalone JARs](#1211-running-standalone-jars)
+       * [1.2.1.2. Adding User Library to CLASSPATH](#1212-adding-user-library-to-classpath)
   * [1.3. Downloading and Installing](#13-downloading-and-installing)
   * [1.4. Basic Configuration](#14-basic-configuration)
     * [1.4.1. Configuring Hazelcast IMDG](#141-configuring-hazelcast-imdg)
@@ -133,91 +129,13 @@ In order to use Hazelcast Go client, we first need to setup a Hazelcast IMDG clu
 
 There are following options to start a Hazelcast IMDG cluster easily:
 
-* The easiest way is to use [hazelcast-member tool](https://github.com/hazelcast/hazelcast-member-tool) if you have brew installed in your computer.
 * You can run standalone members by downloading and running JAR files from the website.
 * You can embed members to your Java projects. 
 
 We are going to download JARs from the website and run a standalone member for this guide.
 
 
-#### 1.2.1.1. Using hazelcast-member Tool
-
-`hazelcast-member` is a tool to download and run Hazelcast IMDG members easily. You can find the installation instructions for various platforms in the following sections.
-
- ##### Installing on Mac OS X
-
- If you have brew installed, run the following commands to install this tool:
- 
-```
-brew tap hazelcast/homebrew-hazelcast
-brew install hazelcast-member
-```
-
-##### Installing on Ubuntu and Debian
-
- To resolve the `.deb` artifacts from Bintray, follow the below instructions.
-
- First, you need to import the Bintray's GPG key using the following command:
-
- ```
- sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
- ```
-
- Then, run the following commands to add the `.deb` artifact to your system configuration file and update the lists of packages:
-
- ```
- echo "deb https://dl.bintray.com/hazelcast/deb stable main" | sudo tee -a /etc/apt/sources.list
- sudo apt-get update
- ``` 
-
- Finally, run the following command to install the `hazelcast-member` tool:
-
- ```
- sudo apt-get install hazelcast-member
- ```
-
- ##### Installing on Red Hat and CentOS
-
- To resolve the `RPM` artifacts from Bintray, follow the below instructions.
-
- First, run the following command to get a generated `.repo` file:
-
- ```
- wget https://bintray.com/hazelcast/rpm/rpm -O bintray-hazelcast-rpm.repo
- ```
-
- Then, install the `.repo` file using the following command:
-
-
- ```
- sudo mv bintray-hazelcast-rpm.repo /etc/yum.repos.d/
- ```
-
- Finally, run the following command to install the `hazelcast-member` tool:
-
- ```
- sudo yum install hazelcast-member
- ```
-
- ---
-
-After successfully installing the `hazelcast-member` tool, you can start a member by running the following command:
-
-```
-hazelcast-member start
-```
-
-To stop a member, run the following command:
-
-```
-hazelcast-member stop
-```
-
-You can find more information about the `hazelcast-member` tool at its GitHub [repo](https://github.com/hazelcast/hazelcast-member-tool).
-
-See the [Hazelcast IMDG Reference Manual](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#getting-started) for more information on setting up the clusters.
-
-#### 1.2.1.2. Running Standalone JARs
+#### 1.2.1.1. Running Standalone JARs
 
 Follow the instructions below to create a Hazelcast IMDG cluster:
 
@@ -239,7 +157,7 @@ Sep 06, 2018 10:50:23 AM com.hazelcast.core.LifecycleService
 INFO: [192.168.0.3]:5701 [dev] [3.10.4] [192.168.0.3]:5701 is STARTED
 ```
 
-#### 1.2.1.3. Adding User Library to CLASSPATH
+#### 1.2.1.2. Adding User Library to CLASSPATH
 
 When you want to use features such as querying and language interoperability, you might need to add your own Java classes
 to the Hazelcast member in order to use them from your Go client. This can be done by adding your own compiled code to the 
@@ -264,6 +182,8 @@ The following is an example configuration when you are adding an `IdentifiedData
 </hazelcast>
 ```
 If you want to add a `Portable` class, you should use `<portable-factories>` instead of `<data-serializable-factories>` in the above configuration.
+
+See the [Hazelcast IMDG Reference Manual](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#getting-started) for more information on setting up the clusters.
 
 ## 1.3. Downloading and Installing
 
