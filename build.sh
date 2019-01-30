@@ -47,17 +47,15 @@ echo "mode: atomic" > coverage.out
 
 for pkg in $(go list -tags enterprise $CLIENT_IMPORT_PATH/...);
 do
-    if [[ $pkg != *"vendor"* ]]; then
-      echo "testing... $pkg"
-      if [ -n "${ENTERPRISE_TESTS_ENABLED}" ]; then
-        go test -race -tags enterprise -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
-      else
-        go test -race -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
-      fi
-      if [ -f tmp.out ]; then
-         cat tmp.out | grep -v "mode: atomic" >> coverage.out | echo
-      fi
-    fi
+  echo "testing... $pkg"
+  if [ -n "${ENTERPRISE_TESTS_ENABLED}" ]; then
+    go test -race -tags enterprise -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
+  else
+    go test -race -covermode=atomic  -v -coverprofile=tmp.out -coverpkg ${PACKAGE_LIST} $pkg | tee -a test.out
+  fi
+  if [ -f tmp.out ]; then
+     cat tmp.out | grep -v "mode: atomic" >> coverage.out | echo
+  fi
 done
 
 rm -f ./tmp.out
