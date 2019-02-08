@@ -11,7 +11,6 @@ export CLIENT_IMPORT_PATH="github.com/hazelcast/hazelcast-go-client"
 ls
 ls src/
 ls src/github.com/
-echo "PWD"
 pwd
 export PACKAGE_LIST=$(go list -tags enterprise $CLIENT_IMPORT_PATH/... | grep -vE ".*/test|.*/compatibility|.*/rc|.*/sample" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
 #run linter
