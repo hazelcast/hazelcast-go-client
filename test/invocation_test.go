@@ -144,6 +144,7 @@ func TestInvocationNotSent(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	mp, _ := client.GetMap("testMap")
 	wg.Add(50)
+	defer wg.Wait()
 	// make put ops concurrently so that some of them will not be sent when the server gets shut down.
 	go func() {
 		for i := 0; i < 50; i++ {
@@ -151,7 +152,7 @@ func TestInvocationNotSent(t *testing.T) {
 				_, err := mp.Put("testKey", "testValue")
 				wg.Done()
 				if err != nil {
-					t.Fatal("put should have been retried, the error was :", err)
+					t.Error("put should have been retried, the error was :", err)
 				}
 			}()
 		}
@@ -162,7 +163,6 @@ func TestInvocationNotSent(t *testing.T) {
 	assert.Equalf(t, timeout, false, "invocationNotSent failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-
 }
 
 func TestInvocationShouldNotHang_whenClientShutsDown(t *testing.T) {
