@@ -329,6 +329,7 @@ func (c *HazelcastClient) getConnectionTimeout() time.Duration {
 }
 
 func (c *HazelcastClient) Shutdown() {
+
 	if c.lifecycleService.isLive.Load().(bool) {
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
 		c.ConnectionManager.shutdown()
