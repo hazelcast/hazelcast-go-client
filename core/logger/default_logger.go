@@ -50,7 +50,7 @@ func New() *DefaultLogger {
 func (l *DefaultLogger) Debug(args ...interface{}) {
 	if l.canLogDebug() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + debugPrefix + ": " + fmt.Sprintln(args...)
+		s := callerName + "\n" + debugPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -59,7 +59,7 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 func (l *DefaultLogger) Trace(args ...interface{}) {
 	if l.canLogTrace() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + tracePrefix + ": " + fmt.Sprintln(args...)
+		s := callerName + "\n" + tracePrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -68,7 +68,7 @@ func (l *DefaultLogger) Trace(args ...interface{}) {
 func (l *DefaultLogger) Info(args ...interface{}) {
 	if l.canLogInfo() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + infoPrefix + ": " + fmt.Sprintln(args...)
+		s := callerName + "\n" + infoPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -77,7 +77,7 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 func (l *DefaultLogger) Warn(args ...interface{}) {
 	if l.canLogWarn() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + warnPrefix + ": " + fmt.Sprintln(args...)
+		s := callerName + "\n" + warnPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
 	}
 }
@@ -86,7 +86,7 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 func (l *DefaultLogger) Error(args ...interface{}) {
 	if l.canLogError() {
 		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + errorPrefix + ": " + fmt.Sprintln(args...)
+		s := callerName + "\n" + errorPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
 	}
 }
