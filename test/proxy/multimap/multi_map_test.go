@@ -24,7 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	multiMap, _ = client.GetMultiMap("myMultiMap")
@@ -325,7 +325,7 @@ func TestMultiMapProxy_AddEntryListenerAdded(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	multiMap.Put(testKey, testValue)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "multiMap AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Key(), testKey, "multiMap AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Value(), testValue, "multiMap AddEntryListener entryAdded failed")
@@ -351,7 +351,7 @@ func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	multiMap.Put("key1", "value1")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListenerToKey failed")
 	assert.Equalf(t, entryListener.event.Key(), "key1", "multiMap AddEntryListenerToKey entryAdded failed")
 	assert.Equalf(t, entryListener.event.Value(), "value1", "multiMap AddEntryListenerToKey entryAdded failed")
@@ -360,7 +360,7 @@ func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {
 	assert.Equalf(t, entryListener.event.EventType(), int32(1), "multiMap AddEntryListenerToKey entryAdded failed")
 	wg.Add(1)
 	multiMap.Put("key2", "value1")
-	timeout = test.WaitTimeout(wg, test.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "multiMap AddEntryListenerToKey failed")
 }
 
@@ -368,7 +368,7 @@ func TestMultiMapProxy_LockWithLeaseTime(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
 	multiMap.LockWithLeaseTime(testKey, 1*time.Millisecond)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		locked, err := multiMap.IsLocked(testKey)
 		return err == nil && !locked
 	})
@@ -385,7 +385,7 @@ func TestMultiMapProxy_Lock(t *testing.T) {
 	defer multiMap.Clear()
 	multiMap.Put(testKey, testValue)
 	multiMap.LockWithLeaseTime(testKey, 1*time.Millisecond)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		locked, err := multiMap.IsLocked(testKey)
 		return err == nil && !locked
 	})
@@ -427,7 +427,7 @@ func TestMultiMapProxy_TryLock(t *testing.T) {
 	ok, err := multiMap.TryLockWithTimeoutAndLease(testKey, 1*time.Second, 2*time.Second)
 	require.NoError(t, err)
 	assert.Equalf(t, ok, true, "multiMap TryLock() failed.")
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		locked, err := multiMap.IsLocked(testKey)
 		return err == nil && !locked
 	})

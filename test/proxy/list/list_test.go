@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	list, _ = client.GetList("myList")
@@ -348,7 +348,7 @@ func TestListProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	defer list.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	list.Add(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "list AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.Item(), testElement, "list AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.EventType(), int32(1), "list AddItemListener() failed when item is added")
@@ -364,7 +364,7 @@ func TestListProxy_AddItemItemAddedListener(t *testing.T) {
 	defer list.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	list.Add(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "list AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.Item(), nil, "list AddItemListener() failed when item is added")
 }
@@ -379,7 +379,7 @@ func TestListProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	defer list.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	list.Remove(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "list AddItemListenerItemRemoved() failed when item is removed")
 	assert.Equalf(t, listener.event.Item(), testElement, "list AddItemListener() failed when item is removed")
 	assert.Equalf(t, listener.event.EventType(), int32(2), "list AddItemListener() failed when item is removed")
@@ -396,7 +396,7 @@ func TestListProxy_AddItemListenerItemRemoved(t *testing.T) {
 	defer list.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	list.Remove(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "list AddItemListenerItemRemoved() failed when item is removed")
 	assert.Equalf(t, listener.event.Item(), nil, "list AddItemListener() failed when item is removed")
 }
@@ -410,7 +410,7 @@ func TestListProxy_AddItemItemRemovedListener(t *testing.T) {
 	defer list.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	list.Add(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "list AddItemListener() failed")
 	assert.Equalf(t, listener.event.Item(), nil, "list AddItemListener() failed")
 }

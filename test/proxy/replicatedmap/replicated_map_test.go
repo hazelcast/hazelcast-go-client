@@ -28,7 +28,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	rmp, _ = client.GetReplicatedMap("myReplicatedMap")
@@ -124,7 +124,7 @@ func TestMapProxy_PutWithTTLWhenExpire(t *testing.T) {
 	testValue := "testingValue"
 	rmp.Put(testKey, testValue)
 	rmp.PutWithTTL(testKey, "nextValue", 1*time.Millisecond)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		res, err := rmp.Get(testKey)
 		return err == nil && res == nil
 	})
@@ -373,7 +373,7 @@ func TestReplicatedMapProxy_AddEntryListener(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key123", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Key(), "key123", "replicatedMap AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Value(), "value", "replicatedMap AddEntryListener entryAdded failed")
@@ -398,7 +398,7 @@ func TestReplicatedMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key123", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListenerWithPredicate failed")
 	assert.Equalf(t, entryListener.event.Key(), "key123", "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
 	assert.Equalf(t, entryListener.event.Value(), "value", "replicatedMap AddEntryListenerWithPredicate entryAdded failed")
@@ -421,7 +421,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key1", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListenerToKey failed")
 	assert.Equalf(t, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKey entryAdded failed")
 	assert.Equalf(t, entryListener.event.Value(), "value", "replicatedMap AddEntryListenerToKey entryAdded failed")
@@ -430,7 +430,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 	assert.Equalf(t, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerToKey entryAdded failed")
 	wg.Add(1)
 	rmp.Put("key2", "value1")
-	timeout = test.WaitTimeout(wg, test.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "replicatedMap AddEntryListenerToKey failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
@@ -450,7 +450,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	rmp.Put("key1", "value1")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
 	assert.Equalf(t, entryListener.event.Key(), "key1", "replicatedMap AddEntryListenerToKeyWithPredicate entryAdded failed")
 	assert.Equalf(t, entryListener.event.Value(), "value1",
@@ -463,7 +463,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 
 	wg.Add(1)
 	rmp.Put("key1", "value2")
-	timeout = test.WaitTimeout(wg, test.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()

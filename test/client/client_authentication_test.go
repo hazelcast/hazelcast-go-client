@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"testing"
@@ -21,6 +21,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/security"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +29,7 @@ import (
 var samplePortableFactoryID int32 = 666
 
 func TestCustomAuthentication(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -51,7 +52,7 @@ func TestCustomAuthentication(t *testing.T) {
 }
 
 func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -71,7 +72,7 @@ func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
 }
 
 func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 

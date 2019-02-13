@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	set, _ = client.GetSet("mySet")
@@ -264,7 +264,7 @@ func TestSetProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	defer set.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	set.Add(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "set AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.Item(), testElement, "set AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.EventType(), int32(1), "set AddItemListener() failed when item is added")
@@ -280,7 +280,7 @@ func TestSetProxy_AddItemItemAddedListener(t *testing.T) {
 	defer set.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	set.Add(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "set AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.Item(), nil, "set AddItemListener() failed when item is added")
 }
@@ -295,7 +295,7 @@ func TestSetProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	defer set.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	set.Remove(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
 	assert.Equalf(t, listener.event.Item(), testElement, "set AddItemListener() failed when item is removed")
 	assert.Equalf(t, listener.event.EventType(), int32(2), "set AddItemListener() failed when item is removed")
@@ -312,7 +312,7 @@ func TestSetProxy_AddItemListenerItemRemoved(t *testing.T) {
 	defer set.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	set.Remove(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "set AddItemListenerItemRemoved() failed when item is removed")
 	assert.Equalf(t, listener.event.Item(), nil, "set AddItemListener() failed when item is removed")
 }
@@ -326,7 +326,7 @@ func TestSetProxy_AddItemItemRemovedListener(t *testing.T) {
 	defer set.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	set.Add(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "set AddItemListener() failed")
 	assert.Equalf(t, listener.event.Item(), nil, "set AddItemListener() failed")
 }

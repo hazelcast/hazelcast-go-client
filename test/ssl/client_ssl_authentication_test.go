@@ -24,7 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 }
 
 func createMemberWithXML(path string) (clusterID string, err error) {
-	config, err := test.Read(path)
+	config, err := testutil.Read(path)
 	if err != nil {
 		return "", err
 	}

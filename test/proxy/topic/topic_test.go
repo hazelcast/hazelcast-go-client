@@ -23,7 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	topic, _ = client.GetTopic("myTopic")
@@ -54,7 +54,7 @@ func TestTopicProxy_AddListener(t *testing.T) {
 	defer topic.RemoveMessageListener(registrationID)
 	require.NoError(t, err)
 	topic.Publish("item-value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "topic AddMembershipListener() failed")
 	assert.Equalf(t, listener.msg, "item-value", "topic AddMembershipListener() failed")
 	if !listener.publishTime.After(time.Time{}) {
@@ -72,7 +72,7 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equalf(t, removed, true, "topic RemoveMembershipListener() failed")
 	topic.Publish("item-value")
-	timeout := test.WaitTimeout(wg, test.Timeout/10)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout/10)
 	assert.Equalf(t, true, timeout, "topic RemoveMembershipListener() failed")
 }
 

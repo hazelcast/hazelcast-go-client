@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetGroupConfig(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	cfg := hazelcast.NewConfig()
 	groupCfg := config.NewGroupConfig()

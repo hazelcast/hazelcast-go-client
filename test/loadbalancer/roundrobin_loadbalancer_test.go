@@ -19,13 +19,13 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRoundRobinLoadBalancer(t *testing.T) {
 
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
 	remoteController.StartMember(cluster.ID)
@@ -53,7 +53,7 @@ func TestRoundRobinLoadBalancer(t *testing.T) {
 
 func TestRoundRobinLoadBalancerOrder(t *testing.T) {
 
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
 	remoteController.StartMember(cluster.ID)

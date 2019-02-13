@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"testing"
@@ -28,12 +28,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestClientGetMapWhenNoMemberUp(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -43,7 +44,7 @@ func TestClientGetMapWhenNoMemberUp(t *testing.T) {
 }
 
 func TestClientShutdownAndReopen(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
@@ -59,7 +60,7 @@ func TestClientShutdownAndReopen(t *testing.T) {
 }
 
 func TestClientRoutineLeakage(t *testing.T) {
-	cluster, err := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, err := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,14 +74,14 @@ func TestClientRoutineLeakage(t *testing.T) {
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
 	client.Shutdown()
-	AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumAfter == routineNumBefore
 	})
 }
 
 func TestConnectionTimeout(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	cfg := hazelcast.NewConfig()
@@ -101,7 +102,7 @@ func TestNegativeConnectionTimeoutShouldPanic(t *testing.T) {
 }
 
 func TestClientUniqueNames(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 
 	defer remoteController.ShutdownCluster(cluster.ID)
@@ -131,7 +132,7 @@ func TestClientUniqueNames(t *testing.T) {
 }
 
 func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	for i := 0; i < 2; i++ {
 		remoteController.StartMember(cluster.ID)
 	}
@@ -160,7 +161,7 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 }
 
 func TestClientNameSet(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
@@ -171,7 +172,7 @@ func TestClientNameSet(t *testing.T) {
 }
 
 func TestClientNameDefault(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
@@ -180,7 +181,7 @@ func TestClientNameDefault(t *testing.T) {
 }
 
 func TestMultipleClientNameDefault(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	names := make(map[string]struct{})
@@ -193,7 +194,7 @@ func TestMultipleClientNameDefault(t *testing.T) {
 }
 
 func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	mu := sync.Mutex{}
@@ -207,7 +208,7 @@ func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
 			mu.Unlock()
 		}()
 	}
-	AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		mu.Lock()
 		defer mu.Unlock()
 		return len(names) == 10
@@ -215,7 +216,7 @@ func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
 }
 
 func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, err := hazelcast.NewClient()
@@ -231,7 +232,7 @@ func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
 }
 
 func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -270,7 +271,7 @@ func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
 }
 
 func TestHazelcastError_ServerError(t *testing.T) {
-	crdtReplicationDelayedConfig, _ := Read("./proxy/pncounter/crdt_replication_delayed_config.xml")
+	crdtReplicationDelayedConfig, _ := testutil.Read("./proxy/pncounter/crdt_replication_delayed_config.xml")
 	cluster, err := remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	if err != nil {
 		t.Fatal(err)

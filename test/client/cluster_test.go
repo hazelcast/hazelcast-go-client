@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"log"
@@ -27,6 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/rc"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,13 +63,13 @@ func TestMain(m *testing.M) {
 
 func TestInitialMembershipListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
 	client, _ := hazelcast.NewClientWithConfig(config)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster initialMembershipListener failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -76,21 +77,21 @@ func TestInitialMembershipListener(t *testing.T) {
 
 func TestMemberAddedandRemoved(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
 	client, _ := hazelcast.NewClientWithConfig(config)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster initialMembershipListener failed")
 	wg.Add(1)
 	member, _ := remoteController.StartMember(cluster.ID)
-	timeout = WaitTimeout(wg, Timeout)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster memberAdded failed")
 	wg.Add(1)
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
-	timeout = WaitTimeout(wg, Timeout)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster memberRemoved failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -98,23 +99,23 @@ func TestMemberAddedandRemoved(t *testing.T) {
 
 func TestAddMembershipListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	wg.Add(1)
 	registrationID := client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
 	member, _ := remoteController.StartMember(cluster.ID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster initialMembershipListener failed")
 	client.Cluster().RemoveMembershipListener(registrationID)
 	wg.Add(1)
 	member2, _ := remoteController.StartMember(cluster.ID)
-	timeout = WaitTimeout(wg, Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "Cluster RemoveMembershipListener failed")
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
 	registrationID = client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
 	remoteController.ShutdownMember(cluster.ID, member2.UUID)
-	timeout = WaitTimeout(wg, Timeout)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster memberRemoved failed")
 	client.Cluster().RemoveMembershipListener(registrationID)
 	client.Shutdown()
@@ -123,7 +124,7 @@ func TestAddMembershipListener(t *testing.T) {
 
 func TestAddMembershipListenerMemberAttributeChanged(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	listener := &membershipListener{wg: wg}
@@ -135,7 +136,7 @@ func TestAddMembershipListenerMemberAttributeChanged(t *testing.T) {
 	res, err := remoteController.ExecuteOnController(cluster.ID, script, rc.Lang_JAVASCRIPT)
 	assert.NoError(t, err)
 	assert.True(t, res.Success)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.False(t, timeout)
 	event := listener.event.Load().(core.MemberAttributeEvent)
 	assert.Equal(t, event.Key(), "test")
@@ -148,14 +149,14 @@ func TestAddMembershipListenerMemberAttributeChanged(t *testing.T) {
 
 func TestAddMembershipListeners(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	wg.Add(2)
 	registrationID1 := client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
 	registrationID2 := client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
 	remoteController.StartMember(cluster.ID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster initialMembershipListener failed")
 	client.Cluster().RemoveMembershipListener(registrationID1)
 	client.Cluster().RemoveMembershipListener(registrationID2)
@@ -164,7 +165,7 @@ func TestAddMembershipListeners(t *testing.T) {
 }
 
 func TestGetMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	member3, _ := remoteController.StartMember(cluster.ID)
@@ -184,7 +185,7 @@ func TestGetMembers(t *testing.T) {
 }
 
 func TestGetMember(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	member2, _ := remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
@@ -198,7 +199,7 @@ func TestGetMember(t *testing.T) {
 }
 
 func TestGetInvalidMember(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	address := proto.NewAddressWithParameters(member1.GetHost(), 0)
@@ -210,7 +211,7 @@ func TestGetInvalidMember(t *testing.T) {
 }
 
 func TestAuthenticationWithWrongCredentials(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.GroupConfig().SetName("wrongName")
@@ -222,7 +223,7 @@ func TestAuthenticationWithWrongCredentials(t *testing.T) {
 }
 
 func TestClientWithoutMember(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	client, err := hazelcast.NewClient()
 	if _, ok := err.(*core.HazelcastIllegalStateError); !ok {
 		t.Fatal("client should have returned a hazelcastError")
@@ -233,7 +234,7 @@ func TestClientWithoutMember(t *testing.T) {
 
 func TestRestartMember(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(10)
@@ -242,12 +243,12 @@ func TestRestartMember(t *testing.T) {
 	wg.Add(1)
 	registrationID := client.LifecycleService().AddLifecycleListener(&lifecycleListener)
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "clusterService reconnect has failed")
 	assert.Equalf(t, lifecycleListener.collector[0], core.LifecycleStateDisconnected, "clusterService reconnect has failed")
 	wg.Add(1)
 	remoteController.StartMember(cluster.ID)
-	timeout = WaitTimeout(wg, Timeout)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "clusterService reconnect has failed")
 	assert.Equalf(t, lifecycleListener.collector[1], core.LifecycleStateConnected, "clusterService reconnect has failed")
 	client.LifecycleService().RemoveLifecycleListener(registrationID)
@@ -257,7 +258,7 @@ func TestRestartMember(t *testing.T) {
 
 func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	oldMember, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
@@ -267,7 +268,7 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	newMember, _ := remoteController.StartMember(cluster.ID)
 	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.False(t, timeout)
 	memberList := client.Cluster().GetMembers()
 	assert.Equalf(t, len(memberList), 1, "client did not use the last member list to reconnect")
@@ -277,7 +278,7 @@ func TestReconnectToNewNodeViaLastMemberList(t *testing.T) {
 }
 
 func TestClusterScaleDown(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	var wg = new(sync.WaitGroup)
@@ -288,7 +289,7 @@ func TestClusterScaleDown(t *testing.T) {
 	assert.Len(t, client.Cluster().GetMembers(), 2)
 
 	remoteController.ShutdownMember(cluster.ID, member1.UUID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.False(t, timeout)
 	assert.Len(t, client.Cluster().GetMembers(), 1)
 	client.Shutdown()
@@ -297,7 +298,7 @@ func TestClusterScaleDown(t *testing.T) {
 }
 
 func TestConnectToClusterWithoutPort(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().AddAddress("127.0.0.1")
@@ -310,7 +311,7 @@ func TestConnectToClusterWithoutPort(t *testing.T) {
 }
 
 func TestConnectToClusterWithSetAddress(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetAddresses([]string{"127.0.0.1"})
@@ -323,7 +324,7 @@ func TestConnectToClusterWithSetAddress(t *testing.T) {
 }
 
 func TestAddressesWhenCloudConfigEnabled(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 

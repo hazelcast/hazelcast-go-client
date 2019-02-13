@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, err = remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, err = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.SetProperty(property.LoggingLevel.Name(), logger.OffLevel)
@@ -205,7 +205,7 @@ func TestPNCounter_ManyAdd(t *testing.T) {
 func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-	liteMemberConfig, _ := test.Read("lite_member_config.xml")
+	liteMemberConfig, _ := testutil.Read("lite_member_config.xml")
 	cluster, err = remoteController.CreateCluster("", liteMemberConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
@@ -220,7 +220,7 @@ func TestPNCounter_HazelcastNoDataMemberInClusterError(t *testing.T) {
 func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-	crdtReplicationDelayedConfig, _ := test.Read("crdt_replication_delayed_config.xml")
+	crdtReplicationDelayedConfig, _ := testutil.Read("crdt_replication_delayed_config.xml")
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
@@ -242,7 +242,7 @@ func TestPNCounter_HazelcastConsistencyLostError(t *testing.T) {
 func TestPNCounter_Reset(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
-	crdtReplicationDelayedConfig, _ := test.Read("crdt_replication_delayed_config.xml")
+	crdtReplicationDelayedConfig, _ := testutil.Read("crdt_replication_delayed_config.xml")
 	cluster, err = remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
