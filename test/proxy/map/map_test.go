@@ -586,9 +586,11 @@ func TestMapProxy_ReplaceIfSameWhenDifferent(t *testing.T) {
 }
 
 func TestMapProxy_Set(t *testing.T) {
+
 	err := mp.Set("testingKey1", "testingValue1")
 	if err != nil {
 		t.Error(err)
+
 	}
 	newValue, err := mp.Get("testingKey1")
 	require.NoError(t, err)
@@ -597,6 +599,7 @@ func TestMapProxy_Set(t *testing.T) {
 }
 
 func TestMapProxy_SetWithNilKey(t *testing.T) {
+
 	err := mp.Set(nil, "test")
 	require.Errorf(t, err, "Set did not return an error for nil key")
 	mp.Clear()

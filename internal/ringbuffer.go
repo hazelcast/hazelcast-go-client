@@ -65,6 +65,7 @@ func (rp *ringbufferProxy) HeadSequence() (headSequence int64, err error) {
 }
 
 func (rp *ringbufferProxy) RemainingCapacity() (remainingCapacity int64, err error) {
+
 	request := proto.RingbufferRemainingCapacityEncodeRequest(rp.name)
 	responseMessage, err := rp.invoke(request)
 	return rp.decodeToInt64AndError(responseMessage, err, proto.RingbufferRemainingCapacityDecodeResponse)
