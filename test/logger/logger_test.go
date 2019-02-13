@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestLoggerConfigurationWithEnvironmentVariable(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	os.Setenv(property.LoggingLevel.Name(), logger.ErrorLevel)
@@ -59,7 +59,7 @@ func TestLoggerConfigurationWithEnvironmentVariable(t *testing.T) {
 }
 
 func TestLoggerLevelConfigurationWithConfig(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	l := logger.New()
@@ -75,7 +75,7 @@ func TestLoggerLevelConfigurationWithConfig(t *testing.T) {
 }
 
 func TestDefaultLogger(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	l := logger.New()
@@ -90,7 +90,7 @@ func TestDefaultLogger(t *testing.T) {
 }
 
 func TestDefaultLoggerContent(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	l := logger.New()
@@ -113,7 +113,7 @@ func TestDefaultLoggerContent(t *testing.T) {
 }
 
 func TestDefaultLoggerFormat(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	l := logger.New()

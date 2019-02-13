@@ -25,7 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -103,7 +103,7 @@ func TestFlakeIDGeneratorProxy_ConfigPanicsWithInvalidPrefetchValidityMillis2(t 
 }
 
 func TestFlakeIDGeneratorProxy_ConfigTest(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	var myBatchSize int32 = shortTermBatchSize
@@ -135,7 +135,7 @@ func TestFlakeIDGeneratorProxy_ConfigTest(t *testing.T) {
 }
 
 func TestFlakeIDGeneratorProxy_ConcurrentlyGeneratedIds(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	wg := sync.WaitGroup{}
@@ -170,7 +170,7 @@ func TestFlakeIDGeneratorProxy_ConcurrentlyGeneratedIds(t *testing.T) {
 }
 
 func TestFlakeIDGeneratorProxy_WhenAllMembersOutOfRangeThenError(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
@@ -189,7 +189,7 @@ func TestFlakeIDGeneratorProxy_WhenAllMembersOutOfRangeThenError(t *testing.T) {
 }
 
 func TestFlakeIDGeneratorProxy_WhenMemberOutOfRangeThenOtherMemberUsed(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)

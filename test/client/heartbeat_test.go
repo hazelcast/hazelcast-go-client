@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"testing"
@@ -24,12 +24,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHeartbeatStoppedForConnection(t *testing.T) {
 	wg := new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
@@ -42,14 +43,14 @@ func TestHeartbeatStoppedForConnection(t *testing.T) {
 	wg.Add(1)
 	defer client.Shutdown()
 	remoteController.SuspendMember(cluster.ID, member.UUID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	remoteController.ResumeMember(cluster.ID, member.UUID)
 	assert.False(t, timeout)
 	assert.Len(t, listener.collector, 1)
 }
 
 func TestServerShouldNotCloseClientWhenClientOnlyListening(t *testing.T) {
-	heartbeatConfig, _ := Read("heartbeat_config.xml")
+	heartbeatConfig, _ := testutil.Read("heartbeat_config.xml")
 	cluster, _ = remoteController.CreateCluster("", heartbeatConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)

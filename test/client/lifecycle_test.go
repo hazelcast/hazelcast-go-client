@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"sync"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,7 +36,7 @@ func (l *lifecycleListener) LifecycleStateChanged(newState string) {
 
 func TestLifecycleListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	config := hazelcast.NewConfig()
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	config.AddLifecycleListener(&lifecycleListener)
@@ -43,7 +44,7 @@ func TestLifecycleListener(t *testing.T) {
 	wg.Add(5)
 	client, _ := hazelcast.NewClientWithConfig(config)
 	client.Shutdown()
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "LifecycleService listener failed")
 	assert.Equalf(t, lifecycleListener.collector[0], core.LifecycleStateStarting, "LifecycleService listener failed")
 	assert.Equalf(t, lifecycleListener.collector[1], core.LifecycleStateConnected, "LifecycleService listener failed")
@@ -55,7 +56,7 @@ func TestLifecycleListener(t *testing.T) {
 
 func TestLifecycleListenerForDisconnected(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	wg.Add(1)
@@ -64,7 +65,7 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	registrationID := client.LifecycleService().AddLifecycleListener(&lifecycleListener)
 	remoteController.ShutdownCluster(cluster.ID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "LifecycleService listener failed")
 	assert.Equalf(t, lifecycleListener.collector[0], core.LifecycleStateDisconnected, "LifecycleService listener failed")
 	client.LifecycleService().RemoveLifecycleListener(registrationID)
@@ -73,7 +74,7 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 
 func TestRemoveListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
@@ -81,7 +82,7 @@ func TestRemoveListener(t *testing.T) {
 	wg.Add(2)
 	client.LifecycleService().RemoveLifecycleListener(registrationID)
 	client.Shutdown()
-	timeout := WaitTimeout(wg, Timeout/20)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "LifecycleService listener failed")
 	assert.Equalf(t, len(lifecycleListener.collector), 0, "LifecycleService addListener or removeListener failed")
 	remoteController.ShutdownCluster(cluster.ID)

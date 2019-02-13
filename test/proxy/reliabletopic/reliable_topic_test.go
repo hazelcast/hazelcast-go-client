@@ -35,7 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 }
 
 func createCluster() {
-	config, _ := test.Read("hazelcast_topic.xml")
+	config, _ := testutil.Read("hazelcast_topic.xml")
 	cluster, _ = remoteController.CreateCluster("", config)
 	remoteController.StartMember(cluster.ID)
 }
@@ -133,7 +133,7 @@ func TestReliableTopicProxy_PublishSingle(t *testing.T) {
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	require.NoError(t, err)
 	assert.Equal(t, timeout, false)
 }
@@ -150,7 +150,7 @@ func TestReliableTopicProxy_ErrorOnMessageTerminal(t *testing.T) {
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	require.NoError(t, err)
 	assert.Equal(t, timeout, false)
 }
@@ -166,7 +166,7 @@ func TestReliableTopicProxy_ErrorOnMessageNotTerminal(t *testing.T) {
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	require.NoError(t, err)
 	assert.Equal(t, timeout, false)
 }
@@ -183,7 +183,7 @@ func TestReliableTopicProxy_ErrorOnMessageErrorOnIsTerminal(t *testing.T) {
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	require.NoError(t, err)
 	assert.Equal(t, timeout, false)
 }
@@ -197,7 +197,7 @@ func TestReliableTopicProxy_DefaultReliableMessageListener(t *testing.T) {
 	msg := "foobar"
 	err := reliableTopic.Publish(msg)
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	require.NoError(t, err)
 	assert.Equal(t, timeout, false)
 }
@@ -221,7 +221,7 @@ func TestReliableTopicProxy_PublishMany(t *testing.T) {
 		assert.NoError(t, err)
 
 	}
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 }
 
@@ -237,7 +237,7 @@ func TestReliableTopicProxy_MessageFieldSetCorrectly(t *testing.T) {
 	err := reliableTopic.Publish(msg)
 	afterPublishTime := time.Now()
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	require.NoError(t, err)
 	assert.Equal(t, timeout, false)
 	require.NoError(t, err)
@@ -274,7 +274,7 @@ func TestReliableTopicProxy_AlwaysStartAfterTail(t *testing.T) {
 	reliableTopic.Publish("5")
 	reliableTopic.Publish("6")
 
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 
 	assert.Equal(t, len(listener.messages), 3)
@@ -361,7 +361,7 @@ func TestReliableTopicProxy_Stale(t *testing.T) {
 	id, err := reliableTopic.AddMessageListener(listener)
 	assert.NoError(t, err)
 	defer reliableTopic.RemoveMessageListener(id)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 	assert.Equal(t, listener.messages[9].MessageObject(), int64(20))
 }
@@ -382,7 +382,7 @@ func TestReliableTopicProxy_DistributedObjectDestroyed(t *testing.T) {
 	remoteController.ShutdownCluster(cluster.ID)
 	createCluster()
 	log.Println(reliableTopic.Publish("aa"))
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 }
 
@@ -393,7 +393,7 @@ func TestReliableTopicProxy_DistributedObjectDestroyedError(t *testing.T) {
 	defer reliableTopic.RemoveMessageListener(id)
 	assert.NoError(t, err)
 	reliableTopic.Destroy()
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		return len(listener.messages) == 0
 	})
 }
@@ -405,7 +405,7 @@ func TestReliableTopicProxy_ClientNotActiveError(t *testing.T) {
 	_, err := reliableTopic.AddMessageListener(listener)
 	assert.NoError(t, err)
 	client2.Shutdown()
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		return len(listener.messages) == 0
 	})
 }
@@ -425,7 +425,7 @@ func TestReliableTopicProxy_Leakage(t *testing.T) {
 	_, err := topic.Ringbuffer().AddAll(items, core.OverflowPolicyOverwrite)
 	assert.NoError(t, err)
 	client2.Shutdown()
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		routineNumAfter := runtime.NumGoroutine()
 		return routineNumBefore == routineNumAfter
 	})

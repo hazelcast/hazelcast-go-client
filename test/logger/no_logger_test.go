@@ -21,12 +21,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNoLogger(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	buf := new(bytes.Buffer)

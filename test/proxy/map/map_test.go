@@ -29,7 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 		log.Fatal("create remote controller failed:", err)
 	}
 
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member, _ = remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.SerializationConfig().AddPortableFactory(666, &portableFactory{})
@@ -285,7 +285,7 @@ func TestMapProxy_PutTransientWhenExpire(t *testing.T) {
 	testValue := "testingValue"
 	mp.Put(testKey, testValue)
 	mp.PutTransient(testKey, "nextValue", 1*time.Millisecond)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		res, err := mp.Get(testKey)
 		return err == nil && res == nil
 	})
@@ -462,7 +462,7 @@ func TestMapProxy_UnlockWithNilKey(t *testing.T) {
 func TestMapProxy_LockWithLeaseTime(t *testing.T) {
 	mp.Put("testingKey", "testingValue")
 	mp.LockWithLeaseTime("testingKey", 10*time.Millisecond)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		locked, err := mp.IsLocked("testingKey")
 		return err == nil && !locked
 	})
@@ -479,7 +479,7 @@ func TestMapProxy_TryLock(t *testing.T) {
 	ok, err := mp.TryLockWithTimeoutAndLease("testingKey", 1*time.Millisecond, 2*time.Millisecond)
 	require.NoError(t, err)
 	assert.Equalf(t, ok, true, "Try Lock failed")
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		locked, err := mp.IsLocked("testingKey")
 		return err == nil && !locked
 	})
@@ -616,7 +616,7 @@ func TestMapProxy_SetWithTTL(t *testing.T) {
 	_, err = mp.Get("testingKey1")
 	require.NoError(t, err)
 	mp.SetWithTTL("testingKey1", "testingValue2", 1*time.Millisecond)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		newValue, err := mp.Get("testingKey1")
 		return err == nil && newValue == nil
 	})
@@ -915,7 +915,7 @@ func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key123", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
@@ -935,7 +935,7 @@ func TestMapProxy_AddEntryListenerAddedWithIncludeValueFalse(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key123", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Name(), "myMap", "AddEntryListener entryAdded failed")
 	assert.Equalf(t, entryListener.event.Key(), "key123", "AddEntryListener entryAdded failed")
@@ -957,7 +957,7 @@ func TestMapProxy_AddEntryListenerUpdated(t *testing.T) {
 	wg.Add(2)
 	mp.Put("key1", "value")
 	mp.Put("key1", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryUpdated failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -971,7 +971,7 @@ func TestMapProxy_AddEntryListenerEvicted(t *testing.T) {
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Evict("test")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryEvicted failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -985,7 +985,7 @@ func TestMapProxy_AddEntryListenerRemoved(t *testing.T) {
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Remove("test")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryRemoved failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -1000,7 +1000,7 @@ func TestMapProxy_AddEntryListenerEvictAll(t *testing.T) {
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.EvictAll()
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryEvictAll failed")
 	assert.Equalf(t, entryListener.mapEvent.EventType(), int32(16), "AddEntryListener entryEvictAll failed")
 	assert.Equalf(t, entryListener.mapEvent.Name(), "myMap", "AddEntryListener entryEvictAll failed")
@@ -1020,7 +1020,7 @@ func TestMapProxy_AddEntryListenerClear(t *testing.T) {
 	wg.Add(2)
 	mp.Put("test", "key")
 	mp.Clear()
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListener entryClear failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -1040,7 +1040,7 @@ func TestMapProxy_AddEntryListenerWithPredicate(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key123", "value")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListenerWithPredicate failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -1060,11 +1060,11 @@ func TestMapProxy_AddEntryListenerToKey(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key1", "value1")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListenerToKey failed")
 	wg.Add(1)
 	mp.Put("key2", "value1")
-	timeout = test.WaitTimeout(wg, test.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "AddEntryListenerToKey failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -1084,11 +1084,11 @@ func TestMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 	require.NoError(t, err)
 	wg.Add(1)
 	mp.Put("key1", "value1")
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "AddEntryListenerToKeyWithPredicate failed")
 	wg.Add(1)
 	mp.Put("key1", "value2")
-	timeout = test.WaitTimeout(wg, test.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
 	assert.Equalf(t, true, timeout, "AddEntryListenerToKeyWithPredicate failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()

@@ -27,7 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestReliableTopicProxy_ServerRestartWhenReliableTopicListenerRegistered(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	member, _ := remoteController.StartMember(cluster.ID)
 	topicName := "topic"
@@ -66,12 +66,12 @@ func TestReliableTopicProxy_ServerRestartWhenReliableTopicListenerRegistered(t *
 	remoteController.StartMember(cluster.ID)
 	err = topic2.Publish(1)
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_ServerRestartWithInvocationTimeout(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	member, _ := remoteController.StartMember(cluster.ID)
 	topicName := "topic2"
@@ -95,12 +95,12 @@ func TestReliableTopicProxy_ServerRestartWithInvocationTimeout(t *testing.T) {
 	time.Sleep(time.Second)
 	err = topic2.Publish("message")
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_ServerRestartWhenDataLossWithInvocationTimeout(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	member, _ := remoteController.StartMember(cluster.ID)
 	topicName := "topic3"
@@ -124,12 +124,12 @@ func TestReliableTopicProxy_ServerRestartWhenDataLossWithInvocationTimeout(t *te
 	time.Sleep(time.Second)
 	err = topic.Publish("message")
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equal(t, timeout, false)
 }
 
 func TestReliableTopicProxy_ServerRestartWhenDataLossWithInvocationTimeoutWhenNotLossTolerant(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	member, _ := remoteController.StartMember(cluster.ID)
 	topicName := "topic3"
@@ -153,7 +153,7 @@ func TestReliableTopicProxy_ServerRestartWhenDataLossWithInvocationTimeoutWhenNo
 	time.Sleep(time.Second)
 	err = topic.Publish("message")
 	assert.NoError(t, err)
-	timeout := test.WaitTimeout(wg, test.Timeout/15)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout/15)
 	assert.Equal(t, timeout, true)
 }
 

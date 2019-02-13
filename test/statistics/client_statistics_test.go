@@ -33,7 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +51,7 @@ func TestMain(t *testing.M) {
 }
 
 func TestClientStatisticsDisabledByDefault(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -66,7 +66,7 @@ func TestClientStatisticsDisabledByDefault(t *testing.T) {
 }
 
 func TestClientStatisticsDisabledWithWrongValue(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -84,7 +84,7 @@ func TestClientStatisticsDisabledWithWrongValue(t *testing.T) {
 }
 
 func TestClientStatisticsEnabled(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -102,7 +102,7 @@ func TestClientStatisticsEnabled(t *testing.T) {
 }
 
 func TestClientStatisticsEnabledViaEnvironmentVariable(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -121,7 +121,7 @@ func TestClientStatisticsEnabledViaEnvironmentVariable(t *testing.T) {
 }
 
 func TestClientStatisticsPeriod(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -155,7 +155,7 @@ func TestClientStatisticsPeriod(t *testing.T) {
 }
 
 func TestClientStatisticsNegativePeriodShouldSendStatistics(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -166,14 +166,14 @@ func TestClientStatisticsNegativePeriodShouldSendStatistics(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
 
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		stats1 := GetClientStatsFromServer(t, cluster.ID)
 		return len(stats1) > 0
 	})
 }
 
 func TestClientStatisticsNonDefaultPeriod(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -217,7 +217,7 @@ func TestClientStatisticsNonDefaultPeriod(t *testing.T) {
 }
 
 func TestClientStatisticsContent(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -250,7 +250,7 @@ func TestClientStatisticsContent(t *testing.T) {
 }
 
 func TestClientStatisticsContentChanges(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	defer remoteController.ShutdownCluster(cluster.ID)
 
@@ -261,13 +261,13 @@ func TestClientStatisticsContentChanges(t *testing.T) {
 	client, _ := hazelcast.NewClientWithConfig(config)
 	defer client.Shutdown()
 	var stats string
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		stats = GetClientStatsFromServer(t, cluster.ID)
 		return len(stats) > 0
 	})
 
 	runTimeMetrics := getRuntimeMetrics(stats)
-	test.AssertTrueEventually(t, func() bool {
+	testutil.AssertTrueEventually(t, func() bool {
 		nextStats := GetClientStatsFromServer(t, cluster.ID)
 		if stats == nextStats {
 			return false

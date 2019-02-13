@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,25 +35,25 @@ func TestColUtilsNilArgument(t *testing.T) {
 func TestObjectToDataCollectionNonSerializableKey(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
-	_, err := ObjectToDataCollection(test.NewNonSerializableObjectSlice(), service)
+	_, err := ObjectToDataCollection(testutil.NewNonSerializableObjectSlice(), service)
 	assert.Error(t, err)
 }
 
 func TestDataToObjectCollectionError(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
-	_, err := DataToObjectCollection(test.NewNonDeserializableDataSlice(), service)
+	_, err := DataToObjectCollection(testutil.NewNonDeserializableDataSlice(), service)
 	assert.Error(t, err)
 }
 
 func TestDataToObjectPairCollectionError(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
-	pairSlice := []*proto.Pair{proto.NewPair(test.NewSerializableData(), test.NewNonDeserializableData())}
+	pairSlice := []*proto.Pair{proto.NewPair(testutil.NewSerializableData(), testutil.NewNonDeserializableData())}
 	_, err := DataToObjectPairCollection(pairSlice, service)
 	assert.Error(t, err)
 
-	pairSlice = []*proto.Pair{proto.NewPair(test.NewNonDeserializableData(), test.NewSerializableData())}
+	pairSlice = []*proto.Pair{proto.NewPair(testutil.NewNonDeserializableData(), testutil.NewSerializableData())}
 	_, err = DataToObjectPairCollection(pairSlice, service)
 	assert.Error(t, err)
 

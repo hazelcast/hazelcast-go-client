@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"strconv"
@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -27,7 +28,7 @@ import (
 
 func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(10)
@@ -44,7 +45,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 		testValue := "testingValue" + strconv.Itoa(i)
 		mp.Put(testKey, testValue)
 	}
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "listener reregister failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -54,7 +55,7 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 
 func TestListenerWithMultipleMembers(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
@@ -68,7 +69,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 		testValue := "testingValue" + strconv.Itoa(i)
 		mp.Put(testKey, testValue)
 	}
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "smartListener with multiple members failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
@@ -78,7 +79,7 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 
 func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(10)
@@ -94,7 +95,7 @@ func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {
 		testValue := "testingValue" + strconv.Itoa(i)
 		mp.Put(testKey, testValue)
 	}
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "smartListener adding a member after a while failed to listen.")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()

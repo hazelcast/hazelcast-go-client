@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package client
 
 import (
 	"strconv"
@@ -24,12 +24,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNonSmartInvoke(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetSmartRouting(false)
@@ -47,7 +48,7 @@ func TestNonSmartInvoke(t *testing.T) {
 }
 
 func TestSingleConnectionWithManyMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
@@ -71,7 +72,7 @@ func TestSingleConnectionWithManyMembers(t *testing.T) {
 }
 
 func TestInvocationTimeout(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetRedoOperation(true)
@@ -89,7 +90,7 @@ func TestInvocationTimeout(t *testing.T) {
 }
 
 func TestInvocationRetry(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member1, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetRedoOperation(true)
@@ -117,7 +118,7 @@ func TestInvocationRetry(t *testing.T) {
 }
 
 func TestInvocationWithShutdown(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetRedoOperation(true)
@@ -134,7 +135,7 @@ func TestInvocationWithShutdown(t *testing.T) {
 
 func TestInvocationNotSent(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	member, _ := remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetRedoOperation(true)
@@ -159,7 +160,7 @@ func TestInvocationNotSent(t *testing.T) {
 	}()
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
 	remoteController.StartMember(cluster.ID)
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, timeout, false, "invocationNotSent failed")
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
@@ -167,7 +168,7 @@ func TestInvocationNotSent(t *testing.T) {
 
 func TestInvocationShouldNotHang_whenClientShutsDown(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", DefaultServerConfig)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	client, _ := hazelcast.NewClientWithConfig(config)
@@ -187,7 +188,7 @@ func TestInvocationShouldNotHang_whenClientShutsDown(t *testing.T) {
 	}()
 	time.Sleep(5 * time.Millisecond)
 	client.Shutdown()
-	timeout := WaitTimeout(wg, Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, timeout, false, "invocationNotSent failed")
 	remoteController.ShutdownCluster(cluster.ID)
 

@@ -22,7 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	ringbuffer, _ = client.GetRingbuffer(ringbufferName)
@@ -95,7 +95,7 @@ func TestRingbufferProxy_Add(t *testing.T) {
 
 func TestRingbufferProxy_AddNonSerializable(t *testing.T) {
 	defer destroyAndCreate()
-	_, err := ringbuffer.Add(test.NewNonSerializableObject(), core.OverflowPolicyOverwrite)
+	_, err := ringbuffer.Add(testutil.NewNonSerializableObject(), core.OverflowPolicyOverwrite)
 	require.Error(t, err)
 }
 
@@ -160,7 +160,7 @@ func TestRingbufferProxy_AddAll(t *testing.T) {
 
 func TestRingbufferProxy_AddAllNonSerializable(t *testing.T) {
 	defer destroyAndCreate()
-	_, err := ringbuffer.AddAll(test.NewNonSerializableObjectSlice(), core.OverflowPolicyFail)
+	_, err := ringbuffer.AddAll(testutil.NewNonSerializableObjectSlice(), core.OverflowPolicyFail)
 	require.Error(t, err)
 }
 
@@ -219,7 +219,7 @@ func TestRingbufferProxy_ReadMany(t *testing.T) {
 
 func TestRingbufferProxy_ReadMany_NonSerializableFilter(t *testing.T) {
 	defer destroyAndCreate()
-	_, err := ringbuffer.ReadMany(0, 0, 0, test.NewNonSerializableObject())
+	_, err := ringbuffer.ReadMany(0, 0, 0, testutil.NewNonSerializableObject())
 	assert.Error(t, err)
 }
 

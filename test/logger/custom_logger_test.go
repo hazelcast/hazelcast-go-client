@@ -21,7 +21,7 @@ import (
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +48,7 @@ func (c *customLogger) Error(args ...interface{}) {
 }
 
 func TestCustomLogger(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	customLogger := &customLogger{}
@@ -61,7 +61,7 @@ func TestCustomLogger(t *testing.T) {
 }
 
 func TestCustomLoggerHasHazelcastPrefix(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	customLogger := &customLogger{}

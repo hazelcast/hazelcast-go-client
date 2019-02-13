@@ -23,7 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	if remoteController == nil || err != nil {
 		log.Fatal("create remote controller failed:", err)
 	}
-	cluster, _ := remoteController.CreateCluster("", test.DefaultServerConfig)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
 	client, _ = hazelcast.NewClient()
 	queue, _ = client.GetQueue(queueName)
@@ -390,7 +390,7 @@ func TestQueueProxy_AddItemListenerItemAddedIncludeValue(t *testing.T) {
 	defer queue.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	queue.Put(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "queue AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.Item(), testElement, "queue AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.EventType(), int32(1), "queue AddItemListener() failed when item is added")
@@ -406,7 +406,7 @@ func TestQueueProxy_AddItemItemAddedListener(t *testing.T) {
 	defer queue.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	queue.Put(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "queue AddItemListener() failed when item is added")
 	assert.Equalf(t, listener.event.Item(), nil, "queue AddItemListener() failed when item is added")
 }
@@ -421,7 +421,7 @@ func TestQueueProxy_AddItemListenerItemRemovedIncludeValue(t *testing.T) {
 	defer queue.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	queue.Remove(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "queue AddItemListenerItemRemoved() failed when item is removed")
 	assert.Equalf(t, listener.event.Item(), testElement, "queue AddItemListener() failed when item is removed")
 	assert.Equalf(t, listener.event.EventType(), int32(2), "queue AddItemListener() failed when item is removed")
@@ -438,7 +438,7 @@ func TestQueueProxy_AddItemListenerItemRemoved(t *testing.T) {
 	defer queue.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	queue.Remove(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "queue AddItemListenerItemRemoved() failed when item is removed")
 	assert.Equalf(t, listener.event.Item(), nil, "queue AddItemListener() failed when item is removed")
 }
@@ -452,7 +452,7 @@ func TestQueueProxy_AddItemItemRemovedListener(t *testing.T) {
 	defer queue.RemoveItemListener(registrationID)
 	require.NoError(t, err)
 	queue.Put(testElement)
-	timeout := test.WaitTimeout(wg, test.Timeout)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "queue AddItemListener() failed")
 	assert.Equalf(t, listener.event.Item(), nil, "queue AddItemListener() failed")
 }

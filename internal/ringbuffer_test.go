@@ -19,13 +19,13 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
-	"github.com/hazelcast/hazelcast-go-client/test"
+	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLazyReadResultSet_GetNonDeserializableDataSlice(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	lazyset := NewLazyReadResultSet(0, test.NewNonDeserializableDataSlice(), nil, service)
+	lazyset := NewLazyReadResultSet(0, testutil.NewNonDeserializableDataSlice(), nil, service)
 	_, err := lazyset.Get(0)
 	assert.Error(t, err)
 }
