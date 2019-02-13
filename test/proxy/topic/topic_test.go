@@ -72,7 +72,7 @@ func TestTopicProxy_RemoveListener(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equalf(t, removed, true, "topic RemoveMembershipListener() failed")
 	topic.Publish("item-value")
-	timeout := testutil.WaitTimeout(wg, testutil.Timeout/10)
+	timeout := testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "topic RemoveMembershipListener() failed")
 }
 

@@ -24,7 +24,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
-var Timeout = 1 * time.Minute
+const (
+	Timeout      = 1 * time.Minute
+	TimeoutShort = Timeout / 20
+)
 
 const DefaultServerConfig = `
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"

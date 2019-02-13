@@ -271,7 +271,7 @@ func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
 }
 
 func TestHazelcastError_ServerError(t *testing.T) {
-	crdtReplicationDelayedConfig, _ := testutil.Read("./proxy/pncounter/crdt_replication_delayed_config.xml")
+	crdtReplicationDelayedConfig, _ := testutil.Read("../proxy/pncounter/crdt_replication_delayed_config.xml")
 	cluster, err := remoteController.CreateCluster("", crdtReplicationDelayedConfig)
 	if err != nil {
 		t.Fatal(err)

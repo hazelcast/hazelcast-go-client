@@ -110,7 +110,7 @@ func TestAddMembershipListener(t *testing.T) {
 	client.Cluster().RemoveMembershipListener(registrationID)
 	wg.Add(1)
 	member2, _ := remoteController.StartMember(cluster.ID)
-	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "Cluster RemoveMembershipListener failed")
 	remoteController.ShutdownMember(cluster.ID, member.UUID)
 	registrationID = client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
