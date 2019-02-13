@@ -82,7 +82,7 @@ func TestRemoveListener(t *testing.T) {
 	wg.Add(2)
 	client.LifecycleService().RemoveLifecycleListener(registrationID)
 	client.Shutdown()
-	timeout := testutil.WaitTimeout(wg, testutil.Timeout/20)
+	timeout := testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "LifecycleService listener failed")
 	assert.Equalf(t, len(lifecycleListener.collector), 0, "LifecycleService addListener or removeListener failed")
 	remoteController.ShutdownCluster(cluster.ID)

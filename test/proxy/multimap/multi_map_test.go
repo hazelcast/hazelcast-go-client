@@ -360,7 +360,7 @@ func TestMultiMapProxy_EntryListenerToKey(t *testing.T) {
 	assert.Equalf(t, entryListener.event.EventType(), int32(1), "multiMap AddEntryListenerToKey entryAdded failed")
 	wg.Add(1)
 	multiMap.Put("key2", "value1")
-	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "multiMap AddEntryListenerToKey failed")
 }
 

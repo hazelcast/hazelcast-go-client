@@ -430,7 +430,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKey(t *testing.T) {
 	assert.Equalf(t, entryListener.event.EventType(), int32(1), "replicatedMap AddEntryListenerToKey entryAdded failed")
 	wg.Add(1)
 	rmp.Put("key2", "value1")
-	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "replicatedMap AddEntryListenerToKey failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
@@ -463,7 +463,7 @@ func TestReplicatedMapProxy_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 
 	wg.Add(1)
 	rmp.Put("key1", "value2")
-	timeout = testutil.WaitTimeout(wg, testutil.Timeout/20)
+	timeout = testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "replicatedMap AddEntryListenerToKeyWithPredicate failed")
 	rmp.RemoveEntryListener(registrationID)
 	rmp.Clear()
