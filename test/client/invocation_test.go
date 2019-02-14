@@ -30,11 +30,11 @@ import (
 )
 
 func TestNonSmartInvoke(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetSmartRouting(false)
-	client, _ := hazelcast.NewClientWithConfig(config)
+	client, shutdownFunc := testutil.CreateClientAndClusterWithConfig(remoteController, config)
+	defer shutdownFunc()
+
 	mp, _ := client.GetMap("myMap")
 	testKey := "testingKey"
 	testValue := "testingValue"
@@ -43,8 +43,6 @@ func TestNonSmartInvoke(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equalf(t, res, testValue, "get returned a wrong value")
 	mp.Clear()
-	remoteController.ShutdownCluster(cluster.ID)
-	client.Shutdown()
 }
 
 func TestSingleConnectionWithManyMembers(t *testing.T) {

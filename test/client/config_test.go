@@ -24,8 +24,8 @@ import (
 )
 
 func TestSetGroupConfig(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	cfg := hazelcast.NewConfig()
 	groupCfg := config.NewGroupConfig()
 	groupCfg.SetName("wrongName")
@@ -34,7 +34,6 @@ func TestSetGroupConfig(t *testing.T) {
 	client, err := hazelcast.NewClientWithConfig(cfg)
 	assert.Error(t, err)
 	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestSetNetworkConfig(t *testing.T) {

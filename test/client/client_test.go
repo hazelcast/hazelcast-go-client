@@ -34,19 +34,17 @@ import (
 )
 
 func TestClientGetMapWhenNoMemberUp(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
 	client, _ := hazelcast.NewClient()
-	remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc()
 	_, err := client.GetMap("map")
 	assert.Errorf(t, err, "getMap should have returned an error when no member is up")
 	client.Shutdown()
 }
 
 func TestClientShutdownAndReopen(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	client, _ := hazelcast.NewClient()
 	testMp, _ := client.GetMap("test")
 	testMp.Put("key", "value")
@@ -60,15 +58,8 @@ func TestClientShutdownAndReopen(t *testing.T) {
 }
 
 func TestClientRoutineLeakage(t *testing.T) {
-	cluster, err := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = remoteController.StartMember(cluster.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	routineNumBefore := runtime.NumGoroutine()
 	client, _ := hazelcast.NewClient()
 	testMp, _ := client.GetMap("test")
@@ -81,9 +72,8 @@ func TestClientRoutineLeakage(t *testing.T) {
 }
 
 func TestConnectionTimeout(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	cfg := hazelcast.NewConfig()
 	cfg.NetworkConfig().SetConnectionTimeout(0)
 	client, err := hazelcast.NewClient()
@@ -102,10 +92,8 @@ func TestNegativeConnectionTimeoutShouldPanic(t *testing.T) {
 }
 
 func TestClientUniqueNames(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
-
-	defer remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 
 	mp := make(map[string]struct{})
 
@@ -132,12 +120,7 @@ func TestClientUniqueNames(t *testing.T) {
 }
 
 func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	for i := 0; i < 2; i++ {
-		remoteController.StartMember(cluster.ID)
-	}
-	client, _ := hazelcast.NewClient()
-
+	client, shutdownFunc := testutil.CreateClientAndClusterWithMembers(remoteController, 2)
 	m, _ := client.GetMap("test")
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(10)
@@ -155,35 +138,26 @@ func TestOpenedClientConnectionCount_WhenMultipleMembers(t *testing.T) {
 	connectionManager := client.(*internal.HazelcastClient).ConnectionManager
 	//There should be 2 connections. Next id will be 3
 	assert.Equal(t, connectionManager.NextConnectionID(), int64(3))
-
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc()
 }
 
 func TestClientNameSet(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.SetClientName("client1")
-	client, _ := hazelcast.NewClientWithConfig(config)
-	defer client.Shutdown()
+	client, shutdownFunc := testutil.CreateClientAndClusterWithConfig(remoteController, config)
+	defer shutdownFunc()
 	assert.Equal(t, client.Name(), "client1")
 }
 
 func TestClientNameDefault(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
-	client, _ := hazelcast.NewClient()
-	defer client.Shutdown()
+	client, shutdownFunc := testutil.CreateClientAndCluster(remoteController)
+	defer shutdownFunc()
 	assert.Contains(t, client.Name(), "hz.client_")
 }
 
 func TestMultipleClientNameDefault(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	names := make(map[string]struct{})
 	for i := 1; i <= 10; i++ {
 		client, _ := hazelcast.NewClient()
@@ -194,9 +168,8 @@ func TestMultipleClientNameDefault(t *testing.T) {
 }
 
 func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	mu := sync.Mutex{}
 	names := make(map[string]struct{})
 	for i := 1; i <= 10; i++ {
@@ -216,26 +189,19 @@ func TestMultipleClientNameDefaultConcurrent(t *testing.T) {
 }
 
 func TestGetDistributedObjectWithNotRegisteredServiceName(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
-	client, err := hazelcast.NewClient()
-	defer client.Shutdown()
-	if err != nil {
-		t.Fatal(err)
-	}
+	client, shutdownFunc := testutil.CreateClientAndCluster(remoteController)
+	defer shutdownFunc()
 	serviceName := "InvalidServiceName"
-	_, err = client.GetDistributedObject(serviceName, "testName")
+	_, err := client.GetDistributedObject(serviceName, "testName")
 	if _, ok := err.(*core.HazelcastClientServiceNotFoundError); ok {
 		t.Error("HazelcastClientServiceNotFoundError expected got :", err)
 	}
 }
 
 func TestGetDistributedObjectsWhenClientNotActive(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
 	client, _ := hazelcast.NewClient()
-	remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc()
 	name := "test"
 	message := "Distributed object should not be created when client is not active"
 	_, err := client.GetMap(name)
@@ -280,7 +246,7 @@ func TestHazelcastError_ServerError(t *testing.T) {
 	remoteController.StartMember(cluster.ID)
 	remoteController.StartMember(cluster.ID)
 	cfg := hazelcast.NewConfig()
-	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "5")
+	cfg.SetProperty(property.InvocationTimeoutSeconds.Name(), "15")
 	client, _ := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
 	counter, _ := client.GetPNCounter("myPNCounter")

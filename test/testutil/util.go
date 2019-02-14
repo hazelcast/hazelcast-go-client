@@ -20,6 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
@@ -149,5 +152,44 @@ func NewNonDeserializableDataSlice() []serialization.Data {
 	return []serialization.Data{
 		NewNonDeserializableData(),
 	}
+}
 
+func CreateCluster(controller *rc.RemoteControllerClient) func() {
+	cluster, _ := controller.CreateCluster("", DefaultServerConfig)
+	controller.StartMember(cluster.ID)
+	return func() {
+		controller.ShutdownCluster(cluster.ID)
+	}
+}
+
+func CreateClientAndCluster(controller *rc.RemoteControllerClient) (hazelcast.Client, func()) {
+	cluster, _ := controller.CreateCluster("", DefaultServerConfig)
+	controller.StartMember(cluster.ID)
+	client, _ := hazelcast.NewClient()
+	return client, func() {
+		client.Shutdown()
+		controller.ShutdownCluster(cluster.ID)
+	}
+}
+
+func CreateClientAndClusterWithConfig(controller *rc.RemoteControllerClient, cfg *config.Config) (hazelcast.Client, func()) {
+	cluster, _ := controller.CreateCluster("", DefaultServerConfig)
+	controller.StartMember(cluster.ID)
+	client, _ := hazelcast.NewClientWithConfig(cfg)
+	return client, func() {
+		client.Shutdown()
+		controller.ShutdownCluster(cluster.ID)
+	}
+}
+
+func CreateClientAndClusterWithMembers(controller *rc.RemoteControllerClient, memberAmount int) (hazelcast.Client, func()) {
+	cluster, _ := controller.CreateCluster("", DefaultServerConfig)
+	for i := 0; i < memberAmount; i++ {
+		controller.StartMember(cluster.ID)
+	}
+	client, _ := hazelcast.NewClient()
+	return client, func() {
+		client.Shutdown()
+		controller.ShutdownCluster(cluster.ID)
+	}
 }
