@@ -63,19 +63,16 @@ func TestMain(m *testing.M) {
 
 func TestInitialMembershipListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.AddMembershipListener(&membershipListener{wg: wg})
 	wg.Add(1)
-	client, _ := hazelcast.NewClientWithConfig(config)
+	_, shutdownFunc := testutil.CreateClientAndClusterWithConfig(remoteController, config)
+	defer shutdownFunc()
 	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
 	assert.Equalf(t, false, timeout, "Cluster initialMembershipListener failed")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
-func TestMemberAddedandRemoved(t *testing.T) {
+func TestMemberAddedAndRemoved(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	remoteController.StartMember(cluster.ID)
@@ -165,23 +162,16 @@ func TestAddMembershipListeners(t *testing.T) {
 }
 
 func TestGetMembers(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	member1, _ := remoteController.StartMember(cluster.ID)
-	member2, _ := remoteController.StartMember(cluster.ID)
-	member3, _ := remoteController.StartMember(cluster.ID)
-	client, _ := hazelcast.NewClient()
+	memberAmount := 2
+	client, shutdownFunc := testutil.CreateClientAndClusterWithMembers(remoteController, memberAmount)
+	defer shutdownFunc()
 
 	members := client.Cluster().GetMembers()
-	assert.Equalf(t, len(members), 3, "GetMembers returned wrong number of members")
+	assert.Equalf(t, len(members), memberAmount, "GetMembers returned wrong number of members")
 	for _, member := range members {
 		assert.Equalf(t, member.IsLiteMember(), false, "member shouldnt be a lite member")
 		assert.Equalf(t, len(member.Attributes()), 0, "member shouldnt have any attributes")
 	}
-	client.Shutdown()
-	remoteController.ShutdownMember(cluster.ID, member1.UUID)
-	remoteController.ShutdownMember(cluster.ID, member2.UUID)
-	remoteController.ShutdownMember(cluster.ID, member3.UUID)
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestGetMember(t *testing.T) {
@@ -211,15 +201,14 @@ func TestGetInvalidMember(t *testing.T) {
 }
 
 func TestAuthenticationWithWrongCredentials(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 	config := hazelcast.NewConfig()
 	config.GroupConfig().SetName("wrongName")
 	config.GroupConfig().SetPassword("wrongPassword")
 	client, err := hazelcast.NewClientWithConfig(config)
 	assert.Error(t, err)
 	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestClientWithoutMember(t *testing.T) {
@@ -298,35 +287,29 @@ func TestClusterScaleDown(t *testing.T) {
 }
 
 func TestConnectToClusterWithoutPort(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().AddAddress("127.0.0.1")
-	client, _ := hazelcast.NewClientWithConfig(config)
+	client, shutdownFunc := testutil.CreateClientAndClusterWithConfig(remoteController, config)
+	defer shutdownFunc()
 	members := client.Cluster().GetMembers()
 	assert.Equalf(t, members[0].Address().Host(), "127.0.0.1", "connectToClusterWithoutPort returned a wrong member address")
 	assert.Equalf(t, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestConnectToClusterWithSetAddress(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetAddresses([]string{"127.0.0.1"})
-	client, _ := hazelcast.NewClientWithConfig(config)
+	client, shutdownFunc := testutil.CreateClientAndClusterWithConfig(remoteController, config)
+	defer shutdownFunc()
+
 	members := client.Cluster().GetMembers()
 	assert.Equalf(t, len(members), 1, "connectToClusterWithoutPort returned a wrong member address")
 	assert.Equalf(t, members[0].Address().Host(), "127.0.0.1", "connectToClusterWithoutPort returned a wrong member address")
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestAddressesWhenCloudConfigEnabled(t *testing.T) {
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
-	defer remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 
 	cfg := hazelcast.NewConfig()
 	cloudConfig := config.NewCloudConfig()

@@ -55,10 +55,8 @@ func TestListenerWhenNodeLeftAndReconnected(t *testing.T) {
 
 func TestListenerWithMultipleMembers(t *testing.T) {
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
-	remoteController.StartMember(cluster.ID)
-	client, _ := hazelcast.NewClient()
+	client, shutdownFunc := testutil.CreateClientAndClusterWithMembers(remoteController, 2)
+	defer shutdownFunc()
 	entryAdded := &mapListener{wg: wg}
 	mp, _ := client.GetMap("testMap")
 	registrationID, err := mp.AddEntryListener(entryAdded, true)
@@ -73,8 +71,6 @@ func TestListenerWithMultipleMembers(t *testing.T) {
 	assert.Equalf(t, false, timeout, "smartListener with multiple members failed")
 	mp.RemoveEntryListener(registrationID)
 	mp.Clear()
-	client.Shutdown()
-	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestListenerWithMemberConnectedAfterAWhile(t *testing.T) {

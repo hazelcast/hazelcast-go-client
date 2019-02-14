@@ -29,65 +29,37 @@ import (
 var samplePortableFactoryID int32 = 666
 
 func TestCustomAuthentication(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
-	defer remoteController.ShutdownCluster(cluster.ID)
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
 
-	cfg := hazelcast.NewConfig()
-	cfg.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &portableFactory{})
+	testCases := [...]struct {
+		username string
+		password string
+		err      bool
+	}{
+		{"dev", "dev-pass", false},
+		{"dev", "invalidPass", false},
+		{"invalidUsername", "dev-pass", true},
+	}
 
-	cfg.SecurityConfig().SetCredentials(&CustomCredentials{
-		security.NewUsernamePasswordCredentials(
-			"dev",
-			"dev-pass",
-		),
-	})
+	for _, tc := range testCases {
+		cfg := hazelcast.NewConfig()
+		cfg.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &portableFactory{})
 
-	client, _ := hazelcast.NewClientWithConfig(cfg)
-	defer client.Shutdown()
-	mp, _ := client.GetMap("myMap")
-	_, err := mp.Put("key", "value")
-
-	assert.NoError(t, err)
-}
-
-func TestCustomAuthenticationWithInvalidPassword(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
-	defer remoteController.ShutdownCluster(cluster.ID)
-
-	cfg := hazelcast.NewConfig()
-	cfg.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &portableFactory{})
-
-	cfg.SecurityConfig().SetCredentials(&CustomCredentials{
-		security.NewUsernamePasswordCredentials(
-			"dev",
-			"invalidPass",
-		),
-	})
-
-	client, err := hazelcast.NewClientWithConfig(cfg)
-	assert.NoError(t, err)
-	client.Shutdown()
-}
-
-func TestCustomAuthenticationWithInvalidUsername(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	remoteController.StartMember(cluster.ID)
-	defer remoteController.ShutdownCluster(cluster.ID)
-
-	cfg := hazelcast.NewConfig()
-	cfg.SerializationConfig().AddPortableFactory(samplePortableFactoryID, &portableFactory{})
-
-	cfg.SecurityConfig().SetCredentials(&CustomCredentials{
-		security.NewUsernamePasswordCredentials(
-			"invalidUsername",
-			"dev-pass",
-		),
-	})
-
-	_, err := hazelcast.NewClientWithConfig(cfg)
-	assert.Errorf(t, err, "Client should not connect with invalid username")
+		cfg.SecurityConfig().SetCredentials(&CustomCredentials{
+			security.NewUsernamePasswordCredentials(
+				tc.username,
+				tc.password,
+			),
+		})
+		client, err := hazelcast.NewClientWithConfig(cfg)
+		if tc.err {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+		client.Shutdown()
+	}
 }
 
 func TestSerializationOfCredentials(t *testing.T) {

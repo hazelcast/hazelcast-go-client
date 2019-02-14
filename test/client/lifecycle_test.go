@@ -37,10 +37,10 @@ func (l *lifecycleListener) LifecycleStateChanged(newState string) {
 func TestLifecycleListener(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
 	config := hazelcast.NewConfig()
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	config.AddLifecycleListener(&lifecycleListener)
-	remoteController.StartMember(cluster.ID)
 	wg.Add(5)
 	client, _ := hazelcast.NewClientWithConfig(config)
 	client.Shutdown()
@@ -55,10 +55,10 @@ func TestLifecycleListener(t *testing.T) {
 }
 
 func TestLifecycleListenerForDisconnected(t *testing.T) {
-	var wg = new(sync.WaitGroup)
 	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	remoteController.StartMember(cluster.ID)
+	var wg = new(sync.WaitGroup)
+	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
 	wg.Add(1)
 	config := hazelcast.NewConfig()
 	config.NetworkConfig().SetConnectionAttemptLimit(100)
@@ -73,10 +73,11 @@ func TestLifecycleListenerForDisconnected(t *testing.T) {
 }
 
 func TestRemoveListener(t *testing.T) {
+	shutdownFunc := testutil.CreateCluster(remoteController)
+	defer shutdownFunc()
+
 	var wg = new(sync.WaitGroup)
-	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	lifecycleListener := lifecycleListener{wg: wg, collector: make([]string, 0)}
-	remoteController.StartMember(cluster.ID)
 	client, _ := hazelcast.NewClient()
 	registrationID := client.LifecycleService().AddLifecycleListener(&lifecycleListener)
 	wg.Add(2)
@@ -85,5 +86,4 @@ func TestRemoveListener(t *testing.T) {
 	timeout := testutil.WaitTimeout(wg, testutil.TimeoutShort)
 	assert.Equalf(t, true, timeout, "LifecycleService listener failed")
 	assert.Equalf(t, len(lifecycleListener.collector), 0, "LifecycleService addListener or removeListener failed")
-	remoteController.ShutdownCluster(cluster.ID)
 }
