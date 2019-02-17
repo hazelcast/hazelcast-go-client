@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package colutil
+package colutil_test
 
 import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
@@ -25,24 +26,24 @@ import (
 )
 
 func TestColUtilsNilArgument(t *testing.T) {
-	_, err := ObjectToDataCollection(nil, nil)
+	_, err := colutil.ObjectToDataCollection(nil, nil)
 	assert.Error(t, err)
 
-	_, err = DataToObjectCollection(nil, nil)
+	_, err = colutil.DataToObjectCollection(nil, nil)
 	assert.Error(t, err)
 }
 
 func TestObjectToDataCollectionNonSerializableKey(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
-	_, err := ObjectToDataCollection(testutil.NewNonSerializableObjectSlice(), service)
+	_, err := colutil.ObjectToDataCollection(testutil.NewNonSerializableObjectSlice(), service)
 	assert.Error(t, err)
 }
 
 func TestDataToObjectCollectionError(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
-	_, err := DataToObjectCollection(testutil.NewNonDeserializableDataSlice(), service)
+	_, err := colutil.DataToObjectCollection(testutil.NewNonDeserializableDataSlice(), service)
 	assert.Error(t, err)
 }
 
@@ -50,11 +51,11 @@ func TestDataToObjectPairCollectionError(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
 	pairSlice := []*proto.Pair{proto.NewPair(testutil.NewSerializableData(), testutil.NewNonDeserializableData())}
-	_, err := DataToObjectPairCollection(pairSlice, service)
+	_, err := colutil.DataToObjectPairCollection(pairSlice, service)
 	assert.Error(t, err)
 
 	pairSlice = []*proto.Pair{proto.NewPair(testutil.NewNonDeserializableData(), testutil.NewSerializableData())}
-	_, err = DataToObjectPairCollection(pairSlice, service)
+	_, err = colutil.DataToObjectPairCollection(pairSlice, service)
 	assert.Error(t, err)
 
 }

@@ -18,17 +18,6 @@ import (
 	"testing"
 )
 
-func TestIsValidIPAddress(t *testing.T) {
-	ip := "142.1.2.4"
-	if ok := IsValidIPAddress(ip); !ok {
-		t.Fatal("IsValidIPAddress failed")
-	}
-	ip = "123.2.1"
-	if ok := IsValidIPAddress(ip); ok {
-		t.Fatal("IsValidIPAddress failed")
-	}
-}
-
 func TestGetIpAndPort(t *testing.T) {
 	testAddress := "121.1.23.3:1231"
 	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != 1231 {

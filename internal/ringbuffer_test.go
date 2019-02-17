@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package internal_test
 
 import (
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
@@ -25,14 +26,14 @@ import (
 
 func TestLazyReadResultSet_GetNonDeserializableDataSlice(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	lazyset := NewLazyReadResultSet(0, testutil.NewNonDeserializableDataSlice(), nil, service)
+	lazyset := internal.NewLazyReadResultSet(0, testutil.NewNonDeserializableDataSlice(), nil, service)
 	_, err := lazyset.Get(0)
 	assert.Error(t, err)
 }
 
 func TestLazyReadResultSet_SequenceWhenNotReady(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
-	lazyset := NewLazyReadResultSet(0, nil, nil, service)
+	lazyset := internal.NewLazyReadResultSet(0, nil, nil, service)
 	_, err := lazyset.Sequence(0)
 	assert.Error(t, err)
 }

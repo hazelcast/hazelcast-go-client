@@ -21,6 +21,8 @@ import (
 
 	"sync/atomic"
 
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
@@ -284,6 +286,37 @@ func TestClusterScaleDown(t *testing.T) {
 	client.Shutdown()
 	remoteController.ShutdownCluster(cluster.ID)
 
+}
+
+func TestClientShouldConnectToClusterWhenValidAddresses(t *testing.T) {
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	remoteController.StartMember(cluster.ID)
+
+	testCases := [...]struct {
+		address string
+		err     bool
+	}{
+		{"localhost:5701", false},
+		{"localhost", false},
+		{"127.0.0.1", false},
+		{"127.0.0.1:5701", false},
+		{"1.12.33.5:5701", true},
+		{"www.invalid.com:5701", true},
+	}
+
+	for _, tc := range testCases {
+		config := hazelcast.NewConfig()
+		config.NetworkConfig().SetConnectionTimeout(10 * time.Millisecond)
+		config.NetworkConfig().AddAddress(tc.address)
+		client, err := hazelcast.NewClientWithConfig(config)
+		if tc.err {
+			assert.Error(t, err, tc.address)
+		} else {
+			assert.NoError(t, err, tc.address)
+		}
+		client.Shutdown()
+	}
+	remoteController.ShutdownCluster(cluster.ID)
 }
 
 func TestConnectToClusterWithoutPort(t *testing.T) {
