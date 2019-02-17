@@ -29,7 +29,7 @@ func IsValidIPAddress(addr string) bool {
 	return net.ParseIP(addr) != nil
 }
 
-func GetIPAndPort(addr string) (string, int32) {
+func GetIPAndPort(addr string) (string, int) {
 	var port int
 	var err error
 	parts := strings.Split(addr, ":")
@@ -42,7 +42,7 @@ func GetIPAndPort(addr string) (string, int32) {
 		port = -1
 	}
 	addr = parts[0]
-	return addr, int32(port)
+	return addr, port
 }
 
 // NewUUID generates a random uuid according to RFC 4122

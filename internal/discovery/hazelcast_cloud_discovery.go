@@ -118,7 +118,7 @@ func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]co
 		publicAddress := hzC.createAddress(addr.PublicAddr)
 		// TODO:: what if privateAddress is not okay ?
 		// TODO:: use addressProvider
-		privateAddress := proto.NewAddressWithParameters(addr.PrivAddr, int32(publicAddress.Port()))
+		privateAddress := proto.NewAddressWithParameters(addr.PrivAddr, publicAddress.Port())
 		privateToPublicAddrs[privateAddress.String()] = publicAddress
 	}
 

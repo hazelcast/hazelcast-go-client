@@ -29,10 +29,10 @@ import (
 
 type Address struct {
 	host string
-	port int32
+	port int
 }
 
-func NewAddressWithParameters(Host string, Port int32) *Address {
+func NewAddressWithParameters(Host string, Port int) *Address {
 	return &Address{Host, Port}
 }
 
