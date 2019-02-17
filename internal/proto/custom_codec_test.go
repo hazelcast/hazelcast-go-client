@@ -23,7 +23,7 @@ import (
 
 func TestAddressCodecEncodeDecode(t *testing.T) {
 	host := "test-host"
-	var port int32 = 8080
+	var port = 8080
 	address := Address{host, port}
 	msg := NewClientMessage(nil, addressCalculateSize(&address))
 	AddressCodecEncode(msg, &address)
