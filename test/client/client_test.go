@@ -76,7 +76,7 @@ func TestConnectionTimeout(t *testing.T) {
 	defer shutdownFunc()
 	cfg := hazelcast.NewConfig()
 	cfg.NetworkConfig().SetConnectionTimeout(0)
-	client, err := hazelcast.NewClient()
+	client, err := hazelcast.NewClientWithConfig(cfg)
 	defer client.Shutdown()
 	assert.NoError(t, err)
 }

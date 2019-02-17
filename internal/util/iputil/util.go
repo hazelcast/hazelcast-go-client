@@ -18,16 +18,11 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
-	"net"
 	"strconv"
 	"strings"
 )
 
 var defaultPort = 5701
-
-func IsValidIPAddress(addr string) bool {
-	return net.ParseIP(addr) != nil
-}
 
 func GetIPAndPort(addr string) (string, int) {
 	var port int

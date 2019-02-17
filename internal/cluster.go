@@ -115,15 +115,12 @@ func createAddressesFromString(addressesInString []string) []proto.Address {
 	addressesSet := make(map[proto.Address]struct{}, len(addressesInString))
 	for _, address := range addressesInString {
 		ip, port := iputil.GetIPAndPort(address)
-		if iputil.IsValidIPAddress(ip) {
-			if port == -1 {
-				addressesSet[*proto.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
-				addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
-				addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
-			} else {
-				addressesSet[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
-			}
-
+		if port == -1 {
+			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
+			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
+			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
+		} else {
+			addressesSet[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
 		}
 	}
 	addresses := make([]proto.Address, len(addressesSet))
