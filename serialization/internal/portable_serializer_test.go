@@ -71,7 +71,7 @@ func (s *student) ReadPortable(reader serialization.PortableReader) error {
 	s.id = reader.ReadInt16("id")
 	s.age = reader.ReadInt32("age")
 	s.name = reader.ReadUTF("name")
-	return nil
+	return reader.Error()
 }
 
 type student2 struct {
