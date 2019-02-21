@@ -26,8 +26,6 @@ import (
 
 	"time"
 
-	"syscall"
-
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
@@ -148,14 +146,6 @@ func (s *statistics) collectRuntimeMetrics(stats *bytes.Buffer) {
 	s.addStat(stats, "runtime.freeMemory", strconv.Itoa(int(m.HeapIdle)))
 	s.addStat(stats, "runtime.totalMemory", strconv.Itoa(int(m.HeapSys)))
 	s.addStat(stats, "runtime.usedMemory", strconv.Itoa(int(m.HeapInuse)))
-}
-
-func (s *statistics) collectOSMetrics(stats *bytes.Buffer) {
-	var limit syscall.Rlimit
-	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit); err == nil {
-		s.addStat(stats, "os.maxFileDescriptorCount", strconv.Itoa(int(limit.Max)))
-		s.addStat(stats, "os.openFileDescriptorCount", strconv.Itoa(int(limit.Cur)))
-	}
 }
 
 func (s *statistics) addStat(stats *bytes.Buffer, name string, value interface{}) {
