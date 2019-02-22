@@ -32,6 +32,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 
+	"encoding/json"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -906,6 +908,32 @@ func TestMapProxy_AddEntryListener_IllegalListener(t *testing.T) {
 	if _, ok := err.(*core.HazelcastIllegalArgumentError); !ok {
 		t.Error("Map.AddEntryListener should return HazelcastIllegalArgumentError")
 	}
+}
+
+type person struct {
+	Age  int
+	Name string
+}
+
+func TestHazelcastJsonPut(t *testing.T) {
+	age := 55
+	name := "Walter"
+	walter := person{Age: age, Name: name}
+	jsonStr, _ := json.Marshal(walter)
+	_, err := mp.Put("key", core.HazelcastJSON{JSONString: jsonStr})
+	assert.NoError(t, err)
+	jsonValue, err := mp.Get("key")
+	assert.NoError(t, err)
+	var result person
+	err = json.Unmarshal(jsonValue.(core.HazelcastJSON).JSONString, &result)
+	assert.NoError(t, err)
+	assert.Equal(t, age, result.Age)
+	assert.Equal(t, name, result.Name)
+}
+
+func TestHazelcastJsonInvalidJsonString(t *testing.T) {
+	_, err := mp.Put("key", core.HazelcastJSON{JSONString: []byte("invalid")})
+	assert.Error(t, err)
 }
 
 func TestMapProxy_AddEntryListenerAdded(t *testing.T) {

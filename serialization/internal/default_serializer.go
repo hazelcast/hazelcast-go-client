@@ -422,3 +422,19 @@ func (*GobSerializer) Write(output serialization.DataOutput, i interface{}) erro
 	output.WriteData(&Data{network.Bytes()})
 	return nil
 }
+
+type HazelcastJSONSerializer struct{}
+
+func (*HazelcastJSONSerializer) ID() (id int32) {
+	return JSONSerializationType
+}
+
+func (*HazelcastJSONSerializer) Read(input serialization.DataInput) (object interface{}, err error) {
+	obj := input.ReadByteArray()
+	return core.HazelcastJSON{JSONString: obj}, input.Error()
+}
+
+func (*HazelcastJSONSerializer) Write(output serialization.DataOutput, object interface{}) (err error) {
+	output.WriteUTF(string(object.(core.HazelcastJSON).JSONString))
+	return nil
+}
