@@ -231,83 +231,83 @@ type DataInput interface {
 	SetPosition(pos int32)
 
 	// ReadByte returns byte read .
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadByte() byte
 
 	// ReadBool returns bool read.
-	// It returns the zero value if an error is set previously.
+	// It returns false if an error is set previously.
 	ReadBool() bool
 
 	// ReadUInt16 returns uint16 read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadUInt16() uint16
 
 	// ReadInt16 returns int16 read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadInt16() int16
 
 	// ReadInt32 returns int32 read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadInt32() int32
 
 	// ReadInt64 returns int64 read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadInt64() int64
 
 	// ReadFloat32 returns float32 read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadFloat32() float32
 
 	// ReadFloat64 returns float64 read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadFloat64() float64
 
 	// ReadUTF returns string read.
-	// It returns the zero value if an error is set previously.
+	// It returns empty string if an error is set previously.
 	ReadUTF() string
 
 	// ReadObject returns object read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadObject() interface{}
 
 	// ReadData returns Data read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadData() Data
 
 	// ReadByteArray returns []byte read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadByteArray() []byte
 
 	// ReadBoolArray returns []bool read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadBoolArray() []bool
 
 	// ReadUInt16Array returns []uint16 read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadUInt16Array() []uint16
 
 	// ReadInt16Array returns []int16 read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadInt16Array() []int16
 
 	// ReadInt32Array returns []int32 read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadInt32Array() []int32
 
 	// ReadInt64Array returns []int64 read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadInt64Array() []int64
 
 	// ReadFloat32Array returns []float32 read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadFloat32Array() []float32
 
 	// ReadFloat64Array returns []float64 read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadFloat64Array() []float64
 
 	// ReadUTFArray returns []string read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadUTFArray() []string
 }
 
@@ -390,83 +390,83 @@ type PortableReader interface {
 	Error() error
 
 	// ReadByte takes fieldName name of the field and returns the byte value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadByte(fieldName string) byte
 
 	// ReadBool takes fieldName name of the field and returns the bool value read.
-	// It returns the zero value if an error is set previously.
+	// It returns false if an error is set previously.
 	ReadBool(fieldName string) bool
 
 	// ReadUInt16 takes fieldName name of the field and returns the uint16 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadUInt16(fieldName string) uint16
 
 	// ReadInt16 takes fieldName name of the field and returns the int16 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadInt16(fieldName string) int16
 
 	// ReadInt32 takes fieldName name of the field and returns the int32 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadInt32(fieldName string) int32
 
 	// ReadInt64 takes fieldName name of the field and returns the int64 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadInt64(fieldName string) int64
 
 	// ReadFloat32 takes fieldName name of the field and returns the float32 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadFloat32(fieldName string) float32
 
 	// ReadFloat64 takes fieldName name of the field and returns the float64 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns zero if an error is set previously.
 	ReadFloat64(fieldName string) float64
 
 	// ReadUTF takes fieldName name of the field and returns the string value read.
-	// It returns the zero value if an error is set previously.
+	// It returns empty string if an error is set previously.
 	ReadUTF(fieldName string) string
 
 	// ReadPortable takes fieldName name of the field and returns the Portable value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadPortable(fieldName string) Portable
 
 	// ReadByteArray takes fieldName name of the field and returns the []byte value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadByteArray(fieldName string) []byte
 
 	// ReadBoolArray takes fieldName name of the field and returns the []bool value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadBoolArray(fieldName string) []bool
 
 	// ReadUInt16Array takes fieldName name of the field and returns the []uint16 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadUInt16Array(fieldName string) []uint16
 
 	// ReadInt16Array takes fieldName name of the field and returns the []int16 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadInt16Array(fieldName string) []int16
 
 	// ReadInt32Array takes fieldName name of the field and returns the []int32 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadInt32Array(fieldName string) []int32
 
 	// ReadInt64Array takes fieldName name of the field and returns the []int64 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadInt64Array(fieldName string) []int64
 
 	// ReadFloat32Array takes fieldName name of the field and returns the []float32 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadFloat32Array(fieldName string) []float32
 
 	// ReadFloat64Array takes fieldName name of the field and returns the []float64 value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadFloat64Array(fieldName string) []float64
 
 	// ReadUTFArray takes fieldName name of the field and returns the []string value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadUTFArray(fieldName string) []string
 
 	// ReadPortableArray takes fieldName name of the field and returns the []Portable value read.
-	// It returns the zero value if an error is set previously.
+	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
 }
 
