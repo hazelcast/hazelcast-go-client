@@ -304,6 +304,12 @@ type LoadBalancer interface {
 	Next() Member
 }
 
+// HazelcastJSON is a wrapper for json byte array.
+// JsonString should be a valid json string.
+type HazelcastJSON struct {
+	JSONString []byte
+}
+
 // StackTraceElement contains stacktrace information for server side exception.
 type StackTraceElement interface {
 	// DeclaringClass returns the fully qualified name of the class containing

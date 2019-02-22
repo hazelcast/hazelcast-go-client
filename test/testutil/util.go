@@ -132,7 +132,7 @@ type NonSerializable struct {
 }
 
 func NewNonSerializableObject() interface{} {
-	return &NonSerializable{}
+	return &NonSerializable{10}
 }
 
 func NewNonSerializableObjectSlice() []interface{} {

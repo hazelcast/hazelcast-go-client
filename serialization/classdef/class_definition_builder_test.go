@@ -23,8 +23,7 @@ import (
 func TestClassDefinitionBuilder_AddFieldAfterBuildError(t *testing.T) {
 	n := NewClassDefinitionBuilder(1, 1, 1)
 	n.Build()
-	var err error
-	err = n.AddByteField("name")
+	err := n.AddByteField("name")
 	assert.Error(t, err)
 	err = n.AddBoolField("name")
 	assert.Error(t, err)

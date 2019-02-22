@@ -185,6 +185,9 @@ func (s *Service) registerDefaultSerializers() error {
 	s.registerSerializer(&StringArraySerializer{})
 	s.nameToID["[]string"] = ConstantTypeStringArray
 
+	s.registerSerializer(&HazelcastJSONSerializer{})
+	s.nameToID[reflect.TypeOf(core.HazelcastJSON{}).String()] = JSONSerializationType
+
 	s.registerSerializer(&GobSerializer{})
 	s.nameToID["!gob"] = GoGobSerializationType
 
@@ -230,15 +233,15 @@ func (s *Service) registerGlobalSerializer(globalSerializer serialization.Serial
 	}
 }
 
-func (s *Service) getIDByObject(obj interface{}) *int32 {
+func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
 	typ := reflect.TypeOf(obj).String()
 	if typ == "int" || typ == "[]int" {
 		typ = typ + strconv.Itoa(64)
 	}
 	if val, ok := s.nameToID[typ]; ok {
-		return &val
+		return val, true
 	}
-	return nil
+	return 0, false
 }
 
 func (s *Service) lookUpDefaultSerializer(obj interface{}) serialization.Serializer {
@@ -249,13 +252,11 @@ func (s *Service) lookUpDefaultSerializer(obj interface{}) serialization.Seriali
 	if isPortableSerializable(obj) {
 		return s.registry[s.nameToID["!portable"]]
 	}
-
-	if s.getIDByObject(obj) == nil {
+	id, found := s.getIDByObject(obj)
+	if !found {
 		return nil
 	}
-
-	serializer = s.registry[*s.getIDByObject(obj)]
-
+	serializer = s.registry[id]
 	return serializer
 }
 
