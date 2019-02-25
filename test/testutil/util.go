@@ -28,7 +28,10 @@ import (
 )
 
 const (
-	Timeout      = 1 * time.Minute
+	// Timeout is timeout for tests with waitgroup.
+	Timeout = 1 * time.Minute
+
+	// TimeoutShort is the timeout for tests with waitgroup that should timeout.
 	TimeoutShort = Timeout / 20
 )
 
