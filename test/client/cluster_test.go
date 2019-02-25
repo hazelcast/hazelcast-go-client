@@ -29,6 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type membershipListener struct {
@@ -320,6 +321,17 @@ func TestAddressesWhenCloudConfigEnabled(t *testing.T) {
 	// Since cloudConfig is enabled and it does not have a valid url returning an error means
 	// default address is not used.
 	assert.Error(t, err)
+}
+
+func TestClusterFormedOnlyByLiteMembersDoesntGetStuck(t *testing.T) {
+	config, err := testutil.Read("lite-member.xml")
+	require.NoError(t, err)
+	cluster, _ = remoteController.CreateCluster("", config)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+	client, _ := hazelcast.NewClient()
+	defer client.Shutdown()
+	client.(*internal.HazelcastClient).PartitionService.GetPartitionIDWithKey(0)
 }
 
 type mapListener struct {
