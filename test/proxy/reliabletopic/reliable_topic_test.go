@@ -24,8 +24,6 @@ import (
 
 	"time"
 
-	"runtime"
-
 	"errors"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -407,27 +405,6 @@ func TestReliableTopicProxy_ClientNotActiveError(t *testing.T) {
 	client2.Shutdown()
 	testutil.AssertTrueEventually(t, func() bool {
 		return len(listener.messages) == 0
-	})
-}
-
-func TestReliableTopicProxy_Leakage(t *testing.T) {
-	routineNumBefore := runtime.NumGoroutine()
-	client2, _ := hazelcast.NewClientWithConfig(initConfig())
-
-	reliableTopic, _ := client2.GetReliableTopic("discard")
-	topic := reliableTopic.(*internal.ReliableTopicProxy)
-	items := generateItems(client.(*internal.HazelcastClient), 20)
-	wg := new(sync.WaitGroup)
-	wg.Add(10)
-	listener := &ReliableMessageListenerMock{wg: wg, isLossTolerant: true, storedSeq: -1}
-	id, _ := reliableTopic.AddMessageListener(listener)
-	defer reliableTopic.RemoveMessageListener(id)
-	_, err := topic.Ringbuffer().AddAll(items, core.OverflowPolicyOverwrite)
-	assert.NoError(t, err)
-	client2.Shutdown()
-	testutil.AssertTrueEventually(t, func() bool {
-		routineNumAfter := runtime.NumGoroutine()
-		return routineNumBefore == routineNumAfter
 	})
 }
 
