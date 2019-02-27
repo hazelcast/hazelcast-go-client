@@ -916,24 +916,26 @@ type person struct {
 }
 
 func TestHazelcastJsonPut(t *testing.T) {
-	age := 55
-	name := "Walter"
-	walter := person{Age: age, Name: name}
-	jsonStr, _ := json.Marshal(walter)
-	_, err := mp.Put("key", core.HazelcastJSON{JSONString: jsonStr})
-	assert.NoError(t, err)
-	jsonValue, err := mp.Get("key")
-	assert.NoError(t, err)
-	var result person
-	err = json.Unmarshal(jsonValue.(core.HazelcastJSON).JSONString, &result)
-	assert.NoError(t, err)
-	assert.Equal(t, age, result.Age)
-	assert.Equal(t, name, result.Name)
-}
 
-func TestHazelcastJsonInvalidJsonString(t *testing.T) {
-	_, err := mp.Put("key", core.HazelcastJSON{JSONString: []byte("invalid")})
-	assert.Error(t, err)
+	testCases := []person{
+		{Age: 55, Name: "Walter"},
+		{Age: 23, Name: "こんにちは"},
+		{Age: 25, Name: ""},
+	}
+
+	for _, currentPerson := range testCases {
+		jsonStr, _ := json.Marshal(currentPerson)
+		_, err := mp.Put("key", core.HazelcastJSON{JSONString: jsonStr})
+		assert.NoError(t, err)
+		jsonValue, err := mp.Get("key")
+		assert.NoError(t, err)
+		var result person
+		err = json.Unmarshal(jsonValue.(core.HazelcastJSON).JSONString, &result)
+		assert.NoError(t, err)
+		assert.Equal(t, currentPerson.Age, result.Age)
+		assert.Equal(t, currentPerson.Name, result.Name)
+	}
+
 }
 
 func TestMapProxy_AddEntryListenerAdded(t *testing.T) {
