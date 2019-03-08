@@ -33,12 +33,18 @@ const (
 )
 
 // DefaultLogger has Go's built in log embedded in it. It adds level logging.
+// To set the logging level, one should use the LoggingLevel property. For example
+// to set it to debug level:
+//  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
 type DefaultLogger struct {
 	*log.Logger
 	Level int
 }
 
 // New returns a Default Logger with defaultLogLevel.
+// To set the logging level, one should use the LoggingLevel property. For example
+// to set it to debug level:
+//  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
 func New() *DefaultLogger {
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
