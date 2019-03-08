@@ -15,7 +15,6 @@
 package logger
 
 import (
-	"os"
 	"testing"
 
 	"log"
@@ -23,7 +22,6 @@ import (
 	"bytes"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
@@ -41,23 +39,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestLoggerConfigurationWithEnvironmentVariable(t *testing.T) {
-	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
-	defer remoteController.ShutdownCluster(cluster.ID)
-	remoteController.StartMember(cluster.ID)
-	os.Setenv(property.LoggingLevel.Name(), logger.ErrorLevel)
-	defer os.Unsetenv(property.LoggingLevel.Name())
-	l := logger.New()
-	buf := new(bytes.Buffer)
-	l.SetOutput(buf)
-	config := hazelcast.NewConfig()
-	config.LoggerConfig().SetLogger(l)
-	client, err := hazelcast.NewClientWithConfig(config)
-	assert.NoError(t, err)
-	client.Shutdown()
-	assert.Zero(t, buf.Len())
-}
-
 func TestLoggerLevelConfigurationWithConfig(t *testing.T) {
 	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
 	defer remoteController.ShutdownCluster(cluster.ID)
@@ -66,11 +47,34 @@ func TestLoggerLevelConfigurationWithConfig(t *testing.T) {
 	buf := new(bytes.Buffer)
 	l.SetOutput(buf)
 	config := hazelcast.NewConfig()
-	config.SetProperty(property.LoggingLevel.Name(), logger.ErrorLevel)
+	level, _ := logger.GetLogLevel(logger.ErrorLevel)
+	l.Level = level
 	config.LoggerConfig().SetLogger(l)
 	client, err := hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
 	client.Shutdown()
+	assert.Zero(t, buf.Len())
+}
+
+func TestLoggerLevelWhenSetLoggerIsUsed(t *testing.T) {
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	defer remoteController.ShutdownCluster(cluster.ID)
+	remoteController.StartMember(cluster.ID)
+
+	config := hazelcast.NewConfig()
+
+	// Turn off logging
+	hazelcastDefaultLogger := logger.New()
+	buf := new(bytes.Buffer)
+	hazelcastDefaultLogger.SetOutput(buf)
+	offLogLevel, _ := logger.GetLogLevel(logger.OffLevel)
+	hazelcastDefaultLogger.Level = offLogLevel
+	config.LoggerConfig().SetLogger(hazelcastDefaultLogger)
+
+	// Create client
+	client, err := hazelcast.NewClientWithConfig(config)
+	defer client.Shutdown()
+	assert.NoError(t, err)
 	assert.Zero(t, buf.Len())
 }
 
