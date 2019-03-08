@@ -22,7 +22,8 @@
   * [4.1. IdentifiedDataSerializable Serialization](#41-identifieddataserializable-serialization)
   * [4.2. Portable Serialization](#42-portable-serialization)
   * [4.3. Custom Serialization](#43-custom-serialization)
-  * [4.4. Global Serialization](#44-global-serialization)
+  * [4.4. JSON Serialization](#44-json-serialization)
+  * [4.5. Global Serialization](#45-global-serialization)
 * [5. Setting Up Client Network](#5-setting-up-client-network)
   * [5.1. Providing the Member Addresses](#51-providing-the-member-addresses)
   * [5.2. Setting Smart Routing](#52-setting-smart-routing)
@@ -75,6 +76,7 @@
       * [7.7.1.3. Querying with SQL](#7713-querying-with-sql)
         * [Supported SQL Syntax](#supported-sql-syntax)
         * [Querying Examples with Predicates](#querying-examples-with-predicates)
+      * [7.7.1.4. Querying with JSON Strings](#7714-querying-with-json-strings)  
     * [7.7.2. Fast-Aggregations](#772-fast-aggregations)
   * [7.8. Monitoring and Logging](#78-monitoring-and-logging)  
     * [7.8.1. Enabling Client Statistics](#781-enabling-client-statistics)
@@ -556,6 +558,7 @@ Hazelcast Go client supports the following data structures and features:
 * Portable Serialization
 * Custom Serialization
 * Global Serialization
+* JSON Serialization
 * SSL Support (requires Enterprise server)
 * Mutual Authentication (requires Enterprise server)
 * Custom Credentials
@@ -774,7 +777,65 @@ config.SerializationConfig().AddCustomSerializer(reflect.TypeOf((*CustomSerializ
 
 From now on, Hazelcast will use `CustomSerializer` to serialize `CustomSerializable` objects.
 
-## 4.4. Global Serialization
+## 4.4. JSON Serialization
+
+You can use the JSON formatted strings as objects in Hazelcast cluster. Starting with Hazelcast IMDG 3.12, the JSON serialization is one of the formerly supported serialization methods. Creating JSON objects in the cluster does not require any server side coding and hence you can just send a JSON formatted string object to the cluster and query these objects by fields.
+
+In order to use JSON serialization, you should use the `HazelcastJSON` object for the key or value.
+
+You can construct a `HazelcastJSON` as follows:
+
+```go
+core.HazelcastJSON{JSONString: "your json string"}
+```
+
+No JSON parsing is performed but it is your responsibility to provide correctly formatted JSON strings. The client will not validate the string, and it will send it to the cluster as it is. If you submit incorrectly formatted JSON strings and, later, if you query those objects, it is highly possible that you will get formatting errors since the server will fail to deserialize or find the query fields.
+
+Here is an example of how you can construct a `HazelcastJSON` and put to the map:
+
+```go
+mp.Put("item1", core.HazelcastJSON{JSONString: []byte("{ \"age\": 4 }")})
+mp.Put("item2", core.HazelcastJSON{JSONString: []byte("{ \"age\": 20 }")})
+```
+
+You can query JSON objects in the cluster using the `Predicate`s of your choice. An example JSON query for querying the values whose age is greater than 6 is shown below:
+
+```go
+ // Get the objects whose age is greater than 6
+	result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("age", 6))
+	var person interface{}
+	json.Unmarshal(result[0].(core.HazelcastJSON).JSONString, &person)
+	log.Println("Retrieved: ", len(result))
+	log.Println("Entry is: ", person)
+```
+
+Note that we have used `var person interface{}`. If we already knew the type of our object we could do the following:
+
+```go
+type person struct {
+    Age  int
+    Name string
+}
+
+
+person1 := person{Age: 20, Name: "Walter"}
+person2 := person{Age: 5, Name: "Mike"}
+jsonStr1, _ := json.Marshal(person1)
+jsonStr2, _ := json.Marshal(person2)
+mp.Put("item1", core.HazelcastJSON{JSONString: jsonStr1})
+mp.Put("item2", core.HazelcastJSON{JSONString: jsonStr2})
+result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("Age", 6))
+var person person
+json.Unmarshal(result[0].(core.HazelcastJSON).JSONString, &person)
+log.Println("Retrieved: ", len(result)) // Retrieved: 1
+log.Println("Entry is: ", person) // Entry is: {20 Walter}
+```
+
+Note that here we also show an example of how to create the JSON string from an object.
+
+
+
+## 4.5. Global Serialization
 
 The global serializer is identical to custom serializers from the implementation perspective. The global serializer is registered as a fallback serializer to handle all other objects if a serializer cannot be located for them.
 
@@ -1889,6 +1950,67 @@ fmt.Println(value) //[28 30]
 ```
 
 In this example, the code creates a slice with the values greater than or equal to "27".
+
+#### 7.7.1.4. Querying with JSON Strings
+
+You can query JSON strings stored inside your Hazelcast clusters. To query the JSON string,
+you first need to create a `HazelcastJSON` from the JSON string. You can use ``HazelcastJSON``s both as keys and values in the distributed data structures. Then, it is
+possible to query these objects using the Hazelcast query methods explained in this section.
+
+```go
+person1 := "{ \"name\": \"John\", \"age\": 35 }"
+person2 := "{ \"name\": \"Jane\", \"age\": 24 }"
+person3 := "{ \"name\": \"Trey\", \"age\": 17 }"
+
+mp.Put(1, core.HazelcastJSON{JSONString: []byte(person1)})
+mp.Put(2, core.HazelcastJSON{JSONString: []byte(person2)})
+mp.Put(3, core.HazelcastJSON{JSONString: []byte(person3)})
+
+peopleUnder21, _ := mp.ValuesWithPredicate(predicate.LessThan("age", 21))
+```
+
+When running the queries, Hazelcast treats values extracted from the JSON documents as Java types so they
+can be compared with the query attribute. JSON specification defines five primitive types to be used in the JSON
+documents: `number`,`string`, `true`, `false` and `nil`. The `string`, `true/false` and `nil` types are treated
+as `String`, `boolean` and `null`, respectively. We treat the extracted `number` values as ``long``s if they
+can be represented by a `long`. Otherwise, ``number``s are treated as ``double``s.
+
+It is possible to query nested attributes and arrays in the JSON documents. The query syntax is the same
+as querying other Hazelcast objects using the ``Predicate``s.
+
+```go
+/**
+* Sample JSON object
+*
+* {
+*     "departmentId": 1,
+*     "room": "alpha",
+*     "people": [
+*         {
+*             "name": "Peter",
+*             "age": 26,
+*             "salary": 50000
+*         },
+*         {
+*             "name": "Jonah",
+*             "age": 50,
+*             "salary": 140000
+*         }
+*     ]
+* }
+*
+*
+* The following query finds all the departments that have a person named "Peter" working in them.
+*/
+
+departmentWithPeter, _  := departments.values(predicate.Equal("people[any].name", "Peter"))
+
+```
+
+`HazelcastJSON` is a lightweight wrapper around your JSON strings. It is used merely as a way to indicate
+that the contained string should be treated as a valid JSON value. Hazelcast does not check the validity of JSON
+strings put into to the maps. Putting an invalid JSON string into a map is permissible. However, in that case
+whether such an entry is going to be returned or not from a query is not defined.
 
 ### 7.7.2. Fast-Aggregations
 
