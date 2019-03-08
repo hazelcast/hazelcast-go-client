@@ -29,6 +29,8 @@ func NewLoggerConfig() *LoggerConfig {
 }
 
 // SetLogger sets the loggerConfig's logger as the given one.
+// If this method is called, LoggingLevel property wont be used, instead Level should be set
+// by user.
 func (l *LoggerConfig) SetLogger(logger logger.Logger) {
 	l.logger = logger
 }

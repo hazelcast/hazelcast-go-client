@@ -36,6 +36,7 @@ const (
 // To set the logging level, one should use the LoggingLevel property. For example
 // to set it to debug level:
 //  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
+// If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 type DefaultLogger struct {
 	*log.Logger
 	Level int
@@ -45,6 +46,7 @@ type DefaultLogger struct {
 // To set the logging level, one should use the LoggingLevel property. For example
 // to set it to debug level:
 //  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
+// If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 func New() *DefaultLogger {
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),

@@ -190,8 +190,6 @@ func (c *HazelcastClient) initLogger() {
 		l := logger.New()
 		l.Level = logLevel
 		setLogger = l
-	} else if setLoggerImpl, ok := setLogger.(*logger.DefaultLogger); ok {
-		setLoggerImpl.Level = logLevel
 	}
 	c.logger = newHazelcastLogger(setLogger, hazelcastPrefix)
 }

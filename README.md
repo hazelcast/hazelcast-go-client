@@ -2185,6 +2185,8 @@ config := hazelcast.NewConfig()
 config.LoggerConfig().SetLogger(customLogger)
 ```
 
+Note that when you call `SetLogger` method, the hazelcast property `LoggingLevel` will not be used.
+
 You can also integrate any third party logger with `Logger` interface:
 
 #### Logrus

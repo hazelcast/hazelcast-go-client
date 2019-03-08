@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +31,9 @@ func TestNoLogger(t *testing.T) {
 	buf := new(bytes.Buffer)
 	l := logger.New()
 	l.SetOutput(buf)
+	level, _ := logger.GetLogLevel(logger.OffLevel)
+	l.Level = level
 	config := hazelcast.NewConfig()
-	config.SetProperty(property.LoggingLevel.Name(), logger.OffLevel)
 	config.LoggerConfig().SetLogger(l)
 	client, err := hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
