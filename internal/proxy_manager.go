@@ -104,7 +104,7 @@ func (pm *proxyManager) findNextProxyAddress() core.Address {
 
 func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (core.DistributedObject, error) {
 	if bufutil.ServiceNameMap == serviceName {
-		return pm.createMapProxy(serviceName, name)
+		return pm.createMapProxy(serviceName, name), nil
 	} else if bufutil.ServiceNameList == serviceName {
 		return newListProxy(pm.client, serviceName, name), nil
 	} else if bufutil.ServiceNameSet == serviceName {
@@ -140,10 +140,10 @@ func (pm *proxyManager) destroy() {
 	}
 }
 
-func (pm *proxyManager) createMapProxy(serviceName, name string) (core.DistributedObject, error) {
+func (pm *proxyManager) createMapProxy(serviceName, name string) core.DistributedObject {
 	nearCacheCfg := pm.client.Config.NearCacheConfig()
 	if nearCacheCfg != nil {
 		return newNearCachedMapProxy(pm.client, serviceName, name)
 	}
-	return newMapProxy(pm.client, serviceName, name), nil
+	return newMapProxy(pm.client, serviceName, name)
 }

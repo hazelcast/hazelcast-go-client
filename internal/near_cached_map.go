@@ -34,13 +34,13 @@ type NearCachedMapProxy struct {
 	registrationID   string
 }
 
-func newNearCachedMapProxy(client *HazelcastClient, serviceName string, name string) (*NearCachedMapProxy, error) {
-	mapProxy, err := newMapProxy(client, serviceName, name)
+func newNearCachedMapProxy(client *HazelcastClient, serviceName string, name string) *NearCachedMapProxy {
+	mapProxy := newMapProxy(client, serviceName, name)
 	nearCachedProxy := &NearCachedMapProxy{
 		mapProxy: mapProxy,
 	}
 	nearCachedProxy.init()
-	return nearCachedProxy, err
+	return nearCachedProxy
 }
 
 func (n *NearCachedMapProxy) init() {
