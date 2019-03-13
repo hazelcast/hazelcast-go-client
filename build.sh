@@ -1,22 +1,16 @@
 #!/bin/bash
 
-# Outside tools include:
+# Following packages will be installed by build.sh
 # gocov: go get github.com/axw/gocov/gocov
 # go2xunit: go get github.com/tebeka/go2xunit
 # gocover-cobertura: go get github.com/t-yuki/gocover-cobertura
-# gometalinter: go get -u github.com/alecthomas/gometalinter
+# golangci-lint: go get github.com/golangci/golangci-lint/cmd/golangci-lint
+# testify : go get github.com/stretchr/testify
 
 # Set up environment
 export CLIENT_IMPORT_PATH="github.com/hazelcast/hazelcast-go-client"
 export PACKAGE_LIST=$(go list -tags enterprise $CLIENT_IMPORT_PATH/... | grep -vE ".*/test|.*/compatibility|.*/rc|.*/sample" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
-#run linter
-pushd $GOPATH/src/$CLIENT_IMPORT_PATH
-bash ./linter.sh
 
-if [ "$?" != "0" ]; then
-    exit 1
-fi
-popd
 set -ex
 
 
@@ -34,13 +28,22 @@ pushd $GOPATH/src/$CLIENT_IMPORT_PATH
 go build
 popd
 
+#run linter
+pushd $GOPATH/src/$CLIENT_IMPORT_PATH
+bash ./linter.sh
+
+if [ "$?" != "0" ]; then
+    exit 1
+fi
+popd
+
 bash ./start-rc.sh
 
 sleep 10
 
 go get github.com/t-yuki/gocover-cobertura
 go get github.com/tebeka/go2xunit
-
+go get github.com/stretchr/testify
 
 # Run tests (JUnit plugin)
 echo "mode: atomic" > coverage.out

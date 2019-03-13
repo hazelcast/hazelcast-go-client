@@ -258,5 +258,5 @@ func TestPNCounter_Reset(t *testing.T) {
 	counter.Reset()
 	currentValue, err := counter.AddAndGet(delta)
 	require.NoError(t, err)
-	assert.Equalf(t, currentValue, int64(delta), "PNCounter.Reset failed")
+	assert.Equalf(t, currentValue, delta, "PNCounter.Reset failed")
 }

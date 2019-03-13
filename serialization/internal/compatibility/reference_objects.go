@@ -41,7 +41,8 @@ func getAllTestObjects() []interface{} {
 	var aFloat float32 = 900.5678
 	var anInt int32 = 56789
 	var aLong int64 = -50992225
-	var aString = "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラムThe quick brown fox jumps over the lazy dog"
+	var aString = "Pijamalı hasta, yağız şoföre çabucak güvendi.イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム" +
+		"The quick brown fox jumps over the lazy dog"
 
 	var booleans = []bool{true, false, true}
 

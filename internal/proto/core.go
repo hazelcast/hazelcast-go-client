@@ -261,7 +261,7 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl: timeutil.ConvertMillisToDuration(ttl),
+		ttl:                    timeutil.ConvertMillisToDuration(ttl),
 	}
 }
 
