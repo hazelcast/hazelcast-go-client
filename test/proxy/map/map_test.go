@@ -1246,7 +1246,7 @@ func TestMapProxy_ExecuteOnEntriesWithPredicate(t *testing.T) {
 
 func TestMapProxy_ExecuteOnKeyWithNonRegisteredProcessor(t *testing.T) {
 	config := hazelcast.NewConfig()
-	expectedValue := "newValue"
+	expectedValue := "aValue"
 	processor := newSimpleEntryProcessor(expectedValue, 68)
 	config.SerializationConfig().AddDataSerializableFactory(processor.identifiedFactory.factoryID, processor.identifiedFactory)
 	client, _ := hazelcast.NewClientWithConfig(config)

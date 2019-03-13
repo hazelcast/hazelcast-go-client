@@ -252,7 +252,7 @@ func TestSSL_NoClientCertificates(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// letsencrypt.jks common name is "member1.hazelcast-test.download".
+// letsencrypt.jks common name is "foobar.hazelcast.com".
 func TestSSL_OnlyServerName(t *testing.T) {
 	trustedCAXML := generateTrustedCAXML()
 	clusterID, err := createMemberWithConfig(trustedCAXML)
@@ -263,7 +263,7 @@ func TestSSL_OnlyServerName(t *testing.T) {
 	config := hazelcast.NewConfig()
 	sslConfig := config.NetworkConfig().SSLConfig()
 	sslConfig.SetEnabled(true)
-	sslConfig.ServerName = "member1.hazelcast-test.download"
+	sslConfig.ServerName = "foobar.hazelcast.com"
 	client, err := hazelcast.NewClientWithConfig(config)
 	assert.NoError(t, err)
 	client.Shutdown()
