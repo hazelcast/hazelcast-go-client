@@ -15,8 +15,6 @@
 package main
 
 import (
-	"encoding/json"
-
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -44,16 +42,16 @@ func main() {
 	person2 := person{
 		Age: 40, Name: "Name2",
 	}
-	jsonStr1, _ := json.Marshal(person1)
-	jsonStr2, _ := json.Marshal(person2)
-	mp.Put("person1", core.HazelcastJSON{JSONString: jsonStr1})
-	mp.Put("person2", core.HazelcastJSON{JSONString: jsonStr2})
+	mp.Put("person1", core.CreateHazelcastJSONValue(person1))
+	mp.Put("person2", core.CreateHazelcastJSONValue(person2))
 
 	greaterEqual := predicate.GreaterThan("Age", int32(35))
 	result, _ := mp.ValuesWithPredicate(greaterEqual)
 
 	var resultPerson person
-	json.Unmarshal(result[0].(core.HazelcastJSON).JSONString, &resultPerson)
+	value := result[0].(*core.HazelcastJSONValue)
+	fmt.Println(value.ToString())
+	value.Unmarshal(&resultPerson)
 	fmt.Println(resultPerson.Age)  // 40
 	fmt.Println(resultPerson.Name) // Name2
 

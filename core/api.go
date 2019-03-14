@@ -16,6 +16,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -294,7 +295,6 @@ type ItemRemovedListener interface {
 // only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer.
 // If the client is not smart routing, LoadBalancer will not be used.
 type LoadBalancer interface {
-
 	// Init initializes LoadBalancer with the given cluster.
 	// The given cluster is used to select members.
 	Init(cluster Cluster)
@@ -304,10 +304,26 @@ type LoadBalancer interface {
 	Next() Member
 }
 
-// HazelcastJSON is a wrapper for json byte array.
+// HazelcastJSONValue is a wrapper for json byte array.
 // JsonString should be a valid json string.
-type HazelcastJSON struct {
-	JSONString []byte
+type HazelcastJSONValue struct {
+	jsonString []byte
+}
+
+func CreateHazelcastJSONValueFromString(jsonString string) *HazelcastJSONValue {
+	return &HazelcastJSONValue{[]byte(jsonString)}
+}
+func CreateHazelcastJSONValue(object interface{}) *HazelcastJSONValue {
+	byteArray, _ := json.Marshal(object)
+	return &HazelcastJSONValue{byteArray}
+}
+
+func (h *HazelcastJSONValue) Unmarshal(v interface{}) {
+	json.Unmarshal(h.jsonString, &v)
+}
+
+func (h HazelcastJSONValue) ToString() string {
+	return string(h.jsonString)
 }
 
 // StackTraceElement contains stacktrace information for server side exception.

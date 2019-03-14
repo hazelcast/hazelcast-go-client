@@ -186,7 +186,7 @@ func (s *Service) registerDefaultSerializers() error {
 	s.nameToID["[]string"] = ConstantTypeStringArray
 
 	s.registerSerializer(&HazelcastJSONSerializer{})
-	s.nameToID[reflect.TypeOf(core.HazelcastJSON{}).String()] = JSONSerializationType
+	s.nameToID[reflect.TypeOf(&core.HazelcastJSONValue{}).String()] = JSONSerializationType
 
 	s.registerSerializer(&GobSerializer{})
 	s.nameToID["!gob"] = GoGobSerializationType

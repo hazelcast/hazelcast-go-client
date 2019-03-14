@@ -431,10 +431,11 @@ func (*HazelcastJSONSerializer) ID() (id int32) {
 
 func (*HazelcastJSONSerializer) Read(input serialization.DataInput) (object interface{}, err error) {
 	obj := input.ReadUTF()
-	return core.HazelcastJSON{JSONString: []byte(obj)}, input.Error()
+	return core.CreateHazelcastJSONValueFromString(obj), input.Error()
 }
 
 func (*HazelcastJSONSerializer) Write(output serialization.DataOutput, object interface{}) (err error) {
-	output.WriteUTF(string(object.(core.HazelcastJSON).JSONString))
+	value := object.(*core.HazelcastJSONValue)
+	output.WriteUTF(value.ToString())
 	return nil
 }

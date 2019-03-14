@@ -781,12 +781,16 @@ From now on, Hazelcast will use `CustomSerializer` to serialize `CustomSerializa
 
 You can use the JSON formatted strings as objects in Hazelcast cluster. Starting with Hazelcast IMDG 3.12, the JSON serialization is one of the formerly supported serialization methods. Creating JSON objects in the cluster does not require any server side coding and hence you can just send a JSON formatted string object to the cluster and query these objects by fields.
 
-In order to use JSON serialization, you should use the `HazelcastJSON` object for the key or value.
+In order to use JSON serialization, you should use the `HazelcastJSONValue` object for the key or value.
 
-You can construct a `HazelcastJSON` as follows:
+You can construct a `HazelcastJSONValue` from string or from your go object:
 
 ```go
-core.HazelcastJSON{JSONString: "your json string"}
+//from string
+core.CreateHazelcastJSONValueFromString{"your json string"}
+
+//from go object
+core.CreateHazelcastJSONValueFromString{yourObject}
 ```
 
 No JSON parsing is performed but it is your responsibility to provide correctly formatted JSON strings. The client will not validate the string, and it will send it to the cluster as it is. If you submit incorrectly formatted JSON strings and, later, if you query those objects, it is highly possible that you will get formatting errors since the server will fail to deserialize or find the query fields.
@@ -794,19 +798,19 @@ No JSON parsing is performed but it is your responsibility to provide correctly 
 Here is an example of how you can construct a `HazelcastJSON` and put to the map:
 
 ```go
-mp.Put("item1", core.HazelcastJSON{JSONString: []byte("{ \"age\": 4 }")})
-mp.Put("item2", core.HazelcastJSON{JSONString: []byte("{ \"age\": 20 }")})
+mp.Put("item1", core.CreateHazelcastJSONValueFromString("{ \"age\": 4 }"))
+mp.Put("item2", core.CreateHazelcastJSONValueFromString("{ \"age\": 20 }"))
 ```
 
 You can query JSON objects in the cluster using the `Predicate`s of your choice. An example JSON query for querying the values whose age is greater than 6 is shown below:
 
 ```go
- // Get the objects whose age is greater than 6
-	result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("age", 6))
-	var person interface{}
-	json.Unmarshal(result[0].(core.HazelcastJSON).JSONString, &person)
-	log.Println("Retrieved: ", len(result))
-	log.Println("Entry is: ", person)
+// Get the objects whose age is greater than 6
+result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("age", 6))
+var person interface{}
+result[0].(*core.HazelcastJSON).Unmarshal(&person)
+log.Println("Retrieved: ", len(result))
+log.Println("Entry is: ", person)
 ```
 
 Note that we have used `var person interface{}`. If we already knew the type of our object we could do the following:
@@ -820,18 +824,18 @@ type person struct {
 
 person1 := person{Age: 20, Name: "Walter"}
 person2 := person{Age: 5, Name: "Mike"}
-jsonStr1, _ := json.Marshal(person1)
-jsonStr2, _ := json.Marshal(person2)
-mp.Put("item1", core.HazelcastJSON{JSONString: jsonStr1})
-mp.Put("item2", core.HazelcastJSON{JSONString: jsonStr2})
+mp.Put("item1", core.CreateHazelcastJSONValue(person1))
+mp.Put("item2", core.CreateHazelcastJSONValue(person2))
 result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("Age", 6))
 var person person
-json.Unmarshal(result[0].(core.HazelcastJSON).JSONString, &person)
+value := result[0].(*core.HazelcastJSON)
+log.Println(value.ToString()) //{"Age":20,"Name":"Walter"}
+value.Unmarshal(&person)
 log.Println("Retrieved: ", len(result)) // Retrieved: 1
 log.Println("Entry is: ", person) // Entry is: {20 Walter}
 ```
 
-Note that here we also show an example of how to create the JSON string from an object.
+Note that here we also show an example of how to create the JSON value from a go object.
 
 
 

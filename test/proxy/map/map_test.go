@@ -32,8 +32,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
 
-	"encoding/json"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -924,14 +922,12 @@ func TestHazelcastJsonPut(t *testing.T) {
 	}
 
 	for _, currentPerson := range testCases {
-		jsonStr, _ := json.Marshal(currentPerson)
-		_, err := mp.Put("key", core.HazelcastJSON{JSONString: jsonStr})
+		_, err := mp.Put("key", core.CreateHazelcastJSONValue(currentPerson))
 		assert.NoError(t, err)
 		jsonValue, err := mp.Get("key")
 		assert.NoError(t, err)
 		var result person
-		err = json.Unmarshal(jsonValue.(core.HazelcastJSON).JSONString, &result)
-		assert.NoError(t, err)
+		jsonValue.(core.HazelcastJSONValue).Unmarshal(&result)
 		assert.Equal(t, currentPerson.Age, result.Age)
 		assert.Equal(t, currentPerson.Name, result.Name)
 	}

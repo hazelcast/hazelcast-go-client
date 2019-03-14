@@ -71,8 +71,11 @@ type listenerRegistrationKey struct {
 }
 
 func newListenerService(client *HazelcastClient) *listenerService {
-	service := &listenerService{client: client, register: make(chan *invocation, 1),
-
+	service := &listenerService{
+		client:                                     client,
+		register:                                   make(chan *invocation, 1),
+		cancel:                                     make(chan struct{}),
+		logger:                                     client.logger,
 		registrations:                              make(map[string]map[int64]*eventRegistration),
 		registrationIDToListenerRegistration:       make(map[string]*listenerRegistrationKey),
 		failedRegistrations:                        make(map[int64][]*listenerRegistrationKey),
@@ -85,8 +88,6 @@ func newListenerService(client *HazelcastClient) *listenerService {
 		registerListenerInternalHandleErrorChannel: make(chan registrationIDConnection, 1),
 		registerListenerInitChannel:                make(chan *listenerRegistrationKey),
 		connectToAllMembersChannel:                 make(chan struct{}, 1),
-		cancel: make(chan struct{}),
-		logger: client.logger,
 	}
 	service.client.ConnectionManager.addListener(service)
 	go service.process()
