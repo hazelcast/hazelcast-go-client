@@ -922,16 +922,26 @@ func TestHazelcastJsonPut(t *testing.T) {
 	}
 
 	for _, currentPerson := range testCases {
-		_, err := mp.Put("key", core.CreateHazelcastJSONValue(currentPerson))
+		value, _ := core.CreateHazelcastJSONValue(currentPerson)
+		_, err := mp.Put("key", value)
 		assert.NoError(t, err)
 		jsonValue, err := mp.Get("key")
 		assert.NoError(t, err)
 		var result person
-		jsonValue.(core.HazelcastJSONValue).Unmarshal(&result)
+		jsonValue.(*core.HazelcastJSONValue).Unmarshal(&result)
 		assert.Equal(t, currentPerson.Age, result.Age)
 		assert.Equal(t, currentPerson.Name, result.Name)
 	}
 
+}
+
+func TestHazelcastNilPut(t *testing.T) {
+	_, err := mp.Put("key", nil)
+	assert.Error(t, err)
+
+	var pnt *int
+	_, err = mp.Put("key", pnt)
+	assert.Error(t, err)
 }
 
 func TestMapProxy_AddEntryListenerAdded(t *testing.T) {

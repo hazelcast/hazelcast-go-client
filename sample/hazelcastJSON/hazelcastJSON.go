@@ -42,8 +42,10 @@ func main() {
 	person2 := person{
 		Age: 40, Name: "Name2",
 	}
-	mp.Put("person1", core.CreateHazelcastJSONValue(person1))
-	mp.Put("person2", core.CreateHazelcastJSONValue(person2))
+	jsonValue1, _ := core.CreateHazelcastJSONValue(person1)
+	mp.Put("person1", jsonValue1)
+	jsonValue2, _ := core.CreateHazelcastJSONValue(person2)
+	mp.Put("person2", jsonValue2)
 
 	greaterEqual := predicate.GreaterThan("Age", int32(35))
 	result, _ := mp.ValuesWithPredicate(greaterEqual)
@@ -56,5 +58,4 @@ func main() {
 	fmt.Println(resultPerson.Name) // Name2
 
 	client.Shutdown()
-
 }

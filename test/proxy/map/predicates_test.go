@@ -23,8 +23,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
 	prd "github.com/hazelcast/hazelcast-go-client/internal/predicate"
 
-	"encoding/json"
-
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
 	"github.com/hazelcast/hazelcast-go-client/internal/projection"
@@ -126,10 +124,10 @@ func TestGreaterThanWithHazelcastJson(t *testing.T) {
 	person2 := person{
 		Age: 40, Name: "Name2",
 	}
-	jsonStr1, _ := json.Marshal(person1)
-	jsonStr2, _ := json.Marshal(person2)
-	mp.Put("person1", core.HazelcastJSONValue{JSONString: jsonStr1})
-	mp.Put("person2", core.HazelcastJSONValue{JSONString: jsonStr2})
+	value, _ := core.CreateHazelcastJSONValue(person1)
+	mp.Put("person1", value)
+	value2, _ := core.CreateHazelcastJSONValue(person2)
+	mp.Put("person2", value2)
 
 	greaterEqual := predicate.GreaterThan("Age", int32(35))
 	result, err := mp.ValuesWithPredicate(greaterEqual)
@@ -137,7 +135,7 @@ func TestGreaterThanWithHazelcastJson(t *testing.T) {
 	assert.Len(t, result, 1)
 
 	var resultPerson person
-	err = json.Unmarshal(result[0].(core.HazelcastJSONValue).JSONString, &resultPerson)
+	result[0].(*core.HazelcastJSONValue).Unmarshal(&resultPerson)
 	assert.NoError(t, err)
 	assert.Equal(t, resultPerson.Age, 40)
 	assert.Equal(t, resultPerson.Name, "Name2")

@@ -19,6 +19,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 )
 
 // Address represents an address of a member in the cluster.
@@ -304,25 +307,46 @@ type LoadBalancer interface {
 	Next() Member
 }
 
-// HazelcastJSONValue is a wrapper for json byte array.
-// JsonString should be a valid json string.
+// HazelcastJSONValue is a wrapper for JSON formatted strings. It is
+// preferred to store HazelcastJSONValue instead of string/[]byte for
+// JSON. Users can run predicates/aggregations and use indexes on
+// the attributes of the underlying JSON objects.
+//
+// HazelcastJSONValue is queried using Hazelcast's querying language.
+//
+// HazelcastJSONValue keeps given string as it is. Strings are not
+// checked for being valid. Ill-formatted JSON strings may cause false
+// positive or false negative results in queries.
 type HazelcastJSONValue struct {
 	jsonString []byte
 }
 
+// CreateHazelcastJSONValueFromString returns *HazelcastJSONValue initialized with the given string
 func CreateHazelcastJSONValueFromString(jsonString string) *HazelcastJSONValue {
 	return &HazelcastJSONValue{[]byte(jsonString)}
 }
-func CreateHazelcastJSONValue(object interface{}) *HazelcastJSONValue {
-	byteArray, _ := json.Marshal(object)
-	return &HazelcastJSONValue{byteArray}
+
+// CreateHazelcastJSONValue returns *HazelcastJSONValue constructed from the provided object
+// if nil, channel, complex or function values are given, method returns error
+func CreateHazelcastJSONValue(object interface{}) (*HazelcastJSONValue, error) {
+	if nilutil.IsNil(object) {
+		return nil, NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+	}
+	byteArray, err := json.Marshal(object)
+	if err != nil {
+		return nil, err
+	}
+	return &HazelcastJSONValue{byteArray}, nil
 }
 
-func (h *HazelcastJSONValue) Unmarshal(v interface{}) {
-	json.Unmarshal(h.jsonString, &v)
+// Unmarshal converts HazelcastJSONValue into given v object
+// Returns error if JSON is not valid
+func (h *HazelcastJSONValue) Unmarshal(v interface{}) error {
+	return json.Unmarshal(h.jsonString, &v)
 }
 
-func (h HazelcastJSONValue) ToString() string {
+// ToString returns unaltered string that was used to create this object.
+func (h *HazelcastJSONValue) ToString() string {
 	return string(h.jsonString)
 }
 

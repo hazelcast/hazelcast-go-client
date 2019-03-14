@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -57,7 +58,7 @@ func (p *proxy) ServiceName() string {
 }
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
-	if arg1 == nil {
+	if nilutil.IsNil(arg1) {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
@@ -66,10 +67,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.D
 
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, err error) {
-	if arg1 == nil {
-		return nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
-	}
-	if arg2 == nil {
+	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
 		return nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
@@ -82,10 +80,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, arg3Data serialization.Data, err error) {
-	if arg1 == nil {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
-	}
-	if arg2 == nil || arg3 == nil {
+	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
 		return nil, nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
@@ -101,7 +96,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 }
 
 func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data serialization.Data, err error) {
-	if arg1 == nil {
+	if nilutil.IsNil(arg1) {
 		return nil, core.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
