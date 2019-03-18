@@ -16,8 +16,12 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 )
 
 // Address represents an address of a member in the cluster.
@@ -294,7 +298,6 @@ type ItemRemovedListener interface {
 // only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer.
 // If the client is not smart routing, LoadBalancer will not be used.
 type LoadBalancer interface {
-
 	// Init initializes LoadBalancer with the given cluster.
 	// The given cluster is used to select members.
 	Init(cluster Cluster)
@@ -304,10 +307,47 @@ type LoadBalancer interface {
 	Next() Member
 }
 
-// HazelcastJSON is a wrapper for json byte array.
-// JsonString should be a valid json string.
-type HazelcastJSON struct {
-	JSONString []byte
+// HazelcastJSONValue is a wrapper for JSON formatted strings. It is
+// preferred to store HazelcastJSONValue instead of string/[]byte for
+// JSON. Users can run predicates/aggregations and use indexes on
+// the attributes of the underlying JSON objects.
+//
+// HazelcastJSONValue is queried using Hazelcast's querying language.
+//
+// HazelcastJSONValue keeps given string as it is. Strings are not
+// checked for being valid. Ill-formatted JSON strings may cause false
+// positive or false negative results in queries.
+type HazelcastJSONValue struct {
+	jsonString []byte
+}
+
+// CreateHazelcastJSONValueFromString returns *HazelcastJSONValue initialized with the given string
+func CreateHazelcastJSONValueFromString(jsonString string) *HazelcastJSONValue {
+	return &HazelcastJSONValue{[]byte(jsonString)}
+}
+
+// CreateHazelcastJSONValue returns *HazelcastJSONValue constructed from the provided object
+// if nil, channel, complex or function values are given, method returns error
+func CreateHazelcastJSONValue(object interface{}) (*HazelcastJSONValue, error) {
+	if nilutil.IsNil(object) {
+		return nil, NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+	}
+	byteArray, err := json.Marshal(object)
+	if err != nil {
+		return nil, err
+	}
+	return &HazelcastJSONValue{byteArray}, nil
+}
+
+// Unmarshal converts HazelcastJSONValue into given v object
+// Returns error if JSON is not valid
+func (h *HazelcastJSONValue) Unmarshal(v interface{}) error {
+	return json.Unmarshal(h.jsonString, &v)
+}
+
+// ToString returns unaltered string that was used to create this object.
+func (h *HazelcastJSONValue) ToString() string {
+	return string(h.jsonString)
 }
 
 // StackTraceElement contains stacktrace information for server side exception.
