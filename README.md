@@ -810,7 +810,7 @@ You can query JSON objects in the cluster using the `Predicate`s of your choice.
 // Get the objects whose age is greater than 6
 result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("age", 6))
 var person interface{}
-result[0].(*core.HazelcastJSON).Unmarshal(&person)
+result[0].(*core.HazelcastJSONValue).Unmarshal(&person)
 log.Println("Retrieved: ", len(result))
 log.Println("Entry is: ", person)
 ```
@@ -830,7 +830,7 @@ mp.Put("item1", person1)
 mp.Put("item2", person2)
 result, _ := mp.ValuesWithPredicate(predicate.GreaterThan("Age", 6))
 var person person
-value := result[0].(*core.HazelcastJSON)
+value := result[0].(*core.HazelcastJSONValue)
 log.Println(value.ToString()) //{"Age":20,"Name":"Walter"}
 value.Unmarshal(&person)
 log.Println("Retrieved: ", len(result)) // Retrieved: 1
