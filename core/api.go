@@ -177,6 +177,12 @@ type EntryAddedListener interface {
 	EntryAdded(event EntryEvent)
 }
 
+// EntryLoadedListener invoked upon map loading of an entry.
+type EntryLoadedListener interface {
+	// EntryLoaded invoked upon map loading of an entry.
+	EntryLoaded(event EntryEvent)
+}
+
 // EntryRemovedListener invoked upon removal of an entry.
 type EntryRemovedListener interface {
 	// EntryRemoved invoked upon removal of an entry.
