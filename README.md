@@ -1863,7 +1863,7 @@ Note that `Employee` is implementing `Portable`. As portable types are not deser
 You can combine predicates by using the `and`, `or` and `not` operators, as shown in the below example.
 
 ```go
-mp, _ := client.GetMap("emloyees")
+mp, _ := client.GetMap("employees")
 prdct := predicate.And(predicate.Equal("active", true), predicate.LessThan("age", 30))
 value, _ := mp.ValuesWithPredicate(prdct)
 ```
