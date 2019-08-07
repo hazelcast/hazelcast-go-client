@@ -1325,7 +1325,7 @@ Hazelcast `PNCounter` (Positive-Negative Counter) is a CRDT positive-negative co
 A PN Counter usage example is shown below.
 
 ```go
-counter, _ := client.GpetPNCounter("myPNCounter")
+counter, _ := client.GetPNCounter("myPNCounter")
 
 currentValue, _ := counter.AddAndGet(5)
 fmt.Printf("added 5 counter, current value is %d\n", currentValue)
