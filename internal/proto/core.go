@@ -512,6 +512,9 @@ func GetMapListenerFlags(listener interface{}) (int32, error) {
 	if _, ok := listener.(core.EntryAddedListener); ok {
 		flags |= bufutil.EntryEventAdded
 	}
+	if _, ok := listener.(core.EntryLoadedListener); ok {
+		flags |= bufutil.EntryEventLoaded
+	}
 	if _, ok := listener.(core.EntryRemovedListener); ok {
 		flags |= bufutil.EntryEventRemoved
 	}

@@ -204,6 +204,7 @@ const (
 	EntryEventMerged       int32 = 64
 	EntryEventExpired      int32 = 128
 	EntryEventInvalidation int32 = 256
+	EntryEventLoaded       int32 = 512
 )
 
 const (

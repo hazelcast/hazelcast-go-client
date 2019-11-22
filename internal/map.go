@@ -602,6 +602,8 @@ func (mp *mapProxy) onEntryEvent(keyData serialization.Data, oldValueData serial
 	switch eventType {
 	case bufutil.EntryEventAdded:
 		listener.(core.EntryAddedListener).EntryAdded(entryEvent)
+	case bufutil.EntryEventLoaded:
+		listener.(core.EntryLoadedListener).EntryLoaded(entryEvent)
 	case bufutil.EntryEventRemoved:
 		listener.(core.EntryRemovedListener).EntryRemoved(entryEvent)
 	case bufutil.EntryEventUpdated:
