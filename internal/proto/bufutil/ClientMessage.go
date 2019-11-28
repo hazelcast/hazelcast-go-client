@@ -11,12 +11,12 @@ import (
 
 const (
 	TYPE_FIELD_OFFSET           = 0
-	CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Uint16SizeInBytes
+	CorrelationIdFieldOffset = TYPE_FIELD_OFFSET + Uint16SizeInBytes
 	//Bits.SHORT_SIZE_IN_BYTES
 	//offSet valid for fragmentation frames only
 	FRAGMENTATION_ID_OFFSET = 0
 	//optional fixed partition id field offSet
-	PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Int64SizeInBytes
+	PartitionIdFieldOffset = CorrelationIdFieldOffset + Int64SizeInBytes
 	//Bits.LONG_SIZE_IN_BYTES
 	DEFAULT_FLAGS                  = 0
 	BEGIN_FRAGMENT_FLAG            = 1 << 15
@@ -74,12 +74,12 @@ func (cMessage *ClientMessagex)SetMessaGeType(messageType int32) *ClientMessagex
 	return new(ClientMessagex)
 }
 
-func (cMessage *ClientMessagex)GetCorrelationId() int64 { //long
-	return 1 //Bits.readLongL(Get(0).content, CORRELATION_ID_FIELD_OFFSET);
+func (cMessage *ClientMessagex)GetCorrelationIdFieldOffset() int64 { //long
+	return 1 //Bits.readLongL(Get(0).content, CorrelationIdFieldOffset);
 }
 
-func (cMessage *ClientMessagex)SetCorrelationId(correlationId int64) *ClientMessagex {
-	//Bits.writeLongL(Get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
+func (cMessage *ClientMessagex)SetCorrelationIdFieldOffset(CorrelationIdFieldOffset int64) *ClientMessagex {
+	//Bits.writeLongL(Get(0).content, CorrelationIdFieldOffset, CorrelationIdFieldOffset);
 	return new(ClientMessagex) //this;
 }
 
@@ -151,10 +151,10 @@ func (cMessage *ClientMessagex)ToString() string {
  * Copies the clientMessage efficiently with correlation id
  * Only initialFrame is duplicated, rest of the frames are shared
  *
- * @param correlationId new id
+ * @param CorrelationIdFieldOffset new id
  * @return the copy message
  */
-func (cMessage *ClientMessagex)CopyWithNewCorrelationId(correlationId int64) *ClientMessagex {
+func (cMessage *ClientMessagex)CopyWithNewCorrelationIdFieldOffset(CorrelationIdFieldOffset int64) *ClientMessagex {
 	newMessage := new(ClientMessagex)
 
 	return newMessage
@@ -170,11 +170,11 @@ func (cMessage *ClientMessagex)HashCode() int32 {
 	return int32(result)
 }
 
-func (cMessage *ClientMessagex)IsEndFrame() bool {
-	return true
+func (frame *Frame)IsEndFrame() bool {
+	return frame.IsNullFrame() //bos doto
 }
 
-func (cMessage *ClientMessagex)IsNullFrame() bool {
+func (frame *Frame)IsNullFrame() bool {
 	return true
 }
 
@@ -191,6 +191,10 @@ func (cMessage *ClientMessagex)Next() *Frame {
 }
 
 func (cMessage *ClientMessagex)FrameIterator() *ClientMessagex{
-	return cMessage
+	return cMessage //yoksa burasi frame mi olmaliydi
 }
 
+func (frame *Frame)NextFrame() *Frame {
+	frame = frame.next
+	return frame
+}
