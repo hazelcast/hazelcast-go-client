@@ -163,7 +163,7 @@ const (
 )
 
 const (
-	ByteSizeInBytes    = 1
+	//ByteSizeInBytes    = 1
 	BoolSizeInBytes    = 1
 	Uint8SizeInBytes   = 1
 	Int16SizeInBytes   = 2
@@ -185,11 +185,11 @@ const (
 	FrameLengthFieldOffset   = 0
 	VersionFieldOffset       = FrameLengthFieldOffset + Int32SizeInBytes
 	FlagsFieldOffset         = VersionFieldOffset + ByteSizeInBytes
-	TypeFieldOffset          = FlagsFieldOffset + ByteSizeInBytes
-	CorrelationIDFieldOffset = TypeFieldOffset + Int16SizeInBytes
-	PartitionIDFieldOffset   = CorrelationIDFieldOffset + Int64SizeInBytes
-	DataOffsetFieldOffset    = PartitionIDFieldOffset + Int32SizeInBytes
-	HeaderSize               = DataOffsetFieldOffset + Int16SizeInBytes
+	//TypeFieldOffset          = FlagsFieldOffset + ByteSizeInBytes
+	//CorrelationIDFieldOffset = TypeFieldOffset + Int16SizeInBytes
+	//PartitionIDFieldOffset   = CorrelationIDFieldOffset + Int64SizeInBytes
+	//DataOffsetFieldOffset    = PartitionIDFieldOffset + Int32SizeInBytes
+	//HeaderSize               = DataOffsetFieldOffset + Int16SizeInBytes
 
 	NilArrayLength = -1
 )

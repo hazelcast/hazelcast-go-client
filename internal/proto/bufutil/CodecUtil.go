@@ -25,7 +25,7 @@ func FastForwardToEndFrame(frame *Frame) { //ListIterator<ClientMessage.Frame>
 
 type T CodecUtil //codecutil degil yaniiiii
 
-func EncodeNullable(messagex ClientMessagex,value T /*,encode [][ClientMessagex,T]*/) {
+func EncodeNullable(messagex *ClientMessagex,value T /*,encode [][ClientMessagex,T]*/) {
 	if (value == T(nil)) {
 		messagex.Add(NullFrame);
 	} else {
@@ -34,32 +34,36 @@ func EncodeNullable(messagex ClientMessagex,value T /*,encode [][ClientMessagex,
 	}
 }
 
-func DecodeNullable(frame Frame /*,decode [][ClientMessagex,T]*/)  { //T
+func DecodeNullable(frame *Frame /*,decode [][ClientMessagex,T]*/) string { //T
 	if NextFrameIsNullEndFrame(frame) {
-		return
+		return "a"
 	}else{
-		return
+		return "b"
 	}
 	//return NextFrameIsNullEndFrame(frame) ? null : decode.apply(iterator);
 }
 
-func NextFrameIsDataStructureEndFrame(frame Frame) bool {
+func NextFrameIsDataStructureEndFrame(iterator ForwardFrameIterator) bool {
+	return iterator.PeekNext().IsEndFrame()
+}
+
+func NextFrameIsNullEndFrame(iterator ForwardFrameIterator) bool {
+	isNull := iterator.PeekNext().IsNullFrame()
+	if isNull {
+		iterator.Next()
+	}
+	return isNull
+}
+
+/*
 	var output bool
 	Block{
 		Try: func() {
-			output = frame.next.IsEndFrame()
+			output = frame.Next().IsEndFrame()
 		},
 		Finally: func() {
 			//frame.previous()
 		},
 	}.Do()
 	return output
-}
-
-func NextFrameIsNullEndFrame(frame Frame) bool {
-	isNull := frame.next.IsNullFrame()
-	if !isNull {
-		//frame.previous()
-	}
-	return isNull
-}
+ */
