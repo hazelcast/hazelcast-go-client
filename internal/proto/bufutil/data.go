@@ -14,5 +14,5 @@ func DataCodecEncode(iterator *ClientMessagex, data serialization.Data)  {
 
 
 func DataCodecDecodeFrame(iterator *ForwardFrameIterator)  serialization.Data {
-	return spi.NewData(iterator.Next().Content) //heapData
+	return spi.NewData(iterator.Next().Content)
 }
