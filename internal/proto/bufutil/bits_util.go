@@ -19,7 +19,7 @@ const (
 	UUIDSizeInBytes    = Int64SizeInBytes * 2
 )*/
 
-func WritInt32(buffer []byte, pos int32, value int32, isBigEndian bool){
+func WriteInt32(buffer []byte, pos int, value int32, isBigEndian bool) {
 	s := buffer[pos:]
 	if isBigEndian {
 		binary.BigEndian.PutUint32(s, uint32(value))
@@ -28,14 +28,14 @@ func WritInt32(buffer []byte, pos int32, value int32, isBigEndian bool){
 	}
 }
 
-func ReadInt32(buffer []byte, pos int32, isBigEndian bool) int32 {
+func ReadInt32(buffer []byte, pos int, isBigEndian bool) int32 {
 	if isBigEndian {
 		return int32(binary.BigEndian.Uint32(buffer[pos:]))
 	} else {
 		return int32(binary.LittleEndian.Uint32(buffer[pos:]))
 	}
 }
-func WriteInt64(buffer []byte, pos int32, value int64, isBigEndian bool){
+func WriteInt64(buffer []byte, pos int32, value int64, isBigEndian bool) {
 	s := buffer[pos:]
 	if isBigEndian {
 		binary.BigEndian.PutUint64(s, uint64(value))

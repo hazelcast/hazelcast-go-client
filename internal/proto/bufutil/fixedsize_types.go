@@ -12,23 +12,24 @@ const (
 	UUIDSizeInBytes    = Int64SizeInBytes * 2
 )
 
-func EncodeInt(buffer []byte, pos int32, value int32) {
-	WritInt32(buffer,pos,value,false)
+func EncodeInt(buffer []byte, pos int, value int32) {
+	WriteInt32(buffer, pos, value, false)
 }
-func DecodeInt(buffer []byte, pos int32) int32 {
-	return ReadInt32(buffer, pos,false)
+func DecodeInt(buffer []byte, pos int) int32 {
+	return ReadInt32(buffer, pos, false)
 }
+
 //TODO: Integer vs int
 
 func EncodeLong(buffer []byte, pos int32, value int64) {
-	WriteInt64(buffer,pos,value,false)
+	WriteInt64(buffer, pos, value, false)
 }
 func DecodeLong(buffer []byte, pos int32) int64 {
-	return ReadInt64(buffer, pos,false)
+	return ReadInt64(buffer, pos, false)
 }
 
 func EncodeBoolean(buffer []byte, pos int32, value bool) {
-	WriteBool(buffer,pos,value)
+	WriteBool(buffer, pos, value)
 }
 func DecodeBoolean(buffer []byte, pos int) bool {
 	return buffer[pos] == 1
@@ -41,23 +42,18 @@ func DecodeByte(buffer []byte, pos int) byte {
 	return buffer[pos]
 }
 
-/*
-func EncodeUUID(buffer []byte, pos int, value string) { //UUID int64
-	mostSigBits := value.getMostSignificantBits()
+//TODO: how to
+func EncodeUUID(buffer []byte, pos int32, value string) { //UUID int64
+	mostSigBits := value.GetMostSignificantBits()
 	leastSigBits := value.getLeastSignificantBits()
-	encodeLong(buffer, pos, mostSigBits)
-	encodeLong(buffer, pos+LONG_SIZE_IN_BYTES, leastSigBits)
-
+	EncodeLong(buffer, pos, mostSigBits)
+	EncodeLong(buffer, pos+LongSizeInBytes, leastSigBits)
 
 }
 
-func DecodeUUID(buffer []byte, pos int) string {
-	mostSigBits := decodeLong(buffer, pos)
-	leastSigBits := decodeLong(buffer, pos + LONG_SIZE_IN_BYTES)
-	return newUUID(mostSigBits, leastSigBits)
+func DecodeUUID(buffer []byte, pos int32) string {
+	mostSigBits := DecodeLong(buffer, pos)
+	leastSigBits := DecodeLong(buffer, pos+LongSizeInBytes)
+	return string(mostSigBits, leastSigBits)
 
-
-	return "aaa"
 }
-
- */

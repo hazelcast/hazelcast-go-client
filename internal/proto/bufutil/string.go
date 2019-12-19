@@ -5,13 +5,13 @@ type StringCodec struct {
 }
 
 func StringCodecEncode(iterator *ClientMessagex, value string)  {
-	iterator.Add(Frame{[]byte(value)}) //value.getBytes(Bits.UTF_8)
+	iterator.Add(&Frame{[]byte(value)}) //value.getBytes(Bits.UTF_8)
+}
+//TODO
+func StringCodecDecode(iterator *ForwardFrameIterator) string  { //
+	return string(iterator.Next().Content)
 }
 
-func StringCodecDecode(iterator *Frame) string  { //
-	return StringCodecDecodeFrame(*iterator)
-}
-
-func StringCodecDecodeFrame(iterator Frame)  string {
-	return string(iterator.Content) //charset
+func StringCodecDecodeFrame(frame *Frame)  string {
+	return string(frame.Content) //charset
 }

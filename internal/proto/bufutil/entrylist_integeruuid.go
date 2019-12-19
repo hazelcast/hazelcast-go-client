@@ -1,5 +1,0 @@
-package bufutil
-
-func main() {
-	
-}

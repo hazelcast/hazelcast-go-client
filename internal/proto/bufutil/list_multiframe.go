@@ -4,67 +4,65 @@ type ListMultiFrameCodec struct {
 
 }
 
-func ListMultiFrameCodecEncode(clientMessage ClientMessagex, T []interface{}, encodeFunction func(messagex ClientMessagex, T interface{}) )  { // , BiConsumer<ClientMessage, T>
-	clientMessage.Add(BeginFrame)
-	//TODO:BiConsumer olayi
+func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}) )  {
+	clientMessage.Add(&BeginFrame) //TODO: clientMessage *
 	for i := 0; i < len(T) ; i++ {
-		encodeFunction(clientMessage,T[i]) //f.accept //TODO
+		encodeFunction(clientMessage,T[i])
 	}
-	clientMessage.Add(EndFrame)
+	clientMessage.Add(&EndFrame)
 }
 
-func ListMultiFrameCodecEncodeContainsNullable(clientMessage ClientMessagex, T []interface{}, encodeFunction func(messagex ClientMessagex, T interface{}) )  { // bu methodu verince olcak , BiConsumer<ClientMessage, T>
-	clientMessage.Add(BeginFrame)
+func ListMultiFrameCodecEncodeContainsNullable(clientMessage ClientMessagex, T []interface{}, encodeFunction func(messagex ClientMessagex, T interface{}) )  {
+	clientMessage.Add(&BeginFrame)
 	for i := 0; i < len(T) ; i++ {
-		if (T == nil){
+		if T == nil{
 		clientMessage.Add(NullFrame.Copy())
 		}else {
 			encodeFunction(clientMessage,T[i])  //f.accept //TODO
 		}
 	}
-	clientMessage.Add(EndFrame)
+	clientMessage.Add(&EndFrame)
 }
 
-func ListMultiFrameCodecEncodeNullable(clientMessage ClientMessagex, T []interface{}, encodeFunction func(messagex ClientMessagex, T interface{}) )  { // , BiConsumer<ClientMessage, T>
-		if (T == nil){
+func ListMultiFrameCodecEncodeNullable(clientMessage *ClientMessagex, T []interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}) )  { // , BiConsumer<ClientMessage, T>
+		if T == nil{
 			clientMessage.Add(NullFrame.Copy())
 		}else {
 			ListMultiFrameCodecEncode(clientMessage, T, encodeFunction)
 		}
 }
 
-func ListMultiFrameCodecDecode(iterator ForwardFrameIterator, T []interface{}, decodeFunction func(iteratorx ForwardFrameIterator, T interface{}) )  []interface{} { // , BiConsumer<ClientMessage, T>
-
-//TODO: result := T//(linked-list)TODO : check
-//begin frame, list
-iterator.Next()
-for !NextFrameIsDataStructureEndFrame(iterator) {
-	//TODO: result.Add(decodeFunction(iterator,T)) //TODO : how to ?
-}
-//end frame, list
-iterator.Next()
-return result
-}
-
-func ListMultiFrameCodecDecodeContainsNullable(iterator ForwardFrameIterator, T []interface{}, decodeFunction func(iteratortx ForwardFrameIterator, T interface{}) ) []interface{} { // bu methodu verince olcak , BiConsumer<ClientMessage, T>
-	//TODO: result := T  //(linked-list)TODO : check
+func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) interface{} )  []interface{} {
+	var result []interface{}
+	//begin frame, list
 	iterator.Next()
 	for !NextFrameIsDataStructureEndFrame(iterator) {
-		if(NextFrameIsNullEndFrame(iterator)){
-			//TODO: result.Add(nil)
+		result = append(result, decodeFunction(iterator))
+	}
+	//end frame, list
+	iterator.Next()
+	return result
+}
+
+func ListMultiFrameCodecDecodeContainsNullable(iterator *ForwardFrameIterator, decodeFunction func(iteratortx *ForwardFrameIterator) interface{} ) []interface{} {
+	var result []interface{}
+	iterator.Next()
+	for !NextFrameIsDataStructureEndFrame(iterator) {
+		if NextFrameIsNullEndFrame(iterator) {
+			result = append(result, nil)
 		}else{
-			//TODO : result.Add(decodeFunction(iterator,T))
+			result = append(result, decodeFunction(iterator))
 		}
 	}
 	iterator.Next()
 	return result
 }
 
-func ListMultiFrameCodecDecodeNullable(iterator ForwardFrameIterator, T []interface{}, decodeFunction func(iteratorx ForwardFrameIterator, T interface{}) ) interface{} { // , BiConsumer<ClientMessage, T>
-		if(NextFrameIsNullEndFrame(iterator)){
-			return nil
-		}else{
-			return ListMultiFrameCodecDecode(iterator,T,decodeFunction)
-		}
+func ListMultiFrameCodecDecodeNullable(iterator *ForwardFrameIterator, decodeNullableFunction func(iteratorx *ForwardFrameIterator) interface{}) []interface{} {
+	if NextFrameIsNullEndFrame(iterator) {
+		return nil
+	}else{ //TODO
+		return ListMultiFrameCodecDecode(iterator, decodeNullableFunction)
+	}
 }
 

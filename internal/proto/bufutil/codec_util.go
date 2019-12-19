@@ -3,51 +3,35 @@ package bufutil
 type CodecUtil struct {
 
 }
-
-type Block struct {
-	Try     func()
-	Finally func()
-}
-
-func (tcf Block) Do() {
-	if tcf.Finally != nil {
-
-		defer tcf.Finally()
-	}
-	tcf.Try()
-}
-
-func FastForwardToEndFrame(frame *Frame) { //ListIterator<ClientMessage.Frame>
-	for !frame.next.IsEndFrame() {
-		frame = frame.next
+//TODO: check
+func FastForwardToEndFrame(iterator *ForwardFrameIterator){
+	// We are starting from 1 because of the BEGIN_FRAME we read
+	// in the beginning of the decode method
+	numberOfExpectedEndFrames := 1
+	var frame *Frame
+	for numberOfExpectedEndFrames != 0 {
+		frame = iterator.Next()
+		if frame.IsEndFrame() {
+			numberOfExpectedEndFrames--
+		} else if frame.IsBeginFrame() {
+			numberOfExpectedEndFrames++
+		}
 	}
 }
 
-type T CodecUtil //codecutil degil yaniiiii
-
-func EncodeNullable(messagex *ClientMessagex,value T /*,encode [][ClientMessagex,T]*/) {
-	if (value == T(nil)) {
-		messagex.Add(NullFrame);
+func EncodeNullable(clientMessage *ClientMessagex, T interface{}, encodeFunction func(messagex *ClientMessagex, T interface{})) {
+	if T == nil {
+		clientMessage.Add(NullFrame.Copy())
 	} else {
-		//Encode(messagex,value)
-		//encode.accept(clientMessage, value);
+		encodeFunction(clientMessage, T)
 	}
 }
 
-func DecodeNullable(frame *Frame /*,decode [][ClientMessagex,T]*/) string { //T
-	if NextFrameIsNullEndFrame(frame) {
-		return "a"
-	}else{
-		return "b"
-	}
-	//return NextFrameIsNullEndFrame(frame) ? null : decode.apply(iterator);
-}
-
-func NextFrameIsDataStructureEndFrame(iterator ForwardFrameIterator) bool {
+func NextFrameIsDataStructureEndFrame(iterator *ForwardFrameIterator) bool {
 	return iterator.PeekNext().IsEndFrame()
 }
 
-func NextFrameIsNullEndFrame(iterator ForwardFrameIterator) bool {
+func NextFrameIsNullEndFrame(iterator *ForwardFrameIterator) bool {
 	isNull := iterator.PeekNext().IsNullFrame()
 	if isNull {
 		iterator.Next()
@@ -55,15 +39,11 @@ func NextFrameIsNullEndFrame(iterator ForwardFrameIterator) bool {
 	return isNull
 }
 
-/*
-	var output bool
-	Block{
-		Try: func() {
-			output = frame.Next().IsEndFrame()
-		},
-		Finally: func() {
-			//frame.previous()
-		},
-	}.Do()
-	return output
- */
+func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction func(itFrame *ForwardFrameIterator) interface{} ) interface{} {
+	if NextFrameIsDataStructureEndFrame(iterator) == false {
+		return decodeFunction(iterator) //TODO: return check
+	}else {
+		return nil
+	}
+}
+
