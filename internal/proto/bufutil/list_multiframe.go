@@ -5,15 +5,15 @@ type ListMultiFrameCodec struct {
 }
 
 func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}) )  {
-	clientMessage.Add(&BeginFrame) //TODO: clientMessage *
+	clientMessage.Add(BeginFrame) //TODO: clientMessage *
 	for i := 0; i < len(T) ; i++ {
 		encodeFunction(clientMessage,T[i])
 	}
-	clientMessage.Add(&EndFrame)
+	clientMessage.Add(EndFrame)
 }
 
 func ListMultiFrameCodecEncodeContainsNullable(clientMessage ClientMessagex, T []interface{}, encodeFunction func(messagex ClientMessagex, T interface{}) )  {
-	clientMessage.Add(&BeginFrame)
+	clientMessage.Add(BeginFrame)
 	for i := 0; i < len(T) ; i++ {
 		if T == nil{
 		clientMessage.Add(NullFrame.Copy())
@@ -21,7 +21,7 @@ func ListMultiFrameCodecEncodeContainsNullable(clientMessage ClientMessagex, T [
 			encodeFunction(clientMessage,T[i])  //f.accept //TODO
 		}
 	}
-	clientMessage.Add(&EndFrame)
+	clientMessage.Add(EndFrame)
 }
 
 func ListMultiFrameCodecEncodeNullable(clientMessage *ClientMessagex, T []interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}) )  { // , BiConsumer<ClientMessage, T>

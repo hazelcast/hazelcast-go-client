@@ -12,6 +12,3 @@ func StringCodecDecode(iterator *ForwardFrameIterator) string  { //
 	return string(iterator.Next().Content)
 }
 
-func StringCodecDecodeFrame(frame *Frame)  string {
-	return string(frame.Content) //charset
-}

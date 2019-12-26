@@ -1,26 +1,26 @@
 package bufutil
 
 import (
-	"bytes"
 	"log"
 )
 
-const IntMaxValue = 0x7fffffff
-	const IntMask  = 0xffff
-	var maxMessageLength int32
-	var readOffset    = -1
-	var clientMessage ClientMessagex
-	var sumUntrustedMessageLength int32
+
+var clientMessage ClientMessagex
+var sumUntrustedMessageLength int32
+var readOffset = -1
+var maxMessageLength int32
+const intMaxValue = 0x7fffffff
+const intMask = 0xffff
 
 func ClientMessageReader(maxMessageLen int32){
 	if maxMessageLen > 0 {
 		maxMessageLength = maxMessageLen
 	}else{
-		maxMessageLength = IntMaxValue
+		maxMessageLength = intMaxValue
 	}
 }
 
-func readFrom(src bytes.Buffer, trusted bool) bool {
+func readFrom(src Buffer, trusted bool) bool {
 	for {
 		if readFrame(src, trusted) {
 			if IsFlagSet(clientMessage.EndFrame.Flags, IsFinalFlag) {
@@ -33,56 +33,56 @@ func readFrom(src bytes.Buffer, trusted bool) bool {
 	}
 }
 
-func readFrame(src bytes.Buffer, trusted bool) bool {
-	remaining := src.Len()
+func readFrame(src Buffer, trusted bool) bool {
+	remaining := len(src.buf) - src.position
 	var frameLength int32
 	if remaining < SizeOfFrameLengthAndFlags {
 		return false
 	}
 	if readOffset == -1 {
-		frameLength = ReadInt32(src.Bytes(), src.off, false)
+		frameLength = ReadInt32(src.buf, src.position , false)
 
-	if frameLength < SizeOfFrameLengthAndFlags {
-		log.Fatal(ErrorCodeIllegalArgument, "The client message frame reported illegal length (%d bytes). Minimal length is the size of frame header (%d bytes).", frameLength, SizeOfFrameLengthAndFlags)
-	}
-	if !trusted {
-		if (IntMaxValue-frameLength) < sumUntrustedMessageLength || (sumUntrustedMessageLength+frameLength) > maxMessageLength {
-			log.Fatal("The client message size (%d + %d) exceededs the maximum allowed length (%d)", sumUntrustedMessageLength, frameLength, maxMessageLength)
+		if frameLength < SizeOfFrameLengthAndFlags {
+			log.Fatal(ErrorCodeIllegalArgument, "The client message frame reported illegal length (%d bytes). Minimal length is the size of frame header (%d bytes).", frameLength, SizeOfFrameLengthAndFlags)
 		}
-		sumUntrustedMessageLength += frameLength
-	}
+		if !trusted {
+			if (intMaxValue-frameLength) < sumUntrustedMessageLength || (sumUntrustedMessageLength+frameLength) > maxMessageLength {
+				log.Fatal("The client message size (%d + %d) exceededs the maximum allowed length (%d)", sumUntrustedMessageLength, frameLength, maxMessageLength)
+			}
+			sumUntrustedMessageLength += frameLength
+		}
 
-	src.position(src.position() + IntSizeInBytes)
-	flags := ReadUInt8(src.Bytes(), src.position()) & IntMask
-	src.position(src.position() + Uint8SizeInBytes)
-	size := frameLength - SizeOfFrameLengthAndFlags
-	bytes := make([]byte, size)
-	frame := &Frame{
-		Content: bytes,
-		Flags:   flags,
+		src.position = src.position + IntSizeInBytes
+		flags := int32(ReadUInt8(src.buf, int32(src.position))) & intMask
+		src.position = src.position + Uint8SizeInBytes
+		size := frameLength - SizeOfFrameLengthAndFlags
+		bytes := make([]byte, size)
+		frame := &Frame{
+			Content: bytes,
+			Flags:   flags,
+		}
+		if clientMessage.StartFrame == nil {
+			clientMessage = CreateForDecode(frame)
+		} else {
+			clientMessage.Add(frame)
+		}
+		readOffset = 0
+		if size == 0 {
+			return true
+		}
 	}
-	if clientMessage.StartFrame == nil {
-		clientMessage = CreateForDecode(frame)
-	} else {
-		clientMessage.Add(frame)
-	}
-	readOffset = 0
-	if size == 0 {
-		return true
-	}
-}
 	frame := EndFrame
 	return accumulate(src, frame.Content, len(frame.Content) - readOffset)
 }
 
-func accumulate(src bytes.Buffer, dest []byte, length int) bool {
-	 remaining := src.Len()
+func accumulate(src Buffer, dest []byte, length int) bool {
+	remaining := len(src.buf) - src.position
 	var readLength int
-	 if remaining < length {
-	 	readLength = remaining
-	 }else {
-	 	readLength = length
-	 }
+	if remaining < length {
+		readLength = remaining
+	}else {
+		readLength = length
+	}
 	if readLength > 0 {
 		src.get(dest, readOffset, readLength)
 		readOffset += readLength
