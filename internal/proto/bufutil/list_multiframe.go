@@ -11,6 +11,21 @@ func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []interface{}, e
 	}
 	clientMessage.Add(EndFrame)
 }
+/*
+
+func typeCast(i interface{}) {
+	switch o := i.(type) {
+	case serialization.Data:
+			i = o
+	//case float64:
+	//	fmt.Printf("%7.3f\n", o)
+	//case string:
+	//	fmt.Printf("%s\n", o)
+	default: // covers structs and such
+	//	fmt.Printf("%+v\n", o)
+	}
+}		*/
+
 
 func ListMultiFrameCodecEncodeContainsNullable(clientMessage ClientMessagex, T []interface{}, encodeFunction func(messagex ClientMessagex, T interface{}) )  {
 	clientMessage.Add(BeginFrame)
@@ -43,6 +58,37 @@ func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction fu
 	iterator.Next()
 	return result
 }
+
+/*
+func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) serialization.Data {
+	return DataCodecDecode(iterator)} )  []serialization.Data {
+	//return func() (result []serialization.Data) {    func(x int) string { return fmt.Sprintf("%b", x) }
+	result := make([]serialization.Data,0)
+		//begin frame, list
+		iterator.Next()
+		for !NextFrameIsDataStructureEndFrame(iterator) {
+			result = append(result, decodeFunction(iterator))
+		}
+		//end frame, list
+		iterator.Next()
+		return result
+	//}
+}	*/
+
+/*
+func decodeFunction(it *ForwardFrameIterator) i{
+	switch o := i.(type) {
+	case int64:
+		fmt.Printf("%5d\n", o)
+	case float64:
+		fmt.Printf("%7.3f\n", o)
+	case string:
+		fmt.Printf("%s\n", o)
+	default: // covers structs and such
+		fmt.Printf("%+v\n", o)
+	}
+}
+ */
 
 func ListMultiFrameCodecDecodeContainsNullable(iterator *ForwardFrameIterator, decodeFunction func(iteratortx *ForwardFrameIterator) interface{} ) []interface{} {
 	var result []interface{}
