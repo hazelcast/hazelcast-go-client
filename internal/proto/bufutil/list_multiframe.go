@@ -59,6 +59,47 @@ func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction fu
 	return result
 }
 
+
+/*
+func ListAddAllDecodeRequest(clientMessage *bufutil.ClientMessagex) *ListAddAllRequestParameters {
+    iterator := clientMessage.FrameIterator()
+    request := new(ListAddAllRequestParameters)
+    //empty initial frame
+    iterator.Next()
+    request.name = bufutil.StringCodecDecode(iterator)
+    request.valueList, _ = bufutil.ListMultiFramecode(iterator, bufutil.DataCodecDecode(iterator))
+    return request
+}
+
+
+type decodeFunctionData func(iterator *ForwardFrameIterator) []serialization.Data
+
+
+func ListMultiFramecode(iterator *ForwardFrameIterator,data interface{}) ([]serialization2.Data, error) {
+
+	switch data.(type) {
+	case decodeFunctionData:
+		var result []serialization2.Data
+		//begin frame, list
+		iterator.Next()
+		for !NextFrameIsDataStructureEndFrame(iterator) {
+			result = append(result, DataCodecDecode(iterator))
+		}
+		//end frame, list
+		iterator.Next()
+
+		return result, nil
+
+	}
+
+	return nil, nil
+}
+
+
+
+
+ */
+
 /*
 func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) serialization.Data {
 	return DataCodecDecode(iterator)} )  []serialization.Data {
