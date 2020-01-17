@@ -16,9 +16,9 @@ package internal
 
 import (
 	"encoding/binary"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
 	"math"
 
-	"github.com/gulcesirvanci/hazelcast-go-client/internal/util/murmur"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
