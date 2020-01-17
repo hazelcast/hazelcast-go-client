@@ -39,16 +39,15 @@ func NextFrameIsNullEndFrame(iterator *ForwardFrameIterator) bool {
 	return isNull
 }
 
-func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction func(itFrame *ForwardFrameIterator) interface{} ) func() (response interface{}) {
-	return func() (response interface{}) {
+func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction func(itFrame *ForwardFrameIterator) interface{} ) interface{} {
 		if NextFrameIsDataStructureEndFrame(iterator) == false {
 			return decodeFunction(iterator) //TODO: return check
 		}else {
 			return nil
 		}
-	}
-
 }
+
+
 
 /*
 func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction func(itFrame *ForwardFrameIterator) interface{} ) interface{} {

@@ -1,7 +1,7 @@
 package bufutil
 
 import (
-	"github.com/gulcesirvanci/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"strconv"
 )
 

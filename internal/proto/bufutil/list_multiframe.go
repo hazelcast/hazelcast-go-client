@@ -1,8 +1,21 @@
 package bufutil
 
+import "github.com/hazelcast/hazelcast-go-client/serialization"
+
 type ListMultiFrameCodec struct {
 
 }
+
+func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []serialization.Data, encodeFunction func(messagex *ClientMessagex, T serialization.Data) )  {
+	clientMessage.Add(BeginFrame) //TODO: clientMessage *
+	for i := 0; i < len(T) ; i++ {
+		encodeFunction(clientMessage,T[i])
+	}
+	clientMessage.Add(EndFrame)
+}
+
+
+/*
 
 func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}) )  {
 	clientMessage.Add(BeginFrame) //TODO: clientMessage *
@@ -11,7 +24,6 @@ func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []interface{}, e
 	}
 	clientMessage.Add(EndFrame)
 }
-/*
 
 func typeCast(i interface{}) {
 	switch o := i.(type) {
@@ -47,6 +59,21 @@ func ListMultiFrameCodecEncodeNullable(clientMessage *ClientMessagex, T []interf
 		}
 }
 
+func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) interface{} )  []serialization.Data {
+	var result []serialization.Data
+	//begin frame, list
+	iterator.Next()
+	for !NextFrameIsDataStructureEndFrame(iterator) {
+		result = append(result, decodeFunction(iterator))
+	}
+	//end frame, list
+	iterator.Next()
+	return result
+}
+
+
+/*
+
 func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) interface{} )  []interface{} {
 	var result []interface{}
 	//begin frame, list
@@ -60,7 +87,6 @@ func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction fu
 }
 
 
-/*
 func ListAddAllDecodeRequest(clientMessage *bufutil.ClientMessagex) *ListAddAllRequestParameters {
     iterator := clientMessage.FrameIterator()
     request := new(ListAddAllRequestParameters)

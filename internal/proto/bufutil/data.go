@@ -9,10 +9,10 @@ type DataCodec struct {
 }
 //TODO
 func DataCodecEncode(iterator *ClientMessagex, data serialization.Data)  {
-	iterator.Add(&Frame{data.Buffer()})
+	iterator.Add(&Frame{Content:data.Buffer()})
 }
 
 
-func DataCodecDecode(iterator *ForwardFrameIterator) serialization.Data {
+func DataCodecDecode(iterator *ForwardFrameIterator) interface{} {
 	return spi.NewData(iterator.Next().Content)
 }
