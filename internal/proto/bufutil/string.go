@@ -4,11 +4,11 @@ type StringCodec struct {
 
 }
 
-func StringCodecEncode(iterator *ClientMessagex, value string)  {
-	iterator.Add(&Frame{Content:[]byte(value)}) //value.getBytes(Bits.UTF_8)
+func StringCodecEncode(iterator *ClientMessagex, value interface{})  {
+	iterator.Add(&Frame{Content:[]byte(value.(string))}) //value.getBytes(Bits.UTF_8)
 }
 //TODO
-func StringCodecDecode(iterator *ForwardFrameIterator) string  { //
+func StringCodecDecode(iterator *ForwardFrameIterator) interface{}  { //
 	return string(iterator.Next().Content)
 }
 

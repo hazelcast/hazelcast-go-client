@@ -13,6 +13,6 @@ func DataCodecEncode(iterator *ClientMessagex, data serialization.Data)  {
 }
 
 
-func DataCodecDecode(iterator *ForwardFrameIterator) interface{} {
+func DataCodecDecode(iterator *ForwardFrameIterator) serialization.Data {
 	return spi.NewData(iterator.Next().Content)
 }

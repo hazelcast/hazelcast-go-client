@@ -6,7 +6,7 @@ type ListMultiFrameCodec struct {
 
 }
 
-func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []serialization.Data, encodeFunction func(messagex *ClientMessagex, T serialization.Data) )  {
+func ListMultiFrameCodecEncode(clientMessage *ClientMessagex, T []interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}))  {
 	clientMessage.Add(BeginFrame) //TODO: clientMessage *
 	for i := 0; i < len(T) ; i++ {
 		encodeFunction(clientMessage,T[i])
@@ -59,7 +59,7 @@ func ListMultiFrameCodecEncodeNullable(clientMessage *ClientMessagex, T []interf
 		}
 }
 
-func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) interface{} )  []serialization.Data {
+func ListMultiFrameCodecDecode(iterator *ForwardFrameIterator, decodeFunction func(iteratorx *ForwardFrameIterator) serialization.Data )  []serialization.Data {
 	var result []serialization.Data
 	//begin frame, list
 	iterator.Next()

@@ -1,7 +1,7 @@
 package bufutil
 
 func ByteArrayCodecEncode(clientMessage *ClientMessagex, bytes []byte) {
-	clientMessage.Add(&Frame{bytes})
+	clientMessage.Add(&Frame{Content:bytes})
 }
 
 func ByteArrayCodecDecode(iterator *ForwardFrameIterator) []byte {
