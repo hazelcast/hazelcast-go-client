@@ -1,6 +1,6 @@
 package bufutil
 
-func LongArrayCodecEncode(clientMessage *ClientMessagex, arr []int64) {
+func LongArrayCodecEncode(clientMessage *ClientMessage, arr []int64) {
 	itemCount := len(arr)
 	frame := &Frame{make([]byte, itemCount * LongSizeInBytes)}
 	for i := 0 ; i < itemCount; i++ {

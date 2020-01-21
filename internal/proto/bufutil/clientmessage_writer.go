@@ -4,7 +4,7 @@ package bufutil
 var currentFrame  = &Frame{}
 var writeOffset = -1
 
-func writeTo(dst Buffer, clientMessage *ClientMessagex) bool{
+func writeTo(dst Buffer, clientMessage *ClientMessage) bool{
 
 	if currentFrame == nil {
 		currentFrame = clientMessage.StartFrame

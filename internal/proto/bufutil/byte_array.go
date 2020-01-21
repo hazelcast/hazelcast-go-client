@@ -1,6 +1,6 @@
 package bufutil
 
-func ByteArrayCodecEncode(clientMessage *ClientMessagex, bytes []byte) {
+func ByteArrayCodecEncode(clientMessage *ClientMessage, bytes []byte) {
 	clientMessage.Add(&Frame{Content:bytes})
 }
 

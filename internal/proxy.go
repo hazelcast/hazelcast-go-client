@@ -164,19 +164,19 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 	return partitions, nil
 }
 
-func (p *proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnKey(request *bufutil.ClientMessage, keyData serialization.Data) (*bufutil.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnKeyOwner(request, keyData).Result()
 }
 
-func (p *proxy) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnRandomTarget(request *bufutil.ClientMessage) (*bufutil.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnRandomTarget(request).Result()
 }
 
-func (p *proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnPartition(request *bufutil.ClientMessage, partitionID int32) (*bufutil.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionID).Result()
 }
 
-func (p *proxy) invokeOnAddress(request *proto.ClientMessage, address *proto.Address) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnAddress(request *bufutil.ClientMessage, address *core.Address) (*bufutil.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnTarget(request, address).Result()
 }
 
@@ -188,48 +188,48 @@ func (p *proxy) toData(object interface{}) (serialization.Data, error) {
 	return p.client.SerializationService.ToData(object)
 }
 
-func (p *proxy) decodeToObjectAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() serialization.Data) (response interface{}, err error) {
+func (p *proxy) decodeToObjectAndError(responseMessage *bufutil.ClientMessage, inputError error,
+	decodeFunc func(*bufutil.ClientMessage) func() serialization.Data) (response interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}
 	return p.toObject(decodeFunc(responseMessage)())
 }
 
-func (p *proxy) decodeToBoolAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() bool) (response bool, err error) {
+func (p *proxy) decodeToBoolAndError(responseMessage *bufutil.ClientMessage, inputError error,
+	decodeFunc func(*bufutil.ClientMessage) func() bool) (response bool, err error) {
 	if inputError != nil {
 		return false, inputError
 	}
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() []serialization.Data) (response []interface{}, err error) {
+func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *bufutil.ClientMessage, inputError error,
+	decodeFunc func(*bufutil.ClientMessage) func() []serialization.Data) (response []interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}
 	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
 }
 
-func (p *proxy) decodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() []*proto.Pair) (response []core.Pair, err error) {
+func (p *proxy) decodeToPairSliceAndError(responseMessage *bufutil.ClientMessage, inputError error,
+	decodeFunc func(*bufutil.ClientMessage) func() []*proto.Pair) (response []core.Pair, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}
 	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
 }
 
-func (p *proxy) decodeToInt32AndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() int32) (response int32, err error) {
+func (p *proxy) decodeToInt32AndError(responseMessage *bufutil.ClientMessage, inputError error,
+	decodeFunc func(*bufutil.ClientMessage) func() int32) (response int32, err error) {
 	if inputError != nil {
 		return 0, inputError
 	}
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *proxy) decodeToInt64AndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() int64) (response int64, err error) {
+func (p *proxy) decodeToInt64AndError(responseMessage *bufutil.ClientMessage, inputError error,
+	decodeFunc func(*bufutil.ClientMessage) func() int64) (response int64, err error) {
 	if inputError != nil {
 		return 0, inputError
 	}
@@ -248,7 +248,7 @@ func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name
 
 }
 
-func (parSpecProxy *partitionSpecificProxy) invoke(request *proto.ClientMessage) (*proto.ClientMessage, error) {
+func (parSpecProxy *partitionSpecificProxy) invoke(request *bufutil.ClientMessage) (*bufutil.ClientMessage, error) {
 	return parSpecProxy.invokeOnPartition(request, parSpecProxy.partitionID)
 }
 

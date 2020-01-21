@@ -4,8 +4,8 @@ type MapCodec struct {
 
 }
 
-func MapCodecEncode(clientMessage *ClientMessagex, M map[interface{}]interface{},
-encodeKeyFunc func(messageK *ClientMessagex, K interface{}), encodeValueFunc func(messageV *ClientMessagex, V interface{}) )  {
+func MapCodecEncode(clientMessage *ClientMessage, M map[interface{}]interface{},
+encodeKeyFunc func(messageK *ClientMessage, K interface{}), encodeValueFunc func(messageV *ClientMessage, V interface{}) )  {
 	clientMessage.Add(BeginFrame.Copy())
 		for k, v := range M{
 	encodeKeyFunc(clientMessage, k)
@@ -14,8 +14,8 @@ encodeKeyFunc func(messageK *ClientMessagex, K interface{}), encodeValueFunc fun
 	clientMessage.Add(EndFrame.Copy())
 }
 
-func MapCodecEncodeNullable(clientMessage *ClientMessagex, M map[interface{}]interface{},
-	encodeKeyFunc func(messageK *ClientMessagex, K interface{}), encodeValueFunc func(messageV *ClientMessagex, V interface{}))  {
+func MapCodecEncodeNullable(clientMessage *ClientMessage, M map[interface{}]interface{},
+	encodeKeyFunc func(messageK *ClientMessage, K interface{}), encodeValueFunc func(messageV *ClientMessage, V interface{}))  {
 	if M == nil {
 		clientMessage.Add(NullFrame.Copy())
 	} else {

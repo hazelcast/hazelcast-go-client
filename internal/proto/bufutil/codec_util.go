@@ -19,7 +19,7 @@ func FastForwardToEndFrame(iterator *ForwardFrameIterator){
 	}
 }
 
-func EncodeNullable(clientMessage *ClientMessagex, T interface{}, encodeFunction func(messagex *ClientMessagex, T interface{}) int) {
+func EncodeNullable(clientMessage *ClientMessage, T interface{}, encodeFunction func(messagex *ClientMessage, T interface{})) {
 	if T == nil {
 		clientMessage.Add(NullFrame.Copy())
 	} else {
@@ -39,13 +39,14 @@ func NextFrameIsNullEndFrame(iterator *ForwardFrameIterator) bool {
 	return isNull
 }
 
-func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction func(itFrame *ForwardFrameIterator) interface{} ) interface{} {
+func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction interface{} ) interface{} {
 		if NextFrameIsDataStructureEndFrame(iterator) == false {
-			return decodeFunction(iterator) //TODO: return check
+			return decodeFunction //TODO: return check
 		}else {
 			return nil
 		}
 }
+
 
 
 
@@ -56,5 +57,17 @@ func DecodeNullable(iterator *ForwardFrameIterator, decodeFunction func(itFrame 
 	}else {
 		return nil
 	}
+}func DecodeNull(iterator *ForwardFrameIterator,data interface{}) (serialization.Data, error) {
+
+	switch data.(type) {
+	case serialization.Data:
+		if NextFrameIsDataStructureEndFrame(iterator) == false {
+			return DataCodecDecode(iterator), nil //TODO: return check
+		}else {
+			return nil,nil
+		}
+
+	}
+	return nil,nil
 }
  */

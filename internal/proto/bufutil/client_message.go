@@ -27,9 +27,9 @@ const (
 )
 
 var serialVersionUID = 1
-var NullFrame = &Frame{make([]byte, 0), IsNullFlag}
-var BeginFrame = &Frame{make([]byte, 0), BeginDataStructureFlag}
-var EndFrame = &Frame{make([]byte, 0), EndDataStructureFlag}
+var NullFrame = &Frame{Content:make([]byte, 0), Flags:IsNullFlag}
+var BeginFrame = &Frame{Content:make([]byte, 0), Flags:BeginDataStructureFlag}
+var EndFrame = &Frame{Content:make([]byte, 0), Flags:EndDataStructureFlag}
 
 type Frame struct {
 	Content []byte
@@ -41,11 +41,10 @@ type ForwardFrameIterator struct {
 	nextFrame *Frame //TODO : check
 }
 
-type ClientMessagex struct {
+type ClientMessage struct {
 	StartFrame       *Frame
 	EndFrame         *Frame
-	Is_Retryable      bool
-	acquiresResource bool
+	Is_Retryable     bool
 	OperationName    string
 	Connection       internal.Connection
 }
@@ -58,13 +57,13 @@ type ClientMessagex struct {
 
 // CLIENT MESSAGE
 
-func CreateForEncode() *ClientMessagex {
-	message := new(ClientMessagex)
+func CreateForEncode() *ClientMessage {
+	message := new(ClientMessage)
 	return message
 }
 
-func CreateForDecode(frame *Frame) ClientMessagex {
-	message := ClientMessagex{
+func CreateForDecode(frame *Frame) ClientMessage {
+	message := ClientMessage{
 		StartFrame: frame,
 		EndFrame:   frame,
 	}
@@ -72,11 +71,11 @@ func CreateForDecode(frame *Frame) ClientMessagex {
 	return message
 }
 
-func (m *ClientMessagex) GetStartFrame() *Frame {
+func (m *ClientMessage) GetStartFrame() *Frame {
 	return m.StartFrame
 }
 
-func (m *ClientMessagex) Add(frame *Frame) *ClientMessagex {
+func (m *ClientMessage) Add(frame *Frame) *ClientMessage {
 	frame.next = nil
 	if m.StartFrame.IsNullFrame() {
 		m.StartFrame = frame
@@ -88,73 +87,65 @@ func (m *ClientMessagex) Add(frame *Frame) *ClientMessagex {
 	return m
 }
 
-func (m *ClientMessagex) FrameIterator() *ForwardFrameIterator {
+func (m *ClientMessage) FrameIterator() *ForwardFrameIterator {
 	message := &ForwardFrameIterator{m.StartFrame}
 	return message
 }
 
-func (m *ClientMessagex) GetMessageType() int32 {
+func (m *ClientMessage) GetMessageType() int32 {
 	return ReadInt32(m.StartFrame.Content, TypeFieldOffset, false)
 }
 
-func (m *ClientMessagex) SetMessageType(messageType int32) *ClientMessagex {
+func (m *ClientMessage) SetMessageType(messageType int32) *ClientMessage {
 	WriteInt32(m.StartFrame.Content, TypeFieldOffset, messageType, false)
 	return m
 }
 
-func (m *ClientMessagex) GetCorrelationId() int64 {
+func (m *ClientMessage) GetCorrelationId() int64 {
 	return ReadInt64(m.StartFrame.Content, CorrelationIdFieldOffset, false)
 }
 
-func (m *ClientMessagex) SetCorrelationId(CorrelationId int64) *ClientMessagex { //TODO: check
+func (m *ClientMessage) SetCorrelationId(CorrelationId int64) *ClientMessage { //TODO: check
 	WriteInt64(m.StartFrame.Content, CorrelationIdFieldOffset, CorrelationId, false)
 	return m
 }
 
-func (m *ClientMessagex) GetNumberOfBackupAcks() int64 {
+func (m *ClientMessage) GetNumberOfBackupAcks() int64 {
 	return ReadInt64(m.StartFrame.Content, ResponseBackupAcksFieldOffset, false)
 }
 
-func (m *ClientMessagex) SetNumberOfBackupAcks(numberOfAcks int64) *ClientMessagex {
+func (m *ClientMessage) SetNumberOfBackupAcks(numberOfAcks int64) *ClientMessage {
 	//const TODO numberOfAcks
 	WriteInt64(m.StartFrame.Content, ResponseBackupAcksFieldOffset, numberOfAcks, false)
 	return m
 }
 
-func (m *ClientMessagex) GetPartitionId() int32 {
+func (m *ClientMessage) GetPartitionId() int32 {
 	return ReadInt32(m.StartFrame.Content, PartitionIdFieldOffset, false)
 }
 
-func (m *ClientMessagex) SetPartitionId(partitionId int32) *ClientMessagex {
+func (m *ClientMessage) SetPartitionId(partitionId int32) *ClientMessage {
 	WriteInt32(m.StartFrame.Content, PartitionIdFieldOffset, partitionId, false)
 	return m
 }
 
-func (m *ClientMessagex) GetHeaderFlags() int32 {
+func (m *ClientMessage) GetHeaderFlags() int32 {
 	return m.StartFrame.Flags
 }
 
-func (m *ClientMessagex) IsRetryable() bool {
+func (m *ClientMessage) IsRetryable() bool {
 	return m.Is_Retryable
 }
 
-func (m *ClientMessagex) SetRetryable(isRetryable bool) {
+func (m *ClientMessage) SetRetryable(isRetryable bool) {
 	m.Is_Retryable = isRetryable
 }
 
-func (m *ClientMessagex) AcquiresResource() bool {
-	return m.acquiresResource
-}
-
-func (m *ClientMessagex) SetAcquiresResource(acquiresResource bool) {
-	m.acquiresResource = acquiresResource
-}
-
-func (m *ClientMessagex) SetOperationName(operationName string) {
+func (m *ClientMessage) SetOperationName(operationName string) {
 	m.OperationName = operationName
 }
 
-func (m *ClientMessagex) GetOperationName() string {
+func (m *ClientMessage) GetOperationName() string {
 	return m.OperationName
 }
 
@@ -163,15 +154,15 @@ func IsFlagSet(flags int32, flagMask int32) bool {
 	return i == flagMask
 }
 
-func (m *ClientMessagex) SetConnection(connection internal.Connection) {
+func (m *ClientMessage) SetConnection(connection internal.Connection) {
 	m.Connection = connection
 }
 
-func (m *ClientMessagex) GetConnection() internal.Connection {
+func (m *ClientMessage) GetConnection() internal.Connection {
 	return m.Connection
 }
 
-func (m *ClientMessagex) GetFrameLength() int {
+func (m *ClientMessage) GetFrameLength() int {
 	frameLength := 0
 	currentFrame := m.StartFrame
 	for currentFrame.IsNullFrame() {
@@ -181,18 +172,18 @@ func (m *ClientMessagex) GetFrameLength() int {
 	return frameLength
 }
 
-func (m *ClientMessagex) IsUrgent() bool {
+func (m *ClientMessage) IsUrgent() bool {
 	return false
 }
 
 
-func (m *ClientMessagex) Merge(fragment *ClientMessagex) {
+func (m *ClientMessage) Merge(fragment *ClientMessage) {
 	fragmentMessageStartFrame := fragment.StartFrame.next
 	m.EndFrame.next = fragmentMessageStartFrame
 	m.EndFrame = fragment.EndFrame
 }
 
-func (m *ClientMessagex) ClientMessageToString() string {
+func (m *ClientMessage) ClientMessageToString() string {
 	str := "ClientMessage{\n" + "connection=" + m.Connection.String() + "\n"
 	if !m.StartFrame.IsNullFrame() {
 		str += ", length=" + string(m.GetFrameLength()) + "\n" +
@@ -208,12 +199,11 @@ func (m *ClientMessagex) ClientMessageToString() string {
 	return str
 }
 
-func (m *ClientMessagex) CopyWithNewCorrelationId(correlationId int64) *ClientMessagex { //TODO : check
+func (m *ClientMessage) CopyWithNewCorrelationId(correlationId int64) *ClientMessage { //TODO : check
 	initialFrameCopy := m.StartFrame.DeepCopy() //TODO : check
-	newMessage := &ClientMessagex{initialFrameCopy, m.EndFrame}
+	newMessage := &ClientMessage{StartFrame:initialFrameCopy, EndFrame:m.EndFrame}
 	newMessage.SetCorrelationId(correlationId)
 	newMessage.Is_Retryable = m.Is_Retryable
-	newMessage.acquiresResource = m.acquiresResource
 	newMessage.OperationName = m.OperationName
 
 	return newMessage
@@ -240,14 +230,14 @@ func (iterator *ForwardFrameIterator) PeekNext() *Frame {
 // FRAME
 
 func (frame *Frame) Copy() *Frame {
-	cFrame := Frame{frame.Content, frame.Flags}
+	cFrame := Frame{Content:frame.Content, Flags:frame.Flags}
 	cFrame.next = frame.next
 	return &cFrame
 }
 
 func (frame *Frame) DeepCopy() *Frame {
 	newContent := frame.Content //copyOf TODO : check
-	cFrame := &Frame{newContent, frame.Flags}
+	cFrame := &Frame{Content:newContent, Flags:frame.Flags}
 	cFrame.next = frame.next
 	return cFrame
 }

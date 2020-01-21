@@ -8,8 +8,8 @@ import (
 type DataCodec struct {
 }
 //TODO
-func DataCodecEncode(iterator *ClientMessagex, data serialization.Data)  {
-	iterator.Add(&Frame{Content:data.Buffer()})
+func DataCodecEncode(iterator *ClientMessage, data serialization.Data)  {
+	iterator.Add(&Frame{Content:data.(serialization.Data).Buffer()})
 }
 
 

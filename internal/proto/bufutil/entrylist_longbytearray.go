@@ -4,7 +4,7 @@ func EntryListLongByteArrayCodec() {
 	
 }
 
-func EntryListLongByteArrayCodecEncode(clientMessage *ClientMessagex, M []map[int64][]byte)  {
+func EntryListLongByteArrayCodecEncode(clientMessage *ClientMessage, M []map[int64][]byte)  {
 	var valueList []int64
 	clientMessage.Add(BeginFrame.Copy())
 	for k, v := range M{

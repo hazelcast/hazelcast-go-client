@@ -1,8 +1,8 @@
 package bufutil
 
-func ListLongArrayCodecEncode(clientMessage *ClientMessagex, long []int64) {
+func ListLongArrayCodecEncode(clientMessage *ClientMessage, long []int64) {
 	itemCount := len(long)
-	frame := &Frame{make([]byte, itemCount * LongSizeInBytes)}
+	frame := &Frame{Content:make([]byte, itemCount * LongSizeInBytes)}
 	var iterator []int64
 	for i := 0; i < itemCount; i++ {
 		EncodeLong(frame.Content, int32(i * LongSizeInBytes), iterator[i]) //itarator.next

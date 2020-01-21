@@ -5,7 +5,7 @@ import (
 )
 
 
-var clientMessage ClientMessagex
+var clientMessage ClientMessage
 var sumUntrustedMessageLength int32
 var readOffset = -1
 var maxMessageLength int32

@@ -5,7 +5,7 @@ func EntryListUUIDLongCodec() {
 }
 const EntrySizeInBytes = UUIDSizeInBytes + LongSizeInBytes
 //TODO: WIP
-func EntryListUUIDLongCodecEncode(clientMessage *ClientMessagex, collection []map[string]int64)  {
+func EntryListUUIDLongCodecEncode(clientMessage *ClientMessage, collection []map[string]int64)  {
 	itemCount := len(collection)
 	frame := &Frame{Content:make([]byte, itemCount * EntrySizeInBytes)}
 	iterator := collection
