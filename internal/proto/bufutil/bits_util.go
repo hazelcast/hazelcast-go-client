@@ -2,7 +2,6 @@ package bufutil
 
 import (
 	"encoding/binary"
-	_ "github.com/hazelcast/hazelcast-go-client/serialization"
 	"math"
 )
 /*

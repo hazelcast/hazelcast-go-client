@@ -1,8 +1,5 @@
 package bufutil
 
-import (
-	_ "github.com/hazelcast/hazelcast-go-client/serialization"
-)
 
 const (
 	ByteSizeInBytes    = 1
@@ -43,17 +40,17 @@ func DecodeByte(buffer []byte, pos int) byte {
 }
 
 //TODO: how to
-func EncodeUUID(buffer []byte, pos int32, value string) { //UUID int64
+func EncodeUUID(buffer []byte, pos int32, value Uuid) { //UUID int64
 	mostSigBits := value.GetMostSignificantBits()
-	leastSigBits := value.getLeastSignificantBits()
+	leastSigBits := value.GetLeastSignificantBits()
 	EncodeLong(buffer, pos, mostSigBits)
 	EncodeLong(buffer, pos+LongSizeInBytes, leastSigBits)
 
 }
 
-func DecodeUUID(buffer []byte, pos int32) string {
+func DecodeUUID(buffer []byte, pos int32) Uuid {
 	mostSigBits := DecodeLong(buffer, pos)
 	leastSigBits := DecodeLong(buffer, pos+LongSizeInBytes)
-	return string(mostSigBits, leastSigBits)
+	return Uuid{msb: mostSigBits, lsb:leastSigBits}
 
 }

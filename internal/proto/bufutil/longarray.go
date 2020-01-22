@@ -2,7 +2,7 @@ package bufutil
 
 func LongArrayCodecEncode(clientMessage *ClientMessage, arr []int64) {
 	itemCount := len(arr)
-	frame := &Frame{make([]byte, itemCount * LongSizeInBytes)}
+	frame := &Frame{Content: make([]byte, itemCount * LongSizeInBytes)}
 	for i := 0 ; i < itemCount; i++ {
 		EncodeLong(frame.Content, int32(i*LongSizeInBytes), arr[i])
 	}

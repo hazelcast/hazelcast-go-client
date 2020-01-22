@@ -1,18 +1,17 @@
 package bufutil
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type ListMultiFrameCodec struct {
 
 }
-
+/*
 func ListMultiFrameCodecEncode(clientMessage *ClientMessage, T []interface{}, encodeFunction func(messagex *ClientMessage, T interface{}))  {
 	clientMessage.Add(BeginFrame) //TODO: clientMessage *
 	for i := 0; i < len(T) ; i++ {
 		encodeFunction(clientMessage,T[i])
 	}
 	clientMessage.Add(EndFrame)
-}
+}*/
 
 
 /*
@@ -38,7 +37,7 @@ func typeCast(i interface{}) {
 	}
 }		*/
 
-
+/*
 func ListMultiFrameCodecEncodeContainsNullable(clientMessage ClientMessage, T []interface{}, encodeFunction func(messagex ClientMessage, T interface{}) )  {
 	clientMessage.Add(BeginFrame)
 	for i := 0; i < len(T) ; i++ {
@@ -161,7 +160,7 @@ func decodeFunction(it *ForwardFrameIterator) i{
 	}
 }
  */
-
+/*
 func ListMultiFrameCodecDecodeContainsNullable(iterator *ForwardFrameIterator, decodeFunction func(iteratortx *ForwardFrameIterator) interface{} ) []interface{} {
 	var result []interface{}
 	iterator.Next()
@@ -183,4 +182,4 @@ func ListMultiFrameCodecDecodeNullable(iterator *ForwardFrameIterator, decodeNul
 		return ListMultiFrameCodecDecode(iterator, decodeNullableFunction)
 	}
 }
-
+*/

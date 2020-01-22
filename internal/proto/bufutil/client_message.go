@@ -1,7 +1,6 @@
 package bufutil
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"strconv"
 )
 
@@ -46,7 +45,7 @@ type ClientMessage struct {
 	EndFrame         *Frame
 	Is_Retryable     bool
 	OperationName    string
-	Connection       internal.Connection
+	//Connection       internal.Connection
 }
 
 /*
@@ -153,7 +152,7 @@ func IsFlagSet(flags int32, flagMask int32) bool {
 	i := flags & flagMask
 	return i == flagMask
 }
-
+/*
 func (m *ClientMessage) SetConnection(connection internal.Connection) {
 	m.Connection = connection
 }
@@ -161,7 +160,7 @@ func (m *ClientMessage) SetConnection(connection internal.Connection) {
 func (m *ClientMessage) GetConnection() internal.Connection {
 	return m.Connection
 }
-
+*/
 func (m *ClientMessage) GetFrameLength() int {
 	frameLength := 0
 	currentFrame := m.StartFrame
@@ -184,7 +183,7 @@ func (m *ClientMessage) Merge(fragment *ClientMessage) {
 }
 
 func (m *ClientMessage) ClientMessageToString() string {
-	str := "ClientMessage{\n" + "connection=" + m.Connection.String() + "\n"
+	str := "ClientMessage{\n" + "connection=" //+ m.Connection.String() + "\n"
 	if !m.StartFrame.IsNullFrame() {
 		str += ", length=" + string(m.GetFrameLength()) + "\n" +
 			", correlationId=" + string(m.GetCorrelationId()) + "\n" +
