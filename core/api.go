@@ -18,9 +18,9 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 )
 
@@ -175,6 +175,12 @@ type MemberAttributeEvent interface {
 type EntryAddedListener interface {
 	// EntryAdded is invoked upon addition of an entry.
 	EntryAdded(event EntryEvent)
+}
+
+// EntryLoadedListener invoked upon map loading of an entry.
+type EntryLoadedListener interface {
+	// EntryLoaded invoked upon map loading of an entry.
+	EntryLoaded(event EntryEvent)
 }
 
 // EntryRemovedListener invoked upon removal of an entry.
