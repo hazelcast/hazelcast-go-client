@@ -382,7 +382,7 @@ func (is *invocationServiceImpl) handleNotSentInvocation(correlationID int64, ca
 
 func (is *invocationServiceImpl) handleClientMessage(response *bufutil.ClientMessage) {
 	correlationID := response.CorrelationId()
-	if bufutil.IsFlagSet(response.HeaderFlags(),bufutil.ListenerFlag) {
+	if bufutil.IsFlagSet(response.HeaderFlags(),int(bufutil.ListenerFlag)) {
 		is.eventHandlersLock.RLock()
 		invocation, found := is.eventHandlers[correlationID]
 		is.eventHandlersLock.RUnlock()
@@ -407,7 +407,8 @@ func (is *invocationServiceImpl) handleClientMessage(response *bufutil.ClientMes
 }
 
 func convertToError(clientMessage *bufutil.ClientMessage) *proto.ServerError {
-	return bufutil.ErrorCodecDecode(clientMessage)
+	//return bufutil.ErrorCodecDecode(clientMessage)
+	return &proto.ServerError{}
 }
 
 func (is *invocationServiceImpl) logError(invocation *invocation, err error) {

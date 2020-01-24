@@ -27,12 +27,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+//ADDRESS
+
 type Address struct {
 	host string
-	port int
+	port int32
 }
 
-func NewAddressWithParameters(Host string, Port int) *Address {
+func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
 }
 
@@ -377,9 +379,6 @@ type StackTraceElement struct {
 	lineNumber     int32
 }
 
-func (e *StackTraceElement) DeclaringClass() string {
-	return e.declaringClass
-}
 
 func (e *StackTraceElement) MethodName() string {
 	return e.methodName

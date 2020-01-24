@@ -26,7 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
@@ -158,10 +157,10 @@ func (c *Connection) send(clientMessage *bufutil.ClientMessage) bool {
 }
 
 func (c *Connection) write(clientMessage *bufutil.ClientMessage) error {
-	remainingLen := len(clientMessage.Buffer)
+	remainingLen := len(clientMessage.StartFrame().Content) //todo
 	writeIndex := 0
 	for remainingLen > 0 {
-		writtenLen, err := c.socket.Write(clientMessage.Buffer[writeIndex:])
+		writtenLen, err := c.socket.Write(clientMessage.StartFrame().Content[writeIndex:])
 		if err != nil {
 			return err
 		}
@@ -211,9 +210,11 @@ func (c *Connection) receiveMessage() {
 		if frameLength > uint32(len(c.readBuffer)) {
 			return
 		}
-		resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
+		//resp := bufutil.CreateForEncode()
+
+		//resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
 		c.readBuffer = c.readBuffer[frameLength:]
-		c.clientMessageBuilder.onMessage(resp)
+		//c.clientMessageBuilder.onMessage(resp)
 	}
 }
 

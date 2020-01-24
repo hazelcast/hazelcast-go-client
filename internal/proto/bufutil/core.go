@@ -29,17 +29,3 @@ func (p *Pair) Key() interface{} {
 func (p *Pair) Value() interface{} {
 	return p.value
 }
-
-
-type Data struct {
-	Payload []byte
-}
-
-func NewDataP(payload []byte) Data {
-	return Data{payload}
-}
-
-// NewData return serialization Data with the given payload.
-func NewData(payload []byte) Data {
-	return NewDataP(payload)
-}

@@ -18,7 +18,6 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
@@ -336,7 +335,7 @@ func CreateHazelcastJSONValueFromString(jsonString string) *HazelcastJSONValue {
 // if nil, channel, complex or function values are given, method returns error
 func CreateHazelcastJSONValue(object interface{}) (*HazelcastJSONValue, error) {
 	if nilutil.IsNil(object) {
-		return nil, NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, NewHazelcastNilPointerError(NilArgIsNotAllowed, nil)
 	}
 	byteArray, err := json.Marshal(object)
 	if err != nil {

@@ -37,7 +37,7 @@ func (fp *flakeIDGeneratorProxy) NewID() (id int64, err error) {
 }
 
 func (fp *flakeIDGeneratorProxy) NewIDBatch(batchSize int32) (*flakeid.IDBatch, error) {
-	request := proto.FlakeIDGeneratorNewIDBatchEncodeRequest(fp.name, batchSize)
+	request := proto.FlakeIDGeneratorNewIBatchEncodeRequest(fp.name, batchSize)
 	responseMessage, err := fp.invokeOnRandomTarget(request)
 	if err != nil {
 		return nil, err

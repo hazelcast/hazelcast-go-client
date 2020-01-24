@@ -23,7 +23,7 @@ func ClientMessageReader(maxMessageLen int32){
 func readFrom(src Buffer, trusted bool) bool {
 	for {
 		if readFrame(src, trusted) {
-			if IsFlagSet(clientMessage.endFrame.flags, IsFinalFlag) {
+			if IsFlagSet(clientMessage.endFrame.Flags, IsFinalFlag) {
 				return true
 			}
 			readOffset = -1
@@ -58,8 +58,8 @@ func readFrame(src Buffer, trusted bool) bool {
 		size := frameLength - SizeOfFrameLengthAndFlags
 		bytes := make([]byte, size)
 		frame := &Frame{
-			content: bytes,
-			flags:   uint8(flags_),
+			Content: bytes,
+			Flags:   uint8(flags_),
 		}
 		if clientMessage.StartFrame == nil {
 			clientMessage = CreateForDecode(frame)
@@ -72,7 +72,7 @@ func readFrame(src Buffer, trusted bool) bool {
 		}
 	}
 	frame := EndFrame
-	return accumulate(src, frame.content, len(frame.content) - readOffset)
+	return accumulate(src, frame.Content, len(frame.Content) - readOffset)
 }
 
 func accumulate(src Buffer, dest []byte, length int) bool {

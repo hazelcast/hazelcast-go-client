@@ -11,32 +11,37 @@ const (
 	ResponseBackupAcksFieldOffset = CorrelationIdFieldOffset + Int64SizeInBytes
 	PartitionIdFieldOffset        = CorrelationIdFieldOffset + Int64SizeInBytes
 	DefaultFlags                  = 0
-	BeginFragmentFlag             = 1 << 15
-	EndFragmentFlag               = 1 << 14
-	UnfragmentedMessage           = BeginFragmentFlag | EndFragmentFlag
-	IsFinalFlag                   = 1 << 13
+	//BeginFragmentFlag             = 1 << 15
+	//EndFragmentFlag               = 1 << 14
+	//UnfragmentedMessage           = BeginFragmentFlag | EndFragmentFlag
+	//IsFinalFlag                   = 1 << 13
 	//BeginDataStructureFlag        = 1 << 12
 	//EndDataStructureFlag          = 1 << 11
 	//IsNullFlag                    = 1 << 10
-	IsEventFlag                   = 1 << 9
+	//IsEventFlag                   = 1 << 9
 	BackupAwareFlag               = 1 << 8
 	BackupEventFlag               = 1 << 7
 
 	SizeOfFrameLengthAndFlags = Int32SizeInBytes + Uint16SizeInBytes
 )
 
+var BeginFragmentFlag             = 1 << 15
+var EndFragmentFlag               = 1 << 14
+var UnfragmentedMessage           = uint8(BeginFragmentFlag | EndFragmentFlag)
+var IsFinalFlag                   = 1 << 13
 var BeginDataStructureFlag        = 1 << 12
 var EndDataStructureFlag          = 1 << 11
 var IsNullFlag                    = 1 << 10
+var IsEventFlag                   = 1 << 9
 
 var serialVersionUID = 1
-var NullFrame = &Frame{content:make([]byte, 0), flags:uint8(IsNullFlag)}
-var BeginFrame = &Frame{content:make([]byte, 0), flags:uint8(BeginDataStructureFlag)}
-var EndFrame = &Frame{content:make([]byte, 0), flags:uint8(EndDataStructureFlag)}
+var NullFrame = &Frame{Content: make([]byte, 0), Flags:uint8(IsNullFlag)}
+var BeginFrame = &Frame{Content: make([]byte, 0), Flags:uint8(BeginDataStructureFlag)}
+var EndFrame = &Frame{Content: make([]byte, 0), Flags:uint8(EndDataStructureFlag)}
 
 type Frame struct {
-	content []byte
-	flags   uint8
+	Content []byte
+	Flags   uint8
 	next    *Frame
 }
 
@@ -59,6 +64,22 @@ type ClientMessage struct {
 */
 
 // CLIENT MESSAGE
+
+/*func NewClientMessage(buffer []byte, payloadSize int) *ClientMessage {
+	clientMessage := new(ClientMessage)
+	if buffer != nil {
+		//Message has a buffer so it will be decoded.
+		clientMessage.Buffer = buffer
+		clientMessage.readIndex = bufutil.HeaderSize
+	} else {
+		//Client message that will be encoded.
+		clientMessage.Buffer = make([]byte, bufutil.HeaderSize+payloadSize)
+		clientMessage.SetDataOffset(bufutil.HeaderSize)
+		clientMessage.writeIndex = bufutil.HeaderSize
+	}
+	clientMessage.SetRetryable(false)
+	return clientMessage
+}*/
 
 func CreateForEncode() *ClientMessage {
 	message := new(ClientMessage)
@@ -96,44 +117,44 @@ func (m *ClientMessage) FrameIterator() *ForwardFrameIterator {
 }
 
 func (m *ClientMessage) MessageType() int32 {
-	return ReadInt32(m.startFrame.content, TypeFieldOffset, false)
+	return ReadInt32(m.startFrame.Content, TypeFieldOffset, false)
 }
 
 func (m *ClientMessage) SetMessageType(messageType int32) *ClientMessage {
-	WriteInt32(m.startFrame.content, TypeFieldOffset, messageType, false)
+	WriteInt32(m.startFrame.Content, TypeFieldOffset, messageType, false)
 	return m
 }
 
 func (m *ClientMessage) CorrelationId() int64 {
-	return ReadInt64(m.startFrame.content, CorrelationIdFieldOffset, false)
+	return ReadInt64(m.startFrame.Content, CorrelationIdFieldOffset, false)
 }
 
 func (m *ClientMessage) SetCorrelationId(CorrelationId int64) *ClientMessage { //TODO: check
-	WriteInt64(m.startFrame.content, CorrelationIdFieldOffset, CorrelationId, false)
+	WriteInt64(m.startFrame.Content, CorrelationIdFieldOffset, CorrelationId, false)
 	return m
 }
 
 func (m *ClientMessage) NumberOfBackupAcks() int64 {
-	return ReadInt64(m.startFrame.content, ResponseBackupAcksFieldOffset, false)
+	return ReadInt64(m.startFrame.Content, ResponseBackupAcksFieldOffset, false)
 }
 
 func (m *ClientMessage) SetNumberOfBackupAcks(numberOfAcks int64) *ClientMessage {
 	//const TODO numberOfAcks
-	WriteInt64(m.startFrame.content, ResponseBackupAcksFieldOffset, numberOfAcks, false)
+	WriteInt64(m.startFrame.Content, ResponseBackupAcksFieldOffset, numberOfAcks, false)
 	return m
 }
 
 func (m *ClientMessage) PartitionId() int32 {
-	return ReadInt32(m.startFrame.content, PartitionIdFieldOffset, false)
+	return ReadInt32(m.startFrame.Content, PartitionIdFieldOffset, false)
 }
 
 func (m *ClientMessage) SetPartitionId(partitionId int32) *ClientMessage {
-	WriteInt32(m.startFrame.content, PartitionIdFieldOffset, partitionId, false)
+	WriteInt32(m.startFrame.Content, PartitionIdFieldOffset, partitionId, false)
 	return m
 }
 
 func (m *ClientMessage) HeaderFlags() uint8 {
-	return m.startFrame.flags
+	return m.startFrame.Flags
 }
 
 func (m *ClientMessage) IsRetryable() bool {
@@ -161,7 +182,7 @@ func IsFlagSet(flags uint8, flagMask int) bool {
 }
 
 func (m *ClientMessage) SetFlags(v uint8) {
-	m.startFrame.content[FlagsFieldOffset] = byte(v) //todo
+	m.startFrame.Content[FlagsFieldOffset] = byte(v) //todo
 }
 
 /*
@@ -202,8 +223,8 @@ func (m *ClientMessage) ClientMessageToString() string {
 			", operation=" + m.OperationName() + "\n" +
 			", messageType=" + string(m.MessageType()) + "\n" +
 			", isRetryable=" + strconv.FormatBool(m.IsRetryable()) + "\n" +
-			", isEvent=" + strconv.FormatBool(IsFlagSet(m.startFrame.flags, IsEventFlag)) + "\n" +
-			", isFragmented=" + strconv.FormatBool(!IsFlagSet(m.startFrame.flags, UnfragmentedMessage))
+			", isEvent=" + strconv.FormatBool(IsFlagSet(m.startFrame.Flags, IsEventFlag)) + "\n" +
+			", isFragmented=" + strconv.FormatBool(!IsFlagSet(m.startFrame.Flags, int(UnfragmentedMessage)))
 	}
 
 	str += "}"
@@ -249,34 +270,34 @@ func (iterator *ForwardFrameIterator) PeekNext() *Frame {
 // FRAME
 
 func (frame *Frame) Copy() *Frame {
-	cFrame := Frame{content:frame.content, flags:frame.flags}
+	cFrame := Frame{Content: frame.Content, Flags:frame.Flags}
 	cFrame.next = frame.next
 	return &cFrame
 }
 
 func (frame *Frame) DeepCopy() *Frame {
-	newcontent := frame.content //copyOf TODO : check
-	cFrame := &Frame{content:newcontent, flags:frame.flags}
+	newcontent := frame.Content //copyOf TODO : check
+	cFrame := &Frame{Content: newcontent, Flags:frame.Flags}
 	cFrame.next = frame.next
 	return cFrame
 }
 
 func (frame *Frame) IsEndFrame() bool {
-	return IsFlagSet(frame.flags, EndDataStructureFlag)
+	return IsFlagSet(frame.Flags, EndDataStructureFlag)
 }
 
 func (frame *Frame) IsBeginFrame() bool {
-	return IsFlagSet(frame.flags, BeginDataStructureFlag)
+	return IsFlagSet(frame.Flags, BeginDataStructureFlag)
 }
 
 func (frame *Frame) IsNullFrame() bool {
-	return IsFlagSet(frame.flags, IsNullFlag)
+	return IsFlagSet(frame.Flags, IsNullFlag)
 }
 
 func (frame *Frame) Size() int {
-	if frame.content == nil {
+	if frame.Content == nil {
 		return SizeOfFrameLengthAndFlags
 	} else {
-		return SizeOfFrameLengthAndFlags + len(frame.content)
+		return SizeOfFrameLengthAndFlags + len(frame.Content)
 	}
 }

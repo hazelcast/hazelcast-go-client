@@ -31,10 +31,10 @@ func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 	bytesWritable := len(dst.buf)
 	var framecontentLength int
 
-	if frame.content == nil {
+	if frame.Content == nil {
 		framecontentLength = 0
 	} else {
-		framecontentLength = len(frame.content)
+		framecontentLength = len(frame.Content)
 	}
 
 	//if write offset is -1 put the length and flags byte first
@@ -44,9 +44,9 @@ func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 			dst.position = dst.position + IntSizeInBytes
 
 			if isLastFrame {
-				WriteInt16(dst.buf, int32(dst.position), (int16)( int32(frame.flags) | IsFinalFlag), false)
+				WriteInt16(dst.buf, int32(dst.position), (int16)( frame.Flags | uint8(IsFinalFlag)), false)
 			} else {
-				WriteInt16(dst.buf, int32(dst.position), (int16)(frame.flags) , false)
+				WriteInt16(dst.buf, int32(dst.position), (int16)(frame.Flags) , false)
 			}
 			dst.position = dst.position + Int16SizeInBytes
 			writeOffset = 0
@@ -55,7 +55,7 @@ func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 		}
 	}
 	bytesWritable = len(dst.buf) - dst.position  //remaining()
-	if frame.content == nil {
+	if frame.Content == nil {
 		return true
 	}
 
@@ -74,7 +74,7 @@ func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 		done = false
 	}
 
-	dst.put(frame.content, writeOffset, bytesWrite)
+	dst.put(frame.Content, writeOffset, bytesWrite)
 	writeOffset += bytesWrite
 
 	return done

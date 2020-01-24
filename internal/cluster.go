@@ -16,7 +16,6 @@ package internal
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -121,7 +120,7 @@ func createAddressesFromString(addressesInString []string) []proto.Address {
 			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
 			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
 		} else {
-			addressesSet[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
+			addressesSet[*proto.NewAddressWithParameters(ip, int32(port))] = struct{}{}
 		}
 	}
 	addresses := make([]proto.Address, len(addressesSet))
@@ -210,8 +209,9 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 	return nil
 }
 
+
 func (cs *clusterService) initMembershipListener(connection *Connection) error {
-	cs.initialMemberListWg.Add(1)
+	/*cs.initialMemberListWg.Add(1)
 	invocation := cs.createMembershipInvocation(connection)
 	response, err := cs.client.InvocationService.sendInvocation(invocation).Result()
 	if err != nil {
@@ -220,19 +220,20 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 	registrationID := proto.ClientAddMembershipListenerDecodeResponse(response)()
 	cs.initialMemberListWg.Wait()
 	cs.logMembers()
-	cs.logger.Info("Registered membership listener with ID", registrationID)
+	cs.logger.Info("Registered membership listener with ID", registrationID)*/
 	return nil
 }
 
 func (cs *clusterService) createMembershipInvocation(connection *Connection) *invocation {
-	request := proto.ClientAddMembershipListenerEncodeRequest(false)
+	/*request := proto.ClientAddMembershipListenerEncodeRequest(false)
 	eventHandler := func(message *bufutil.ClientMessage) {
 		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList,
 			cs.handleMemberAttributeChange)
-	}
-	invocation := newInvocation(request, -1, nil, connection, cs.client)
-	invocation.eventHandler = eventHandler
-	return invocation
+	}*/
+	//invocation := newInvocation(request, -1, nil, connection, cs.client)
+	//invocation.eventHandler = eventHandler
+	//return invocation
+	return nil
 }
 
 func (cs *clusterService) logMembers() {

@@ -234,13 +234,14 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *bufutil.ClientMessage {
 	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		return cm.createAuthenticationRequest(asOwner, creds)
+		print(creds)
+		return nil//cm.createAuthenticationRequest(asOwner, creds)
 	}
-	return cm.createCustomAuthenticationRequest(asOwner)
+	return nil//cm.createCustomAuthenticationRequest(asOwner)
 
 }
 
-func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
+/*func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *bufutil.ClientMessage {
 	uuid := cm.client.ClusterService.uuid.Load().(string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
@@ -273,7 +274,7 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 		serializationVersion,
 		ClientVersion,
 	)
-}
+}*/
 
 func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *bufutil.ClientMessage) func() (
 	status uint8, address *proto.Address,
@@ -283,9 +284,9 @@ func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *
 		uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
 		clientUnregisteredMembers []*proto.Member)
 	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		authenticationDecoder = proto.ClientAuthenticationDecodeResponse
+		//authenticationDecoder = proto.ClientAuthenticationDecodeResponse
 	} else {
-		authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
+		//authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
 	}
 	return authenticationDecoder
 }
