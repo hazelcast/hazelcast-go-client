@@ -160,9 +160,9 @@ func (mmp *multiMapProxy) AddEntryListener(listener interface{}, includeValue bo
 	}
 	request := proto.MultiMapAddEntryListenerEncodeRequest(mmp.name, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandler(listener)
-	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *bufutil.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
-	}, func(clientMessage *proto.ClientMessage) string {
+	}, func(clientMessage *bufutil.ClientMessage) string {
 		return proto.MultiMapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
@@ -179,15 +179,15 @@ func (mmp *multiMapProxy) AddEntryListenerToKey(listener interface{}, key interf
 	}
 	request := proto.MultiMapAddEntryListenerToKeyEncodeRequest(mmp.name, keyData, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandlerToKey(listener)
-	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *bufutil.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
-	}, func(clientMessage *proto.ClientMessage) string {
+	}, func(clientMessage *bufutil.ClientMessage) string {
 		return proto.MultiMapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
 
 func (mmp *multiMapProxy) RemoveEntryListener(registrationID string) (removed bool, err error) {
-	return mmp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return mmp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
 	})
 }
@@ -280,8 +280,8 @@ func (mmp *multiMapProxy) onEntryEvent(keyData serialization.Data, oldValueData 
 	}
 }
 
-func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
-	return func(clientMessage *proto.ClientMessage) {
+func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
+	return func(clientMessage *bufutil.ClientMessage) {
 		proto.MultiMapAddEntryListenerHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
 			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
@@ -289,8 +289,8 @@ func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMe
 	}
 }
 
-func (mmp *multiMapProxy) createEventHandlerToKey(listener interface{}) func(clientMessage *proto.ClientMessage) {
-	return func(clientMessage *proto.ClientMessage) {
+func (mmp *multiMapProxy) createEventHandlerToKey(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
+	return func(clientMessage *bufutil.ClientMessage) {
 		proto.MultiMapAddEntryListenerToKeyHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
 			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 			mmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)

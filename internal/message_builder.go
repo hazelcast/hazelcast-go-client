@@ -15,22 +15,22 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 type clientMessageBuilder struct {
-	incompleteMessages map[int64]*proto.ClientMessage
+	incompleteMessages map[int64]*bufutil.ClientMessage
 	handleResponse     func(interface{})
 }
 
-func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
-	if msg.HasFlags(bufutil.BeginEndFlag) > 0 {
+/*
+func (mb *clientMessageBuilder) onMessage(msg *bufutil.ClientMessage) {
+	if msg.IsFlagSet(msg.bufutil.BeginEndFlag) {
 		mb.handleResponse(msg)
 	} else if msg.HasFlags(bufutil.BeginFlag) > 0 {
-		mb.incompleteMessages[msg.CorrelationID()] = msg
+		mb.incompleteMessages[msg.CorrelationId()] = msg
 	} else {
-		message, found := mb.incompleteMessages[msg.CorrelationID()]
+		message, found := mb.incompleteMessages[msg.CorrelationId()]
 		if !found {
 			return
 		}
@@ -38,7 +38,7 @@ func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
 		if msg.HasFlags(bufutil.EndFlag) > 0 {
 			message.AddFlags(bufutil.BeginEndFlag)
 			mb.handleResponse(message)
-			delete(mb.incompleteMessages, msg.CorrelationID())
+			delete(mb.incompleteMessages, msg.CorrelationId())
 		}
 	}
-}
+}*/

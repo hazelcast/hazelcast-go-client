@@ -7,7 +7,7 @@ var writeOffset = -1
 func writeTo(dst Buffer, clientMessage *ClientMessage) bool{
 
 	if currentFrame == nil {
-		currentFrame = clientMessage.StartFrame
+		currentFrame = clientMessage.startFrame
 	}
 
 	for ; ;  {
@@ -29,24 +29,24 @@ func writeTo(dst Buffer, clientMessage *ClientMessage) bool{
 func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 
 	bytesWritable := len(dst.buf)
-	var frameContentLength int
+	var framecontentLength int
 
-	if frame.Content == nil {
-		frameContentLength = 0
+	if frame.content == nil {
+		framecontentLength = 0
 	} else {
-		frameContentLength = len(frame.Content)
+		framecontentLength = len(frame.content)
 	}
 
 	//if write offset is -1 put the length and flags byte first
 	if writeOffset == -1 {
 		if bytesWritable >= SizeOfFrameLengthAndFlags {
-			WriteInt32(dst.buf, dst.position, int32(frameContentLength + SizeOfFrameLengthAndFlags),false)
+			WriteInt32(dst.buf, dst.position, int32(framecontentLength + SizeOfFrameLengthAndFlags),false)
 			dst.position = dst.position + IntSizeInBytes
 
 			if isLastFrame {
-				WriteInt16(dst.buf, int32(dst.position), (int16)(frame.Flags | IsFinalFlag), false)
+				WriteInt16(dst.buf, int32(dst.position), (int16)( int32(frame.flags) | IsFinalFlag), false)
 			} else {
-				WriteInt16(dst.buf, int32(dst.position), (int16)(frame.Flags) , false)
+				WriteInt16(dst.buf, int32(dst.position), (int16)(frame.flags) , false)
 			}
 			dst.position = dst.position + Int16SizeInBytes
 			writeOffset = 0
@@ -55,12 +55,12 @@ func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 		}
 	}
 	bytesWritable = len(dst.buf) - dst.position  //remaining()
-	if frame.Content == nil {
+	if frame.content == nil {
 		return true
 	}
 
 	// the number of bytes that need to be written
-	bytesNeeded := frameContentLength - writeOffset
+	bytesNeeded := framecontentLength - writeOffset
 
 	var bytesWrite int
 	var done bool
@@ -74,7 +74,7 @@ func writeFrame(dst Buffer, frame *Frame , isLastFrame bool) bool {
 		done = false
 	}
 
-	dst.put(frame.Content, writeOffset, bytesWrite)
+	dst.put(frame.content, writeOffset, bytesWrite)
 	writeOffset += bytesWrite
 
 	return done

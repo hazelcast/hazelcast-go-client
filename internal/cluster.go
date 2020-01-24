@@ -16,6 +16,7 @@ package internal
 
 import (
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -225,7 +226,7 @@ func (cs *clusterService) initMembershipListener(connection *Connection) error {
 
 func (cs *clusterService) createMembershipInvocation(connection *Connection) *invocation {
 	request := proto.ClientAddMembershipListenerEncodeRequest(false)
-	eventHandler := func(message *proto.ClientMessage) {
+	eventHandler := func(message *bufutil.ClientMessage) {
 		proto.ClientAddMembershipListenerHandle(message, cs.handleMember, cs.handleMemberList,
 			cs.handleMemberAttributeChange)
 	}

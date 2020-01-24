@@ -51,9 +51,9 @@ func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (
 	request := proto.QueueAddListenerEncodeRequest(qp.name, includeValue, false)
 	eventHandler := qp.createEventHandler(listener)
 	return qp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *proto.ClientMessage {
+		func(registrationID string) *bufutil.ClientMessage {
 			return proto.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) string {
+		}, func(clientMessage *bufutil.ClientMessage) string {
 			return proto.QueueAddListenerDecodeResponse(clientMessage)()
 		})
 }
@@ -195,7 +195,7 @@ func (qp *queueProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 }
 
 func (qp *queueProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return qp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return qp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
 		return proto.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
 	})
 }
@@ -228,8 +228,8 @@ func (qp *queueProxy) ToSlice() (items []interface{}, err error) {
 	return qp.decodeToInterfaceSliceAndError(responseMessage, err, proto.QueueIteratorDecodeResponse)
 }
 
-func (qp *queueProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
-	return func(clientMessage *proto.ClientMessage) {
+func (qp *queueProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
+	return func(clientMessage *bufutil.ClientMessage) {
 		proto.QueueAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
 			onItemEvent := qp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)

@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"math"
 	"math/rand"
 	"sync"
@@ -143,7 +144,7 @@ func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses *sync.Map) (c
 }
 
 func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses *sync.Map, lastError error,
-	target core.Address) (response *proto.ClientMessage, err error) {
+	target core.Address) (response *bufutil.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -172,7 +173,7 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses *sync.Map, lastErr
 
 func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	excludedAddresses *sync.Map, lastError error,
-	target core.Address) (response *proto.ClientMessage, err error) {
+	target core.Address) (response *bufutil.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError

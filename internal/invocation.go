@@ -37,16 +37,16 @@ type invocation struct {
 	address         core.Address
 	partitionID     int32
 	sentConnection  atomic.Value
-	eventHandler    func(clientMessage *proto.ClientMessage)
+	eventHandler    func(clientMessage *bufutil.ClientMessage)
 	deadline        time.Time
 }
 
 type invocationResult interface {
-	Result() (*proto.ClientMessage, error)
-	ResultWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
+	Result() (*bufutil.ClientMessage, error)
+	ResultWithTimeout(duration time.Duration) (*bufutil.ClientMessage, error)
 }
 
-func newInvocation(request *proto.ClientMessage, partitionID int32, address core.Address,
+func newInvocation(request *bufutil.ClientMessage, partitionID int32, address core.Address,
 	connection *Connection, client *HazelcastClient) *invocation {
 	invocation := &invocation{
 		partitionID:     partitionID,
@@ -64,7 +64,7 @@ func (i *invocation) isBoundToSingleConnection() bool {
 	return i.boundConnection != nil
 }
 
-func (i *invocation) Result() (*proto.ClientMessage, error) {
+func (i *invocation) Result() (*bufutil.ClientMessage, error) {
 	response := <-i.response
 	return i.unwrapResponse(response)
 }
@@ -76,9 +76,9 @@ func (i *invocation) complete(response interface{}) {
 
 }
 
-func (i *invocation) unwrapResponse(response interface{}) (*proto.ClientMessage, error) {
+func (i *invocation) unwrapResponse(response interface{}) (*bufutil.ClientMessage, error) {
 	switch res := response.(type) {
-	case *proto.ClientMessage:
+	case *bufutil.ClientMessage:
 		return res, nil
 	case error:
 		return nil, res
@@ -87,7 +87,7 @@ func (i *invocation) unwrapResponse(response interface{}) (*proto.ClientMessage,
 	}
 }
 
-func (i *invocation) ResultWithTimeout(duration time.Duration) (*proto.ClientMessage, error) {
+func (i *invocation) ResultWithTimeout(duration time.Duration) (*bufutil.ClientMessage, error) {
 	select {
 	case response := <-i.response:
 		return i.unwrapResponse(response)
@@ -97,11 +97,11 @@ func (i *invocation) ResultWithTimeout(duration time.Duration) (*proto.ClientMes
 }
 
 type invocationService interface {
-	invokeOnPartitionOwner(message *proto.ClientMessage, partitionID int32) invocationResult
-	invokeOnRandomTarget(message *proto.ClientMessage) invocationResult
-	invokeOnKeyOwner(message *proto.ClientMessage, data serialization.Data) invocationResult
-	invokeOnTarget(message *proto.ClientMessage, address core.Address) invocationResult
-	invokeOnConnection(message *proto.ClientMessage, connection *Connection) invocationResult
+	invokeOnPartitionOwner(message *bufutil.ClientMessage, partitionID int32) invocationResult
+	invokeOnRandomTarget(message *bufutil.ClientMessage) invocationResult
+	invokeOnKeyOwner(message *bufutil.ClientMessage, data serialization.Data) invocationResult
+	invokeOnTarget(message *bufutil.ClientMessage, address core.Address) invocationResult
+	invokeOnConnection(message *bufutil.ClientMessage, connection *Connection) invocationResult
 	cleanupConnection(connection *Connection, e error)
 	removeEventHandler(correlationID int64)
 	sendInvocation(invocation *invocation) invocationResult
@@ -110,27 +110,27 @@ type invocationService interface {
 	shutdown()
 }
 
-func (is *invocationServiceImpl) invokeOnPartitionOwner(request *proto.ClientMessage, partitionID int32) invocationResult {
+func (is *invocationServiceImpl) invokeOnPartitionOwner(request *bufutil.ClientMessage, partitionID int32) invocationResult {
 	invocation := newInvocation(request, partitionID, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnRandomTarget(request *proto.ClientMessage) invocationResult {
+func (is *invocationServiceImpl) invokeOnRandomTarget(request *bufutil.ClientMessage) invocationResult {
 	invocation := newInvocation(request, -1, nil, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnKeyOwner(request *proto.ClientMessage, keyData serialization.Data) invocationResult {
+func (is *invocationServiceImpl) invokeOnKeyOwner(request *bufutil.ClientMessage, keyData serialization.Data) invocationResult {
 	partitionID := is.client.PartitionService.GetPartitionID(keyData)
 	return is.invokeOnPartitionOwner(request, partitionID)
 }
 
-func (is *invocationServiceImpl) invokeOnTarget(request *proto.ClientMessage, target core.Address) invocationResult {
+func (is *invocationServiceImpl) invokeOnTarget(request *bufutil.ClientMessage, target core.Address) invocationResult {
 	invocation := newInvocation(request, -1, target, nil, is.client)
 	return is.sendInvocation(invocation)
 }
 
-func (is *invocationServiceImpl) invokeOnConnection(request *proto.ClientMessage, connection *Connection) invocationResult {
+func (is *invocationServiceImpl) invokeOnConnection(request *bufutil.ClientMessage, connection *Connection) invocationResult {
 	invocation := newInvocation(request, -1, nil, connection, is.client)
 	return is.sendInvocation(invocation)
 }
@@ -141,7 +141,7 @@ func (is *invocationServiceImpl) cleanupConnection(connection *Connection, cause
 	for _, invocation := range is.invocations {
 		sentConnection, ok := invocation.sentConnection.Load().(*Connection)
 		if ok && sentConnection == connection {
-			is.unRegisterInvocationWithoutLock(invocation.request.Load().(*proto.ClientMessage).CorrelationID())
+			is.unRegisterInvocationWithoutLock(invocation.request.Load().(*bufutil.ClientMessage).CorrelationId())
 			is.handleError(invocation, cause)
 		}
 	}
@@ -171,7 +171,7 @@ func (is *invocationServiceImpl) retryInvocation(invocation *invocation, cause e
 	}
 	// retryInvocation modifies the client message and should not reuse the client message.
 	// It could be the case that it is in write queue of the connection.
-	invocation.request.Store(invocation.request.Load().(*proto.ClientMessage).CloneMessage())
+	invocation.request.Store(invocation.request.Load().(*bufutil.ClientMessage).CloneMessage())
 	is.registerInvocation(invocation)
 	is.invoke(invocation)
 }
@@ -256,7 +256,7 @@ func (is *invocationServiceImpl) initRetryPause() {
 func (is *invocationServiceImpl) process() {
 	for command := range is.responseChannel {
 		switch resp := command.(type) {
-		case *proto.ClientMessage:
+		case *bufutil.ClientMessage:
 			is.handleClientMessage(resp)
 		case int64:
 			is.handleNotSentInvocation(resp, core.NewHazelcastIOError("packet is not sent", nil))
@@ -283,7 +283,7 @@ func (is *invocationServiceImpl) getNextAddress() core.Address {
 func (is *invocationServiceImpl) sendToRandomAddress(invocation *invocation) {
 	var target = is.getNextAddress()
 	if target == nil {
-		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+		is.handleNotSentInvocation(invocation.request.Load().(*bufutil.ClientMessage).CorrelationId(),
 			core.NewHazelcastIOError("no address found to invoke", nil))
 		return
 	}
@@ -297,7 +297,7 @@ func (is *invocationServiceImpl) invokeSmart(invocation *invocation) {
 		if target, ok := is.client.PartitionService.partitionOwner(invocation.partitionID); ok {
 			is.sendToAddress(invocation, target)
 		} else {
-			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+			is.handleNotSentInvocation(invocation.request.Load().(*bufutil.ClientMessage).CorrelationId(),
 				core.NewHazelcastIOError(fmt.Sprintf("partition does not have an owner. partitionID: %d", invocation.partitionID), nil))
 		}
 	} else if invocation.address != nil {
@@ -313,7 +313,7 @@ func (is *invocationServiceImpl) invokeNonSmart(invocation *invocation) {
 	} else {
 		address := is.client.ClusterService.getOwnerConnectionAddress()
 		if address == nil {
-			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+			is.handleNotSentInvocation(invocation.request.Load().(*bufutil.ClientMessage).CorrelationId(),
 				core.NewHazelcastIOError("no address found to invoke", nil))
 			return
 		}
@@ -322,9 +322,9 @@ func (is *invocationServiceImpl) invokeNonSmart(invocation *invocation) {
 }
 
 func (is *invocationServiceImpl) sendToConnection(invocation *invocation, connection *Connection) {
-	sent := connection.send(invocation.request.Load().(*proto.ClientMessage))
+	sent := connection.send(invocation.request.Load().(*bufutil.ClientMessage))
 	if !sent {
-		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+		is.handleNotSentInvocation(invocation.request.Load().(*bufutil.ClientMessage).CorrelationId(),
 			core.NewHazelcastIOError("packet is not sent", nil))
 	} else {
 		invocation.sentConnection.Store(connection)
@@ -336,17 +336,17 @@ func (is *invocationServiceImpl) sendToAddress(invocation *invocation, address c
 	connection, err := is.client.ConnectionManager.getOrTriggerConnect(address)
 	if err != nil {
 		is.logger.Trace("Sending invocation to ", address, " failed, err: ", err)
-		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(), err)
+		is.handleNotSentInvocation(invocation.request.Load().(*bufutil.ClientMessage).CorrelationId(), err)
 		return
 	}
 	is.sendToConnection(invocation, connection)
 }
 
 func (is *invocationServiceImpl) registerInvocation(invocation *invocation) {
-	message := invocation.request.Load().(*proto.ClientMessage)
+	message := invocation.request.Load().(*bufutil.ClientMessage)
 	correlationID := is.nextCorrelationID()
-	message.SetCorrelationID(correlationID)
-	message.SetPartitionID(invocation.partitionID)
+	message.SetCorrelationId(correlationID)
+	message.SetPartitionId(invocation.partitionID)
 	message.SetFlags(bufutil.BeginEndFlag)
 	if invocation.eventHandler != nil {
 		is.eventHandlersLock.Lock()
@@ -380,9 +380,9 @@ func (is *invocationServiceImpl) handleNotSentInvocation(correlationID int64, ca
 	}
 }
 
-func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessage) {
-	correlationID := response.CorrelationID()
-	if response.HasFlags(bufutil.ListenerFlag) > 0 {
+func (is *invocationServiceImpl) handleClientMessage(response *bufutil.ClientMessage) {
+	correlationID := response.CorrelationId()
+	if bufutil.IsFlagSet(response.HeaderFlags(),bufutil.ListenerFlag) {
 		is.eventHandlersLock.RLock()
 		invocation, found := is.eventHandlers[correlationID]
 		is.eventHandlersLock.RUnlock()
@@ -395,7 +395,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 	}
 
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
-		if response.MessageType() == bufutil.MessageTypeException {
+		if response.MessageType() == int32(bufutil.MessageTypeException) {
 			err := createHazelcastError(convertToError(response))
 			is.handleError(invocation, err)
 		} else {
@@ -406,12 +406,12 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 	}
 }
 
-func convertToError(clientMessage *proto.ClientMessage) *proto.ServerError {
-	return proto.ErrorCodecDecode(clientMessage)
+func convertToError(clientMessage *bufutil.ClientMessage) *proto.ServerError {
+	return bufutil.ErrorCodecDecode(clientMessage)
 }
 
 func (is *invocationServiceImpl) logError(invocation *invocation, err error) {
-	correlationID := invocation.request.Load().(*proto.ClientMessage).CorrelationID()
+	correlationID := invocation.request.Load().(*bufutil.ClientMessage).CorrelationId()
 	is.logger.Trace("Invocation with correlation id: ", correlationID, " got an error: ", err)
 }
 
@@ -447,7 +447,7 @@ func (is *invocationServiceImpl) isRedoOperation() bool {
 
 func (is *invocationServiceImpl) shouldRetryInvocation(invocation *invocation, err error) bool {
 	_, isTargetDisconnectedError := err.(*core.HazelcastTargetDisconnectedError)
-	if (isTargetDisconnectedError && invocation.request.Load().(*proto.ClientMessage).IsRetryable) ||
+	if (isTargetDisconnectedError && invocation.request.Load().(*bufutil.ClientMessage).IsRetryable()) ||
 		is.isRedoOperation() || isRetrySafeError(err) {
 		return true
 	}

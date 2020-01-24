@@ -35,12 +35,14 @@ const (
 	ServiceNamePNCounter                   = "hz:impl:PNCounterService"
 )
 
-type MessageType uint16
+/*type MessageType uint16
 
 //MESSAGE TYPES
 const (
 	MessageTypeException MessageType = 109
-)
+)*/
+
+const MessageTypeException uint16 = 109
 
 type ErrorCode int32
 
@@ -163,7 +165,7 @@ const (
 )
 
 const (
-	//ByteSizeInBytes    = 1
+	ByteSizeInBytes    = 1
 	BoolSizeInBytes    = 1
 	Uint8SizeInBytes   = 1
 	Int16SizeInBytes   = 2
@@ -204,6 +206,7 @@ const (
 	EntryEventMerged       int32 = 64
 	EntryEventExpired      int32 = 128
 	EntryEventInvalidation int32 = 256
+	EntryEventLoaded	   int32 = 512
 )
 
 const (

@@ -16,6 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -56,9 +57,9 @@ func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (re
 	request := proto.SetAddListenerEncodeRequest(sp.name, includeValue, false)
 	eventHandler := sp.createEventHandler(listener)
 	return sp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *proto.ClientMessage {
+		func(registrationID string) *bufutil.ClientMessage {
 			return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) string {
+		}, func(clientMessage *bufutil.ClientMessage) string {
 			return proto.SetAddListenerDecodeResponse(clientMessage)()
 		})
 
@@ -133,7 +134,7 @@ func (sp *setProxy) Size() (size int32, err error) {
 }
 
 func (sp *setProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
 		return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 	})
 }
@@ -144,8 +145,8 @@ func (sp *setProxy) ToSlice() (items []interface{}, err error) {
 	return sp.decodeToInterfaceSliceAndError(responseMessage, err, proto.SetGetAllDecodeResponse)
 }
 
-func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
-	return func(clientMessage *proto.ClientMessage) {
+func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
+	return func(clientMessage *bufutil.ClientMessage) {
 		proto.SetAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
 			onItemEvent := sp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)

@@ -15,9 +15,9 @@ const (
 	EndFragmentFlag               = 1 << 14
 	UnfragmentedMessage           = BeginFragmentFlag | EndFragmentFlag
 	IsFinalFlag                   = 1 << 13
-	BeginDataStructureFlag        = 1 << 12
-	EndDataStructureFlag          = 1 << 11
-	IsNullFlag                    = 1 << 10
+	//BeginDataStructureFlag        = 1 << 12
+	//EndDataStructureFlag          = 1 << 11
+	//IsNullFlag                    = 1 << 10
 	IsEventFlag                   = 1 << 9
 	BackupAwareFlag               = 1 << 8
 	BackupEventFlag               = 1 << 7
@@ -25,14 +25,18 @@ const (
 	SizeOfFrameLengthAndFlags = Int32SizeInBytes + Uint16SizeInBytes
 )
 
+var BeginDataStructureFlag        = 1 << 12
+var EndDataStructureFlag          = 1 << 11
+var IsNullFlag                    = 1 << 10
+
 var serialVersionUID = 1
-var NullFrame = &Frame{Content:make([]byte, 0), Flags:IsNullFlag}
-var BeginFrame = &Frame{Content:make([]byte, 0), Flags:BeginDataStructureFlag}
-var EndFrame = &Frame{Content:make([]byte, 0), Flags:EndDataStructureFlag}
+var NullFrame = &Frame{content:make([]byte, 0), flags:uint8(IsNullFlag)}
+var BeginFrame = &Frame{content:make([]byte, 0), flags:uint8(BeginDataStructureFlag)}
+var EndFrame = &Frame{content:make([]byte, 0), flags:uint8(EndDataStructureFlag)}
 
 type Frame struct {
-	Content []byte
-	Flags   int32
+	content []byte
+	flags   uint8
 	next    *Frame
 }
 
@@ -41,11 +45,11 @@ type ForwardFrameIterator struct {
 }
 
 type ClientMessage struct {
-	StartFrame       *Frame
-	EndFrame         *Frame
-	Is_Retryable     bool
-	OperationName    string
-	//Connection       internal.Connection
+	startFrame       *Frame
+	endFrame         *Frame
+	isRetryable      bool
+	operationName    string
+	//connection       internal.Connection
 }
 
 /*
@@ -63,109 +67,117 @@ func CreateForEncode() *ClientMessage {
 
 func CreateForDecode(frame *Frame) ClientMessage {
 	message := ClientMessage{
-		StartFrame: frame,
-		EndFrame:   frame,
+		startFrame: frame,
+		endFrame:   frame,
 	}
 	panic(frame.next == nil) //TODO : check
 	return message
 }
 
-func (m *ClientMessage) GetStartFrame() *Frame {
-	return m.StartFrame
+func (m *ClientMessage) StartFrame() *Frame {
+	return m.startFrame
 }
 
 func (m *ClientMessage) Add(frame *Frame) *ClientMessage {
 	frame.next = nil
-	if m.StartFrame.IsNullFrame() {
-		m.StartFrame = frame
-		m.EndFrame = frame
+	if m.startFrame.IsNullFrame() {
+		m.startFrame = frame
+		m.endFrame = frame
 		return m
 	}
-	m.EndFrame.next = frame //TODO : check : check
-	m.EndFrame = frame
+	m.endFrame.next = frame //TODO : check : check
+	m.endFrame = frame
 	return m
 }
 
 func (m *ClientMessage) FrameIterator() *ForwardFrameIterator {
-	message := &ForwardFrameIterator{m.StartFrame}
+	message := &ForwardFrameIterator{m.startFrame}
 	return message
 }
 
-func (m *ClientMessage) GetMessageType() int32 {
-	return ReadInt32(m.StartFrame.Content, TypeFieldOffset, false)
+func (m *ClientMessage) MessageType() int32 {
+	return ReadInt32(m.startFrame.content, TypeFieldOffset, false)
 }
 
 func (m *ClientMessage) SetMessageType(messageType int32) *ClientMessage {
-	WriteInt32(m.StartFrame.Content, TypeFieldOffset, messageType, false)
+	WriteInt32(m.startFrame.content, TypeFieldOffset, messageType, false)
 	return m
 }
 
-func (m *ClientMessage) GetCorrelationId() int64 {
-	return ReadInt64(m.StartFrame.Content, CorrelationIdFieldOffset, false)
+func (m *ClientMessage) CorrelationId() int64 {
+	return ReadInt64(m.startFrame.content, CorrelationIdFieldOffset, false)
 }
 
 func (m *ClientMessage) SetCorrelationId(CorrelationId int64) *ClientMessage { //TODO: check
-	WriteInt64(m.StartFrame.Content, CorrelationIdFieldOffset, CorrelationId, false)
+	WriteInt64(m.startFrame.content, CorrelationIdFieldOffset, CorrelationId, false)
 	return m
 }
 
-func (m *ClientMessage) GetNumberOfBackupAcks() int64 {
-	return ReadInt64(m.StartFrame.Content, ResponseBackupAcksFieldOffset, false)
+func (m *ClientMessage) NumberOfBackupAcks() int64 {
+	return ReadInt64(m.startFrame.content, ResponseBackupAcksFieldOffset, false)
 }
 
 func (m *ClientMessage) SetNumberOfBackupAcks(numberOfAcks int64) *ClientMessage {
 	//const TODO numberOfAcks
-	WriteInt64(m.StartFrame.Content, ResponseBackupAcksFieldOffset, numberOfAcks, false)
+	WriteInt64(m.startFrame.content, ResponseBackupAcksFieldOffset, numberOfAcks, false)
 	return m
 }
 
-func (m *ClientMessage) GetPartitionId() int32 {
-	return ReadInt32(m.StartFrame.Content, PartitionIdFieldOffset, false)
+func (m *ClientMessage) PartitionId() int32 {
+	return ReadInt32(m.startFrame.content, PartitionIdFieldOffset, false)
 }
 
 func (m *ClientMessage) SetPartitionId(partitionId int32) *ClientMessage {
-	WriteInt32(m.StartFrame.Content, PartitionIdFieldOffset, partitionId, false)
+	WriteInt32(m.startFrame.content, PartitionIdFieldOffset, partitionId, false)
 	return m
 }
 
-func (m *ClientMessage) GetHeaderFlags() int32 {
-	return m.StartFrame.Flags
+func (m *ClientMessage) HeaderFlags() uint8 {
+	return m.startFrame.flags
 }
 
 func (m *ClientMessage) IsRetryable() bool {
-	return m.Is_Retryable
+	return m.isRetryable
 }
 
 func (m *ClientMessage) SetRetryable(isRetryable bool) {
-	m.Is_Retryable = isRetryable
+	m.isRetryable = isRetryable
 }
 
 func (m *ClientMessage) SetOperationName(operationName string) {
-	m.OperationName = operationName
+	m.operationName = operationName
 }
 
-func (m *ClientMessage) GetOperationName() string {
-	return m.OperationName
+func (m *ClientMessage) OperationName() string {
+	return m.operationName
 }
 
-func IsFlagSet(flags int32, flagMask int32) bool {
-	i := flags & flagMask
-	return i == flagMask
+func IsFlagSet(flags uint8, flagMask int) bool {
+	i := int(flags) & flagMask
+		if i == flagMask{
+			return true
+		}
+	return false
 }
+
+func (m *ClientMessage) SetFlags(v uint8) {
+	m.startFrame.content[FlagsFieldOffset] = byte(v) //todo
+}
+
 /*
 func (m *ClientMessage) SetConnection(connection internal.Connection) {
 	m.Connection = connection
 }
 
-func (m *ClientMessage) GetConnection() internal.Connection {
+func (m *ClientMessage) Connection() internal.Connection {
 	return m.Connection
 }
 */
-func (m *ClientMessage) GetFrameLength() int {
+func (m *ClientMessage) FrameLength() int {
 	frameLength := 0
-	currentFrame := m.StartFrame
+	currentFrame := m.startFrame
 	for currentFrame.IsNullFrame() {
-		frameLength += currentFrame.GetSize() //TODO : check
+		frameLength += currentFrame.Size() //TODO : check
 		currentFrame = currentFrame.next     //TODO : check
 	}
 	return frameLength
@@ -177,21 +189,21 @@ func (m *ClientMessage) IsUrgent() bool {
 
 
 func (m *ClientMessage) Merge(fragment *ClientMessage) {
-	fragmentMessageStartFrame := fragment.StartFrame.next
-	m.EndFrame.next = fragmentMessageStartFrame
-	m.EndFrame = fragment.EndFrame
+	fragmentMessageStartFrame := fragment.startFrame.next
+	m.endFrame.next = fragmentMessageStartFrame
+	m.endFrame = fragment.endFrame
 }
 
 func (m *ClientMessage) ClientMessageToString() string {
 	str := "ClientMessage{\n" + "connection=" //+ m.Connection.String() + "\n"
-	if !m.StartFrame.IsNullFrame() {
-		str += ", length=" + string(m.GetFrameLength()) + "\n" +
-			", correlationId=" + string(m.GetCorrelationId()) + "\n" +
-			", operation=" + m.GetOperationName() + "\n" +
-			", messageType=" + string(m.GetMessageType()) + "\n" +
+	if !m.startFrame.IsNullFrame() {
+		str += ", length=" + string(m.FrameLength()) + "\n" +
+			", correlationId=" + string(m.CorrelationId()) + "\n" +
+			", operation=" + m.OperationName() + "\n" +
+			", messageType=" + string(m.MessageType()) + "\n" +
 			", isRetryable=" + strconv.FormatBool(m.IsRetryable()) + "\n" +
-			", isEvent=" + strconv.FormatBool(IsFlagSet(m.StartFrame.Flags, IsEventFlag)) + "\n" +
-			", isFragmented=" + strconv.FormatBool(!IsFlagSet(m.StartFrame.Flags, UnfragmentedMessage))
+			", isEvent=" + strconv.FormatBool(IsFlagSet(m.startFrame.flags, IsEventFlag)) + "\n" +
+			", isFragmented=" + strconv.FormatBool(!IsFlagSet(m.startFrame.flags, UnfragmentedMessage))
 	}
 
 	str += "}"
@@ -199,14 +211,22 @@ func (m *ClientMessage) ClientMessageToString() string {
 }
 
 func (m *ClientMessage) CopyWithNewCorrelationId(correlationId int64) *ClientMessage { //TODO : check
-	initialFrameCopy := m.StartFrame.DeepCopy() //TODO : check
-	newMessage := &ClientMessage{StartFrame:initialFrameCopy, EndFrame:m.EndFrame}
+	initialFrameCopy := m.startFrame.DeepCopy() //TODO : check
+	newMessage := &ClientMessage{startFrame:initialFrameCopy, endFrame:m.endFrame}
 	newMessage.SetCorrelationId(correlationId)
-	newMessage.Is_Retryable = m.Is_Retryable
-	newMessage.OperationName = m.OperationName
+	newMessage.isRetryable = m.isRetryable
+	newMessage.operationName = m.operationName
 
 	return newMessage
 }
+
+func (m *ClientMessage) CloneMessage() *ClientMessage {
+	copiedMessage := &ClientMessage{startFrame:m.startFrame, endFrame:m.endFrame}
+	copiedMessage.isRetryable = m.isRetryable
+	copiedMessage.operationName = m.operationName
+	return copiedMessage
+}
+
 
 // FORWARD FRAME ITERATOR
 
@@ -229,34 +249,34 @@ func (iterator *ForwardFrameIterator) PeekNext() *Frame {
 // FRAME
 
 func (frame *Frame) Copy() *Frame {
-	cFrame := Frame{Content:frame.Content, Flags:frame.Flags}
+	cFrame := Frame{content:frame.content, flags:frame.flags}
 	cFrame.next = frame.next
 	return &cFrame
 }
 
 func (frame *Frame) DeepCopy() *Frame {
-	newContent := frame.Content //copyOf TODO : check
-	cFrame := &Frame{Content:newContent, Flags:frame.Flags}
+	newcontent := frame.content //copyOf TODO : check
+	cFrame := &Frame{content:newcontent, flags:frame.flags}
 	cFrame.next = frame.next
 	return cFrame
 }
 
 func (frame *Frame) IsEndFrame() bool {
-	return IsFlagSet(frame.Flags, EndDataStructureFlag)
+	return IsFlagSet(frame.flags, EndDataStructureFlag)
 }
 
 func (frame *Frame) IsBeginFrame() bool {
-	return IsFlagSet(frame.Flags, BeginDataStructureFlag)
+	return IsFlagSet(frame.flags, BeginDataStructureFlag)
 }
 
 func (frame *Frame) IsNullFrame() bool {
-	return IsFlagSet(frame.Flags, IsNullFlag)
+	return IsFlagSet(frame.flags, IsNullFlag)
 }
 
-func (frame *Frame) GetSize() int {
-	if frame.Content == nil {
+func (frame *Frame) Size() int {
+	if frame.content == nil {
 		return SizeOfFrameLengthAndFlags
 	} else {
-		return SizeOfFrameLengthAndFlags + len(frame.Content)
+		return SizeOfFrameLengthAndFlags + len(frame.content)
 	}
 }

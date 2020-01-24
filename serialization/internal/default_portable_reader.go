@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
 )
@@ -98,9 +97,9 @@ func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int
 	if field.Type() != fieldType {
 		return 0, core.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil)
 	}
-	pos := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*bufutil.Int32SizeInBytes)
+	pos := pr.input.(*ObjectDataInput).ReadInt32WithPosition(pr.offset + field.Index()*Int32SizeInBytes)
 	length := pr.input.(*ObjectDataInput).ReadInt16WithPosition(pos)
-	return pos + bufutil.Int16SizeInBytes + int32(length) + 1, pr.input.Error()
+	return pos + Int16SizeInBytes + int32(length) + 1, pr.input.Error()
 }
 
 func (pr *DefaultPortableReader) ReadByte(fieldName string) byte {
@@ -458,14 +457,14 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]serializ
 	length := pr.input.ReadInt32()
 	factoryID := pr.input.ReadInt32()
 	classID := pr.input.ReadInt32()
-	if pr.input.Error() != nil || length == bufutil.NilArrayLength {
+	if pr.input.Error() != nil || length == NilArrayLength {
 		return nil, pr.input.Error()
 	}
 	var portables = make([]serialization.Portable, length)
 	if length > 0 {
 		offset := pr.input.Position()
 		for i := int32(0); i < length; i++ {
-			start := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
+			start := pr.input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*Int32SizeInBytes)
 			if pr.input.Error() != nil {
 				return nil, pr.input.Error()
 			}

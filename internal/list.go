@@ -16,6 +16,7 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -77,9 +78,9 @@ func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (r
 	request := proto.ListAddListenerEncodeRequest(lp.name, includeValue, false)
 	eventHandler := lp.createEventHandler(listener)
 	return lp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *proto.ClientMessage {
+		func(registrationID string) *bufutil.ClientMessage {
 			return proto.ListRemoveListenerEncodeRequest(lp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) string {
+		}, func(clientMessage *bufutil.ClientMessage) string {
 			return proto.ListAddListenerDecodeResponse(clientMessage)()
 		})
 }
@@ -169,7 +170,7 @@ func (lp *listProxy) RemoveAll(elements []interface{}) (changed bool, err error)
 }
 
 func (lp *listProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return lp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+	return lp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
 		return proto.ListRemoveListenerEncodeRequest(lp.name, registrationID)
 	})
 }
@@ -212,8 +213,8 @@ func (lp *listProxy) ToSlice() (elements []interface{}, err error) {
 	return lp.decodeToInterfaceSliceAndError(responseMessage, err, proto.ListGetAllDecodeResponse)
 }
 
-func (lp *listProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
-	return func(clientMessage *proto.ClientMessagex) {
+func (lp *listProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
+	return func(clientMessage *bufutil.ClientMessage) {
 		proto.ListAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
 			onItemEvent := lp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)

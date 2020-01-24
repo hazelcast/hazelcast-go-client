@@ -2,7 +2,7 @@ package bufutil
 
 
 const (
-	ByteSizeInBytes    = 1
+	//ByteSizeInBytes    = 1
 	LongSizeInBytes    = Int64SizeInBytes
 	IntSizeInBytes     = Int32SizeInBytes
 	BooleanSizeInBytes = BoolSizeInBytes

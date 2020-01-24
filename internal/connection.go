@@ -39,8 +39,8 @@ const (
 )
 
 type Connection struct {
-	pending                   chan *proto.ClientMessage
-	received                  chan *proto.ClientMessage
+	pending                   chan *bufutil.ClientMessage
+	received                  chan *bufutil.ClientMessage
 	socket                    net.Conn
 	clientMessageBuilder      *clientMessageBuilder
 	closed                    chan struct{}
@@ -78,11 +78,11 @@ func createDefaultConnection(cm connectionManager, handleResponse func(interface
 
 	builder := &clientMessageBuilder{
 		handleResponse:     handleResponse,
-		incompleteMessages: make(map[int64]*proto.ClientMessage),
+		incompleteMessages: make(map[int64]*bufutil.ClientMessage),
 	}
 	return &Connection{
-		pending:              make(chan *proto.ClientMessage, 1),
-		received:             make(chan *proto.ClientMessage, 1),
+		pending:              make(chan *bufutil.ClientMessage, 1),
+		received:             make(chan *bufutil.ClientMessage, 1),
 		closed:               make(chan struct{}),
 		clientMessageBuilder: builder,
 		readBuffer:           make([]byte, 0),
@@ -137,7 +137,7 @@ func (c *Connection) writePool() {
 		case request := <-c.pending:
 			err := c.write(request)
 			if err != nil {
-				c.clientMessageBuilder.handleResponse(request.CorrelationID())
+				c.clientMessageBuilder.handleResponse(request.CorrelationId())
 			} else {
 				c.lastWrite.Store(time.Now())
 			}
@@ -147,7 +147,7 @@ func (c *Connection) writePool() {
 	}
 }
 
-func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
+func (c *Connection) send(clientMessage *bufutil.ClientMessage) bool {
 	select {
 	case <-c.closed:
 		return false
@@ -157,7 +157,7 @@ func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 	}
 }
 
-func (c *Connection) write(clientMessage *proto.ClientMessage) error {
+func (c *Connection) write(clientMessage *bufutil.ClientMessage) error {
 	remainingLen := len(clientMessage.Buffer)
 	writeIndex := 0
 	for remainingLen > 0 {

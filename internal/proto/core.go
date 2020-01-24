@@ -17,17 +17,22 @@ package proto
 import (
 	"bytes"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"reflect"
 	"strconv"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-//ADDRESS
+type Address struct {
+	host string
+	port int
+}
 
-func NewAddressWithParameters(Host string, Port int32) *Address {
+func NewAddressWithParameters(Host string, Port int) *Address {
 	return &Address{Host, Port}
 }
 
@@ -43,36 +48,27 @@ func (a *Address) String() string {
 	return a.Host() + ":" + strconv.Itoa(a.Port())
 }
 
-type Member struct {
-	address      Address
-	uuid         uuid
-	isLiteMember bool
-	attributes   map[string]string
-}
-
 type uuid struct {
 	msb int64
 	lsb int64
 }
 
-func (u uuid) GetLeastSignificantBits() int64 {
-	return u.lsb
+type Member struct {
+	address      Address
+	uuid         string
+	isLiteMember bool
+	attributes   map[string]string
 }
 
-func (u uuid) GetMostSignificantBits() int64 {
-	return u.msb
-}
-
-
-func NewMember(address Address, uuid uuid, isLiteMember bool, attributes map[string]string) *Member {
+func NewMember(address Address, uuid string, isLiteMember bool, attributes map[string]string) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
 }
 
-func (m *Member) Address() *Address {
+func (m *Member) Address() core.Address {
 	return &m.address
 }
 
-func (m *Member) UUID() uuid {
+func (m *Member) UUID() string {
 	return m.uuid
 }
 
@@ -95,20 +91,6 @@ func (m *Member) String() string {
 func (m *Member) HasSameAddress(member *Member) bool {
 	return m.address == member.address
 }
-
-type Data struct {
-	Payload []byte
-}
-
-func NewDataP(payload []byte) Data {
-	return Data{payload}
-}
-
-// NewData return serialization Data with the given payload.
-func NewData(payload []byte) Data {
-	return NewDataP(payload)
-}
-
 
 type Pair struct {
 	key, value interface{}
@@ -146,10 +128,10 @@ type MemberAttributeEvent struct {
 	operationType int32
 	key           string
 	value         string
-	member        Member
+	member        core.Member
 }
 
-func NewMemberAttributeEvent(operationType int32, key string, value string, member Member) *MemberAttributeEvent {
+func NewMemberAttributeEvent(operationType int32, key string, value string, member core.Member) *MemberAttributeEvent {
 	return &MemberAttributeEvent{
 		operationType: operationType,
 		key:           key,
@@ -170,11 +152,14 @@ func (m *MemberAttributeEvent) Value() string {
 	return m.value
 }
 
-func (m *MemberAttributeEvent) Member() Member {
+func (m *MemberAttributeEvent) Member() core.Member {
 	return m.member
 }
 
-// DISTRIBUTED OBJECT INFO
+type DistributedObjectInfo struct {
+	name        string
+	serviceName string
+}
 
 func (i *DistributedObjectInfo) Name() string {
 	return i.name
@@ -185,8 +170,8 @@ func (i *DistributedObjectInfo) ServiceName() string {
 }
 
 type DataEntryView struct {
-	keyData                Data
-	valueData              Data
+	keyData                serialization.Data
+	valueData              serialization.Data
 	cost                   int64
 	creationTime           int64
 	expirationTime         int64
@@ -199,11 +184,11 @@ type DataEntryView struct {
 	ttl                    int64
 }
 
-func (ev *DataEntryView) KeyData() Data {
+func (ev *DataEntryView) KeyData() serialization.Data {
 	return ev.keyData
 }
 
-func (ev *DataEntryView) ValueData() Data {
+func (ev *DataEntryView) ValueData() serialization.Data {
 	return ev.valueData
 }
 
@@ -348,7 +333,7 @@ type ServerError struct {
 	errorCode      int32
 	className      string
 	message        string
-	stackTrace     []StackTraceElement
+	stackTrace     []core.StackTraceElement
 	causeErrorCode int32
 	causeClassName string
 }
@@ -369,8 +354,8 @@ func (e *ServerError) Message() string {
 	return e.message
 }
 
-func (e *ServerError) StackTrace() []StackTraceElement {
-	stackTrace := make([]StackTraceElement, len(e.stackTrace))
+func (e *ServerError) StackTrace() []core.StackTraceElement {
+	stackTrace := make([]core.StackTraceElement, len(e.stackTrace))
 	for i, v := range e.stackTrace {
 		stackTrace[i] = v
 	}
@@ -385,11 +370,15 @@ func (e *ServerError) CauseClassName() string {
 	return e.causeClassName
 }
 
-// STACK TRACE ELEMENT
-
+type StackTraceElement struct {
+	declaringClass string
+	methodName     string
+	fileName       string
+	lineNumber     int32
+}
 
 func (e *StackTraceElement) DeclaringClass() string {
-	return e.className
+	return e.declaringClass
 }
 
 func (e *StackTraceElement) MethodName() string {
@@ -406,7 +395,7 @@ func (e *StackTraceElement) LineNumber() int32 {
 
 type AbstractMapEvent struct {
 	name      string
-	member    Member
+	member    core.Member
 	eventType int32
 }
 
@@ -414,7 +403,7 @@ func (e *AbstractMapEvent) Name() string {
 	return e.name
 }
 
-func (e *AbstractMapEvent) Member() Member {
+func (e *AbstractMapEvent) Member() core.Member {
 	return e.member
 }
 
@@ -435,7 +424,7 @@ type EntryEvent struct {
 	mergingValue interface{}
 }
 
-func NewEntryEvent(name string, member Member, eventType int32, key interface{}, value interface{},
+func NewEntryEvent(name string, member core.Member, eventType int32, key interface{}, value interface{},
 	oldValue interface{}, mergingValue interface{}) *EntryEvent {
 	return &EntryEvent{
 		AbstractMapEvent: &AbstractMapEvent{name, member, eventType},
@@ -467,7 +456,7 @@ type MapEvent struct {
 	numberOfAffectedEntries int32
 }
 
-func NewMapEvent(name string, member Member, eventType int32, numberOfAffectedEntries int32) *MapEvent {
+func NewMapEvent(name string, member core.Member, eventType int32, numberOfAffectedEntries int32) core.MapEvent {
 	return &MapEvent{
 		AbstractMapEvent:        &AbstractMapEvent{name, member, eventType},
 		numberOfAffectedEntries: numberOfAffectedEntries,
@@ -486,10 +475,10 @@ type ItemEvent struct {
 	name      string
 	item      interface{}
 	eventType int32
-	member    Member
+	member    core.Member
 }
 
-func NewItemEvent(name string, item interface{}, eventType int32, member Member) *ItemEvent {
+func NewItemEvent(name string, item interface{}, eventType int32, member core.Member) core.ItemEvent {
 	return &ItemEvent{
 		name:      name,
 		item:      item,
@@ -510,7 +499,7 @@ func (e *ItemEvent) EventType() int32 {
 	return e.eventType
 }
 
-func (e *ItemEvent) Member() Member {
+func (e *ItemEvent) Member() core.Member {
 	return e.member
 }
 
@@ -518,14 +507,49 @@ type DecodeListenerResponse func(message *bufutil.ClientMessage) string
 type EncodeListenerRemoveRequest func(registrationID string) *bufutil.ClientMessage
 
 // Helper function to get flags for listeners
+func GetMapListenerFlags(listener interface{}) (int32, error) {
+	flags := int32(0)
+	if _, ok := listener.(core.EntryAddedListener); ok {
+		flags |= bufutil.EntryEventAdded
+	}
+	if _, ok := listener.(core.EntryLoadedListener); ok {
+		flags |= bufutil.EntryEventLoaded
+	}
+	if _, ok := listener.(core.EntryRemovedListener); ok {
+		flags |= bufutil.EntryEventRemoved
+	}
+	if _, ok := listener.(core.EntryUpdatedListener); ok {
+		flags |= bufutil.EntryEventUpdated
+	}
+	if _, ok := listener.(core.EntryEvictedListener); ok {
+		flags |= bufutil.EntryEventEvicted
+	}
+	if _, ok := listener.(core.MapEvictedListener); ok {
+		flags |= bufutil.MapEventEvicted
+	}
+	if _, ok := listener.(core.MapClearedListener); ok {
+		flags |= bufutil.MapEventCleared
+	}
+	if _, ok := listener.(core.EntryExpiredListener); ok {
+		flags |= bufutil.EntryEventExpired
+	}
+	if _, ok := listener.(core.EntryMergedListener); ok {
+		flags |= bufutil.EntryEventMerged
+	}
+	if flags == 0 {
+		return 0, core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
+			reflect.TypeOf(listener)), nil)
+	}
+	return flags, nil
+}
 
 type TopicMessage struct {
 	messageObject    interface{}
 	publishTime      time.Time
-	publishingMember Member
+	publishingMember core.Member
 }
 
-func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember Member) *TopicMessage {
+func NewTopicMessage(messageObject interface{}, publishTime int64, publishingMember core.Member) *TopicMessage {
 	return &TopicMessage{
 		messageObject:    messageObject,
 		publishTime:      timeutil.ConvertMillisToUnixTime(publishTime),
@@ -541,6 +565,6 @@ func (m *TopicMessage) PublishTime() time.Time {
 	return m.publishTime
 }
 
-func (m *TopicMessage) PublishingMember() Member {
+func (m *TopicMessage) PublishingMember() core.Member {
 	return m.publishingMember
 }

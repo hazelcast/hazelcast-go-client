@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"sync/atomic"
 	"time"
 
@@ -108,7 +109,7 @@ func (ps *partitionService) doRefresh() {
 	ps.processPartitionResponse(result)
 }
 
-func (ps *partitionService) processPartitionResponse(result *proto.ClientMessage) {
+func (ps *partitionService) processPartitionResponse(result *bufutil.ClientMessage) {
 	partitions /*partitionStateVersion*/, _ := proto.ClientGetPartitionsDecodeResponse(result)()
 	newPartitions := make(map[int32]*proto.Address, len(partitions))
 	for _, partitionList := range partitions {

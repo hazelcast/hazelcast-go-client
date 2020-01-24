@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
@@ -65,9 +66,9 @@ type eventRegistration struct {
 
 type listenerRegistrationKey struct {
 	userRegistrationKey string
-	request             *proto.ClientMessage
+	request             *bufutil.ClientMessage
 	responseDecoder     proto.DecodeListenerResponse
-	eventHandler        func(clientMessage *proto.ClientMessage)
+	eventHandler        func(clientMessage *bufutil.ClientMessage)
 }
 
 func newListenerService(client *HazelcastClient) *listenerService {
@@ -153,8 +154,8 @@ func (ls *listenerService) registerListenerInit(key *listenerRegistrationKey) {
 	ls.registrations[key.userRegistrationKey] = make(map[int64]*eventRegistration)
 }
 
-func (ls *listenerService) registerListener(request *proto.ClientMessage,
-	eventHandler func(clientMessage *proto.ClientMessage),
+func (ls *listenerService) registerListener(request *bufutil.ClientMessage,
+	eventHandler func(clientMessage *bufutil.ClientMessage),
 	encodeListenerRemoveRequest proto.EncodeListenerRemoveRequest,
 	responseDecoder proto.DecodeListenerResponse) (string, error) {
 	err := ls.trySyncConnectToAllConnections()
