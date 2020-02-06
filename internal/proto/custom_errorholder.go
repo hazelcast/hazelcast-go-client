@@ -16,6 +16,10 @@
 
 package proto
 
+
+import (
+)
+
 type ErrorHolder struct {
 errorCode int32
 className string
@@ -23,7 +27,28 @@ message string
 stackTraceElements []StackTraceElement
 }
 
-//@Generated("f2ddb9e11fa8e02631ad78da9d76b24c")
+//CONSTRUCTOR
+func NewErrorHolder(errorCode int32,className string,message string,stackTraceElements []StackTraceElement) *ErrorHolder {
+return &ErrorHolder{errorCode,className,message,stackTraceElements}
+}
+
+
+//GETTERS
+func (x *ErrorHolder) ErrorCode() int32 {
+    return x.errorCode
+    }
+func (x *ErrorHolder) ClassName() string {
+    return x.className
+    }
+func (x *ErrorHolder) Message() string {
+    return x.message
+    }
+func (x *ErrorHolder) StackTraceElements() []StackTraceElement {
+    return x.stackTraceElements
+    }
+
+
+//@Generated("587b4b4e842dbecb9d77f41455cb8463")
 const (
     ErrorHolderErrorCodeFieldOffset = 0
     ErrorHolderInitialFrameSize = ErrorHolderErrorCodeFieldOffset + IntSizeInBytes

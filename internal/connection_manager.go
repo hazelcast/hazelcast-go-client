@@ -242,36 +242,41 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 
 func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
-	uuid := cm.client.ClusterService.uuid.Load().(string)
+	uuid := cm.client.ClusterService.uuid.Load().(core.Uuid)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	byte := new(byte)
 	return proto.ClientAuthenticationEncodeRequest(
+		"",
 		creds.Username(),
 		creds.Password(),
 		uuid,
 		ownerUUID,
-		asOwner,
-		proto.ClientType,
-		serializationVersion,
+		*byte,
+		"",
 		ClientVersion,
+		make([]string,0),
 	)
 }
 
 func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
-	uuid := cm.client.ClusterService.uuid.Load().(string)
+	uuid := cm.client.ClusterService.uuid.Load().(core.Uuid)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
 	if err != nil {
 		cm.logger.Error("Credentials cannot be serialized!")
 		return nil
 	}
-	return proto.ClientAuthenticationCustomEncodeRequest(
-		credsData,
+
+	return proto.ClientAuthenticationEncodeRequest(
+		"",
+		"",
+		"",
 		uuid,
 		ownerUUID,
-		asOwner,
-		proto.ClientType,
-		serializationVersion,
+		credsData.Buffer()[0],
+		"",
 		ClientVersion,
+		make([]string,0),
 	)
 }
 

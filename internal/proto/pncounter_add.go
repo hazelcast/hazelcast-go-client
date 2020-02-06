@@ -21,10 +21,6 @@ package proto
 
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
-
-
-
-
 )
 
 
@@ -46,7 +42,7 @@ import (
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-//@Generated("00d7d008ed10c19885aae7a3668a38c9")
+//@Generated("f0fdb8ca42a96f9d538719e032fbd81d")
 const (
     //hex: 0x1D0200
     PNCounterAddRequestMessageType = 1901056
@@ -62,7 +58,7 @@ const (
 
 )
 
-func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []  *Pair, targetReplicaUUID core.Uuid) *ClientMessage {
+func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplicaUUID core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("PNCounter.Add")
@@ -82,8 +78,8 @@ func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, r
 }
 
 
-func PNCounterAddDecodeResponse(clientMessage *ClientMessage) func() ( /*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []  *Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
-    return func() (/*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []  *Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
+func PNCounterAddDecodeResponse(clientMessage *ClientMessage) func() (/*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []*Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
+    return func() (/*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []*Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         value = DecodeLong(initialFrame.Content, PNCounterAddResponseValueFieldOffset)

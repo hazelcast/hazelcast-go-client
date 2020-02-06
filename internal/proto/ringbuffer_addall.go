@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -41,7 +41,7 @@ import (
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-//@Generated("5e53ca33ab3df905f18eeff2b9805607")
+//@Generated("dbb2e79ad882a2dbb30353d7f5d1cef8")
 const (
     //hex: 0x170800
     RingbufferAddAllRequestMessageType = 1509376
@@ -78,7 +78,7 @@ func RingbufferAddAllEncodeRequest(name string, valueList []serialization.Data, 
 }
 
 
-func RingbufferAddAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** the CompletionStage to synchronize on completion.*/response int64) {
+func RingbufferAddAllDecodeResponse(clientMessage *ClientMessage) func() (/*** the CompletionStage to synchronize on completion.*/response int64) {
     return func() (/*** the CompletionStage to synchronize on completion.*/response int64) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

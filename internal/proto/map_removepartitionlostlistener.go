@@ -35,7 +35,7 @@ import (
  * Removes the specified map partition lost listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-//@Generated("bbaabeaef101b058cccda01fd1ebcd09")
+//@Generated("4a0e30c20ec547bc97b31b9d77122f8c")
 const (
     //hex: 0x011C00
     MapRemovePartitionLostListenerRequestMessageType = 72704
@@ -63,7 +63,7 @@ func MapRemovePartitionLostListenerEncodeRequest(name string, registrationId cor
 }
 
 
-func MapRemovePartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if registration is removed, false otherwise.*/response bool) {
+func MapRemovePartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** true if registration is removed, false otherwise.*/response bool) {
     return func() (/*** true if registration is removed, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
-//@Generated("28d00afeb6dd4e97dede53259b0799ed")
+//@Generated("ad6ed6e3df8d8b5aff88cb6d5f70ad68")
 const (
     //hex: 0x013C00
     MapProjectWithPredicateRequestMessageType = 80896
@@ -65,7 +65,7 @@ func MapProjectWithPredicateEncodeRequest(name string, projection serialization.
 }
 
 
-func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) func() ( /*** the resulted collection upon transformation to the type of the projection*/response []serialization.Data) {
+func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (/*** the resulted collection upon transformation to the type of the projection*/response []serialization.Data) {
     return func() (/*** the resulted collection upon transformation to the type of the projection*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

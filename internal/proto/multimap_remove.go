@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Removes the given key value pair from the multimap.
  */
-//@Generated("0443b93abcb147fb1c9e76567e53abaa")
+//@Generated("556dea57468cc03d1e7a0ba2dc2cd158")
 const (
     //hex: 0x020300
     MultiMapRemoveRequestMessageType = 131840
@@ -64,7 +64,7 @@ func MultiMapRemoveEncodeRequest(name string, key serialization.Data, threadId i
 }
 
 
-func MultiMapRemoveDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if the size of the multimap changed after the remove operation, false otherwise.*/response []serialization.Data) {
+func MultiMapRemoveDecodeResponse(clientMessage *ClientMessage) func() (/*** True if the size of the multimap changed after the remove operation, false otherwise.*/response []serialization.Data) {
     return func() (/*** True if the size of the multimap changed after the remove operation, false otherwise.*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

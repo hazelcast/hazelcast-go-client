@@ -21,8 +21,6 @@ package proto
 
 import (
      "github.com/hazelcast/hazelcast-go-client/serialization"
-
-
 )
 
 
@@ -39,7 +37,7 @@ import (
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-//@Generated("f94139abc14ba2fa7e576c4c880d27f4")
+//@Generated("04d8ae50dee88264d3b4b17d2414da09")
 const (
     //hex: 0x012800
     MapEntriesWithPredicateRequestMessageType = 75776
@@ -67,12 +65,12 @@ func MapEntriesWithPredicateEncodeRequest(name string, predicate serialization.D
 }
 
 
-func MapEntriesWithPredicateDecodeResponse(clientMessage *ClientMessage) func() ( /*** result key-value entry collection of the query.*/response []  *Pair) {
-    return func() (/*** result key-value entry collection of the query.*/response []  *Pair) {
+func MapEntriesWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (/*** result key-value entry collection of the query.*/response []*Pair) {
+    return func() (/*** result key-value entry collection of the query.*/response []*Pair) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        var result []  *Pair
+        var result []*Pair
         //begin frame, list
         iterator.Next()
         for !NextFrameIsDataStructureEndFrame(iterator) {

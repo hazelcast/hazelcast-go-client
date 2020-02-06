@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
-//@Generated("e9495668bb3fcbbaa576b39e4446b6f4")
+//@Generated("20990560585c01ce44f45e08211c3c16")
 const (
     //hex: 0x010500
     MapReplaceIfSameRequestMessageType = 66816
@@ -71,7 +71,7 @@ func MapReplaceIfSameEncodeRequest(name string, key serialization.Data, testValu
 }
 
 
-func MapReplaceIfSameDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if value is replaced with new one, false otherwise*/response bool) {
+func MapReplaceIfSameDecodeResponse(clientMessage *ClientMessage) func() (/*** true if value is replaced with new one, false otherwise*/response bool) {
     return func() (/*** true if value is replaced with new one, false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

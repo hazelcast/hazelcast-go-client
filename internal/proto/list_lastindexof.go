@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-//@Generated("0251eab40122e8ebf6c717156c7d3d96")
+//@Generated("5558c243d62faa1aeb5ea813b17312bd")
 const (
     //hex: 0x051300
     ListLastIndexOfRequestMessageType = 332544
@@ -64,7 +64,7 @@ func ListLastIndexOfEncodeRequest(name string, value serialization.Data) *Client
 }
 
 
-func ListLastIndexOfDecodeResponse(clientMessage *ClientMessage) func() ( /*** the index of the last occurrence of the specified element in* this list, or -1 if this list does not contain the element*/response int32) {
+func ListLastIndexOfDecodeResponse(clientMessage *ClientMessage) func() (/*** the index of the last occurrence of the specified element in* this list, or -1 if this list does not contain the element*/response int32) {
     return func() (/*** the index of the last occurrence of the specified element in* this list, or -1 if this list does not contain the element*/response int32) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

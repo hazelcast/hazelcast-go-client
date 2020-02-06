@@ -22,6 +22,13 @@ package proto
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
     "github.com/hazelcast/hazelcast-go-client/serialization"
+
+
+
+
+
+
+
 )
 
 
@@ -35,7 +42,7 @@ import (
 /**
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
-//@Generated("54856fe587e0f6c747fd30004d15cfc9")
+//@Generated("21aa59ed26c9a53f54025957dfb9633b")
 const (
     //hex: 0x020E00
     MultiMapAddEntryListenerRequestMessageType = 134656
@@ -72,7 +79,7 @@ func MultiMapAddEntryListenerEncodeRequest(name string, includeValue bool, local
 }
 
 
-func MultiMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns registration id for the entry listener*/response core.Uuid) {
+func MultiMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns registration id for the entry listener*/response core.Uuid) {
     return func() (/*** Returns registration id for the entry listener*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
@@ -92,13 +99,13 @@ func MultiMapAddEntryListenerHandle(clientMessage *ClientMessage, handleEntry Mu
         eventType := DecodeInt(initialFrame.Content, MultiMapAddEntryListenerEventEntryEventTypeFieldOffset)
         uuid := DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerEventEntryUuidFieldOffset)
         numberOfAffectedEntries := DecodeInt(initialFrame.Content, MultiMapAddEntryListenerEventEntryNumberOfAffectedEntriesFieldOffset)
-        key := DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        key := DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
 
-        value := DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        value := DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
 
-        oldValue := DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        oldValue := DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
 
-        mergingValue := DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        mergingValue := DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
 
         handleEntry(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
         return

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-//@Generated("d6990967e63847ee0b687c707f7cdd39")
+//@Generated("4b45fcde8c51730a456d6a462939fd17")
 const (
     //hex: 0x051600
     ListIteratorRequestMessageType = 333312
@@ -59,7 +59,7 @@ func ListIteratorEncodeRequest(name string) *ClientMessage {
 }
 
 
-func ListIteratorDecodeResponse(clientMessage *ClientMessage) func() ( /*** An iterator over the elements in this list in proper sequence*/response []serialization.Data) {
+func ListIteratorDecodeResponse(clientMessage *ClientMessage) func() (/*** An iterator over the elements in this list in proper sequence*/response []serialization.Data) {
     return func() (/*** An iterator over the elements in this list in proper sequence*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

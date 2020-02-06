@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
  * the specified waiting time elapses.
  */
-//@Generated("afd4875f9d0863a542fae5d421490ca6")
+//@Generated("66f189952d6c4bfe8dbad1d151a254cd")
 const (
     //hex: 0x011100
     MapTryLockRequestMessageType = 69888
@@ -74,7 +74,7 @@ func MapTryLockEncodeRequest(name string, key serialization.Data, threadId int64
 }
 
 
-func MapTryLockDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if successful, otherwise returns false*/response bool) {
+func MapTryLockDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if successful, otherwise returns false*/response bool) {
     return func() (/*** Returns true if successful, otherwise returns false*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

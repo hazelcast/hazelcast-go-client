@@ -21,6 +21,8 @@ package proto
 
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
+
+
 )
 
 
@@ -39,7 +41,7 @@ import (
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-//@Generated("e1755e2f358ae74b50194bba1df9a39d")
+//@Generated("f015329361f4f0f4f020eced4ead8fcf")
 const (
     //hex: 0x011B00
     MapAddPartitionLostListenerRequestMessageType = 72448
@@ -73,7 +75,7 @@ func MapAddPartitionLostListenerEncodeRequest(name string, localOnly bool) *Clie
 }
 
 
-func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** returns the registration id for the MapPartitionLostListener.*/response core.Uuid) {
+func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** returns the registration id for the MapPartitionLostListener.*/response core.Uuid) {
     return func() (/*** returns the registration id for the MapPartitionLostListener.*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

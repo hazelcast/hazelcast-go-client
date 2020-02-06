@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Return the all elements of this collection
  */
-//@Generated("023ba7fc6f4d7301828bc3411af2e759")
+//@Generated("a2ca94347a8cc5c6a36df06e0c416a0a")
 const (
     //hex: 0x060A00
     SetGetAllRequestMessageType = 395776
@@ -59,7 +59,7 @@ func SetGetAllEncodeRequest(name string) *ClientMessage {
 }
 
 
-func SetGetAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** Array of all values in the Set*/response []serialization.Data) {
+func SetGetAllDecodeResponse(clientMessage *ClientMessage) func() (/*** Array of all values in the Set*/response []serialization.Data) {
     return func() (/*** Array of all values in the Set*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

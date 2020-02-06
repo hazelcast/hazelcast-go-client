@@ -21,10 +21,6 @@ package proto
 
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
-
-
-
-
 )
 
 
@@ -45,7 +41,7 @@ import (
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-//@Generated("7a1156b95e31b1dbb7973c306753b451")
+//@Generated("6442540a34ec1ee4a11541d217272336")
 const (
     //hex: 0x1D0100
     PNCounterGetRequestMessageType = 1900800
@@ -59,7 +55,7 @@ const (
 
 )
 
-func PNCounterGetEncodeRequest(name string, replicaTimestamps []  *Pair, targetReplicaUUID core.Uuid) *ClientMessage {
+func PNCounterGetEncodeRequest(name string, replicaTimestamps []*Pair, targetReplicaUUID core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("PNCounter.Get")
@@ -77,8 +73,8 @@ func PNCounterGetEncodeRequest(name string, replicaTimestamps []  *Pair, targetR
 }
 
 
-func PNCounterGetDecodeResponse(clientMessage *ClientMessage) func() ( /*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []  *Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
-    return func() (/*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []  *Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
+func PNCounterGetDecodeResponse(clientMessage *ClientMessage) func() (/*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []*Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
+    return func() (/*** Value of the counter.*/value int64, /*** last observed replica timestamps (vector clock)*/replicaTimestamps []*Pair, /*** Number of replicas that keep the state of this counter.*/replicaCount int32) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         value = DecodeLong(initialFrame.Content, PNCounterGetResponseValueFieldOffset)

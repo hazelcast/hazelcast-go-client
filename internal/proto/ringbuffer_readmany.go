@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -40,7 +40,7 @@ import (
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-//@Generated("641e9a11fc2677a6dcc532661a21a6a0")
+//@Generated("84c835aa159babd553f68bcf6c7ba2f9")
 const (
     //hex: 0x170900
     RingbufferReadManyRequestMessageType = 1509632
@@ -70,13 +70,13 @@ func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount 
     StringCodecEncode(clientMessage, name)
 
 
-    EncodeNullable(clientMessage, filter, DataCodecEncode)
+    EncodeNullable(clientMessage, filter, DataCodecEncode)  
 
     return clientMessage
 }
 
 
-func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() ( /*** Number of items that have been read before filtering.*/readCount int32, /*** List of items that have beee read.*/items []serialization.Data, /*** List of sequence numbers for the items that have been read.*//* @Nullable */itemSeqs []int64, /*** Sequence number of the item following the last read item.*/nextSeq int64) {
+func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (/*** Number of items that have been read before filtering.*/readCount int32, /*** List of items that have beee read.*/items []serialization.Data, /*** List of sequence numbers for the items that have been read.*//* @Nullable */itemSeqs []int64, /*** Sequence number of the item following the last read item.*/nextSeq int64) {
     return func() (/*** Number of items that have been read before filtering.*/readCount int32, /*** List of items that have beee read.*/items []serialization.Data, /*** List of sequence numbers for the items that have been read.*//* @Nullable */itemSeqs []int64, /*** Sequence number of the item following the last read item.*/nextSeq int64) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
@@ -91,7 +91,7 @@ func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() ( /**
         //end frame, list
         iterator.Next()
         items = result //0.1
-        itemSeqs = DecodeNullable(iterator, LongArrayCodecDecode).([]int64)
+        itemSeqs = DecodeNullable(iterator, LongArrayCodecDecode).([]int64) // 2  
         return
     }
 }

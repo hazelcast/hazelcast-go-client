@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -44,7 +44,7 @@ import (
  * structurally modified in any way other than via the returned list.(Structural modifications are those that change
  * the size of this list, or otherwise perturb it in such a fashion that iterations in progress may yield incorrect results.)
  */
-//@Generated("bd5026842de381f88490be41241c912f")
+//@Generated("de59909f1698201514d582a3b6d09472")
 const (
     //hex: 0x051500
     ListSubRequestMessageType = 333056
@@ -73,7 +73,7 @@ func ListSubEncodeRequest(name string, from int32, to int32) *ClientMessage {
 }
 
 
-func ListSubDecodeResponse(clientMessage *ClientMessage) func() ( /*** A view of the specified range within this list*/response []serialization.Data) {
+func ListSubDecodeResponse(clientMessage *ClientMessage) func() (/*** A view of the specified range within this list*/response []serialization.Data) {
     return func() (/*** A view of the specified range within this list*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Returns true if this map maps one or more keys to the specified value.This operation will probably require time
  * linear in the map size for most implementations of the Map interface.
  */
-//@Generated("9465fb589d981df9f5704901c6dae116")
+//@Generated("94db2be66ee50f102eb45d533818c9c3")
 const (
     //hex: 0x010700
     MapContainsValueRequestMessageType = 67328
@@ -64,7 +64,7 @@ func MapContainsValueEncodeRequest(name string, value serialization.Data) *Clien
 }
 
 
-func MapContainsValueDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if the value exists, otherwise returns false.*/response bool) {
+func MapContainsValueDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if the value exists, otherwise returns false.*/response bool) {
     return func() (/*** Returns true if the value exists, otherwise returns false.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

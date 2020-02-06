@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * If this list does not contain the element, it is unchanged.
  * Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
  */
-//@Generated("334bde5f4db5044ada12632db87d97f0")
+//@Generated("7ac9c9eecf7f6be955497b886f236be9")
 const (
     //hex: 0x050500
     ListRemoveRequestMessageType = 328960
@@ -65,7 +65,7 @@ func ListRemoveEncodeRequest(name string, value serialization.Data) *ClientMessa
 }
 
 
-func ListRemoveDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if this list contained the specified element, false otherwise*/response bool) {
+func ListRemoveDecodeResponse(clientMessage *ClientMessage) func() (/*** True if this list contained the specified element, false otherwise*/response bool) {
     return func() (/*** True if this list contained the specified element, false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

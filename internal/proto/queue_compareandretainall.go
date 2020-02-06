@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Retains only the elements in this collection that are contained in the specified collection (optional operation).
  * In other words, removes from this collection all of its elements that are not contained in the specified collection.
  */
-//@Generated("a66279d5da222ee4a162bf1718fb05ef")
+//@Generated("b67dc44c4e19863897d0799a6fd2965d")
 const (
     //hex: 0x030E00
     QueueCompareAndRetainAllRequestMessageType = 200192
@@ -70,7 +70,7 @@ func QueueCompareAndRetainAllEncodeRequest(name string, dataList []serialization
 }
 
 
-func QueueCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
+func QueueCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
     return func() (/*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

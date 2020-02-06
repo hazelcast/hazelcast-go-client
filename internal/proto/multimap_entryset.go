@@ -20,8 +20,6 @@ package proto
 
 
 import (
-
-
 )
 
 
@@ -36,7 +34,7 @@ import (
  * Returns the set of key-value pairs in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa
  */
-//@Generated("99cb9613bbfabe2772b178d94c110218")
+//@Generated("b7cb62c10f5d8e1137c5f4800f3524e7")
 const (
     //hex: 0x020600
     MultiMapEntrySetRequestMessageType = 132608
@@ -61,19 +59,19 @@ func MultiMapEntrySetEncodeRequest(name string) *ClientMessage {
 }
 
 
-func MultiMapEntrySetDecodeResponse(clientMessage *ClientMessage) func() ( /*** The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []  *Pair) {
-    return func() (/*** The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []  *Pair) {
+func MultiMapEntrySetDecodeResponse(clientMessage *ClientMessage) func() (/*** The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []*Pair) {
+    return func() (/*** The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []*Pair) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        var result []  *Pair
+        var result []*Pair
         //begin frame, list
         iterator.Next()
         for !NextFrameIsDataStructureEndFrame(iterator) {
             i := 0
             key := DataCodecDecode(iterator)
             value := DataCodecDecode(iterator)
-            result[i] =  NewPair(key,value)
+            result[i] = NewPair(key,value)
             i++
         }
 

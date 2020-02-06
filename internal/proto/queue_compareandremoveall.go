@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
  * After this call returns, this collection will contain no elements in common with the specified collection.
  */
-//@Generated("5f8490a4d4ddf563ea62db092fe44bfe")
+//@Generated("98ffd118493492cebd8c3b78a553f9b5")
 const (
     //hex: 0x030D00
     QueueCompareAndRemoveAllRequestMessageType = 199936
@@ -70,7 +70,7 @@ func QueueCompareAndRemoveAllEncodeRequest(name string, dataList []serialization
 }
 
 
-func QueueCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
+func QueueCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
     return func() (/*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

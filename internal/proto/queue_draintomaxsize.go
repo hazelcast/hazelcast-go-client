@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * ILLEGAL_ARGUMENT. Further, the behavior of this operation is undefined if the specified collection is
  * modified while the operation is in progress.
  */
-//@Generated("cb743222be22b836f8a46d53483b6f3d")
+//@Generated("06eafe80ad946060824d1a57221306a5")
 const (
     //hex: 0x030A00
     QueueDrainToMaxSizeRequestMessageType = 199168
@@ -65,7 +65,7 @@ func QueueDrainToMaxSizeEncodeRequest(name string, maxSize int32) *ClientMessage
 }
 
 
-func QueueDrainToMaxSizeDecodeResponse(clientMessage *ClientMessage) func() ( /*** list of all removed data in result of this method*/response []serialization.Data) {
+func QueueDrainToMaxSizeDecodeResponse(clientMessage *ClientMessage) func() (/*** list of all removed data in result of this method*/response []serialization.Data) {
     return func() (/*** list of all removed data in result of this method*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

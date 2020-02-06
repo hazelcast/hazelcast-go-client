@@ -222,7 +222,7 @@ func (mp *mapProxy) AddIndex(attribute string, ordered bool) (err error) {
 	//TODO: IndexUtil
 
 	indexConf := proto.NewIndexConfig(mp.name, 0, make([]string,2) )
-	request := proto.MapAddIndexEncodeRequest(mp.name, indexConf)
+	request := proto.MapAddIndexEncodeRequest(mp.name, *indexConf)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
  * rounded to the next closest second value.
  */
-//@Generated("559011198802092f993e0b0adacd68f6")
+//@Generated("756c4bc41ccc766728aa1a2ecfca3197")
 const (
     //hex: 0x010100
     MapPutRequestMessageType = 65792
@@ -72,12 +72,12 @@ func MapPutEncodeRequest(name string, key serialization.Data, value serializatio
 }
 
 
-func MapPutDecodeResponse(clientMessage *ClientMessage) func() ( /*** old value of the entry*//* @Nullable */response serialization.Data) {
+func MapPutDecodeResponse(clientMessage *ClientMessage) func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
     return func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

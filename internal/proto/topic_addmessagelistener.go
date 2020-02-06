@@ -22,6 +22,9 @@ package proto
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
     "github.com/hazelcast/hazelcast-go-client/serialization"
+
+
+
 )
 
 
@@ -36,7 +39,7 @@ import (
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-//@Generated("93a9ab6834834d588b85cb547acaf8de")
+//@Generated("ed95fbc0d95f61275b7dc32a85f28b7e")
 const (
     //hex: 0x040200
     TopicAddMessageListenerRequestMessageType = 262656
@@ -70,7 +73,7 @@ func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMe
 }
 
 
-func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** returns the registration id*/response core.Uuid) {
+func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** returns the registration id*/response core.Uuid) {
     return func() (/*** returns the registration id*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

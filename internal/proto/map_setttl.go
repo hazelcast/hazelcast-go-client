@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -46,7 +46,7 @@ import (
  * <p>
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
-//@Generated("75667603511c8e1452687122e9bbfd53")
+//@Generated("5a1a7664a924da48c56b74e674df9da3")
 const (
     //hex: 0x014300
     MapSetTtlRequestMessageType = 82688
@@ -77,7 +77,7 @@ func MapSetTtlEncodeRequest(name string, key serialization.Data, ttl int64) *Cli
 }
 
 
-func MapSetTtlDecodeResponse(clientMessage *ClientMessage) func() ( /*** 'true' if the entry is affected, 'false' otherwise*/response bool) {
+func MapSetTtlDecodeResponse(clientMessage *ClientMessage) func() (/*** 'true' if the entry is affected, 'false' otherwise*/response bool) {
     return func() (/*** 'true' if the entry is affected, 'false' otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

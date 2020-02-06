@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
-//@Generated("6c048dbde4347e63d8acc7406dee4c65")
+//@Generated("1fed6a4ab4d2b1117a9b3857a9b537f2")
 const (
     //hex: 0x0D0100
     ReplicatedMapPutRequestMessageType = 852224
@@ -69,12 +69,12 @@ func ReplicatedMapPutEncodeRequest(name string, key serialization.Data, value se
 }
 
 
-func ReplicatedMapPutDecodeResponse(clientMessage *ClientMessage) func() ( /*** The old value if existed for the key.*//* @Nullable */response serialization.Data) {
+func ReplicatedMapPutDecodeResponse(clientMessage *ClientMessage) func() (/*** The old value if existed for the key.*//* @Nullable */response serialization.Data) {
     return func() (/*** The old value if existed for the key.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

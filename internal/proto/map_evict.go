@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
-//@Generated("257eddc6625250cc3ec61c29fd62ff69")
+//@Generated("40c507aed426c97ec1ae3860dbf5b92f")
 const (
     //hex: 0x011E00
     MapEvictRequestMessageType = 73216
@@ -66,7 +66,7 @@ func MapEvictEncodeRequest(name string, key serialization.Data, threadId int64) 
 }
 
 
-func MapEvictDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if the key is evicted, false otherwise.*/response bool) {
+func MapEvictDecodeResponse(clientMessage *ClientMessage) func() (/*** true if the key is evicted, false otherwise.*/response bool) {
     return func() (/*** true if the key is evicted, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

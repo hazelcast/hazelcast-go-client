@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
  * become available.
  */
-//@Generated("482fa71bd264aebe075d86fc824db925")
+//@Generated("4aa50b5e55b059f45ba44152afaa6b65")
 const (
     //hex: 0x030100
     QueueOfferRequestMessageType = 196864
@@ -66,7 +66,7 @@ func QueueOfferEncodeRequest(name string, value serialization.Data, timeoutMilli
 }
 
 
-func QueueOfferDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>True</tt> if the element was added to this queue, else <tt>false</tt>*/response bool) {
+func QueueOfferDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>True</tt> if the element was added to this queue, else <tt>false</tt>*/response bool) {
     return func() (/*** <tt>True</tt> if the element was added to this queue, else <tt>false</tt>*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

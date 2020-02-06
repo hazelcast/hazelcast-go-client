@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -39,7 +39,7 @@ import (
  * This method breaks the contract of EntryListener. When an entry is removed by delete(), it fires an EntryEvent
  * with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
  */
-//@Generated("616d5958a78dd2f511c9bd0505fe6355")
+//@Generated("69f49d0fde3b9c9c26a788f857ac25ce")
 const (
     //hex: 0x010900
     MapDeleteRequestMessageType = 67840

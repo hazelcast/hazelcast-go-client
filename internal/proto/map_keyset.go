@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may
  * throw a QueryResultSizeExceededException if query result size limit is configured.
  */
-//@Generated("a1bf8573700e7372d189ce0a42f62669")
+//@Generated("c99d7dee07ddb18886d73fff82f0eeda")
 const (
     //hex: 0x012200
     MapKeySetRequestMessageType = 74240
@@ -61,7 +61,7 @@ func MapKeySetEncodeRequest(name string) *ClientMessage {
 }
 
 
-func MapKeySetDecodeResponse(clientMessage *ClientMessage) func() ( /*** a set clone of the keys contained in this map.*/response []serialization.Data) {
+func MapKeySetDecodeResponse(clientMessage *ClientMessage) func() (/*** a set clone of the keys contained in this map.*/response []serialization.Data) {
     return func() (/*** a set clone of the keys contained in this map.*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

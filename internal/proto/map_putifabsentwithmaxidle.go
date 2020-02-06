@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
  */
-//@Generated("c12a47d686981313552615d268ab74ea")
+//@Generated("7e40b90117e2c480675ef96939b031b2")
 const (
     //hex: 0x014600
     MapPutIfAbsentWithMaxIdleRequestMessageType = 83456
@@ -72,12 +72,12 @@ func MapPutIfAbsentWithMaxIdleEncodeRequest(name string, key serialization.Data,
 }
 
 
-func MapPutIfAbsentWithMaxIdleDecodeResponse(clientMessage *ClientMessage) func() ( /*** old value of the entry*//* @Nullable */response serialization.Data) {
+func MapPutIfAbsentWithMaxIdleDecodeResponse(clientMessage *ClientMessage) func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
     return func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

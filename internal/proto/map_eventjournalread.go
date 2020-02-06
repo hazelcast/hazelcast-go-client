@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -41,7 +41,7 @@ import (
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-//@Generated("a7512c96840f11e8fb9181aebda35546")
+//@Generated("f2f380408ec3009219995f81ed8658ff")
 const (
     //hex: 0x014200
     MapEventJournalReadRequestMessageType = 82432
@@ -71,16 +71,16 @@ func MapEventJournalReadEncodeRequest(name string, startSequence int64, minSize 
     StringCodecEncode(clientMessage, name)
 
 
-    EncodeNullable(clientMessage, predicate, DataCodecEncode)
+    EncodeNullable(clientMessage, predicate, DataCodecEncode)  
 
 
-    EncodeNullable(clientMessage, projection, DataCodecEncode)
+    EncodeNullable(clientMessage, projection, DataCodecEncode)  
 
     return clientMessage
 }
 
 
-func MapEventJournalReadDecodeResponse(clientMessage *ClientMessage) func() ( /*** Number of items that have been read.*/readCount int32, /*** List of items that have been read.*/items []serialization.Data, /*** Sequence numbers of items in the event journal.*//* @Nullable */itemSeqs []int64, /*** Sequence number of the item following the last read item.*/nextSeq int64) {
+func MapEventJournalReadDecodeResponse(clientMessage *ClientMessage) func() (/*** Number of items that have been read.*/readCount int32, /*** List of items that have been read.*/items []serialization.Data, /*** Sequence numbers of items in the event journal.*//* @Nullable */itemSeqs []int64, /*** Sequence number of the item following the last read item.*/nextSeq int64) {
     return func() (/*** Number of items that have been read.*/readCount int32, /*** List of items that have been read.*/items []serialization.Data, /*** Sequence numbers of items in the event journal.*//* @Nullable */itemSeqs []int64, /*** Sequence number of the item following the last read item.*/nextSeq int64) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
@@ -95,7 +95,7 @@ func MapEventJournalReadDecodeResponse(clientMessage *ClientMessage) func() ( /*
         //end frame, list
         iterator.Next()
         items = result //0.1
-        itemSeqs = DecodeNullable(iterator, LongArrayCodecDecode).([]int64)
+        itemSeqs = DecodeNullable(iterator, LongArrayCodecDecode).([]int64) // 2  
         return
     }
 }

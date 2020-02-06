@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
  * operation of EntryProcessor.
  */
-//@Generated("5e94d2434db7a107294883dd98f30fc0")
+//@Generated("d1ffa21c5a3d14fe9747bb32fefcae25")
 const (
     //hex: 0x012F00
     MapSubmitToKeyRequestMessageType = 77568
@@ -69,12 +69,12 @@ func MapSubmitToKeyEncodeRequest(name string, entryProcessor serialization.Data,
 }
 
 
-func MapSubmitToKeyDecodeResponse(clientMessage *ClientMessage) func() ( /*** result of entry process.*//* @Nullable */response serialization.Data) {
+func MapSubmitToKeyDecodeResponse(clientMessage *ClientMessage) func() (/*** result of entry process.*//* @Nullable */response serialization.Data) {
     return func() (/*** result of entry process.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

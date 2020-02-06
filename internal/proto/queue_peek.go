@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
-//@Generated("898551b2df4ac9079643e95274f08df8")
+//@Generated("d80fd8319b74155bbdab8dd705ac16b9")
 const (
     //hex: 0x030700
     QueuePeekRequestMessageType = 198400
@@ -59,12 +59,12 @@ func QueuePeekEncodeRequest(name string) *ClientMessage {
 }
 
 
-func QueuePeekDecodeResponse(clientMessage *ClientMessage) func() ( /*** The head of this queue, or <tt>null</tt> if this queue is empty*//* @Nullable */response serialization.Data) {
+func QueuePeekDecodeResponse(clientMessage *ClientMessage) func() (/*** The head of this queue, or <tt>null</tt> if this queue is empty*//* @Nullable */response serialization.Data) {
     return func() (/*** The head of this queue, or <tt>null</tt> if this queue is empty*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

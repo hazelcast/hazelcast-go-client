@@ -20,10 +20,7 @@ package proto
 
 
 import (
-
      "github.com/hazelcast/hazelcast-go-client/serialization"
-
-
 )
 
 
@@ -38,7 +35,7 @@ import (
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-//@Generated("d605bb5c0423ede37ad44fbbbce262b6")
+//@Generated("8944ace13ed314901a06d52bf4ec7206")
 const (
     //hex: 0x013100
     MapExecuteWithPredicateRequestMessageType = 78080
@@ -69,19 +66,19 @@ func MapExecuteWithPredicateEncodeRequest(name string, entryProcessor serializat
 }
 
 
-func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) func() ( /*** results of entry process on the entries matching the query criteria*/response []  *Pair) {
-    return func() (/*** results of entry process on the entries matching the query criteria*/response []  *Pair) {
+func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (/*** results of entry process on the entries matching the query criteria*/response []*Pair) {
+    return func() (/*** results of entry process on the entries matching the query criteria*/response []*Pair) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        var result []  *Pair
+        var result []*Pair
         //begin frame, list
         iterator.Next()
         for !NextFrameIsDataStructureEndFrame(iterator) {
             i := 0
             key := DataCodecDecode(iterator)
             value := DataCodecDecode(iterator)
-            result[i] =  NewPair(key,value)
+            result[i] = NewPair(key,value)
             i++
         }
 

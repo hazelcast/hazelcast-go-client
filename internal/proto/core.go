@@ -37,16 +37,16 @@ func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
 }
 
-func (a *Address) Host() string {
+/*func (a *Address) Host() string {
 	return a.host
 }
 
 func (a *Address) Port() int {
 	return int(a.port)
-}
+}*/
 
 func (a *Address) String() string {
-	return a.Host() + ":" + strconv.Itoa(a.Port())
+	return a.Host() + ":" + strconv.Itoa(int(a.Port()))
 }
 
 //type Uuid struct {
@@ -170,13 +170,13 @@ func (m *MemberAttributeEvent) Member() core.Member {
 	serviceName string
 }*/
 
-func (i *DistributedObjectInfo) Name() string {
+/*func (i *DistributedObjectInfo) Name() string {
 	return i.name
 }
 
 func (i *DistributedObjectInfo) ServiceName() string {
 	return i.serviceName
-}
+}*/
 
 type DataEntryView struct {
 	keyData                serialization.Data
@@ -387,7 +387,7 @@ func (e *ServerError) CauseClassName() string {
 }
 */
 
-func (e *StackTraceElement) MethodName() string {
+/*func (e *StackTraceElement) MethodName() string {
 	return e.methodName
 }
 
@@ -397,7 +397,7 @@ func (e *StackTraceElement) FileName() string {
 
 func (e *StackTraceElement) LineNumber() int32 {
 	return e.lineNumber
-}
+}*/
 
 type AbstractMapEvent struct {
 	name      string

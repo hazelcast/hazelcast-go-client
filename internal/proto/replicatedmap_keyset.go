@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -39,7 +39,7 @@ import (
  * very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
-//@Generated("21d48c80e6d848ed0d2e0a2656b568fb")
+//@Generated("b749748cc637b87e3548f3e6c90cee89")
 const (
     //hex: 0x0D0F00
     ReplicatedMapKeySetRequestMessageType = 855808
@@ -64,7 +64,7 @@ func ReplicatedMapKeySetEncodeRequest(name string) *ClientMessage {
 }
 
 
-func ReplicatedMapKeySetDecodeResponse(clientMessage *ClientMessage) func() ( /*** A lazy set view of the keys contained in this map.*/response []serialization.Data) {
+func ReplicatedMapKeySetDecodeResponse(clientMessage *ClientMessage) func() (/*** A lazy set view of the keys contained in this map.*/response []serialization.Data) {
     return func() (/*** A lazy set view of the keys contained in this map.*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

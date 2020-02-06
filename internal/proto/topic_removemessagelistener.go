@@ -34,7 +34,7 @@ import (
 /**
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
-//@Generated("031ac56fe34c716e780c39d7bb621a18")
+//@Generated("9a2771f088b1b15b2000b8ec5b5707f2")
 const (
     //hex: 0x040300
     TopicRemoveMessageListenerRequestMessageType = 262912
@@ -62,7 +62,7 @@ func TopicRemoveMessageListenerEncodeRequest(name string, registrationId core.Uu
 }
 
 
-func TopicRemoveMessageListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if registration is removed, false otherwise*/response bool) {
+func TopicRemoveMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** True if registration is removed, false otherwise*/response bool) {
     return func() (/*** True if registration is removed, false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

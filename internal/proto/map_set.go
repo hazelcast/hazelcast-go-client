@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * If ttl is 0, then the entry lives forever. Similar to the put operation except that set doesn't
  * return the old value, which is more efficient.
  */
-//@Generated("5e5761ce63e7bb161ff5d947f7f3aa97")
+//@Generated("1ae2d60ea75af2ced90f7914d63fabe4")
 const (
     //hex: 0x010F00
     MapSetRequestMessageType = 69376

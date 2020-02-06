@@ -34,7 +34,7 @@ import (
 /**
  * Makes an authentication request to the cluster.
  */
-//@Generated("d6f168507277ff21e092392cc04eb858")
+//@Generated("9cc16b7f3f1043f71dc14128179c25f5")
 const (
     //hex: 0x000100
     ClientAuthenticationRequestMessageType = 256
@@ -66,10 +66,10 @@ func ClientAuthenticationEncodeRequest(clusterName string, /* @Nullable */ usern
     StringCodecEncode(clientMessage, clusterName)
 
 
-    EncodeNullable(clientMessage, username, StringCodecEncode)
+    EncodeNullable(clientMessage, username, StringCodecEncode)  
 
 
-    EncodeNullable(clientMessage, password, StringCodecEncode)
+    EncodeNullable(clientMessage, password, StringCodecEncode)  
 
 
     StringCodecEncode(clientMessage, clientType)
@@ -93,7 +93,7 @@ func ClientAuthenticationEncodeRequest(clusterName string, /* @Nullable */ usern
 }
 
 
-func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() ( /*** A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),* SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).*/status byte, /*** Address of the Hazelcast member which sends the authentication response.*//* @Nullable */address Address, /*** Unique string identifying the connected client uniquely.*//* @Nullable */uuid core.Uuid, /*** client side supported version to inform server side*/serializationVersion byte, /*** Version of the Hazelcast member which sends the authentication response.*/serverHazelcastVersion string, /*** Partition count of the cluster.*/partitionCount int32, /*** UUID of the cluster that the client authenticated.*/clusterId core.Uuid, /*** Returns true if server supports clients with failover feature.*/failoverSupported bool) {
+func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (/*** A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),* SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).*/status byte, /*** Address of the Hazelcast member which sends the authentication response.*//* @Nullable */address Address, /*** Unique string identifying the connected client uniquely.*//* @Nullable */uuid core.Uuid, /*** client side supported version to inform server side*/serializationVersion byte, /*** Version of the Hazelcast member which sends the authentication response.*/serverHazelcastVersion string, /*** Partition count of the cluster.*/partitionCount int32, /*** UUID of the cluster that the client authenticated.*/clusterId core.Uuid, /*** Returns true if server supports clients with failover feature.*/failoverSupported bool) {
     return func() (/*** A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),* SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).*/status byte, /*** Address of the Hazelcast member which sends the authentication response.*//* @Nullable */address Address, /*** Unique string identifying the connected client uniquely.*//* @Nullable */uuid core.Uuid, /*** client side supported version to inform server side*/serializationVersion byte, /*** Version of the Hazelcast member which sends the authentication response.*/serverHazelcastVersion string, /*** Partition count of the cluster.*/partitionCount int32, /*** UUID of the cluster that the client authenticated.*/clusterId core.Uuid, /*** Returns true if server supports clients with failover feature.*/failoverSupported bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
@@ -103,7 +103,7 @@ func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() ( /
         partitionCount = DecodeInt(initialFrame.Content, ClientAuthenticationResponsePartitionCountFieldOffset)
         clusterId = DecodeUUID(initialFrame.Content, ClientAuthenticationResponseClusterIdFieldOffset)
         failoverSupported = DecodeBoolean(initialFrame.Content, ClientAuthenticationResponseFailoverSupportedFieldOffset)
-        address =          DecodeNullable(iterator, AddressCodecDecode).(Address)
+        address =          DecodeNullable(iterator, AddressCodecDecode).(Address) // 1  
     //check line for no nullable decode
         return
     }

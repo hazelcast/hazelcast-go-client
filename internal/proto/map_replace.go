@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Replaces the entry for a key only if currently mapped to a given value.
  */
-//@Generated("5b76b345df94d8788ccdb536db266f23")
+//@Generated("bd03242123e0e42b8d626eb825b6a539")
 const (
     //hex: 0x010400
     MapReplaceRequestMessageType = 66560
@@ -67,12 +67,12 @@ func MapReplaceEncodeRequest(name string, key serialization.Data, value serializ
 }
 
 
-func MapReplaceDecodeResponse(clientMessage *ClientMessage) func() ( /*** Clone of the previous value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
+func MapReplaceDecodeResponse(clientMessage *ClientMessage) func() (/*** Clone of the previous value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
     return func() (/*** Clone of the previous value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * and lies dormant until one of two things happens:the lock is acquired by the current thread, or the specified
  * waiting time elapses.
  */
-//@Generated("4db462bcf99a3b46b8b008445cfbbbb9")
+//@Generated("3f0794efd416b0f726b021223353a712")
 const (
     //hex: 0x021100
     MultiMapTryLockRequestMessageType = 135424
@@ -74,7 +74,7 @@ func MultiMapTryLockEncodeRequest(name string, key serialization.Data, threadId 
 }
 
 
-func MultiMapTryLockDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if the lock was acquired and false if the waiting time elapsed before the lock acquired*/response bool) {
+func MultiMapTryLockDecodeResponse(clientMessage *ClientMessage) func() (/*** True if the lock was acquired and false if the waiting time elapsed before the lock acquired*/response bool) {
     return func() (/*** True if the lock was acquired and false if the waiting time elapsed before the lock acquired*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

@@ -21,6 +21,10 @@ package proto
 
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
+
+
+
+
 )
 
 
@@ -35,7 +39,7 @@ import (
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-//@Generated("d1184944dae13f9154c02e6e013b6c38")
+//@Generated("87c791f99bd76be94a52839d31363122")
 const (
     //hex: 0x000900
     ClientAddDistributedObjectListenerRequestMessageType = 2304
@@ -67,7 +71,7 @@ func ClientAddDistributedObjectListenerEncodeRequest(localOnly bool, internal bo
 }
 
 
-func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** The registration id for the distributed object listener.*/response core.Uuid) {
+func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The registration id for the distributed object listener.*/response core.Uuid) {
     return func() (/*** The registration id for the distributed object listener.*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

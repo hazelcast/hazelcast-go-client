@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Return true if this collection contains all of the elements in the specified collection.
  */
-//@Generated("06e3f65c1942dddea50a24bb8dfa1a4f")
+//@Generated("2bd6b8c14c47d53f445dbecee6f9f9e0")
 const (
     //hex: 0x030C00
     QueueContainsAllRequestMessageType = 199680
@@ -69,7 +69,7 @@ func QueueContainsAllEncodeRequest(name string, dataList []serialization.Data) *
 }
 
 
-func QueueContainsAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this collection contains all of the elements in the specified collection*/response bool) {
+func QueueContainsAllDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this collection contains all of the elements in the specified collection*/response bool) {
     return func() (/*** <tt>true</tt> if this collection contains all of the elements in the specified collection*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

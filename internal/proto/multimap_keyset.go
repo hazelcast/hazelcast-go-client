@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Returns the set of keys in the multimap.The collection is NOT backed by the map, so changes to the map are NOT
  * reflected in the collection, and vice-versa.
  */
-//@Generated("01d48880f2c6ae9508d32fde448bbebb")
+//@Generated("613d8b243ebfe6704ba309e454e537db")
 const (
     //hex: 0x020400
     MultiMapKeySetRequestMessageType = 132096
@@ -60,7 +60,7 @@ func MultiMapKeySetEncodeRequest(name string) *ClientMessage {
 }
 
 
-func MultiMapKeySetDecodeResponse(clientMessage *ClientMessage) func() ( /*** The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []serialization.Data) {
+func MultiMapKeySetDecodeResponse(clientMessage *ClientMessage) func() (/*** The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []serialization.Data) {
     return func() (/*** The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

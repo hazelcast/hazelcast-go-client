@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
  * call returns.
  */
-//@Generated("89abbb5182e26b17af63fe43aba80880")
+//@Generated("d82426ec08aabcdde3b79377d7841f11")
 const (
     //hex: 0x010300
     MapRemoveRequestMessageType = 66304
@@ -68,12 +68,12 @@ func MapRemoveEncodeRequest(name string, key serialization.Data, threadId int64)
 }
 
 
-func MapRemoveDecodeResponse(clientMessage *ClientMessage) func() ( /*** Clone of the removed value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
+func MapRemoveDecodeResponse(clientMessage *ClientMessage) func() (/*** Clone of the removed value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
     return func() (/*** Clone of the removed value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

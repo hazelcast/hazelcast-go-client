@@ -35,7 +35,7 @@ import (
  * Removes the specified partition lost listener. If there is no such listener added before, this call does no change
  * in the cluster and returns false.
  */
-//@Generated("333a0f0f6a481161e319e3193cf5dc1d")
+//@Generated("38fc1d0a29e3ea4dbe3f2968b693f7ee")
 const (
     //hex: 0x000700
     ClientRemovePartitionLostListenerRequestMessageType = 1792
@@ -60,7 +60,7 @@ func ClientRemovePartitionLostListenerEncodeRequest(registrationId core.Uuid) *C
 }
 
 
-func ClientRemovePartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if the listener existed and removed, false otherwise.*/response bool) {
+func ClientRemovePartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** true if the listener existed and removed, false otherwise.*/response bool) {
     return func() (/*** true if the listener existed and removed, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

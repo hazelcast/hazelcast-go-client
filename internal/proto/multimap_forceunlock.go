@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
  * never blocks and returns immediately.
  */
-//@Generated("63645ad5a5963ceee158a50bdf39b70a")
+//@Generated("6a0aa8aa0e43c573e57591083bffa0b5")
 const (
     //hex: 0x021400
     MultiMapForceUnlockRequestMessageType = 136192

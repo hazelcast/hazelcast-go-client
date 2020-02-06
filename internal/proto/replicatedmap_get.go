@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * necessarily indicate that the map contains no mapping for the key; it's also possible that the map
  * explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
  */
-//@Generated("bc41024f79bdab153530cae6c9f349b2")
+//@Generated("0da11dadf98af358d2089d26169a9b4b")
 const (
     //hex: 0x0D0600
     ReplicatedMapGetRequestMessageType = 853504
@@ -65,12 +65,12 @@ func ReplicatedMapGetEncodeRequest(name string, key serialization.Data) *ClientM
 }
 
 
-func ReplicatedMapGetDecodeResponse(clientMessage *ClientMessage) func() ( /*** The value to which the specified key is mapped, or null if this map contains no mapping for the key*//* @Nullable */response serialization.Data) {
+func ReplicatedMapGetDecodeResponse(clientMessage *ClientMessage) func() (/*** The value to which the specified key is mapped, or null if this map contains no mapping for the key*//* @Nullable */response serialization.Data) {
     return func() (/*** The value to which the specified key is mapped, or null if this map contains no mapping for the key*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

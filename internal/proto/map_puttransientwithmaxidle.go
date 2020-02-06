@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
-//@Generated("6a6be0d3c810693028e2d8c9c4eccd03")
+//@Generated("f8807569e202ad1015d805814b1fd294")
 const (
     //hex: 0x014500
     MapPutTransientWithMaxIdleRequestMessageType = 83200
@@ -72,12 +72,12 @@ func MapPutTransientWithMaxIdleEncodeRequest(name string, key serialization.Data
 }
 
 
-func MapPutTransientWithMaxIdleDecodeResponse(clientMessage *ClientMessage) func() ( /*** old value of the entry*//* @Nullable */response serialization.Data) {
+func MapPutTransientWithMaxIdleDecodeResponse(clientMessage *ClientMessage) func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
     return func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

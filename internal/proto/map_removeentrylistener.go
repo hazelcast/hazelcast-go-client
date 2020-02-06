@@ -35,7 +35,7 @@ import (
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("15cb53786e8256988b1213dc39e28d2d")
+//@Generated("215d6bad1515c65542829291a9c44bb0")
 const (
     //hex: 0x011A00
     MapRemoveEntryListenerRequestMessageType = 72192
@@ -63,7 +63,7 @@ func MapRemoveEntryListenerEncodeRequest(name string, registrationId core.Uuid) 
 }
 
 
-func MapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if registration is removed, false otherwise.*/response bool) {
+func MapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** true if registration is removed, false otherwise.*/response bool) {
     return func() (/*** true if registration is removed, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

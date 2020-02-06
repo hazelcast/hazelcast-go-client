@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Removes all the entries with the given key.
  */
-//@Generated("136139a889c5bafafd34e5e9422186be")
+//@Generated("b6d90226c7d09f49b949f333070ada63")
 const (
     //hex: 0x021600
     MultiMapDeleteRequestMessageType = 136704

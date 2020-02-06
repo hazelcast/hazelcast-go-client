@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * If the key is already locked by another thread and/or member, then this operation will wait the timeout
  * amount for acquiring the lock.
  */
-//@Generated("6a966fac02b57d7df30600f705347972")
+//@Generated("bb96be075862099f4ac2f37dc17cb014")
 const (
     //hex: 0x010B00
     MapTryRemoveRequestMessageType = 68352
@@ -69,7 +69,7 @@ func MapTryRemoveEncodeRequest(name string, key serialization.Data, threadId int
 }
 
 
-func MapTryRemoveDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if successful, otherwise returns false*/response bool) {
+func MapTryRemoveDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if successful, otherwise returns false*/response bool) {
     return func() (/*** Returns true if successful, otherwise returns false*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

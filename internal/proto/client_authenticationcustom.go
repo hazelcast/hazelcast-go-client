@@ -34,7 +34,7 @@ import (
 /**
  * Makes an authentication request to the cluster using custom credentials.
  */
-//@Generated("bc66947a2796b03d9a82bbc28599c303")
+//@Generated("150b75df31258e7cf39cb37e564ec2ec")
 const (
     //hex: 0x000200
     ClientAuthenticationCustomRequestMessageType = 512
@@ -90,7 +90,7 @@ func ClientAuthenticationCustomEncodeRequest(clusterName string, credentials []b
 }
 
 
-func ClientAuthenticationCustomDecodeResponse(clientMessage *ClientMessage) func() ( /*** A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),* SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).*/status byte, /*** Address of the Hazelcast member which sends the authentication response.*//* @Nullable */address Address, /*** Unique string identifying the connected client uniquely.*//* @Nullable */uuid core.Uuid, /*** client side supported version to inform server side*/serializationVersion byte, /*** Version of the Hazelcast member which sends the authentication response.*/serverHazelcastVersion string, /*** Partition count of the cluster.*/partitionCount int32, /*** The cluster id of the cluster.*/clusterId core.Uuid, /*** Returns true if server supports clients with failover feature.*/failoverSupported bool) {
+func ClientAuthenticationCustomDecodeResponse(clientMessage *ClientMessage) func() (/*** A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),* SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).*/status byte, /*** Address of the Hazelcast member which sends the authentication response.*//* @Nullable */address Address, /*** Unique string identifying the connected client uniquely.*//* @Nullable */uuid core.Uuid, /*** client side supported version to inform server side*/serializationVersion byte, /*** Version of the Hazelcast member which sends the authentication response.*/serverHazelcastVersion string, /*** Partition count of the cluster.*/partitionCount int32, /*** The cluster id of the cluster.*/clusterId core.Uuid, /*** Returns true if server supports clients with failover feature.*/failoverSupported bool) {
     return func() (/*** A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),* SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).*/status byte, /*** Address of the Hazelcast member which sends the authentication response.*//* @Nullable */address Address, /*** Unique string identifying the connected client uniquely.*//* @Nullable */uuid core.Uuid, /*** client side supported version to inform server side*/serializationVersion byte, /*** Version of the Hazelcast member which sends the authentication response.*/serverHazelcastVersion string, /*** Partition count of the cluster.*/partitionCount int32, /*** The cluster id of the cluster.*/clusterId core.Uuid, /*** Returns true if server supports clients with failover feature.*/failoverSupported bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
@@ -100,7 +100,7 @@ func ClientAuthenticationCustomDecodeResponse(clientMessage *ClientMessage) func
         partitionCount = DecodeInt(initialFrame.Content, ClientAuthenticationCustomResponsePartitionCountFieldOffset)
         clusterId = DecodeUUID(initialFrame.Content, ClientAuthenticationCustomResponseClusterIdFieldOffset)
         failoverSupported = DecodeBoolean(initialFrame.Content, ClientAuthenticationCustomResponseFailoverSupportedFieldOffset)
-        address =          DecodeNullable(iterator, AddressCodecDecode).(Address)
+        address =          DecodeNullable(iterator, AddressCodecDecode).(Address) // 1  
     //check line for no nullable decode
         return
     }

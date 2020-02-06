@@ -35,7 +35,7 @@ import (
  * Removes the specified distributed object listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-//@Generated("43d8986365ac19689ba0af80f7d8f5dd")
+//@Generated("b9962eab85546b37579e100f11e9ecc9")
 const (
     //hex: 0x000A00
     ClientRemoveDistributedObjectListenerRequestMessageType = 2560
@@ -60,7 +60,7 @@ func ClientRemoveDistributedObjectListenerEncodeRequest(registrationId core.Uuid
 }
 
 
-func ClientRemoveDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if the listener existed and removed, false otherwise.*/response bool) {
+func ClientRemoveDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** true if the listener existed and removed, false otherwise.*/response bool) {
     return func() (/*** true if the listener existed and removed, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

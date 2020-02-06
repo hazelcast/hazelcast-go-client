@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * null does not necessarily indicate that the map contained no mapping for the key; it's also possible that the map
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
-//@Generated("ef1e2aca395152dc5cfba0c5fe4793b2")
+//@Generated("dc9c4255e7909f746acd2e1e19a216e9")
 const (
     //hex: 0x0D0700
     ReplicatedMapRemoveRequestMessageType = 853760
@@ -65,12 +65,12 @@ func ReplicatedMapRemoveEncodeRequest(name string, key serialization.Data) *Clie
 }
 
 
-func ReplicatedMapRemoveDecodeResponse(clientMessage *ClientMessage) func() ( /*** the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.*//* @Nullable */response serialization.Data) {
+func ReplicatedMapRemoveDecodeResponse(clientMessage *ClientMessage) func() (/*** the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.*//* @Nullable */response serialization.Data) {
     return func() (/*** the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

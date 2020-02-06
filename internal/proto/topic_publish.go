@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Publishes the message to all subscribers of this topic
  */
-//@Generated("f86bf3af1c416c288cc2af29217d08d4")
+//@Generated("9f5bb6ba5333c52215ca5f8fb00fde54")
 const (
     //hex: 0x040100
     TopicPublishRequestMessageType = 262400

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl.
  */
-//@Generated("fc9e29e656614de50e2fb7f46fb51e94")
+//@Generated("e172ca2827cd3adaa79be5b05e3c6891")
 const (
     //hex: 0x010E00
     MapPutIfAbsentRequestMessageType = 69120
@@ -70,12 +70,12 @@ func MapPutIfAbsentEncodeRequest(name string, key serialization.Data, value seri
 }
 
 
-func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) func() ( /*** returns a clone of the previous value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
+func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) func() (/*** returns a clone of the previous value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
     return func() (/*** returns a clone of the previous value, not the original (identically equal) value previously put into the map.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

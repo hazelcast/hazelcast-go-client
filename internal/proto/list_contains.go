@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this list contains the specified element.
  */
-//@Generated("3731079675fb2273545aa7ac12061943")
+//@Generated("e1c20cc0df03bfd98f68b2ef5404b223")
 const (
     //hex: 0x050200
     ListContainsRequestMessageType = 328192
@@ -63,7 +63,7 @@ func ListContainsEncodeRequest(name string, value serialization.Data) *ClientMes
 }
 
 
-func ListContainsDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if this list contains the specified element, false otherwise*/response bool) {
+func ListContainsDecodeResponse(clientMessage *ClientMessage) func() (/*** True if this list contains the specified element, false otherwise*/response bool) {
     return func() (/*** True if this list contains the specified element, false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

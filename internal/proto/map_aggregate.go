@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-//@Generated("8a0b2d09734155bad6c2e1ebf34c00d0")
+//@Generated("6edfca41fbfe7c982e7c393045487c96")
 const (
     //hex: 0x013900
     MapAggregateRequestMessageType = 80128
@@ -62,12 +62,12 @@ func MapAggregateEncodeRequest(name string, aggregator serialization.Data) *Clie
 }
 
 
-func MapAggregateDecodeResponse(clientMessage *ClientMessage) func() ( /*** the aggregation result*//* @Nullable */response serialization.Data) {
+func MapAggregateDecodeResponse(clientMessage *ClientMessage) func() (/*** the aggregation result*//* @Nullable */response serialization.Data) {
     return func() (/*** the aggregation result*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

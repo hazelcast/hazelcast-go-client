@@ -20,8 +20,6 @@ package proto
 
 
 import (
-
-
 )
 
 
@@ -35,7 +33,7 @@ import (
 /**
  * Gets a lazy set view of the mappings contained in this map.
  */
-//@Generated("929aebef6e8dc5a2c54414a5f90916b3")
+//@Generated("dfe5e3565b9f22f56c4c0bbfa1d4a02e")
 const (
     //hex: 0x0D1100
     ReplicatedMapEntrySetRequestMessageType = 856320
@@ -60,19 +58,19 @@ func ReplicatedMapEntrySetEncodeRequest(name string) *ClientMessage {
 }
 
 
-func ReplicatedMapEntrySetDecodeResponse(clientMessage *ClientMessage) func() ( /*** A lazy set view of the mappings contained in this map.*/response []  *Pair) {
-    return func() (/*** A lazy set view of the mappings contained in this map.*/response []  *Pair) {
+func ReplicatedMapEntrySetDecodeResponse(clientMessage *ClientMessage) func() (/*** A lazy set view of the mappings contained in this map.*/response []*Pair) {
+    return func() (/*** A lazy set view of the mappings contained in this map.*/response []*Pair) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        var result []  *Pair
+        var result []*Pair
         //begin frame, list
         iterator.Next()
         for !NextFrameIsDataStructureEndFrame(iterator) {
             i := 0
             key := DataCodecDecode(iterator)
             value := DataCodecDecode(iterator)
-            result[i] =  NewPair(key,value)
+            result[i] = NewPair(key,value)
             i++
         }
 

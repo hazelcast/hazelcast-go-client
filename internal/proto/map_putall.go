@@ -20,8 +20,7 @@ package proto
 
 
 import (
-
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -41,7 +40,7 @@ import (
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-//@Generated("60dd5f557c486fdeecaed3097b8e3d07")
+//@Generated("7955c3d12c5761bfeb3783097604dcd4")
 const (
     //hex: 0x012C00
     MapPutAllRequestMessageType = 76800
@@ -52,7 +51,7 @@ const (
 
 )
 
-func MapPutAllEncodeRequest(name string, entries []  *Pair) *ClientMessage {
+func MapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.PutAll")

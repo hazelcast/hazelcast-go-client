@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * This method returns a clone of the original value, so modifying the returned value does not change the actual
  * value in the map. You should put the modified value back to make changes visible to all nodes.
  */
-//@Generated("4ba4ad0faa1fb6566d90f43ccbcef8dc")
+//@Generated("1e029d5083218267799b26eea0e9773d")
 const (
     //hex: 0x010200
     MapGetRequestMessageType = 66048
@@ -65,12 +65,12 @@ func MapGetEncodeRequest(name string, key serialization.Data, threadId int64) *C
 }
 
 
-func MapGetDecodeResponse(clientMessage *ClientMessage) func() ( /*** The value for the key if exists*//* @Nullable */response serialization.Data) {
+func MapGetDecodeResponse(clientMessage *ClientMessage) func() (/*** The value for the key if exists*//* @Nullable */response serialization.Data) {
     return func() (/*** The value for the key if exists*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

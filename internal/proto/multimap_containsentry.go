@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns whether the multimap contains the given key-value pair.
  */
-//@Generated("c0edb32138e8b7ba5f57e2494cb6a5c7")
+//@Generated("2845a69c544c41ffeb775bf7aa9dd76a")
 const (
     //hex: 0x020900
     MultiMapContainsEntryRequestMessageType = 133376
@@ -68,7 +68,7 @@ func MultiMapContainsEntryEncodeRequest(name string, key serialization.Data, val
 }
 
 
-func MultiMapContainsEntryDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if the multimap contains the key-value pair, false otherwise.*/response bool) {
+func MultiMapContainsEntryDecodeResponse(clientMessage *ClientMessage) func() (/*** True if the multimap contains the key-value pair, false otherwise.*/response bool) {
     return func() (/*** True if the multimap contains the key-value pair, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-//@Generated("bb20888d90e9a4b17425b17e6d8cdc48")
+//@Generated("8608794ec3fc2b47e6d11b65bf526007")
 const (
     //hex: 0x010C00
     MapTryPutRequestMessageType = 68608
@@ -72,7 +72,7 @@ func MapTryPutEncodeRequest(name string, key serialization.Data, value serializa
 }
 
 
-func MapTryPutDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if successful, otherwise returns false*/response bool) {
+func MapTryPutDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if successful, otherwise returns false*/response bool) {
     return func() (/*** Returns true if successful, otherwise returns false*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

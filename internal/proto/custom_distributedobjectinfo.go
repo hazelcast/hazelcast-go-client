@@ -16,12 +16,31 @@
 
 package proto
 
+
+import (
+)
+
 type DistributedObjectInfo struct {
 serviceName string
 name string
 }
 
-//@Generated("59d3045a920ff18c17360a178338beff")
+//CONSTRUCTOR
+func NewDistributedObjectInfo(serviceName string,name string) *DistributedObjectInfo {
+return &DistributedObjectInfo{serviceName,name}
+}
+
+
+//GETTERS
+func (x *DistributedObjectInfo) ServiceName() string {
+    return x.serviceName
+    }
+func (x *DistributedObjectInfo) Name() string {
+    return x.name
+    }
+
+
+//@Generated("17c4981c15c4fe6bb3476e079a179061")
 const (
 )
 

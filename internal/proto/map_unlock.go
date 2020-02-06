@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * then the lock is released.  If the current thread is not the holder of this lock,
  * then ILLEGAL_MONITOR_STATE is thrown.
  */
-//@Generated("ecd3765228831ef8227da1bb8a31224d")
+//@Generated("28d94898a9de73ed5e6743994b76ea2c")
 const (
     //hex: 0x011300
     MapUnlockRequestMessageType = 70400

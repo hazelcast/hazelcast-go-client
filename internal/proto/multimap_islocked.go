@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
  */
-//@Generated("e8a7daca92b1ca251106224731ef683e")
+//@Generated("540c77909455ea726d19bcbfaa41e704")
 const (
     //hex: 0x021200
     MultiMapIsLockedRequestMessageType = 135680
@@ -63,7 +63,7 @@ func MultiMapIsLockedEncodeRequest(name string, key serialization.Data) *ClientM
 }
 
 
-func MultiMapIsLockedDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if the lock acquired,false otherwise*/response bool) {
+func MultiMapIsLockedDecodeResponse(clientMessage *ClientMessage) func() (/*** True if the lock acquired,false otherwise*/response bool) {
     return func() (/*** True if the lock acquired,false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

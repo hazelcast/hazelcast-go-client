@@ -16,12 +16,31 @@
 
 package proto
 
+
+import (
+)
+
 type Address struct {
 host string
 port int32
 }
 
-//@Generated("7aa314f34af9f77e9609527fe69101bf")
+//CONSTRUCTOR
+func NewAddress(host string,port int32) *Address {
+return &Address{host,port}
+}
+
+
+//GETTERS
+func (x *Address) Host() string {
+    return x.host
+    }
+func (x *Address) Port() int32 {
+    return x.port
+    }
+
+
+//@Generated("9a1f24d1c90f03d40e9881960139b2ac")
 const (
     AddressPortFieldOffset = 0
     AddressInitialFrameSize = AddressPortFieldOffset + IntSizeInBytes

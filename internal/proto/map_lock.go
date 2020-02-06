@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
  * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
  */
-//@Generated("cb1649653c7731e6a814851430afda88")
+//@Generated("3d3362f9e1f74a1719b6f327a2988b6f")
 const (
     //hex: 0x011000
     MapLockRequestMessageType = 69632

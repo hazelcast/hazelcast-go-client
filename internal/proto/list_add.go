@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * elements, and others will impose restrictions on the type of elements that may be added. List classes should
  * clearly specify in their documentation any restrictions on what elements may be added.
  */
-//@Generated("5f67ce61dd337d45220b6a59ee1354b8")
+//@Generated("1160306598881a4e31e1780216d0d320")
 const (
     //hex: 0x050400
     ListAddRequestMessageType = 328704
@@ -66,7 +66,7 @@ func ListAddEncodeRequest(name string, value serialization.Data) *ClientMessage 
 }
 
 
-func ListAddDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if this list changed as a result of the call, false otherwise*/response bool) {
+func ListAddDecodeResponse(clientMessage *ClientMessage) func() (/*** true if this list changed as a result of the call, false otherwise*/response bool) {
     return func() (/*** true if this list changed as a result of the call, false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

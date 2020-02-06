@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
-//@Generated("1e053870b9cad0017b3cf81ce41ccbdb")
+//@Generated("5792202cd0b3718c9a36a706c5ed8d8f")
 const (
     //hex: 0x011200
     MapIsLockedRequestMessageType = 70144
@@ -63,7 +63,7 @@ func MapIsLockedEncodeRequest(name string, key serialization.Data) *ClientMessag
 }
 
 
-func MapIsLockedDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if the entry is locked, otherwise returns false*/response bool) {
+func MapIsLockedDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if the entry is locked, otherwise returns false*/response bool) {
     return func() (/*** Returns true if the entry is locked, otherwise returns false*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

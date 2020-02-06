@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * (This implies that the behavior of this call is undefined if the specified collection is this collection,
  * and this collection is nonempty.)
  */
-//@Generated("9d08e8da24022d2c4faf1e630fecda51")
+//@Generated("a348d8c3e0c5cef7bce9a7f1fed3366e")
 const (
     //hex: 0x031000
     QueueAddAllRequestMessageType = 200704
@@ -72,7 +72,7 @@ func QueueAddAllEncodeRequest(name string, dataList []serialization.Data) *Clien
 }
 
 
-func QueueAddAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
+func QueueAddAllDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
     return func() (/*** <tt>true</tt> if this collection changed as a result of the call*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

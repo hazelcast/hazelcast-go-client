@@ -35,7 +35,7 @@ import (
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("8982fc6bf8412255222c15215138ed5d")
+//@Generated("dbed26d899a473c1d70deae36dd1dc1b")
 const (
     //hex: 0x020F00
     MultiMapRemoveEntryListenerRequestMessageType = 134912
@@ -63,7 +63,7 @@ func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationId core.U
 }
 
 
-func MultiMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if registration is removed, false otherwise*/response bool) {
+func MultiMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** True if registration is removed, false otherwise*/response bool) {
     return func() (/*** True if registration is removed, false otherwise*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

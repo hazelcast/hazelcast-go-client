@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
-//@Generated("53487a99782a3446bd7ec061117c1992")
+//@Generated("83cda73c9e93aeb53fb65778251e6828")
 const (
     //hex: 0x030200
     QueuePutRequestMessageType = 197120

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
  * unlocked N times before another thread can acquire it.
  */
-//@Generated("5ad5eb48390c3826e9ed3cd963162409")
+//@Generated("bce57e87f9043c1a7fd46b6f9236ae63")
 const (
     //hex: 0x021000
     MultiMapLockRequestMessageType = 135168

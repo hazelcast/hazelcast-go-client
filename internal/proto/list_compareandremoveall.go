@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Removes from this list all of its elements that are contained in the specified collection (optional operation).
  */
-//@Generated("0b82c825b76181eb6d9768f84133391b")
+//@Generated("eb537c91a4f0b78a30f470f99568646f")
 const (
     //hex: 0x050700
     ListCompareAndRemoveAllRequestMessageType = 329472
@@ -69,7 +69,7 @@ func ListCompareAndRemoveAllEncodeRequest(name string, values []serialization.Da
 }
 
 
-func ListCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if removed at least one of the items, false otherwise.*/response bool) {
+func ListCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() (/*** True if removed at least one of the items, false otherwise.*/response bool) {
     return func() (/*** True if removed at least one of the items, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

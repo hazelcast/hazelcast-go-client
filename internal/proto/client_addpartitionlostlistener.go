@@ -21,6 +21,9 @@ package proto
 
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
+
+
+
 )
 
 
@@ -34,7 +37,7 @@ import (
 /**
  * Adds a partition lost listener to the cluster.
  */
-//@Generated("8191713c8eb6c80c3a267834817e1714")
+//@Generated("068ef2819d63f5e70bf18d2d8ae873ef")
 const (
     //hex: 0x000600
     ClientAddPartitionLostListenerRequestMessageType = 1536
@@ -66,7 +69,7 @@ func ClientAddPartitionLostListenerEncodeRequest(localOnly bool) *ClientMessage 
 }
 
 
-func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** The listener registration id.*/response core.Uuid) {
+func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The listener registration id.*/response core.Uuid) {
     return func() (/*** The listener registration id.*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns a lazy collection view of the values contained in this map.
  */
-//@Generated("0759e0924d4257dc7ecdccb816e0dc08")
+//@Generated("f5022fd96ab945fe2d583cf9c6e83382")
 const (
     //hex: 0x0D1000
     ReplicatedMapValuesRequestMessageType = 856064
@@ -59,7 +59,7 @@ func ReplicatedMapValuesEncodeRequest(name string) *ClientMessage {
 }
 
 
-func ReplicatedMapValuesDecodeResponse(clientMessage *ClientMessage) func() ( /*** A collection view of the values contained in this map.*/response []serialization.Data) {
+func ReplicatedMapValuesDecodeResponse(clientMessage *ClientMessage) func() (/*** A collection view of the values contained in this map.*/response []serialization.Data) {
     return func() (/*** A collection view of the values contained in this map.*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

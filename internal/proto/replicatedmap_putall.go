@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-//@Generated("3c0de33580e03e7234b3bce2d240a85b")
+//@Generated("ca559f972060b56d6cb08f22a7ec045b")
 const (
     //hex: 0x0D0800
     ReplicatedMapPutAllRequestMessageType = 854016
@@ -48,7 +48,7 @@ const (
 
 )
 
-func ReplicatedMapPutAllEncodeRequest(name string, entries []  *Pair) *ClientMessage {
+func ReplicatedMapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.PutAll")

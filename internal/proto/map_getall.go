@@ -20,10 +20,7 @@ package proto
 
 
 import (
-
      "github.com/hazelcast/hazelcast-go-client/serialization"
-
-
 )
 
 
@@ -41,7 +38,7 @@ import (
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-//@Generated("5fa080cd7f29ef84fb0b28601508e2e0")
+//@Generated("9c85f978065e7b313e35008e4cada72d")
 const (
     //hex: 0x012300
     MapGetAllRequestMessageType = 74496
@@ -75,19 +72,19 @@ func MapGetAllEncodeRequest(name string, keys []serialization.Data) *ClientMessa
 }
 
 
-func MapGetAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** values for the provided keys.*/response []  *Pair) {
-    return func() (/*** values for the provided keys.*/response []  *Pair) {
+func MapGetAllDecodeResponse(clientMessage *ClientMessage) func() (/*** values for the provided keys.*/response []*Pair) {
+    return func() (/*** values for the provided keys.*/response []*Pair) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        var result []  *Pair
+        var result []*Pair
         //begin frame, list
         iterator.Next()
         for !NextFrameIsDataStructureEndFrame(iterator) {
             i := 0
             key := DataCodecDecode(iterator)
             value := DataCodecDecode(iterator)
-            result[i] =  NewPair(key,value)
+            result[i] = NewPair(key,value)
             i++
         }
 

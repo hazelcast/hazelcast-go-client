@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Removes all entries which match with the supplied predicate
  */
-//@Generated("3151104136271171b9c9ca968a34af2a")
+//@Generated("8e5983ecd0c2511898120b51d0a4641e")
 const (
     //hex: 0x013E00
     MapRemoveAllRequestMessageType = 81408

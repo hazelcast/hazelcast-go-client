@@ -22,6 +22,9 @@ package proto
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
     "github.com/hazelcast/hazelcast-go-client/serialization"
+
+
+
 )
 
 
@@ -35,7 +38,7 @@ import (
 /**
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
-//@Generated("2fc6f7ed25e04248bd533431f579651b")
+//@Generated("dd71a2ba37d6c8b20bc9a5109ddddc44")
 const (
     //hex: 0x031100
     QueueAddListenerRequestMessageType = 200960
@@ -71,7 +74,7 @@ func QueueAddListenerEncodeRequest(name string, includeValue bool, localOnly boo
 }
 
 
-func QueueAddListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** The registration id*/response core.Uuid) {
+func QueueAddListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The registration id*/response core.Uuid) {
     return func() (/*** The registration id*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
@@ -90,7 +93,7 @@ func QueueAddListenerHandle(clientMessage *ClientMessage, handleItem QueueAddLis
         initialFrame := iterator.Next()
         uuid := DecodeUUID(initialFrame.Content, QueueAddListenerEventItemUuidFieldOffset)
         eventType := DecodeInt(initialFrame.Content, QueueAddListenerEventItemEventTypeFieldOffset)
-        item := DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        item := DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
 
         handleItem(item, uuid, eventType)
         return

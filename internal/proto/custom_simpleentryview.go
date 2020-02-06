@@ -36,55 +36,52 @@ ttl int64
 maxIdle int64
 }
 
-func (s SimpleEntryView) Key() serialization.Data {
-    return s.key
+//CONSTRUCTOR
+func NewSimpleEntryView(key serialization.Data,value serialization.Data,cost int64,creationTime int64,expirationTime int64,hits int64,lastAccessTime int64,lastStoredTime int64,lastUpdateTime int64,version int64,ttl int64,maxIdle int64) *SimpleEntryView {
+return &SimpleEntryView{key,value,cost,creationTime,expirationTime,hits,lastAccessTime,lastStoredTime,lastUpdateTime,version,ttl,maxIdle}
 }
 
-func (s SimpleEntryView) Value() serialization.Data {
-    return s.value
-}
 
-func (s SimpleEntryView) ExpirationTime() int64 {
-    return s.expirationTime
-}
+//GETTERS
+func (x *SimpleEntryView) Key() serialization.Data {
+    return x.key
+    }
+func (x *SimpleEntryView) Value() serialization.Data {
+    return x.value
+    }
+func (x *SimpleEntryView) Cost() int64 {
+    return x.cost
+    }
+func (x *SimpleEntryView) CreationTime() int64 {
+    return x.creationTime
+    }
+func (x *SimpleEntryView) ExpirationTime() int64 {
+    return x.expirationTime
+    }
+func (x *SimpleEntryView) Hits() int64 {
+    return x.hits
+    }
+func (x *SimpleEntryView) LastAccessTime() int64 {
+    return x.lastAccessTime
+    }
+func (x *SimpleEntryView) LastStoredTime() int64 {
+    return x.lastStoredTime
+    }
+func (x *SimpleEntryView) LastUpdateTime() int64 {
+    return x.lastUpdateTime
+    }
+func (x *SimpleEntryView) Version() int64 {
+    return x.version
+    }
+func (x *SimpleEntryView) Ttl() int64 {
+    return x.ttl
+    }
+func (x *SimpleEntryView) MaxIdle() int64 {
+    return x.maxIdle
+    }
 
-func (s SimpleEntryView) Hits() int64 {
-    return s.hits
-}
 
-func (s SimpleEntryView) LastAccessTime() int64 {
-    return s.lastAccessTime
-}
-
-func (s SimpleEntryView) LastStoredTime() int64 {
-    return s.lastStoredTime
-}
-
-func (s SimpleEntryView) LastUpdateTime() int64 {
-    return s.lastUpdateTime
-}
-
-func (s SimpleEntryView) Version() int64 {
-    return s.version
-}
-
-func (s SimpleEntryView) Ttl() int64 {
-    return s.ttl
-}
-
-func (s SimpleEntryView) MaxIdle() int64 {
-    return s.maxIdle
-}
-
-func (s SimpleEntryView) Cost() int64 {
-    return s.cost
-}
-
-func (s SimpleEntryView) CreationTime() int64 {
-    return s.creationTime
-}
-
-//@Generated("99733ff6560195f784d32f45e6c68ba0")
+//@Generated("569541699571bb5644cbeccff37eb393")
 const (
     SimpleEntryViewCostFieldOffset = 0
     SimpleEntryViewCreationTimeFieldOffset = SimpleEntryViewCostFieldOffset + LongSizeInBytes

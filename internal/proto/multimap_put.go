@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Stores a key-value pair in the multimap.
  */
-//@Generated("9c744903a08e78e9510ecfd97ecdc31d")
+//@Generated("844f24da264429976846e3b4ae42212c")
 const (
     //hex: 0x020100
     MultiMapPutRequestMessageType = 131328
@@ -68,7 +68,7 @@ func MultiMapPutEncodeRequest(name string, key serialization.Data, value seriali
 }
 
 
-func MultiMapPutDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if size of the multimap is increased, false if the multimap already contains the key-value pair.*/response bool) {
+func MultiMapPutDecodeResponse(clientMessage *ClientMessage) func() (/*** True if size of the multimap is increased, false if the multimap already contains the key-value pair.*/response bool) {
     return func() (/*** True if size of the multimap is increased, false if the multimap already contains the key-value pair.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

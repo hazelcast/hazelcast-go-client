@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Returns true if this queue contains the specified element. More formally, returns true if and only if this queue
  * contains at least one element e such that value.equals(e)
  */
-//@Generated("4f2c82e549fa2bfb305dab85539a2e8f")
+//@Generated("ba323382ee71eb5eb1cf2f1212d552fd")
 const (
     //hex: 0x030B00
     QueueContainsRequestMessageType = 199424
@@ -64,7 +64,7 @@ func QueueContainsEncodeRequest(name string, value serialization.Data) *ClientMe
 }
 
 
-func QueueContainsDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this collection contains the specified element*/response bool) {
+func QueueContainsDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this collection contains the specified element*/response bool) {
     return func() (/*** <tt>true</tt> if this collection contains the specified element*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

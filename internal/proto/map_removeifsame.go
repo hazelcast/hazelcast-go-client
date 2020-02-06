@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-//@Generated("66be8277f1a402dc1c6338c6837ee1eb")
+//@Generated("b2730ef0c961cf5588bd2e36bf9b53ee")
 const (
     //hex: 0x010800
     MapRemoveIfSameRequestMessageType = 67584
@@ -68,7 +68,7 @@ func MapRemoveIfSameEncodeRequest(name string, key serialization.Data, value ser
 }
 
 
-func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if the key exists and removed, otherwise returns false.*/response bool) {
+func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if the key exists and removed, otherwise returns false.*/response bool) {
     return func() (/*** Returns true if the key exists and removed, otherwise returns false.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

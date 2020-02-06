@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
  * the process() method of EntryProcessor.
  */
-//@Generated("7ab2c3e0bba0394454b20d088abb2dd2")
+//@Generated("4770e09d1f4f420236b41d3f00c13fbb")
 const (
     //hex: 0x012E00
     MapExecuteOnKeyRequestMessageType = 77312
@@ -68,12 +68,12 @@ func MapExecuteOnKeyEncodeRequest(name string, entryProcessor serialization.Data
 }
 
 
-func MapExecuteOnKeyDecodeResponse(clientMessage *ClientMessage) func() ( /*** result of entry process.*//* @Nullable */response serialization.Data) {
+func MapExecuteOnKeyDecodeResponse(clientMessage *ClientMessage) func() (/*** result of entry process.*//* @Nullable */response serialization.Data) {
     return func() (/*** result of entry process.*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

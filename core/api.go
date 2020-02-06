@@ -31,7 +31,7 @@ type Address interface {
 	Host() string
 
 	// Port returns the port of the member.
-	Port() int
+	Port() int32
 }
 
 type Uuid struct {

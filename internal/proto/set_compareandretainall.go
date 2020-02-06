@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * intersection of the two sets.
  */
-//@Generated("cf865b00b21fd553385959ba30b1b9fc")
+//@Generated("7be400f0304d62656b80957ada7bc75e")
 const (
     //hex: 0x060800
     SetCompareAndRetainAllRequestMessageType = 395264
@@ -72,7 +72,7 @@ func SetCompareAndRetainAllEncodeRequest(name string, values []serialization.Dat
 }
 
 
-func SetCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but* in the Set are removed.*/response bool) {
+func SetCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) func() (/*** true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but* in the Set are removed.*/response bool) {
     return func() (/*** true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but* in the Set are removed.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

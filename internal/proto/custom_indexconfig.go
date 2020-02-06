@@ -16,23 +16,41 @@
 
 package proto
 
+
+import (
+)
+
 type IndexConfig struct {
 name string
 _type int32
 attributes []string
 }
 
-func NewIndexConfig(name string, _type int32, attributes []string) *IndexConfig {
-    return &IndexConfig{name: name, _type: _type, attributes: attributes}
+//CONSTRUCTOR
+func NewIndexConfig(name string,_type int32,attributes []string) *IndexConfig {
+return &IndexConfig{name,_type,attributes}
 }
 
-//@Generated("5338378742f5ec7a88ec3de27dc0c86d")
+
+//GETTERS
+func (x *IndexConfig) Name() string {
+    return x.name
+    }
+func (x *IndexConfig) Type() int32 {
+    return x._type
+    }
+func (x *IndexConfig) Attributes() []string {
+    return x.attributes
+    }
+
+
+//@Generated("5ff5b7db11edb512700768af0804ce3e")
 const (
     IndexConfigTypeFieldOffset = 0
     IndexConfigInitialFrameSize = IndexConfigTypeFieldOffset + IntSizeInBytes
 )
 
-func IndexConfigCodecEncode(clientMessage *ClientMessage, indexConfig *IndexConfig) {
+func IndexConfigCodecEncode(clientMessage *ClientMessage, indexConfig IndexConfig) {
         clientMessage.Add(BeginFrame)
         initialFrame := &Frame{Content: make([]byte, IndexConfigInitialFrameSize), Flags: UnfragmentedMessage}
         EncodeInt(initialFrame.Content, IndexConfigTypeFieldOffset, indexConfig._type)

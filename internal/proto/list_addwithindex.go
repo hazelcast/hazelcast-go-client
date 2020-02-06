@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Inserts the specified element at the specified position in this list (optional operation). Shifts the element
  * currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
  */
-//@Generated("26cd8a2c2957c8b1cfdd3d1ee4381abd")
+//@Generated("cd6d5a76d77c77ee6cf7ff44132addab")
 const (
     //hex: 0x051100
     ListAddWithIndexRequestMessageType = 332032

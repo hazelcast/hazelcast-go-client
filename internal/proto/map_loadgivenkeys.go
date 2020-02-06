@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-//@Generated("5178cc0a0a52201f388e897fbc0f770d")
+//@Generated("95d048d5ce985a3e94c2e96bcdbc140d")
 const (
     //hex: 0x012100
     MapLoadGivenKeysRequestMessageType = 73984

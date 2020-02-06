@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -39,7 +39,7 @@ import (
  * element, including null, and throw an exception, as described in the specification for Collection
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
-//@Generated("a3597b3b8c36d23c3ef2707bd73990d3")
+//@Generated("4846ba2ef989caa19e53c174eb07cf4d")
 const (
     //hex: 0x060400
     SetAddRequestMessageType = 394240
@@ -68,7 +68,7 @@ func SetAddEncodeRequest(name string, value serialization.Data) *ClientMessage {
 }
 
 
-func SetAddDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if this set did not already contain the specified* element and the element is added, returns false otherwise.*/response bool) {
+func SetAddDecodeResponse(clientMessage *ClientMessage) func() (/*** True if this set did not already contain the specified* element and the element is added, returns false otherwise.*/response bool) {
     return func() (/*** True if this set did not already contain the specified* element and the element is added, returns false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

@@ -21,6 +21,7 @@ package proto
 
 import (
     "github.com/hazelcast/hazelcast-go-client/core"
+
 )
 
 
@@ -34,7 +35,7 @@ import (
 /**
  * Adds listener for backup acks
  */
-//@Generated("57d0e9d40beeb13db9ee7d9502ba1ba2")
+//@Generated("58a7c5e165774b57e0825e7b62e3957c")
 const (
     //hex: 0x000F00
     ClientLocalBackupListenerRequestMessageType = 3840
@@ -62,7 +63,7 @@ func ClientLocalBackupListenerEncodeRequest() *ClientMessage {
 }
 
 
-func ClientLocalBackupListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns the registration id for the listener.*/response core.Uuid) {
+func ClientLocalBackupListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns the registration id for the listener.*/response core.Uuid) {
     return func() (/*** Returns the registration id for the listener.*/response core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

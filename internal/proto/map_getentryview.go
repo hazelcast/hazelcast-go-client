@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -36,7 +36,7 @@ import (
  * This method returns a clone of original mapping, modifying the returned value does not change the actual value
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
-//@Generated("7823c12e64deeecb14dc92cd0237d43f")
+//@Generated("a53c2ba32be57b54253208f678ea5d2a")
 const (
     //hex: 0x011D00
     MapGetEntryViewRequestMessageType = 72960
@@ -67,12 +67,12 @@ func MapGetEntryViewEncodeRequest(name string, key serialization.Data, threadId 
 }
 
 
-func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) func() ( /*** Entry view of the specified key.*//* @Nullable */response SimpleEntryView, /*** Last set max idle in millis.*/maxIdle int64) {
+func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) func() (/*** Entry view of the specified key.*//* @Nullable */response SimpleEntryView, /*** Last set max idle in millis.*/maxIdle int64) {
     return func() (/*** Entry view of the specified key.*//* @Nullable */response SimpleEntryView, /*** Last set max idle in millis.*/maxIdle int64) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         maxIdle = DecodeLong(initialFrame.Content, MapGetEntryViewResponseMaxIdleFieldOffset)
-        response =          DecodeNullable(iterator, SimpleEntryViewCodecDecode).(SimpleEntryView)
+        response =          DecodeNullable(iterator, SimpleEntryViewCodecDecode).(SimpleEntryView) // 1  
         return
     }
 }

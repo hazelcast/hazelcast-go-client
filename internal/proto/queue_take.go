@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-//@Generated("c6e590a04c54878bdf071b85e4fe040b")
+//@Generated("d332908f8fb31be95a7c7d00246975e8")
 const (
     //hex: 0x030600
     QueueTakeRequestMessageType = 198144
@@ -59,12 +59,12 @@ func QueueTakeEncodeRequest(name string) *ClientMessage {
 }
 
 
-func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() ( /*** The head of this queue*//* @Nullable */response serialization.Data) {
+func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (/*** The head of this queue*//* @Nullable */response serialization.Data) {
     return func() (/*** The head of this queue*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

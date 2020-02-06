@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-//@Generated("277b5901df704476ee74bea2fbcfb2ef")
+//@Generated("b598909e3dfc6ef9b492267db3d2b85a")
 const (
     //hex: 0x050E00
     ListAddAllWithIndexRequestMessageType = 331264
@@ -75,7 +75,7 @@ func ListAddAllWithIndexEncodeRequest(name string, index int32, valueList []seri
 }
 
 
-func ListAddAllWithIndexDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if this list changed as a result of the call, false otherwise.*/response bool) {
+func ListAddAllWithIndexDecodeResponse(clientMessage *ClientMessage) func() (/*** True if this list changed as a result of the call, false otherwise.*/response bool) {
     return func() (/*** True if this list changed as a result of the call, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

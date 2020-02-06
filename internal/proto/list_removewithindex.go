@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
-//@Generated("97d57be8ead923f1a2d98302b9bd0720")
+//@Generated("d646077a776b3c6ba596c17a83bfb0ad")
 const (
     //hex: 0x051200
     ListRemoveWithIndexRequestMessageType = 332288
@@ -62,12 +62,12 @@ func ListRemoveWithIndexEncodeRequest(name string, index int32) *ClientMessage {
 }
 
 
-func ListRemoveWithIndexDecodeResponse(clientMessage *ClientMessage) func() ( /*** The element previously at the specified position*//* @Nullable */response serialization.Data) {
+func ListRemoveWithIndexDecodeResponse(clientMessage *ClientMessage) func() (/*** The element previously at the specified position*//* @Nullable */response serialization.Data) {
     return func() (/*** The element previously at the specified position*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

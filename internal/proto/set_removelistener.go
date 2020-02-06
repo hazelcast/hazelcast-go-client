@@ -35,7 +35,7 @@ import (
  * Removes the specified item listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("a2d749cece82a83d3e2bac42111c51a0")
+//@Generated("4b02f1d611f7568c45bea451fe940983")
 const (
     //hex: 0x060C00
     SetRemoveListenerRequestMessageType = 396288
@@ -63,7 +63,7 @@ func SetRemoveListenerEncodeRequest(name string, registrationId core.Uuid) *Clie
 }
 
 
-func SetRemoveListenerDecodeResponse(clientMessage *ClientMessage) func() ( /*** true if the listener with the provided id existed and removed, false otherwise.*/response bool) {
+func SetRemoveListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** true if the listener with the provided id existed and removed, false otherwise.*/response bool) {
     return func() (/*** true if the listener with the provided id existed and removed, false otherwise.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

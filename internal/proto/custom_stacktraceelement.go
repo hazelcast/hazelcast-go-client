@@ -16,6 +16,10 @@
 
 package proto
 
+
+import (
+)
+
 type StackTraceElement struct {
 className string
 methodName string
@@ -23,7 +27,28 @@ fileName string
 lineNumber int32
 }
 
-//@Generated("ebcc9867a14e608b8fd5b4969a3d2de0")
+//CONSTRUCTOR
+func NewStackTraceElement(className string,methodName string,fileName string,lineNumber int32) *StackTraceElement {
+return &StackTraceElement{className,methodName,fileName,lineNumber}
+}
+
+
+//GETTERS
+func (x *StackTraceElement) ClassName() string {
+    return x.className
+    }
+func (x *StackTraceElement) MethodName() string {
+    return x.methodName
+    }
+func (x *StackTraceElement) FileName() string {
+    return x.fileName
+    }
+func (x *StackTraceElement) LineNumber() int32 {
+    return x.lineNumber
+    }
+
+
+//@Generated("55d34cca653bd7b2531113639ed29b84")
 const (
     StackTraceElementLineNumberFieldOffset = 0
     StackTraceElementInitialFrameSize = StackTraceElementLineNumberFieldOffset + IntSizeInBytes

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * 
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
-//@Generated("ce783a534aac1c199f3670c733b0ceb5")
+//@Generated("66dfd0599cd1176b2aab70915a2bbdf1")
 const (
     //hex: 0x014700
     MapSetWithMaxIdleRequestMessageType = 83712
@@ -75,12 +75,12 @@ func MapSetWithMaxIdleEncodeRequest(name string, key serialization.Data, value s
 }
 
 
-func MapSetWithMaxIdleDecodeResponse(clientMessage *ClientMessage) func() ( /*** old value of the entry*//* @Nullable */response serialization.Data) {
+func MapSetWithMaxIdleDecodeResponse(clientMessage *ClientMessage) func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
     return func() (/*** old value of the entry*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

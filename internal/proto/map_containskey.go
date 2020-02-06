@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this map contains a mapping for the specified key.
  */
-//@Generated("b45e5ea858f7d37b8ce5ae9213005246")
+//@Generated("e380cac130e51c398a9f12e4bdd7771b")
 const (
     //hex: 0x010600
     MapContainsKeyRequestMessageType = 67072
@@ -65,7 +65,7 @@ func MapContainsKeyEncodeRequest(name string, key serialization.Data, threadId i
 }
 
 
-func MapContainsKeyDecodeResponse(clientMessage *ClientMessage) func() ( /*** Returns true if the key exists, otherwise returns false.*/response bool) {
+func MapContainsKeyDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns true if the key exists, otherwise returns false.*/response bool) {
     return func() (/*** Returns true if the key exists, otherwise returns false.*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl is 0, then the entry lives forever.
  */
-//@Generated("1fb87c69f53ca9bdbfbd510030f3967e")
+//@Generated("4a8191a4099fd59bd4018fa820c4267e")
 const (
     //hex: 0x010D00
     MapPutTransientRequestMessageType = 68864

@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Returns an iterator over the elements in this collection.  There are no guarantees concerning the order in which
  * the elements are returned (unless this collection is an instance of some class that provides a guarantee).
  */
-//@Generated("b9774fbd25e35bade266ecca19a86e09")
+//@Generated("0aa5e17ec1110f16b27cf3b979e5d66a")
 const (
     //hex: 0x030800
     QueueIteratorRequestMessageType = 198656
@@ -60,7 +60,7 @@ func QueueIteratorEncodeRequest(name string) *ClientMessage {
 }
 
 
-func QueueIteratorDecodeResponse(clientMessage *ClientMessage) func() ( /*** list of all data in queue*/response []serialization.Data) {
+func QueueIteratorDecodeResponse(clientMessage *ClientMessage) func() (/*** list of all data in queue*/response []serialization.Data) {
     return func() (/*** list of all data in queue*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

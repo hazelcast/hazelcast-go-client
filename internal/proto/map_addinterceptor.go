@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Adds an interceptor for this map. Added interceptor will intercept operations
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
-//@Generated("c778744d73a4aad3dabe9672e292690c")
+//@Generated("931725ce407d5f338d8f0794fe952ce4")
 const (
     //hex: 0x011400
     MapAddInterceptorRequestMessageType = 70656
@@ -63,7 +63,7 @@ func MapAddInterceptorEncodeRequest(name string, interceptor serialization.Data)
 }
 
 
-func MapAddInterceptorDecodeResponse(clientMessage *ClientMessage) func() ( /*** id of registered interceptor.*/response string) {
+func MapAddInterceptorDecodeResponse(clientMessage *ClientMessage) func() (/*** id of registered interceptor.*/response string) {
     return func() (/*** id of registered interceptor.*/response string) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

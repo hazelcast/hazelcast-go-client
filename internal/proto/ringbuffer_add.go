@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -44,7 +44,7 @@ import (
  * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
  * to find that item.
  */
-//@Generated("7e70fb780ccbf8e8251e8fd2d45b8999")
+//@Generated("ddb15d8d808c74ea95646e96bc8341b3")
 const (
     //hex: 0x170600
     RingbufferAddRequestMessageType = 1508864
@@ -75,7 +75,7 @@ func RingbufferAddEncodeRequest(name string, overflowPolicy int32, value seriali
 }
 
 
-func RingbufferAddDecodeResponse(clientMessage *ClientMessage) func() ( /*** the sequence of the added item, or -1 if the add failed.*/response int64) {
+func RingbufferAddDecodeResponse(clientMessage *ClientMessage) func() (/*** the sequence of the added item, or -1 if the add failed.*/response int64) {
     return func() (/*** the sequence of the added item, or -1 if the add failed.*/response int64) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

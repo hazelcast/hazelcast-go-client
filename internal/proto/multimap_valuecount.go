@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns the number of values that match the given key in the multimap.
  */
-//@Generated("7fd1a812720b6a94d862b89565823cef")
+//@Generated("2dc3b9f0c94683e4d84459d20bd899dc")
 const (
     //hex: 0x020C00
     MultiMapValueCountRequestMessageType = 134144
@@ -65,7 +65,7 @@ func MultiMapValueCountEncodeRequest(name string, key serialization.Data, thread
 }
 
 
-func MultiMapValueCountDecodeResponse(clientMessage *ClientMessage) func() ( /*** The number of values that match the given key in the multimap*/response int32) {
+func MultiMapValueCountDecodeResponse(clientMessage *ClientMessage) func() (/*** The number of values that match the given key in the multimap*/response int32) {
     return func() (/*** The number of values that match the given key in the multimap*/response int32) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

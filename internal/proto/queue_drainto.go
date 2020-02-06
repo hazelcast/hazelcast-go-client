@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -38,7 +38,7 @@ import (
  * thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
  * this operation is undefined if the specified collection is modified while the operation is in progress.
  */
-//@Generated("7578def9f0da3ad92aa2fc803513fba8")
+//@Generated("34037fc55043df91caffee4767f158a9")
 const (
     //hex: 0x030900
     QueueDrainToRequestMessageType = 198912
@@ -63,7 +63,7 @@ func QueueDrainToEncodeRequest(name string) *ClientMessage {
 }
 
 
-func QueueDrainToDecodeResponse(clientMessage *ClientMessage) func() ( /*** list of all removed data in queue*/response []serialization.Data) {
+func QueueDrainToDecodeResponse(clientMessage *ClientMessage) func() (/*** list of all removed data in queue*/response []serialization.Data) {
     return func() (/*** list of all removed data in queue*/response []serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame

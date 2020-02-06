@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
  * if this queue is empty.
  */
-//@Generated("73cf203be667b87b58f3ce6523aa10a1")
+//@Generated("727a8fbe5de76088b52474ccd4e0e44b")
 const (
     //hex: 0x030400
     QueueRemoveRequestMessageType = 197632
@@ -64,7 +64,7 @@ func QueueRemoveEncodeRequest(name string, value serialization.Data) *ClientMess
 }
 
 
-func QueueRemoveDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this queue changed as a result of the call*/response bool) {
+func QueueRemoveDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this queue changed as a result of the call*/response bool) {
     return func() (/*** <tt>true</tt> if this queue changed as a result of the call*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

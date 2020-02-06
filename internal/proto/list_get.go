@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -34,7 +34,7 @@ import (
 /**
  * Returns the element at the specified position in this list
  */
-//@Generated("9e57d567046ff79d01761b1cfff420a1")
+//@Generated("33e8d6ce46e6b9778779595efac5890b")
 const (
     //hex: 0x050F00
     ListGetRequestMessageType = 331520
@@ -61,12 +61,12 @@ func ListGetEncodeRequest(name string, index int32) *ClientMessage {
 }
 
 
-func ListGetDecodeResponse(clientMessage *ClientMessage) func() ( /*** The element at the specified position in this list*//* @Nullable */response serialization.Data) {
+func ListGetDecodeResponse(clientMessage *ClientMessage) func() (/*** The element at the specified position in this list*//* @Nullable */response serialization.Data) {
     return func() (/*** The element at the specified position in this list*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

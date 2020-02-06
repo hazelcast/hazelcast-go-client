@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * readers or it can be read multiple times by the same reader. Currently it isn't possible to control how long this
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
-//@Generated("9a25a125607c79b740d89abfffea0905")
+//@Generated("273fb8b72ff3f287f8324026d6fc98a6")
 const (
     //hex: 0x170700
     RingbufferReadOneRequestMessageType = 1509120
@@ -64,12 +64,12 @@ func RingbufferReadOneEncodeRequest(name string, sequence int64) *ClientMessage 
 }
 
 
-func RingbufferReadOneDecodeResponse(clientMessage *ClientMessage) func() ( /*** the read item*//* @Nullable */response serialization.Data) {
+func RingbufferReadOneDecodeResponse(clientMessage *ClientMessage) func() (/*** the read item*//* @Nullable */response serialization.Data) {
     return func() (/*** the read item*//* @Nullable */response serialization.Data) {
         iterator := clientMessage.FrameIterator()
         //empty initial frame
         iterator.Next()
-        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data)
+        response = DecodeNullable(iterator, DataCodecDecode).(serialization.Data) // 2  
         return
     }
 }

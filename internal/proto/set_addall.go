@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -37,7 +37,7 @@ import (
  * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
  * collection is modified while the operation is in progress.
  */
-//@Generated("fe8a4f864daebe15b36ff9753c71285f")
+//@Generated("601a864479df2f0fe0daea7250f71866")
 const (
     //hex: 0x060600
     SetAddAllRequestMessageType = 394752
@@ -72,7 +72,7 @@ func SetAddAllEncodeRequest(name string, valueList []serialization.Data) *Client
 }
 
 
-func SetAddAllDecodeResponse(clientMessage *ClientMessage) func() ( /*** True if this set changed as a result of the call*/response bool) {
+func SetAddAllDecodeResponse(clientMessage *ClientMessage) func() (/*** True if this set changed as a result of the call*/response bool) {
     return func() (/*** True if this set changed as a result of the call*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()

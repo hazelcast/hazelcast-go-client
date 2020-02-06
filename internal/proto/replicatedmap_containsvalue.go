@@ -20,7 +20,7 @@ package proto
 
 
 import (
-    "github.com/hazelcast/hazelcast-go-client/serialization"
+     "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 
@@ -35,7 +35,7 @@ import (
  * Returns true if this map maps one or more keys to the specified value.
  * This operation will probably require time linear in the map size for most implementations of the Map interface.
  */
-//@Generated("63a4623cde450679a6fb9607fb63adc5")
+//@Generated("a5c0458afd22847d8fe9556da4151984")
 const (
     //hex: 0x0D0500
     ReplicatedMapContainsValueRequestMessageType = 853248
@@ -64,7 +64,7 @@ func ReplicatedMapContainsValueEncodeRequest(name string, value serialization.Da
 }
 
 
-func ReplicatedMapContainsValueDecodeResponse(clientMessage *ClientMessage) func() ( /*** <tt>true</tt> if this map maps one or more keys to the specified value*/response bool) {
+func ReplicatedMapContainsValueDecodeResponse(clientMessage *ClientMessage) func() (/*** <tt>true</tt> if this map maps one or more keys to the specified value*/response bool) {
     return func() (/*** <tt>true</tt> if this map maps one or more keys to the specified value*/response bool) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
