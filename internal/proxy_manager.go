@@ -22,7 +22,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 type proxyManager struct {
@@ -63,7 +62,7 @@ func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.
 }
 
 func (pm *proxyManager) createProxy(serviceName string, name string) (core.DistributedObject, error) {
-	message := proto.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress().(*proto.Address))
+	message := proto.ClientCreateProxyEncodeRequest(name, serviceName) //, pm.findNextProxyAddress().(*proto.Address) todo
 	_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
@@ -99,27 +98,27 @@ func (pm *proxyManager) findNextProxyAddress() core.Address {
 }
 
 func (pm *proxyManager) getProxyByNameSpace(serviceName string, name string) (core.DistributedObject, error) {
-	if bufutil.ServiceNameMap == serviceName {
+	if proto.ServiceNameMap == serviceName {
 		return newMapProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameList == serviceName {
+	} else if proto.ServiceNameList == serviceName {
 		return newListProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameSet == serviceName {
+	} else if proto.ServiceNameSet == serviceName {
 		return newSetProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameTopic == serviceName {
+	} else if proto.ServiceNameTopic == serviceName {
 		return newTopicProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameMultiMap == serviceName {
+	} else if proto.ServiceNameMultiMap == serviceName {
 		return newMultiMapProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameReplicatedMap == serviceName {
+	} else if proto.ServiceNameReplicatedMap == serviceName {
 		return newReplicatedMapProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameQueue == serviceName {
+	} else if proto.ServiceNameQueue == serviceName {
 		return newQueueProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameRingbufferService == serviceName {
+	} else if proto.ServiceNameRingbufferService == serviceName {
 		return newRingbufferProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNamePNCounter == serviceName {
+	} else if proto.ServiceNamePNCounter == serviceName {
 		return newPNCounterProxy(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameIDGenerator == serviceName {
+	} else if proto.ServiceNameIDGenerator == serviceName {
 		return newFlakeIDGenerator(pm.client, serviceName, name), nil
-	} else if bufutil.ServiceNameReliableTopic == serviceName {
+	} else if proto.ServiceNameReliableTopic == serviceName {
 		return newReliableTopicProxy(pm.client, serviceName, name)
 	}
 	return nil, core.NewHazelcastClientServiceNotFoundError(fmt.Sprintf("no factory registered for service: %s",

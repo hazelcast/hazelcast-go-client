@@ -15,16 +15,16 @@
 package map1
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestProxy_Destroy(t *testing.T) {
 	name := "testMap"
-	serviceName := bufutil.ServiceNameMap
+	serviceName := proto.ServiceNameMap
 	testMap, err := client.GetDistributedObject(serviceName, name)
 	require.NoError(t, err)
 	res, err := testMap.Destroy()
@@ -42,7 +42,7 @@ func TestProxy_Destroy(t *testing.T) {
 
 func TestProxy_GetDistributedObject(t *testing.T) {
 	name := "testMap"
-	serviceName := bufutil.ServiceNameMap
+	serviceName := proto.ServiceNameMap
 	mp, _ := client.GetDistributedObject(serviceName, name)
 	mp2, _ := client.GetDistributedObject(serviceName, name)
 

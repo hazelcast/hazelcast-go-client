@@ -89,7 +89,7 @@ type MultiMap interface {
 	//  * EntryRemovedListener
 	//  * MapClearedListener
 	// It returns registration ID for this entry listener.
-	AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error)
+	AddEntryListener(listener interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// AddEntryListenerToKey adds an entry listener to this multi-map.
 	// Supported listeners for MultiMap:
@@ -98,10 +98,10 @@ type MultiMap interface {
 	//  * MapClearedListener
 	// This entry listener will only be notified of updates related to this key.
 	// It returns registration ID for this entry listener.
-	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID string, err error)
+	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// RemoveEntryListener removes the entry listener by the registration ID.
-	RemoveEntryListener(registrationID string) (removed bool, err error)
+	RemoveEntryListener(registrationID Uuid) (removed bool, err error)
 
 	// Lock acquires a lock for the specified key.
 	// If the lock is not available, then

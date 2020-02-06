@@ -15,12 +15,12 @@
 package ringbuffer
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"log"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
@@ -54,7 +54,7 @@ func TestRingbufferProxy_Name(t *testing.T) {
 }
 
 func TestRingbufferProxy_ServiceName(t *testing.T) {
-	serviceName := bufutil.ServiceNameRingbufferService
+	serviceName := proto.ServiceNameRingbufferService
 	if serviceName != ringbuffer.ServiceName() {
 		t.Error("ServiceName() failed")
 	}

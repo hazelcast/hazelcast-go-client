@@ -29,12 +29,12 @@ type Topic interface {
 	// OnMessage() function of the given messageListener is called. More than one message listener can be
 	// added on one instance.
 	// AddMessageListener returns registrationID of the listener.
-	AddMessageListener(messageListener MessageListener) (registrationID string, err error)
+	AddMessageListener(messageListener MessageListener) (registrationID Uuid, err error)
 
 	// RemoveMessageListener stops receiving messages for the listener with the given registrationID.
 	// If the listener is already removed, this method does nothing.
 	// RemoveMessageListener returns true if the listener with the given registrationID is removed.
-	RemoveMessageListener(registrationID string) (removed bool, err error)
+	RemoveMessageListener(registrationID Uuid) (removed bool, err error)
 
 	// Publish publishes the message to all subscribers of this topic.
 	Publish(message interface{}) (err error)

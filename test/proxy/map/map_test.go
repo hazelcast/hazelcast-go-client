@@ -15,6 +15,7 @@
 package map1
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"log"
 	"reflect"
 	"sort"
@@ -26,7 +27,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/predicate"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
@@ -68,7 +68,7 @@ func TestMapProxy_Name(t *testing.T) {
 }
 
 func TestMapProxy_ServiceName(t *testing.T) {
-	serviceName := bufutil.ServiceNameMap
+	serviceName := proto.ServiceNameMap
 	if serviceName != mp.ServiceName() {
 		t.Error("ServiceName() failed")
 	}
@@ -837,7 +837,7 @@ func TestMapProxy_GetEntryView(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equalf(t, entryView.Hits(), int64(2), "Map GetEntryView returned a wrong view.")
 	require.NoError(t, err)
-	assert.Equalf(t, entryView.EvictionCriteriaNumber(), int64(0), "Map GetEntryView returned a wrong view.")
+	assert.Equalf(t, entryView.MaxIdle(), int64(0), "Map GetEntryView returned a wrong view.")
 	require.NoError(t, err)
 	assert.Equalf(t, entryView.Version(), int64(1), "Map GetEntryView returned a wrong view.")
 	if cost := entryView.Cost(); cost <= 0 {

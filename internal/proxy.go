@@ -20,7 +20,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -59,7 +58,7 @@ func (p *proxy) ServiceName() string {
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(proto.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	return
@@ -68,7 +67,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.D
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
-		return nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, nil, core.NewHazelcastNilPointerError(proto.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	if err != nil {
@@ -81,7 +80,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, arg3Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, nil, nil, core.NewHazelcastNilPointerError(proto.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	if err != nil {
@@ -97,7 +96,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 
 func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
-		return nil, core.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
+		return nil, core.NewHazelcastSerializationError(proto.NilPredicateIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	return
@@ -105,7 +104,7 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data serial
 
 func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData []serialization.Data, err error) {
 	if elements == nil {
-		return nil, core.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
+		return nil, core.NewHazelcastSerializationError(proto.NilSliceIsNotAllowed, nil)
 	}
 	elementsData, err = colutil.ObjectToDataCollection(elements, p.client.SerializationService)
 	return
@@ -125,7 +124,7 @@ func (p *proxy) validateItemListener(listener interface{}) (err error) {
 func (p *proxy) validateEntryListener(listener interface{}) (err error) {
 	argErr := core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
 		reflect.TypeOf(listener)), nil)
-	if p.serviceName == bufutil.ServiceNameReplicatedMap {
+	if p.serviceName == proto.ServiceNameReplicatedMap {
 		switch listener.(type) {
 		case core.EntryAddedListener:
 		case core.EntryRemovedListener:
@@ -135,7 +134,7 @@ func (p *proxy) validateEntryListener(listener interface{}) (err error) {
 		default:
 			err = argErr
 		}
-	} else if p.serviceName == bufutil.ServiceNameMultiMap {
+	} else if p.serviceName == proto.ServiceNameMultiMap {
 		switch listener.(type) {
 		case core.EntryAddedListener:
 		case core.EntryRemovedListener:
@@ -149,7 +148,7 @@ func (p *proxy) validateEntryListener(listener interface{}) (err error) {
 
 func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*proto.Pair, error) {
 	if entries == nil {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(proto.NilMapIsNotAllowed, nil)
 	}
 	partitions := make(map[int32][]*proto.Pair)
 	for key, value := range entries {
@@ -164,19 +163,19 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 	return partitions, nil
 }
 
-func (p *proxy) invokeOnKey(request *bufutil.ClientMessage, keyData serialization.Data) (*bufutil.ClientMessage, error) {
+func (p *proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnKeyOwner(request, keyData).Result()
 }
 
-func (p *proxy) invokeOnRandomTarget(request *bufutil.ClientMessage) (*bufutil.ClientMessage, error) {
+func (p *proxy) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnRandomTarget(request).Result()
 }
 
-func (p *proxy) invokeOnPartition(request *bufutil.ClientMessage, partitionID int32) (*bufutil.ClientMessage, error) {
+func (p *proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionID).Result()
 }
 
-func (p *proxy) invokeOnAddress(request *bufutil.ClientMessage, address *core.Address) (*bufutil.ClientMessage, error) {
+func (p *proxy) invokeOnAddress(request *proto.ClientMessage, address core.Address) (*proto.ClientMessage, error) {
 	return p.client.InvocationService.invokeOnTarget(request, address).Result()
 }
 
@@ -188,48 +187,48 @@ func (p *proxy) toData(object interface{}) (serialization.Data, error) {
 	return p.client.SerializationService.ToData(object)
 }
 
-func (p *proxy) decodeToObjectAndError(responseMessage *bufutil.ClientMessage, inputError error,
-	decodeFunc func(*bufutil.ClientMessage) func() serialization.Data) (response interface{}, err error) {
+func (p *proxy) decodeToObjectAndError(responseMessage *proto.ClientMessage, inputError error,
+	decodeFunc func(*proto.ClientMessage) func() serialization.Data) (response interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}
 	return p.toObject(decodeFunc(responseMessage)())
 }
 
-func (p *proxy) decodeToBoolAndError(responseMessage *bufutil.ClientMessage, inputError error,
-	decodeFunc func(*bufutil.ClientMessage) func() bool) (response bool, err error) {
+func (p *proxy) decodeToBoolAndError(responseMessage *proto.ClientMessage, inputError error,
+	decodeFunc func(*proto.ClientMessage) func() bool) (response bool, err error) {
 	if inputError != nil {
 		return false, inputError
 	}
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *bufutil.ClientMessage, inputError error,
-	decodeFunc func(*bufutil.ClientMessage) func() []serialization.Data) (response []interface{}, err error) {
+func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *proto.ClientMessage, inputError error,
+	decodeFunc func(*proto.ClientMessage) func() []serialization.Data) (response []interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}
 	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
 }
 
-func (p *proxy) decodeToPairSliceAndError(responseMessage *bufutil.ClientMessage, inputError error,
-	decodeFunc func(*bufutil.ClientMessage) func() []*proto.Pair) (response []core.Pair, err error) {
+func (p *proxy) decodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
+	decodeFunc func(*proto.ClientMessage) func() []*proto.Pair) (response []core.Pair, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}
 	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.client.SerializationService)
 }
 
-func (p *proxy) decodeToInt32AndError(responseMessage *bufutil.ClientMessage, inputError error,
-	decodeFunc func(*bufutil.ClientMessage) func() int32) (response int32, err error) {
+func (p *proxy) decodeToInt32AndError(responseMessage *proto.ClientMessage, inputError error,
+	decodeFunc func(*proto.ClientMessage) func() int32) (response int32, err error) {
 	if inputError != nil {
 		return 0, inputError
 	}
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *proxy) decodeToInt64AndError(responseMessage *bufutil.ClientMessage, inputError error,
-	decodeFunc func(*bufutil.ClientMessage) func() int64) (response int64, err error) {
+func (p *proxy) decodeToInt64AndError(responseMessage *proto.ClientMessage, inputError error,
+	decodeFunc func(*proto.ClientMessage) func() int64) (response int64, err error) {
 	if inputError != nil {
 		return 0, inputError
 	}
@@ -248,21 +247,21 @@ func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name
 
 }
 
-func (parSpecProxy *partitionSpecificProxy) invoke(request *bufutil.ClientMessage) (*bufutil.ClientMessage, error) {
+func (parSpecProxy *partitionSpecificProxy) invoke(request *proto.ClientMessage) (*proto.ClientMessage, error) {
 	return parSpecProxy.invokeOnPartition(request, parSpecProxy.partitionID)
 }
 
-func (p *proxy) createOnItemEvent(listener interface{}) func(itemData serialization.Data, uuid string, eventType int32) {
-	return func(itemData serialization.Data, uuid string, eventType int32) {
+func (p *proxy) createOnItemEvent(listener interface{}) func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
+	return func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
 		var item interface{}
 		item, _ = p.toObject(itemData)
 		member := p.client.ClusterService.GetMemberByUUID(uuid)
 		itemEvent := proto.NewItemEvent(p.name, item, eventType, member.(*proto.Member))
-		if eventType == bufutil.ItemAdded {
+		if eventType == proto.ItemAdded {
 			if _, ok := listener.(core.ItemAddedListener); ok {
 				listener.(core.ItemAddedListener).ItemAdded(itemEvent)
 			}
-		} else if eventType == bufutil.ItemRemoved {
+		} else if eventType == proto.ItemRemoved {
 			if _, ok := listener.(core.ItemRemovedListener); ok {
 				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
 			}

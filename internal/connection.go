@@ -17,6 +17,7 @@ package internal
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"net"
 	"sync/atomic"
 	"time"
@@ -26,7 +27,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
@@ -38,8 +38,8 @@ const (
 )
 
 type Connection struct {
-	pending                   chan *bufutil.ClientMessage
-	received                  chan *bufutil.ClientMessage
+	pending                   chan *proto.ClientMessage
+	received                  chan *proto.ClientMessage
 	socket                    net.Conn
 	clientMessageBuilder      *clientMessageBuilder
 	closed                    chan struct{}
@@ -77,11 +77,11 @@ func createDefaultConnection(cm connectionManager, handleResponse func(interface
 
 	builder := &clientMessageBuilder{
 		handleResponse:     handleResponse,
-		incompleteMessages: make(map[int64]*bufutil.ClientMessage),
+		incompleteMessages: make(map[int64]*proto.ClientMessage),
 	}
 	return &Connection{
-		pending:              make(chan *bufutil.ClientMessage, 1),
-		received:             make(chan *bufutil.ClientMessage, 1),
+		pending:              make(chan *proto.ClientMessage, 1),
+		received:             make(chan *proto.ClientMessage, 1),
 		closed:               make(chan struct{}),
 		clientMessageBuilder: builder,
 		readBuffer:           make([]byte, 0),
@@ -146,7 +146,7 @@ func (c *Connection) writePool() {
 	}
 }
 
-func (c *Connection) send(clientMessage *bufutil.ClientMessage) bool {
+func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 	select {
 	case <-c.closed:
 		return false
@@ -156,7 +156,7 @@ func (c *Connection) send(clientMessage *bufutil.ClientMessage) bool {
 	}
 }
 
-func (c *Connection) write(clientMessage *bufutil.ClientMessage) error {
+func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	remainingLen := len(clientMessage.StartFrame().Content) //todo
 	writeIndex := 0
 	for remainingLen > 0 {
@@ -205,8 +205,8 @@ func (c *Connection) StartTime() int64 {
 
 func (c *Connection) receiveMessage() {
 	c.lastRead.Store(time.Now())
-	for len(c.readBuffer) > bufutil.Int32SizeInBytes {
-		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:bufutil.Int32SizeInBytes])
+	for len(c.readBuffer) > proto.Int32SizeInBytes {
+		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:proto.Int32SizeInBytes])
 		if frameLength > uint32(len(c.readBuffer)) {
 			return
 		}

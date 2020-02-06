@@ -18,6 +18,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
@@ -33,6 +34,54 @@ type Address interface {
 	Port() int
 }
 
+type Uuid struct {
+	msb int64
+	lsb int64
+}
+
+func NewUuid(msb int64, lsb int64) *Uuid {
+	return &Uuid{msb: msb, lsb: lsb}
+}
+
+func NewUuidFromBytes(data []byte) *Uuid {
+	msb := 0
+	lsb := 0
+
+	for  i :=0; i<8; i++ {
+		msb = (msb << 8) | (int)(data[i] & 0xff)
+	}
+	for  i := 8; i<16; i++ {
+	lsb = (lsb << 8) | (int)(data[i] & 0xff)
+	}
+
+	return &Uuid{msb: int64(msb), lsb: int64(lsb)}
+}
+
+
+func (uuid Uuid)String() string{
+	
+	return digits(uuid.msb >> 32, 8) + "-" +
+			digits(uuid.msb >> 16, 4) + "-" +
+			digits(uuid.msb, 4) + "-" +
+			digits(uuid.lsb >> 48, 4) + "-" +
+			digits(uuid.lsb, 12)
+
+}
+
+func digits(val int64, d int) string {
+	str := "%0" + strconv.Itoa(d) + "x"
+	return fmt.Sprintf(str, val)
+}
+
+
+func (u Uuid) GetLeastSignificantBits() int64 {
+	return u.lsb
+}
+
+func (u Uuid) GetMostSignificantBits() int64 {
+	return u.msb
+}
+
 // Member represents a member in the cluster with its address, uuid, lite member status and attributes.
 type Member interface {
 	fmt.Stringer
@@ -40,7 +89,7 @@ type Member interface {
 	Address() Address
 
 	// UUID returns the uuid of this member.
-	UUID() string
+	UUID() Uuid
 
 	// IsLiteMember returns true if this member is a lite member.
 	IsLiteMember() bool
@@ -90,11 +139,11 @@ type EntryView interface {
 	// Version returns the version of the entry.
 	Version() int64
 
-	// EvictionCriteriaNumber returns the criteria number for eviction.
-	EvictionCriteriaNumber() int64
-
 	// TTL returns the last set time to live second.
 	TTL() time.Duration
+
+	// MaxIdle returns the last set max idle time in milliseconds.
+	MaxIdle() time.Duration
 }
 
 // AbstractMapEvent is base for a map event.

@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"sync/atomic"
 	"time"
 
@@ -98,7 +97,7 @@ func (ps *partitionService) doRefresh() {
 		ps.logger.Trace("Error while fetching cluster partition table!")
 		return
 	}
-	request := proto.ClientGetPartitionsEncodeRequest()
+	/*request := proto.ClientGetPartitionsEncodeRequest()
 	result, err := ps.client.InvocationService.invokeOnConnection(request, connection).Result()
 	if err != nil {
 		if ps.client.lifecycleService.isLive.Load() == true {
@@ -106,11 +105,11 @@ func (ps *partitionService) doRefresh() {
 		}
 		return
 	}
-	ps.processPartitionResponse(result)
+	ps.processPartitionResponse(result)*/
 }
 
-func (ps *partitionService) processPartitionResponse(result *bufutil.ClientMessage) {
-	partitions /*partitionStateVersion*/, _ := proto.ClientGetPartitionsDecodeResponse(result)()
+func (ps *partitionService) processPartitionResponse(result *proto.ClientMessage) {
+	/*partitions /*partitionStateVersion, _ := proto.ClientGetPartitionsDecodeResponse(result)()
 	newPartitions := make(map[int32]*proto.Address, len(partitions))
 	for _, partitionList := range partitions {
 		addr := partitionList.Key().(*proto.Address)
@@ -118,7 +117,7 @@ func (ps *partitionService) processPartitionResponse(result *bufutil.ClientMessa
 			newPartitions[partition] = addr
 		}
 	}
-	ps.mp.Store(newPartitions)
+	ps.mp.Store(newPartitions)*/
 }
 
 func (ps *partitionService) shutdown() {

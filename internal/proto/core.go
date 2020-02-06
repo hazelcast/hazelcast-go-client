@@ -22,17 +22,16 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 //ADDRESS
 
-type Address struct {
+/*type Address struct {
 	host string
 	port int32
-}
+}*/
 
 func NewAddressWithParameters(Host string, Port int32) *Address {
 	return &Address{Host, Port}
@@ -50,27 +49,35 @@ func (a *Address) String() string {
 	return a.Host() + ":" + strconv.Itoa(a.Port())
 }
 
-type uuid struct {
-	msb int64
-	lsb int64
-}
+//type Uuid struct {
+//	msb int64
+//	lsb int64
+//}
+
+//func (u Uuid) GetLeastSignificantBits() int64 {
+//	return u.lsb
+//}
+//
+//func (u Uuid) GetMostSignificantBits() int64 {
+//	return u.msb
+//}
 
 type Member struct {
-	address      Address
-	uuid         string
+	address      core.Address
+	uuid         core.Uuid
 	isLiteMember bool
 	attributes   map[string]string
 }
 
-func NewMember(address Address, uuid string, isLiteMember bool, attributes map[string]string) *Member {
+func NewMember(address core.Address, uuid core.Uuid, isLiteMember bool, attributes map[string]string) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
 }
 
 func (m *Member) Address() core.Address {
-	return &m.address
+	return m.address
 }
 
-func (m *Member) UUID() string {
+func (m *Member) UUID() core.Uuid {
 	return m.uuid
 }
 
@@ -158,10 +165,10 @@ func (m *MemberAttributeEvent) Member() core.Member {
 	return m.member
 }
 
-type DistributedObjectInfo struct {
+/*type DistributedObjectInfo struct {
 	name        string
 	serviceName string
-}
+}*/
 
 func (i *DistributedObjectInfo) Name() string {
 	return i.name
@@ -182,8 +189,8 @@ type DataEntryView struct {
 	lastStoredTime         int64
 	lastUpdateTime         int64
 	version                int64
-	evictionCriteriaNumber int64
 	ttl                    int64
+	maxIdle				   int64
 }
 
 func (ev *DataEntryView) KeyData() serialization.Data {
@@ -226,8 +233,8 @@ func (ev *DataEntryView) Version() int64 {
 	return ev.version
 }
 
-func (ev *DataEntryView) EvictionCriteriaNumber() int64 {
-	return ev.evictionCriteriaNumber
+func (ev *DataEntryView) MaxIdle() int64 {
+	return ev.MaxIdle()
 }
 
 func (ev *DataEntryView) TTL() int64 {
@@ -245,12 +252,12 @@ type EntryView struct {
 	lastStoredTime         time.Time
 	lastUpdateTime         time.Time
 	version                int64
-	evictionCriteriaNumber int64
 	ttl                    time.Duration
+	maxIdle				   time.Duration
 }
 
 func NewEntryView(key interface{}, value interface{}, cost int64, creationTime int64, expirationTime int64, hits int64,
-	lastAccessTime int64, lastStoredTime int64, lastUpdateTime int64, version int64, evictionCriteriaNumber int64, ttl int64) *EntryView {
+	lastAccessTime int64, lastStoredTime int64, lastUpdateTime int64, version int64, ttl int64, maxIdle int64) *EntryView {
 	return &EntryView{
 		key:                    key,
 		value:                  value,
@@ -262,8 +269,8 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		lastStoredTime:         timeutil.ConvertMillisToUnixTime(lastStoredTime),
 		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
-		evictionCriteriaNumber: evictionCriteriaNumber,
 		ttl:                    timeutil.ConvertMillisToDuration(ttl),
+		maxIdle:				timeutil.ConvertMillisToDuration(maxIdle),
 	}
 }
 
@@ -307,8 +314,8 @@ func (ev *EntryView) Version() int64 {
 	return ev.version
 }
 
-func (ev *EntryView) EvictionCriteriaNumber() int64 {
-	return ev.evictionCriteriaNumber
+func (ev *EntryView) MaxIdle() time.Duration {
+	return ev.maxIdle
 }
 
 func (ev *EntryView) TTL() time.Duration {
@@ -325,7 +332,7 @@ func (ev DataEntryView) Equal(ev2 DataEntryView) bool {
 	if ev.lastAccessTime != ev2.lastAccessTime || ev.lastStoredTime != ev2.lastStoredTime || ev.lastUpdateTime != ev2.lastUpdateTime {
 		return false
 	}
-	if ev.version != ev2.version || ev.evictionCriteriaNumber != ev2.evictionCriteriaNumber || ev.ttl != ev2.ttl {
+	if ev.version != ev2.version || ev.ttl != ev2.ttl  || ev.maxIdle != ev2.maxIdle {
 		return false
 	}
 	return true
@@ -372,13 +379,13 @@ func (e *ServerError) CauseClassName() string {
 	return e.causeClassName
 }
 
-type StackTraceElement struct {
+/*type StackTraceElement struct {
 	declaringClass string
 	methodName     string
 	fileName       string
 	lineNumber     int32
 }
-
+*/
 
 func (e *StackTraceElement) MethodName() string {
 	return e.methodName
@@ -502,38 +509,38 @@ func (e *ItemEvent) Member() core.Member {
 	return e.member
 }
 
-type DecodeListenerResponse func(message *bufutil.ClientMessage) string
-type EncodeListenerRemoveRequest func(registrationID string) *bufutil.ClientMessage
+type DecodeListenerResponse func(message *ClientMessage) core.Uuid
+type EncodeListenerRemoveRequest func(registrationID core.Uuid) *ClientMessage
 
 // Helper function to get flags for listeners
 func GetMapListenerFlags(listener interface{}) (int32, error) {
 	flags := int32(0)
 	if _, ok := listener.(core.EntryAddedListener); ok {
-		flags |= bufutil.EntryEventAdded
+		flags |= EntryEventAdded
 	}
 	if _, ok := listener.(core.EntryLoadedListener); ok {
-		flags |= bufutil.EntryEventLoaded
+		flags |= EntryEventLoaded
 	}
 	if _, ok := listener.(core.EntryRemovedListener); ok {
-		flags |= bufutil.EntryEventRemoved
+		flags |= EntryEventRemoved
 	}
 	if _, ok := listener.(core.EntryUpdatedListener); ok {
-		flags |= bufutil.EntryEventUpdated
+		flags |= EntryEventUpdated
 	}
 	if _, ok := listener.(core.EntryEvictedListener); ok {
-		flags |= bufutil.EntryEventEvicted
+		flags |= EntryEventEvicted
 	}
 	if _, ok := listener.(core.MapEvictedListener); ok {
-		flags |= bufutil.MapEventEvicted
+		flags |= MapEventEvicted
 	}
 	if _, ok := listener.(core.MapClearedListener); ok {
-		flags |= bufutil.MapEventCleared
+		flags |= MapEventCleared
 	}
 	if _, ok := listener.(core.EntryExpiredListener); ok {
-		flags |= bufutil.EntryEventExpired
+		flags |= EntryEventExpired
 	}
 	if _, ok := listener.(core.EntryMergedListener); ok {
-		flags |= bufutil.EntryEventMerged
+		flags |= EntryEventMerged
 	}
 	if flags == 0 {
 		return 0, core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",

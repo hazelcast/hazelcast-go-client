@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
@@ -27,8 +26,8 @@ import (
 
 type listenerService struct {
 	client                                     *HazelcastClient
-	registrations                              map[string]map[int64]*eventRegistration
-	registrationIDToListenerRegistration       map[string]*listenerRegistrationKey
+	registrations                              map[core.Uuid]map[int64]*eventRegistration
+	registrationIDToListenerRegistration       map[core.Uuid]*listenerRegistrationKey
 	failedRegistrations                        map[int64][]*listenerRegistrationKey
 	register                                   chan *invocation
 	registerListenerOnConnectionChannel        chan registrationIDConnection
@@ -50,25 +49,25 @@ type removedErr struct {
 }
 
 type registrationIDRequestEncoder struct {
-	registrationID string
+	registrationID core.Uuid
 	requestEncoder proto.EncodeListenerRemoveRequest
 }
 type registrationIDConnection struct {
-	registrationID string
+	registrationID core.Uuid
 	connection     *Connection
 }
 
 type eventRegistration struct {
-	serverRegistrationID string
+	serverRegistrationID core.Uuid
 	correlationID        int64
 	connection           *Connection
 }
 
 type listenerRegistrationKey struct {
-	userRegistrationKey string
-	request             *bufutil.ClientMessage
+	userRegistrationKey core.Uuid
+	request             *proto.ClientMessage
 	responseDecoder     proto.DecodeListenerResponse
-	eventHandler        func(clientMessage *bufutil.ClientMessage)
+	eventHandler        func(clientMessage *proto.ClientMessage)
 }
 
 func newListenerService(client *HazelcastClient) *listenerService {
@@ -77,8 +76,8 @@ func newListenerService(client *HazelcastClient) *listenerService {
 		register:                                   make(chan *invocation, 1),
 		cancel:                                     make(chan struct{}),
 		logger:                                     client.logger,
-		registrations:                              make(map[string]map[int64]*eventRegistration),
-		registrationIDToListenerRegistration:       make(map[string]*listenerRegistrationKey),
+		registrations:                              make(map[core.Uuid]map[int64]*eventRegistration),
+		registrationIDToListenerRegistration:       make(map[core.Uuid]*listenerRegistrationKey),
 		failedRegistrations:                        make(map[int64][]*listenerRegistrationKey),
 		registerListenerOnConnectionChannel:        make(chan registrationIDConnection, 1),
 		registerListenerOnConnectionErrChannel:     make(chan error, 1),
@@ -154,13 +153,13 @@ func (ls *listenerService) registerListenerInit(key *listenerRegistrationKey) {
 	ls.registrations[key.userRegistrationKey] = make(map[int64]*eventRegistration)
 }
 
-func (ls *listenerService) registerListener(request *bufutil.ClientMessage,
-	eventHandler func(clientMessage *bufutil.ClientMessage),
+func (ls *listenerService) registerListener(request *proto.ClientMessage,
+	eventHandler func(clientMessage *proto.ClientMessage),
 	encodeListenerRemoveRequest proto.EncodeListenerRemoveRequest,
-	responseDecoder proto.DecodeListenerResponse) (string, error) {
+	responseDecoder proto.DecodeListenerResponse) (core.Uuid, error) {
 	err := ls.trySyncConnectToAllConnections()
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	userRegistrationID, _ := iputil.NewUUID()
 	registrationKey := listenerRegistrationKey{
@@ -181,7 +180,7 @@ func (ls *listenerService) registerListener(request *bufutil.ClientMessage,
 		if err != nil {
 			if connection.isAlive() {
 				ls.deregisterListener(userRegistrationID, encodeListenerRemoveRequest)
-				return "", core.NewHazelcastErrorType("listener cannot be added", nil)
+				return core.Uuid{}, core.NewHazelcastErrorType("listener cannot be added", nil)
 			}
 		}
 	}
@@ -189,7 +188,7 @@ func (ls *listenerService) registerListener(request *bufutil.ClientMessage,
 	return userRegistrationID, nil
 }
 
-func (ls *listenerService) registerListenerOnConnection(registrationID string, connection *Connection) error {
+func (ls *listenerService) registerListenerOnConnection(registrationID core.Uuid, connection *Connection) error {
 	if registrationMap, found := ls.registrations[registrationID]; found {
 		_, found := registrationMap[connection.connectionID]
 		if found {
@@ -204,7 +203,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 		return err
 	}
 	serverRegistrationID := registrationKey.responseDecoder(responseMessage)
-	correlationID := registrationKey.request.CorrelationID()
+	correlationID := registrationKey.request.CorrelationId()
 	registration := &eventRegistration{
 		serverRegistrationID: serverRegistrationID,
 		correlationID:        correlationID,
@@ -214,7 +213,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 	return nil
 }
 
-func (ls *listenerService) deregisterListener(registrationID string,
+func (ls *listenerService) deregisterListener(registrationID core.Uuid,
 	requestEncoder proto.EncodeListenerRemoveRequest) (bool, error) {
 	registrationIDRequestEncoder := registrationIDRequestEncoder{
 		registrationID: registrationID,
@@ -225,7 +224,7 @@ func (ls *listenerService) deregisterListener(registrationID string,
 	return removedErr.removed, removedErr.err
 }
 
-func (ls *listenerService) deregisterListenerInternal(registrationID string,
+func (ls *listenerService) deregisterListenerInternal(registrationID core.Uuid,
 	requestEncoder proto.EncodeListenerRemoveRequest) (bool, error) {
 	var registrationMap map[int64]*eventRegistration
 	var found bool
@@ -256,7 +255,7 @@ func (ls *listenerService) deregisterListenerInternal(registrationID string,
 	return successful, err
 }
 
-func (ls *listenerService) registerListenerFromInternal(registrationID string, connection *Connection) {
+func (ls *listenerService) registerListenerFromInternal(registrationID core.Uuid, connection *Connection) {
 	registrationIDConnection := registrationIDConnection{
 		registrationID: registrationID,
 		connection:     connection,
@@ -273,7 +272,7 @@ func (ls *listenerService) registerListenerFromInternal(registrationID string, c
 
 }
 
-func (ls *listenerService) registerListenerFromInternalHandleError(registrationID string, connection *Connection) {
+func (ls *listenerService) registerListenerFromInternalHandleError(registrationID core.Uuid, connection *Connection) {
 	failedRegsToConnection, found := ls.failedRegistrations[connection.connectionID]
 	if !found {
 		ls.failedRegistrations[connection.connectionID] = make([]*listenerRegistrationKey, 0)

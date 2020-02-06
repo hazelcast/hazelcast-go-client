@@ -19,7 +19,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 func createHazelcastError(err *proto.ServerError) core.HazelcastError {
@@ -29,22 +28,22 @@ func createHazelcastError(err *proto.ServerError) core.HazelcastError {
 			trace.LineNumber())
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), stackTrace)
-	switch bufutil.ErrorCode(err.ErrorCode()) {
-	case bufutil.ErrorCodeAuthentication:
+	switch proto.ErrorCode(err.ErrorCode()) {
+	case proto.ErrorCodeAuthentication:
 		return core.NewHazelcastAuthenticationError(message, err)
-	case bufutil.ErrorCodeHazelcastInstanceNotActive:
+	case proto.ErrorCodeHazelcastInstanceNotActive:
 		return core.NewHazelcastInstanceNotActiveError(message, err)
-	case bufutil.ErrorCodeHazelcastSerialization:
+	case proto.ErrorCodeHazelcastSerialization:
 		return core.NewHazelcastSerializationError(message, err)
-	case bufutil.ErrorCodeTargetDisconnected:
+	case proto.ErrorCodeTargetDisconnected:
 		return core.NewHazelcastTargetDisconnectedError(message, err)
-	case bufutil.ErrorCodeTargetNotMember:
+	case proto.ErrorCodeTargetNotMember:
 		return core.NewHazelcastTargetNotMemberError(message, err)
-	case bufutil.ErrorCodeUnsupportedOperation:
+	case proto.ErrorCodeUnsupportedOperation:
 		return core.NewHazelcastUnsupportedOperationError(message, err)
-	case bufutil.ErrorCodeConsistencyLostException:
+	case proto.ErrorCodeConsistencyLostException:
 		return core.NewHazelcastConsistencyLostError(message, err)
-	case bufutil.ErrorCodeIllegalArgument:
+	case proto.ErrorCodeIllegalArgument:
 		return core.NewHazelcastIllegalArgumentError(message, err)
 	}
 

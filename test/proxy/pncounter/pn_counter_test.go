@@ -15,6 +15,7 @@
 package pncounter
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"log"
 	"sync"
 	"testing"
@@ -24,7 +25,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/rc"
 	"github.com/hazelcast/hazelcast-go-client/test/testutil"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +69,7 @@ func TestPNCounter_Name(t *testing.T) {
 }
 
 func TestPNCounter_ServiceName(t *testing.T) {
-	serviceName := bufutil.ServiceNamePNCounter
+	serviceName := proto.ServiceNamePNCounter
 	if serviceName != counter.ServiceName() {
 		t.Error("PNCounter.ServiceName failed")
 	}

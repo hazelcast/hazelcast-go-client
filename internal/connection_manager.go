@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"sync"
 	"sync/atomic"
 
@@ -232,17 +231,17 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 	return atomic.AddInt64(&cm.nextConnectionID, 1)
 }
 
-func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *bufutil.ClientMessage {
+func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
 	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
 		print(creds)
-		return nil//cm.createAuthenticationRequest(asOwner, creds)
+		return cm.createAuthenticationRequest(asOwner, creds)
 	}
-	return nil//cm.createCustomAuthenticationRequest(asOwner)
+	return cm.createCustomAuthenticationRequest(asOwner)
 
 }
 
-/*func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
-	creds *security.UsernamePasswordCredentials) *bufutil.ClientMessage {
+func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
+	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	uuid := cm.client.ClusterService.uuid.Load().(string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	return proto.ClientAuthenticationEncodeRequest(
@@ -257,7 +256,7 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *bufu
 	)
 }
 
-func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *bufutil.ClientMessage {
+func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
 	uuid := cm.client.ClusterService.uuid.Load().(string)
 	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
 	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
@@ -274,13 +273,13 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 		serializationVersion,
 		ClientVersion,
 	)
-}*/
+}
 
-func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *bufutil.ClientMessage) func() (
+func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *proto.ClientMessage) func() (
 	status uint8, address *proto.Address,
 	uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
 	clientUnregisteredMembers []*proto.Member) {
-	var authenticationDecoder func(clientMessage *bufutil.ClientMessage) func() (status uint8, address *proto.Address,
+	var authenticationDecoder func(clientMessage *proto.ClientMessage) func() (status uint8, address *proto.Address,
 		uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
 		clientUnregisteredMembers []*proto.Member)
 	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
@@ -303,7 +302,7 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 }
 
 func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool,
-	result *bufutil.ClientMessage) error {
+	result *proto.ClientMessage) error {
 	authenticationDecoder := cm.getAuthenticationDecoder()
 	//status, address, uuid, ownerUUID, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
 	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := authenticationDecoder(result)()

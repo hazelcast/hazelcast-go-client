@@ -381,7 +381,7 @@ type Map interface {
 	//  * MapEvictedListener
 	//  * MapClearedListener
 	// AddEntryListener returns uuid which is used as a key to remove the listener.
-	AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error)
+	AddEntryListener(listener interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// AddEntryListenerWithPredicate adds a continuous entry listener for this map filtered with the given predicate.
 	// Supported listeners for Map:
@@ -394,7 +394,7 @@ type Map interface {
 	//  * MapEvictedListener
 	//  * MapClearedListener
 	// AddEntryListenerWithPredicate returns uuid which is used as a key to remove the listener.
-	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (registrationID string, err error)
+	AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// AddEntryListenerToKey adds a continuous entry listener for this map filtered with the given key.
 	// Supported listeners for Map:
@@ -407,7 +407,7 @@ type Map interface {
 	//  * MapEvictedListener
 	//  * MapClearedListener
 	// AddEntryListenerToKey returns uuid which is used as a key to remove the listener.
-	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID string, err error)
+	AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// AddEntryListenerToKeyWithPredicate adds a continuous entry listener for this map filtered with the given key and predicate.
 	// Supported listeners for Map:
@@ -421,12 +421,12 @@ type Map interface {
 	//  * MapClearedListener
 	// AddEntryListenerToKeyWithPredicate returns uuid which is used as a key to remove the listener.
 	AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{}, includeValue bool) (
-		registrationID string, err error)
+		registrationID Uuid, err error)
 
 	// RemoveEntryListener removes the specified entry listener with the given registrationID.
 	// RemoveEntryListener returns silently if there is no such listener added before.
 	// RemoveEntryListener true if registration is removed, false otherwise.
-	RemoveEntryListener(registrationID string) (removed bool, err error)
+	RemoveEntryListener(registrationID Uuid) (removed bool, err error)
 
 	// ExecuteOnKey applies the user defined EntryProcessor to the entry mapped by the key.
 	// ExecuteOnKey returns the result of EntryProcessor's process method.

@@ -126,12 +126,12 @@ func (s *statistics) sendStatistics() {
 }
 
 func (s *statistics) sendStatsToOwner(stats *bytes.Buffer) {
-	request := proto.ClientStatisticsEncodeRequest(stats.String())
+/*	request := proto.ClientStatisticsEncodeRequest(stats.String()) //todo
 	ownerConnection := s.getOwnerConnection()
 	_, err := s.client.InvocationService.invokeOnConnection(request, ownerConnection).Result()
 	if err != nil {
 		s.client.logger.Trace("Could not send the statistics, ", err)
-	}
+	}*/
 }
 
 func (s *statistics) collectMetrics(stats *bytes.Buffer) {

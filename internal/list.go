@@ -15,8 +15,8 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -70,7 +70,7 @@ func (lp *listProxy) AddAllAt(index int32, elements []interface{}) (changed bool
 	return lp.decodeToBoolAndError(responseMessage, err, proto.ListAddAllWithIndexDecodeResponse)
 }
 
-func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error) {
+func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID core.Uuid, err error) {
 	err = lp.validateItemListener(listener)
 	if err != nil {
 		return
@@ -78,9 +78,9 @@ func (lp *listProxy) AddItemListener(listener interface{}, includeValue bool) (r
 	request := proto.ListAddListenerEncodeRequest(lp.name, includeValue, false)
 	eventHandler := lp.createEventHandler(listener)
 	return lp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *bufutil.ClientMessage {
+		func(registrationID core.Uuid) *proto.ClientMessage {
 			return proto.ListRemoveListenerEncodeRequest(lp.name, registrationID)
-		}, func(clientMessage *bufutil.ClientMessage) string {
+		}, func(clientMessage *proto.ClientMessage) core.Uuid {
 			return proto.ListAddListenerDecodeResponse(clientMessage)()
 		})
 }
@@ -169,8 +169,8 @@ func (lp *listProxy) RemoveAll(elements []interface{}) (changed bool, err error)
 	return lp.decodeToBoolAndError(responseMessage, err, proto.ListCompareAndRemoveAllDecodeResponse)
 }
 
-func (lp *listProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return lp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
+func (lp *listProxy) RemoveItemListener(registrationID core.Uuid) (removed bool, err error) {
+	return lp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
 		return proto.ListRemoveListenerEncodeRequest(lp.name, registrationID)
 	})
 }
@@ -213,9 +213,9 @@ func (lp *listProxy) ToSlice() (elements []interface{}, err error) {
 	return lp.decodeToInterfaceSliceAndError(responseMessage, err, proto.ListGetAllDecodeResponse)
 }
 
-func (lp *listProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
-	return func(clientMessage *bufutil.ClientMessage) {
-		proto.ListAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
+func (lp *listProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
+	return func(clientMessage *proto.ClientMessage) {
+		proto.ListAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
 			onItemEvent := lp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

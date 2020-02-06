@@ -15,11 +15,11 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type clientMessageBuilder struct {
-	incompleteMessages map[int64]*bufutil.ClientMessage
+	incompleteMessages map[int64]*proto.ClientMessage
 	handleResponse     func(interface{})
 }
 

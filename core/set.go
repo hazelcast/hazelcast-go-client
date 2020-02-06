@@ -32,7 +32,7 @@ type Set interface {
 	// To receive an event, listener should implement a corresponding interface for that event
 	// such as ItemAddedListener, ItemRemovedListener.
 	// AddItemListener returns the registrationID of the listener.
-	AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error)
+	AddItemListener(listener interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// Clear removes all of the elements from this set.
 	Clear() (err error)
@@ -63,7 +63,7 @@ type Set interface {
 
 	// RemoveItemListener removes the listener with the given registrationID.
 	// RemoveItemListener returns true if the listener is removed, false otherwise.
-	RemoveItemListener(registrationID string) (removed bool, err error)
+	RemoveItemListener(registrationID Uuid) (removed bool, err error)
 
 	// ToSlice returns all the items in this set in proper sequence.
 	ToSlice() (items []interface{}, err error)

@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"math"
 	"math/rand"
 	"sync"
@@ -30,7 +29,7 @@ import (
 type pnCounterProxy struct {
 	*proxy
 	targetSelectionMutex        sync.RWMutex // guards currentTargetReplicaAddress
-	currentTargetReplicaAddress core.Address
+	currentTargetReplicaAddress core.Member
 	maxConfiguredReplicaCount   int32
 	emptyAddresses              *sync.Map
 	observedClock               unsafe.Pointer
@@ -121,30 +120,30 @@ func (pn *pnCounterProxy) Reset() {
 	atomic.StorePointer(&pn.observedClock, unsafe.Pointer(newVectorClock()))
 }
 
-func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses *sync.Map) (core.Address, error) {
+func (pn *pnCounterProxy) getCRDTOperationTarget(excludedAddresses *sync.Map) (core.Member, error) {
 	pn.targetSelectionMutex.RLock()
-	localCurrentTargetReplicaAddress := pn.currentTargetReplicaAddress
+	localCurrentTargetReplicaMember := pn.currentTargetReplicaAddress
 	pn.targetSelectionMutex.RUnlock()
-	_, isExcluded := excludedAddresses.Load(localCurrentTargetReplicaAddress)
-	if localCurrentTargetReplicaAddress != nil && !isExcluded {
-		return localCurrentTargetReplicaAddress, nil
+	_, isExcluded := excludedAddresses.Load(localCurrentTargetReplicaMember)
+	if localCurrentTargetReplicaMember != nil && !isExcluded {
+		return localCurrentTargetReplicaMember, nil
 	}
 	var err error
-	_, isExcluded = excludedAddresses.Load(localCurrentTargetReplicaAddress)
-	if localCurrentTargetReplicaAddress == nil || isExcluded {
+	_, isExcluded = excludedAddresses.Load(localCurrentTargetReplicaMember)
+	if localCurrentTargetReplicaMember == nil || isExcluded {
 		pn.targetSelectionMutex.Lock()
 		pn.currentTargetReplicaAddress, err = pn.chooseTargetReplica(excludedAddresses)
-		localCurrentTargetReplicaAddress = pn.currentTargetReplicaAddress
+		localCurrentTargetReplicaMember = pn.currentTargetReplicaAddress
 		pn.targetSelectionMutex.Unlock()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return localCurrentTargetReplicaAddress, nil
+	return localCurrentTargetReplicaMember, nil
 }
 
 func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses *sync.Map, lastError error,
-	target core.Address) (response *bufutil.ClientMessage, err error) {
+	target core.Member) (response *proto.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -155,8 +154,8 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses *sync.Map, lastErr
 		return
 	}
 	request := proto.PNCounterGetEncodeRequest(pn.name,
-		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*proto.Address))
-	response, lastError = pn.invokeOnAddress(request, target.(*proto.Address))
+		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.UUID())
+	response, lastError = pn.invokeOnAddress(request, target.Address())
 	if lastError != nil {
 		pn.client.logger.Warn("Error occurred while invoking operation on target ", target,
 			", choosing different target, err: ", lastError)
@@ -173,7 +172,7 @@ func (pn *pnCounterProxy) invokeGetInternal(excludedAddresses *sync.Map, lastErr
 
 func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	excludedAddresses *sync.Map, lastError error,
-	target core.Address) (response *bufutil.ClientMessage, err error) {
+	target core.Member) (response *proto.ClientMessage, err error) {
 	if target == nil {
 		if lastError != nil {
 			err = lastError
@@ -184,8 +183,8 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 		return
 	}
 	request := proto.PNCounterAddEncodeRequest(pn.name, delta, getBeforeUpdate,
-		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.(*proto.Address))
-	response, lastError = pn.invokeOnAddress(request, target.(*proto.Address))
+		(*vectorClock)(atomic.LoadPointer(&pn.observedClock)).EntrySet(), target.UUID())
+	response, lastError = pn.invokeOnAddress(request, target.Address())
 	if lastError != nil {
 		pn.client.logger.Warn("Unable to provide session guarantees when sending operations to, ", target,
 			"choosing different target, err: ", lastError)
@@ -199,7 +198,7 @@ func (pn *pnCounterProxy) invokeAddInternal(delta int64, getBeforeUpdate bool,
 	return response, nil
 }
 
-func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses *sync.Map) (core.Address, error) {
+func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses *sync.Map) (core.Member, error) {
 	replicaAddresses, err := pn.getReplicaAddresses(excludedAddresses)
 	if err != nil || len(replicaAddresses) == 0 {
 		return nil, err
@@ -207,16 +206,16 @@ func (pn *pnCounterProxy) chooseTargetReplica(excludedAddresses *sync.Map) (core
 	return replicaAddresses[pn.random.Intn(len(replicaAddresses))], nil
 }
 
-func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses *sync.Map) ([]core.Address, error) {
+func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses *sync.Map) ([]core.Member, error) {
 	dataMembers := pn.client.ClusterService.GetMembersWithSelector(core.MemberSelectors.DataMemberSelector)
 	maxConfiguredReplicaCount, err := pn.getMaxConfiguredReplicaCount()
 	if err != nil {
 		return nil, err
 	}
 	currentReplicaCount := int(math.Min(float64(maxConfiguredReplicaCount), float64(len(dataMembers))))
-	var replicaAdresses []core.Address
+	var replicaAdresses []core.Member
 	for i := 0; i < currentReplicaCount; i++ {
-		dataMemberAddress := dataMembers[i].Address()
+		dataMemberAddress := dataMembers[i]
 		_, ok := excludedAddresses.Load(dataMemberAddress)
 		if !ok {
 			replicaAdresses = append(replicaAdresses, dataMemberAddress)
@@ -228,7 +227,7 @@ func (pn *pnCounterProxy) getReplicaAddresses(excludedAddresses *sync.Map) ([]co
 // GetCurrentTargetReplicaAddress returns the current target replica address to which this proxy is
 // sending invocations.
 // It is public for testing purposes.
-func GetCurrentTargetReplicaAddress(pn core.PNCounter) core.Address {
+func GetCurrentTargetReplicaAddress(pn core.PNCounter) core.Member {
 	return pn.(*pnCounterProxy).currentTargetReplicaAddress
 }
 

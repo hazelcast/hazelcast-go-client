@@ -25,13 +25,13 @@ type Cluster interface {
 	// it will get events twice.
 	// The given listener should implement MemberAddedListener or MemberRemovedListener interfaces or both.
 	// If the given listener does not implement any of these, it will not have any effect.
-	AddMembershipListener(listener interface{}) string
+	AddMembershipListener(listener interface{}) Uuid
 
 	// RemoveMembershipListener removes the listener with the given registrationID.
 	// RemoveMembershipListener returns true if successfully removed, false otherwise.
 	// If the same MembershipListener is registered multiple times,
 	// it needs to be removed multiple times.
-	RemoveMembershipListener(registrationID string) bool
+	RemoveMembershipListener(registrationID Uuid) bool
 
 	// GetMembers returns a slice of current members in the cluster. The returned slice is
 	// a copy of current members.

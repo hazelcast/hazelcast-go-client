@@ -45,12 +45,12 @@ func newLifecycleService(client *HazelcastClient) *lifecycleService {
 	return newLifecycle
 }
 
-func (ls *lifecycleService) AddLifecycleListener(listener interface{}) string {
+func (ls *lifecycleService) AddLifecycleListener(listener interface{}) core.Uuid {
 	registrationID, _ := iputil.NewUUID()
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
-	listeners := ls.listeners.Load().(map[string]interface{})
-	copyListeners := make(map[string]interface{}, len(listeners)+1)
+	listeners := ls.listeners.Load().(map[core.Uuid]interface{})
+	copyListeners := make(map[core.Uuid]interface{}, len(listeners)+1)
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}
@@ -59,11 +59,11 @@ func (ls *lifecycleService) AddLifecycleListener(listener interface{}) string {
 	return registrationID
 }
 
-func (ls *lifecycleService) RemoveLifecycleListener(registrationID string) bool {
+func (ls *lifecycleService) RemoveLifecycleListener(registrationID core.Uuid) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
-	listeners := ls.listeners.Load().(map[string]interface{})
-	copyListeners := make(map[string]interface{}, len(listeners)-1)
+	listeners := ls.listeners.Load().(map[core.Uuid]interface{})
+	copyListeners := make(map[core.Uuid]interface{}, len(listeners)-1)
 	for k, v := range listeners {
 		copyListeners[k] = v
 	}

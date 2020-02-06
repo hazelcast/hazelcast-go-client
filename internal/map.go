@@ -19,7 +19,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -220,7 +219,10 @@ func (mp *mapProxy) IsEmpty() (empty bool, err error) {
 }
 
 func (mp *mapProxy) AddIndex(attribute string, ordered bool) (err error) {
-	request := proto.MapAddIndexEncodeRequest(mp.name, attribute, ordered)
+	//TODO: IndexUtil
+
+	indexConf := proto.NewIndexConfig(mp.name, 0, make([]string,2) )
+	request := proto.MapAddIndexEncodeRequest(mp.name, indexConf)
 	_, err = mp.invokeOnRandomTarget(request)
 	return
 }
@@ -365,7 +367,7 @@ func (mp *mapProxy) PutIfAbsent(key interface{}, value interface{}) (oldValue in
 
 func (mp *mapProxy) PutAll(entries map[interface{}]interface{}) (err error) {
 	if entries == nil {
-		return core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
+		return core.NewHazelcastNilPointerError(proto.NilMapIsNotAllowed, nil)
 	}
 	partitions, err := mp.validateAndSerializeMapAndGetPartitions(entries)
 	if err != nil {
@@ -431,7 +433,7 @@ func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []
 
 func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if keys == nil {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilKeysAreNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(proto.NilKeysAreNotAllowed, nil)
 	}
 	partitions := make(map[int32][]serialization.Data)
 	entryMap = make(map[interface{}]interface{})
@@ -475,122 +477,122 @@ func (mp *mapProxy) GetEntryView(key interface{}) (entryView core.EntryView, err
 	if err != nil {
 		return nil, err
 	}
-	response := proto.MapGetEntryViewDecodeResponse(responseMessage)()
-	resultKey, _ := mp.toObject(response.KeyData())
-	resultValue, _ := mp.toObject(response.ValueData())
+	response, _ := proto.MapGetEntryViewDecodeResponse(responseMessage)()
+	resultKey, _ := mp.toObject(response.Key())
+	resultValue, _ := mp.toObject(response.Value())
 	entryView = proto.NewEntryView(resultKey, resultValue, response.Cost(),
 		response.CreationTime(), response.ExpirationTime(), response.Hits(), response.LastAccessTime(), response.LastStoredTime(),
-		response.LastUpdateTime(), response.Version(), response.EvictionCriteriaNumber(), response.TTL())
+		response.LastUpdateTime(), response.Version(), response.Ttl() ,response.MaxIdle())
 	return entryView, nil
 }
 
-func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID string, err error) {
+func (mp *mapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID core.Uuid, err error) {
 	var request *proto.ClientMessage
 	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	request = proto.MapAddEntryListenerEncodeRequest(mp.name, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *proto.ClientMessage) {
 		proto.MapAddEntryListenerHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
-			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.Uuid,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID core.Uuid) *proto.ClientMessage {
 		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-	}, func(clientMessage *proto.ClientMessage) string {
+	}, func(clientMessage *proto.ClientMessage) core.Uuid {
 		return proto.MapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
 
 func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicate interface{}, includeValue bool) (
-	string, error) {
+	core.Uuid, error) {
 	var request *proto.ClientMessage
 	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	request = proto.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, false)
 	eventHandler := func(clientMessage *proto.ClientMessage) {
 		proto.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
-			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.Uuid,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *proto.ClientMessage {
+		func(registrationID core.Uuid) *proto.ClientMessage {
 			return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) string {
+		}, func(clientMessage *proto.ClientMessage) core.Uuid {
 			return proto.MapAddEntryListenerWithPredicateDecodeResponse(clientMessage)()
 		})
 }
 
 func (mp *mapProxy) AddEntryListenerToKey(listener interface{}, key interface{}, includeValue bool) (
-	registrationID string, err error) {
+	registrationID core.Uuid, err error) {
 	var request *proto.ClientMessage
 	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	request = proto.MapAddEntryListenerToKeyEncodeRequest(mp.name, keyData, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *proto.ClientMessage) {
 		proto.MapAddEntryListenerToKeyHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
-			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.Uuid,
 			numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
-	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID string) *proto.ClientMessage {
+	return mp.client.ListenerService.registerListener(request, eventHandler, func(registrationID core.Uuid) *proto.ClientMessage {
 		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-	}, func(clientMessage *proto.ClientMessage) string {
+	}, func(clientMessage *proto.ClientMessage) core.Uuid {
 		return proto.MapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
 
 func (mp *mapProxy) AddEntryListenerToKeyWithPredicate(listener interface{}, predicate interface{}, key interface{},
-	includeValue bool) (string, error) {
+	includeValue bool) (core.Uuid, error) {
 	var request *proto.ClientMessage
 	listenerFlags, err := proto.GetMapListenerFlags(listener)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	predicateData, err := mp.validateAndSerializePredicate(predicate)
 	if err != nil {
-		return "", err
+		return core.Uuid{}, err
 	}
 	request = proto.MapAddEntryListenerToKeyWithPredicateEncodeRequest(mp.name, keyData, predicateData, includeValue,
 		listenerFlags, false)
 	eventHandler := func(clientMessage *proto.ClientMessage) {
 		proto.MapAddEntryListenerToKeyWithPredicateHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
-			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32) {
 			mp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
 	return mp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *proto.ClientMessage {
+		func(registrationID core.Uuid) *proto.ClientMessage {
 			return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) string {
+		}, func(clientMessage *proto.ClientMessage) core.Uuid {
 			return proto.MapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage)()
 		})
 }
 
 func (mp *mapProxy) onEntryEvent(keyData serialization.Data, oldValueData serialization.Data,
-	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid string,
+	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid core.Uuid,
 	numberOfAffectedEntries int32, listener interface{}) {
 	member := mp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mp.toObject(keyData)
@@ -600,27 +602,27 @@ func (mp *mapProxy) onEntryEvent(keyData serialization.Data, oldValueData serial
 	entryEvent := proto.NewEntryEvent(mp.name, member, eventType, key, oldValue, value, mergingValue)
 	mapEvent := proto.NewMapEvent(mp.name, member, eventType, numberOfAffectedEntries)
 	switch eventType {
-	case bufutil.EntryEventAdded:
+	case proto.EntryEventAdded:
 		listener.(core.EntryAddedListener).EntryAdded(entryEvent)
-	case bufutil.EntryEventRemoved:
+	case proto.EntryEventRemoved:
 		listener.(core.EntryRemovedListener).EntryRemoved(entryEvent)
-	case bufutil.EntryEventUpdated:
+	case proto.EntryEventUpdated:
 		listener.(core.EntryUpdatedListener).EntryUpdated(entryEvent)
-	case bufutil.EntryEventEvicted:
+	case proto.EntryEventEvicted:
 		listener.(core.EntryEvictedListener).EntryEvicted(entryEvent)
-	case bufutil.MapEventEvicted:
+	case proto.MapEventEvicted:
 		listener.(core.MapEvictedListener).MapEvicted(mapEvent)
-	case bufutil.MapEventCleared:
+	case proto.MapEventCleared:
 		listener.(core.MapClearedListener).MapCleared(mapEvent)
-	case bufutil.EntryEventMerged:
+	case proto.EntryEventMerged:
 		listener.(core.EntryMergedListener).EntryMerged(entryEvent)
-	case bufutil.EntryEventExpired:
+	case proto.EntryEventExpired:
 		listener.(core.EntryExpiredListener).EntryExpired(entryEvent)
 	}
 }
 
-func (mp *mapProxy) RemoveEntryListener(registrationID string) (bool, error) {
-	return mp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *proto.ClientMessage {
+func (mp *mapProxy) RemoveEntryListener(registrationID core.Uuid) (bool, error) {
+	return mp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
 		return proto.MapRemoveEntryListenerEncodeRequest(mp.name, registrationID)
 	})
 }

@@ -48,7 +48,7 @@ type List interface {
 	// To receive an event, listener should implement a corresponding interface for that event
 	// such as ItemAddedListener, ItemRemovedListener.
 	// AddItemListener returns registrationID of the listener.
-	AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error)
+	AddItemListener(listener interface{}, includeValue bool) (registrationID Uuid, err error)
 
 	// Clear clears this list.
 	Clear() (err error)
@@ -87,7 +87,7 @@ type List interface {
 
 	// RemoveItemListener removes the item listener with the given registrationID.
 	// RemoveItemListener returns true if the listener is removed, false otherwise.
-	RemoveItemListener(registrationID string) (removed bool, err error)
+	RemoveItemListener(registrationID Uuid) (removed bool, err error)
 
 	// RetainAll removes all elements from this list except the ones contained in the given slice.
 	// RetainAll returns true if the list has changed as a result of this operation, false otherwise.

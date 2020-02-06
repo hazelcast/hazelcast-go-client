@@ -26,7 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/config"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/reliabletopic"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
 	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
@@ -64,9 +63,9 @@ func newReliableTopicProxy(client *HazelcastClient, serviceName string, name str
 	return proxy, err
 }
 
-func (r *ReliableTopicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID string, err error) {
+func (r *ReliableTopicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID core.Uuid, err error) {
 	if messageListener == nil {
-		return "", core.NewHazelcastNilPointerError(bufutil.NilListenerIsNotAllowed, nil)
+		return core.Uuid{}, core.NewHazelcastNilPointerError(proto.NilListenerIsNotAllowed, nil)
 	}
 	uuid, _ := iputil.NewUUID()
 	reliableMsgListener := r.toReliableMessageListener(messageListener)
@@ -83,14 +82,15 @@ func (r *ReliableTopicProxy) toReliableMessageListener(messageListener core.Mess
 	return newReliableMessageListenerAdapter(messageListener)
 }
 
-func (r *ReliableTopicProxy) RemoveMessageListener(registrationID string) (removed bool, err error) {
+func (r *ReliableTopicProxy) RemoveMessageListener(registrationID core.Uuid) (removed bool, err error) {
 	if msgProcessor, ok := r.msgProcessors.Load(registrationID); ok {
 		msgProcessor := msgProcessor.(*messageProcessor)
 		msgProcessor.cancel()
 		return true, nil
 	}
+
 	return false, core.NewHazelcastIllegalArgumentError("no listener is found with the given id : "+
-		registrationID, nil)
+		registrationID.String() , nil)
 }
 
 func (r *ReliableTopicProxy) Publish(message interface{}) (err error) {
@@ -160,14 +160,14 @@ func (r *ReliableTopicProxy) Ringbuffer() core.Ringbuffer {
 }
 
 type messageProcessor struct {
-	id        string
+	id        core.Uuid
 	sequence  int64
 	cancelled atomic.Value
 	listener  core.ReliableMessageListener
 	proxy     *ReliableTopicProxy
 }
 
-func newMessageProcessor(id string, listener core.ReliableMessageListener, proxy *ReliableTopicProxy) *messageProcessor {
+func newMessageProcessor(id core.Uuid, listener core.ReliableMessageListener, proxy *ReliableTopicProxy) *messageProcessor {
 	msgProcessor := &messageProcessor{
 		id:       id,
 		listener: listener,
@@ -202,7 +202,7 @@ func (m *messageProcessor) onFailure(err error) {
 	if m.cancelled.Load() == true {
 		return
 	}
-	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
+	baseMsg := "Terminating Message Listener: " + m.id.String() + " on topic: " + m.proxy.name + ". Reason: "
 	if _, ok := err.(*core.HazelcastOperationTimeoutError); ok {
 		m.handleOperationTimeoutError()
 		return
@@ -210,7 +210,7 @@ func (m *messageProcessor) onFailure(err error) {
 		m.handleIllegalArgumentError(err)
 		return
 	} else if hzErr, ok := err.(core.HazelcastError); ok &&
-		hzErr.ServerError() != nil && hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeStaleSequence) {
+		hzErr.ServerError() != nil && hzErr.ServerError().ErrorCode() == int32(proto.ErrorCodeStaleSequence) {
 		if m.handleStaleSequenceError() {
 			return
 		}
@@ -220,7 +220,7 @@ func (m *messageProcessor) onFailure(err error) {
 	} else if _, ok := err.(*core.HazelcastClientNotActiveError); ok {
 		m.proxy.client.logger.Trace(baseMsg + "HazelcastClient is shutting down.")
 	} else if hzErr, ok := err.(core.HazelcastError); ok && hzErr.ServerError() != nil &&
-		hzErr.ServerError().ErrorCode() == int32(bufutil.ErrorCodeDistributedObjectDestroyed) {
+		hzErr.ServerError().ErrorCode() == int32(proto.ErrorCodeDistributedObjectDestroyed) {
 		m.proxy.client.logger.Trace(baseMsg + "Topic is destroyed.")
 	} else {
 		m.proxy.client.logger.Warn(baseMsg + "Unhandled error, message:  " + err.Error())
@@ -254,7 +254,7 @@ func (m *messageProcessor) handleStaleSequenceError() bool {
 		go m.next()
 		return true
 	}
-	m.proxy.client.logger.Warn("Terminating Message Listener: "+m.id+" on topic: "+m.proxy.name+". Reason: "+
+	m.proxy.client.logger.Warn("Terminating Message Listener: "+m.id.String() +" on topic: "+m.proxy.name+". Reason: "+
 		"The listener was too slow or the retention period of the message has been violated. ",
 		"Head: ", headSeq, " sequence: ", m.sequence)
 	return false
@@ -264,7 +264,7 @@ func (m *messageProcessor) terminate(err error) bool {
 	if m.cancelled.Load() == true {
 		return true
 	}
-	baseMsg := "Terminating Message Listener: " + m.id + " on topic: " + m.proxy.name + ". Reason: "
+	baseMsg := "Terminating Message Listener: " + m.id.String() + " on topic: " + m.proxy.name + ". Reason: "
 	terminate, terminalErr := m.listener.IsTerminal(err)
 	if terminalErr != nil {
 		m.proxy.client.logger.Warn(baseMsg+"Unhandled error while calling ReliableMessageListener.isTerminal() method:", terminalErr)

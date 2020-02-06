@@ -19,7 +19,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -43,7 +42,7 @@ func (qp *queueProxy) AddAll(items []interface{}) (changed bool, err error) {
 	return qp.decodeToBoolAndError(responseMessage, err, proto.QueueAddAllDecodeResponse)
 }
 
-func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error) {
+func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID core.Uuid, err error) {
 	err = qp.validateItemListener(listener)
 	if err != nil {
 		return
@@ -51,9 +50,9 @@ func (qp *queueProxy) AddItemListener(listener interface{}, includeValue bool) (
 	request := proto.QueueAddListenerEncodeRequest(qp.name, includeValue, false)
 	eventHandler := qp.createEventHandler(listener)
 	return qp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *bufutil.ClientMessage {
+		func(registrationID core.Uuid) *proto.ClientMessage {
 			return proto.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
-		}, func(clientMessage *bufutil.ClientMessage) string {
+		}, func(clientMessage *proto.ClientMessage) core.Uuid {
 			return proto.QueueAddListenerDecodeResponse(clientMessage)()
 		})
 }
@@ -86,7 +85,7 @@ func (qp *queueProxy) ContainsAll(items []interface{}) (foundAll bool, err error
 
 func (qp *queueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err error) {
 	if slice == nil {
-		return 0, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
+		return 0, core.NewHazelcastNilPointerError(proto.NilSliceIsNotAllowed, nil)
 	}
 	request := proto.QueueDrainToEncodeRequest(qp.name)
 	responseMessage, err := qp.invoke(request)
@@ -100,7 +99,7 @@ func (qp *queueProxy) DrainTo(slice *[]interface{}) (movedAmount int32, err erro
 
 func (qp *queueProxy) DrainToWithMaxSize(slice *[]interface{}, maxElements int32) (movedAmount int32, err error) {
 	if slice == nil {
-		return 0, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
+		return 0, core.NewHazelcastNilPointerError(proto.NilSliceIsNotAllowed, nil)
 	}
 	request := proto.QueueDrainToMaxSizeEncodeRequest(qp.name, maxElements)
 	responseMessage, err := qp.invoke(request)
@@ -194,8 +193,8 @@ func (qp *queueProxy) RemoveAll(items []interface{}) (changed bool, err error) {
 	return qp.decodeToBoolAndError(responseMessage, err, proto.QueueCompareAndRemoveAllDecodeResponse)
 }
 
-func (qp *queueProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return qp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
+func (qp *queueProxy) RemoveItemListener(registrationID core.Uuid) (removed bool, err error) {
+	return qp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
 		return proto.QueueRemoveListenerEncodeRequest(qp.name, registrationID)
 	})
 }
@@ -228,9 +227,9 @@ func (qp *queueProxy) ToSlice() (items []interface{}, err error) {
 	return qp.decodeToInterfaceSliceAndError(responseMessage, err, proto.QueueIteratorDecodeResponse)
 }
 
-func (qp *queueProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
-	return func(clientMessage *bufutil.ClientMessage) {
-		proto.QueueAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
+func (qp *queueProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
+	return func(clientMessage *proto.ClientMessage) {
+		proto.QueueAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
 			onItemEvent := qp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

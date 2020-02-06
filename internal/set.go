@@ -15,8 +15,8 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -49,7 +49,7 @@ func (sp *setProxy) AddAll(items []interface{}) (changed bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, proto.SetAddAllDecodeResponse)
 }
 
-func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID string, err error) {
+func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID core.Uuid, err error) {
 	err = sp.validateItemListener(listener)
 	if err != nil {
 		return
@@ -57,9 +57,9 @@ func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (re
 	request := proto.SetAddListenerEncodeRequest(sp.name, includeValue, false)
 	eventHandler := sp.createEventHandler(listener)
 	return sp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID string) *bufutil.ClientMessage {
+		func(registrationID core.Uuid) *proto.ClientMessage {
 			return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
-		}, func(clientMessage *bufutil.ClientMessage) string {
+		}, func(clientMessage *proto.ClientMessage) core.Uuid {
 			return proto.SetAddListenerDecodeResponse(clientMessage)()
 		})
 
@@ -133,8 +133,8 @@ func (sp *setProxy) Size() (size int32, err error) {
 	return sp.decodeToInt32AndError(responseMessage, err, proto.SetSizeDecodeResponse)
 }
 
-func (sp *setProxy) RemoveItemListener(registrationID string) (removed bool, err error) {
-	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID string) *bufutil.ClientMessage {
+func (sp *setProxy) RemoveItemListener(registrationID core.Uuid) (removed bool, err error) {
+	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
 		return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 	})
 }
@@ -145,9 +145,9 @@ func (sp *setProxy) ToSlice() (items []interface{}, err error) {
 	return sp.decodeToInterfaceSliceAndError(responseMessage, err, proto.SetGetAllDecodeResponse)
 }
 
-func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *bufutil.ClientMessage) {
-	return func(clientMessage *bufutil.ClientMessage) {
-		proto.SetAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid string, eventType int32) {
+func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
+	return func(clientMessage *proto.ClientMessage) {
+		proto.SetAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
 			onItemEvent := sp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})
