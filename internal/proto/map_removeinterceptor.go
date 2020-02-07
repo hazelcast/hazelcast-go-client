@@ -33,7 +33,7 @@ import (
 /**
  * Removes the given interceptor for this map so it will not intercept operations anymore.
  */
-//@Generated("9c5ed0a648405f687606b8fb95996c2f")
+//@Generated("3ab24ca01e77b76bab068ec2ba80fc47")
 const (
     //hex: 0x011500
     MapRemoveInterceptorRequestMessageType = 70912
@@ -49,7 +49,7 @@ func MapRemoveInterceptorEncodeRequest(name string, id string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.RemoveInterceptor")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapRemoveInterceptorResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapRemoveInterceptorRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -33,7 +33,7 @@ import (
 /**
  * Returns the capacity of this Ringbuffer.
  */
-//@Generated("67ec3566eb93219c75c5bb27df6e35fb")
+//@Generated("a366d1b0ddad3b12f0e30e51f162aa18")
 const (
     //hex: 0x170400
     RingbufferCapacityRequestMessageType = 1508352
@@ -49,7 +49,7 @@ func RingbufferCapacityEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.Capacity")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferCapacityResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferCapacityRequestMessageType)
     clientMessage.Add(initialFrame)
 

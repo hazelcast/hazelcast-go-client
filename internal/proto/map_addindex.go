@@ -33,7 +33,7 @@ import (
 /**
  * Adds an index to this map with specified configuration.
  */
-//@Generated("632781b2aa9444121a81630830568496")
+//@Generated("e70b30c23eb722edea0a40583a6d3bc8")
 const (
     //hex: 0x012900
     MapAddIndexRequestMessageType = 76032
@@ -48,7 +48,7 @@ func MapAddIndexEncodeRequest(name string, indexConfig IndexConfig) *ClientMessa
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.AddIndex")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAddIndexResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAddIndexRequestMessageType)
     clientMessage.Add(initialFrame)
 

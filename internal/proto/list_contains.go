@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this list contains the specified element.
  */
-//@Generated("e1c20cc0df03bfd98f68b2ef5404b223")
+//@Generated("375e648d60b3cb2ee48ad254f500ee15")
 const (
     //hex: 0x050200
     ListContainsRequestMessageType = 328192
@@ -50,7 +50,7 @@ func ListContainsEncodeRequest(name string, value serialization.Data) *ClientMes
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.Contains")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListContainsResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListContainsRequestMessageType)
     clientMessage.Add(initialFrame)
 

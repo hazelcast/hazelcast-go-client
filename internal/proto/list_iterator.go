@@ -34,7 +34,7 @@ import (
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-//@Generated("4b45fcde8c51730a456d6a462939fd17")
+//@Generated("63aa67b26763033a8a3ec5d13c312a6e")
 const (
     //hex: 0x051600
     ListIteratorRequestMessageType = 333312
@@ -49,7 +49,7 @@ func ListIteratorEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.Iterator")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListIteratorResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListIteratorRequestMessageType)
     clientMessage.Add(initialFrame)
 

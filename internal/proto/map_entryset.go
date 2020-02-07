@@ -36,7 +36,7 @@ import (
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-//@Generated("c430b470aa757996581b2bebc7b3119b")
+//@Generated("bdd897bddff2f3ca0d62eb9e7d38786a")
 const (
     //hex: 0x012500
     MapEntrySetRequestMessageType = 75008
@@ -51,7 +51,7 @@ func MapEntrySetEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.EntrySet")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapEntrySetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapEntrySetRequestMessageType)
     clientMessage.Add(initialFrame)
 

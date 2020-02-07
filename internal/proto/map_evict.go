@@ -35,7 +35,7 @@ import (
  * Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
-//@Generated("40c507aed426c97ec1ae3860dbf5b92f")
+//@Generated("5c73f89ec56a9d4b5ae8a1dbfb410a13")
 const (
     //hex: 0x011E00
     MapEvictRequestMessageType = 73216
@@ -52,7 +52,7 @@ func MapEvictEncodeRequest(name string, key serialization.Data, threadId int64) 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Evict")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapEvictResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapEvictRequestMessageType)
     EncodeLong(initialFrame.Content, MapEvictRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

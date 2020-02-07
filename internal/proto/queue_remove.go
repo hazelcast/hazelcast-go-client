@@ -35,7 +35,7 @@ import (
  * Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
  * if this queue is empty.
  */
-//@Generated("727a8fbe5de76088b52474ccd4e0e44b")
+//@Generated("f7cc6fdc061266bd9719486745b0c80b")
 const (
     //hex: 0x030400
     QueueRemoveRequestMessageType = 197632
@@ -51,7 +51,7 @@ func QueueRemoveEncodeRequest(name string, value serialization.Data) *ClientMess
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Remove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueRemoveRequestMessageType)
     clientMessage.Add(initialFrame)
 

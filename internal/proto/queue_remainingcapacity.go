@@ -36,7 +36,7 @@ import (
  * always tell if an attempt to insert an element will succeed by inspecting remainingCapacity because it may be
  * the case that another thread is about to insert or remove an element.
  */
-//@Generated("0eea56a1364f66ca2fef7beca15bae19")
+//@Generated("195a5bf566b1caf3f7d2e28f7b7da8d3")
 const (
     //hex: 0x031300
     QueueRemainingCapacityRequestMessageType = 201472
@@ -52,7 +52,7 @@ func QueueRemainingCapacityEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.RemainingCapacity")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueRemainingCapacityResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueRemainingCapacityRequestMessageType)
     clientMessage.Add(initialFrame)
 

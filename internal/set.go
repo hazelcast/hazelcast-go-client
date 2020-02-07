@@ -49,7 +49,7 @@ func (sp *setProxy) AddAll(items []interface{}) (changed bool, err error) {
 	return sp.decodeToBoolAndError(responseMessage, err, proto.SetAddAllDecodeResponse)
 }
 
-func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID core.Uuid, err error) {
+func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (registrationID *core.Uuid, err error) {
 	err = sp.validateItemListener(listener)
 	if err != nil {
 		return
@@ -57,9 +57,9 @@ func (sp *setProxy) AddItemListener(listener interface{}, includeValue bool) (re
 	request := proto.SetAddListenerEncodeRequest(sp.name, includeValue, false)
 	eventHandler := sp.createEventHandler(listener)
 	return sp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID core.Uuid) *proto.ClientMessage {
+		func(registrationID *core.Uuid) *proto.ClientMessage {
 			return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) core.Uuid {
+		}, func(clientMessage *proto.ClientMessage) *core.Uuid {
 			return proto.SetAddListenerDecodeResponse(clientMessage)()
 		})
 
@@ -133,8 +133,8 @@ func (sp *setProxy) Size() (size int32, err error) {
 	return sp.decodeToInt32AndError(responseMessage, err, proto.SetSizeDecodeResponse)
 }
 
-func (sp *setProxy) RemoveItemListener(registrationID core.Uuid) (removed bool, err error) {
-	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
+func (sp *setProxy) RemoveItemListener(registrationID *core.Uuid) (removed bool, err error) {
+	return sp.client.ListenerService.deregisterListener(registrationID, func(registrationID *core.Uuid) *proto.ClientMessage {
 		return proto.SetRemoveListenerEncodeRequest(sp.name, registrationID)
 	})
 }
@@ -147,7 +147,7 @@ func (sp *setProxy) ToSlice() (items []interface{}, err error) {
 
 func (sp *setProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
-		proto.SetAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
+		proto.SetAddListenerHandle(clientMessage, func(itemData serialization.Data, uuid *core.Uuid, eventType int32) {
 			onItemEvent := sp.createOnItemEvent(listener)
 			onItemEvent(itemData, uuid, eventType)
 		})

@@ -35,7 +35,7 @@ import (
  * Removes the specified item listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("7660c50a41a3e6c8683b4932e9d17749")
+//@Generated("c5d76e8c8d549969dfd6d7e9d788ebe0")
 const (
     //hex: 0x031200
     QueueRemoveListenerRequestMessageType = 201216
@@ -48,11 +48,11 @@ const (
 
 )
 
-func QueueRemoveListenerEncodeRequest(name string, registrationId core.Uuid) *ClientMessage {
+func QueueRemoveListenerEncodeRequest(name string, registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Queue.RemoveListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueRemoveListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueRemoveListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, QueueRemoveListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

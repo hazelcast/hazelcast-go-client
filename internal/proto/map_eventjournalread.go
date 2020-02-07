@@ -41,7 +41,7 @@ import (
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-//@Generated("f2f380408ec3009219995f81ed8658ff")
+//@Generated("38746208b32fc00074c09b6ed2e5a4b7")
 const (
     //hex: 0x014200
     MapEventJournalReadRequestMessageType = 82432
@@ -61,7 +61,7 @@ func MapEventJournalReadEncodeRequest(name string, startSequence int64, minSize 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.EventJournalRead")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapEventJournalReadResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapEventJournalReadRequestMessageType)
     EncodeLong(initialFrame.Content, MapEventJournalReadRequestStartSequenceFieldOffset, startSequence)
     EncodeInt(initialFrame.Content, MapEventJournalReadRequestMinSizeFieldOffset, minSize)

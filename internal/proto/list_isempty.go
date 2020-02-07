@@ -33,7 +33,7 @@ import (
 /**
  * Returns true if this list contains no elements
  */
-//@Generated("98a7c66a95039db3c82cbd163b3a15ff")
+//@Generated("bd99c672de78579734ebd81a037c8d8b")
 const (
     //hex: 0x050D00
     ListIsEmptyRequestMessageType = 331008
@@ -49,7 +49,7 @@ func ListIsEmptyEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.IsEmpty")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListIsEmptyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListIsEmptyRequestMessageType)
     clientMessage.Add(initialFrame)
 

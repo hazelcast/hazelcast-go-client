@@ -35,7 +35,7 @@ import (
  * This method returns a clone of the original value, so modifying the returned value does not change the actual
  * value in the map. You should put the modified value back to make changes visible to all nodes.
  */
-//@Generated("1e029d5083218267799b26eea0e9773d")
+//@Generated("c093c085d6db1b439ca2a443a718fc00")
 const (
     //hex: 0x010200
     MapGetRequestMessageType = 66048
@@ -51,7 +51,7 @@ func MapGetEncodeRequest(name string, key serialization.Data, threadId int64) *C
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.Get")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapGetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapGetRequestMessageType)
     EncodeLong(initialFrame.Content, MapGetRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

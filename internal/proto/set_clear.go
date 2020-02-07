@@ -33,7 +33,7 @@ import (
 /**
  * Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
  */
-//@Generated("b8587e6706f063994a883884d4bd1dea")
+//@Generated("6d6ad1c85a201d6ba7bf6b3061cc2a62")
 const (
     //hex: 0x060900
     SetClearRequestMessageType = 395520
@@ -48,7 +48,7 @@ func SetClearEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.Clear")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetClearResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetClearRequestMessageType)
     clientMessage.Add(initialFrame)
 

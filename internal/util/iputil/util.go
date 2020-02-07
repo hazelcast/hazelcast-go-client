@@ -41,13 +41,13 @@ func GetIPAndPort(addr string) (string, int) {
 }
 
 // NewUUID generates a random uuid according to RFC 4122
-func NewUUID() (core.Uuid, error) {
+func NewUUID() (*core.Uuid, error) {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(rand.Reader, uuid)
 	if n != len(uuid) || err != nil {
-		return core.Uuid{}, err
+		return nil, err
 	}
 	uuid[8] = uuid[8]&^0xc0 | 0x80
 	uuid[6] = uuid[6]&^0xf0 | 0x40
-	return *core.NewUuidFromBytes(uuid), nil
+	return core.NewUuidFromBytes(uuid), nil
 }

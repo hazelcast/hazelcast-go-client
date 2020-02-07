@@ -2,7 +2,6 @@ package internal
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"log"
 )
 
 
@@ -43,7 +42,7 @@ func readFrame(src Buffer, trusted bool) bool {
 	if readOffset == -1 {
 		frameLength = proto.ReadInt32(src.buf, src.position , false)
 
-		if frameLength < proto.SizeOfFrameLengthAndFlags {
+/*		if frameLength < proto.SizeOfFrameLengthAndFlags {
 			log.Fatal(proto.ErrorCodeIllegalArgument, "The client message frame reported illegal length (%d bytes). Minimal length is the size of frame header (%d bytes).", frameLength, proto.SizeOfFrameLengthAndFlags)
 		}
 		if !trusted {
@@ -51,7 +50,7 @@ func readFrame(src Buffer, trusted bool) bool {
 				log.Fatal("The client message size (%d + %d) exceededs the maximum allowed length (%d)", sumUntrustedMessageLength, frameLength, maxMessageLength)
 			}
 			sumUntrustedMessageLength += frameLength
-		}
+		}*/
 
 		src.position = src.position + proto.IntSizeInBytes
 		flags_ := int32(proto.ReadUInt8(src.buf, int32(src.position))) & intMask

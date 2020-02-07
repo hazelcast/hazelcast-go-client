@@ -233,7 +233,6 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
 	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		print(creds)
 		return cm.createAuthenticationRequest(asOwner, creds)
 	}
 	return cm.createCustomAuthenticationRequest(asOwner)
@@ -242,15 +241,15 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 
 func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
-	uuid := cm.client.ClusterService.uuid.Load().(core.Uuid)
-	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	uuid := cm.client.ClusterService.uuid.Load().(*core.Uuid)
+	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*core.Uuid)
 	byte := new(byte)
 	return proto.ClientAuthenticationEncodeRequest(
 		"",
 		creds.Username(),
-		creds.Password(),
+		"",
 		uuid,
-		ownerUUID,
+		"",
 		*byte,
 		"",
 		ClientVersion,
@@ -259,8 +258,8 @@ func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
 }
 
 func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
-	uuid := cm.client.ClusterService.uuid.Load().(core.Uuid)
-	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	uuid := cm.client.ClusterService.uuid.Load().(*core.Uuid)
+	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*core.Uuid)
 	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
 	if err != nil {
 		cm.logger.Error("Credentials cannot be serialized!")
@@ -272,7 +271,7 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 		"",
 		"",
 		uuid,
-		ownerUUID,
+		"",
 		credsData.Buffer()[0],
 		"",
 		ClientVersion,
@@ -281,16 +280,12 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 }
 
 func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *proto.ClientMessage) func() (
-	status uint8, address *proto.Address,
-	uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
-	clientUnregisteredMembers []*proto.Member) {
-	var authenticationDecoder func(clientMessage *proto.ClientMessage) func() (status uint8, address *proto.Address,
-		uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string,
-		clientUnregisteredMembers []*proto.Member)
+	status uint8, address *proto.Address, uuid *core.Uuid, serializationVersion uint8, serverHazelcastVersion string, partitionCount int32, clusterId *core.Uuid, failoverSupported bool ) {
+	var authenticationDecoder func(clientMessage *proto.ClientMessage) func() (status uint8, address *proto.Address, uuid *core.Uuid, serializationVersion uint8, serverHazelcastVersion string, partitionCount int32, clusterId *core.Uuid, failoverSupported bool)
 	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		//authenticationDecoder = proto.ClientAuthenticationDecodeResponse
+		authenticationDecoder = proto.ClientAuthenticationDecodeResponse
 	} else {
-		//authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
+		authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
 	}
 	return authenticationDecoder
 }
@@ -309,8 +304,8 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool,
 	result *proto.ClientMessage) error {
 	authenticationDecoder := cm.getAuthenticationDecoder()
-	//status, address, uuid, ownerUUID, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
-	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := authenticationDecoder(result)()
+	//status, address, uuid, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
+	status, address, uuid,  _, serverHazelcastVersion, _ , _ , _ := authenticationDecoder(result)()
 	switch status {
 	case authenticated:
 		connection.setConnectedServerVersion(serverHazelcastVersion)
@@ -320,7 +315,7 @@ func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connect
 		go cm.fireConnectionAddedEvent(connection)
 		if asOwner {
 			cm.client.ClusterService.ownerConnectionAddress.Store(address)
-			cm.client.ClusterService.ownerUUID.Store(ownerUUID)
+			//cm.client.ClusterService.ownerUUID.Store(ownerUUID)
 			cm.client.ClusterService.uuid.Store(uuid)
 			cm.logger.Info("Setting ", connection, " as owner.")
 		}

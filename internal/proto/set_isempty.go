@@ -33,7 +33,7 @@ import (
 /**
  * Returns true if this set contains no elements.
  */
-//@Generated("19313e21b18e9d52ac9058d5203a4b45")
+//@Generated("1ae84dcfa189fe7dbc2c1d254bd430e7")
 const (
     //hex: 0x060D00
     SetIsEmptyRequestMessageType = 396544
@@ -49,7 +49,7 @@ func SetIsEmptyEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.IsEmpty")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetIsEmptyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetIsEmptyRequestMessageType)
     clientMessage.Add(initialFrame)
 

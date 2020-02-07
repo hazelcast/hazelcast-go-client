@@ -37,7 +37,7 @@ import (
 /**
  * Adds a partition lost listener to the cluster.
  */
-//@Generated("068ef2819d63f5e70bf18d2d8ae873ef")
+//@Generated("d4c97e8675c4069298f73e9bdfe2dd60")
 const (
     //hex: 0x000600
     ClientAddPartitionLostListenerRequestMessageType = 1536
@@ -61,7 +61,7 @@ func ClientAddPartitionLostListenerEncodeRequest(localOnly bool) *ClientMessage 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.AddPartitionLostListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientAddPartitionLostListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientAddPartitionLostListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, ClientAddPartitionLostListenerRequestLocalOnlyFieldOffset, localOnly)
     clientMessage.Add(initialFrame)
@@ -69,8 +69,8 @@ func ClientAddPartitionLostListenerEncodeRequest(localOnly bool) *ClientMessage 
 }
 
 
-func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The listener registration id.*/response core.Uuid) {
-    return func() (/*** The listener registration id.*/response core.Uuid) {
+func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The listener registration id.*/response *core.Uuid) {
+    return func() (/*** The listener registration id.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, ClientAddPartitionLostListenerResponseResponseFieldOffset)
@@ -79,7 +79,7 @@ func ClientAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) 
 }
 
 
-type ClientAddPartitionLostListenerHandlePartitionLostFunc func(partitionId int32, lostBackupCount int32, /* @Nullable */ source core.Uuid)
+type ClientAddPartitionLostListenerHandlePartitionLostFunc func(partitionId int32, lostBackupCount int32, /* @Nullable */ source *core.Uuid)
 
 func ClientAddPartitionLostListenerHandle(clientMessage *ClientMessage, handlePartitionLost ClientAddPartitionLostListenerHandlePartitionLostFunc){
     messageType := clientMessage.MessageType()

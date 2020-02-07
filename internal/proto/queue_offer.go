@@ -35,7 +35,7 @@ import (
  * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
  * become available.
  */
-//@Generated("4aa50b5e55b059f45ba44152afaa6b65")
+//@Generated("030a0e3eefe15a6728cf3704cbe5ced0")
 const (
     //hex: 0x030100
     QueueOfferRequestMessageType = 196864
@@ -52,7 +52,7 @@ func QueueOfferEncodeRequest(name string, value serialization.Data, timeoutMilli
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Offer")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueOfferResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueOfferRequestMessageType)
     EncodeLong(initialFrame.Content, QueueOfferRequestTimeoutMillisFieldOffset, timeoutMillis)
     clientMessage.Add(initialFrame)

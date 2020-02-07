@@ -152,41 +152,41 @@ func (mmp *multiMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
 	return mmp.decodeToPairSliceAndError(responseMessage, err, proto.MultiMapEntrySetDecodeResponse)
 }
 
-func (mmp *multiMapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID core.Uuid, err error) {
+func (mmp *multiMapProxy) AddEntryListener(listener interface{}, includeValue bool) (registrationID *core.Uuid, err error) {
 	err = mmp.validateEntryListener(listener)
 	if err != nil {
 		return
 	}
 	request := proto.MultiMapAddEntryListenerEncodeRequest(mmp.name, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandler(listener)
-	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID core.Uuid) *proto.ClientMessage {
+	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *core.Uuid) *proto.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
-	}, func(clientMessage *proto.ClientMessage) core.Uuid {
+	}, func(clientMessage *proto.ClientMessage) *core.Uuid {
 		return proto.MultiMapAddEntryListenerDecodeResponse(clientMessage)()
 	})
 }
 
 func (mmp *multiMapProxy) AddEntryListenerToKey(listener interface{}, key interface{},
-	includeValue bool) (registrationID core.Uuid, err error) {
+	includeValue bool) (registrationID *core.Uuid, err error) {
 	err = mmp.validateEntryListener(listener)
 	if err != nil {
 		return
 	}
 	keyData, err := mmp.validateAndSerialize(key)
 	if err != nil {
-		return core.Uuid{}, err
+		return nil, err
 	}
 	request := proto.MultiMapAddEntryListenerToKeyEncodeRequest(mmp.name, keyData, includeValue, mmp.isSmart())
 	eventHandler := mmp.createEventHandlerToKey(listener)
-	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID core.Uuid) *proto.ClientMessage {
+	return mmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *core.Uuid) *proto.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
-	}, func(clientMessage *proto.ClientMessage) core.Uuid {
+	}, func(clientMessage *proto.ClientMessage) *core.Uuid {
 		return proto.MultiMapAddEntryListenerToKeyDecodeResponse(clientMessage)()
 	})
 }
 
-func (mmp *multiMapProxy) RemoveEntryListener(registrationID core.Uuid) (removed bool, err error) {
-	return mmp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
+func (mmp *multiMapProxy) RemoveEntryListener(registrationID *core.Uuid) (removed bool, err error) {
+	return mmp.client.ListenerService.deregisterListener(registrationID, func(registrationID *core.Uuid) *proto.ClientMessage {
 		return proto.MultiMapRemoveEntryListenerEncodeRequest(mmp.name, registrationID)
 	})
 }
@@ -260,7 +260,7 @@ func (mmp *multiMapProxy) ForceUnlock(key interface{}) (err error) {
 }
 
 func (mmp *multiMapProxy) onEntryEvent(keyData serialization.Data, oldValueData serialization.Data,
-	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid core.Uuid,
+	valueData serialization.Data, mergingValueData serialization.Data, eventType int32, uuid *core.Uuid,
 	numberOfAffectedEntries int32, listener interface{}) {
 	member := mmp.client.ClusterService.GetMemberByUUID(uuid)
 	key, _ := mmp.toObject(keyData)
@@ -282,7 +282,7 @@ func (mmp *multiMapProxy) onEntryEvent(keyData serialization.Data, oldValueData 
 func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
 		proto.MultiMapAddEntryListenerHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
-			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32) {
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32) {
 			mmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}
@@ -291,7 +291,7 @@ func (mmp *multiMapProxy) createEventHandler(listener interface{}) func(clientMe
 func (mmp *multiMapProxy) createEventHandlerToKey(listener interface{}) func(clientMessage *proto.ClientMessage) {
 	return func(clientMessage *proto.ClientMessage) {
 		proto.MultiMapAddEntryListenerToKeyHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
-			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32) {
+			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32) {
 			mmp.onEntryEvent(key, oldValue, value, mergingValue, eventType, uuid, numberOfAffectedEntries, listener)
 		})
 	}

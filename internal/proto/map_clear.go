@@ -35,7 +35,7 @@ import (
  * will delete the records from that database. The MAP_CLEARED event is fired for any registered listeners.
  * To clear a map without calling MapStore#deleteAll, use #evictAll.
  */
-//@Generated("4e3d66c96d9a42380749b7d0bbedaa69")
+//@Generated("b14d92879dd650fa4819ee287795fa32")
 const (
     //hex: 0x012D00
     MapClearRequestMessageType = 77056
@@ -50,7 +50,7 @@ func MapClearEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Clear")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapClearResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapClearRequestMessageType)
     clientMessage.Add(initialFrame)
 

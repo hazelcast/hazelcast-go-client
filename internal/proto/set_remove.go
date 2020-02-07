@@ -36,7 +36,7 @@ import (
  * Returns true if this set contained the element (or equivalently, if this set changed as a result of the call).
  * (This set will not contain the element once the call returns.)
  */
-//@Generated("2a53258617bb1fb7ccb0437eb69b9bd6")
+//@Generated("6b9a6d1cbf543e2185b1fc15355aa53e")
 const (
     //hex: 0x060500
     SetRemoveRequestMessageType = 394496
@@ -52,7 +52,7 @@ func SetRemoveEncodeRequest(name string, value serialization.Data) *ClientMessag
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.Remove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetRemoveRequestMessageType)
     clientMessage.Add(initialFrame)
 

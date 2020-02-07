@@ -34,7 +34,7 @@ import (
 /**
  * Return true if this collection contains all of the elements in the specified collection.
  */
-//@Generated("2bd6b8c14c47d53f445dbecee6f9f9e0")
+//@Generated("c889e8a8fe5572777d6557077e8f7655")
 const (
     //hex: 0x030C00
     QueueContainsAllRequestMessageType = 199680
@@ -50,7 +50,7 @@ func QueueContainsAllEncodeRequest(name string, dataList []serialization.Data) *
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.ContainsAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueContainsAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueContainsAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

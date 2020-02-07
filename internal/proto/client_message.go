@@ -67,21 +67,6 @@ type ClientMessage struct {
 
 // CLIENT MESSAGE
 
-/*func NewClientMessage(buffer []byte, payloadSize int) *ClientMessage {
-	clientMessage := new(ClientMessage)
-	if buffer != nil {
-		//Message has a buffer so it will be decoded.
-		clientMessage.Buffer = buffer
-		clientMessage.readIndex = bufutil.HeaderSize
-	} else {
-		//Client message that will be encoded.
-		clientMessage.Buffer = make([]byte, bufutil.HeaderSize+payloadSize)
-		clientMessage.SetDataOffset(bufutil.HeaderSize)
-		clientMessage.writeIndex = bufutil.HeaderSize
-	}
-	clientMessage.SetRetryable(false)
-	return clientMessage
-}*/
 
 func CreateForEncode() *ClientMessage {
 	message := new(ClientMessage)
@@ -107,7 +92,7 @@ func (m *ClientMessage) EndFrame() *Frame {
 
 func (m *ClientMessage) Add(frame *Frame) *ClientMessage {
 	frame.next = nil
-	if m.startFrame.IsNullFrame() {
+	if m.startFrame == nil {
 		m.startFrame = frame
 		m.endFrame = frame
 		return m

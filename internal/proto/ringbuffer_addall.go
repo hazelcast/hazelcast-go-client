@@ -41,7 +41,7 @@ import (
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-//@Generated("dbb2e79ad882a2dbb30353d7f5d1cef8")
+//@Generated("f1c592aff23169d553d0baec1b7ba104")
 const (
     //hex: 0x170800
     RingbufferAddAllRequestMessageType = 1509376
@@ -58,7 +58,7 @@ func RingbufferAddAllEncodeRequest(name string, valueList []serialization.Data, 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Ringbuffer.AddAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferAddAllRequestMessageType)
     EncodeInt(initialFrame.Content, RingbufferAddAllRequestOverflowPolicyFieldOffset, overflowPolicy)
     clientMessage.Add(initialFrame)

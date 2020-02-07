@@ -34,7 +34,7 @@ import (
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-//@Generated("d332908f8fb31be95a7c7d00246975e8")
+//@Generated("a483468e69f6523bbdd90dd6113ddc44")
 const (
     //hex: 0x030600
     QueueTakeRequestMessageType = 198144
@@ -49,7 +49,7 @@ func QueueTakeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Take")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueTakeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueTakeRequestMessageType)
     clientMessage.Add(initialFrame)
 

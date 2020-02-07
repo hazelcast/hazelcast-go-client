@@ -37,7 +37,7 @@ import (
  * set, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-//@Generated("85d8207710fb80f50fc27bb7ea951b13")
+//@Generated("41b0495eca4bd7da3091ce29f49eaada")
 const (
     //hex: 0x012600
     MapKeySetWithPredicateRequestMessageType = 75264
@@ -52,7 +52,7 @@ func MapKeySetWithPredicateEncodeRequest(name string, predicate serialization.Da
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.KeySetWithPredicate")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapKeySetWithPredicateResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapKeySetWithPredicateRequestMessageType)
     clientMessage.Add(initialFrame)
 

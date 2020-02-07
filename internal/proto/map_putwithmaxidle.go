@@ -37,7 +37,7 @@ import (
  * (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
  * rounded to the next closest second value.
  */
-//@Generated("e9562867b051535247c3933576e748b1")
+//@Generated("25a7698d772ac916eb20003f1abff8f3")
 const (
     //hex: 0x014400
     MapPutWithMaxIdleRequestMessageType = 82944
@@ -55,7 +55,7 @@ func MapPutWithMaxIdleEncodeRequest(name string, key serialization.Data, value s
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.PutWithMaxIdle")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapPutWithMaxIdleResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapPutWithMaxIdleRequestMessageType)
     EncodeLong(initialFrame.Content, MapPutWithMaxIdleRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapPutWithMaxIdleRequestTtlFieldOffset, ttl)

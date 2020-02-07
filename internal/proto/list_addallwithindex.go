@@ -38,7 +38,7 @@ import (
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-//@Generated("b598909e3dfc6ef9b492267db3d2b85a")
+//@Generated("b5f899a7d020514e73705a54085c703a")
 const (
     //hex: 0x050E00
     ListAddAllWithIndexRequestMessageType = 331264
@@ -55,7 +55,7 @@ func ListAddAllWithIndexEncodeRequest(name string, index int32, valueList []seri
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.AddAllWithIndex")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListAddAllWithIndexResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListAddAllWithIndexRequestMessageType)
     EncodeInt(initialFrame.Content, ListAddAllWithIndexRequestIndexFieldOffset, index)
     clientMessage.Add(initialFrame)

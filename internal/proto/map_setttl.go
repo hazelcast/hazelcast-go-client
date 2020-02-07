@@ -46,7 +46,7 @@ import (
  * <p>
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
-//@Generated("5a1a7664a924da48c56b74e674df9da3")
+//@Generated("6b12b9ab22ad15164495b7da94728b98")
 const (
     //hex: 0x014300
     MapSetTtlRequestMessageType = 82688
@@ -63,7 +63,7 @@ func MapSetTtlEncodeRequest(name string, key serialization.Data, ttl int64) *Cli
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.SetTtl")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapSetTtlResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapSetTtlRequestMessageType)
     EncodeLong(initialFrame.Content, MapSetTtlRequestTtlFieldOffset, ttl)
     clientMessage.Add(initialFrame)

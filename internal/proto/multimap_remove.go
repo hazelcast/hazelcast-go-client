@@ -34,7 +34,7 @@ import (
 /**
  * Removes the given key value pair from the multimap.
  */
-//@Generated("556dea57468cc03d1e7a0ba2dc2cd158")
+//@Generated("54ae3520f538f4cbe237f3bc1c2a9591")
 const (
     //hex: 0x020300
     MultiMapRemoveRequestMessageType = 131840
@@ -50,7 +50,7 @@ func MultiMapRemoveEncodeRequest(name string, key serialization.Data, threadId i
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("MultiMap.Remove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapRemoveRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapRemoveRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

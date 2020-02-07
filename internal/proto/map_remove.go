@@ -38,7 +38,7 @@ import (
  * possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
  * call returns.
  */
-//@Generated("d82426ec08aabcdde3b79377d7841f11")
+//@Generated("928417dbc8482a7071c9625da7f3292d")
 const (
     //hex: 0x010300
     MapRemoveRequestMessageType = 66304
@@ -54,7 +54,7 @@ func MapRemoveEncodeRequest(name string, key serialization.Data, threadId int64)
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Remove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapRemoveRequestMessageType)
     EncodeLong(initialFrame.Content, MapRemoveRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

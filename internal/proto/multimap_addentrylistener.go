@@ -42,7 +42,7 @@ import (
 /**
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
-//@Generated("21aa59ed26c9a53f54025957dfb9633b")
+//@Generated("c49d4030d07721d965d2b1e15fe766df")
 const (
     //hex: 0x020E00
     MultiMapAddEntryListenerRequestMessageType = 134656
@@ -67,7 +67,7 @@ func MultiMapAddEntryListenerEncodeRequest(name string, includeValue bool, local
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("MultiMap.AddEntryListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapAddEntryListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapAddEntryListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerRequestIncludeValueFieldOffset, includeValue)
     EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerRequestLocalOnlyFieldOffset, localOnly)
@@ -79,8 +79,8 @@ func MultiMapAddEntryListenerEncodeRequest(name string, includeValue bool, local
 }
 
 
-func MultiMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns registration id for the entry listener*/response core.Uuid) {
-    return func() (/*** Returns registration id for the entry listener*/response core.Uuid) {
+func MultiMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns registration id for the entry listener*/response *core.Uuid) {
+    return func() (/*** Returns registration id for the entry listener*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerResponseResponseFieldOffset)
@@ -89,7 +89,7 @@ func MultiMapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func()
 }
 
 
-type MultiMapAddEntryListenerHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32)
+type MultiMapAddEntryListenerHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32)
 
 func MultiMapAddEntryListenerHandle(clientMessage *ClientMessage, handleEntry MultiMapAddEntryListenerHandleEntryFunc){
     messageType := clientMessage.MessageType()

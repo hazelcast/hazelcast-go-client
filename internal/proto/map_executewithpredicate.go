@@ -35,7 +35,7 @@ import (
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-//@Generated("8944ace13ed314901a06d52bf4ec7206")
+//@Generated("b9e7880c61b9f56ab6b4b02fb9daa506")
 const (
     //hex: 0x013100
     MapExecuteWithPredicateRequestMessageType = 78080
@@ -50,7 +50,7 @@ func MapExecuteWithPredicateEncodeRequest(name string, entryProcessor serializat
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.ExecuteWithPredicate")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapExecuteWithPredicateResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapExecuteWithPredicateRequestMessageType)
     clientMessage.Add(initialFrame)
 

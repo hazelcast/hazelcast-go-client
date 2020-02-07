@@ -189,7 +189,7 @@ import (
  * 
  * The metrics blob constructed this way is then gets ZLIB compressed.
  */
-//@Generated("d97b15eb00f7d8dc9ddea02a11632ec1")
+//@Generated("44bc7f4b6f361cec4cf86cc740b768ec")
 const (
     //hex: 0x000C00
     ClientStatisticsRequestMessageType = 3072
@@ -205,7 +205,7 @@ func ClientStatisticsEncodeRequest(timestamp int64, clientAttributes string, met
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.Statistics")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientStatisticsResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientStatisticsRequestMessageType)
     EncodeLong(initialFrame.Content, ClientStatisticsRequestTimestampFieldOffset, timestamp)
     clientMessage.Add(initialFrame)

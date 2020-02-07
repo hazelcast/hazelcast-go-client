@@ -36,7 +36,7 @@ import (
  * it is retried for at most 3 times (on the failing nodes only). If it does not work after the third time, this
  * method throws a OPERATION_TIMEOUT back to the caller.
  */
-//@Generated("642c90b7e2e36f798e84e1de512c8000")
+//@Generated("53fbf432e94785b595e4056f221227dd")
 const (
     //hex: 0x0D0900
     ReplicatedMapClearRequestMessageType = 854272
@@ -51,7 +51,7 @@ func ReplicatedMapClearEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.Clear")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapClearResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapClearRequestMessageType)
     clientMessage.Add(initialFrame)
 

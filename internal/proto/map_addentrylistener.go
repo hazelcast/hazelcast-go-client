@@ -43,7 +43,7 @@ import (
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-//@Generated("40af85308ddb90631ea32c9c50482b06")
+//@Generated("08fb30a41082c492cdbb4b23cd7deb7d")
 const (
     //hex: 0x011900
     MapAddEntryListenerRequestMessageType = 71936
@@ -69,7 +69,7 @@ func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFl
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.AddEntryListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAddEntryListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAddEntryListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, MapAddEntryListenerRequestIncludeValueFieldOffset, includeValue)
     EncodeInt(initialFrame.Content, MapAddEntryListenerRequestListenerFlagsFieldOffset, listenerFlags)
@@ -82,8 +82,8 @@ func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFl
 }
 
 
-func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string which is used as a key to remove the listener.*/response core.Uuid) {
-    return func() (/*** A unique string which is used as a key to remove the listener.*/response core.Uuid) {
+func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string which is used as a key to remove the listener.*/response *core.Uuid) {
+    return func() (/*** A unique string which is used as a key to remove the listener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, MapAddEntryListenerResponseResponseFieldOffset)
@@ -92,7 +92,7 @@ func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/**
 }
 
 
-type MapAddEntryListenerHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32)
+type MapAddEntryListenerHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32)
 
 func MapAddEntryListenerHandle(clientMessage *ClientMessage, handleEntry MapAddEntryListenerHandleEntryFunc){
     messageType := clientMessage.MessageType()

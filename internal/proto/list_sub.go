@@ -44,7 +44,7 @@ import (
  * structurally modified in any way other than via the returned list.(Structural modifications are those that change
  * the size of this list, or otherwise perturb it in such a fashion that iterations in progress may yield incorrect results.)
  */
-//@Generated("de59909f1698201514d582a3b6d09472")
+//@Generated("51f8fbadc781301f07bfd173d2b7f84e")
 const (
     //hex: 0x051500
     ListSubRequestMessageType = 333056
@@ -61,7 +61,7 @@ func ListSubEncodeRequest(name string, from int32, to int32) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.Sub")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListSubResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListSubRequestMessageType)
     EncodeInt(initialFrame.Content, ListSubRequestFromFieldOffset, from)
     EncodeInt(initialFrame.Content, ListSubRequestToFieldOffset, to)

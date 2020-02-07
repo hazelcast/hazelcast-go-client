@@ -34,7 +34,7 @@ import (
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-//@Generated("b2730ef0c961cf5588bd2e36bf9b53ee")
+//@Generated("a94025fe680c1143cfb2101e85249dc3")
 const (
     //hex: 0x010800
     MapRemoveIfSameRequestMessageType = 67584
@@ -51,7 +51,7 @@ func MapRemoveIfSameEncodeRequest(name string, key serialization.Data, value ser
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.RemoveIfSame")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapRemoveIfSameResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapRemoveIfSameRequestMessageType)
     EncodeLong(initialFrame.Content, MapRemoveIfSameRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

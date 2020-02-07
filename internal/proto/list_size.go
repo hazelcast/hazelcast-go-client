@@ -34,7 +34,7 @@ import (
  * Returns the number of elements in this list.  If this list contains more than Integer.MAX_VALUE elements, returns
  * Integer.MAX_VALUE.
  */
-//@Generated("8ee2bff3079bca9b40895c798b94f39f")
+//@Generated("391d4c17771b2f36bfcbebe57ece6a68")
 const (
     //hex: 0x050100
     ListSizeRequestMessageType = 327936
@@ -50,7 +50,7 @@ func ListSizeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.Size")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListSizeRequestMessageType)
     clientMessage.Add(initialFrame)
 

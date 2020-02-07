@@ -35,7 +35,7 @@ import (
  * Retains only the elements in this list that are contained in the specified collection (optional operation).
  * In other words, removes from this list all of its elements that are not contained in the specified collection.
  */
-//@Generated("90d0837e913bbb7c5d2c429cfa8da165")
+//@Generated("8e9ab0e3861c19384c67b56a0ff1e548")
 const (
     //hex: 0x050800
     ListCompareAndRetainAllRequestMessageType = 329728
@@ -51,7 +51,7 @@ func ListCompareAndRetainAllEncodeRequest(name string, values []serialization.Da
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.CompareAndRetainAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListCompareAndRetainAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListCompareAndRetainAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

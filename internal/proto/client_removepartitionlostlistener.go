@@ -35,7 +35,7 @@ import (
  * Removes the specified partition lost listener. If there is no such listener added before, this call does no change
  * in the cluster and returns false.
  */
-//@Generated("38fc1d0a29e3ea4dbe3f2968b693f7ee")
+//@Generated("abd72dab0cfda4407609a83433af896c")
 const (
     //hex: 0x000700
     ClientRemovePartitionLostListenerRequestMessageType = 1792
@@ -48,11 +48,11 @@ const (
 
 )
 
-func ClientRemovePartitionLostListenerEncodeRequest(registrationId core.Uuid) *ClientMessage {
+func ClientRemovePartitionLostListenerEncodeRequest(registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Client.RemovePartitionLostListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientRemovePartitionLostListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientRemovePartitionLostListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, ClientRemovePartitionLostListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

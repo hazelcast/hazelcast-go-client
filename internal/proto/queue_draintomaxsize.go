@@ -38,7 +38,7 @@ import (
  * ILLEGAL_ARGUMENT. Further, the behavior of this operation is undefined if the specified collection is
  * modified while the operation is in progress.
  */
-//@Generated("06eafe80ad946060824d1a57221306a5")
+//@Generated("36c55eccb32b0dd2220b68caadb3f160")
 const (
     //hex: 0x030A00
     QueueDrainToMaxSizeRequestMessageType = 199168
@@ -54,7 +54,7 @@ func QueueDrainToMaxSizeEncodeRequest(name string, maxSize int32) *ClientMessage
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.DrainToMaxSize")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueDrainToMaxSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueDrainToMaxSizeRequestMessageType)
     EncodeInt(initialFrame.Content, QueueDrainToMaxSizeRequestMaxSizeFieldOffset, maxSize)
     clientMessage.Add(initialFrame)

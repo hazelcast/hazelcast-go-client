@@ -40,7 +40,7 @@ import (
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-//@Generated("7955c3d12c5761bfeb3783097604dcd4")
+//@Generated("0a62c31a4e7adf975b87a259ac7d6fee")
 const (
     //hex: 0x012C00
     MapPutAllRequestMessageType = 76800
@@ -55,7 +55,7 @@ func MapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.PutAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapPutAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapPutAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

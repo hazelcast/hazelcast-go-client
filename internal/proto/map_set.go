@@ -36,7 +36,7 @@ import (
  * If ttl is 0, then the entry lives forever. Similar to the put operation except that set doesn't
  * return the old value, which is more efficient.
  */
-//@Generated("1ae2d60ea75af2ced90f7914d63fabe4")
+//@Generated("b99fdac1eb8a8b2be34f43e6a9cdf07b")
 const (
     //hex: 0x010F00
     MapSetRequestMessageType = 69376
@@ -53,7 +53,7 @@ func MapSetEncodeRequest(name string, key serialization.Data, value serializatio
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Set")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapSetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapSetRequestMessageType)
     EncodeLong(initialFrame.Content, MapSetRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapSetRequestTtlFieldOffset, ttl)

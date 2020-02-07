@@ -33,7 +33,7 @@ import (
 /**
  * Creates a cluster-wide proxy with the given name and service.
  */
-//@Generated("1af27dbd9893d91abbaf92a80793c0c5")
+//@Generated("b7219248f2b215bd61ecd5cf9b8a53b8")
 const (
     //hex: 0x000400
     ClientCreateProxyRequestMessageType = 1024
@@ -48,7 +48,7 @@ func ClientCreateProxyEncodeRequest(name string, serviceName string) *ClientMess
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.CreateProxy")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientCreateProxyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientCreateProxyRequestMessageType)
     clientMessage.Add(initialFrame)
 

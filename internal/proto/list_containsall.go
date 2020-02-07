@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this list contains all of the elements of the specified collection.
  */
-//@Generated("1441816921517945acabc10dead22dc5")
+//@Generated("7b4e0fa608b3344fad60c3d8360fd34d")
 const (
     //hex: 0x050300
     ListContainsAllRequestMessageType = 328448
@@ -50,7 +50,7 @@ func ListContainsAllEncodeRequest(name string, values []serialization.Data) *Cli
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.ContainsAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListContainsAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListContainsAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

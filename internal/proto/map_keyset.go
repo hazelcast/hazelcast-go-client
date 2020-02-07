@@ -36,7 +36,7 @@ import (
  * are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may
  * throw a QueryResultSizeExceededException if query result size limit is configured.
  */
-//@Generated("c99d7dee07ddb18886d73fff82f0eeda")
+//@Generated("5e3e68606c7b16975d75977c33e33f3b")
 const (
     //hex: 0x012200
     MapKeySetRequestMessageType = 74240
@@ -51,7 +51,7 @@ func MapKeySetEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.KeySet")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapKeySetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapKeySetRequestMessageType)
     clientMessage.Add(initialFrame)
 

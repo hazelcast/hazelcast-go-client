@@ -34,7 +34,7 @@ import (
  * Returns the number of key-value mappings in this map. If the map contains more than Integer.MAX_VALUE elements,
  * returns Integer.MAX_VALUE.
  */
-//@Generated("392dabe9656ead87581d6ffe18153035")
+//@Generated("3fb0be6eb1ea98ec6ca7dc930a812881")
 const (
     //hex: 0x0D0200
     ReplicatedMapSizeRequestMessageType = 852480
@@ -50,7 +50,7 @@ func ReplicatedMapSizeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.Size")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapSizeRequestMessageType)
     clientMessage.Add(initialFrame)
 

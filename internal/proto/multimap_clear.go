@@ -33,7 +33,7 @@ import (
 /**
  * Clears the multimap. Removes all key-value pairs.
  */
-//@Generated("0c31d26ccd97860eb72506be8fbacac2")
+//@Generated("5d1c5bb540f8cc8cfd2ade7f611134fc")
 const (
     //hex: 0x020B00
     MultiMapClearRequestMessageType = 133888
@@ -48,7 +48,7 @@ func MultiMapClearEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("MultiMap.Clear")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapClearResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapClearRequestMessageType)
     clientMessage.Add(initialFrame)
 

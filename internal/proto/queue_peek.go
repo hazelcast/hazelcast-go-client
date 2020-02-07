@@ -34,7 +34,7 @@ import (
 /**
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
-//@Generated("d80fd8319b74155bbdab8dd705ac16b9")
+//@Generated("ce642d8c1751bf57c12f38f75c44b3b5")
 const (
     //hex: 0x030700
     QueuePeekRequestMessageType = 198400
@@ -49,7 +49,7 @@ func QueuePeekEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Peek")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueuePeekResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueuePeekRequestMessageType)
     clientMessage.Add(initialFrame)
 

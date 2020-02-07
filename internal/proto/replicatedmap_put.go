@@ -36,7 +36,7 @@ import (
  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
-//@Generated("1fed6a4ab4d2b1117a9b3857a9b537f2")
+//@Generated("e65e2b159c8e4e467bc0c2859228ffa9")
 const (
     //hex: 0x0D0100
     ReplicatedMapPutRequestMessageType = 852224
@@ -52,7 +52,7 @@ func ReplicatedMapPutEncodeRequest(name string, key serialization.Data, value se
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.Put")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapPutResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapPutRequestMessageType)
     EncodeLong(initialFrame.Content, ReplicatedMapPutRequestTtlFieldOffset, ttl)
     clientMessage.Add(initialFrame)

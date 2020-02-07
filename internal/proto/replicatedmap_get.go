@@ -37,7 +37,7 @@ import (
  * necessarily indicate that the map contains no mapping for the key; it's also possible that the map
  * explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
  */
-//@Generated("0da11dadf98af358d2089d26169a9b4b")
+//@Generated("c67583b8d5b690772531a7058e4cd24b")
 const (
     //hex: 0x0D0600
     ReplicatedMapGetRequestMessageType = 853504
@@ -52,7 +52,7 @@ func ReplicatedMapGetEncodeRequest(name string, key serialization.Data) *ClientM
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.Get")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapGetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapGetRequestMessageType)
     clientMessage.Add(initialFrame)
 

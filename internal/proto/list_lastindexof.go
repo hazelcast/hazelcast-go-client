@@ -35,7 +35,7 @@ import (
  * Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-//@Generated("5558c243d62faa1aeb5ea813b17312bd")
+//@Generated("f1a7973a81790b856e4f621a699a6c6a")
 const (
     //hex: 0x051300
     ListLastIndexOfRequestMessageType = 332544
@@ -51,7 +51,7 @@ func ListLastIndexOfEncodeRequest(name string, value serialization.Data) *Client
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.LastIndexOf")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListLastIndexOfResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListLastIndexOfRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -34,7 +34,7 @@ import (
 /**
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
-//@Generated("ad6ed6e3df8d8b5aff88cb6d5f70ad68")
+//@Generated("12b6610bd35777fd03704ff4dfdfda05")
 const (
     //hex: 0x013C00
     MapProjectWithPredicateRequestMessageType = 80896
@@ -49,7 +49,7 @@ func MapProjectWithPredicateEncodeRequest(name string, projection serialization.
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.ProjectWithPredicate")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapProjectWithPredicateResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapProjectWithPredicateRequestMessageType)
     clientMessage.Add(initialFrame)
 

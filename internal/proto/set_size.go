@@ -34,7 +34,7 @@ import (
  * Returns the number of elements in this set (its cardinality). If this set contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE.
  */
-//@Generated("25a9a2afdc1903532bb754417de1f0db")
+//@Generated("f74559ce216e9aa9dfeb6300d8f980dc")
 const (
     //hex: 0x060100
     SetSizeRequestMessageType = 393472
@@ -50,7 +50,7 @@ func SetSizeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.Size")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetSizeRequestMessageType)
     clientMessage.Add(initialFrame)
 

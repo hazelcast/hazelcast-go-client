@@ -34,7 +34,7 @@ import (
 /**
  * Returns whether the multimap contains an entry with the key.
  */
-//@Generated("76321cc7ae2fa7954e8dbf8a6e2d2bb7")
+//@Generated("775c7827d4618a8a4b2405fbe140a64a")
 const (
     //hex: 0x020700
     MultiMapContainsKeyRequestMessageType = 132864
@@ -51,7 +51,7 @@ func MultiMapContainsKeyEncodeRequest(name string, key serialization.Data, threa
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.ContainsKey")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapContainsKeyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapContainsKeyRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapContainsKeyRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

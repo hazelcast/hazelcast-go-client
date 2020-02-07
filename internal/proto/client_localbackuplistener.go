@@ -35,7 +35,7 @@ import (
 /**
  * Adds listener for backup acks
  */
-//@Generated("58a7c5e165774b57e0825e7b62e3957c")
+//@Generated("980058bb53e7edb2704cef1eb742ffe1")
 const (
     //hex: 0x000F00
     ClientLocalBackupListenerRequestMessageType = 3840
@@ -56,15 +56,15 @@ func ClientLocalBackupListenerEncodeRequest() *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.LocalBackupListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientLocalBackupListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientLocalBackupListenerRequestMessageType)
     clientMessage.Add(initialFrame)
     return clientMessage
 }
 
 
-func ClientLocalBackupListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns the registration id for the listener.*/response core.Uuid) {
-    return func() (/*** Returns the registration id for the listener.*/response core.Uuid) {
+func ClientLocalBackupListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** Returns the registration id for the listener.*/response *core.Uuid) {
+    return func() (/*** Returns the registration id for the listener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, ClientLocalBackupListenerResponseResponseFieldOffset)

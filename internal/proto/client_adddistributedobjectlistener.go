@@ -39,7 +39,7 @@ import (
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-//@Generated("87c791f99bd76be94a52839d31363122")
+//@Generated("293e8fb4a7b72606844d85ea694c95df")
 const (
     //hex: 0x000900
     ClientAddDistributedObjectListenerRequestMessageType = 2304
@@ -62,7 +62,7 @@ func ClientAddDistributedObjectListenerEncodeRequest(localOnly bool, internal bo
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.AddDistributedObjectListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientAddDistributedObjectListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientAddDistributedObjectListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, ClientAddDistributedObjectListenerRequestLocalOnlyFieldOffset, localOnly)
     EncodeBoolean(initialFrame.Content, ClientAddDistributedObjectListenerRequestInternalFieldOffset, internal)
@@ -71,8 +71,8 @@ func ClientAddDistributedObjectListenerEncodeRequest(localOnly bool, internal bo
 }
 
 
-func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The registration id for the distributed object listener.*/response core.Uuid) {
-    return func() (/*** The registration id for the distributed object listener.*/response core.Uuid) {
+func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The registration id for the distributed object listener.*/response *core.Uuid) {
+    return func() (/*** The registration id for the distributed object listener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseFieldOffset)
@@ -81,7 +81,7 @@ func ClientAddDistributedObjectListenerDecodeResponse(clientMessage *ClientMessa
 }
 
 
-type ClientAddDistributedObjectListenerHandleDistributedObjectFunc func(name string, serviceName string, eventType string, source core.Uuid)
+type ClientAddDistributedObjectListenerHandleDistributedObjectFunc func(name string, serviceName string, eventType string, source *core.Uuid)
 
 func ClientAddDistributedObjectListenerHandle(clientMessage *ClientMessage, handleDistributedObject ClientAddDistributedObjectListenerHandleDistributedObjectFunc){
     messageType := clientMessage.MessageType()

@@ -14,7 +14,7 @@ func EntryListUUIDLongCodecEncode(clientMessage *ClientMessage, collection []*Pa
 	frame := &Frame{Content: make([]byte, itemCount * EntrySizeInBytes)}
 
 	for i, it := range collection{
-		EncodeUUID(frame.Content, int32(i*EntrySizeInBytes), it.Key().(core.Uuid))
+		EncodeUUID(frame.Content, int32(i*EntrySizeInBytes), it.Key().(*core.Uuid))
 		EncodeLong(frame.Content, int32(i*EntrySizeInBytes+UUIDSizeInBytes), it.Value().(int64))
 	}
 

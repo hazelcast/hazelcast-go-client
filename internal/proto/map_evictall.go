@@ -35,7 +35,7 @@ import (
  * called by this method. If you do want to deleteAll to be called use the clear method. The EVICT_ALL event is
  * fired for any registered listeners.
  */
-//@Generated("8fb60d3b4004571352bf1101420c62a0")
+//@Generated("d205f6b834c9343674938c9aae210192")
 const (
     //hex: 0x011F00
     MapEvictAllRequestMessageType = 73472
@@ -50,7 +50,7 @@ func MapEvictAllEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.EvictAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapEvictAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapEvictAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

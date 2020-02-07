@@ -36,7 +36,7 @@ import (
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * asymmetric set difference of the two sets.
  */
-//@Generated("b1e2bafb4cbc3d0e92000db48482d152")
+//@Generated("4cb8d7703068acc57dacd53d34492052")
 const (
     //hex: 0x060700
     SetCompareAndRemoveAllRequestMessageType = 395008
@@ -52,7 +52,7 @@ func SetCompareAndRemoveAllEncodeRequest(name string, values []serialization.Dat
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.CompareAndRemoveAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetCompareAndRemoveAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetCompareAndRemoveAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -36,7 +36,7 @@ import (
  * The actual replica count may be less, depending on the number of data
  * members in the cluster (members that own data).
  */
-//@Generated("65a06aa63492a17b12ac99ef706fafec")
+//@Generated("b11584cd10ead0616bea55a147a5d0fe")
 const (
     //hex: 0x1D0300
     PNCounterGetConfiguredReplicaCountRequestMessageType = 1901312
@@ -52,7 +52,7 @@ func PNCounterGetConfiguredReplicaCountEncodeRequest(name string) *ClientMessage
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("PNCounter.GetConfiguredReplicaCount")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, PNCounterGetConfiguredReplicaCountResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, PNCounterGetConfiguredReplicaCountRequestMessageType)
     clientMessage.Add(initialFrame)
 

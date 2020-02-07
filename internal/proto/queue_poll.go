@@ -35,7 +35,7 @@ import (
  * Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
  * to become available.
  */
-//@Generated("fe506bef1b6cd0eb189d967ed3bcac17")
+//@Generated("0aaee9f4674f1631824b7d71f8eaf692")
 const (
     //hex: 0x030500
     QueuePollRequestMessageType = 197888
@@ -51,7 +51,7 @@ func QueuePollEncodeRequest(name string, timeoutMillis int64) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Poll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueuePollResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueuePollRequestMessageType)
     EncodeLong(initialFrame.Content, QueuePollRequestTimeoutMillisFieldOffset, timeoutMillis)
     clientMessage.Add(initialFrame)

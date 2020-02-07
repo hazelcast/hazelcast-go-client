@@ -37,7 +37,7 @@ import (
  * and lies dormant until one of two things happens:the lock is acquired by the current thread, or the specified
  * waiting time elapses.
  */
-//@Generated("3f0794efd416b0f726b021223353a712")
+//@Generated("19c3ff36ca882975d66c089ea1802853")
 const (
     //hex: 0x021100
     MultiMapTryLockRequestMessageType = 135424
@@ -57,7 +57,7 @@ func MultiMapTryLockEncodeRequest(name string, key serialization.Data, threadId 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.TryLock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapTryLockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapTryLockRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapTryLockRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MultiMapTryLockRequestLeaseFieldOffset, lease)

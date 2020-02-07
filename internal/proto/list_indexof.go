@@ -35,7 +35,7 @@ import (
  * Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-//@Generated("bb890a714d1c6d56e903fae4ed0e4ed0")
+//@Generated("b108840cf87da57d753492c0126f8f15")
 const (
     //hex: 0x051400
     ListIndexOfRequestMessageType = 332800
@@ -51,7 +51,7 @@ func ListIndexOfEncodeRequest(name string, value serialization.Data) *ClientMess
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.IndexOf")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListIndexOfResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListIndexOfRequestMessageType)
     clientMessage.Add(initialFrame)
 

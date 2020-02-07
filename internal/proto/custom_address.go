@@ -40,13 +40,13 @@ func (x *Address) Port() int32 {
     }
 
 
-//@Generated("9a1f24d1c90f03d40e9881960139b2ac")
+//@Generated("eb1f6e9db8c592e5fda15135a14792d6")
 const (
     AddressPortFieldOffset = 0
     AddressInitialFrameSize = AddressPortFieldOffset + IntSizeInBytes
 )
 
-func AddressCodecEncode(clientMessage *ClientMessage, address Address) {
+func AddressCodecEncode(clientMessage *ClientMessage, address *Address) {
         clientMessage.Add(BeginFrame)
         initialFrame := &Frame{Content: make([]byte, AddressInitialFrameSize), Flags: UnfragmentedMessage}
         EncodeInt(initialFrame.Content, AddressPortFieldOffset, address.port)
@@ -56,12 +56,12 @@ func AddressCodecEncode(clientMessage *ClientMessage, address Address) {
         clientMessage.Add(EndFrame)
     }
 
-func AddressCodecDecode(iterator *ForwardFrameIterator)  Address  {
+func AddressCodecDecode(iterator *ForwardFrameIterator)  *Address  {
         // begin frame
         iterator.Next()
         initialFrame := iterator.Next()
         port := DecodeInt(initialFrame.Content, AddressPortFieldOffset)
         host := StringCodecDecode(iterator)
         FastForwardToEndFrame(iterator)
-        return Address { host, port }
+        return &Address { host, port }
     }

@@ -38,7 +38,7 @@ import (
  * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
  * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
  */
-//@Generated("3d3362f9e1f74a1719b6f327a2988b6f")
+//@Generated("98b6769992a329b1b5da321a058245c9")
 const (
     //hex: 0x011000
     MapLockRequestMessageType = 69632
@@ -56,7 +56,7 @@ func MapLockEncodeRequest(name string, key serialization.Data, threadId int64, t
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.Lock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapLockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapLockRequestMessageType)
     EncodeLong(initialFrame.Content, MapLockRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapLockRequestTtlFieldOffset, ttl)

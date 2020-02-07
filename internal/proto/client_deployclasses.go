@@ -35,7 +35,7 @@ import (
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-//@Generated("37918bf08ed01165d48a075fed59ca5f")
+//@Generated("34538bf8bb4f49e04aaa331ff89bc6bd")
 const (
     //hex: 0x000D00
     ClientDeployClassesRequestMessageType = 3328
@@ -50,7 +50,7 @@ func ClientDeployClassesEncodeRequest(classDefinitions []*Pair) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.DeployClasses")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientDeployClassesResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientDeployClassesRequestMessageType)
     clientMessage.Add(initialFrame)
 

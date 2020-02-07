@@ -34,7 +34,7 @@ import (
 /**
  * Returns the element at the specified position in this list
  */
-//@Generated("33e8d6ce46e6b9778779595efac5890b")
+//@Generated("938afe237e9d1ce843c4dbb7fb3a886b")
 const (
     //hex: 0x050F00
     ListGetRequestMessageType = 331520
@@ -50,7 +50,7 @@ func ListGetEncodeRequest(name string, index int32) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.Get")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListGetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListGetRequestMessageType)
     EncodeInt(initialFrame.Content, ListGetRequestIndexFieldOffset, index)
     clientMessage.Add(initialFrame)

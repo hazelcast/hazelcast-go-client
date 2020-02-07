@@ -37,7 +37,7 @@ import (
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * intersection of the two sets.
  */
-//@Generated("7be400f0304d62656b80957ada7bc75e")
+//@Generated("499a8a0eaabf7b93f263e54e4b708e2a")
 const (
     //hex: 0x060800
     SetCompareAndRetainAllRequestMessageType = 395264
@@ -53,7 +53,7 @@ func SetCompareAndRetainAllEncodeRequest(name string, values []serialization.Dat
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.CompareAndRetainAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetCompareAndRetainAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetCompareAndRetainAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

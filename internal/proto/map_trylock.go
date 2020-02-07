@@ -37,7 +37,7 @@ import (
  * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
  * the specified waiting time elapses.
  */
-//@Generated("66f189952d6c4bfe8dbad1d151a254cd")
+//@Generated("9ddfdd5d3a36300535ca2a458d9a07e3")
 const (
     //hex: 0x011100
     MapTryLockRequestMessageType = 69888
@@ -57,7 +57,7 @@ func MapTryLockEncodeRequest(name string, key serialization.Data, threadId int64
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.TryLock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapTryLockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapTryLockRequestMessageType)
     EncodeLong(initialFrame.Content, MapTryLockRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapTryLockRequestLeaseFieldOffset, lease)

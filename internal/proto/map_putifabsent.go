@@ -35,7 +35,7 @@ import (
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl.
  */
-//@Generated("e172ca2827cd3adaa79be5b05e3c6891")
+//@Generated("69cede5ba6bddb3d105280f995ee4ad5")
 const (
     //hex: 0x010E00
     MapPutIfAbsentRequestMessageType = 69120
@@ -52,7 +52,7 @@ func MapPutIfAbsentEncodeRequest(name string, key serialization.Data, value seri
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.PutIfAbsent")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapPutIfAbsentResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapPutIfAbsentRequestMessageType)
     EncodeLong(initialFrame.Content, MapPutIfAbsentRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapPutIfAbsentRequestTtlFieldOffset, ttl)

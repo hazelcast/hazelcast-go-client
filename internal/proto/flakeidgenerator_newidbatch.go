@@ -33,7 +33,7 @@ import (
 /**
  * Fetches a new batch of ids for the given flake id generator.
  */
-//@Generated("91d6d60fc501ed3e21e748c1cda36bbe")
+//@Generated("c49f852903aad8ae579f0ce69358d780")
 const (
     //hex: 0x1C0100
     FlakeIdGeneratorNewIdBatchRequestMessageType = 1835264
@@ -52,7 +52,7 @@ func FlakeIdGeneratorNewIdBatchEncodeRequest(name string, batchSize int32) *Clie
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("FlakeIdGenerator.NewIdBatch")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, FlakeIdGeneratorNewIdBatchResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, FlakeIdGeneratorNewIdBatchRequestMessageType)
     EncodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchRequestBatchSizeFieldOffset, batchSize)
     clientMessage.Add(initialFrame)

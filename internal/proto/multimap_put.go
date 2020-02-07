@@ -34,7 +34,7 @@ import (
 /**
  * Stores a key-value pair in the multimap.
  */
-//@Generated("844f24da264429976846e3b4ae42212c")
+//@Generated("5ee2a66d45e64ff635b93e65c8a22c9a")
 const (
     //hex: 0x020100
     MultiMapPutRequestMessageType = 131328
@@ -51,7 +51,7 @@ func MultiMapPutEncodeRequest(name string, key serialization.Data, value seriali
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("MultiMap.Put")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapPutResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapPutRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapPutRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

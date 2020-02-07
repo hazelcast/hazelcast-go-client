@@ -35,7 +35,7 @@ import (
  * Removes all the entries with the given key. The collection is NOT backed by the map, so changes to the map are
  * NOT reflected in the collection, and vice-versa.
  */
-//@Generated("da601a2c161327295039c475cdd58eae")
+//@Generated("5d1abc260da85216ec7e4ee8623aacf2")
 const (
     //hex: 0x021500
     MultiMapRemoveEntryRequestMessageType = 136448
@@ -52,7 +52,7 @@ func MultiMapRemoveEntryEncodeRequest(name string, key serialization.Data, value
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("MultiMap.RemoveEntry")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapRemoveEntryResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapRemoveEntryRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapRemoveEntryRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

@@ -44,7 +44,7 @@ import (
  * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
  * to find that item.
  */
-//@Generated("ddb15d8d808c74ea95646e96bc8341b3")
+//@Generated("3809b3e7e3d95094c8ab20993c17fe5b")
 const (
     //hex: 0x170600
     RingbufferAddRequestMessageType = 1508864
@@ -61,7 +61,7 @@ func RingbufferAddEncodeRequest(name string, overflowPolicy int32, value seriali
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Ringbuffer.Add")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferAddResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferAddRequestMessageType)
     EncodeInt(initialFrame.Content, RingbufferAddRequestOverflowPolicyFieldOffset, overflowPolicy)
     clientMessage.Add(initialFrame)

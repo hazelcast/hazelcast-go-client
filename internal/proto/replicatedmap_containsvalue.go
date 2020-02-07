@@ -35,7 +35,7 @@ import (
  * Returns true if this map maps one or more keys to the specified value.
  * This operation will probably require time linear in the map size for most implementations of the Map interface.
  */
-//@Generated("a5c0458afd22847d8fe9556da4151984")
+//@Generated("2144ecc850f8f47affca7e74f71db22e")
 const (
     //hex: 0x0D0500
     ReplicatedMapContainsValueRequestMessageType = 853248
@@ -51,7 +51,7 @@ func ReplicatedMapContainsValueEncodeRequest(name string, value serialization.Da
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.ContainsValue")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapContainsValueResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapContainsValueRequestMessageType)
     clientMessage.Add(initialFrame)
 

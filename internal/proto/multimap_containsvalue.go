@@ -34,7 +34,7 @@ import (
 /**
  * Returns whether the multimap contains an entry with the value.
  */
-//@Generated("79f0af8fd2d1b7cfc86389487f5d9963")
+//@Generated("72c83664a175538041d91d697159e06c")
 const (
     //hex: 0x020800
     MultiMapContainsValueRequestMessageType = 133120
@@ -50,7 +50,7 @@ func MultiMapContainsValueEncodeRequest(name string, value serialization.Data) *
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.ContainsValue")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapContainsValueResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapContainsValueRequestMessageType)
     clientMessage.Add(initialFrame)
 

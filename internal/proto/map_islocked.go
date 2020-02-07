@@ -34,7 +34,7 @@ import (
 /**
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
-//@Generated("5792202cd0b3718c9a36a706c5ed8d8f")
+//@Generated("0ee4bbc4ea0cb1a1ab4b042bdbe58d04")
 const (
     //hex: 0x011200
     MapIsLockedRequestMessageType = 70144
@@ -50,7 +50,7 @@ func MapIsLockedEncodeRequest(name string, key serialization.Data) *ClientMessag
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.IsLocked")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapIsLockedResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapIsLockedRequestMessageType)
     clientMessage.Add(initialFrame)
 

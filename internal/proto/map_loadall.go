@@ -33,7 +33,7 @@ import (
 /**
  * Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-//@Generated("9bdb10d1c2fc6e67b5e3065ad2a4c7ed")
+//@Generated("4c9405fcfad1eb96991f2eafabb7d048")
 const (
     //hex: 0x012000
     MapLoadAllRequestMessageType = 73728
@@ -49,7 +49,7 @@ func MapLoadAllEncodeRequest(name string, replaceExistingValues bool) *ClientMes
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.LoadAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapLoadAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapLoadAllRequestMessageType)
     EncodeBoolean(initialFrame.Content, MapLoadAllRequestReplaceExistingValuesFieldOffset, replaceExistingValues)
     clientMessage.Add(initialFrame)

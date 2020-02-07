@@ -34,7 +34,7 @@ import (
 /**
  * Applies the aggregation logic on map entries filtered with the Predicate and returns the result
  */
-//@Generated("c1e67a2cf9c1ebc17d3ce81885ef7819")
+//@Generated("6ad4c69d14d91ac1b961dac376a2c0b6")
 const (
     //hex: 0x013A00
     MapAggregateWithPredicateRequestMessageType = 80384
@@ -49,7 +49,7 @@ func MapAggregateWithPredicateEncodeRequest(name string, aggregator serializatio
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.AggregateWithPredicate")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAggregateWithPredicateResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAggregateWithPredicateRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -35,7 +35,7 @@ import (
  * Returns true if this set contains all of the elements of the specified collection. If the specified collection is
  * also a set, this method returns true if it is a subset of this set.
  */
-//@Generated("4dea023c64451c1ecc8b69bd638891cf")
+//@Generated("bba0448565cf04d6fea31602cc7091e5")
 const (
     //hex: 0x060300
     SetContainsAllRequestMessageType = 393984
@@ -51,7 +51,7 @@ func SetContainsAllEncodeRequest(name string, items []serialization.Data) *Clien
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.ContainsAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetContainsAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetContainsAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

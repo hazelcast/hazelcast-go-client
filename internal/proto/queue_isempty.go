@@ -33,7 +33,7 @@ import (
 /**
  * Returns true if this collection contains no elements.
  */
-//@Generated("facd095c006ea74a371bcea3816719ee")
+//@Generated("07161c28866a23137189367527b263e7")
 const (
     //hex: 0x031400
     QueueIsEmptyRequestMessageType = 201728
@@ -49,7 +49,7 @@ func QueueIsEmptyEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.IsEmpty")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueIsEmptyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueIsEmptyRequestMessageType)
     clientMessage.Add(initialFrame)
 

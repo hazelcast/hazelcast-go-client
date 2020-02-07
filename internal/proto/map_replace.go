@@ -34,7 +34,7 @@ import (
 /**
  * Replaces the entry for a key only if currently mapped to a given value.
  */
-//@Generated("bd03242123e0e42b8d626eb825b6a539")
+//@Generated("aca3f9f0c291c236e36da87bd4e3e946")
 const (
     //hex: 0x010400
     MapReplaceRequestMessageType = 66560
@@ -50,7 +50,7 @@ func MapReplaceEncodeRequest(name string, key serialization.Data, value serializ
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Replace")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapReplaceResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapReplaceRequestMessageType)
     EncodeLong(initialFrame.Content, MapReplaceRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

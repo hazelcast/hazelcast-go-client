@@ -37,7 +37,7 @@ import (
  * ListIterator#next next. An initial call to ListIterator#previous previous would return the element with the
  * specified index minus one.
  */
-//@Generated("38d18bae6a10d546ad86b8f776be5e2c")
+//@Generated("cda5d8b5b15d8700c24032e09e788367")
 const (
     //hex: 0x051700
     ListListIteratorRequestMessageType = 333568
@@ -53,7 +53,7 @@ func ListListIteratorEncodeRequest(name string, index int32) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.ListIterator")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListListIteratorResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListListIteratorRequestMessageType)
     EncodeInt(initialFrame.Content, ListListIteratorRequestIndexFieldOffset, index)
     clientMessage.Add(initialFrame)

@@ -34,7 +34,7 @@ import (
  * Returns the remaining capacity of the ringbuffer. The returned value could be stale as soon as it is returned.
  * If ttl is not set, the remaining capacity will always be the capacity.
  */
-//@Generated("d616643282041cb3e3c4e9e9a96a278f")
+//@Generated("48ab412d745ee5fcd5dac590a7cc2e22")
 const (
     //hex: 0x170500
     RingbufferRemainingCapacityRequestMessageType = 1508608
@@ -50,7 +50,7 @@ func RingbufferRemainingCapacityEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.RemainingCapacity")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferRemainingCapacityResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferRemainingCapacityRequestMessageType)
     clientMessage.Add(initialFrame)
 

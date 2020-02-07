@@ -34,7 +34,7 @@ import (
 /**
  * Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
  */
-//@Generated("4f0e0f9b76f8825a9b3299f1f45cf653")
+//@Generated("33d3b45f14b644c84af431104ed6cbf0")
 const (
     //hex: 0x013000
     MapExecuteOnAllKeysRequestMessageType = 77824
@@ -49,7 +49,7 @@ func MapExecuteOnAllKeysEncodeRequest(name string, entryProcessor serialization.
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.ExecuteOnAllKeys")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapExecuteOnAllKeysResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapExecuteOnAllKeysRequestMessageType)
     clientMessage.Add(initialFrame)
 

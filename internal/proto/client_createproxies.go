@@ -37,7 +37,7 @@ import (
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-//@Generated("6e67f6a3542d4092ebc58c3993030295")
+//@Generated("afa391907df90f6450b35da94494fc15")
 const (
     //hex: 0x000E00
     ClientCreateProxiesRequestMessageType = 3584
@@ -52,7 +52,7 @@ func ClientCreateProxiesEncodeRequest(proxies []*Pair) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.CreateProxies")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientCreateProxiesResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientCreateProxiesRequestMessageType)
     clientMessage.Add(initialFrame)
 

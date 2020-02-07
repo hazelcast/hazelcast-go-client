@@ -34,7 +34,7 @@ import (
  * Removes all of the elements from this collection (optional operation). The collection will be empty after this
  * method returns.
  */
-//@Generated("c45f25805153bd56d1b0dd3ee25c3275")
+//@Generated("402f26a3e28f2beda4b76e3fb93bd0d8")
 const (
     //hex: 0x030F00
     QueueClearRequestMessageType = 200448
@@ -49,7 +49,7 @@ func QueueClearEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Clear")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueClearResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueClearRequestMessageType)
     clientMessage.Add(initialFrame)
 

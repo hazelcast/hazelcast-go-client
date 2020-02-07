@@ -35,7 +35,7 @@ import (
  * Removes the specified item listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("d40b1e48763faae4b14f0fef0245c3c2")
+//@Generated("c013bd7cd315ae0fe76cf4504d2ca801")
 const (
     //hex: 0x050C00
     ListRemoveListenerRequestMessageType = 330752
@@ -48,11 +48,11 @@ const (
 
 )
 
-func ListRemoveListenerEncodeRequest(name string, registrationId core.Uuid) *ClientMessage {
+func ListRemoveListenerEncodeRequest(name string, registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.RemoveListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListRemoveListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListRemoveListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, ListRemoveListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

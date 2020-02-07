@@ -33,7 +33,7 @@ import (
 /**
  * Sends a ping to the given connection.
  */
-//@Generated("957920ae06f0468a3bed0d20f3e1a021")
+//@Generated("6e90cbda7a710ac2bd3f3abedbc4c710")
 const (
     //hex: 0x000B00
     ClientPingRequestMessageType = 2816
@@ -48,7 +48,7 @@ func ClientPingEncodeRequest() *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Client.Ping")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientPingResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientPingRequestMessageType)
     clientMessage.Add(initialFrame)
     return clientMessage

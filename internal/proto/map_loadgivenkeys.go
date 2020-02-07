@@ -34,7 +34,7 @@ import (
 /**
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-//@Generated("95d048d5ce985a3e94c2e96bcdbc140d")
+//@Generated("0706f71ba06220c70055d4ad9d68419c")
 const (
     //hex: 0x012100
     MapLoadGivenKeysRequestMessageType = 73984
@@ -50,7 +50,7 @@ func MapLoadGivenKeysEncodeRequest(name string, keys []serialization.Data, repla
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.LoadGivenKeys")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapLoadGivenKeysResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapLoadGivenKeysRequestMessageType)
     EncodeBoolean(initialFrame.Content, MapLoadGivenKeysRequestReplaceExistingValuesFieldOffset, replaceExistingValues)
     clientMessage.Add(initialFrame)

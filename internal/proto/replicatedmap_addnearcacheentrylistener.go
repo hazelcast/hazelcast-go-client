@@ -42,7 +42,7 @@ import (
 /**
  * Adds a near cache entry listener for this map. This listener will be notified when an entry is added/removed/updated/evicted/expired etc. so that the near cache entries can be invalidated.
  */
-//@Generated("3781359ada37aec65b5bcc07c49404fe")
+//@Generated("dc02f8da36373d4702a26cdc19f47846")
 const (
     //hex: 0x0D1200
     ReplicatedMapAddNearCacheEntryListenerRequestMessageType = 856576
@@ -67,7 +67,7 @@ func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name string, includeVal
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.AddNearCacheEntryListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapAddNearCacheEntryListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapAddNearCacheEntryListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerRequestIncludeValueFieldOffset, includeValue)
     EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerRequestLocalOnlyFieldOffset, localOnly)
@@ -79,8 +79,8 @@ func ReplicatedMapAddNearCacheEntryListenerEncodeRequest(name string, includeVal
 }
 
 
-func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string  which is used as a key to remove the listener.*/response core.Uuid) {
-    return func() (/*** A unique string  which is used as a key to remove the listener.*/response core.Uuid) {
+func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string  which is used as a key to remove the listener.*/response *core.Uuid) {
+    return func() (/*** A unique string  which is used as a key to remove the listener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerResponseResponseFieldOffset)
@@ -89,7 +89,7 @@ func ReplicatedMapAddNearCacheEntryListenerDecodeResponse(clientMessage *ClientM
 }
 
 
-type ReplicatedMapAddNearCacheEntryListenerHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32)
+type ReplicatedMapAddNearCacheEntryListenerHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32)
 
 func ReplicatedMapAddNearCacheEntryListenerHandle(clientMessage *ClientMessage, handleEntry ReplicatedMapAddNearCacheEntryListenerHandleEntryFunc){
     messageType := clientMessage.MessageType()

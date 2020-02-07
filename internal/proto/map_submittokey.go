@@ -36,7 +36,7 @@ import (
  * representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
  * operation of EntryProcessor.
  */
-//@Generated("d1ffa21c5a3d14fe9747bb32fefcae25")
+//@Generated("80e0e88a8a4b0aacdc60f1d8400d242c")
 const (
     //hex: 0x012F00
     MapSubmitToKeyRequestMessageType = 77568
@@ -52,7 +52,7 @@ func MapSubmitToKeyEncodeRequest(name string, entryProcessor serialization.Data,
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.SubmitToKey")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapSubmitToKeyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapSubmitToKeyRequestMessageType)
     EncodeLong(initialFrame.Content, MapSubmitToKeyRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

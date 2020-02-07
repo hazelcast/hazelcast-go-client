@@ -41,7 +41,7 @@ import (
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-//@Generated("f015329361f4f0f4f020eced4ead8fcf")
+//@Generated("757544e093881873e54d8cb933636f75")
 const (
     //hex: 0x011B00
     MapAddPartitionLostListenerRequestMessageType = 72448
@@ -64,7 +64,7 @@ func MapAddPartitionLostListenerEncodeRequest(name string, localOnly bool) *Clie
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.AddPartitionLostListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAddPartitionLostListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAddPartitionLostListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, MapAddPartitionLostListenerRequestLocalOnlyFieldOffset, localOnly)
     clientMessage.Add(initialFrame)
@@ -75,8 +75,8 @@ func MapAddPartitionLostListenerEncodeRequest(name string, localOnly bool) *Clie
 }
 
 
-func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** returns the registration id for the MapPartitionLostListener.*/response core.Uuid) {
-    return func() (/*** returns the registration id for the MapPartitionLostListener.*/response core.Uuid) {
+func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** returns the registration id for the MapPartitionLostListener.*/response *core.Uuid) {
+    return func() (/*** returns the registration id for the MapPartitionLostListener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerResponseResponseFieldOffset)
@@ -85,7 +85,7 @@ func MapAddPartitionLostListenerDecodeResponse(clientMessage *ClientMessage) fun
 }
 
 
-type MapAddPartitionLostListenerHandleMapPartitionLostFunc func(partitionId int32, uuid core.Uuid)
+type MapAddPartitionLostListenerHandleMapPartitionLostFunc func(partitionId int32, uuid *core.Uuid)
 
 func MapAddPartitionLostListenerHandle(clientMessage *ClientMessage, handleMapPartitionLost MapAddPartitionLostListenerHandleMapPartitionLostFunc){
     messageType := clientMessage.MessageType()

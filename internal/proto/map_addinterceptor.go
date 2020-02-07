@@ -35,7 +35,7 @@ import (
  * Adds an interceptor for this map. Added interceptor will intercept operations
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
-//@Generated("931725ce407d5f338d8f0794fe952ce4")
+//@Generated("54fa439a2538c02edb7aae8823a7ecdf")
 const (
     //hex: 0x011400
     MapAddInterceptorRequestMessageType = 70656
@@ -50,7 +50,7 @@ func MapAddInterceptorEncodeRequest(name string, interceptor serialization.Data)
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.AddInterceptor")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAddInterceptorResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAddInterceptorRequestMessageType)
     clientMessage.Add(initialFrame)
 

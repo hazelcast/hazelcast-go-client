@@ -34,7 +34,7 @@ import (
 /**
  * Removes from this list all of its elements that are contained in the specified collection (optional operation).
  */
-//@Generated("eb537c91a4f0b78a30f470f99568646f")
+//@Generated("641261d4a5dc885a911aa0e605dafd92")
 const (
     //hex: 0x050700
     ListCompareAndRemoveAllRequestMessageType = 329472
@@ -50,7 +50,7 @@ func ListCompareAndRemoveAllEncodeRequest(name string, values []serialization.Da
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.CompareAndRemoveAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListCompareAndRemoveAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListCompareAndRemoveAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

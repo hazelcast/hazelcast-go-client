@@ -41,7 +41,7 @@ import (
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-//@Generated("6442540a34ec1ee4a11541d217272336")
+//@Generated("e05dc3ea709181761c9e0f6bbae1d20f")
 const (
     //hex: 0x1D0100
     PNCounterGetRequestMessageType = 1900800
@@ -55,11 +55,11 @@ const (
 
 )
 
-func PNCounterGetEncodeRequest(name string, replicaTimestamps []*Pair, targetReplicaUUID core.Uuid) *ClientMessage {
+func PNCounterGetEncodeRequest(name string, replicaTimestamps []*Pair, targetReplicaUUID *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("PNCounter.Get")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, PNCounterGetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, PNCounterGetRequestMessageType)
     EncodeUUID(initialFrame.Content, PNCounterGetRequestTargetReplicaUUIDFieldOffset, targetReplicaUUID)
     clientMessage.Add(initialFrame)

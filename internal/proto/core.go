@@ -45,8 +45,8 @@ func (a *Address) Port() int {
 	return int(a.port)
 }*/
 
-func (a *Address) String() string {
-	return a.Host() + ":" + strconv.Itoa(int(a.Port()))
+func (x *Address) String() string {
+	return x.Host() + ":" + strconv.Itoa(int(x.Port()))
 }
 
 //type Uuid struct {
@@ -64,12 +64,12 @@ func (a *Address) String() string {
 
 type Member struct {
 	address      core.Address
-	uuid         core.Uuid
+	uuid         *core.Uuid
 	isLiteMember bool
 	attributes   map[string]string
 }
 
-func NewMember(address core.Address, uuid core.Uuid, isLiteMember bool, attributes map[string]string) *Member {
+func NewMember(address core.Address, uuid *core.Uuid, isLiteMember bool, attributes map[string]string) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
 }
 
@@ -77,7 +77,7 @@ func (m *Member) Address() core.Address {
 	return m.address
 }
 
-func (m *Member) UUID() core.Uuid {
+func (m *Member) UUID() *core.Uuid {
 	return m.uuid
 }
 
@@ -509,8 +509,8 @@ func (e *ItemEvent) Member() core.Member {
 	return e.member
 }
 
-type DecodeListenerResponse func(message *ClientMessage) core.Uuid
-type EncodeListenerRemoveRequest func(registrationID core.Uuid) *ClientMessage
+type DecodeListenerResponse func(message *ClientMessage) *core.Uuid
+type EncodeListenerRemoveRequest func(registrationID *core.Uuid) *ClientMessage
 
 // Helper function to get flags for listeners
 func GetMapListenerFlags(listener interface{}) (int32, error) {

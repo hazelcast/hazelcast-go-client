@@ -38,7 +38,7 @@ import (
  * 
  * Similar to the put operation except that set doesn't return the old value, which is more efficient.
  */
-//@Generated("66dfd0599cd1176b2aab70915a2bbdf1")
+//@Generated("7e003b8d4bc337e3a1ace87776eef205")
 const (
     //hex: 0x014700
     MapSetWithMaxIdleRequestMessageType = 83712
@@ -56,7 +56,7 @@ func MapSetWithMaxIdleEncodeRequest(name string, key serialization.Data, value s
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.SetWithMaxIdle")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapSetWithMaxIdleResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapSetWithMaxIdleRequestMessageType)
     EncodeLong(initialFrame.Content, MapSetWithMaxIdleRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapSetWithMaxIdleRequestTtlFieldOffset, ttl)

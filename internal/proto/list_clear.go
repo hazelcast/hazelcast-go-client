@@ -33,7 +33,7 @@ import (
 /**
  * Removes all of the elements from this list (optional operation). The list will be empty after this call returns.
  */
-//@Generated("eec23f8cfe2ae63182b8090889745a37")
+//@Generated("860cbb77b5e100128487644f821c906a")
 const (
     //hex: 0x050900
     ListClearRequestMessageType = 329984
@@ -48,7 +48,7 @@ func ListClearEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.Clear")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListClearResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListClearRequestMessageType)
     clientMessage.Add(initialFrame)
 

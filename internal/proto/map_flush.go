@@ -34,7 +34,7 @@ import (
  * If this map has a MapStore, this method flushes all the local dirty entries by calling MapStore.storeAll()
  * and/or MapStore.deleteAll().
  */
-//@Generated("5a428aac1ed3097c6936dea5d10cf2df")
+//@Generated("f122d545804f15aa7a0b13abf37fa1d8")
 const (
     //hex: 0x010A00
     MapFlushRequestMessageType = 68096
@@ -49,7 +49,7 @@ func MapFlushEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Flush")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapFlushResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapFlushRequestMessageType)
     clientMessage.Add(initialFrame)
 

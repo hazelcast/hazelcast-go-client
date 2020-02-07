@@ -11,7 +11,7 @@ func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool{
 		currentFrame = clientMessage.StartFrame()
 	}
 
-	for ; ;  {
+	for {
 		isLastFrame := currentFrame.Next() == nil
 		if writeFrame(dst, currentFrame, isLastFrame) {
 			writeOffset = -1
@@ -24,6 +24,8 @@ func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool{
 			return false
 		}
 	}
+
+
 
 }
 

@@ -35,7 +35,7 @@ import (
  * Returns an iterator over the elements in this collection.  There are no guarantees concerning the order in which
  * the elements are returned (unless this collection is an instance of some class that provides a guarantee).
  */
-//@Generated("0aa5e17ec1110f16b27cf3b979e5d66a")
+//@Generated("c8ca51e69ff30bcd44e51bd41b9bb0ea")
 const (
     //hex: 0x030800
     QueueIteratorRequestMessageType = 198656
@@ -50,7 +50,7 @@ func QueueIteratorEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Iterator")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueIteratorResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueIteratorRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -35,7 +35,7 @@ import (
  * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
  * After this call returns, this collection will contain no elements in common with the specified collection.
  */
-//@Generated("98ffd118493492cebd8c3b78a553f9b5")
+//@Generated("77a9498866cd8c9130270a2c958c27f0")
 const (
     //hex: 0x030D00
     QueueCompareAndRemoveAllRequestMessageType = 199936
@@ -51,7 +51,7 @@ func QueueCompareAndRemoveAllEncodeRequest(name string, dataList []serialization
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.CompareAndRemoveAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueCompareAndRemoveAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueCompareAndRemoveAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

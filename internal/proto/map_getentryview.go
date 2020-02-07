@@ -36,7 +36,7 @@ import (
  * This method returns a clone of original mapping, modifying the returned value does not change the actual value
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
-//@Generated("a53c2ba32be57b54253208f678ea5d2a")
+//@Generated("5e7f3393d74feae1ffeffd9888554ba5")
 const (
     //hex: 0x011D00
     MapGetEntryViewRequestMessageType = 72960
@@ -53,7 +53,7 @@ func MapGetEntryViewEncodeRequest(name string, key serialization.Data, threadId 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.GetEntryView")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapGetEntryViewResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapGetEntryViewRequestMessageType)
     EncodeLong(initialFrame.Content, MapGetEntryViewRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

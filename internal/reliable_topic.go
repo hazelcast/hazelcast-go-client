@@ -63,9 +63,9 @@ func newReliableTopicProxy(client *HazelcastClient, serviceName string, name str
 	return proxy, err
 }
 
-func (r *ReliableTopicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID core.Uuid, err error) {
+func (r *ReliableTopicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID *core.Uuid, err error) {
 	if messageListener == nil {
-		return core.Uuid{}, core.NewHazelcastNilPointerError(proto.NilListenerIsNotAllowed, nil)
+		return nil, core.NewHazelcastNilPointerError(proto.NilListenerIsNotAllowed, nil)
 	}
 	uuid, _ := iputil.NewUUID()
 	reliableMsgListener := r.toReliableMessageListener(messageListener)
@@ -82,7 +82,7 @@ func (r *ReliableTopicProxy) toReliableMessageListener(messageListener core.Mess
 	return newReliableMessageListenerAdapter(messageListener)
 }
 
-func (r *ReliableTopicProxy) RemoveMessageListener(registrationID core.Uuid) (removed bool, err error) {
+func (r *ReliableTopicProxy) RemoveMessageListener(registrationID *core.Uuid) (removed bool, err error) {
 	if msgProcessor, ok := r.msgProcessors.Load(registrationID); ok {
 		msgProcessor := msgProcessor.(*messageProcessor)
 		msgProcessor.cancel()
@@ -160,14 +160,14 @@ func (r *ReliableTopicProxy) Ringbuffer() core.Ringbuffer {
 }
 
 type messageProcessor struct {
-	id        core.Uuid
+	id        *core.Uuid
 	sequence  int64
 	cancelled atomic.Value
 	listener  core.ReliableMessageListener
 	proxy     *ReliableTopicProxy
 }
 
-func newMessageProcessor(id core.Uuid, listener core.ReliableMessageListener, proxy *ReliableTopicProxy) *messageProcessor {
+func newMessageProcessor(id *core.Uuid, listener core.ReliableMessageListener, proxy *ReliableTopicProxy) *messageProcessor {
 	msgProcessor := &messageProcessor{
 		id:       id,
 		listener: listener,

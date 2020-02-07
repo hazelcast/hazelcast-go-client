@@ -251,8 +251,8 @@ func (parSpecProxy *partitionSpecificProxy) invoke(request *proto.ClientMessage)
 	return parSpecProxy.invokeOnPartition(request, parSpecProxy.partitionID)
 }
 
-func (p *proxy) createOnItemEvent(listener interface{}) func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
-	return func(itemData serialization.Data, uuid core.Uuid, eventType int32) {
+func (p *proxy) createOnItemEvent(listener interface{}) func(itemData serialization.Data, uuid *core.Uuid, eventType int32) {
+	return func(itemData serialization.Data, uuid *core.Uuid, eventType int32) {
 		var item interface{}
 		item, _ = p.toObject(itemData)
 		member := p.client.ClusterService.GetMemberByUUID(uuid)

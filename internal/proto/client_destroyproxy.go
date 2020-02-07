@@ -33,7 +33,7 @@ import (
 /**
  * Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this proxy.
  */
-//@Generated("af4f03771392e563e221f25c3405e5f3")
+//@Generated("64ed08db8222d8b490757ade6ab05080")
 const (
     //hex: 0x000500
     ClientDestroyProxyRequestMessageType = 1280
@@ -48,7 +48,7 @@ func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMes
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.DestroyProxy")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientDestroyProxyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientDestroyProxyRequestMessageType)
     clientMessage.Add(initialFrame)
 

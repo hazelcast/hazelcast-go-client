@@ -39,11 +39,11 @@ const (
 type LifecycleService interface {
 	// AddLifecycleListener adds a listener object to listen for lifecycle events.
 	// AddLifecycleListener returns the registrationID.
-	AddLifecycleListener(listener interface{}) Uuid
+	AddLifecycleListener(listener interface{}) *Uuid
 
 	// RemoveLifecycleListener removes lifecycle listener with the given registrationID.
 	// RemoveLifecycleListener returns true if the listener is removed successfully, false otherwise.
-	RemoveLifecycleListener(registrationID Uuid) bool
+	RemoveLifecycleListener(registrationID *Uuid) bool
 
 	// IsRunning checks whether or not the client is running.
 	IsRunning() bool

@@ -39,7 +39,7 @@ import (
  * element, including null, and throw an exception, as described in the specification for Collection
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
-//@Generated("4846ba2ef989caa19e53c174eb07cf4d")
+//@Generated("8c0f424b5501a4ad291c6082f4fcc1be")
 const (
     //hex: 0x060400
     SetAddRequestMessageType = 394240
@@ -55,7 +55,7 @@ func SetAddEncodeRequest(name string, value serialization.Data) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.Add")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetAddResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetAddRequestMessageType)
     clientMessage.Add(initialFrame)
 

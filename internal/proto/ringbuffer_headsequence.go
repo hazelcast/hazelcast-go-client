@@ -35,7 +35,7 @@ import (
  * are found. If the RingBuffer is empty, the head will be one more than the tail.
  * The initial value of the head is 0 (1 more than tail).
  */
-//@Generated("8b344dd781921c33f9f15f2eb0303b1c")
+//@Generated("44d72de0e3ded2d26d572fe8feb28264")
 const (
     //hex: 0x170300
     RingbufferHeadSequenceRequestMessageType = 1508096
@@ -51,7 +51,7 @@ func RingbufferHeadSequenceEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.HeadSequence")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferHeadSequenceResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferHeadSequenceRequestMessageType)
     clientMessage.Add(initialFrame)
 

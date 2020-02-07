@@ -37,7 +37,7 @@ import (
  * (This implies that the behavior of this call is undefined if the specified collection is this collection,
  * and this collection is nonempty.)
  */
-//@Generated("a348d8c3e0c5cef7bce9a7f1fed3366e")
+//@Generated("7c970f202862097d0d6e8690501ed5c5")
 const (
     //hex: 0x031000
     QueueAddAllRequestMessageType = 200704
@@ -53,7 +53,7 @@ func QueueAddAllEncodeRequest(name string, dataList []serialization.Data) *Clien
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.AddAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueAddAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

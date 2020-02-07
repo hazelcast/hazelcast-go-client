@@ -34,7 +34,7 @@ import (
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-//@Generated("6edfca41fbfe7c982e7c393045487c96")
+//@Generated("469479e4174357e65670a853b9480789")
 const (
     //hex: 0x013900
     MapAggregateRequestMessageType = 80128
@@ -49,7 +49,7 @@ func MapAggregateEncodeRequest(name string, aggregator serialization.Data) *Clie
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.Aggregate")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAggregateResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAggregateRequestMessageType)
     clientMessage.Add(initialFrame)
 

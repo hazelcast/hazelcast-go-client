@@ -38,7 +38,7 @@ import (
  * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
  * unlocked N times before another thread can acquire it.
  */
-//@Generated("bce57e87f9043c1a7fd46b6f9236ae63")
+//@Generated("1a39c2a9a29c462171ab787f5b9d943b")
 const (
     //hex: 0x021000
     MultiMapLockRequestMessageType = 135168
@@ -56,7 +56,7 @@ func MultiMapLockEncodeRequest(name string, key serialization.Data, threadId int
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.Lock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapLockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapLockRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapLockRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MultiMapLockRequestTtlFieldOffset, ttl)

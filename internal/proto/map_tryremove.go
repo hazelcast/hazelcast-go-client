@@ -36,7 +36,7 @@ import (
  * If the key is already locked by another thread and/or member, then this operation will wait the timeout
  * amount for acquiring the lock.
  */
-//@Generated("bb96be075862099f4ac2f37dc17cb014")
+//@Generated("58ed0ad2648ec547b57ee1592d37b4f1")
 const (
     //hex: 0x010B00
     MapTryRemoveRequestMessageType = 68352
@@ -54,7 +54,7 @@ func MapTryRemoveEncodeRequest(name string, key serialization.Data, threadId int
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.TryRemove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapTryRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapTryRemoveRequestMessageType)
     EncodeLong(initialFrame.Content, MapTryRemoveRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapTryRemoveRequestTimeoutFieldOffset, timeout)

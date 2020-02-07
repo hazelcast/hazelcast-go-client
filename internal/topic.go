@@ -29,21 +29,21 @@ func newTopicProxy(client *HazelcastClient, serviceName string, name string) *to
 	return &topicProxy{parSpecProxy}
 }
 
-func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID core.Uuid, err error) {
+func (tp *topicProxy) AddMessageListener(messageListener core.MessageListener) (registrationID *core.Uuid, err error) {
 	request := proto.TopicAddMessageListenerEncodeRequest(tp.name, false)
 	eventHandler := tp.createEventHandler(messageListener)
 
 	return tp.client.ListenerService.registerListener(request, eventHandler,
-		func(registrationID core.Uuid) *proto.ClientMessage {
+		func(registrationID *core.Uuid) *proto.ClientMessage {
 			return proto.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
-		}, func(clientMessage *proto.ClientMessage) core.Uuid {
+		}, func(clientMessage *proto.ClientMessage) *core.Uuid {
 			return proto.TopicAddMessageListenerDecodeResponse(clientMessage)()
 		})
 
 }
 
-func (tp *topicProxy) RemoveMessageListener(registrationID core.Uuid) (removed bool, err error) {
-	return tp.client.ListenerService.deregisterListener(registrationID, func(registrationID core.Uuid) *proto.ClientMessage {
+func (tp *topicProxy) RemoveMessageListener(registrationID *core.Uuid) (removed bool, err error) {
+	return tp.client.ListenerService.deregisterListener(registrationID, func(registrationID *core.Uuid) *proto.ClientMessage {
 		return proto.TopicRemoveMessageListenerEncodeRequest(tp.name, registrationID)
 	})
 }
@@ -60,7 +60,7 @@ func (tp *topicProxy) Publish(message interface{}) (err error) {
 
 func (tp *topicProxy) createEventHandler(messageListener core.MessageListener) func(clientMessage *proto.ClientMessage) {
 	return func(message *proto.ClientMessage) {
-		proto.TopicAddMessageListenerHandle(message, func(itemData serialization.Data, publishTime int64, uuid core.Uuid) {
+		proto.TopicAddMessageListenerHandle(message, func(itemData serialization.Data, publishTime int64, uuid *core.Uuid) {
 			member := tp.client.ClusterService.GetMemberByUUID(uuid)
 			item, _ := tp.toObject(itemData)
 			itemEvent := proto.NewTopicMessage(item, publishTime, member)

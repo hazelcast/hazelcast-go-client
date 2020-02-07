@@ -35,7 +35,7 @@ import (
  * Removes the specified map partition lost listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-//@Generated("4a0e30c20ec547bc97b31b9d77122f8c")
+//@Generated("dd10c88b37f7f8050e73109fa43cb1dd")
 const (
     //hex: 0x011C00
     MapRemovePartitionLostListenerRequestMessageType = 72704
@@ -48,11 +48,11 @@ const (
 
 )
 
-func MapRemovePartitionLostListenerEncodeRequest(name string, registrationId core.Uuid) *ClientMessage {
+func MapRemovePartitionLostListenerEncodeRequest(name string, registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.RemovePartitionLostListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapRemovePartitionLostListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapRemovePartitionLostListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, MapRemovePartitionLostListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

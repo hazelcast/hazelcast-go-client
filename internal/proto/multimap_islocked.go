@@ -34,7 +34,7 @@ import (
 /**
  * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
  */
-//@Generated("540c77909455ea726d19bcbfaa41e704")
+//@Generated("5f3c9b3abe65fbd2f08b3016ba79fac7")
 const (
     //hex: 0x021200
     MultiMapIsLockedRequestMessageType = 135680
@@ -50,7 +50,7 @@ func MultiMapIsLockedEncodeRequest(name string, key serialization.Data) *ClientM
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.IsLocked")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapIsLockedResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapIsLockedRequestMessageType)
     clientMessage.Add(initialFrame)
 

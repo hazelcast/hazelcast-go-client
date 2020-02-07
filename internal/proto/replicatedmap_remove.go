@@ -37,7 +37,7 @@ import (
  * null does not necessarily indicate that the map contained no mapping for the key; it's also possible that the map
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
-//@Generated("dc9c4255e7909f746acd2e1e19a216e9")
+//@Generated("c7e6fcafc1989ce331f575c0ac3a855d")
 const (
     //hex: 0x0D0700
     ReplicatedMapRemoveRequestMessageType = 853760
@@ -52,7 +52,7 @@ func ReplicatedMapRemoveEncodeRequest(name string, key serialization.Data) *Clie
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.Remove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapRemoveRequestMessageType)
     clientMessage.Add(initialFrame)
 

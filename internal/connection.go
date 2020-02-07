@@ -34,7 +34,7 @@ import (
 const (
 	kb              = 1024
 	bufferSize      = 128 * kb
-	protocolStarter = "CB2"
+	protocolStarter = "CP2"
 )
 
 type Connection struct {
@@ -157,8 +157,9 @@ func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 }
 
 func (c *Connection) write(clientMessage *proto.ClientMessage) error {
-	remainingLen := len(clientMessage.StartFrame().Content) //todo
+	remainingLen := clientMessage.FrameLength() //todo
 	writeIndex := 0
+
 	for remainingLen > 0 {
 		writtenLen, err := c.socket.Write(clientMessage.StartFrame().Content[writeIndex:])
 		if err != nil {
@@ -241,13 +242,13 @@ func (c *Connection) close(err error) {
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{"+
 		"isAlive=%t"+
-		", connectionID=%d"+
+		//", connectionID=%d"+
 		", endpoint=%s"+
 		", lastReadTime=%s"+
 		", lastWriteTime=%s"+
 		", closedTime=%s"+
 		", connected server version=%s", c.isAlive(), c.connectionID,
-		c.endpoint.Load().(core.Address),
+		//c.endpoint.Load().(core.Address),
 		c.lastRead.Load().(time.Time), c.lastWrite.Load().(time.Time),
 		c.closedTime.Load().(time.Time), c.connectedServerVersionStr)
 }

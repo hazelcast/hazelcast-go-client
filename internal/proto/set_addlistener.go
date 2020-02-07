@@ -38,7 +38,7 @@ import (
 /**
  * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
  */
-//@Generated("f09a7356fbfe2c930c2d7a7d09ff122c")
+//@Generated("7257782024c89de13c192c765d92d5f7")
 const (
     //hex: 0x060B00
     SetAddListenerRequestMessageType = 396032
@@ -62,7 +62,7 @@ func SetAddListenerEncodeRequest(name string, includeValue bool, localOnly bool)
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.AddListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetAddListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetAddListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, SetAddListenerRequestIncludeValueFieldOffset, includeValue)
     EncodeBoolean(initialFrame.Content, SetAddListenerRequestLocalOnlyFieldOffset, localOnly)
@@ -74,8 +74,8 @@ func SetAddListenerEncodeRequest(name string, includeValue bool, localOnly bool)
 }
 
 
-func SetAddListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The registration id.*/response core.Uuid) {
-    return func() (/*** The registration id.*/response core.Uuid) {
+func SetAddListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The registration id.*/response *core.Uuid) {
+    return func() (/*** The registration id.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, SetAddListenerResponseResponseFieldOffset)
@@ -84,7 +84,7 @@ func SetAddListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** The
 }
 
 
-type SetAddListenerHandleItemFunc func(/* @Nullable */ item serialization.Data, uuid core.Uuid, eventType int32)
+type SetAddListenerHandleItemFunc func(/* @Nullable */ item serialization.Data, uuid *core.Uuid, eventType int32)
 
 func SetAddListenerHandle(clientMessage *ClientMessage, handleItem SetAddListenerHandleItemFunc){
     messageType := clientMessage.MessageType()

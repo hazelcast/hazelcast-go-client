@@ -35,7 +35,7 @@ import (
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
  */
-//@Generated("7e40b90117e2c480675ef96939b031b2")
+//@Generated("1eaeb7f64753ed909a1202a1d8f9e7f6")
 const (
     //hex: 0x014600
     MapPutIfAbsentWithMaxIdleRequestMessageType = 83456
@@ -53,7 +53,7 @@ func MapPutIfAbsentWithMaxIdleEncodeRequest(name string, key serialization.Data,
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.PutIfAbsentWithMaxIdle")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapPutIfAbsentWithMaxIdleResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapPutIfAbsentWithMaxIdleRequestMessageType)
     EncodeLong(initialFrame.Content, MapPutIfAbsentWithMaxIdleRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapPutIfAbsentWithMaxIdleRequestTtlFieldOffset, ttl)

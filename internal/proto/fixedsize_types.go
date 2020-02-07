@@ -43,7 +43,7 @@ func DecodeByte(buffer []byte, pos int) byte {
 }
 
 //TODO: how to
-func EncodeUUID(buffer []byte, pos int32, value core.Uuid) { //UUID int64
+func EncodeUUID(buffer []byte, pos int32, value *core.Uuid) { //UUID int64
 	mostSigBits := value.GetMostSignificantBits()
 	leastSigBits := value.GetLeastSignificantBits()
 	EncodeLong(buffer, pos, mostSigBits)
@@ -51,9 +51,9 @@ func EncodeUUID(buffer []byte, pos int32, value core.Uuid) { //UUID int64
 
 }
 
-func DecodeUUID(buffer []byte, pos int32) core.Uuid {
+func DecodeUUID(buffer []byte, pos int32) *core.Uuid {
 	mostSigBits := DecodeLong(buffer, pos)
 	leastSigBits := DecodeLong(buffer, pos+LongSizeInBytes)
-	return *core.NewUuid(mostSigBits,leastSigBits)
+	return core.NewUuid(mostSigBits,leastSigBits)
 
 }

@@ -18,6 +18,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -57,6 +58,11 @@ func NewUuidFromBytes(data []byte) *Uuid {
 	return &Uuid{msb: int64(msb), lsb: int64(lsb)}
 }
 
+func NewUuidRandom() *Uuid {
+	random := make([]byte, 16)
+	rand.Read(random)
+	return NewUuidFromBytes(random)
+}
 
 func (uuid Uuid)String() string{
 	
@@ -89,7 +95,7 @@ type Member interface {
 	Address() Address
 
 	// UUID returns the uuid of this member.
-	UUID() Uuid
+	UUID() *Uuid
 
 	// IsLiteMember returns true if this member is a lite member.
 	IsLiteMember() bool

@@ -35,7 +35,7 @@ import (
  * Returns the collection of values associated with the key. The collection is NOT backed by the map, so changes to
  * the map are NOT reflected in the collection, and vice-versa.
  */
-//@Generated("3a6632f079d468a782a96212a3d142b6")
+//@Generated("136212ca1b91e43e1f6dd28470eee730")
 const (
     //hex: 0x020200
     MultiMapGetRequestMessageType = 131584
@@ -51,7 +51,7 @@ func MultiMapGetEncodeRequest(name string, key serialization.Data, threadId int6
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.Get")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapGetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapGetRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapGetRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

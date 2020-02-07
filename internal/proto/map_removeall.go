@@ -34,7 +34,7 @@ import (
 /**
  * Removes all entries which match with the supplied predicate
  */
-//@Generated("8e5983ecd0c2511898120b51d0a4641e")
+//@Generated("4204a5f1b4ab24d14e96ff7a9e42b694")
 const (
     //hex: 0x013E00
     MapRemoveAllRequestMessageType = 81408
@@ -49,7 +49,7 @@ func MapRemoveAllEncodeRequest(name string, predicate serialization.Data) *Clien
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.RemoveAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapRemoveAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapRemoveAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

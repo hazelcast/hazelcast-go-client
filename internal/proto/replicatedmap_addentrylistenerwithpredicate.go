@@ -43,7 +43,7 @@ import (
  * Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
  * events filtered by the given predicate.
  */
-//@Generated("c82e8c5c7830e51e30bf86837bbd474c")
+//@Generated("34e16ba70e62fe461005b23a4a246db2")
 const (
     //hex: 0x0D0B00
     ReplicatedMapAddEntryListenerWithPredicateRequestMessageType = 854784
@@ -67,7 +67,7 @@ func ReplicatedMapAddEntryListenerWithPredicateEncodeRequest(name string, predic
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.AddEntryListenerWithPredicate")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapAddEntryListenerWithPredicateResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapAddEntryListenerWithPredicateRequestMessageType)
     EncodeBoolean(initialFrame.Content, ReplicatedMapAddEntryListenerWithPredicateRequestLocalOnlyFieldOffset, localOnly)
     clientMessage.Add(initialFrame)
@@ -81,8 +81,8 @@ func ReplicatedMapAddEntryListenerWithPredicateEncodeRequest(name string, predic
 }
 
 
-func ReplicatedMapAddEntryListenerWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string  which is used as a key to remove the listener.*/response core.Uuid) {
-    return func() (/*** A unique string  which is used as a key to remove the listener.*/response core.Uuid) {
+func ReplicatedMapAddEntryListenerWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string  which is used as a key to remove the listener.*/response *core.Uuid) {
+    return func() (/*** A unique string  which is used as a key to remove the listener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerWithPredicateResponseResponseFieldOffset)
@@ -91,7 +91,7 @@ func ReplicatedMapAddEntryListenerWithPredicateDecodeResponse(clientMessage *Cli
 }
 
 
-type ReplicatedMapAddEntryListenerWithPredicateHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32)
+type ReplicatedMapAddEntryListenerWithPredicateHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32)
 
 func ReplicatedMapAddEntryListenerWithPredicateHandle(clientMessage *ClientMessage, handleEntry ReplicatedMapAddEntryListenerWithPredicateHandleEntryFunc){
     messageType := clientMessage.MessageType()

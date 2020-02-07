@@ -35,7 +35,7 @@ import (
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("dbed26d899a473c1d70deae36dd1dc1b")
+//@Generated("e13a43db80390f5a24b1cd59d2fc1d71")
 const (
     //hex: 0x020F00
     MultiMapRemoveEntryListenerRequestMessageType = 134912
@@ -48,11 +48,11 @@ const (
 
 )
 
-func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationId core.Uuid) *ClientMessage {
+func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.RemoveEntryListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapRemoveEntryListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapRemoveEntryListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, MultiMapRemoveEntryListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

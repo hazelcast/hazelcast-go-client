@@ -34,7 +34,7 @@ import (
 /**
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
-//@Generated("9a2771f088b1b15b2000b8ec5b5707f2")
+//@Generated("09ffda6f8984e0fbd6ed91a4d23d0098")
 const (
     //hex: 0x040300
     TopicRemoveMessageListenerRequestMessageType = 262912
@@ -47,11 +47,11 @@ const (
 
 )
 
-func TopicRemoveMessageListenerEncodeRequest(name string, registrationId core.Uuid) *ClientMessage {
+func TopicRemoveMessageListenerEncodeRequest(name string, registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Topic.RemoveMessageListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, TopicRemoveMessageListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, TopicRemoveMessageListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, TopicRemoveMessageListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

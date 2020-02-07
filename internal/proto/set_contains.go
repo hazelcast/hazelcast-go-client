@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this set contains the specified element.
  */
-//@Generated("0bf6f12837f37186fd89ce21a7fbef9d")
+//@Generated("1cc121eb17bdf9fe115a064cb332b9ff")
 const (
     //hex: 0x060200
     SetContainsRequestMessageType = 393728
@@ -50,7 +50,7 @@ func SetContainsEncodeRequest(name string, value serialization.Data) *ClientMess
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.Contains")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetContainsResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetContainsRequestMessageType)
     clientMessage.Add(initialFrame)
 

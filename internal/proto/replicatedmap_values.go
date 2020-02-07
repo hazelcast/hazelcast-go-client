@@ -34,7 +34,7 @@ import (
 /**
  * Returns a lazy collection view of the values contained in this map.
  */
-//@Generated("f5022fd96ab945fe2d583cf9c6e83382")
+//@Generated("5139e20f28716276bc786bd913a5cdef")
 const (
     //hex: 0x0D1000
     ReplicatedMapValuesRequestMessageType = 856064
@@ -49,7 +49,7 @@ func ReplicatedMapValuesEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.Values")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapValuesResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapValuesRequestMessageType)
     clientMessage.Add(initialFrame)
 

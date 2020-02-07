@@ -34,7 +34,7 @@ import (
  * Returns number of items in the ringbuffer. If no ttl is set, the size will always be equal to capacity after the
  * head completed the first looparound the ring. This is because no items are getting retired.
  */
-//@Generated("2cfbf6dd2250811b829f01ca3c1a5884")
+//@Generated("752b550abd2b64d9e53509422fe66d7c")
 const (
     //hex: 0x170100
     RingbufferSizeRequestMessageType = 1507584
@@ -50,7 +50,7 @@ func RingbufferSizeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.Size")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferSizeRequestMessageType)
     clientMessage.Add(initialFrame)
 

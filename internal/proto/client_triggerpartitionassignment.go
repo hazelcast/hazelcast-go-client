@@ -34,7 +34,7 @@ import (
  * Triggers partition assignment manually on the cluster.
  * Note that Partition based operations triggers this automatically
  */
-//@Generated("74d5fff147be9be0affe1714c3dc4fb0")
+//@Generated("e7c5a79a4d141ba3a68d6fe90c154cdc")
 const (
     //hex: 0x001000
     ClientTriggerPartitionAssignmentRequestMessageType = 4096
@@ -49,7 +49,7 @@ func ClientTriggerPartitionAssignmentEncodeRequest() *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Client.TriggerPartitionAssignment")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientTriggerPartitionAssignmentResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientTriggerPartitionAssignmentRequestMessageType)
     clientMessage.Add(initialFrame)
     return clientMessage

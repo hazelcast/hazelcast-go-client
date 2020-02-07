@@ -34,7 +34,7 @@ import (
  * Returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
  * The initial value of the tail is -1.
  */
-//@Generated("f03a456d89d5b45ea517e9fc61fcb62d")
+//@Generated("e9b4f91ddc8e704959e86ddec6d09991")
 const (
     //hex: 0x170200
     RingbufferTailSequenceRequestMessageType = 1507840
@@ -50,7 +50,7 @@ func RingbufferTailSequenceEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.TailSequence")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferTailSequenceResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferTailSequenceRequestMessageType)
     clientMessage.Add(initialFrame)
 

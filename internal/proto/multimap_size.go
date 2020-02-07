@@ -33,7 +33,7 @@ import (
 /**
  * Returns the number of key-value pairs in the multimap.
  */
-//@Generated("babe2de208b4071f6cd32b09d5770bf1")
+//@Generated("50b97aa8bb935ea7ef6e8ef86e9fedc1")
 const (
     //hex: 0x020A00
     MultiMapSizeRequestMessageType = 133632
@@ -49,7 +49,7 @@ func MultiMapSizeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.Size")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapSizeRequestMessageType)
     clientMessage.Add(initialFrame)
 

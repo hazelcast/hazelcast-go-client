@@ -35,7 +35,7 @@ import (
  * Inserts the specified element at the specified position in this list (optional operation). Shifts the element
  * currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
  */
-//@Generated("cd6d5a76d77c77ee6cf7ff44132addab")
+//@Generated("4ea0b50f49564a920bdf2a25859261e3")
 const (
     //hex: 0x051100
     ListAddWithIndexRequestMessageType = 332032
@@ -51,7 +51,7 @@ func ListAddWithIndexEncodeRequest(name string, index int32, value serialization
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.AddWithIndex")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListAddWithIndexResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListAddWithIndexRequestMessageType)
     EncodeInt(initialFrame.Content, ListAddWithIndexRequestIndexFieldOffset, index)
     clientMessage.Add(initialFrame)

@@ -37,7 +37,7 @@ import (
  * readers or it can be read multiple times by the same reader. Currently it isn't possible to control how long this
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
-//@Generated("273fb8b72ff3f287f8324026d6fc98a6")
+//@Generated("f8ef451095fecd1285569def8cbdcd4f")
 const (
     //hex: 0x170700
     RingbufferReadOneRequestMessageType = 1509120
@@ -53,7 +53,7 @@ func RingbufferReadOneEncodeRequest(name string, sequence int64) *ClientMessage 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.ReadOne")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferReadOneResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferReadOneRequestMessageType)
     EncodeLong(initialFrame.Content, RingbufferReadOneRequestSequenceFieldOffset, sequence)
     clientMessage.Add(initialFrame)

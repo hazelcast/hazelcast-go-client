@@ -34,7 +34,7 @@ import (
 /**
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
-//@Generated("20990560585c01ce44f45e08211c3c16")
+//@Generated("bd7c5df6091d596072a328c2ebae08c4")
 const (
     //hex: 0x010500
     MapReplaceIfSameRequestMessageType = 66816
@@ -51,7 +51,7 @@ func MapReplaceIfSameEncodeRequest(name string, key serialization.Data, testValu
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.ReplaceIfSame")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapReplaceIfSameResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapReplaceIfSameRequestMessageType)
     EncodeLong(initialFrame.Content, MapReplaceIfSameRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

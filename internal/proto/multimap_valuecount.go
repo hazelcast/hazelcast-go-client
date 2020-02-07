@@ -34,7 +34,7 @@ import (
 /**
  * Returns the number of values that match the given key in the multimap.
  */
-//@Generated("2dc3b9f0c94683e4d84459d20bd899dc")
+//@Generated("c1b33462a72dfdbfad3faee92d6f6041")
 const (
     //hex: 0x020C00
     MultiMapValueCountRequestMessageType = 134144
@@ -51,7 +51,7 @@ func MultiMapValueCountEncodeRequest(name string, key serialization.Data, thread
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.ValueCount")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapValueCountResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapValueCountRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapValueCountRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

@@ -23,7 +23,7 @@ import (
 func main() {
 
 	config := hazelcast.NewConfig()
-	config.NetworkConfig().AddAddress("127.0.0.1:5701")
+	config.NetworkConfig().AddAddress("127.0.0.1:5704")
 
 	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {

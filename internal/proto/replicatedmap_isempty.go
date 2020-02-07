@@ -33,7 +33,7 @@ import (
 /**
  * Return true if this map contains no key-value mappings
  */
-//@Generated("2fb9d8dd8049f175ab153468f2168d85")
+//@Generated("10bc92210041c6da2dc216e0ace4903e")
 const (
     //hex: 0x0D0300
     ReplicatedMapIsEmptyRequestMessageType = 852736
@@ -49,7 +49,7 @@ func ReplicatedMapIsEmptyEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.IsEmpty")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapIsEmptyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapIsEmptyRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -68,8 +68,8 @@ func (cs *clusterService) init() {
 	cs.ownerConnectionAddress.Store(&proto.Address{})
 	cs.members.Store(make([]*proto.Member, 0)) //Initialize
 	cs.initialMemberListWg = new(sync.WaitGroup)
-	cs.ownerUUID.Store("") //Initialize
-	cs.uuid.Store("")      //Initialize
+	//cs.ownerUUID.Store("") //Initialize
+	cs.uuid.Store(core.NewUuidRandom())      //Initialize
 }
 
 func (cs *clusterService) registerMembershipListeners() {
@@ -248,13 +248,13 @@ func (cs *clusterService) logMembers() {
 	cs.logger.Info(membersInfo)
 }
 
-func (cs *clusterService) AddMembershipListener(listener interface{}) core.Uuid {
+func (cs *clusterService) AddMembershipListener(listener interface{}) *core.Uuid {
 	registrationID, _ := iputil.NewUUID()
 	cs.listeners.Store(registrationID, listener)
 	return registrationID
 }
 
-func (cs *clusterService) RemoveMembershipListener(registrationID core.Uuid) bool {
+func (cs *clusterService) RemoveMembershipListener(registrationID *core.Uuid) bool {
 	cs.removeListenerMu.Lock()
 	defer cs.removeListenerMu.Unlock()
 	_, found := cs.listeners.Load(registrationID)
@@ -314,7 +314,7 @@ func (cs *clusterService) handleMemberListAdditions(previousMembers []*proto.Mem
 	}
 }
 
-func (cs *clusterService) handleMemberAttributeChange(uuid core.Uuid, key string, operationType int32, value string) {
+func (cs *clusterService) handleMemberAttributeChange(uuid *core.Uuid, key string, operationType int32, value string) {
 	cs.notifyListenersForMemberAttributeChange(uuid, key, operationType, value)
 }
 
@@ -330,14 +330,14 @@ func (cs *clusterService) memberRemoved(member *proto.Member) {
 }
 
 func (cs *clusterService) closeRemovedMembersConnection(member *proto.Member) {
-	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address))
+	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address)) //todo
 	if connection != nil {
 		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
 			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
 	}
 }
 
-func (cs *clusterService) notifyListenersForMemberAttributeChange(uuid core.Uuid, key string,
+func (cs *clusterService) notifyListenersForMemberAttributeChange(uuid *core.Uuid, key string,
 	operationType int32, value string) {
 	rangeFunc := func(id, listener interface{}) bool {
 		if _, ok := listener.(core.MemberAttributeChangedListener); ok {
@@ -424,7 +424,7 @@ func (cs *clusterService) GetMember(address core.Address) core.Member {
 	return nil
 }
 
-func (cs *clusterService) GetMemberByUUID(uuid core.Uuid) core.Member {
+func (cs *clusterService) GetMemberByUUID(uuid *core.Uuid) core.Member {
 	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
 		if member.UUID() == uuid {

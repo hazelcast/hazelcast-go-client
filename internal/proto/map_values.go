@@ -37,7 +37,7 @@ import (
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-//@Generated("30dada8ddb0cc1180e57da8428ce7450")
+//@Generated("fe24cd91082193813230efcf1b1cf85d")
 const (
     //hex: 0x012400
     MapValuesRequestMessageType = 74752
@@ -52,7 +52,7 @@ func MapValuesEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.Values")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapValuesResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapValuesRequestMessageType)
     clientMessage.Add(initialFrame)
 

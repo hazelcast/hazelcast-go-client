@@ -37,7 +37,7 @@ import (
  * then the lock is released.  If the current thread is not the holder of this lock,
  * then ILLEGAL_MONITOR_STATE is thrown.
  */
-//@Generated("28d94898a9de73ed5e6743994b76ea2c")
+//@Generated("26be74bc8b1bd02d883ac4241e218a7a")
 const (
     //hex: 0x011300
     MapUnlockRequestMessageType = 70400
@@ -54,7 +54,7 @@ func MapUnlockEncodeRequest(name string, key serialization.Data, threadId int64,
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.Unlock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapUnlockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapUnlockRequestMessageType)
     EncodeLong(initialFrame.Content, MapUnlockRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapUnlockRequestReferenceIdFieldOffset, referenceId)

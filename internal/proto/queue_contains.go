@@ -35,7 +35,7 @@ import (
  * Returns true if this queue contains the specified element. More formally, returns true if and only if this queue
  * contains at least one element e such that value.equals(e)
  */
-//@Generated("ba323382ee71eb5eb1cf2f1212d552fd")
+//@Generated("346f2418bb9c8ef3c4d83b4f469ea240")
 const (
     //hex: 0x030B00
     QueueContainsRequestMessageType = 199424
@@ -51,7 +51,7 @@ func QueueContainsEncodeRequest(name string, value serialization.Data) *ClientMe
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Contains")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueContainsResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueContainsRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -34,7 +34,7 @@ import (
 /**
  * The element previously at the specified position
  */
-//@Generated("9389be536eff684e2a8790e783ef07be")
+//@Generated("63f074b147fa27f8abf8b8649d2c56e9")
 const (
     //hex: 0x051000
     ListSetRequestMessageType = 331776
@@ -50,7 +50,7 @@ func ListSetEncodeRequest(name string, index int32, value serialization.Data) *C
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.Set")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListSetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListSetRequestMessageType)
     EncodeInt(initialFrame.Content, ListSetRequestIndexFieldOffset, index)
     clientMessage.Add(initialFrame)

@@ -35,7 +35,7 @@ import (
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl is 0, then the entry lives forever.
  */
-//@Generated("4a8191a4099fd59bd4018fa820c4267e")
+//@Generated("420496938f43ac10f41787b3b318816e")
 const (
     //hex: 0x010D00
     MapPutTransientRequestMessageType = 68864
@@ -52,7 +52,7 @@ func MapPutTransientEncodeRequest(name string, key serialization.Data, value ser
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.PutTransient")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapPutTransientResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapPutTransientRequestMessageType)
     EncodeLong(initialFrame.Content, MapPutTransientRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapPutTransientRequestTtlFieldOffset, ttl)

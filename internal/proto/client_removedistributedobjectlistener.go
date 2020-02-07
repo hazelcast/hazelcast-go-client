@@ -35,7 +35,7 @@ import (
  * Removes the specified distributed object listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-//@Generated("b9962eab85546b37579e100f11e9ecc9")
+//@Generated("0ee479ab7ef6529875dfc559ac89d080")
 const (
     //hex: 0x000A00
     ClientRemoveDistributedObjectListenerRequestMessageType = 2560
@@ -48,11 +48,11 @@ const (
 
 )
 
-func ClientRemoveDistributedObjectListenerEncodeRequest(registrationId core.Uuid) *ClientMessage {
+func ClientRemoveDistributedObjectListenerEncodeRequest(registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Client.RemoveDistributedObjectListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientRemoveDistributedObjectListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientRemoveDistributedObjectListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, ClientRemoveDistributedObjectListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

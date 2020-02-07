@@ -34,7 +34,7 @@ import (
  * Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE
  */
-//@Generated("5be263880ea0934b7143c4310ef2646b")
+//@Generated("edd1941666dcddacbbd29a9351137008")
 const (
     //hex: 0x030300
     QueueSizeRequestMessageType = 197376
@@ -50,7 +50,7 @@ func QueueSizeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Size")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueSizeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueSizeRequestMessageType)
     clientMessage.Add(initialFrame)
 

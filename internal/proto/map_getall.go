@@ -38,7 +38,7 @@ import (
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-//@Generated("9c85f978065e7b313e35008e4cada72d")
+//@Generated("e6f35d3406a571024a1720f4a3cc8891")
 const (
     //hex: 0x012300
     MapGetAllRequestMessageType = 74496
@@ -53,7 +53,7 @@ func MapGetAllEncodeRequest(name string, keys []serialization.Data) *ClientMessa
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.GetAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapGetAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapGetAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

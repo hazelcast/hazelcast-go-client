@@ -37,7 +37,7 @@ import (
  * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
  * collection is modified while the operation is in progress.
  */
-//@Generated("601a864479df2f0fe0daea7250f71866")
+//@Generated("f1f46863263e9ffc867e93081508e80d")
 const (
     //hex: 0x060600
     SetAddAllRequestMessageType = 394752
@@ -53,7 +53,7 @@ func SetAddAllEncodeRequest(name string, valueList []serialization.Data) *Client
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Set.AddAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, SetAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, SetAddAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

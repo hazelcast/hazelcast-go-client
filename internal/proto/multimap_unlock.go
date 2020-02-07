@@ -35,7 +35,7 @@ import (
  * Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
  * never blocks and returns immediately.
  */
-//@Generated("2bbef2241bb2a9c4d0b32e0e89f575a4")
+//@Generated("035a71fd4ef78a60a334dc7fd99cb52d")
 const (
     //hex: 0x021300
     MultiMapUnlockRequestMessageType = 135936
@@ -52,7 +52,7 @@ func MultiMapUnlockEncodeRequest(name string, key serialization.Data, threadId i
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.Unlock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapUnlockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapUnlockRequestMessageType)
     EncodeLong(initialFrame.Content, MultiMapUnlockRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MultiMapUnlockRequestReferenceIdFieldOffset, referenceId)

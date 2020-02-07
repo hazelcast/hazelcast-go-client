@@ -33,7 +33,7 @@ import (
 /**
  * Returns true if this map contains no key-value mappings.
  */
-//@Generated("6a40e5aa4707c92eb22dc966877d6cd4")
+//@Generated("fdede35805493f5cd78b3817528562c5")
 const (
     //hex: 0x012B00
     MapIsEmptyRequestMessageType = 76544
@@ -49,7 +49,7 @@ func MapIsEmptyEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.IsEmpty")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapIsEmptyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapIsEmptyRequestMessageType)
     clientMessage.Add(initialFrame)
 

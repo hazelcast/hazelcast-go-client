@@ -35,7 +35,7 @@ import (
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-//@Generated("e6d19c936660ba50ed534eacc00892c7")
+//@Generated("faeb8d82b6abc67d001482f1184a0e9e")
 const (
     //hex: 0x0D0E00
     ReplicatedMapRemoveEntryListenerRequestMessageType = 855552
@@ -48,11 +48,11 @@ const (
 
 )
 
-func ReplicatedMapRemoveEntryListenerEncodeRequest(name string, registrationId core.Uuid) *ClientMessage {
+func ReplicatedMapRemoveEntryListenerEncodeRequest(name string, registrationId *core.Uuid) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.RemoveEntryListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapRemoveEntryListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapRemoveEntryListenerRequestMessageType)
     EncodeUUID(initialFrame.Content, ReplicatedMapRemoveEntryListenerRequestRegistrationIdFieldOffset, registrationId)
     clientMessage.Add(initialFrame)

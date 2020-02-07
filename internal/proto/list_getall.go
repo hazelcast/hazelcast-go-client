@@ -34,7 +34,7 @@ import (
 /**
  * Return the all elements of this collection
  */
-//@Generated("d1210733b6a6ceb8db872fb195c08387")
+//@Generated("acf822d1d7737d74b6c697755dba3df8")
 const (
     //hex: 0x050A00
     ListGetAllRequestMessageType = 330240
@@ -49,7 +49,7 @@ func ListGetAllEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("List.GetAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListGetAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListGetAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

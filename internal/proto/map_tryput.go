@@ -36,7 +36,7 @@ import (
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-//@Generated("8608794ec3fc2b47e6d11b65bf526007")
+//@Generated("32031bdaf2989b9068955c157bb2ac16")
 const (
     //hex: 0x010C00
     MapTryPutRequestMessageType = 68608
@@ -54,7 +54,7 @@ func MapTryPutEncodeRequest(name string, key serialization.Data, value serializa
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.TryPut")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapTryPutResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapTryPutRequestMessageType)
     EncodeLong(initialFrame.Content, MapTryPutRequestThreadIdFieldOffset, threadId)
     EncodeLong(initialFrame.Content, MapTryPutRequestTimeoutFieldOffset, timeout)

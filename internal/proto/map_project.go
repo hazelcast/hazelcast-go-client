@@ -34,7 +34,7 @@ import (
 /**
  * Applies the projection logic on all map entries and returns the result
  */
-//@Generated("0715941f3cd5f87e9af3c58cfe8ee37c")
+//@Generated("282cb3dda252e40d75447e9f13b2cbdb")
 const (
     //hex: 0x013B00
     MapProjectRequestMessageType = 80640
@@ -49,7 +49,7 @@ func MapProjectEncodeRequest(name string, projection serialization.Data) *Client
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.Project")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapProjectResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapProjectRequestMessageType)
     clientMessage.Add(initialFrame)
 

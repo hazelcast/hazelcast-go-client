@@ -35,7 +35,7 @@ import (
  * Returns the set of keys in the multimap.The collection is NOT backed by the map, so changes to the map are NOT
  * reflected in the collection, and vice-versa.
  */
-//@Generated("613d8b243ebfe6704ba309e454e537db")
+//@Generated("7662a74a7bea4c94d8f3bfdf88ddf971")
 const (
     //hex: 0x020400
     MultiMapKeySetRequestMessageType = 132096
@@ -50,7 +50,7 @@ func MultiMapKeySetEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.KeySet")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapKeySetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapKeySetRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -38,7 +38,7 @@ import (
  * thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
  * this operation is undefined if the specified collection is modified while the operation is in progress.
  */
-//@Generated("34037fc55043df91caffee4767f158a9")
+//@Generated("5443b115311764eba418a73de56369f8")
 const (
     //hex: 0x030900
     QueueDrainToRequestMessageType = 198912
@@ -53,7 +53,7 @@ func QueueDrainToEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.DrainTo")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueueDrainToResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueueDrainToRequestMessageType)
     clientMessage.Add(initialFrame)
 

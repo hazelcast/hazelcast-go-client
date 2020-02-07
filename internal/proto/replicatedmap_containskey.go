@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this map contains a mapping for the specified key.
  */
-//@Generated("086450893f05edd2359b0e9a7c903379")
+//@Generated("4376650f5fea5ecd1bbd1595a4ad5aa4")
 const (
     //hex: 0x0D0400
     ReplicatedMapContainsKeyRequestMessageType = 852992
@@ -50,7 +50,7 @@ func ReplicatedMapContainsKeyEncodeRequest(name string, key serialization.Data) 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.ContainsKey")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapContainsKeyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapContainsKeyRequestMessageType)
     clientMessage.Add(initialFrame)
 

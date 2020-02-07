@@ -34,7 +34,7 @@ import (
 /**
  * Returns true if this map contains a mapping for the specified key.
  */
-//@Generated("e380cac130e51c398a9f12e4bdd7771b")
+//@Generated("7bb7db526597c1a40948fa5e3b2dd73d")
 const (
     //hex: 0x010600
     MapContainsKeyRequestMessageType = 67072
@@ -51,7 +51,7 @@ func MapContainsKeyEncodeRequest(name string, key serialization.Data, threadId i
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.ContainsKey")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapContainsKeyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapContainsKeyRequestMessageType)
     EncodeLong(initialFrame.Content, MapContainsKeyRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

@@ -34,7 +34,7 @@ import (
 /**
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
-//@Generated("83cda73c9e93aeb53fb65778251e6828")
+//@Generated("c8d77995913cecfc100d74e9c1975d0c")
 const (
     //hex: 0x030200
     QueuePutRequestMessageType = 197120
@@ -49,7 +49,7 @@ func QueuePutEncodeRequest(name string, value serialization.Data) *ClientMessage
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Queue.Put")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, QueuePutResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, QueuePutRequestMessageType)
     clientMessage.Add(initialFrame)
 

@@ -40,7 +40,7 @@ import (
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-//@Generated("84c835aa159babd553f68bcf6c7ba2f9")
+//@Generated("394462935a5d1e19a3fadb14b3036792")
 const (
     //hex: 0x170900
     RingbufferReadManyRequestMessageType = 1509632
@@ -60,7 +60,7 @@ func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Ringbuffer.ReadMany")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, RingbufferReadManyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, RingbufferReadManyRequestMessageType)
     EncodeLong(initialFrame.Content, RingbufferReadManyRequestStartSequenceFieldOffset, startSequence)
     EncodeInt(initialFrame.Content, RingbufferReadManyRequestMinCountFieldOffset, minCount)

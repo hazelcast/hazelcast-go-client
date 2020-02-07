@@ -34,7 +34,7 @@ import (
 /**
  * Publishes the message to all subscribers of this topic
  */
-//@Generated("9f5bb6ba5333c52215ca5f8fb00fde54")
+//@Generated("488820071332d200abda37f9886d4ab9")
 const (
     //hex: 0x040100
     TopicPublishRequestMessageType = 262400
@@ -49,7 +49,7 @@ func TopicPublishEncodeRequest(name string, message serialization.Data) *ClientM
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Topic.Publish")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, TopicPublishResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, TopicPublishRequestMessageType)
     clientMessage.Add(initialFrame)
 

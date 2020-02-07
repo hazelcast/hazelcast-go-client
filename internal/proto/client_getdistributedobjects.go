@@ -33,7 +33,7 @@ import (
 /**
  * Gets the list of distributed objects in the cluster.
  */
-//@Generated("3b1aef87e2eb3277869e3bef84e6c5bf")
+//@Generated("9e6a15cbc66465376edd88342f629c2d")
 const (
     //hex: 0x000800
     ClientGetDistributedObjectsRequestMessageType = 2048
@@ -48,7 +48,7 @@ func ClientGetDistributedObjectsEncodeRequest() *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Client.GetDistributedObjects")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ClientGetDistributedObjectsResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ClientGetDistributedObjectsRequestMessageType)
     clientMessage.Add(initialFrame)
     return clientMessage

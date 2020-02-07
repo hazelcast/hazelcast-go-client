@@ -37,7 +37,7 @@ import (
  * elements, and others will impose restrictions on the type of elements that may be added. List classes should
  * clearly specify in their documentation any restrictions on what elements may be added.
  */
-//@Generated("1160306598881a4e31e1780216d0d320")
+//@Generated("3e6bdedbcbf945d7f5dc14b357f55a4e")
 const (
     //hex: 0x050400
     ListAddRequestMessageType = 328704
@@ -53,7 +53,7 @@ func ListAddEncodeRequest(name string, value serialization.Data) *ClientMessage 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.Add")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListAddResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListAddRequestMessageType)
     clientMessage.Add(initialFrame)
 

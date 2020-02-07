@@ -39,7 +39,7 @@ import (
  * very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
-//@Generated("b749748cc637b87e3548f3e6c90cee89")
+//@Generated("5e2860b27e4983a48ecc9279c2055d2f")
 const (
     //hex: 0x0D0F00
     ReplicatedMapKeySetRequestMessageType = 855808
@@ -54,7 +54,7 @@ func ReplicatedMapKeySetEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.KeySet")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapKeySetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapKeySetRequestMessageType)
     clientMessage.Add(initialFrame)
 

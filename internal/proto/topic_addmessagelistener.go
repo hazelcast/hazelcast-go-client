@@ -39,7 +39,7 @@ import (
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-//@Generated("ed95fbc0d95f61275b7dc32a85f28b7e")
+//@Generated("22d9bd61d13836a90c99646104ed9f2f")
 const (
     //hex: 0x040200
     TopicAddMessageListenerRequestMessageType = 262656
@@ -62,7 +62,7 @@ func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMe
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Topic.AddMessageListener")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, TopicAddMessageListenerResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, TopicAddMessageListenerRequestMessageType)
     EncodeBoolean(initialFrame.Content, TopicAddMessageListenerRequestLocalOnlyFieldOffset, localOnly)
     clientMessage.Add(initialFrame)
@@ -73,8 +73,8 @@ func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMe
 }
 
 
-func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** returns the registration id*/response core.Uuid) {
-    return func() (/*** returns the registration id*/response core.Uuid) {
+func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (/*** returns the registration id*/response *core.Uuid) {
+    return func() (/*** returns the registration id*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseFieldOffset)
@@ -83,7 +83,7 @@ func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() 
 }
 
 
-type TopicAddMessageListenerHandleTopicFunc func(item serialization.Data, publishTime int64, uuid core.Uuid)
+type TopicAddMessageListenerHandleTopicFunc func(item serialization.Data, publishTime int64, uuid *core.Uuid)
 
 func TopicAddMessageListenerHandle(clientMessage *ClientMessage, handleTopic TopicAddMessageListenerHandleTopicFunc){
     messageType := clientMessage.MessageType()

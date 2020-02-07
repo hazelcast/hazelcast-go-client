@@ -43,7 +43,7 @@ import (
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-//@Generated("64cd8baf1352039c525204165ead45a3")
+//@Generated("96c968449b8aa931930bed9e3d7aa734")
 const (
     //hex: 0x011800
     MapAddEntryListenerToKeyRequestMessageType = 71680
@@ -69,7 +69,7 @@ func MapAddEntryListenerToKeyEncodeRequest(name string, key serialization.Data, 
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.AddEntryListenerToKey")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapAddEntryListenerToKeyResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapAddEntryListenerToKeyRequestMessageType)
     EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyRequestIncludeValueFieldOffset, includeValue)
     EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyRequestListenerFlagsFieldOffset, listenerFlags)
@@ -85,8 +85,8 @@ func MapAddEntryListenerToKeyEncodeRequest(name string, key serialization.Data, 
 }
 
 
-func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string which is used as a key to remove the listener.*/response core.Uuid) {
-    return func() (/*** A unique string which is used as a key to remove the listener.*/response core.Uuid) {
+func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func() (/*** A unique string which is used as a key to remove the listener.*/response *core.Uuid) {
+    return func() (/*** A unique string which is used as a key to remove the listener.*/response *core.Uuid) {
         iterator := clientMessage.FrameIterator()
         initialFrame := iterator.Next()
         response = DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyResponseResponseFieldOffset)
@@ -95,7 +95,7 @@ func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func()
 }
 
 
-type MapAddEntryListenerToKeyHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid core.Uuid, numberOfAffectedEntries int32)
+type MapAddEntryListenerToKeyHandleEntryFunc func(/* @Nullable */ key serialization.Data, /* @Nullable */ value serialization.Data, /* @Nullable */ oldValue serialization.Data, /* @Nullable */ mergingValue serialization.Data, eventType int32, uuid *core.Uuid, numberOfAffectedEntries int32)
 
 func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage, handleEntry MapAddEntryListenerToKeyHandleEntryFunc){
     messageType := clientMessage.MessageType()

@@ -33,7 +33,7 @@ import (
 /**
  * Gets a lazy set view of the mappings contained in this map.
  */
-//@Generated("dfe5e3565b9f22f56c4c0bbfa1d4a02e")
+//@Generated("baf7b8dc3036dc96bcb795e50efd4f13")
 const (
     //hex: 0x0D1100
     ReplicatedMapEntrySetRequestMessageType = 856320
@@ -48,7 +48,7 @@ func ReplicatedMapEntrySetEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("ReplicatedMap.EntrySet")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapEntrySetResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapEntrySetRequestMessageType)
     clientMessage.Add(initialFrame)
 

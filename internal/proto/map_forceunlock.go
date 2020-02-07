@@ -35,7 +35,7 @@ import (
  * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
  * never blocks,and returns immediately.
  */
-//@Generated("38d51af1f6492c3832c9fce326d0501f")
+//@Generated("87c2d3b4c81caa09d3161a10990c90ae")
 const (
     //hex: 0x013300
     MapForceUnlockRequestMessageType = 78592
@@ -51,7 +51,7 @@ func MapForceUnlockEncodeRequest(name string, key serialization.Data, referenceI
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.ForceUnlock")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapForceUnlockResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapForceUnlockRequestMessageType)
     EncodeLong(initialFrame.Content, MapForceUnlockRequestReferenceIdFieldOffset, referenceId)
     clientMessage.Add(initialFrame)

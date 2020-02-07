@@ -35,7 +35,7 @@ import (
  * Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
-//@Generated("d646077a776b3c6ba596c17a83bfb0ad")
+//@Generated("b92406c945806c97d7f57cd7aa53b21a")
 const (
     //hex: 0x051200
     ListRemoveWithIndexRequestMessageType = 332288
@@ -51,7 +51,7 @@ func ListRemoveWithIndexEncodeRequest(name string, index int32) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.RemoveWithIndex")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListRemoveWithIndexResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListRemoveWithIndexRequestMessageType)
     EncodeInt(initialFrame.Content, ListRemoveWithIndexRequestIndexFieldOffset, index)
     clientMessage.Add(initialFrame)

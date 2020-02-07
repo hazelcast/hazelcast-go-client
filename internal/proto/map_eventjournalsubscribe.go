@@ -35,7 +35,7 @@ import (
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-//@Generated("8d6d1a9f1919129d26a919e5c147c326")
+//@Generated("bedf6b89a07129456b3a2268751dfba6")
 const (
     //hex: 0x014100
     MapEventJournalSubscribeRequestMessageType = 82176
@@ -52,7 +52,7 @@ func MapEventJournalSubscribeEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("Map.EventJournalSubscribe")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapEventJournalSubscribeResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapEventJournalSubscribeRequestMessageType)
     clientMessage.Add(initialFrame)
 

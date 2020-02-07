@@ -35,7 +35,7 @@ import (
  * Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa.
  */
-//@Generated("bf2ee5cb7bd9cda68723058478bc3bb4")
+//@Generated("475cb14c4a9a6be23e6980e8c3a04a6f")
 const (
     //hex: 0x020500
     MultiMapValuesRequestMessageType = 132352
@@ -50,7 +50,7 @@ func MultiMapValuesEncodeRequest(name string) *ClientMessage {
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( true )
     clientMessage.SetOperationName("MultiMap.Values")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MultiMapValuesResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MultiMapValuesRequestMessageType)
     clientMessage.Add(initialFrame)
 

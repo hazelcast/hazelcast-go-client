@@ -39,7 +39,7 @@ import (
  * This method breaks the contract of EntryListener. When an entry is removed by delete(), it fires an EntryEvent
  * with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
  */
-//@Generated("69f49d0fde3b9c9c26a788f857ac25ce")
+//@Generated("b99b965276ddaec789b4fef736603054")
 const (
     //hex: 0x010900
     MapDeleteRequestMessageType = 67840
@@ -55,7 +55,7 @@ func MapDeleteEncodeRequest(name string, key serialization.Data, threadId int64)
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("Map.Delete")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, MapDeleteResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, MapDeleteRequestMessageType)
     EncodeLong(initialFrame.Content, MapDeleteRequestThreadIdFieldOffset, threadId)
     clientMessage.Add(initialFrame)

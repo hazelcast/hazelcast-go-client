@@ -37,7 +37,7 @@ import (
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-//@Generated("ca559f972060b56d6cb08f22a7ec045b")
+//@Generated("7d63aec236454645bebb3c4fba33d429")
 const (
     //hex: 0x0D0800
     ReplicatedMapPutAllRequestMessageType = 854016
@@ -52,7 +52,7 @@ func ReplicatedMapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessa
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("ReplicatedMap.PutAll")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ReplicatedMapPutAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ReplicatedMapPutAllRequestMessageType)
     clientMessage.Add(initialFrame)
 

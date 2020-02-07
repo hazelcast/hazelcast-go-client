@@ -36,7 +36,7 @@ import (
  * If this list does not contain the element, it is unchanged.
  * Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
  */
-//@Generated("7ac9c9eecf7f6be955497b886f236be9")
+//@Generated("12c6c8db73e143f97940aded7314b4db")
 const (
     //hex: 0x050500
     ListRemoveRequestMessageType = 328960
@@ -52,7 +52,7 @@ func ListRemoveEncodeRequest(name string, value serialization.Data) *ClientMessa
     clientMessage := CreateForEncode()
     clientMessage.SetRetryable( false )
     clientMessage.SetOperationName("List.Remove")
-	initialFrame := &Frame{Content: make([]byte, ListAddAllResponseInitialFrameSize), Flags: UnfragmentedMessage}
+	initialFrame := &Frame{Content: make([]byte, ListRemoveResponseInitialFrameSize), Flags: UnfragmentedMessage}
     EncodeInt(initialFrame.Content, TypeFieldOffset, ListRemoveRequestMessageType)
     clientMessage.Add(initialFrame)
 
