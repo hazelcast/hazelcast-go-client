@@ -157,9 +157,9 @@ func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 }
 
 func (c *Connection) write(clientMessage *proto.ClientMessage) error {
+
 	remainingLen := clientMessage.FrameLength() //todo
 	writeIndex := 0
-
 	for remainingLen > 0 {
 		writtenLen, err := c.socket.Write(clientMessage.StartFrame().Content[writeIndex:])
 		if err != nil {
@@ -211,7 +211,7 @@ func (c *Connection) receiveMessage() {
 		if frameLength > uint32(len(c.readBuffer)) {
 			return
 		}
-		//resp := bufutil.CreateForEncode()
+		//resp := proto.CreateForEncode()
 
 		//resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
 		c.readBuffer = c.readBuffer[frameLength:]

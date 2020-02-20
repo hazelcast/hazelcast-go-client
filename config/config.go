@@ -60,6 +60,9 @@ type Config struct {
 	// clientName is the name of client with this config.
 	clientName string
 
+	// clusterName is the name of cluster with this config.
+	clusterName string
+
 	// reliableTopicConfigMap is mapping of names to ReliableTopicConfigs
 	reliableTopicConfigMap map[string]*ReliableTopicConfig
 }
@@ -158,6 +161,16 @@ func (c *Config) SetClientName(name string) {
 // ClientName returns the client name with this config.
 func (c *Config) ClientName() string {
 	return c.clientName
+}
+
+// SetClientName sets the client name.
+func (c *Config) SetClusterName(name string) {
+	c.clusterName = name
+}
+
+// ClientName returns the client name with this config.
+func (c *Config) ClusterName() string {
+	return c.clusterName
 }
 
 // LoadBalancer returns loadBalancer for this client.

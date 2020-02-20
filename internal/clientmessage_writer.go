@@ -5,7 +5,7 @@ import "github.com/hazelcast/hazelcast-go-client/internal/proto"
 var currentFrame  = &proto.Frame{}
 var writeOffset = -1
 
-func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool{
+func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool {
 
 	if currentFrame == nil {
 		currentFrame = clientMessage.StartFrame()
@@ -24,7 +24,6 @@ func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool{
 			return false
 		}
 	}
-
 
 
 }
@@ -78,6 +77,9 @@ func writeFrame(dst Buffer, frame *proto.Frame, isLastFrame bool) bool {
 	}
 
 	dst.put(frame.Content, writeOffset, bytesWrite)
+
+
+
 	writeOffset += bytesWrite
 
 	return done

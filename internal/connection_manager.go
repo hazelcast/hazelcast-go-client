@@ -31,8 +31,9 @@ const (
 )
 
 const serializationVersion = 1
-
+const clientType = "GO"
 var ClientVersion = "0.5-SNAPSHOT" //TODO This should be replace with a build time version variable, BuildInfo etc.
+var labels []string //todo: check set := make(map[string]void)
 
 type connectionManager interface {
 	//getActiveConnections returns a snapshot of active connections
@@ -233,49 +234,49 @@ func (cm *connectionManagerImpl) NextConnectionID() int64 {
 
 func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
 	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		return cm.createAuthenticationRequest(asOwner, creds)
+		return cm.createAuthenticationRequest(creds)
 	}
-	return cm.createCustomAuthenticationRequest(asOwner)
+	return cm.createCustomAuthenticationRequest()
 
 }
 
-func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
+func (cm *connectionManagerImpl) createAuthenticationRequest(
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
+	clusterName := cm.client.Config.ClusterName()
+	clientName := cm.client.Config.ClientName()
 	uuid := cm.client.ClusterService.uuid.Load().(*core.Uuid)
-	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*core.Uuid)
-	byte := new(byte)
 	return proto.ClientAuthenticationEncodeRequest(
-		"",
+		clusterName,
 		creds.Username(),
-		"",
+		creds.Password(),
 		uuid,
-		"",
-		*byte,
-		"",
+		clientType,
+		serializationVersion,
 		ClientVersion,
-		make([]string,0),
+		clientName,
+		labels,
 	)
 }
 
-func (cm *connectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
+func (cm *connectionManagerImpl) createCustomAuthenticationRequest() *proto.ClientMessage {
 	uuid := cm.client.ClusterService.uuid.Load().(*core.Uuid)
-	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(*core.Uuid)
-	credsData, err := cm.client.SerializationService.ToData(cm.credentials)
+	clusterName := cm.client.Config.ClusterName()
+	clientName := cm.client.Config.ClientName()
+	credsData, err := cm.client.SerializationService.ToData(cm.credentials) //todo
 	if err != nil {
 		cm.logger.Error("Credentials cannot be serialized!")
 		return nil
 	}
 
-	return proto.ClientAuthenticationEncodeRequest(
-		"",
-		"",
-		"",
+	return proto.ClientAuthenticationCustomEncodeRequest(
+		clusterName,
+		credsData.Buffer(),
 		uuid,
-		"",
-		credsData.Buffer()[0],
-		"",
+		clientType,
+		serializationVersion,
 		ClientVersion,
-		make([]string,0),
+		clientName,
+		labels,
 	)
 }
 
@@ -304,18 +305,17 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool,
 	result *proto.ClientMessage) error {
 	authenticationDecoder := cm.getAuthenticationDecoder()
-	//status, address, uuid, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
 	status, address, uuid,  _, serverHazelcastVersion, _ , _ , _ := authenticationDecoder(result)()
 	switch status {
 	case authenticated:
 		connection.setConnectedServerVersion(serverHazelcastVersion)
 		connection.endpoint.Store(address)
 		connection.isOwnerConnection = asOwner
+		connection.endpoint.Store(uuid) //todo:check
 		cm.connections[address.String()] = connection
 		go cm.fireConnectionAddedEvent(connection)
 		if asOwner {
 			cm.client.ClusterService.ownerConnectionAddress.Store(address)
-			//cm.client.ClusterService.ownerUUID.Store(ownerUUID)
 			cm.client.ClusterService.uuid.Store(uuid)
 			cm.logger.Info("Setting ", connection, " as owner.")
 		}
