@@ -62,7 +62,7 @@ func CheckHazelcastResponse(t *testing.T,response string,port string) {
 	certpool := x509.NewCertPool()
 	certpool.AddCert(cert)
 
-	hzC := NewHazelcastCloud(server.URL , 0, certpool)
+	hzC := NewHazelcastCloud(server.URL, 0, certpool)
 	addresses, err := hzC.discoverNodesInternal()
 	if err != nil {
 		t.Fatal(err)
