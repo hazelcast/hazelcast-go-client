@@ -158,16 +158,8 @@ func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 
 func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 
-	remainingLen := clientMessage.FrameLength() //todo
-	writeIndex := 0
-	for remainingLen > 0 {
-		writtenLen, err := c.socket.Write(clientMessage.StartFrame().Content[writeIndex:])
-		if err != nil {
-			return err
-		}
-		remainingLen -= writtenLen
-		writeIndex += writtenLen
-	}
+	var dst Buffer //?????? todo
+	c.writeTo(dst,clientMessage)
 
 	return nil
 }

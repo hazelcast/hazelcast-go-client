@@ -5,7 +5,7 @@ import "github.com/hazelcast/hazelcast-go-client/internal/proto"
 var currentFrame  = &proto.Frame{}
 var writeOffset = -1
 
-func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool {
+func (c *Connection)writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool {
 
 	if currentFrame == nil {
 		currentFrame = clientMessage.StartFrame()
@@ -13,7 +13,7 @@ func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool {
 
 	for {
 		isLastFrame := currentFrame.Next() == nil
-		if writeFrame(dst, currentFrame, isLastFrame) {
+		if c.writeFrame(dst, currentFrame, isLastFrame) {
 			writeOffset = -1
 			if isLastFrame {
 				currentFrame = nil
@@ -28,21 +28,21 @@ func writeTo(dst Buffer, clientMessage *proto.ClientMessage) bool {
 
 }
 
-func writeFrame(dst Buffer, frame *proto.Frame, isLastFrame bool) bool {
+func (c *Connection)writeFrame(dst Buffer, frame *proto.Frame, isLastFrame bool) bool {
 
 	bytesWritable := len(dst.buf)
-	var framecontentLength int
+	var frameContentLength int
 
 	if frame.Content == nil {
-		framecontentLength = 0
+		frameContentLength = 0
 	} else {
-		framecontentLength = len(frame.Content)
+		frameContentLength = len(frame.Content)
 	}
 
 	//if write offset is -1 put the length and flags byte first
 	if writeOffset == -1 {
 		if bytesWritable >= proto.SizeOfFrameLengthAndFlags {
-			proto.WriteInt32(dst.buf, dst.position, int32(framecontentLength +proto.SizeOfFrameLengthAndFlags),false)
+			proto.WriteInt32(dst.buf, dst.position, int32(frameContentLength +proto.SizeOfFrameLengthAndFlags),false)
 			dst.position = dst.position + proto.IntSizeInBytes
 
 			if isLastFrame {
@@ -62,7 +62,7 @@ func writeFrame(dst Buffer, frame *proto.Frame, isLastFrame bool) bool {
 	}
 
 	// the number of bytes that need to be written
-	bytesNeeded := framecontentLength - writeOffset
+	bytesNeeded := frameContentLength - writeOffset
 
 	var bytesWrite int
 	var done bool
@@ -78,6 +78,18 @@ func writeFrame(dst Buffer, frame *proto.Frame, isLastFrame bool) bool {
 
 	dst.put(frame.Content, writeOffset, bytesWrite)
 
+	/*8*/ //todo
+	remainingLen := clientMessage.FrameLength() //todo
+	writeIndex := 0
+	for remainingLen > 0 {
+		writtenLen, err := c.socket.Write(clientMessage.StartFrame().Content[writeIndex:])
+		if err != nil {
+			return false
+		}
+		remainingLen -= writtenLen
+		writeIndex += writtenLen
+	}
+	/*8*/
 
 
 	writeOffset += bytesWrite
