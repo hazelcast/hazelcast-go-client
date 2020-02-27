@@ -33,7 +33,7 @@ import (
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
+ * the minimum required number of items in the response, the maximum number of items
  * in the response, a predicate that the events should pass and a projection to
  * apply to the events in the journal.
  * If the event journal currently contains less events than {@code minSize}, the

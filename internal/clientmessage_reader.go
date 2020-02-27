@@ -43,7 +43,9 @@ func readFrame(src Buffer, trusted bool) bool {
 		frameLength = proto.ReadInt32(src.buf, src.position , false)
 
 /*		if frameLength < proto.SizeOfFrameLengthAndFlags {
-			log.Fatal(proto.ErrorCodeIllegalArgument, "The client message frame reported illegal length (%d bytes). Minimal length is the size of frame header (%d bytes).", frameLength, proto.SizeOfFrameLengthAndFlags)
+			log.Fatal(proto.ErrorCodeIllegalArgument,
+"The client message frame reported illegal length (%d bytes). Minimal length is the size of frame header (%d bytes).", frameLength,
+proto.SizeOfFrameLengthAndFlags)
 		}
 		if !trusted {
 			if (intMaxValue-frameLength) < sumUntrustedMessageLength || (sumUntrustedMessageLength+frameLength) > maxMessageLength {

@@ -281,8 +281,11 @@ func (cm *connectionManagerImpl) createCustomAuthenticationRequest() *proto.Clie
 }
 
 func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *proto.ClientMessage) func() (
-	status uint8, address *proto.Address, uuid *core.Uuid, serializationVersion uint8, serverHazelcastVersion string, partitionCount int32, clusterId *core.Uuid, failoverSupported bool ) {
-	var authenticationDecoder func(clientMessage *proto.ClientMessage) func() (status uint8, address *proto.Address, uuid *core.Uuid, serializationVersion uint8, serverHazelcastVersion string, partitionCount int32, clusterId *core.Uuid, failoverSupported bool)
+	status uint8, address *proto.Address, uuid *core.Uuid, serializationVersion uint8,
+	serverHazelcastVersion string, partitionCount int32, clusterId *core.Uuid, failoverSupported bool ) {
+	var authenticationDecoder func(clientMessage *proto.ClientMessage) func() (status uint8,
+		address *proto.Address, uuid *core.Uuid, serializationVersion uint8, serverHazelcastVersion string,
+		partitionCount int32, clusterId *core.Uuid, failoverSupported bool)
 	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
 		authenticationDecoder = proto.ClientAuthenticationDecodeResponse
 	} else {

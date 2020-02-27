@@ -180,7 +180,8 @@ func (rmp *replicatedMapProxy) AddEntryListenerWithPredicate(listener interface{
 	})
 }
 
-func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key interface{}) (registrationID *core.Uuid, err error) {
+func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{},
+key interface{}) (registrationID *core.Uuid, err error) {
 	err = rmp.validateEntryListener(listener)
 	if err != nil {
 		return
@@ -191,7 +192,8 @@ func (rmp *replicatedMapProxy) AddEntryListenerToKey(listener interface{}, key i
 	}
 	request := proto.ReplicatedMapAddEntryListenerToKeyEncodeRequest(rmp.name, keyData, rmp.isSmart())
 	eventHandler := rmp.createEventHandlerToKey(listener)
-	return rmp.client.ListenerService.registerListener(request, eventHandler, func(registrationID *core.Uuid) *proto.ClientMessage {
+	return rmp.client.ListenerService.registerListener(request, eventHandler,
+		func(registrationID *core.Uuid) *proto.ClientMessage {
 		return proto.ReplicatedMapRemoveEntryListenerEncodeRequest(rmp.name, registrationID)
 	}, func(clientMessage *proto.ClientMessage) *core.Uuid {
 		return proto.ReplicatedMapAddEntryListenerToKeyDecodeResponse(clientMessage)()
