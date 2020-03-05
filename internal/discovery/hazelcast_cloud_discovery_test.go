@@ -44,7 +44,7 @@ const serverPrivateLinkResponse = "[" +
 	"{\"private-address\":\"" + privateAddr3 + ":" + privatePort + "\",\"public-address\":\"54.186.232.37:" + port + "\"}" +
 	"]"
 
-func CheckHazelcastResponse(t *testing.T, response string, port string) {
+func checkHazelcastResponse(t *testing.T, response string, port string) {
 	// Start a local HTTP server
 	server := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Send response to be tested
@@ -83,11 +83,11 @@ func CheckHazelcastResponse(t *testing.T, response string, port string) {
 }
 
 func TestHazelcastCloudDiscoverPrivateLinkNodes(t *testing.T) {
-	CheckHazelcastResponse(t, serverPrivateLinkResponse, privatePort)
+	checkHazelcastResponse(t, serverPrivateLinkResponse, privatePort)
 }
 
 func TestHazelcastCloudDiscoverNodes(t *testing.T) {
-	CheckHazelcastResponse(t, serverResponse, port)
+	checkHazelcastResponse(t, serverResponse, port)
 }
 
 func TestHazelcastCloudDiscoveryInvalidURL(t *testing.T) {
