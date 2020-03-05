@@ -28,6 +28,7 @@ const (
 	privateAddr1 = "10.47.0.8"
 	privateAddr2 = "10.47.0.9"
 	privateAddr3 = "10.47.0.10"
+	privatePort  = "31115"
 	port         = "32298"
 )
 
@@ -37,11 +38,17 @@ const serverResponse = "[" +
 	"{\"private-address\":\"" + privateAddr3 + "\",\"public-address\":\"54.186.232.37:" + port + "\"}" +
 	"]"
 
-func TestHazelcastCloudDiscoverNodes(t *testing.T) {
+const serverPrivateLinkResponse = "[" +
+	"{\"private-address\":\"" + privateAddr1 + ":" + privatePort + "\",\"public-address\":\"54.213.63.142:" + port + "\"}," +
+	"{\"private-address\":\"" + privateAddr2 + ":" + privatePort + "\",\"public-address\":\"54.245.77.185:" + port + "\"}," +
+	"{\"private-address\":\"" + privateAddr3 + ":" + privatePort + "\",\"public-address\":\"54.186.232.37:" + port + "\"}" +
+	"]"
+
+func checkHazelcastResponse(t *testing.T, response string, port string) {
 	// Start a local HTTP server
 	server := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Send response to be tested
-		rw.Write([]byte(serverResponse))
+		rw.Write([]byte(response))
 	}))
 
 	// Close the server when test finishes
@@ -73,6 +80,14 @@ func TestHazelcastCloudDiscoverNodes(t *testing.T) {
 	if _, found := addresses[expPrivAddr3]; !found {
 		t.Errorf("Expected %s to be in addresses", expPrivAddr3)
 	}
+}
+
+func TestHazelcastCloudDiscoverPrivateLinkNodes(t *testing.T) {
+	checkHazelcastResponse(t, serverPrivateLinkResponse, privatePort)
+}
+
+func TestHazelcastCloudDiscoverNodes(t *testing.T) {
+	checkHazelcastResponse(t, serverResponse, port)
 }
 
 func TestHazelcastCloudDiscoveryInvalidURL(t *testing.T) {
