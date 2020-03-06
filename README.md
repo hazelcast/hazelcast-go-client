@@ -2307,6 +2307,19 @@ config.LoggerConfig().SetLogger(&gLogger{})
 If you want to help with bug fixes, develop new features or tweak the implementation to your application's needs, 
 you can follow the steps in this section.
 
+You must use the **original repo** using `go get` under the `$GOPATH`.
+ 
+ ```go
+go get <OriginalRepo>
+```
+ 
+If you want to use locally, you can run the following:
+
+  ```go
+ git remote add <ForkedRepo>
+ ```
+
+
 ## 8.1. Building and Using Client From Sources
 
 Follow the below steps to build and install Hazelcast Go client from its source:
