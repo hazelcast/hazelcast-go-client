@@ -2307,18 +2307,37 @@ config.LoggerConfig().SetLogger(&gLogger{})
 If you want to help with bug fixes, develop new features or tweak the implementation to your application's needs, 
 you can follow the steps in this section.
 
-You must use the **original repo** using `go get` under the `$GOPATH`.
- 
- ```go
-go get <OriginalRepo>
+You must not run the following: 
+
 ```
- 
-If you want to use locally, you can run the following:
+go get github.com/gitUserName/hazelcast-go-client
+```
 
-  ```go
- git remote add <ForkedRepo>
- ```
+Because when you run this way, it will create a directory problem. 
 
+In order for it to work properly, you must run it in the following order. 
+
+1.Install Hazelcast Go client.
+```
+go get github.com/hazelcast/hazelcast-go-client
+```
+
+2.Change directory to `$GOPATH`.
+```
+cd $GOPATH
+```
+
+3.Add remote your forked repo and fetch.
+```
+git remote add userRepo github.com/gitUserName/hazelcast-go-client
+
+git fetch
+```
+
+4.Switch to the userRepo and development.
+```
+git checkout userRepo developmentBranch
+```
 
 ## 8.1. Building and Using Client From Sources
 
