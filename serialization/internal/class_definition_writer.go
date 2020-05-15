@@ -143,7 +143,7 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 }
 
 func (cdw *ClassDefinitionWriter) RawDataOutput() serialization.PositionalDataOutput {
-	 return NewEmptyObjectDataOutput()
+	return NewEmptyObjectDataOutput()
 }
 
 func (cdw *ClassDefinitionWriter) registerAndGet() (serialization.ClassDefinition, error) {
