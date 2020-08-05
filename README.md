@@ -991,21 +991,20 @@ As explained in the [TLS/SSL section](#61-tlsssl), Hazelcast members have key st
 
 ## 5.8. Enabling Hazelcast Cloud Discovery
 
-The purpose of Hazelcast Cloud Discovery is to provide the clients to use IP addresses provided by `hazelcast orchestrator`. To enable Hazelcast Cloud Discovery, specify a token for the `discoveryToken` field and set the `enabled` field to `true`.
+Go client can discover and connect to Hazelcast clusters running on [Hazelcast Cloud](https://cloud.hazelcast.com/).
 
-The following are example configurations.
+For this, provide authentication information as `group_config`, enable `cloud_config` and set your `discovery_token` as shown below.
 
 ```go
-config.GroupConfig().SetName("hazel")
-config.GroupConfig().SetPassword("cast")
+config.GroupConfig().SetName("YOUR_CLUSTER_NAME")
+config.GroupConfig().SetPassword("YOUR_CLUSTER_PASSWORD")
 
 cloudConfig := config.NetworkConfig().CloudConfig()
-cloudConfig.SetDiscoveryToken("EXAMPLE_TOKEN")
+cloudConfig.SetDiscoveryToken("YOUR_CLUSTER_DISCOVERY_TOKEN")
 cloudConfig.SetEnabled(true)
 ```
 
-To be able to connect to the provided IP addresses, you should use secure TLS/SSL connection between the client and members. Therefore, you should set an SSL configuration as described in the previous section.
-
+If you have enabled encryption for your cluster, you should also enable TLS/SSL configuration to secure communication between your client and cluster members as described in the [6.1.2. TLS/SSL for Hazelcast Go Clients](#612-tlsssl-for-hazelcast-go-clients).
 # 6. Securing Client Connection
 
 This chapter describes the security features of Hazelcast Go client. These include using TLS/SSL for connections between members and between clients and members, and mutual authentication. These security features require **Hazelcast IMDG Enterprise** edition.
