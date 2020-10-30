@@ -25,7 +25,8 @@ else
 fi
 
 pushd $GOPATH/src/$CLIENT_IMPORT_PATH
-go build
+export CLIENT_VERSION=$(git describe --tags --abbrev=0)
+go build -ldflags "-X internal.ClientVersion=$CLIENT_VERSION"
 popd
 
 #run linter
