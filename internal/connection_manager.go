@@ -32,7 +32,7 @@ const (
 
 const serializationVersion = 1
 
-var ClientVersion = "0.5-SNAPSHOT" //TODO This should be replace with a build time version variable, BuildInfo etc.
+var ClientVersion string
 
 type connectionManager interface {
 	//getActiveConnections returns a snapshot of active connections
