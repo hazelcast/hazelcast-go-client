@@ -516,7 +516,7 @@ func (mp *mapProxy) AddEntryListenerWithPredicate(listener interface{}, predicat
 	if err != nil {
 		return "", err
 	}
-	request = proto.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, false)
+	request = proto.MapAddEntryListenerWithPredicateEncodeRequest(mp.name, predicateData, includeValue, listenerFlags, mp.isSmart())
 	eventHandler := func(clientMessage *proto.ClientMessage) {
 		proto.MapAddEntryListenerWithPredicateHandle(clientMessage, func(key serialization.Data, oldValue serialization.Data,
 			value serialization.Data, mergingValue serialization.Data, eventType int32, uuid string,
