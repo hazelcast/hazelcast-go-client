@@ -34,22 +34,14 @@ func multimapContainsKeyCalculateSize(name string, key serialization.Data, threa
 // It returns the encoded client message.
 func MultiMapContainsKeyEncodeRequest(name string, key serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapContainsKeyCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(multimapContainsKey)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapContainsKeyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MultiMapContainsKeyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

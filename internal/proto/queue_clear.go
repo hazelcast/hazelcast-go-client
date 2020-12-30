@@ -26,12 +26,8 @@ func queueClearCalculateSize(name string) int {
 // It returns the encoded client message.
 func QueueClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueClearCalculateSize(name))
-	clientMessage.SetMessageType(queueClear)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueClearDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

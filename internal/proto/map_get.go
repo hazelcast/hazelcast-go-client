@@ -34,25 +34,14 @@ func mapGetCalculateSize(name string, key serialization.Data, threadId int64) in
 // It returns the encoded client message.
 func MapGetEncodeRequest(name string, key serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapGetCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(mapGet)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapGetDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapGetDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

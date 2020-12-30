@@ -26,12 +26,8 @@ func listClearCalculateSize(name string) int {
 // It returns the encoded client message.
 func ListClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listClearCalculateSize(name))
-	clientMessage.SetMessageType(listClear)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListClearDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

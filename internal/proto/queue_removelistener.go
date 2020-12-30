@@ -27,13 +27,8 @@ func queueRemoveListenerCalculateSize(name string, registrationId string) int {
 // It returns the encoded client message.
 func QueueRemoveListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueRemoveListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(queueRemoveListener)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // func QueueRemoveListenerDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode.

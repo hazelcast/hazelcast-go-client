@@ -34,22 +34,14 @@ func ringbufferAddCalculateSize(name string, overflowPolicy int32, value seriali
 // It returns the encoded client message.
 func RingbufferAddEncodeRequest(name string, overflowPolicy int32, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ringbufferAddCalculateSize(name, overflowPolicy, value))
-	clientMessage.SetMessageType(ringbufferAdd)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(overflowPolicy)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // RingbufferAddDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func RingbufferAddDecodeResponse(clientMessage *ClientMessage) func() (response int64) {
 	// Decode response from client message
-	return func() (response int64) {
-		response = clientMessage.ReadInt64()
-		return
-	}
+	//TODO
+	return nil
 }

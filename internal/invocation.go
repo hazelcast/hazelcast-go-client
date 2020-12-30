@@ -141,7 +141,7 @@ func (is *invocationServiceImpl) cleanupConnection(connection *Connection, cause
 	for _, invocation := range is.invocations {
 		sentConnection, ok := invocation.sentConnection.Load().(*Connection)
 		if ok && sentConnection == connection {
-			is.unRegisterInvocationWithoutLock(invocation.request.Load().(*proto.ClientMessage).CorrelationID())
+			is.unRegisterInvocationWithoutLock(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID())
 			is.handleError(invocation, cause)
 		}
 	}
@@ -171,7 +171,8 @@ func (is *invocationServiceImpl) retryInvocation(invocation *invocation, cause e
 	}
 	// retryInvocation modifies the client message and should not reuse the client message.
 	// It could be the case that it is in write queue of the connection.
-	invocation.request.Store(invocation.request.Load().(*proto.ClientMessage).CloneMessage())
+	nextCorrelationID := is.nextCorrelationID()
+	invocation.request.Store(invocation.request.Load().(*proto.ClientMessage).CopyWithNewCorrelationId(nextCorrelationID))
 	is.registerInvocation(invocation)
 	is.invoke(invocation)
 }
@@ -283,7 +284,7 @@ func (is *invocationServiceImpl) getNextAddress() core.Address {
 func (is *invocationServiceImpl) sendToRandomAddress(invocation *invocation) {
 	var target = is.getNextAddress()
 	if target == nil {
-		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID(),
 			core.NewHazelcastIOError("no address found to invoke", nil))
 		return
 	}
@@ -297,7 +298,7 @@ func (is *invocationServiceImpl) invokeSmart(invocation *invocation) {
 		if target, ok := is.client.PartitionService.partitionOwner(invocation.partitionID); ok {
 			is.sendToAddress(invocation, target)
 		} else {
-			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID(),
 				core.NewHazelcastIOError(fmt.Sprintf("partition does not have an owner. partitionID: %d", invocation.partitionID), nil))
 		}
 	} else if invocation.address != nil {
@@ -313,7 +314,7 @@ func (is *invocationServiceImpl) invokeNonSmart(invocation *invocation) {
 	} else {
 		address := is.client.ClusterService.getOwnerConnectionAddress()
 		if address == nil {
-			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID(),
 				core.NewHazelcastIOError("no address found to invoke", nil))
 			return
 		}
@@ -324,7 +325,7 @@ func (is *invocationServiceImpl) invokeNonSmart(invocation *invocation) {
 func (is *invocationServiceImpl) sendToConnection(invocation *invocation, connection *Connection) {
 	sent := connection.send(invocation.request.Load().(*proto.ClientMessage))
 	if !sent {
-		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(),
+		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID(),
 			core.NewHazelcastIOError("packet is not sent", nil))
 	} else {
 		invocation.sentConnection.Store(connection)
@@ -336,7 +337,7 @@ func (is *invocationServiceImpl) sendToAddress(invocation *invocation, address c
 	connection, err := is.client.ConnectionManager.getOrTriggerConnect(address)
 	if err != nil {
 		is.logger.Trace("Sending invocation to ", address, " failed, err: ", err)
-		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).CorrelationID(), err)
+		is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID(), err)
 		return
 	}
 	is.sendToConnection(invocation, connection)
@@ -346,8 +347,7 @@ func (is *invocationServiceImpl) registerInvocation(invocation *invocation) {
 	message := invocation.request.Load().(*proto.ClientMessage)
 	correlationID := is.nextCorrelationID()
 	message.SetCorrelationID(correlationID)
-	message.SetPartitionID(invocation.partitionID)
-	message.SetFlags(bufutil.BeginEndFlag)
+	message.SetPartitionId(invocation.partitionID)
 	if invocation.eventHandler != nil {
 		is.eventHandlersLock.Lock()
 		is.eventHandlers[correlationID] = invocation
@@ -381,8 +381,9 @@ func (is *invocationServiceImpl) handleNotSentInvocation(correlationID int64, ca
 }
 
 func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessage) {
-	correlationID := response.CorrelationID()
-	if response.HasFlags(bufutil.ListenerFlag) > 0 {
+	correlationID := response.GetCorrelationID()
+
+	if response.StartFrame.HasEventFlag() || response.StartFrame.HasBackupEventFlag() {
 		is.eventHandlersLock.RLock()
 		invocation, found := is.eventHandlers[correlationID]
 		is.eventHandlersLock.RUnlock()
@@ -395,7 +396,7 @@ func (is *invocationServiceImpl) handleClientMessage(response *proto.ClientMessa
 	}
 
 	if invocation, ok := is.unRegisterInvocation(correlationID); ok {
-		if response.MessageType() == bufutil.MessageTypeException {
+		if response.GetMessageType() == int32(bufutil.MessageTypeException) {
 			err := createHazelcastError(convertToError(response))
 			is.handleError(invocation, err)
 		} else {
@@ -411,7 +412,7 @@ func convertToError(clientMessage *proto.ClientMessage) *proto.ServerError {
 }
 
 func (is *invocationServiceImpl) logError(invocation *invocation, err error) {
-	correlationID := invocation.request.Load().(*proto.ClientMessage).CorrelationID()
+	correlationID := invocation.request.Load().(*proto.ClientMessage).GetCorrelationID()
 	is.logger.Trace("Invocation with correlation id: ", correlationID, " got an error: ", err)
 }
 
@@ -447,7 +448,7 @@ func (is *invocationServiceImpl) isRedoOperation() bool {
 
 func (is *invocationServiceImpl) shouldRetryInvocation(invocation *invocation, err error) bool {
 	_, isTargetDisconnectedError := err.(*core.HazelcastTargetDisconnectedError)
-	if (isTargetDisconnectedError && invocation.request.Load().(*proto.ClientMessage).IsRetryable) ||
+	if (isTargetDisconnectedError && invocation.request.Load().(*proto.ClientMessage).IsRetryable()) ||
 		is.isRedoOperation() || isRetrySafeError(err) {
 		return true
 	}

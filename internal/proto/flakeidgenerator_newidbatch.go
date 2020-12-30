@@ -31,26 +31,13 @@ func flakeidgeneratorNewIdBatchCalculateSize(name string, batchSize int32) int {
 // It returns the encoded client message.
 func FlakeIDGeneratorNewIDBatchEncodeRequest(name string, batchSize int32) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, flakeidgeneratorNewIdBatchCalculateSize(name, batchSize))
-	clientMessage.SetMessageType(flakeidgeneratorNewIdBatch)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(batchSize)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // FlakeIDGeneratorNewIDBatchDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func FlakeIDGeneratorNewIDBatchDecodeResponse(clientMessage *ClientMessage) func() (base int64, increment int64, batchSize int32) {
-	// Decode response from client message
-	return func() (base int64, increment int64, batchSize int32) {
-		if clientMessage.IsComplete() {
-			return
-		}
-		base = clientMessage.ReadInt64()
-		increment = clientMessage.ReadInt64()
-		batchSize = clientMessage.ReadInt32()
-		return
-	}
+	//TODO
+	return nil
 }

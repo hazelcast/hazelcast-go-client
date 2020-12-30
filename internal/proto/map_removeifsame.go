@@ -35,23 +35,14 @@ func mapRemoveIfSameCalculateSize(name string, key serialization.Data, value ser
 // It returns the encoded client message.
 func MapRemoveIfSameEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapRemoveIfSameCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(mapRemoveIfSame)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapRemoveIfSameDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapRemoveIfSameDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

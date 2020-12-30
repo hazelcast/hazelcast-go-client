@@ -37,25 +37,14 @@ func mapTryLockCalculateSize(name string, key serialization.Data, threadId int64
 // It returns the encoded client message.
 func MapTryLockEncodeRequest(name string, key serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapTryLockCalculateSize(name, key, threadId, lease, timeout, referenceId))
-	clientMessage.SetMessageType(mapTryLock)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(lease)
-	clientMessage.AppendInt64(timeout)
-	clientMessage.AppendInt64(referenceId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapTryLockDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapTryLockDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

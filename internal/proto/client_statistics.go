@@ -26,12 +26,8 @@ func clientStatisticsCalculateSize(stats string) int {
 // It returns the encoded client message.
 func ClientStatisticsEncodeRequest(stats string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientStatisticsCalculateSize(stats))
-	clientMessage.SetMessageType(clientStatistics)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(stats)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientStatisticsDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

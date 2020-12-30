@@ -35,7 +35,8 @@ func (v *vectorClock) EntrySet() (entrySet []*proto.Pair) {
 	entrySet = make([]*proto.Pair, len(v.replicaTimestamps))
 	i := 0
 	for key, value := range v.replicaTimestamps {
-		entrySet[i] = proto.NewPair(key, value)
+		pair := proto.NewPair(key, value)
+		entrySet[i] = &pair
 		i++
 	}
 	return entrySet

@@ -31,21 +31,14 @@ func mapIsLockedCalculateSize(name string, key serialization.Data) int {
 // It returns the encoded client message.
 func MapIsLockedEncodeRequest(name string, key serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapIsLockedCalculateSize(name, key))
-	clientMessage.SetMessageType(mapIsLocked)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapIsLockedDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapIsLockedDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

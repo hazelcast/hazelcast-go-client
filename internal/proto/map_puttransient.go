@@ -36,16 +36,8 @@ func mapPutTransientCalculateSize(name string, key serialization.Data, value ser
 // It returns the encoded client message.
 func MapPutTransientEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapPutTransientCalculateSize(name, key, value, threadId, ttl))
-	clientMessage.SetMessageType(mapPutTransient)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(ttl)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapPutTransientDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

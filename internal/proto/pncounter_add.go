@@ -40,42 +40,14 @@ func pncounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, r
 // It returns the encoded client message.
 func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *Address) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, pncounterAddCalculateSize(name, delta, getBeforeUpdate, replicaTimestamps, targetReplica))
-	clientMessage.SetMessageType(pncounterAdd)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt64(delta)
-	clientMessage.AppendBool(getBeforeUpdate)
-	clientMessage.AppendInt32(int32(len(replicaTimestamps)))
-	for _, replicaTimestampsItem := range replicaTimestamps {
-		key := replicaTimestampsItem.key.(string)
-		val := replicaTimestampsItem.value.(int64)
-		clientMessage.AppendString(key)
-		clientMessage.AppendInt64(val)
-	}
-	AddressCodecEncode(clientMessage, targetReplica)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // PNCounterAddDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func PNCounterAddDecodeResponse(clientMessage *ClientMessage) func() (value int64, replicaTimestamps []*Pair, replicaCount int32) {
 	// Decode response from client message
-	return func() (value int64, replicaTimestamps []*Pair, replicaCount int32) {
-		if clientMessage.IsComplete() {
-			return
-		}
-		value = clientMessage.ReadInt64()
-		replicaTimestampsSize := clientMessage.ReadInt32()
-		replicaTimestamps = make([]*Pair, replicaTimestampsSize)
-		for replicaTimestampsIndex := 0; replicaTimestampsIndex < int(replicaTimestampsSize); replicaTimestampsIndex++ {
-			replicaTimestampsItemKey := clientMessage.ReadString()
-			replicaTimestampsItemValue := clientMessage.ReadInt64()
-			var replicaTimestampsItem = &Pair{key: replicaTimestampsItemKey, value: replicaTimestampsItemValue}
-			replicaTimestamps[replicaTimestampsIndex] = replicaTimestampsItem
-		}
-		replicaCount = clientMessage.ReadInt32()
-		return
-	}
+	//TODO
+	return nil
 }

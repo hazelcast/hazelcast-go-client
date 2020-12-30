@@ -36,24 +36,14 @@ func mapReplaceIfSameCalculateSize(name string, key serialization.Data, testValu
 // It returns the encoded client message.
 func MapReplaceIfSameEncodeRequest(name string, key serialization.Data, testValue serialization.Data, value serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapReplaceIfSameCalculateSize(name, key, testValue, value, threadId))
-	clientMessage.SetMessageType(mapReplaceIfSame)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(testValue)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapReplaceIfSameDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapReplaceIfSameDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

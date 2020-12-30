@@ -42,60 +42,13 @@ func clientAuthenticationCalculateSize(username string, password string, uuid st
 // with the given parameters.
 // It returns the encoded client message.
 func ClientAuthenticationEncodeRequest(username string, password string, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
-	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientAuthenticationCalculateSize(username, password, uuid, ownerUuid, isOwnerConnection, clientType, serializationVersion, clientHazelcastVersion))
-	clientMessage.SetMessageType(clientAuthentication)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(username)
-	clientMessage.AppendString(password)
-	clientMessage.AppendBool(uuid == "")
-	if uuid != "" {
-		clientMessage.AppendString(uuid)
-	}
-	clientMessage.AppendBool(ownerUuid == "")
-	if ownerUuid != "" {
-		clientMessage.AppendString(ownerUuid)
-	}
-	clientMessage.AppendBool(isOwnerConnection)
-	clientMessage.AppendString(clientType)
-	clientMessage.AppendUint8(serializationVersion)
-	clientMessage.AppendString(clientHazelcastVersion)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientAuthenticationDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string, clientUnregisteredMembers []*Member) {
-	// Decode response from client message
-	return func() (status uint8, address *Address, uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string, clientUnregisteredMembers []*Member) {
-		status = clientMessage.ReadUint8()
-
-		if !clientMessage.ReadBool() {
-			address = AddressCodecDecode(clientMessage)
-		}
-
-		if !clientMessage.ReadBool() {
-			uuid = clientMessage.ReadString()
-		}
-
-		if !clientMessage.ReadBool() {
-			ownerUuid = clientMessage.ReadString()
-		}
-		serializationVersion = clientMessage.ReadUint8()
-		if clientMessage.IsComplete() {
-			return
-		}
-		serverHazelcastVersion = clientMessage.ReadString()
-
-		if !clientMessage.ReadBool() {
-			clientUnregisteredMembersSize := clientMessage.ReadInt32()
-			clientUnregisteredMembers = make([]*Member, clientUnregisteredMembersSize)
-			for clientUnregisteredMembersIndex := 0; clientUnregisteredMembersIndex < int(clientUnregisteredMembersSize); clientUnregisteredMembersIndex++ {
-				clientUnregisteredMembersItem := MemberCodecDecode(clientMessage)
-				clientUnregisteredMembers[clientUnregisteredMembersIndex] = clientUnregisteredMembersItem
-			}
-		}
-		return
-	}
+	//TODO
+	return nil
 }

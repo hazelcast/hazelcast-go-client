@@ -36,24 +36,14 @@ func mapTryPutCalculateSize(name string, key serialization.Data, value serializa
 // It returns the encoded client message.
 func MapTryPutEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, timeout int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapTryPutCalculateSize(name, key, value, threadId, timeout))
-	clientMessage.SetMessageType(mapTryPut)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(timeout)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapTryPutDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapTryPutDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

@@ -27,13 +27,8 @@ func multimapRemoveEntryListenerCalculateSize(name string, registrationId string
 // It returns the encoded client message.
 func MultiMapRemoveEntryListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapRemoveEntryListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(multimapRemoveEntryListener)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // func MultiMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) , this message has no parameters to decode.

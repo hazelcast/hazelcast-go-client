@@ -35,26 +35,14 @@ func mapReplaceCalculateSize(name string, key serialization.Data, value serializ
 // It returns the encoded client message.
 func MapReplaceEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapReplaceCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(mapReplace)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapReplaceDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapReplaceDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

@@ -34,22 +34,14 @@ func queueOfferCalculateSize(name string, value serialization.Data, timeoutMilli
 // It returns the encoded client message.
 func QueueOfferEncodeRequest(name string, value serialization.Data, timeoutMillis int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueOfferCalculateSize(name, value, timeoutMillis))
-	clientMessage.SetMessageType(queueOffer)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(timeoutMillis)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueOfferDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueueOfferDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

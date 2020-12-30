@@ -32,24 +32,14 @@ func ringbufferReadOneCalculateSize(name string, sequence int64) int {
 // It returns the encoded client message.
 func RingbufferReadOneEncodeRequest(name string, sequence int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ringbufferReadOneCalculateSize(name, sequence))
-	clientMessage.SetMessageType(ringbufferReadOne)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt64(sequence)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // RingbufferReadOneDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func RingbufferReadOneDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

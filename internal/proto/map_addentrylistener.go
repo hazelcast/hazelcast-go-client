@@ -35,25 +35,16 @@ func mapAddEntryListenerCalculateSize(name string, includeValue bool, listenerFl
 // It returns the encoded client message.
 func MapAddEntryListenerEncodeRequest(name string, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapAddEntryListenerCalculateSize(name, includeValue, listenerFlags, localOnly))
-	clientMessage.SetMessageType(mapAddEntryListener)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendBool(includeValue)
-	clientMessage.AppendInt32(listenerFlags)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapAddEntryListenerDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapAddEntryListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // MapAddEntryListenerHandleEventEntryFunc is the event handler function.
@@ -64,26 +55,8 @@ type MapAddEntryListenerHandleEventEntryFunc func(serialization.Data, serializat
 // It returns the result parameters for the event.
 func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (
 	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
-
-	if !clientMessage.ReadBool() {
-		key = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		value = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		oldValue = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		mergingValue = clientMessage.ReadData()
-	}
-	eventType = clientMessage.ReadInt32()
-	uuid = clientMessage.ReadString()
-	numberOfAffectedEntries = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, nil, nil, nil, 0, "", 0
 }
 
 // MapAddEntryListenerHandle handles the event with the given
@@ -91,8 +64,6 @@ func MapAddEntryListenerEventEntryDecode(clientMessage *ClientMessage) (
 func MapAddEntryListenerHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerHandleEventEntryFunc) {
 	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventEntry && handleEventEntry != nil {
-		handleEventEntry(MapAddEntryListenerEventEntryDecode(clientMessage))
-	}
+	//TODO
+	return
 }

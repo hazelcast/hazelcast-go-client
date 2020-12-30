@@ -34,24 +34,16 @@ func setAddListenerCalculateSize(name string, includeValue bool, localOnly bool)
 // It returns the encoded client message.
 func SetAddListenerEncodeRequest(name string, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, setAddListenerCalculateSize(name, includeValue, localOnly))
-	clientMessage.SetMessageType(setAddListener)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendBool(includeValue)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // SetAddListenerDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func SetAddListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // SetAddListenerHandleEventItemFunc is the event handler function.
@@ -62,22 +54,14 @@ type SetAddListenerHandleEventItemFunc func(serialization.Data, string, int32)
 // It returns the result parameters for the event.
 func SetAddListenerEventItemDecode(clientMessage *ClientMessage) (
 	item serialization.Data, uuid string, eventType int32) {
-
-	if !clientMessage.ReadBool() {
-		item = clientMessage.ReadData()
-	}
-	uuid = clientMessage.ReadString()
-	eventType = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, "", 0
 }
 
 // SetAddListenerHandle handles the event with the given
 // event handler function.
 func SetAddListenerHandle(clientMessage *ClientMessage,
 	handleEventItem SetAddListenerHandleEventItemFunc) {
-	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventItem && handleEventItem != nil {
-		handleEventItem(SetAddListenerEventItemDecode(clientMessage))
-	}
+	//TODO
+	return
 }

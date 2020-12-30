@@ -16,260 +16,278 @@ package proto
 
 import (
 	"encoding/binary"
-	"unicode/utf8"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
 )
 
-// ClientMessage is the carrier framed data as defined below.
-// Any request parameter, response or event data will be carried in the payload.
-//	0                   1                   2                   3
-//	0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|R|                      Frame Length                           |
-//	+-------------+---------------+---------------------------------+
-//	|  Version    |B|E|  Flags    |               Type              |
-//	+-------------+---------------+---------------------------------+
-//	|                                                               |
-//	+                       CorrelationID                           +
-//	|                                                               |
-//	+---------------------------------------------------------------+
-//	|                        PartitionID                            |
-//	+-----------------------------+---------------------------------+
-//	|        Data Offset          |                                 |
-//	+-----------------------------+                                 |
-//	|                      Message Payload Data                    ...
-//	|                                                              ...
+const (
+	TypeFieldOffset    = 0
+	MessageTypeOffset  = 0
+	ByteSizeInBytes    = 1
+	BooleanSizeInBytes = 1
+	ShortSizeInBytes   = 2
+	CharSizeInBytes    = 2
+	IntSizeInBytes     = 4
+	FloatSizeInBytes   = 4
+	LongSizeInBytes    = 8
+	DoubleSizeInBytes  = 8
+	UUIDSizeInBytes    = 17
+	UuidSizeInBytes    = 17
+	EntrySizeInBytes   = UUIDSizeInBytes + LongSizeInBytes
+
+	CorrelationIDFieldOffset   = TypeFieldOffset + IntSizeInBytes
+	CorrelationIDOffset        = MessageTypeOffset + IntSizeInBytes
+	FragmentationIDOffset      = 0
+	PartitionIDOffset          = CorrelationIDOffset + LongSizeInBytes
+	RequestThreadIdOffset      = PartitionIDOffset + IntSizeInBytes
+	RequestTtlOffset           = RequestThreadIdOffset + LongSizeInBytes
+	RequestIncludeValueOffset  = PartitionIDOffset + IntSizeInBytes
+	RequestListenerFlagsOffset = RequestIncludeValueOffset + BooleanSizeInBytes
+	RequestLocalOnlyOffset     = RequestListenerFlagsOffset + IntSizeInBytes
+	RequestReferenceIdOffset   = RequestTtlOffset + LongSizeInBytes
+	ResponseBackupAcksOffset   = CorrelationIDOffset + LongSizeInBytes
+	UnfragmentedMessage        = BeginFragmentFlag | EndFragmentFlag
+
+	DefaultFlags              = 0
+	BeginFragmentFlag         = 1 << 15
+	EndFragmentFlag           = 1 << 14
+	IsFinalFlag               = 1 << 13
+	BeginDataStructureFlag    = 1 << 12
+	EndDataStructureFlag      = 1 << 11
+	IsNullFlag                = 1 << 10
+	IsEventFlag               = 1 << 9
+	BackupEventFlag           = 1 << 7
+	SizeOfFrameLengthAndFlags = IntSizeInBytes + ShortSizeInBytes
+)
+
+var (
+	EmptyArray = make([]byte, 0)
+	NullFrame  = NewFrameWith(EmptyArray, IsNullFlag)
+	BeginFrame = NewFrameWith(EmptyArray, BeginDataStructureFlag)
+	EndFrame   = NewFrameWith(EmptyArray, EndDataStructureFlag)
+)
+
+// ClientMessage
 type ClientMessage struct {
-	Buffer      []byte
-	writeIndex  int32
-	readIndex   int32
-	IsRetryable bool
+	StartFrame    *Frame
+	EndFrame      *Frame
+	Retryable     bool
+	OperationName string
 }
 
-/*
+func NewClientMessage(startFrame *Frame) *ClientMessage {
+	return &ClientMessage{StartFrame: startFrame, EndFrame: startFrame}
+}
 
-	Constructor
+func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *ClientMessage {
+	return &ClientMessage{StartFrame: startFrame, EndFrame: endFrame}
+}
 
-*/
+func NewClientMessageForEncode() *ClientMessage {
+	return &ClientMessage{}
+}
 
-func NewClientMessage(buffer []byte, payloadSize int) *ClientMessage {
-	clientMessage := new(ClientMessage)
-	if buffer != nil {
-		//Message has a buffer so it will be decoded.
-		clientMessage.Buffer = buffer
-		clientMessage.readIndex = bufutil.HeaderSize
+func NewClientMessageForDecode(frame *Frame) *ClientMessage {
+	return NewClientMessage(frame)
+}
+
+func (clientMessage *ClientMessage) CopyWithNewCorrelationId(correlationID int64) *ClientMessage {
+	initialFrameCopy := clientMessage.StartFrame.DeepCopy()
+	frame := NewClientMessageWithStartAndEndFrame(initialFrameCopy, clientMessage.EndFrame)
+	frame.SetCorrelationID(correlationID)
+	frame.SetRetryable(clientMessage.IsRetryable())
+	frame.SetOperationName(clientMessage.GetOperationName())
+	return frame
+}
+
+func (clientMessage *ClientMessage) IsRetryable() bool {
+	return clientMessage.Retryable
+}
+
+func (clientMessage *ClientMessage) SetRetryable(retryable bool) {
+	clientMessage.Retryable = retryable
+}
+
+func (clientMessage *ClientMessage) GetOperationName() string {
+	return clientMessage.OperationName
+}
+
+func (clientMessage *ClientMessage) SetOperationName(operationName string) {
+	clientMessage.OperationName = operationName
+}
+
+func (clientMessage *ClientMessage) FrameIterator() *ForwardFrameIterator {
+	return NewForwardFrameIterator(clientMessage.StartFrame)
+}
+
+func (clientMessage *ClientMessage) AddFrame(frame *Frame) {
+	frame.next = nil
+	if clientMessage.StartFrame == nil {
+		clientMessage.StartFrame = frame
+		clientMessage.EndFrame = frame
 	} else {
-		//Client message that will be encoded.
-		clientMessage.Buffer = make([]byte, bufutil.HeaderSize+payloadSize)
-		clientMessage.SetDataOffset(bufutil.HeaderSize)
-		clientMessage.writeIndex = bufutil.HeaderSize
+		clientMessage.EndFrame.next = frame
+		clientMessage.EndFrame = frame
 	}
-	clientMessage.IsRetryable = false
-	return clientMessage
 }
 
-func (m *ClientMessage) CloneMessage() *ClientMessage {
-	newBuffer := make([]byte, len(m.Buffer))
-	copy(newBuffer, m.Buffer)
-	copiedMessage := NewClientMessage(newBuffer, 0)
-	copiedMessage.IsRetryable = m.IsRetryable
-	return copiedMessage
+func (clientMessage *ClientMessage) GetMessageType() int32 {
+	return int32(binary.LittleEndian.Uint32(clientMessage.StartFrame.Content[TypeFieldOffset:]))
 }
 
-func (m *ClientMessage) FrameLength() int32 {
-	return int32(binary.LittleEndian.Uint32(m.Buffer[bufutil.FrameLengthFieldOffset:bufutil.VersionFieldOffset]))
+func (clientMessage *ClientMessage) SetCorrelationID(correlationID int64) {
+	binary.LittleEndian.PutUint64(clientMessage.StartFrame.Content, uint64(correlationID))
 }
 
-func (m *ClientMessage) SetFrameLength(v int32) {
-	binary.LittleEndian.PutUint32(m.Buffer[bufutil.FrameLengthFieldOffset:bufutil.VersionFieldOffset], uint32(v))
+func (clientMessage *ClientMessage) GetCorrelationID() int64 {
+	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:]))
 }
 
-func (m *ClientMessage) SetVersion(v uint8) {
-	m.Buffer[bufutil.VersionFieldOffset] = byte(v)
+func (clientMessage *ClientMessage) GetFragmentationID() int64 {
+	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[FragmentationIDOffset:]))
 }
 
-func (m *ClientMessage) Flags() uint8 {
-	return m.Buffer[bufutil.FlagsFieldOffset]
+func (clientMessage *ClientMessage) GetNumberOfBackupAcks() uint8 {
+	return clientMessage.StartFrame.Content[ResponseBackupAcksOffset]
 }
 
-func (m *ClientMessage) SetFlags(v uint8) {
-	m.Buffer[bufutil.FlagsFieldOffset] = byte(v)
+func (clientMessage *ClientMessage) SetMessageType(messageType int32) {
+	binary.LittleEndian.PutUint32(clientMessage.StartFrame.Content[MessageTypeOffset:], uint32(messageType))
 }
 
-func (m *ClientMessage) AddFlags(v uint8) {
-	m.Buffer[bufutil.FlagsFieldOffset] = m.Buffer[bufutil.FlagsFieldOffset] | byte(v)
+func (clientMessage *ClientMessage) SetPartitionId(partitionId int32) {
+	binary.LittleEndian.PutUint32(clientMessage.StartFrame.Content[PartitionIDOffset:], uint32(partitionId))
 }
 
-func (m *ClientMessage) HasFlags(flags uint8) uint8 {
-	value := m.Flags() & flags
-	if value == flags {
-		return value
+func (clientMessage *ClientMessage) GetTotalLength() int {
+	totalLength := 0
+	currentFrame := clientMessage.StartFrame
+	for currentFrame != nil {
+		totalLength += currentFrame.GetLength()
+		currentFrame = currentFrame.next
 	}
-	return 0
+	return totalLength
 }
 
-func (m *ClientMessage) MessageType() bufutil.MessageType {
-	return bufutil.MessageType(binary.LittleEndian.Uint16(m.Buffer[bufutil.TypeFieldOffset:bufutil.CorrelationIDFieldOffset]))
-}
-
-func (m *ClientMessage) SetMessageType(v bufutil.MessageType) {
-	binary.LittleEndian.PutUint16(m.Buffer[bufutil.TypeFieldOffset:bufutil.CorrelationIDFieldOffset], uint16(v))
-}
-
-func (m *ClientMessage) CorrelationID() int64 {
-	return int64(binary.LittleEndian.Uint64(m.Buffer[bufutil.CorrelationIDFieldOffset:bufutil.PartitionIDFieldOffset]))
-}
-
-func (m *ClientMessage) SetCorrelationID(val int64) {
-	binary.LittleEndian.PutUint64(m.Buffer[bufutil.CorrelationIDFieldOffset:bufutil.PartitionIDFieldOffset], uint64(val))
-}
-
-func (m *ClientMessage) PartitionID() int32 {
-	return int32(binary.LittleEndian.Uint32(m.Buffer[bufutil.PartitionIDFieldOffset:bufutil.DataOffsetFieldOffset]))
-}
-
-func (m *ClientMessage) SetPartitionID(val int32) {
-	binary.LittleEndian.PutUint32(m.Buffer[bufutil.PartitionIDFieldOffset:bufutil.DataOffsetFieldOffset], uint32(val))
-}
-
-func (m *ClientMessage) DataOffset() uint16 {
-	return binary.LittleEndian.Uint16(m.Buffer[bufutil.DataOffsetFieldOffset:bufutil.HeaderSize])
-}
-
-func (m *ClientMessage) SetDataOffset(v uint16) {
-	binary.LittleEndian.PutUint16(m.Buffer[bufutil.DataOffsetFieldOffset:bufutil.HeaderSize], v)
-}
-
-func (m *ClientMessage) writeOffset() int32 {
-	return int32(m.DataOffset()) + m.writeIndex
-}
-
-func (m *ClientMessage) readOffset() int32 {
-	return m.readIndex
-}
-
-/*
-	PAYLOAD
-*/
-
-func (m *ClientMessage) AppendByte(v uint8) {
-	m.Buffer[m.writeIndex] = byte(v)
-	m.writeIndex += bufutil.ByteSizeInBytes
-}
-
-func (m *ClientMessage) AppendUint8(v uint8) {
-	m.Buffer[m.writeIndex] = byte(v)
-	m.writeIndex += bufutil.ByteSizeInBytes
-}
-
-func (m *ClientMessage) AppendInt32(v int32) {
-	binary.LittleEndian.PutUint32(m.Buffer[m.writeIndex:m.writeIndex+bufutil.Int32SizeInBytes], uint32(v))
-	m.writeIndex += bufutil.Int32SizeInBytes
-}
-
-func (m *ClientMessage) AppendData(v serialization.Data) {
-	m.AppendByteArray(v.Buffer())
-}
-
-func (m *ClientMessage) AppendByteArray(arr []byte) {
-	length := int32(len(arr))
-	//length
-	m.AppendInt32(length)
-	//copy content
-	copy(m.Buffer[m.writeIndex:m.writeIndex+length], arr)
-	m.writeIndex += length
-}
-
-func (m *ClientMessage) AppendInt64(v int64) {
-	binary.LittleEndian.PutUint64(m.Buffer[m.writeIndex:m.writeIndex+bufutil.Int64SizeInBytes], uint64(v))
-	m.writeIndex += bufutil.Int64SizeInBytes
-}
-
-func (m *ClientMessage) AppendString(str string) {
-	if utf8.ValidString(str) {
-		m.AppendByteArray([]byte(str))
-	} else {
-		buff := make([]byte, 0, len(str)*3)
-		n := 0
-		for _, b := range str {
-			n += utf8.EncodeRune(buff[n:], rune(b))
+func (clientMessage *ClientMessage) GetBytes(bytes []byte) int {
+	pos := 0
+	currentFrame := clientMessage.StartFrame
+	for currentFrame != nil {
+		isLastFrame := currentFrame.next == nil
+		binary.LittleEndian.PutUint32(bytes[pos:], uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
+		if isLastFrame {
+			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], uint16(currentFrame.flags|IsFinalFlag))
+		} else {
+			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], uint16(currentFrame.flags))
 		}
-		//append fixed size slice
-		m.AppendByteArray(buff[0:n])
+		pos += SizeOfFrameLengthAndFlags
+		copy(bytes[pos:], currentFrame.Content)
+		pos += len(currentFrame.Content)
+		currentFrame = currentFrame.next
 	}
+	return pos
 }
 
-func (m *ClientMessage) AppendBool(v bool) {
-	if v {
-		m.AppendByte(1)
-	} else {
-		m.AppendByte(0)
+func (clientMessage *ClientMessage) DropFragmentationFrame() {
+	clientMessage.StartFrame = clientMessage.StartFrame.next
+}
+
+// ForwardFrameIterator
+type ForwardFrameIterator struct {
+	nextFrame *Frame
+}
+
+func NewForwardFrameIterator(frame *Frame) *ForwardFrameIterator {
+	return &ForwardFrameIterator{frame}
+}
+
+func (forwardFrameIterator *ForwardFrameIterator) Next() *Frame {
+	result := forwardFrameIterator.nextFrame
+	if result != nil {
+		forwardFrameIterator.nextFrame = forwardFrameIterator.nextFrame.next
 	}
-}
-
-/*
-	PAYLOAD READ
-*/
-
-func (m *ClientMessage) ReadInt32() int32 {
-	int := int32(binary.LittleEndian.Uint32(m.Buffer[m.readOffset() : m.readOffset()+bufutil.Int32SizeInBytes]))
-	m.readIndex += bufutil.Int32SizeInBytes
-	return int
-}
-
-func (m *ClientMessage) ReadInt64() int64 {
-	int64 := int64(binary.LittleEndian.Uint64(m.Buffer[m.readOffset() : m.readOffset()+bufutil.Int64SizeInBytes]))
-	m.readIndex += bufutil.Int64SizeInBytes
-	return int64
-}
-
-func (m *ClientMessage) ReadUint8() uint8 {
-	byte := byte(m.Buffer[m.readOffset()])
-	m.readIndex += bufutil.ByteSizeInBytes
-	return byte
-}
-
-func (m *ClientMessage) ReadBool() bool {
-	if m.ReadUint8() == 1 {
-		return true
-	} else {
-		return false
-	}
-}
-
-func (m *ClientMessage) ReadString() string {
-	str := string(m.ReadByteArray())
-	return str
-}
-
-func (m *ClientMessage) ReadData() serialization.Data {
-	return spi.NewData(m.ReadByteArray())
-}
-
-func (m *ClientMessage) ReadByteArray() []byte {
-	length := m.ReadInt32()
-	result := m.Buffer[m.readOffset() : m.readOffset()+length]
-	m.readIndex += length
 	return result
 }
 
-/*
-	Helpers
-*/
-func (m *ClientMessage) UpdateFrameLength() {
-	m.SetFrameLength(int32(m.writeIndex))
+func (forwardFrameIterator *ForwardFrameIterator) HasNext() bool {
+	return forwardFrameIterator.nextFrame != nil
 }
 
-func (m *ClientMessage) Accumulate(newMsg *ClientMessage) {
-	start := newMsg.DataOffset()
-	end := newMsg.FrameLength()
-	m.Buffer = append(m.Buffer, newMsg.Buffer[start:end]...)
-	m.SetFrameLength(int32(len(m.Buffer)))
+func (forwardFrameIterator *ForwardFrameIterator) PeekNext() *Frame {
+	return forwardFrameIterator.nextFrame
 }
 
-func (m *ClientMessage) IsComplete() bool {
-	return (m.readOffset() >= bufutil.HeaderSize) && (m.readOffset() == m.FrameLength())
+// Frame
+type Frame struct {
+	Content []byte
+	flags   int32
+	next    *Frame
+}
+
+// NewFrame create with content
+func NewFrame(content []byte) *Frame {
+	return &Frame{Content: content, flags: DefaultFlags}
+}
+
+// NewFrame create with content with flags
+func NewFrameWith(content []byte, flags int32) *Frame {
+	return &Frame{Content: content, flags: flags}
+}
+
+// Copy frame
+func (frame Frame) Copy() *Frame {
+	newFrame := NewFrameWith(frame.Content, frame.flags)
+	newFrame.next = frame.next
+	return newFrame
+}
+
+func (frame Frame) DeepCopy() *Frame {
+	newContent := make([]byte, len(frame.Content))
+	copy(newContent, frame.Content)
+	newFrame := NewFrameWith(newContent, frame.flags)
+	newFrame.next = frame.next
+	return newFrame
+}
+
+// IsEndFrame is checking last frame
+func (frame Frame) IsEndFrame() bool {
+	return frame.IsFlagSet(EndDataStructureFlag)
+}
+
+func (frame Frame) IsBeginFrame() bool {
+	return frame.IsFlagSet(BeginDataStructureFlag)
+}
+
+func (frame Frame) IsNullFrame() bool {
+	return frame.IsFlagSet(IsNullFlag)
+}
+
+func (frame Frame) HasEventFlag() bool {
+	return frame.IsFlagSet(IsEventFlag)
+}
+
+func (frame Frame) HasBackupEventFlag() bool {
+	return frame.IsFlagSet(BackupEventFlag)
+}
+
+func (frame Frame) HasUnFragmentedMessageFlags() bool {
+	return frame.IsFlagSet(UnfragmentedMessage)
+}
+
+func (frame Frame) HasBeginFragmentFlag() bool {
+	return frame.IsFlagSet(BeginFragmentFlag)
+}
+
+func (frame Frame) HasEndFragmentFlag() bool {
+	return frame.IsFlagSet(EndFragmentFlag)
+}
+
+func (frame Frame) IsFinalFrame() bool {
+	return frame.IsFlagSet(IsFinalFlag)
+}
+
+func (frame Frame) IsFlagSet(flagMask int32) bool {
+	return frame.flags&flagMask == flagMask
+}
+
+func (frame Frame) GetLength() int {
+	return SizeOfFrameLengthAndFlags + len(frame.Content)
 }

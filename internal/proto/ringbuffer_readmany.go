@@ -39,49 +39,14 @@ func ringbufferReadManyCalculateSize(name string, startSequence int64, minCount 
 // It returns the encoded client message.
 func RingbufferReadManyEncodeRequest(name string, startSequence int64, minCount int32, maxCount int32, filter serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ringbufferReadManyCalculateSize(name, startSequence, minCount, maxCount, filter))
-	clientMessage.SetMessageType(ringbufferReadMany)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt64(startSequence)
-	clientMessage.AppendInt32(minCount)
-	clientMessage.AppendInt32(maxCount)
-	clientMessage.AppendBool(filter == nil)
-	if filter != nil {
-		clientMessage.AppendData(filter)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // RingbufferReadManyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func RingbufferReadManyDecodeResponse(clientMessage *ClientMessage) func() (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
 	// Decode response from client message
-	return func() (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
-		readCount = clientMessage.ReadInt32()
-		itemsSize := clientMessage.ReadInt32()
-		items = make([]serialization.Data, itemsSize)
-		for itemsIndex := 0; itemsIndex < int(itemsSize); itemsIndex++ {
-			itemsItem := clientMessage.ReadData()
-			items[itemsIndex] = itemsItem
-		}
-		if clientMessage.IsComplete() {
-			return
-		}
-
-		if !clientMessage.ReadBool() {
-			itemSeqsSize := clientMessage.ReadInt32()
-			itemSeqs = make([]int64, itemSeqsSize)
-			for itemSeqsIndex := 0; itemSeqsIndex < int(itemSeqsSize); itemSeqsIndex++ {
-				itemSeqsItem := clientMessage.ReadInt64()
-				itemSeqs[itemSeqsIndex] = itemSeqsItem
-			}
-		}
-		if clientMessage.IsComplete() {
-			return
-		}
-		nextSeq = clientMessage.ReadInt64()
-		return
-	}
+	//TODO
+	return nil
 }

@@ -32,26 +32,14 @@ func queueDrainToMaxSizeCalculateSize(name string, maxSize int32) int {
 // It returns the encoded client message.
 func QueueDrainToMaxSizeEncodeRequest(name string, maxSize int32) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueDrainToMaxSizeCalculateSize(name, maxSize))
-	clientMessage.SetMessageType(queueDrainToMaxSize)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(maxSize)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueDrainToMaxSizeDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueueDrainToMaxSizeDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem := clientMessage.ReadData()
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

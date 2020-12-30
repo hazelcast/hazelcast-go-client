@@ -26,20 +26,14 @@ func replicatedmapSizeCalculateSize(name string) int {
 // It returns the encoded client message.
 func ReplicatedMapSizeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapSizeCalculateSize(name))
-	clientMessage.SetMessageType(replicatedmapSize)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapSizeDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapSizeDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
-	return func() (response int32) {
-		response = clientMessage.ReadInt32()
-		return
-	}
+	//TODO
+	return nil
 }

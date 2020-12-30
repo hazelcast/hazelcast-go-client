@@ -32,6 +32,10 @@ type Data struct {
 	Payload []byte
 }
 
+func (d *Data) ToByteArray() []byte {
+	panic("implement me")
+}
+
 // NewData return serialization Data with the given payload.
 func NewData(payload []byte) serialization.Data {
 	return &Data{payload}

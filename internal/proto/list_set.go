@@ -34,25 +34,14 @@ func listSetCalculateSize(name string, index int32, value serialization.Data) in
 // It returns the encoded client message.
 func ListSetEncodeRequest(name string, index int32, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listSetCalculateSize(name, index, value))
-	clientMessage.SetMessageType(listSet)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListSetDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ListSetDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

@@ -31,21 +31,14 @@ func listRemoveCalculateSize(name string, value serialization.Data) int {
 // It returns the encoded client message.
 func ListRemoveEncodeRequest(name string, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listRemoveCalculateSize(name, value))
-	clientMessage.SetMessageType(listRemove)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListRemoveDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ListRemoveDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

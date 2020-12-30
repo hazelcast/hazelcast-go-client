@@ -26,20 +26,14 @@ func replicatedmapIsEmptyCalculateSize(name string) int {
 // It returns the encoded client message.
 func ReplicatedMapIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(replicatedmapIsEmpty)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapIsEmptyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapIsEmptyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

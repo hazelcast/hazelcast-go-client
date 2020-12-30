@@ -26,12 +26,8 @@ func mapClearCalculateSize(name string) int {
 // It returns the encoded client message.
 func MapClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapClearCalculateSize(name))
-	clientMessage.SetMessageType(mapClear)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapClearDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

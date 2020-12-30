@@ -36,24 +36,14 @@ func queueCompareAndRemoveAllCalculateSize(name string, dataList []serialization
 // It returns the encoded client message.
 func QueueCompareAndRemoveAllEncodeRequest(name string, dataList []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueCompareAndRemoveAllCalculateSize(name, dataList))
-	clientMessage.SetMessageType(queueCompareAndRemoveAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(dataList)))
-	for _, dataListItem := range dataList {
-		clientMessage.AppendData(dataListItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueCompareAndRemoveAllDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueueCompareAndRemoveAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

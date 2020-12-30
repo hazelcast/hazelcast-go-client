@@ -35,23 +35,14 @@ func multimapContainsEntryCalculateSize(name string, key serialization.Data, val
 // It returns the encoded client message.
 func MultiMapContainsEntryEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapContainsEntryCalculateSize(name, key, value, threadId))
-	clientMessage.SetMessageType(multimapContainsEntry)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapContainsEntryDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MultiMapContainsEntryDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

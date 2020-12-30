@@ -31,21 +31,14 @@ func replicatedmapContainsValueCalculateSize(name string, value serialization.Da
 // It returns the encoded client message.
 func ReplicatedMapContainsValueEncodeRequest(name string, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapContainsValueCalculateSize(name, value))
-	clientMessage.SetMessageType(replicatedmapContainsValue)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapContainsValueDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapContainsValueDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

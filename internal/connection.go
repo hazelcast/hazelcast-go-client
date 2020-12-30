@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"encoding/binary"
 	"fmt"
 	"net"
 	"sync/atomic"
@@ -27,7 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
@@ -137,7 +135,7 @@ func (c *Connection) writePool() {
 		case request := <-c.pending:
 			err := c.write(request)
 			if err != nil {
-				c.clientMessageBuilder.handleResponse(request.CorrelationID())
+				c.clientMessageBuilder.handleResponse(request.GetCorrelationID())
 			} else {
 				c.lastWrite.Store(time.Now())
 			}
@@ -158,17 +156,9 @@ func (c *Connection) send(clientMessage *proto.ClientMessage) bool {
 }
 
 func (c *Connection) write(clientMessage *proto.ClientMessage) error {
-	remainingLen := len(clientMessage.Buffer)
-	writeIndex := 0
-	for remainingLen > 0 {
-		writtenLen, err := c.socket.Write(clientMessage.Buffer[writeIndex:])
-		if err != nil {
-			return err
-		}
-		remainingLen -= writtenLen
-		writeIndex += writtenLen
-	}
-
+	bytes := make([]byte, clientMessage.GetTotalLength())
+	clientMessage.GetBytes(bytes)
+	c.socket.Write(bytes)
 	return nil
 }
 
@@ -205,7 +195,9 @@ func (c *Connection) StartTime() int64 {
 }
 
 func (c *Connection) receiveMessage() {
-	c.lastRead.Store(time.Now())
+	//TODO
+	/**
+		c.lastRead.Store(time.Now())
 	for len(c.readBuffer) > bufutil.Int32SizeInBytes {
 		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:bufutil.Int32SizeInBytes])
 		if frameLength > uint32(len(c.readBuffer)) {
@@ -215,6 +207,7 @@ func (c *Connection) receiveMessage() {
 		c.readBuffer = c.readBuffer[frameLength:]
 		c.clientMessageBuilder.onMessage(resp)
 	}
+	*/
 }
 
 func (c *Connection) localAddress() net.Addr {

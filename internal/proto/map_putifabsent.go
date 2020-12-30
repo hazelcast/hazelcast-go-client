@@ -36,27 +36,14 @@ func mapPutIfAbsentCalculateSize(name string, key serialization.Data, value seri
 // It returns the encoded client message.
 func MapPutIfAbsentEncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapPutIfAbsentCalculateSize(name, key, value, threadId, ttl))
-	clientMessage.SetMessageType(mapPutIfAbsent)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(ttl)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapPutIfAbsentDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapPutIfAbsentDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

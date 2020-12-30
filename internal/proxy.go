@@ -159,7 +159,7 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 		}
 		pair := proto.NewPair(keyData, valueData)
 		partitionID := p.client.PartitionService.GetPartitionID(keyData)
-		partitions[partitionID] = append(partitions[partitionID], pair)
+		partitions[partitionID] = append(partitions[partitionID], &pair)
 	}
 	return partitions, nil
 }
@@ -213,7 +213,7 @@ func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *proto.ClientMess
 }
 
 func (p *proxy) decodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() []*proto.Pair) (response []core.Pair, err error) {
+	decodeFunc func(*proto.ClientMessage) func() []*proto.Pair) (response []proto.Pair, err error) {
 	if inputError != nil {
 		return nil, inputError
 	}

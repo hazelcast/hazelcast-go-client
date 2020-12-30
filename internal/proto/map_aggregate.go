@@ -31,27 +31,14 @@ func mapAggregateCalculateSize(name string, aggregator serialization.Data) int {
 // It returns the encoded client message.
 func MapAggregateEncodeRequest(name string, aggregator serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapAggregateCalculateSize(name, aggregator))
-	clientMessage.SetMessageType(mapAggregate)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(aggregator)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapAggregateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapAggregateDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-		if clientMessage.IsComplete() {
-			return
-		}
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

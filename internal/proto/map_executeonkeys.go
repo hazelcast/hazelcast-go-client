@@ -37,32 +37,14 @@ func mapExecuteOnKeysCalculateSize(name string, entryProcessor serialization.Dat
 // It returns the encoded client message.
 func MapExecuteOnKeysEncodeRequest(name string, entryProcessor serialization.Data, keys []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapExecuteOnKeysCalculateSize(name, entryProcessor, keys))
-	clientMessage.SetMessageType(mapExecuteOnKeys)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(entryProcessor)
-	clientMessage.AppendInt32(int32(len(keys)))
-	for _, keysItem := range keys {
-		clientMessage.AppendData(keysItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapExecuteOnKeysDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapExecuteOnKeysDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
-	return func() (response []*Pair) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]*Pair, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItemKey := clientMessage.ReadData()
-			responseItemValue := clientMessage.ReadData()
-			var responseItem = &Pair{key: responseItemKey, value: responseItemValue}
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

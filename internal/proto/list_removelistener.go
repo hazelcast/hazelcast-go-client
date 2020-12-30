@@ -27,13 +27,8 @@ func listRemoveListenerCalculateSize(name string, registrationId string) int {
 // It returns the encoded client message.
 func ListRemoveListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listRemoveListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(listRemoveListener)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // func ListRemoveListenerDecodeResponse(clientMessage *ClientMessage) , this message has no parameters to decode.

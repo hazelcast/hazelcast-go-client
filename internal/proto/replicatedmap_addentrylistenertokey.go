@@ -34,24 +34,16 @@ func replicatedmapAddEntryListenerToKeyCalculateSize(name string, key serializat
 // It returns the encoded client message.
 func ReplicatedMapAddEntryListenerToKeyEncodeRequest(name string, key serialization.Data, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapAddEntryListenerToKeyCalculateSize(name, key, localOnly))
-	clientMessage.SetMessageType(replicatedmapAddEntryListenerToKey)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapAddEntryListenerToKeyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // ReplicatedMapAddEntryListenerToKeyHandleEventEntryFunc is the event handler function.
@@ -63,25 +55,8 @@ type ReplicatedMapAddEntryListenerToKeyHandleEventEntryFunc func(serialization.D
 func ReplicatedMapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (
 	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
-	if !clientMessage.ReadBool() {
-		key = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		value = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		oldValue = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		mergingValue = clientMessage.ReadData()
-	}
-	eventType = clientMessage.ReadInt32()
-	uuid = clientMessage.ReadString()
-	numberOfAffectedEntries = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, nil, nil, nil, 0, "", 0
 }
 
 // ReplicatedMapAddEntryListenerToKeyHandle handles the event with the given
@@ -89,8 +64,6 @@ func ReplicatedMapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMes
 func ReplicatedMapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventEntry && handleEventEntry != nil {
-		handleEventEntry(ReplicatedMapAddEntryListenerToKeyEventEntryDecode(clientMessage))
-	}
+	//TODO
+	return
 }

@@ -36,31 +36,14 @@ func mapGetAllCalculateSize(name string, keys []serialization.Data) int {
 // It returns the encoded client message.
 func MapGetAllEncodeRequest(name string, keys []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapGetAllCalculateSize(name, keys))
-	clientMessage.SetMessageType(mapGetAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(keys)))
-	for _, keysItem := range keys {
-		clientMessage.AppendData(keysItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapGetAllDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapGetAllDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
-	return func() (response []*Pair) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]*Pair, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItemKey := clientMessage.ReadData()
-			responseItemValue := clientMessage.ReadData()
-			var responseItem = &Pair{key: responseItemKey, value: responseItemValue}
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

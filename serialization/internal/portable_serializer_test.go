@@ -274,8 +274,8 @@ func TestPortableSerializer2(t *testing.T) {
 	var i16 int16 = -32768
 	var i32 int32 = -2147483648
 	var i64 int64 = -9223372036854775808
-	var f32 float32 = -3.4E+38
-	var f64 = -1.7E+308
+	var f32 float32 = -3.4e+38
+	var f64 = -1.7e+308
 	var utf = "Günaydın, こんにちは"
 	var portable serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
 	var bytArr = []byte{127, 128, 255, 0, 4, 6, 8, 121}
@@ -284,8 +284,8 @@ func TestPortableSerializer2(t *testing.T) {
 	var i16Arr = []int16{-32768, -2222, 32767, 0}
 	var i32Arr = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
 	var i64Arr = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
-	var f32Arr = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
-	var f64Arr = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
+	var f32Arr = []float32{-3.4e+38, 12.344, 21.2646, 3.4e+38}
+	var f64Arr = []float64{-1.7e+308, 1213.2342, 45345.9887, 1.7e+308}
 	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
 	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
 
@@ -342,8 +342,8 @@ func TestPortableSerializer4(t *testing.T) {
 	var i16 int16 = -32768
 	var i32 int32 = -2147483648
 	var i64 int64 = -9223372036854775808
-	var f32 float32 = -3.4E+38
-	var f64 = -1.7E+308
+	var f32 float32 = -3.4e+38
+	var f64 = -1.7e+308
 	var utf = "Günaydın, こんにちは"
 	var bytArr = []byte{127, 128, 255, 0, 4, 6, 8, 121}
 	var boolArr = []bool{true, true, false, true, false, false, false, true, false, true}
@@ -351,8 +351,8 @@ func TestPortableSerializer4(t *testing.T) {
 	var i16Arr = []int16{-32768, -2222, 32767, 0}
 	var i32Arr = []int32{-2147483648, 234123, 13123, 13144, 14134, 2147483647}
 	var i64Arr = []int64{-9223372036854775808, 1231231231231, 315253647, 255225, 9223372036854775807}
-	var f32Arr = []float32{-3.4E+38, 12.344, 21.2646, 3.4E+38}
-	var f64Arr = []float64{-1.7E+308, 1213.2342, 45345.9887, 1.7E+308}
+	var f32Arr = []float32{-3.4e+38, 12.344, 21.2646, 3.4e+38}
+	var f64Arr = []float64{-1.7e+308, 1213.2342, 45345.9887, 1.7e+308}
 	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
 	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
 

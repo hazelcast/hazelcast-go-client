@@ -27,11 +27,10 @@ import (
 // Address represents an address of a member in the cluster.
 type Address interface {
 	fmt.Stringer
-	// Host returns host of the member.
 	Host() string
-
-	// Port returns the port of the member.
 	Port() int
+	GetHost() string
+	GetPort() int32
 }
 
 // Member represents a member in the cluster with its address, uuid, lite member status and attributes.
@@ -96,6 +95,77 @@ type EntryView interface {
 
 	// TTL returns the last set time to live second.
 	TTL() time.Duration
+}
+
+// SimpleEntryView represents a readonly view of a map entry.
+type SimpleEntryView struct {
+	key            interface{}
+	value          interface{}
+	cost           int64
+	creationTime   int64
+	expirationTime int64
+	hits           int64
+	lastAccessTime int64
+	lastStoredTime int64
+	lastUpdateTime int64
+	version        int64
+	ttl            int64
+	maxIdle        int64
+}
+
+func NewSimpleEntryView(key, value interface{}, cost, creationTime, expirationTime, hits, lastAccessTime,
+	lastStoredTime, lastUpdateTime, version, ttl, maxIdle int64) SimpleEntryView {
+	return SimpleEntryView{key, value, cost, creationTime, expirationTime,
+		hits, lastAccessTime, lastStoredTime, lastUpdateTime,
+		version, ttl, maxIdle}
+}
+
+func (s SimpleEntryView) GetKey() interface{} {
+	return s.key
+}
+
+func (s SimpleEntryView) GetValue() interface{} {
+	return s.value
+}
+
+func (s SimpleEntryView) GetCost() int64 {
+	return s.cost
+}
+
+func (s SimpleEntryView) GetCreationTime() int64 {
+	return s.creationTime
+}
+
+func (s SimpleEntryView) GetExpirationTime() int64 {
+	return s.expirationTime
+}
+
+func (s SimpleEntryView) GetHits() int64 {
+	return s.hits
+}
+
+func (s SimpleEntryView) GetLastAccessTime() int64 {
+	return s.lastAccessTime
+}
+
+func (s SimpleEntryView) GetLastStoredTime() int64 {
+	return s.lastStoredTime
+}
+
+func (s SimpleEntryView) GetLastUpdateTime() int64 {
+	return s.lastUpdateTime
+}
+
+func (s SimpleEntryView) GetVersion() int64 {
+	return s.version
+}
+
+func (s SimpleEntryView) GetTtl() int64 {
+	return s.ttl
+}
+
+func (s SimpleEntryView) GetMaxIdle() int64 {
+	return s.maxIdle
 }
 
 // AbstractMapEvent is base for a map event.
@@ -454,4 +524,95 @@ type ReliableMessageListener interface {
 	// IsTerminal checks if the ReliableMessageListener should be terminated based on an error returned while calling
 	// MessageListener.OnMessage().
 	IsTerminal(err error) (bool, error)
+}
+
+// MemberVersion
+type MemberVersion struct {
+	major int8
+	minor int8
+	patch int8
+}
+
+func NewMemberVersion(major, minor, patch byte) MemberVersion {
+	return MemberVersion{int8(major), int8(minor), int8(patch)}
+}
+
+func (memberVersion MemberVersion) GetMajor() byte {
+	return byte(memberVersion.major)
+}
+
+func (memberVersion MemberVersion) GetMinor() byte {
+	return byte(memberVersion.minor)
+}
+
+func (memberVersion MemberVersion) GetPatch() byte {
+	return byte(memberVersion.patch)
+}
+
+// MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
+type MemberInfo struct {
+	// address is core.Address: Address of the member.
+	address Address
+
+	// uuid is core.UUID: UUID of the member.
+	uuid UUID
+
+	// liteMember represents member is a lite member. Lite members do not own any partition.
+	liteMember bool
+
+	// attributes are configured attributes of the member
+	attributes map[string]string
+
+	// version is core.MemberVersion: Hazelcast codebase version of the member.
+	version MemberVersion
+
+	// addressMap
+	addressMap map[EndpointQualifier]Address
+}
+
+func NewMemberInfo(address Address, uuid UUID, attributes map[string]string, liteMember bool, version MemberVersion,
+	isAddressMapExists bool, addressMap interface{}) MemberInfo {
+	return MemberInfo{address: address, uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
+		addressMap: addressMap.(map[EndpointQualifier]Address)}
+}
+
+func (memberInfo MemberInfo) GetAddress() Address {
+	return memberInfo.address
+}
+
+func (memberInfo MemberInfo) GetUuid() UUID {
+	return memberInfo.uuid
+}
+
+func (memberInfo MemberInfo) GetAttributes() map[string]string {
+	return memberInfo.attributes
+}
+
+func (memberInfo MemberInfo) GetLiteMember() bool {
+	return memberInfo.liteMember
+}
+
+func (memberInfo MemberInfo) GetVersion() MemberVersion {
+	return memberInfo.version
+}
+
+func (memberInfo MemberInfo) GetAddressMap() map[EndpointQualifier]Address {
+	return memberInfo.addressMap
+}
+
+type EndpointQualifier struct {
+	_type      int32
+	identifier string
+}
+
+func NewEndpointQualifier(_type int32, identifier string) EndpointQualifier {
+	return EndpointQualifier{_type, identifier}
+}
+
+func (e EndpointQualifier) GetType() int32 {
+	return e._type
+}
+
+func (e EndpointQualifier) GetIdentifier() string {
+	return e.identifier
 }

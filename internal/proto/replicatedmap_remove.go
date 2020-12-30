@@ -31,24 +31,14 @@ func replicatedmapRemoveCalculateSize(name string, key serialization.Data) int {
 // It returns the encoded client message.
 func ReplicatedMapRemoveEncodeRequest(name string, key serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapRemoveCalculateSize(name, key))
-	clientMessage.SetMessageType(replicatedmapRemove)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapRemoveDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapRemoveDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

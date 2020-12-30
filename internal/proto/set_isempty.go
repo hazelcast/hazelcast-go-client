@@ -26,20 +26,14 @@ func setIsEmptyCalculateSize(name string) int {
 // It returns the encoded client message.
 func SetIsEmptyEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, setIsEmptyCalculateSize(name))
-	clientMessage.SetMessageType(setIsEmpty)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // SetIsEmptyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func SetIsEmptyDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

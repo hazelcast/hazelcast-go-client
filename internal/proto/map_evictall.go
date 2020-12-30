@@ -26,12 +26,8 @@ func mapEvictAllCalculateSize(name string) int {
 // It returns the encoded client message.
 func MapEvictAllEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapEvictAllCalculateSize(name))
-	clientMessage.SetMessageType(mapEvictAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapEvictAllDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

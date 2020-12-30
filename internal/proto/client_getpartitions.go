@@ -25,35 +25,14 @@ func clientGetPartitionsCalculateSize() int {
 // It returns the encoded client message.
 func ClientGetPartitionsEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientGetPartitionsCalculateSize())
-	clientMessage.SetMessageType(clientGetPartitions)
-	clientMessage.IsRetryable = false
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientGetPartitionsDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ClientGetPartitionsDecodeResponse(clientMessage *ClientMessage) func() (partitions []*Pair, partitionStateVersion int32) {
 	// Decode response from client message
-	return func() (partitions []*Pair, partitionStateVersion int32) {
-		partitionsSize := clientMessage.ReadInt32()
-		partitions = make([]*Pair, partitionsSize)
-		for partitionsIndex := 0; partitionsIndex < int(partitionsSize); partitionsIndex++ {
-			partitionsItemKey := AddressCodecDecode(clientMessage)
-			partitionsItemValueSize := clientMessage.ReadInt32()
-			partitionsItemValue := make([]int32, partitionsItemValueSize)
-			for partitionsItemValueIndex := 0; partitionsItemValueIndex < int(partitionsItemValueSize); partitionsItemValueIndex++ {
-				partitionsItemValueItem := clientMessage.ReadInt32()
-				partitionsItemValue[partitionsItemValueIndex] = partitionsItemValueItem
-			}
-			var partitionsItem = &Pair{key: partitionsItemKey, value: partitionsItemValue}
-			partitions[partitionsIndex] = partitionsItem
-		}
-		if clientMessage.IsComplete() {
-			return
-		}
-		partitionStateVersion = clientMessage.ReadInt32()
-		return
-	}
+	//TODO
+	return nil
 }

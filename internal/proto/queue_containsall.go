@@ -36,24 +36,14 @@ func queueContainsAllCalculateSize(name string, dataList []serialization.Data) i
 // It returns the encoded client message.
 func QueueContainsAllEncodeRequest(name string, dataList []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueContainsAllCalculateSize(name, dataList))
-	clientMessage.SetMessageType(queueContainsAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(dataList)))
-	for _, dataListItem := range dataList {
-		clientMessage.AppendData(dataListItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueContainsAllDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueueContainsAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

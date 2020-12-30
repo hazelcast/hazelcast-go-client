@@ -34,14 +34,8 @@ func multimapDeleteCalculateSize(name string, key serialization.Data, threadId i
 // It returns the encoded client message.
 func MultiMapDeleteEncodeRequest(name string, key serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapDeleteCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(multimapDelete)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapDeleteDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

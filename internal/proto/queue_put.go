@@ -31,13 +31,8 @@ func queuePutCalculateSize(name string, value serialization.Data) int {
 // It returns the encoded client message.
 func QueuePutEncodeRequest(name string, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queuePutCalculateSize(name, value))
-	clientMessage.SetMessageType(queuePut)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueuePutDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode
