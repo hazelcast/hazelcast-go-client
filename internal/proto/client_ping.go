@@ -25,11 +25,8 @@ func clientPingCalculateSize() int {
 // It returns the encoded client message.
 func ClientPingEncodeRequest() *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientPingCalculateSize())
-	clientMessage.SetMessageType(clientPing)
-	clientMessage.IsRetryable = true
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientPingDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

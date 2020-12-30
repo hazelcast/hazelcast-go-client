@@ -34,14 +34,8 @@ func listAddWithIndexCalculateSize(name string, index int32, value serialization
 // It returns the encoded client message.
 func ListAddWithIndexEncodeRequest(name string, index int32, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listAddWithIndexCalculateSize(name, index, value))
-	clientMessage.SetMessageType(listAddWithIndex)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListAddWithIndexDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

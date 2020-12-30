@@ -35,25 +35,16 @@ func replicatedmapAddEntryListenerToKeyWithPredicateCalculateSize(name string, k
 // It returns the encoded client message.
 func ReplicatedMapAddEntryListenerToKeyWithPredicateEncodeRequest(name string, key serialization.Data, predicate serialization.Data, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapAddEntryListenerToKeyWithPredicateCalculateSize(name, key, predicate, localOnly))
-	clientMessage.SetMessageType(replicatedmapAddEntryListenerToKeyWithPredicate)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(predicate)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapAddEntryListenerToKeyWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapAddEntryListenerToKeyWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // ReplicatedMapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc is the event handler function.
@@ -65,25 +56,8 @@ type ReplicatedMapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc func(se
 func ReplicatedMapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage *ClientMessage) (
 	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
-	if !clientMessage.ReadBool() {
-		key = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		value = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		oldValue = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		mergingValue = clientMessage.ReadData()
-	}
-	eventType = clientMessage.ReadInt32()
-	uuid = clientMessage.ReadString()
-	numberOfAffectedEntries = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, nil, nil, nil, 0, "", 0
 }
 
 // ReplicatedMapAddEntryListenerToKeyWithPredicateHandle handles the event with the given
@@ -91,8 +65,6 @@ func ReplicatedMapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessa
 func ReplicatedMapAddEntryListenerToKeyWithPredicateHandle(clientMessage *ClientMessage,
 	handleEventEntry ReplicatedMapAddEntryListenerToKeyWithPredicateHandleEventEntryFunc) {
 	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventEntry && handleEventEntry != nil {
-		handleEventEntry(ReplicatedMapAddEntryListenerToKeyWithPredicateEventEntryDecode(clientMessage))
-	}
+	//TODO
+	return
 }

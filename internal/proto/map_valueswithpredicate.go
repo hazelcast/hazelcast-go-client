@@ -31,26 +31,14 @@ func mapValuesWithPredicateCalculateSize(name string, predicate serialization.Da
 // It returns the encoded client message.
 func MapValuesWithPredicateEncodeRequest(name string, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapValuesWithPredicateCalculateSize(name, predicate))
-	clientMessage.SetMessageType(mapValuesWithPredicate)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapValuesWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapValuesWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem := clientMessage.ReadData()
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

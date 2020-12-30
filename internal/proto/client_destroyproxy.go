@@ -27,13 +27,8 @@ func clientDestroyProxyCalculateSize(name string, serviceName string) int {
 // It returns the encoded client message.
 func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientDestroyProxyCalculateSize(name, serviceName))
-	clientMessage.SetMessageType(clientDestroyProxy)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(serviceName)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientDestroyProxyDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

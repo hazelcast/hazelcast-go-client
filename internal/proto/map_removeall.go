@@ -31,13 +31,8 @@ func mapRemoveAllCalculateSize(name string, predicate serialization.Data) int {
 // It returns the encoded client message.
 func MapRemoveAllEncodeRequest(name string, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapRemoveAllCalculateSize(name, predicate))
-	clientMessage.SetMessageType(mapRemoveAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapRemoveAllDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

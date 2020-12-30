@@ -35,25 +35,16 @@ func multimapAddEntryListenerToKeyCalculateSize(name string, key serialization.D
 // It returns the encoded client message.
 func MultiMapAddEntryListenerToKeyEncodeRequest(name string, key serialization.Data, includeValue bool, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapAddEntryListenerToKeyCalculateSize(name, key, includeValue, localOnly))
-	clientMessage.SetMessageType(multimapAddEntryListenerToKey)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendBool(includeValue)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapAddEntryListenerToKeyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MultiMapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // MultiMapAddEntryListenerToKeyHandleEventEntryFunc is the event handler function.
@@ -65,25 +56,8 @@ type MultiMapAddEntryListenerToKeyHandleEventEntryFunc func(serialization.Data, 
 func MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (
 	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
 
-	if !clientMessage.ReadBool() {
-		key = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		value = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		oldValue = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		mergingValue = clientMessage.ReadData()
-	}
-	eventType = clientMessage.ReadInt32()
-	uuid = clientMessage.ReadString()
-	numberOfAffectedEntries = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, nil, nil, nil, 0, "", 0
 }
 
 // MultiMapAddEntryListenerToKeyHandle handles the event with the given
@@ -91,8 +65,6 @@ func MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage)
 func MultiMapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MultiMapAddEntryListenerToKeyHandleEventEntryFunc) {
 	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventEntry && handleEventEntry != nil {
-		handleEventEntry(MultiMapAddEntryListenerToKeyEventEntryDecode(clientMessage))
-	}
+	//TODO
+	return
 }

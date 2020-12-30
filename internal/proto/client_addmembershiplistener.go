@@ -30,12 +30,8 @@ func clientAddMembershipListenerCalculateSize(localOnly bool) int {
 // It returns the encoded client message.
 func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientAddMembershipListenerCalculateSize(localOnly))
-	clientMessage.SetMessageType(clientAddMembershipListener)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientAddMembershipListenerDecodeResponse decodes the given client message.
@@ -43,7 +39,8 @@ func ClientAddMembershipListenerEncodeRequest(localOnly bool) *ClientMessage {
 func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
 	return func() (response string) {
-		response = clientMessage.ReadString()
+		//TODO
+		//response = clientMessage.ReadString()
 		return
 	}
 }
@@ -62,9 +59,8 @@ type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(string
 // It returns the result parameters for the event.
 func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) (
 	member *Member, eventType int32) {
-	member = MemberCodecDecode(clientMessage)
-	eventType = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, 0
 }
 
 // ClientAddMembershipListenerEventMemberListDecode decodes the corresponding event
@@ -72,13 +68,9 @@ func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) 
 // It returns the result parameters for the event.
 func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessage) (
 	members []*Member) {
-	membersSize := clientMessage.ReadInt32()
-	members = make([]*Member, membersSize)
-	for membersIndex := 0; membersIndex < int(membersSize); membersIndex++ {
-		membersItem := MemberCodecDecode(clientMessage)
-		members[membersIndex] = membersItem
-	}
-	return
+	//TODO
+	return nil
+
 }
 
 // ClientAddMembershipListenerEventMemberAttributeChangeDecode decodes the corresponding event
@@ -86,14 +78,8 @@ func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessa
 // It returns the result parameters for the event.
 func ClientAddMembershipListenerEventMemberAttributeChangeDecode(clientMessage *ClientMessage) (
 	uuid string, key string, operationType int32, value string) {
-	uuid = clientMessage.ReadString()
-	key = clientMessage.ReadString()
-	operationType = clientMessage.ReadInt32()
-
-	if !clientMessage.ReadBool() {
-		value = clientMessage.ReadString()
-	}
-	return
+	//TODO
+	return "nil", "nil", 0, "nil"
 }
 
 // ClientAddMembershipListenerHandle handles the event with the given
@@ -102,8 +88,9 @@ func ClientAddMembershipListenerHandle(clientMessage *ClientMessage,
 	handleEventMember ClientAddMembershipListenerHandleEventMemberFunc,
 	handleEventMemberList ClientAddMembershipListenerHandleEventMemberListFunc,
 	handleEventMemberAttributeChange ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc) {
+	//TODO
 	// Event handler
-	messageType := clientMessage.MessageType()
+	messageType := clientMessage.GetMessageType()
 	if messageType == bufutil.EventMember && handleEventMember != nil {
 		handleEventMember(ClientAddMembershipListenerEventMemberDecode(clientMessage))
 	}

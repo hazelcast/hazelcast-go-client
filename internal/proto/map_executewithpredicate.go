@@ -32,29 +32,14 @@ func mapExecuteWithPredicateCalculateSize(name string, entryProcessor serializat
 // It returns the encoded client message.
 func MapExecuteWithPredicateEncodeRequest(name string, entryProcessor serialization.Data, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapExecuteWithPredicateCalculateSize(name, entryProcessor, predicate))
-	clientMessage.SetMessageType(mapExecuteWithPredicate)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(entryProcessor)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapExecuteWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapExecuteWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
-	return func() (response []*Pair) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]*Pair, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItemKey := clientMessage.ReadData()
-			responseItemValue := clientMessage.ReadData()
-			var responseItem = &Pair{key: responseItemKey, value: responseItemValue}
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

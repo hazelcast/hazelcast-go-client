@@ -39,19 +39,8 @@ func mapPutAllCalculateSize(name string, entries []*Pair) int {
 // It returns the encoded client message.
 func MapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapPutAllCalculateSize(name, entries))
-	clientMessage.SetMessageType(mapPutAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(entries)))
-	for _, entriesItem := range entries {
-		key := entriesItem.key.(serialization.Data)
-		val := entriesItem.value.(serialization.Data)
-		clientMessage.AppendData(key)
-		clientMessage.AppendData(val)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapPutAllDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

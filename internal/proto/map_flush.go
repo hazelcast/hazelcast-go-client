@@ -26,12 +26,8 @@ func mapFlushCalculateSize(name string) int {
 // It returns the encoded client message.
 func MapFlushEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapFlushCalculateSize(name))
-	clientMessage.SetMessageType(mapFlush)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapFlushDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

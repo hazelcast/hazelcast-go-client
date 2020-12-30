@@ -35,23 +35,14 @@ func mapTryRemoveCalculateSize(name string, key serialization.Data, threadId int
 // It returns the encoded client message.
 func MapTryRemoveEncodeRequest(name string, key serialization.Data, threadId int64, timeout int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapTryRemoveCalculateSize(name, key, threadId, timeout))
-	clientMessage.SetMessageType(mapTryRemove)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(timeout)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapTryRemoveDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapTryRemoveDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

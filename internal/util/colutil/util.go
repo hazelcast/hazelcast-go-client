@@ -55,8 +55,8 @@ func DataToObjectCollection(dataSlice []serialization.Data, service spi.Serializ
 	return elements, nil
 }
 
-func DataToObjectPairCollection(dataSlice []*proto.Pair, service spi.SerializationService) (pairSlice []core.Pair, err error) {
-	pairSlice = make([]core.Pair, len(dataSlice))
+func DataToObjectPairCollection(dataSlice []*proto.Pair, service spi.SerializationService) (pairSlice []proto.Pair, err error) {
+	pairSlice = make([]proto.Pair, len(dataSlice))
 	for index, pairData := range dataSlice {
 		key, err := service.ToObject(pairData.Key().(serialization.Data))
 		if err != nil {
@@ -66,7 +66,7 @@ func DataToObjectPairCollection(dataSlice []*proto.Pair, service spi.Serializati
 		if err != nil {
 			return nil, err
 		}
-		pairSlice[index] = core.Pair(proto.NewPair(key, value))
+		pairSlice[index] = proto.NewPair(key, value)
 	}
 	return
 }

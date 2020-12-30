@@ -30,25 +30,14 @@ func replicatedmapKeySetCalculateSize(name string) int {
 // It returns the encoded client message.
 func ReplicatedMapKeySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapKeySetCalculateSize(name))
-	clientMessage.SetMessageType(replicatedmapKeySet)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapKeySetDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapKeySetDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem := clientMessage.ReadData()
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

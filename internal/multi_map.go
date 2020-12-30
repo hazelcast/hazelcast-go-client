@@ -147,7 +147,7 @@ func (mmp *multiMapProxy) KeySet() (keySet []interface{}, err error) {
 	return mmp.decodeToInterfaceSliceAndError(responseMessage, err, proto.MultiMapKeySetDecodeResponse)
 }
 
-func (mmp *multiMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
+func (mmp *multiMapProxy) EntrySet() (resultPairs []proto.Pair, err error) {
 	request := proto.MultiMapEntrySetEncodeRequest(mmp.name)
 	responseMessage, err := mmp.invokeOnRandomTarget(request)
 	return mmp.decodeToPairSliceAndError(responseMessage, err, proto.MultiMapEntrySetDecodeResponse)

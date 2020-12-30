@@ -34,22 +34,14 @@ func multimapValueCountCalculateSize(name string, key serialization.Data, thread
 // It returns the encoded client message.
 func MultiMapValueCountEncodeRequest(name string, key serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapValueCountCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(multimapValueCount)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapValueCountDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MultiMapValueCountDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
-	return func() (response int32) {
-		response = clientMessage.ReadInt32()
-		return
-	}
+	//TODO
+	return nil
 }

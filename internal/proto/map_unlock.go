@@ -35,15 +35,8 @@ func mapUnlockCalculateSize(name string, key serialization.Data, threadId int64,
 // It returns the encoded client message.
 func MapUnlockEncodeRequest(name string, key serialization.Data, threadId int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapUnlockCalculateSize(name, key, threadId, referenceId))
-	clientMessage.SetMessageType(mapUnlock)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(referenceId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapUnlockDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

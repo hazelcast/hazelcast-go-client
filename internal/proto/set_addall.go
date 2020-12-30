@@ -36,24 +36,14 @@ func setAddAllCalculateSize(name string, valueList []serialization.Data) int {
 // It returns the encoded client message.
 func SetAddAllEncodeRequest(name string, valueList []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, setAddAllCalculateSize(name, valueList))
-	clientMessage.SetMessageType(setAddAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(valueList)))
-	for _, valueListItem := range valueList {
-		clientMessage.AppendData(valueListItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // SetAddAllDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func SetAddAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

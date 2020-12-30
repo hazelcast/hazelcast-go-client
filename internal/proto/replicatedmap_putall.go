@@ -39,19 +39,8 @@ func replicatedmapPutAllCalculateSize(name string, entries []*Pair) int {
 // It returns the encoded client message.
 func ReplicatedMapPutAllEncodeRequest(name string, entries []*Pair) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapPutAllCalculateSize(name, entries))
-	clientMessage.SetMessageType(replicatedmapPutAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(entries)))
-	for _, entriesItem := range entries {
-		key := entriesItem.key.(serialization.Data)
-		val := entriesItem.value.(serialization.Data)
-		clientMessage.AppendData(key)
-		clientMessage.AppendData(val)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapPutAllDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

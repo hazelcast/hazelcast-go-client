@@ -26,12 +26,8 @@ func multimapClearCalculateSize(name string) int {
 // It returns the encoded client message.
 func MultiMapClearEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapClearCalculateSize(name))
-	clientMessage.SetMessageType(multimapClear)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapClearDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

@@ -32,24 +32,14 @@ func queuePollCalculateSize(name string, timeoutMillis int64) int {
 // It returns the encoded client message.
 func QueuePollEncodeRequest(name string, timeoutMillis int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queuePollCalculateSize(name, timeoutMillis))
-	clientMessage.SetMessageType(queuePoll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt64(timeoutMillis)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueuePollDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueuePollDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

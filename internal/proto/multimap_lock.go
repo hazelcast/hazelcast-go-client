@@ -36,16 +36,8 @@ func multimapLockCalculateSize(name string, key serialization.Data, threadId int
 // It returns the encoded client message.
 func MultiMapLockEncodeRequest(name string, key serialization.Data, threadId int64, ttl int64, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapLockCalculateSize(name, key, threadId, ttl, referenceId))
-	clientMessage.SetMessageType(multimapLock)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.AppendInt64(ttl)
-	clientMessage.AppendInt64(referenceId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapLockDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

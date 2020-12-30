@@ -63,7 +63,8 @@ func (rmp *replicatedMapProxy) PutAll(entries map[interface{}]interface{}) (err 
 		if err != nil {
 			return err
 		}
-		pairs[index] = proto.NewPair(keyData, valueData)
+		pair := proto.NewPair(keyData, valueData)
+		pairs[index] = &pair
 		index++
 	}
 	request := proto.ReplicatedMapPutAllEncodeRequest(rmp.name, pairs)
@@ -142,7 +143,7 @@ func (rmp *replicatedMapProxy) KeySet() (keySet []interface{}, err error) {
 	return rmp.decodeToInterfaceSliceAndError(responseMessage, err, proto.ReplicatedMapKeySetDecodeResponse)
 }
 
-func (rmp *replicatedMapProxy) EntrySet() (resultPairs []core.Pair, err error) {
+func (rmp *replicatedMapProxy) EntrySet() (resultPairs []proto.Pair, err error) {
 	request := proto.ReplicatedMapEntrySetEncodeRequest(rmp.name)
 	responseMessage, err := rmp.invokeOnPartition(request, rmp.tarGetPartitionID)
 	return rmp.decodeToPairSliceAndError(responseMessage, err, proto.ReplicatedMapEntrySetDecodeResponse)

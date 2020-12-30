@@ -34,14 +34,8 @@ func mapForceUnlockCalculateSize(name string, key serialization.Data, referenceI
 // It returns the encoded client message.
 func MapForceUnlockEncodeRequest(name string, key serialization.Data, referenceId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapForceUnlockCalculateSize(name, key, referenceId))
-	clientMessage.SetMessageType(mapForceUnlock)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(referenceId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapForceUnlockDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

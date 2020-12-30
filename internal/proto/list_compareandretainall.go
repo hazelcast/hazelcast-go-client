@@ -36,24 +36,14 @@ func listCompareAndRetainAllCalculateSize(name string, values []serialization.Da
 // It returns the encoded client message.
 func ListCompareAndRetainAllEncodeRequest(name string, values []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listCompareAndRetainAllCalculateSize(name, values))
-	clientMessage.SetMessageType(listCompareAndRetainAll)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(int32(len(values)))
-	for _, valuesItem := range values {
-		clientMessage.AppendData(valuesItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListCompareAndRetainAllDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ListCompareAndRetainAllDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

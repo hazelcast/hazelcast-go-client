@@ -203,7 +203,7 @@ func (ls *listenerService) registerListenerOnConnection(registrationID string, c
 		return err
 	}
 	serverRegistrationID := registrationKey.responseDecoder(responseMessage)
-	correlationID := registrationKey.request.CorrelationID()
+	correlationID := registrationKey.request.GetCorrelationID()
 	registration := &eventRegistration{
 		serverRegistrationID: serverRegistrationID,
 		correlationID:        correlationID,

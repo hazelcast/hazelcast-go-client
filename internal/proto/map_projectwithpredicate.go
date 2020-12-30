@@ -32,34 +32,14 @@ func mapProjectWithPredicateCalculateSize(name string, projection serialization.
 // It returns the encoded client message.
 func MapProjectWithPredicateEncodeRequest(name string, projection serialization.Data, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapProjectWithPredicateCalculateSize(name, projection, predicate))
-	clientMessage.SetMessageType(mapProjectWithPredicate)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(projection)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapProjectWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapProjectWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		if clientMessage.IsComplete() {
-			return
-		}
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			if !clientMessage.ReadBool() {
-				responseItem := clientMessage.ReadData()
-				response[responseIndex] = responseItem
-			} else {
-				response[responseIndex] = nil
-			}
-		}
-		return
-	}
+	//TODO
+	return nil
 }

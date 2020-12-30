@@ -36,26 +36,16 @@ func mapAddEntryListenerToKeyCalculateSize(name string, key serialization.Data, 
 // It returns the encoded client message.
 func MapAddEntryListenerToKeyEncodeRequest(name string, key serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapAddEntryListenerToKeyCalculateSize(name, key, includeValue, listenerFlags, localOnly))
-	clientMessage.SetMessageType(mapAddEntryListenerToKey)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendBool(includeValue)
-	clientMessage.AppendInt32(listenerFlags)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapAddEntryListenerToKeyDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapAddEntryListenerToKeyDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // MapAddEntryListenerToKeyHandleEventEntryFunc is the event handler function.
@@ -66,35 +56,13 @@ type MapAddEntryListenerToKeyHandleEventEntryFunc func(serialization.Data, seria
 // It returns the result parameters for the event.
 func MapAddEntryListenerToKeyEventEntryDecode(clientMessage *ClientMessage) (
 	key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid string, numberOfAffectedEntries int32) {
-
-	if !clientMessage.ReadBool() {
-		key = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		value = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		oldValue = clientMessage.ReadData()
-	}
-
-	if !clientMessage.ReadBool() {
-		mergingValue = clientMessage.ReadData()
-	}
-	eventType = clientMessage.ReadInt32()
-	uuid = clientMessage.ReadString()
-	numberOfAffectedEntries = clientMessage.ReadInt32()
-	return
+	//TODO
+	return nil, nil, nil, nil, 0, "", 0
 }
 
 // MapAddEntryListenerToKeyHandle handles the event with the given
 // event handler function.
 func MapAddEntryListenerToKeyHandle(clientMessage *ClientMessage,
 	handleEventEntry MapAddEntryListenerToKeyHandleEventEntryFunc) {
-	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventEntry && handleEventEntry != nil {
-		handleEventEntry(MapAddEntryListenerToKeyEventEntryDecode(clientMessage))
-	}
+
 }

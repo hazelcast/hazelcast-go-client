@@ -30,23 +30,14 @@ func queueTakeCalculateSize(name string) int {
 // It returns the encoded client message.
 func QueueTakeEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueTakeCalculateSize(name))
-	clientMessage.SetMessageType(queueTake)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueTakeDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueueTakeDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

@@ -32,28 +32,14 @@ func mapAggregateWithPredicateCalculateSize(name string, aggregator serializatio
 // It returns the encoded client message.
 func MapAggregateWithPredicateEncodeRequest(name string, aggregator serialization.Data, predicate serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapAggregateWithPredicateCalculateSize(name, aggregator, predicate))
-	clientMessage.SetMessageType(mapAggregateWithPredicate)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(aggregator)
-	clientMessage.AppendData(predicate)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapAggregateWithPredicateDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapAggregateWithPredicateDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-		if clientMessage.IsComplete() {
-			return
-		}
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

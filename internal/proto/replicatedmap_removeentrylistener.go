@@ -27,13 +27,8 @@ func replicatedmapRemoveEntryListenerCalculateSize(name string, registrationId s
 // It returns the encoded client message.
 func ReplicatedMapRemoveEntryListenerEncodeRequest(name string, registrationId string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapRemoveEntryListenerCalculateSize(name, registrationId))
-	clientMessage.SetMessageType(replicatedmapRemoveEntryListener)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(registrationId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // func ReplicatedMapRemoveEntryListenerDecodeResponse(clientMessage *ClientMessage) , this message has no parameters to decode.

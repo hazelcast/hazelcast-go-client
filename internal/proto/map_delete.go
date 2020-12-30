@@ -34,14 +34,8 @@ func mapDeleteCalculateSize(name string, key serialization.Data, threadId int64)
 // It returns the encoded client message.
 func MapDeleteEncodeRequest(name string, key serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapDeleteCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(mapDelete)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapDeleteDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

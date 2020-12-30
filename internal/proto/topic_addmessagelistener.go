@@ -33,23 +33,16 @@ func topicAddMessageListenerCalculateSize(name string, localOnly bool) int {
 // It returns the encoded client message.
 func TopicAddMessageListenerEncodeRequest(name string, localOnly bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, topicAddMessageListenerCalculateSize(name, localOnly))
-	clientMessage.SetMessageType(topicAddMessageListener)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendBool(localOnly)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // TopicAddMessageListenerDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func TopicAddMessageListenerDecodeResponse(clientMessage *ClientMessage) func() (response string) {
 	// Decode response from client message
-	return func() (response string) {
-		response = clientMessage.ReadString()
-		return
-	}
+	//TODO
+	return nil
 }
 
 // TopicAddMessageListenerHandleEventTopicFunc is the event handler function.
@@ -60,10 +53,8 @@ type TopicAddMessageListenerHandleEventTopicFunc func(serialization.Data, int64,
 // It returns the result parameters for the event.
 func TopicAddMessageListenerEventTopicDecode(clientMessage *ClientMessage) (
 	item serialization.Data, publishTime int64, uuid string) {
-	item = clientMessage.ReadData()
-	publishTime = clientMessage.ReadInt64()
-	uuid = clientMessage.ReadString()
-	return
+	//TODO
+	return nil, 0, ""
 }
 
 // TopicAddMessageListenerHandle handles the event with the given
@@ -71,8 +62,5 @@ func TopicAddMessageListenerEventTopicDecode(clientMessage *ClientMessage) (
 func TopicAddMessageListenerHandle(clientMessage *ClientMessage,
 	handleEventTopic TopicAddMessageListenerHandleEventTopicFunc) {
 	// Event handler
-	messageType := clientMessage.MessageType()
-	if messageType == bufutil.EventTopic && handleEventTopic != nil {
-		handleEventTopic(TopicAddMessageListenerEventTopicDecode(clientMessage))
-	}
+
 }

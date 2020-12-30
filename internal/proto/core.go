@@ -32,6 +32,10 @@ type Address struct {
 	port int
 }
 
+func NewAddress(Host string, Port int32) *Address {
+	return &Address{Host, int(Port)}
+}
+
 func NewAddressWithParameters(Host string, Port int) *Address {
 	return &Address{Host, Port}
 }
@@ -46,6 +50,13 @@ func (a *Address) Port() int {
 
 func (a *Address) String() string {
 	return a.Host() + ":" + strconv.Itoa(a.Port())
+}
+func (a *Address) GetHost() string {
+	return a.host
+}
+
+func (a *Address) GetPort() int32 {
+	return int32(a.port)
 }
 
 type uuid struct {
@@ -90,14 +101,6 @@ func (m *Member) String() string {
 
 func (m *Member) HasSameAddress(member *Member) bool {
 	return m.address == member.address
-}
-
-type Pair struct {
-	key, value interface{}
-}
-
-func NewPair(key interface{}, value interface{}) *Pair {
-	return &Pair{key, value}
 }
 
 func (p *Pair) Key() interface{} {
@@ -167,6 +170,18 @@ func (i *DistributedObjectInfo) Name() string {
 
 func (i *DistributedObjectInfo) ServiceName() string {
 	return i.serviceName
+}
+
+func (i *DistributedObjectInfo) GetName() string {
+	return i.name
+}
+
+func (i *DistributedObjectInfo) GetServiceName() string {
+	return i.serviceName
+}
+
+func NewDistributedObjectInfo(name string, serviceName string) DistributedObjectInfo {
+	return DistributedObjectInfo{name: name, serviceName: serviceName}
 }
 
 type DataEntryView struct {
@@ -261,7 +276,7 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl:                    timeutil.ConvertMillisToDuration(ttl),
+		ttl: timeutil.ConvertMillisToDuration(ttl),
 	}
 }
 
@@ -368,29 +383,6 @@ func (e *ServerError) CauseErrorCode() int32 {
 
 func (e *ServerError) CauseClassName() string {
 	return e.causeClassName
-}
-
-type StackTraceElement struct {
-	declaringClass string
-	methodName     string
-	fileName       string
-	lineNumber     int32
-}
-
-func (e *StackTraceElement) DeclaringClass() string {
-	return e.declaringClass
-}
-
-func (e *StackTraceElement) MethodName() string {
-	return e.methodName
-}
-
-func (e *StackTraceElement) FileName() string {
-	return e.fileName
-}
-
-func (e *StackTraceElement) LineNumber() int32 {
-	return e.lineNumber
 }
 
 type AbstractMapEvent struct {

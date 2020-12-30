@@ -32,14 +32,8 @@ func mapAddIndexCalculateSize(name string, attribute string, ordered bool) int {
 // It returns the encoded client message.
 func MapAddIndexEncodeRequest(name string, attribute string, ordered bool) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapAddIndexCalculateSize(name, attribute, ordered))
-	clientMessage.SetMessageType(mapAddIndex)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(attribute)
-	clientMessage.AppendBool(ordered)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapAddIndexDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

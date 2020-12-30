@@ -31,13 +31,8 @@ func topicPublishCalculateSize(name string, message serialization.Data) int {
 // It returns the encoded client message.
 func TopicPublishEncodeRequest(name string, message serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, topicPublishCalculateSize(name, message))
-	clientMessage.SetMessageType(topicPublish)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(message)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // TopicPublishDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

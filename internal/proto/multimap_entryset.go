@@ -26,27 +26,14 @@ func multimapEntrySetCalculateSize(name string) int {
 // It returns the encoded client message.
 func MultiMapEntrySetEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, multimapEntrySetCalculateSize(name))
-	clientMessage.SetMessageType(multimapEntrySet)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MultiMapEntrySetDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MultiMapEntrySetDecodeResponse(clientMessage *ClientMessage) func() (response []*Pair) {
 	// Decode response from client message
-	return func() (response []*Pair) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]*Pair, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItemKey := clientMessage.ReadData()
-			responseItemValue := clientMessage.ReadData()
-			var responseItem = &Pair{key: responseItemKey, value: responseItemValue}
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

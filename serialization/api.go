@@ -95,6 +95,8 @@ type Data interface {
 	// Buffer returns byte array representation of internal binary format.
 	Buffer() []byte
 
+	ToByteArray() []byte
+
 	// GetType returns serialization type of binary form.
 	GetType() int32
 

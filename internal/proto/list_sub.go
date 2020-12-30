@@ -33,27 +33,14 @@ func listSubCalculateSize(name string, from int32, to int32) int {
 // It returns the encoded client message.
 func ListSubEncodeRequest(name string, from int32, to int32) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listSubCalculateSize(name, from, to))
-	clientMessage.SetMessageType(listSub)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(from)
-	clientMessage.AppendInt32(to)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListSubDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ListSubDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem := clientMessage.ReadData()
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

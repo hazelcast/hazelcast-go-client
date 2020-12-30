@@ -35,26 +35,14 @@ func replicatedmapPutCalculateSize(name string, key serialization.Data, value se
 // It returns the encoded client message.
 func ReplicatedMapPutEncodeRequest(name string, key serialization.Data, value serialization.Data, ttl int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, replicatedmapPutCalculateSize(name, key, value, ttl))
-	clientMessage.SetMessageType(replicatedmapPut)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendData(value)
-	clientMessage.AppendInt64(ttl)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ReplicatedMapPutDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ReplicatedMapPutDecodeResponse(clientMessage *ClientMessage) func() (response serialization.Data) {
 	// Decode response from client message
-	return func() (response serialization.Data) {
-
-		if !clientMessage.ReadBool() {
-			response = clientMessage.ReadData()
-		}
-		return
-	}
+	//TODO
+	return nil
 }

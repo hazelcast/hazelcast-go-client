@@ -31,33 +31,14 @@ func mapProjectCalculateSize(name string, projection serialization.Data) int {
 // It returns the encoded client message.
 func MapProjectEncodeRequest(name string, projection serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapProjectCalculateSize(name, projection))
-	clientMessage.SetMessageType(mapProject)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(projection)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapProjectDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapProjectDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		if clientMessage.IsComplete() {
-			return
-		}
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			if !clientMessage.ReadBool() {
-				responseItem := clientMessage.ReadData()
-				response[responseIndex] = responseItem
-			} else {
-				response[responseIndex] = nil
-			}
-		}
-		return
-	}
+	//TODO
+	return nil
 }

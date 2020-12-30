@@ -31,21 +31,14 @@ func listLastIndexOfCalculateSize(name string, value serialization.Data) int {
 // It returns the encoded client message.
 func ListLastIndexOfEncodeRequest(name string, value serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listLastIndexOfCalculateSize(name, value))
-	clientMessage.SetMessageType(listLastIndexOf)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(value)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListLastIndexOfDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ListLastIndexOfDecodeResponse(clientMessage *ClientMessage) func() (response int32) {
 	// Decode response from client message
-	return func() (response int32) {
-		response = clientMessage.ReadInt32()
-		return
-	}
+	//TODO
+	return nil
 }

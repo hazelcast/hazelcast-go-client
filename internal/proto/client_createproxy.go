@@ -28,14 +28,8 @@ func clientCreateProxyCalculateSize(name string, serviceName string, target *Add
 // It returns the encoded client message.
 func ClientCreateProxyEncodeRequest(name string, serviceName string, target *Address) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, clientCreateProxyCalculateSize(name, serviceName, target))
-	clientMessage.SetMessageType(clientCreateProxy)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendString(serviceName)
-	AddressCodecEncode(clientMessage, target)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ClientCreateProxyDecodeResponse(clientMessage *ClientMessage), this message has no parameters to decode

@@ -34,25 +34,14 @@ func mapGetEntryViewCalculateSize(name string, key serialization.Data, threadId 
 // It returns the encoded client message.
 func MapGetEntryViewEncodeRequest(name string, key serialization.Data, threadId int64) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, mapGetEntryViewCalculateSize(name, key, threadId))
-	clientMessage.SetMessageType(mapGetEntryView)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.AppendData(key)
-	clientMessage.AppendInt64(threadId)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // MapGetEntryViewDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) func() (response *DataEntryView) {
 	// Decode response from client message
-	return func() (response *DataEntryView) {
-
-		if !clientMessage.ReadBool() {
-			response = DataEntryViewCodecDecode(clientMessage)
-		}
-		return
-	}
+	//TODO
+	return nil
 }

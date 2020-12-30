@@ -37,25 +37,14 @@ func listAddAllWithIndexCalculateSize(name string, index int32, valueList []seri
 // It returns the encoded client message.
 func ListAddAllWithIndexEncodeRequest(name string, index int32, valueList []serialization.Data) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, listAddAllWithIndexCalculateSize(name, index, valueList))
-	clientMessage.SetMessageType(listAddAllWithIndex)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.AppendInt32(index)
-	clientMessage.AppendInt32(int32(len(valueList)))
-	for _, valueListItem := range valueList {
-		clientMessage.AppendData(valueListItem)
-	}
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // ListAddAllWithIndexDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func ListAddAllWithIndexDecodeResponse(clientMessage *ClientMessage) func() (response bool) {
 	// Decode response from client message
-	return func() (response bool) {
-		response = clientMessage.ReadBool()
-		return
-	}
+	//TODO
+	return nil
 }

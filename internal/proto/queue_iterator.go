@@ -30,25 +30,14 @@ func queueIteratorCalculateSize(name string) int {
 // It returns the encoded client message.
 func QueueIteratorEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, queueIteratorCalculateSize(name))
-	clientMessage.SetMessageType(queueIterator)
-	clientMessage.IsRetryable = false
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // QueueIteratorDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func QueueIteratorDecodeResponse(clientMessage *ClientMessage) func() (response []serialization.Data) {
 	// Decode response from client message
-	return func() (response []serialization.Data) {
-		responseSize := clientMessage.ReadInt32()
-		response = make([]serialization.Data, responseSize)
-		for responseIndex := 0; responseIndex < int(responseSize); responseIndex++ {
-			responseItem := clientMessage.ReadData()
-			response[responseIndex] = responseItem
-		}
-		return
-	}
+	//TODO
+	return nil
 }

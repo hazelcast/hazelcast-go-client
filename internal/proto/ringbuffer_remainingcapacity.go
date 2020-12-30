@@ -26,20 +26,14 @@ func ringbufferRemainingCapacityCalculateSize(name string) int {
 // It returns the encoded client message.
 func RingbufferRemainingCapacityEncodeRequest(name string) *ClientMessage {
 	// Encode request into clientMessage
-	clientMessage := NewClientMessage(nil, ringbufferRemainingCapacityCalculateSize(name))
-	clientMessage.SetMessageType(ringbufferRemainingCapacity)
-	clientMessage.IsRetryable = true
-	clientMessage.AppendString(name)
-	clientMessage.UpdateFrameLength()
-	return clientMessage
+	//TODO
+	return nil
 }
 
 // RingbufferRemainingCapacityDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
 func RingbufferRemainingCapacityDecodeResponse(clientMessage *ClientMessage) func() (response int64) {
 	// Decode response from client message
-	return func() (response int64) {
-		response = clientMessage.ReadInt64()
-		return
-	}
+	//TODO
+	return nil
 }
