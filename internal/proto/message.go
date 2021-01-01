@@ -67,10 +67,9 @@ var (
 
 // ClientMessage
 type ClientMessage struct {
-	StartFrame    *Frame
-	EndFrame      *Frame
-	Retryable     bool
-	OperationName string
+	StartFrame *Frame
+	EndFrame   *Frame
+	Retryable  bool
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
@@ -94,7 +93,6 @@ func (clientMessage *ClientMessage) CopyWithNewCorrelationId(correlationID int64
 	frame := NewClientMessageWithStartAndEndFrame(initialFrameCopy, clientMessage.EndFrame)
 	frame.SetCorrelationID(correlationID)
 	frame.SetRetryable(clientMessage.IsRetryable())
-	frame.SetOperationName(clientMessage.GetOperationName())
 	return frame
 }
 
@@ -104,14 +102,6 @@ func (clientMessage *ClientMessage) IsRetryable() bool {
 
 func (clientMessage *ClientMessage) SetRetryable(retryable bool) {
 	clientMessage.Retryable = retryable
-}
-
-func (clientMessage *ClientMessage) GetOperationName() string {
-	return clientMessage.OperationName
-}
-
-func (clientMessage *ClientMessage) SetOperationName(operationName string) {
-	clientMessage.OperationName = operationName
 }
 
 func (clientMessage *ClientMessage) FrameIterator() *ForwardFrameIterator {

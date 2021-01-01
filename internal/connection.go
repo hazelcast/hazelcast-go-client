@@ -33,7 +33,7 @@ import (
 const (
 	kb              = 1024
 	bufferSize      = 128 * kb
-	protocolStarter = "CB2"
+	protocolStarter = "CP2"
 )
 
 type Connection struct {
@@ -195,19 +195,16 @@ func (c *Connection) StartTime() int64 {
 }
 
 func (c *Connection) receiveMessage() {
-	//TODO
-	/**
-		c.lastRead.Store(time.Now())
-	for len(c.readBuffer) > bufutil.Int32SizeInBytes {
-		frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:bufutil.Int32SizeInBytes])
-		if frameLength > uint32(len(c.readBuffer)) {
-			return
-		}
-		resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
-		c.readBuffer = c.readBuffer[frameLength:]
-		c.clientMessageBuilder.onMessage(resp)
-	}
-	*/
+	/*	c.lastRead.Store(time.Now())
+		for len(c.readBuffer) > bufutil.Int32SizeInBytes {
+			frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:bufutil.Int32SizeInBytes])
+			if frameLength > uint32(len(c.readBuffer)) {
+				return
+			}
+			resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
+			c.readBuffer = c.readBuffer[frameLength:]
+			c.clientMessageBuilder.onMessage(resp)
+		}*/
 }
 
 func (c *Connection) localAddress() net.Addr {
