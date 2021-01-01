@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"sync"
 	"sync/atomic"
 
@@ -32,7 +33,7 @@ const (
 
 const serializationVersion = 1
 
-var ClientVersion = "0.5-SNAPSHOT" //TODO This should be replace with a build time version variable, BuildInfo etc.
+var ClientVersion = "4.0.0" //TODO This should be replace with a build time version variable, BuildInfo etc.
 
 type connectionManager interface {
 	//getActiveConnections returns a snapshot of active connections
@@ -241,17 +242,18 @@ func (cm *connectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *prot
 
 func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
-	uuid := cm.client.ClusterService.uuid.Load().(string)
-	ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
-	return proto.ClientAuthenticationEncodeRequest(
-		creds.Username(),
-		creds.Password(),
-		uuid,
-		ownerUUID,
-		asOwner,
+	//uuid := cm.client.ClusterService.uuid.Load().(string)
+	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	return codec.ClientAuthenticationCodec.EncodeRequest(
+		"dev",
+		"",
+		"",
+		core.NewUUID(),
 		proto.ClientType,
-		serializationVersion,
+		byte(serializationVersion),
 		ClientVersion,
+		"",
+		nil,
 	)
 }
 

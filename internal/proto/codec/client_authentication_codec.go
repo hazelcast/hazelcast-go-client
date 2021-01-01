@@ -54,8 +54,8 @@ func (clientAuthenticationCodec) EncodeRequest(clusterName string, username stri
 	clientMessage.SetPartitionId(-1)
 
 	internal.StringCodec.Encode(clientMessage, clusterName)
-	internal.CodecUtil.EncodeNullable(clientMessage, username, internal.StringCodec.Encode)
-	internal.CodecUtil.EncodeNullable(clientMessage, password, internal.StringCodec.Encode)
+	internal.CodecUtil.EncodeNullableForString(clientMessage, username)
+	internal.CodecUtil.EncodeNullableForString(clientMessage, password)
 	internal.StringCodec.Encode(clientMessage, clientType)
 	internal.StringCodec.Encode(clientMessage, clientHazelcastVersion)
 	internal.StringCodec.Encode(clientMessage, clientName)
