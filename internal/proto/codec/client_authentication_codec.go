@@ -46,7 +46,7 @@ func (clientAuthenticationCodec) EncodeRequest(clusterName string, username stri
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCodecRequestUuidOffset, uuid)
 	internal.FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCodecRequestSerializationVersionOffset, serializationVersion)
 	clientMessage.AddFrame(initialFrame)

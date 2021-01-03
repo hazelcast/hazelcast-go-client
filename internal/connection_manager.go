@@ -252,7 +252,7 @@ func (cm *connectionManagerImpl) createAuthenticationRequest(asOwner bool,
 		proto.ClientType,
 		byte(serializationVersion),
 		ClientVersion,
-		"",
+		cm.client.name,
 		nil,
 	)
 }
@@ -304,9 +304,9 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 
 func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool,
 	result *proto.ClientMessage) error {
-	authenticationDecoder := cm.getAuthenticationDecoder()
+	//TODO
 	//status, address, uuid, ownerUUID, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
-	status, address, uuid, ownerUUID, _, serverHazelcastVersion, _ := authenticationDecoder(result)()
+	status, address, memberUuid, _, serverHazelcastVersion, _, _, _ := codec.ClientAuthenticationCodec.DecodeResponse(result)
 	switch status {
 	case authenticated:
 		connection.setConnectedServerVersion(serverHazelcastVersion)
@@ -316,8 +316,9 @@ func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connect
 		go cm.fireConnectionAddedEvent(connection)
 		if asOwner {
 			cm.client.ClusterService.ownerConnectionAddress.Store(address)
-			cm.client.ClusterService.ownerUUID.Store(ownerUUID)
-			cm.client.ClusterService.uuid.Store(uuid)
+			cm.client.ClusterService.ownerUUID.Store(memberUuid.ToString())
+			//TODO
+			//cm.client.ClusterService.uuid.Store(clusterId)
 			cm.logger.Info("Setting ", connection, " as owner.")
 		}
 	case credentialsFailed:

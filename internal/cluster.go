@@ -195,17 +195,20 @@ func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimi
 
 func (cs *clusterService) connectToAddress(address core.Address) error {
 	cs.logger.Info("Trying to connect to", address, "as owner member.")
-	connection, err := cs.client.ConnectionManager.getOrConnect(address, true)
+	_, err := cs.client.ConnectionManager.getOrConnect(address, true)
 	if err != nil {
 		cs.logger.Warn("Error during initial connection to", address, "error:", err)
 		return err
 	}
 
-	err = cs.initMembershipListener(connection)
-	if err != nil {
-		return err
-	}
-	cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)
+	//TODO ask to anyone
+
+	/*	err = cs.initMembershipListener(connection)
+		if err != nil {
+			return err
+		}
+		cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)*/
+
 	return nil
 }
 
