@@ -25,6 +25,13 @@ type clientMessageBuilder struct {
 
 func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
 
+	println(msg.GetCorrelationID())
+	println(msg.GetFragmentationID())
+
+	if msg.StartFrame.HasUnFragmentedMessageFlags() {
+		mb.handleResponse(msg)
+	}
+
 	//TODO
 	/**
 		if msg.HasFlags(bufutil.BeginEndFlag) > 0 {
@@ -44,4 +51,5 @@ func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
 		}
 	}
 	*/
+
 }

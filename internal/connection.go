@@ -15,8 +15,10 @@
 package internal
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -49,6 +51,7 @@ type Connection struct {
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
 	readBuffer                []byte
+	clientMessageReader       *clientMessageReader
 	connectionID              int64
 	connectionManager         connectionManager
 	connectedServerVersion    int32
@@ -66,6 +69,7 @@ func newConnection(address core.Address, cm connectionManager, handleResponse fu
 	}
 	connection.socket = socket
 	connection.init()
+	connection.clientMessageReader = &clientMessageReader{}
 	connection.sendProtocolStarter()
 	go connection.writePool()
 	go connection.readPool()
@@ -163,9 +167,10 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 }
 
 func (c *Connection) readPool() {
-	buf := make([]byte, bufferSize)
+
 	for {
 		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
+		buf := make([]byte, 32768)
 		n, err := c.socket.Read(buf)
 		if !c.isAlive() {
 			return
@@ -180,7 +185,7 @@ func (c *Connection) readPool() {
 		if n == 0 {
 			continue
 		}
-		c.readBuffer = append(c.readBuffer, buf[:n]...)
+		c.clientMessageReader.Append(buf[:n])
 		c.receiveMessage()
 	}
 }
@@ -195,16 +200,17 @@ func (c *Connection) StartTime() int64 {
 }
 
 func (c *Connection) receiveMessage() {
-	/*	c.lastRead.Store(time.Now())
-		for len(c.readBuffer) > bufutil.Int32SizeInBytes {
-			frameLength := binary.LittleEndian.Uint32(c.readBuffer[0:bufutil.Int32SizeInBytes])
-			if frameLength > uint32(len(c.readBuffer)) {
+	for {
+		if c.clientMessageReader.ReadFrame() {
+			if c.clientMessageReader.clientMessage.EndFrame.IsFinalFrame() {
+				c.clientMessageBuilder.onMessage(c.clientMessageReader.clientMessage)
+				c.clientMessageReader.Reset()
 				return
 			}
-			resp := proto.NewClientMessage(c.readBuffer[:frameLength], 0)
-			c.readBuffer = c.readBuffer[frameLength:]
-			c.clientMessageBuilder.onMessage(resp)
-		}*/
+		} else {
+			return
+		}
+	}
 }
 
 func (c *Connection) localAddress() net.Addr {
@@ -239,4 +245,81 @@ func (c *Connection) String() string {
 		c.endpoint.Load().(core.Address),
 		c.lastRead.Load().(time.Time), c.lastWrite.Load().(time.Time),
 		c.closedTime.Load().(time.Time), c.connectedServerVersionStr)
+}
+
+type clientMessageReader struct {
+	chunks          [][]byte
+	chunksTotalSize int32
+	frameSize       int32
+	flags           uint16
+	clientMessage   *proto.ClientMessage
+	rwMutex         sync.RWMutex
+}
+
+func (c *clientMessageReader) Append(bytes []byte) {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+	c.chunksTotalSize += int32(len(bytes))
+	c.chunks = append(c.chunks, bytes)
+}
+
+func (c *clientMessageReader) ReadFrame() bool {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+	if c.chunksTotalSize < proto.SizeOfFrameLengthAndFlags {
+		// we don't have even the frame length and flags ready
+		return false
+	}
+
+	if c.frameSize == 0 {
+		c.readFrameSizeAndFlags()
+	}
+
+	if c.chunksTotalSize < c.frameSize {
+		return false
+	}
+
+	var buf []byte
+	if len(c.chunks) == 1 {
+		buf = c.chunks[0]
+	} else {
+		for i := 0; i < int(c.chunksTotalSize); i++ {
+			buf = append(buf, c.chunks[i]...)
+		}
+	}
+
+	if c.chunksTotalSize >= c.frameSize {
+		if len(c.chunks) == 1 {
+			c.chunks[0] = buf[c.frameSize:]
+		} else {
+			c.chunks = [][]byte{buf[0:c.frameSize]}
+		}
+		buf = buf[proto.SizeOfFrameLengthAndFlags:c.frameSize]
+	} else {
+		c.chunks = [][]byte{}
+		buf = buf[:proto.SizeOfFrameLengthAndFlags]
+	}
+
+	c.chunksTotalSize -= c.frameSize
+	c.frameSize = 0
+	// No need to reset flags since it will be overwritten on the next readFrameSizeAndFlags call.
+	frame := proto.NewFrameWith(buf, c.flags)
+	if c.clientMessage == nil {
+		c.clientMessage = proto.NewClientMessageForDecode(frame)
+	} else {
+		c.clientMessage.AddFrame(frame)
+	}
+	return true
+}
+
+func (c *clientMessageReader) readFrameSizeAndFlags() {
+	if len(c.chunks[0]) >= proto.SizeOfFrameLengthAndFlags {
+		c.frameSize = int32(binary.LittleEndian.Uint32(c.chunks[0]))
+		c.flags = binary.LittleEndian.Uint16(c.chunks[0][proto.IntSizeInBytes:])
+		return
+	}
+}
+
+func (c *clientMessageReader) Reset() {
+	c.clientMessage = nil
 }

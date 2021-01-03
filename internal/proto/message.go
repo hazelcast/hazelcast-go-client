@@ -124,7 +124,7 @@ func (clientMessage *ClientMessage) GetMessageType() int32 {
 }
 
 func (clientMessage *ClientMessage) SetCorrelationID(correlationID int64) {
-	binary.LittleEndian.PutUint64(clientMessage.StartFrame.Content, uint64(correlationID))
+	binary.LittleEndian.PutUint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
 }
 
 func (clientMessage *ClientMessage) GetCorrelationID() int64 {
@@ -164,9 +164,9 @@ func (clientMessage *ClientMessage) GetBytes(bytes []byte) int {
 		isLastFrame := currentFrame.next == nil
 		binary.LittleEndian.PutUint32(bytes[pos:], uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
 		if isLastFrame {
-			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], uint16(currentFrame.flags|IsFinalFlag))
+			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], currentFrame.flags|IsFinalFlag)
 		} else {
-			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], uint16(currentFrame.flags))
+			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], currentFrame.flags)
 		}
 		pos += SizeOfFrameLengthAndFlags
 		copy(bytes[pos:], currentFrame.Content)
@@ -208,7 +208,7 @@ func (forwardFrameIterator *ForwardFrameIterator) PeekNext() *Frame {
 // Frame
 type Frame struct {
 	Content []byte
-	flags   int32
+	flags   uint16
 	next    *Frame
 }
 
@@ -218,7 +218,7 @@ func NewFrame(content []byte) *Frame {
 }
 
 // NewFrame create with content with flags
-func NewFrameWith(content []byte, flags int32) *Frame {
+func NewFrameWith(content []byte, flags uint16) *Frame {
 	return &Frame{Content: content, flags: flags}
 }
 
@@ -274,7 +274,7 @@ func (frame Frame) IsFinalFrame() bool {
 	return frame.IsFlagSet(IsFinalFlag)
 }
 
-func (frame Frame) IsFlagSet(flagMask int32) bool {
+func (frame Frame) IsFlagSet(flagMask uint16) bool {
 	return frame.flags&flagMask == flagMask
 }
 

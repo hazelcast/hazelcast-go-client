@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/hazelcast/protocol/serialization"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,6 +25,7 @@ func TestCodecUtil_FastForwardToEndFrame(t *testing.T) {
 
 	//then
 	assert.False(t, iterator.HasNext())
+	println(message.GetCorrelationID())
 }
 
 func TestCodecUtil_EncodeNullable(t *testing.T) {
@@ -126,32 +126,6 @@ func TestCodecUtil_EncodeNullable_If_Value_Is_Null_Add_Null_Frame_To_Message(t *
 	assert.True(t, iterator.Next().IsNullFrame())
 }
 
-func TestDataCodec_Encode(t *testing.T) {
-	//given
-	bytes := []byte("value-0")
-	message := proto.NewClientMessageForEncode()
-
-	//when
-	DataCodec.Encode(message, serialization.NewHeapData(bytes))
-
-	//then
-	iterator := message.FrameIterator()
-	assert.Equal(t, string(iterator.Next().Content), "value-0")
-}
-
-func TestDataCodec_EncodeNullable(t *testing.T) {
-	//given
-	bytes := []byte("value-0")
-	message := proto.NewClientMessageForEncode()
-
-	//when
-	DataCodec.EncodeNullable(message, serialization.NewHeapData(bytes))
-
-	//then
-	iterator := message.FrameIterator()
-	assert.Equal(t, string(iterator.Next().Content), "value-0")
-}
-
 func TestDataCodec_EncodeNullable_When_Data_Is_Nil(t *testing.T) {
 	//given
 	message := proto.NewClientMessageForEncode()
@@ -201,33 +175,6 @@ func TestEntryListCodec_Encode(t *testing.T) {
 
 	//when
 	EntryListCodec.Encode(message, pairs, StringCodec.Encode, StringCodec.Encode)
-
-	//then
-	frameIterator := message.FrameIterator()
-	assert.Equal(t, string(frameIterator.Next().Content), "value-0")
-
-	beginFrame := frameIterator.Next()
-	assert.Empty(t, beginFrame.Content)
-	assert.True(t, beginFrame.IsBeginFrame())
-
-	assert.Equal(t, string(frameIterator.Next().Content), "key")
-	assert.Equal(t, string(frameIterator.Next().Content), "value")
-
-	endFrame := frameIterator.Next()
-	assert.Empty(t, endFrame.Content)
-	assert.True(t, endFrame.IsEndFrame())
-}
-
-func TestEntryListCodec_Encode_With_Data_Codec(t *testing.T) {
-	//given
-	bytes := []byte("value-0")
-	frame := proto.NewFrame(bytes)
-	message := proto.NewClientMessageForDecode(frame)
-	pairs := make([]proto.Pair, 0)
-	pairs = append(pairs, proto.NewPair(serialization.NewHeapData([]byte("key")), serialization.NewHeapData([]byte("value"))))
-
-	//when
-	EntryListCodec.Encode(message, pairs, DataCodec.Encode, DataCodec.Encode)
 
 	//then
 	frameIterator := message.FrameIterator()
@@ -306,37 +253,6 @@ func TestEntryListCodec_EncodeNullable_When_Entries_Is_Empty(t *testing.T) {
 	//then
 	frameIterator := message.FrameIterator()
 	assert.True(t, frameIterator.Next().IsNullFrame())
-}
-
-func TestEntryListCodec_Decode(t *testing.T) {
-	//given
-	bytes1 := []byte("value")
-	frame1 := proto.NewFrame(bytes1)
-
-	keyByte := []byte("key")
-	frame2 := proto.NewFrame(keyByte)
-
-	valueByte := []byte("value")
-	frame3 := proto.NewFrame(valueByte)
-
-	message := proto.NewClientMessageForDecode(frame1)
-	message.AddFrame(frame2)
-	message.AddFrame(frame3)
-	message.AddFrame(proto.EndFrame.Copy())
-
-	iterator := message.FrameIterator()
-
-	//when
-	results := EntryListCodec.Decode(iterator, DataCodec.Decode, DataCodec.Decode)
-
-	//then
-	assert.Len(t, results, 1)
-	pair := results[0]
-	key := pair.Key().(serialization.Data)
-	value := pair.Value().(serialization.Data)
-
-	assert.Equal(t, key.ToByteArray(), keyByte)
-	assert.Equal(t, value.ToByteArray(), valueByte)
 }
 
 func TestEntryListCodec_DecodeNullable(t *testing.T) {
@@ -653,97 +569,6 @@ func TestEntryListUUIDListIntegerCodec_Decode(t *testing.T) {
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, result[0].Key().([]core.UUID)[0].ToString(), key.ToString())
 	assert.EqualValues(t, result[0].Value().([]int32), value)
-}
-
-func TestListMultiFrameCodec_Encode(t *testing.T) {
-	// given
-	clientMessage := proto.NewClientMessageForEncode()
-	values := make([]serialization.Data, 0)
-	values = append(values, serialization.NewHeapData([]byte("values")))
-
-	// when
-	ListMultiFrameCodec.Encode(clientMessage, values, DataCodec.Encode)
-
-	// then
-	frames := clientMessage.FrameIterator()
-	assert.Equal(t, frames.Next().IsBeginFrame(), true)
-	assert.Equal(t, string(frames.Next().Content), "values")
-	assert.Equal(t, frames.Next().IsEndFrame(), true)
-}
-
-func TestListMultiFrameCodec_Encode_Contains_Nullable(t *testing.T) {
-	// given
-	clientMessage := proto.NewClientMessageForEncode()
-	values := make([]serialization.Data, 0)
-	values = append(values, nil, serialization.NewHeapData([]byte("values")))
-
-	// when
-	ListMultiFrameCodec.EncodeContainsNullable(clientMessage, values, DataCodec.Encode)
-
-	// then
-	frames := clientMessage.FrameIterator()
-	assert.Equal(t, frames.Next().IsBeginFrame(), true)
-	assert.Equal(t, frames.Next().IsNullFrame(), true)
-	assert.Equal(t, string(frames.Next().Content), "values")
-	assert.Equal(t, frames.Next().IsEndFrame(), true)
-}
-
-func TestListMultiFrameCodec_EncodeNullable_When_Values_Is_Empty(t *testing.T) {
-	// given
-	clientMessage := proto.NewClientMessageForEncode()
-	values := make([]serialization.Data, 0)
-
-	// when
-	ListMultiFrameCodec.EncodeNullable(clientMessage, values, DataCodec.Encode)
-
-	// then
-	assert.True(t, clientMessage.FrameIterator().Next().IsNullFrame())
-}
-
-func TestListMultiFrameCodec_EncodeNullable_When_Values_Is_Not_Empty(t *testing.T) {
-	// given
-	clientMessage := proto.NewClientMessageForEncode()
-	values := make([]serialization.Data, 0)
-	values = append(values, serialization.NewHeapData([]byte("values")))
-
-	// when
-	ListMultiFrameCodec.EncodeNullable(clientMessage, values, DataCodec.Encode)
-
-	// then
-	frames := clientMessage.FrameIterator()
-	assert.Equal(t, frames.Next().IsBeginFrame(), true)
-	assert.Equal(t, string(frames.Next().Content), "values")
-	assert.Equal(t, frames.Next().IsEndFrame(), true)
-}
-
-func TestListMultiFrameCodec_Decode(t *testing.T) {
-	// given
-	clientMessage := proto.NewClientMessageForEncode()
-	values := make([]serialization.Data, 0)
-	values = append(values, serialization.NewHeapData([]byte("values")))
-	ListMultiFrameCodec.Encode(clientMessage, values, DataCodec.Encode)
-
-	// when
-	decodeList := ListMultiFrameCodec.DecodeForData(clientMessage.FrameIterator())
-
-	// then
-	assert.Equal(t, len(decodeList), 1)
-	assert.Equal(t, decodeList[0].ToByteArray(), []byte("values"))
-}
-
-func TestListMultiFrameCodec_DecodeContainsNullable(t *testing.T) {
-	// given
-	clientMessage := proto.NewClientMessageForEncode()
-	values := make([]serialization.Data, 0)
-	values = append(values, serialization.NewHeapData([]byte("values")))
-	ListMultiFrameCodec.Encode(clientMessage, values, DataCodec.Encode)
-
-	// when
-	encodeList := ListMultiFrameCodec.DecodeForDataContainsNullable(clientMessage.FrameIterator())
-
-	// then
-	assert.Equal(t, len(encodeList), 1)
-	assert.Equal(t, encodeList[0].ToByteArray(), []byte("values"))
 }
 
 func TestLongArrayCodec_Encode(t *testing.T) {

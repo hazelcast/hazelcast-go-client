@@ -23,7 +23,7 @@ import (
 func main() {
 
 	config := hazelcast.NewConfig()
-	config.NetworkConfig().AddAddress("127.0.0.1:5701")
+	config.NetworkConfig().AddAddress("localhost:5701")
 
 	client, err := hazelcast.NewClientWithConfig(config)
 	if err != nil {
@@ -38,9 +38,5 @@ func main() {
 	result1, _ := mp.Get("key1")
 	fmt.Println("key1 has the value of ", result1)
 
-	result2, _ := mp.Get("key2")
-	fmt.Println("key2 has the value of ", result2)
-
-	mp.Clear()
-	client.Shutdown()
+	//client.Shutdown()
 }
