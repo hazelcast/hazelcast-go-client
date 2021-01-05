@@ -15,12 +15,12 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/config/property"
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type heartBeatService struct {
@@ -74,7 +74,7 @@ func (hbs *heartBeatService) heartBeat() {
 			}
 		}
 		if timeSinceLastWrite > hbs.heartBeatInterval {
-			request := proto.ClientPingEncodeRequest()
+			request := codec.ClientPingCodec.EncodeRequest()
 			sentInvocation := hbs.client.InvocationService.invokeOnConnection(request, connection)
 			go func(con *Connection) {
 				_, err := sentInvocation.Result()

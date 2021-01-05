@@ -317,8 +317,7 @@ func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connect
 		if asOwner {
 			cm.client.ClusterService.ownerConnectionAddress.Store(address)
 			cm.client.ClusterService.ownerUUID.Store(memberUuid.ToString())
-			//TODO
-			//cm.client.ClusterService.uuid.Store(clusterId)
+			cm.client.ClusterService.uuid.Store(memberUuid.ToString())
 			cm.logger.Info("Setting ", connection, " as owner.")
 		}
 	case credentialsFailed:
