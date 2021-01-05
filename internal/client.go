@@ -218,14 +218,14 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
-	c.PartitionService.start()
+	//c.PartitionService.start()
 	err = c.ClusterService.start()
 	if err != nil {
 		return err
 	}
 
-	c.HeartBeatService.start()
-	c.statistics.start()
+	//c.HeartBeatService.start()
+	//c.statistics.start()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
 }
