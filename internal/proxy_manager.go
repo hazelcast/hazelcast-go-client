@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"sync"
 	"sync/atomic"
 
@@ -63,7 +64,7 @@ func (pm *proxyManager) getOrCreateProxy(serviceName string, name string) (core.
 }
 
 func (pm *proxyManager) createProxy(serviceName string, name string) (core.DistributedObject, error) {
-	message := proto.ClientCreateProxyEncodeRequest(name, serviceName, pm.findNextProxyAddress().(*proto.Address))
+	message := codec.ClientCreateProxyCodec.EncodeRequest(name, serviceName)
 	_, err := pm.client.InvocationService.invokeOnRandomTarget(message).Result()
 	if err != nil {
 		return nil, err
