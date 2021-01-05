@@ -25,11 +25,10 @@ type clientMessageBuilder struct {
 
 func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
 
-	println(msg.GetCorrelationID())
-	println(msg.GetFragmentationID())
-
 	if msg.StartFrame.HasUnFragmentedMessageFlags() {
 		mb.handleResponse(msg)
+	} else {
+		println("here")
 	}
 
 	//TODO
