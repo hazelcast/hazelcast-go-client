@@ -62,6 +62,9 @@ type Config struct {
 
 	// reliableTopicConfigMap is mapping of names to ReliableTopicConfigs
 	reliableTopicConfigMap map[string]*ReliableTopicConfig
+
+	// labels for the client to be sent to the cluster.
+	labels []string
 }
 
 // New returns a new Config with default configuration.
@@ -76,6 +79,7 @@ func New() *Config {
 		securityConfig:            new(SecurityConfig),
 		reliableTopicConfigMap:    make(map[string]*ReliableTopicConfig),
 		loggerConfig:              NewLoggerConfig(),
+		labels:                    make([]string, 0),
 	}
 }
 
@@ -218,4 +222,8 @@ func (c *Config) SetNetworkConfig(networkConfig *NetworkConfig) {
 // SetSerializationConfig sets the serialization config.
 func (c *Config) SetSerializationConfig(serializationConfig *serialization.Config) {
 	c.serializationConfig = serializationConfig
+}
+
+func (c *Config) GetLabels() []string {
+	return c.labels
 }

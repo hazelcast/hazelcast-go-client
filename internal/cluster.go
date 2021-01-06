@@ -16,6 +16,8 @@ package internal
 
 import (
 	"fmt"
+	"net"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -34,20 +36,26 @@ const (
 	memberRemoved  int32 = 2
 )
 
+var EmptySnapshot = NewEmptyMemberListSnapshot()
+
 type clusterService struct {
-	client                 *HazelcastClient
-	config                 *config.Config
-	members                atomic.Value
-	ownerUUID              atomic.Value
-	uuid                   atomic.Value
-	ownerConnectionAddress atomic.Value
-	listeners              sync.Map
-	removeListenerMu       sync.Mutex
-	addressProviders       []AddressProvider
-	initialMemberListWg    *sync.WaitGroup
-	reconnectChan          chan struct{}
-	cancelChan             chan struct{}
-	logger                 logger.Logger
+	client                  *HazelcastClient
+	config                  *config.Config
+	members                 atomic.Value
+	ownerUUID               atomic.Value
+	uuid                    atomic.Value
+	ownerConnectionAddress  atomic.Value
+	listeners               sync.Map
+	removeListenerMu        sync.Mutex
+	addressProviders        []AddressProvider
+	initialMemberListWg     *sync.WaitGroup
+	reconnectChan           chan struct{}
+	cancelChan              chan struct{}
+	listenersV2             sync.Map
+	memberListSnapshot      atomic.Value
+	labels                  []string
+	initialListFetchedLatch sync.WaitGroup
+	logger                  logger.Logger
 }
 
 func newClusterService(client *HazelcastClient, addressProviders []AddressProvider) *clusterService {
@@ -70,6 +78,125 @@ func (cs *clusterService) init() {
 	cs.initialMemberListWg = new(sync.WaitGroup)
 	cs.ownerUUID.Store("") //Initialize
 	cs.uuid.Store("")      //Initialize
+	cs.memberListSnapshot.Store(EmptySnapshot)
+	cs.labels = cs.client.Config.GetLabels()
+	cs.initialListFetchedLatch.Add(1)
+}
+
+func (cs *clusterService) GetMemberV2(uuid string) core.Member {
+	return cs.memberListSnapshot.Load().(MemberListSnapshot).members[uuid]
+}
+
+func (cs *clusterService) GetMemberList() []core.Member {
+	memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
+	members := make([]core.Member, 0, len(memberListSnapshot.members))
+	for _, member := range memberListSnapshot.members {
+		members = append(members, member)
+	}
+	return members
+}
+
+func (cs *clusterService) GetMembersV2(selector core.MemberSelector) []core.Member {
+	if selector == nil {
+		return cs.GetMembers()
+	}
+	membersList := cs.memberListSnapshot.Load().(MemberListSnapshot)
+	members := make([]core.Member, 0)
+	for _, member := range membersList.members {
+		if selector.Select(member) {
+			members = append(members, member)
+		}
+	}
+	return members
+}
+
+func (cs *clusterService) GetSize() int {
+	membersList := cs.memberListSnapshot.Load().(MemberListSnapshot)
+	return len(membersList.members)
+}
+
+func (cs *clusterService) GetLocalClient() core.ClientInfo {
+	connectionManager := cs.client.ConnectionManager
+	connection := connectionManager.getRandomConnection()
+	var localAddress net.Addr
+	if connection != nil {
+		localAddress = connection.localAddress()
+	} else {
+		localAddress = nil
+	}
+	clientName := cs.client.Name()
+	uuid := connectionManager.getClientUUID()
+	return core.ClientInfo{UUID: uuid, LocalAddress: localAddress, ClientType: proto.ClientType, Name: clientName, Labels: cs.labels}
+}
+
+func (cs *clusterService) AddMembershipListenerV2(listener MembershipListener) string {
+	registrationId := core.NewUUID().ToString()
+	cs.listenersV2.Store(registrationId, listener)
+
+	if isInitialMembershipListener(listener) {
+		members := cs.GetMemberList()
+		if len(members) == 0 {
+			// if members are empty,it means initial event did not arrive yet
+			// it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
+			membershipEvent := NewInitialMembershipEvent(members)
+			listener.(InitialMembershipListener).init(membershipEvent)
+		}
+	}
+	return registrationId
+}
+
+func isInitialMembershipListener(listener MembershipListener) bool {
+	initialMembershipListener := reflect.TypeOf((*InitialMembershipListener)(nil)).Elem()
+	return reflect.TypeOf(&listener).Implements(initialMembershipListener)
+}
+
+func (cs *clusterService) RemoveMembershipListenerV2(uuid string) bool {
+	cs.listenersV2.Delete(uuid)
+	_, ok := cs.listenersV2.Load(uuid)
+	return !ok
+}
+
+func (cs *clusterService) StartV2(configuredListeners []MembershipListener) {
+	for _, eachMembershipListener := range configuredListeners {
+		cs.AddMembershipListenerV2(eachMembershipListener)
+	}
+}
+
+func (cs *clusterService) Reset() {
+	cs.logger.Debug("ClusterService Resetting the cluster snapshot.")
+}
+
+func (cs *clusterService) WaitForInitialMemberList() {
+	panic("implement me")
+}
+
+func (cs *clusterService) handleMembersViewEvent(memberListVersion int32, memberInfos []core.MemberInfo) {
+	memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
+	if reflect.DeepEqual(EmptySnapshot, memberListSnapshot) {
+		//this means this is the first time client connected to cluster
+		applyInitialState(memberListVersion, memberInfos)
+		cs.initialListFetchedLatch.Done()
+	}
+}
+
+func applyInitialState(memberListVersion int32, memberInfos []core.MemberInfo) {
+	/*	snapshot := createSnapshot(memberListVersion, memberInfos)
+	 */
+}
+
+func createSnapshot(memberListVersion int32, memberInfos []core.MemberInfo) interface{} {
+	/*	newMembers := make(map[string]core.Member, 0)
+
+		for i, memberInfo := range memberInfos {
+			address := memberInfo.GetAddress()
+			proto.NewMember(address.(core.Address), "", true, memberInfo.GetAttributes())
+		}
+	*/
+	return nil
+}
+
+func (cs *clusterService) clearMemberListVersion() {
+	//TODO
 }
 
 func (cs *clusterService) registerMembershipListeners() {
@@ -470,10 +597,62 @@ func (cs *clusterService) shutdown() {
 	cs.cancelChan <- struct{}{}
 }
 
-func (cs *clusterService) handleMembersViewEvent(version int32, infos []core.MemberInfo) {
-	//TODO
+type MembershipListener interface {
+	/*
+		memberAdded Invoked when a new member is added to the cluster.
+	*/
+	memberAdded(membershipEvent MembershipEvent)
+
+	/*
+		memberRemoved Invoked when an existing member leaves the cluster.
+	*/
+	memberRemoved(membershipEvent MembershipEvent)
 }
 
-func (cs *clusterService) clearMemberListVersion() {
-	//TODO
+type MemberEvent int
+
+const (
+	ADDED = iota + 1
+	REMOVED
+)
+
+type MembershipEvent struct {
+	/*
+		Removed or added member.
+	*/
+	member proto.Member
+
+	/**
+	 * Members list at the moment after this event.
+	 */
+	members []proto.Member
+
+	eventType MemberEvent
+}
+
+type MemberListSnapshot struct {
+	version int32
+	members map[string]core.Member
+}
+
+func NewMemberListSnapshot(version int32, members map[string]core.Member) MemberListSnapshot {
+	return MemberListSnapshot{version, members}
+}
+
+func NewEmptyMemberListSnapshot() MemberListSnapshot {
+	return MemberListSnapshot{-1, make(map[string]core.Member, 0)}
+}
+
+// An event that is sent when a initialMembershipListener registers itself on a cluster.
+type InitialMembershipEvent struct {
+	members []core.Member
+}
+
+func NewInitialMembershipEvent(members []core.Member) InitialMembershipEvent {
+	return InitialMembershipEvent{members: members}
+}
+
+type InitialMembershipListener interface {
+	MembershipListener
+	init(event InitialMembershipEvent)
 }

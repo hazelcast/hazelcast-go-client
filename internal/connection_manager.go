@@ -52,7 +52,7 @@ type connectionManager interface {
 	getOrTriggerConnect(address core.Address) (*Connection, error)
 
 	getOwnerConnection() *Connection
-
+	getClientUUID() core.UUID
 	getRandomConnection() *Connection
 	addListener(listener connectionListener)
 	onConnectionClose(connection *Connection, cause error)
@@ -135,6 +135,10 @@ func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
 	return cm.getActiveConnection(ownerConnectionAddress)
 }
 
+func (cm *connectionManagerImpl) getClientUUID() core.UUID {
+	return cm.clientUUID
+}
+
 func (cm *connectionManagerImpl) getRandomConnection() *Connection {
 	panic("implement me")
 }
@@ -167,6 +171,7 @@ type connectionManagerImpl struct {
 	addressTranslator   AddressTranslator
 	isAlive             atomic.Value
 	credentials         security.Credentials
+	clientUUID          core.UUID
 	logger              logger.Logger
 }
 
@@ -176,6 +181,7 @@ func newConnectionManager(client *HazelcastClient, addressTranslator AddressTran
 		connections:       make(map[string]*Connection),
 		addressTranslator: addressTranslator,
 		credentials:       client.credentials,
+		clientUUID:        core.NewUUID(),
 		logger:            client.logger,
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0))

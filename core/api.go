@@ -18,6 +18,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -31,6 +32,14 @@ type Address interface {
 	Port() int
 	GetHost() string
 	GetPort() int32
+}
+
+type ClientInfo struct {
+	UUID         UUID
+	LocalAddress net.Addr
+	ClientType   string
+	Name         string
+	Labels       []string
 }
 
 // Member represents a member in the cluster with its address, uuid, lite member status and attributes.
