@@ -53,6 +53,7 @@ type connectionManager interface {
 
 	getOwnerConnection() *Connection
 
+	getRandomConnection() *Connection
 	addListener(listener connectionListener)
 	onConnectionClose(connection *Connection, cause error)
 	NextConnectionID() int64
@@ -132,6 +133,10 @@ func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
 		return nil
 	}
 	return cm.getActiveConnection(ownerConnectionAddress)
+}
+
+func (cm *connectionManagerImpl) getRandomConnection() *Connection {
+	panic("implement me")
 }
 
 func (cm *connectionManagerImpl) IsAlive() bool {
