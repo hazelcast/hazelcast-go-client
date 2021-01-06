@@ -41,23 +41,24 @@ import (
 var clientID int64
 
 type HazelcastClient struct {
-	InvocationService    invocationService
-	Config               *config.Config
-	PartitionService     *partitionService
-	SerializationService spi.SerializationService
-	lifecycleService     *lifecycleService
-	ConnectionManager    connectionManager
-	ListenerService      *listenerService
-	ClusterService       *clusterService
-	ProxyManager         *proxyManager
-	LoadBalancer         core.LoadBalancer
-	HeartBeatService     *heartBeatService
-	properties           *property.HazelcastProperties
-	credentials          security.Credentials
-	name                 string
-	id                   int64
-	statistics           *statistics
-	logger               logger.Logger
+	InvocationService          invocationService
+	Config                     *config.Config
+	PartitionService           *partitionService
+	SerializationService       spi.SerializationService
+	lifecycleService           *lifecycleService
+	ConnectionManager          connectionManager
+	ListenerService            *listenerService
+	ClusterService             *clusterService
+	ProxyManager               *proxyManager
+	LoadBalancer               core.LoadBalancer
+	HeartBeatService           *heartBeatService
+	properties                 *property.HazelcastProperties
+	credentials                security.Credentials
+	name                       string
+	id                         int64
+	statistics                 *statistics
+	logger                     logger.Logger
+	clusterViewListenerService clusterViewListenerService
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
@@ -208,6 +209,7 @@ func (c *HazelcastClient) init() error {
 	c.InvocationService = newInvocationService(c)
 	addressProviders := c.createAddressProviders()
 	c.ClusterService = newClusterService(c, addressProviders)
+	c.clusterViewListenerService = newClusterViewListenerService(c)
 	c.ListenerService = newListenerService(c)
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
@@ -220,6 +222,7 @@ func (c *HazelcastClient) init() error {
 	}
 	//c.PartitionService.start()
 	err = c.ClusterService.start()
+	c.clusterViewListenerService.start()
 	if err != nil {
 		return err
 	}

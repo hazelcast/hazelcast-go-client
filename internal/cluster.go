@@ -201,14 +201,12 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 		return err
 	}
 
-	//TODO ask to anyone
-
 	/*	err = cs.initMembershipListener(connection)
 		if err != nil {
 			return err
 		}
-		cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)*/
-
+	*/
+	cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)
 	return nil
 }
 
@@ -470,4 +468,12 @@ func (cs *clusterService) onConnectionOpened(connection *Connection) {
 
 func (cs *clusterService) shutdown() {
 	cs.cancelChan <- struct{}{}
+}
+
+func (cs *clusterService) handleMembersViewEvent(version int32, infos []core.MemberInfo) {
+	//TODO
+}
+
+func (cs *clusterService) clearMemberListVersion() {
+	//TODO
 }
