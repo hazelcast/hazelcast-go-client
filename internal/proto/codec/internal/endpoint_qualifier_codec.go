@@ -16,7 +16,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -29,7 +28,7 @@ type endpointqualifierCodec struct{}
 
 var EndpointQualifierCodec endpointqualifierCodec
 
-func (endpointqualifierCodec) Encode(clientMessage *proto.ClientMessage, endpointQualifier core.EndpointQualifier) {
+func (endpointqualifierCodec) Encode(clientMessage *proto.ClientMessage, endpointQualifier proto.EndpointQualifier) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, EndpointQualifierCodecTypeInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, EndpointQualifierCodecTypeFieldOffset, endpointQualifier.GetType())

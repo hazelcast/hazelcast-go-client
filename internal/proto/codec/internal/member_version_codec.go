@@ -16,7 +16,6 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -31,7 +30,7 @@ type memberversionCodec struct{}
 
 var MemberVersionCodec memberversionCodec
 
-func (memberversionCodec) Encode(clientMessage *proto.ClientMessage, memberVersion core.MemberVersion) {
+func (memberversionCodec) Encode(clientMessage *proto.ClientMessage, memberVersion proto.MemberVersion) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberVersionCodecPatchInitialFrameSize))
 	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.GetMajor())
@@ -42,7 +41,7 @@ func (memberversionCodec) Encode(clientMessage *proto.ClientMessage, memberVersi
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (memberversionCodec) Decode(frameIterator *proto.ForwardFrameIterator) core.MemberVersion {
+func (memberversionCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.MemberVersion {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -51,5 +50,5 @@ func (memberversionCodec) Decode(frameIterator *proto.ForwardFrameIterator) core
 	patch := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return core.NewMemberVersion(major, minor, patch)
+	return proto.NewMemberVersion(major, minor, patch)
 }

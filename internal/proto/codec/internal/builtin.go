@@ -591,8 +591,8 @@ func (c listMultiFrameCodec) DecodeForDistributedObjectInfo(frameIterator *proto
 	return result
 }
 
-func (c listMultiFrameCodec) DecodeForMemberInfo(frameIterator *proto.ForwardFrameIterator) []core.MemberInfo {
-	result := make([]core.MemberInfo, 0)
+func (c listMultiFrameCodec) DecodeForMemberInfo(frameIterator *proto.ForwardFrameIterator) []proto.MemberInfo {
+	result := make([]proto.MemberInfo, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, MemberInfoCodec.Decode(frameIterator))
@@ -711,7 +711,7 @@ func (mapCodec) EncodeForStringAndString(message *proto.ClientMessage, values ma
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (mapCodec) EncodeForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[core.EndpointQualifier]core.Address) {
+func (mapCodec) EncodeForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[proto.EndpointQualifier]core.Address) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {
 		EndpointQualifierCodec.Encode(message, key)
