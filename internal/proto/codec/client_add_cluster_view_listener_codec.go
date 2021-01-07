@@ -14,7 +14,6 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
 )
@@ -54,7 +53,7 @@ func (clientAddClusterViewListenerCodec) EncodeRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func (clientAddClusterViewListenerCodec) Handle(clientMessage *proto.ClientMessage, handleMembersViewEvent func(version int32, memberInfos []core.MemberInfo), handlePartitionsViewEvent func(version int32, partitions []proto.Pair)) {
+func (clientAddClusterViewListenerCodec) Handle(clientMessage *proto.ClientMessage, handleMembersViewEvent func(version int32, memberInfos []proto.MemberInfo), handlePartitionsViewEvent func(version int32, partitions []proto.Pair)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddClusterViewListenerCodecEventMembersViewMessageType {

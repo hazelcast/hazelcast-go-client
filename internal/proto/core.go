@@ -40,22 +40,22 @@ func NewAddressWithParameters(Host string, Port int) *Address {
 	return &Address{Host, Port}
 }
 
-func (a *Address) Host() string {
+func (a Address) Host() string {
 	return a.host
 }
 
-func (a *Address) Port() int {
+func (a Address) Port() int {
 	return int(a.port)
 }
 
-func (a *Address) String() string {
+func (a Address) String() string {
 	return a.Host() + ":" + strconv.Itoa(a.Port())
 }
-func (a *Address) GetHost() string {
+func (a Address) GetHost() string {
 	return a.host
 }
 
-func (a *Address) GetPort() int32 {
+func (a Address) GetPort() int32 {
 	return int32(a.port)
 }
 
@@ -65,18 +65,20 @@ type uuid struct {
 }
 
 type Member struct {
-	address      Address
+	address      core.Address
 	uuid         string
 	isLiteMember bool
 	attributes   map[string]string
+	version      MemberVersion
+	addressMap   map[EndpointQualifier]core.Address
 }
 
-func NewMember(address Address, uuid string, isLiteMember bool, attributes map[string]string) *Member {
-	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes}
+func NewMember(address core.Address, uuid string, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]core.Address) *Member {
+	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes, version: version, addressMap: addressMap}
 }
 
 func (m *Member) Address() core.Address {
-	return &m.address
+	return m.address
 }
 
 func (m *Member) UUID() string {
@@ -276,7 +278,7 @@ func NewEntryView(key interface{}, value interface{}, cost int64, creationTime i
 		lastUpdateTime:         timeutil.ConvertMillisToUnixTime(lastUpdateTime),
 		version:                version,
 		evictionCriteriaNumber: evictionCriteriaNumber,
-		ttl: timeutil.ConvertMillisToDuration(ttl),
+		ttl:                    timeutil.ConvertMillisToDuration(ttl),
 	}
 }
 
@@ -559,4 +561,95 @@ func (m *TopicMessage) PublishTime() time.Time {
 
 func (m *TopicMessage) PublishingMember() core.Member {
 	return m.publishingMember
+}
+
+// MemberVersion
+type MemberVersion struct {
+	major int8
+	minor int8
+	patch int8
+}
+
+func NewMemberVersion(major, minor, patch byte) MemberVersion {
+	return MemberVersion{int8(major), int8(minor), int8(patch)}
+}
+
+func (memberVersion MemberVersion) GetMajor() byte {
+	return byte(memberVersion.major)
+}
+
+func (memberVersion MemberVersion) GetMinor() byte {
+	return byte(memberVersion.minor)
+}
+
+func (memberVersion MemberVersion) GetPatch() byte {
+	return byte(memberVersion.patch)
+}
+
+// MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
+type MemberInfo struct {
+	// address is proto.Address: Address of the member.
+	address core.Address
+
+	// uuid is core.UUID: UUID of the member.
+	uuid core.UUID
+
+	// liteMember represents member is a lite member. Lite members do not own any partition.
+	liteMember bool
+
+	// attributes are configured attributes of the member
+	attributes map[string]string
+
+	// version is core.MemberVersion: Hazelcast codebase version of the member.
+	version MemberVersion
+
+	// addressMap
+	addressMap map[EndpointQualifier]core.Address
+}
+
+func NewMemberInfo(address core.Address, uuid core.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
+	isAddressMapExists bool, addressMap interface{}) MemberInfo {
+	return MemberInfo{address: address, uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
+		addressMap: addressMap.(map[EndpointQualifier]core.Address)}
+}
+
+func (memberInfo MemberInfo) GetAddress() core.Address {
+	return memberInfo.address
+}
+
+func (memberInfo MemberInfo) GetUuid() core.UUID {
+	return memberInfo.uuid
+}
+
+func (memberInfo MemberInfo) GetAttributes() map[string]string {
+	return memberInfo.attributes
+}
+
+func (memberInfo MemberInfo) GetLiteMember() bool {
+	return memberInfo.liteMember
+}
+
+func (memberInfo MemberInfo) GetVersion() MemberVersion {
+	return memberInfo.version
+}
+
+func (memberInfo MemberInfo) GetAddressMap() map[EndpointQualifier]core.Address {
+	return memberInfo.addressMap
+}
+
+type EndpointQualifier struct {
+	_type      int32
+	identifier string
+}
+
+func NewEndpointQualifier(_type int32, identifier string) EndpointQualifier {
+	return EndpointQualifier{_type, identifier}
+}
+
+func (e EndpointQualifier) GetType() int32 {
+	return e._type
+}
+
+func (e EndpointQualifier) GetIdentifier() string {
+	return e.identifier
 }
