@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,10 +31,11 @@ import (
 )
 
 const (
-	defaultAddress       = "127.0.0.1"
-	defaultPort          = 5701
-	memberAdded    int32 = 1
-	memberRemoved  int32 = 2
+	defaultAddress              = "127.0.0.1"
+	defaultPort                 = 5701
+	memberAdded           int32 = 1
+	memberRemoved         int32 = 2
+	InitialMembersTimeout       = 120 * time.Second
 )
 
 var EmptySnapshot = NewEmptyMemberListSnapshot()
@@ -54,7 +56,7 @@ type clusterService struct {
 	listenersV2             sync.Map
 	memberListSnapshot      atomic.Value
 	labels                  []string
-	initialListFetchedLatch sync.WaitGroup
+	initialListFetchedLatch TimedWaitGroup
 	logger                  logger.Logger
 }
 
@@ -84,13 +86,13 @@ func (cs *clusterService) init() {
 }
 
 func (cs *clusterService) GetMemberV2(uuid string) core.Member {
-	return cs.memberListSnapshot.Load().(MemberListSnapshot).members[uuid]
+	return cs.memberListSnapshot.Load().(MemberListSnapshot).GetMembers()[uuid]
 }
 
 func (cs *clusterService) GetMemberList() []core.Member {
 	memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
-	members := make([]core.Member, 0, len(memberListSnapshot.members))
-	for _, member := range memberListSnapshot.members {
+	members := make([]core.Member, 0, len(memberListSnapshot.GetMembers()))
+	for _, member := range memberListSnapshot.GetMembers() {
 		members = append(members, member)
 	}
 	return members
@@ -102,7 +104,7 @@ func (cs *clusterService) GetMembersV2(selector core.MemberSelector) []core.Memb
 	}
 	membersList := cs.memberListSnapshot.Load().(MemberListSnapshot)
 	members := make([]core.Member, 0)
-	for _, member := range membersList.members {
+	for _, member := range membersList.GetMembers() {
 		if selector.Select(member) {
 			members = append(members, member)
 		}
@@ -112,7 +114,7 @@ func (cs *clusterService) GetMembersV2(selector core.MemberSelector) []core.Memb
 
 func (cs *clusterService) GetSize() int {
 	membersList := cs.memberListSnapshot.Load().(MemberListSnapshot)
-	return len(membersList.members)
+	return len(membersList.GetMembers())
 }
 
 func (cs *clusterService) GetLocalClient() core.ClientInfo {
@@ -162,41 +164,141 @@ func (cs *clusterService) StartV2(configuredListeners []MembershipListener) {
 	}
 }
 
-func (cs *clusterService) Reset() {
-	cs.logger.Debug("ClusterService Resetting the cluster snapshot.")
-}
-
-func (cs *clusterService) WaitForInitialMemberList() {
-	panic("implement me")
-}
-
-func (cs *clusterService) handleMembersViewEvent(memberListVersion int32, memberInfos []core.MemberInfo) {
-	memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
-	if reflect.DeepEqual(EmptySnapshot, memberListSnapshot) {
-		//this means this is the first time client connected to cluster
-		applyInitialState(memberListVersion, memberInfos)
-		cs.initialListFetchedLatch.Done()
+func (cs *clusterService) WaitForInitialMemberList() error {
+	await := cs.initialListFetchedLatch.Await(InitialMembersTimeout)
+	if !await {
+		return core.NewHazelcastIllegalStateError("Could not get initial member list from the cluster!", nil)
 	}
-}
-
-func applyInitialState(memberListVersion int32, memberInfos []core.MemberInfo) {
-	/*	snapshot := createSnapshot(memberListVersion, memberInfos)
-	 */
-}
-
-func createSnapshot(memberListVersion int32, memberInfos []core.MemberInfo) interface{} {
-	/*	newMembers := make(map[string]core.Member, 0)
-
-		for i, memberInfo := range memberInfos {
-			address := memberInfo.GetAddress()
-			proto.NewMember(address.(core.Address), "", true, memberInfo.GetAttributes())
-		}
-	*/
 	return nil
 }
 
+func (cs *clusterService) handleMembersViewEvent(memberListVersion int32, memberInfos []proto.MemberInfo) {
+	memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
+	if reflect.DeepEqual(EmptySnapshot, memberListSnapshot) {
+		//this means this is the first time client connected to cluster
+		cs.applyInitialState(memberListVersion, memberInfos)
+		cs.initialListFetchedLatch.Done()
+		return
+	}
+
+	if memberListVersion >= memberListSnapshot.GetVersion() {
+		prevMembers := memberListSnapshot.GetMembers()
+		snapshot := createSnapshot(memberListVersion, memberInfos)
+		cs.memberListSnapshot.Store(snapshot)
+		currentMembers := snapshot.GetMemberList()
+		membershipEvents := cs.detectMembershipEvents(prevMembers, currentMembers)
+		cs.fireEvents(membershipEvents)
+	}
+}
+
+func (cs *clusterService) applyInitialState(memberListVersion int32, memberInfos []proto.MemberInfo) {
+	snapshot := createSnapshot(memberListVersion, memberInfos)
+	cs.memberListSnapshot.Store(snapshot)
+	cs.logger.Info(membersString(snapshot))
+	initialMembershipEvent := NewInitialMembershipEvent(snapshot.GetMemberList())
+
+	cs.listenersV2.Range(func(key, value interface{}) bool {
+		listener := value.(MembershipListener)
+		if isInitialMembershipListener(listener) {
+			listener.(InitialMembershipListener).init(initialMembershipEvent)
+		}
+		return true
+	})
+}
+
+func membersString(snapshot MemberListSnapshot) string {
+	var sb strings.Builder
+	sb.WriteString("\n\nMembers [")
+	sb.WriteString(string(len(snapshot.GetMembers())))
+	sb.WriteString("] {")
+	for _, member := range snapshot.GetMembers() {
+		sb.WriteString("\n\t")
+		sb.WriteString(member.String())
+	}
+	sb.WriteString("\n}\n")
+	return sb.String()
+}
+
+func createSnapshot(memberListVersion int32, memberInfos []proto.MemberInfo) MemberListSnapshot {
+	newMembers := make(map[string]core.Member, len(memberInfos))
+
+	for _, memberInfo := range memberInfos {
+		uuid := memberInfo.GetUuid().ToString()
+		member := proto.NewMember(memberInfo.GetAddress(), uuid, memberInfo.GetLiteMember(),
+			memberInfo.GetAttributes(), memberInfo.GetVersion(), memberInfo.GetAddressMap())
+		newMembers[uuid] = member
+	}
+
+	return NewMemberListSnapshot(memberListVersion, newMembers)
+}
+
+func (cs *clusterService) detectMembershipEvents(prevMembers map[string]core.Member, currentMembers []core.Member) []MembershipEvent {
+	newMembers := make([]core.Member, 0)
+	deadMembers := make(map[string]core.Member)
+	for _, eachMember := range prevMembers {
+		deadMembers[eachMember.UUID()] = eachMember
+	}
+
+	for _, eachMember := range currentMembers {
+		member, ok := deadMembers[eachMember.UUID()]
+		if !ok {
+			newMembers = append(newMembers, member)
+		} else {
+			delete(deadMembers, eachMember.UUID())
+		}
+	}
+
+	membershipEvents := make([]MembershipEvent, 0)
+	for _, eachMember := range deadMembers {
+		membershipEvents = append(membershipEvents, NewMembershipEvent(eachMember, currentMembers, REMOVED))
+		connection, ok := cs.client.ConnectionManager.getActiveConnections()[eachMember.UUID()]
+		if ok {
+			connection.close(core.NewHazelcastTargetDisconnectedError("The client has closed the connection to this"+
+				"member, after receiving a member left event from the cluster", nil))
+		}
+	}
+
+	for _, eachMember := range newMembers {
+		membershipEvents = append(membershipEvents, NewMembershipEvent(eachMember, currentMembers, REMOVED))
+	}
+
+	if len(membershipEvents) != 0 {
+		memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
+		if len(memberListSnapshot.GetMembers()) != 0 {
+			cs.logger.Info("ClusterService" + membersString(memberListSnapshot))
+		}
+	}
+
+	return membershipEvents
+}
+
+func (cs *clusterService) fireEvents(events []MembershipEvent) {
+	for _, event := range events {
+		cs.listenersV2.Range(func(key, value interface{}) bool {
+			listener := value.(MembershipListener)
+			if event.eventType == ADDED {
+				listener.memberAdded(event)
+			} else if event.eventType == REMOVED {
+				listener.memberRemoved(event)
+			}
+			return true
+		})
+	}
+}
+
 func (cs *clusterService) clearMemberListVersion() {
-	//TODO
+	clusterViewSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
+
+	if clusterViewSnapshot != EmptySnapshot {
+		cs.memberListSnapshot.Store(NewMemberListSnapshot(0, clusterViewSnapshot.GetMembers()))
+	}
+}
+
+func (cs *clusterService) Reset() {
+	cs.logger.Debug("ClusterService Resetting the cluster snapshot.")
+	cs.initialListFetchedLatch = TimedWaitGroup{}
+	cs.initialListFetchedLatch.Add(1)
+	cs.memberListSnapshot.Store(EmptySnapshot)
 }
 
 func (cs *clusterService) registerMembershipListeners() {
@@ -620,27 +722,53 @@ type MembershipEvent struct {
 	/*
 		Removed or added member.
 	*/
-	member proto.Member
+	member core.Member
 
 	/**
 	 * Members list at the moment after this event.
 	 */
-	members []proto.Member
+	members []core.Member
 
 	eventType MemberEvent
 }
 
-type MemberListSnapshot struct {
+func NewMembershipEvent(member core.Member, members []core.Member, eventType MemberEvent) MembershipEvent {
+	return MembershipEvent{member: member, members: members, eventType: eventType}
+}
+
+type MemberListSnapshot interface {
+	GetVersion() int32
+	GetMembers() map[string]core.Member
+	GetMemberList() []core.Member
+}
+
+type memberListSnapshot struct {
 	version int32
 	members map[string]core.Member
 }
 
 func NewMemberListSnapshot(version int32, members map[string]core.Member) MemberListSnapshot {
-	return MemberListSnapshot{version, members}
+	return memberListSnapshot{version, members}
 }
 
 func NewEmptyMemberListSnapshot() MemberListSnapshot {
-	return MemberListSnapshot{-1, make(map[string]core.Member, 0)}
+	return memberListSnapshot{-1, make(map[string]core.Member, 0)}
+}
+
+func (m memberListSnapshot) GetVersion() int32 {
+	return m.version
+}
+
+func (m memberListSnapshot) GetMembers() map[string]core.Member {
+	return m.members
+}
+
+func (m memberListSnapshot) GetMemberList() []core.Member {
+	members := make([]core.Member, len(m.members))
+	for _, eachMember := range m.members {
+		members = append(members, eachMember)
+	}
+	return members
 }
 
 // An event that is sent when a initialMembershipListener registers itself on a cluster.
