@@ -64,7 +64,7 @@ type Config struct {
 	reliableTopicConfigMap map[string]*ReliableTopicConfig
 
 	// connectionStrategyConfig Connection strategy config of the client.
-	connectionStrategyConfig *ClientConnectionStrategyConfig
+	connectionStrategyConfig ConnectionStrategyConfig
 
 	// labels for the client to be sent to the cluster.
 	labels []string
@@ -228,6 +228,18 @@ func (c *Config) SetSerializationConfig(serializationConfig *serialization.Confi
 	c.serializationConfig = serializationConfig
 }
 
+func (c *Config) SetLabels(labels []string) {
+	c.labels = labels
+}
+
 func (c *Config) GetLabels() []string {
 	return c.labels
+}
+
+func (c *Config) SetConnectionStrategyConfig(connectionStrategyConfig ConnectionStrategyConfig) {
+	c.connectionStrategyConfig = connectionStrategyConfig
+}
+
+func (c *Config) GetConnectionStrategyConfig() ConnectionStrategyConfig {
+	return c.connectionStrategyConfig
 }
