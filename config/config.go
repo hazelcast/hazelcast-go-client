@@ -63,6 +63,9 @@ type Config struct {
 	// reliableTopicConfigMap is mapping of names to ReliableTopicConfigs
 	reliableTopicConfigMap map[string]*ReliableTopicConfig
 
+	// connectionStrategyConfig Connection strategy config of the client.
+	connectionStrategyConfig *ClientConnectionStrategyConfig
+
 	// labels for the client to be sent to the cluster.
 	labels []string
 }
@@ -79,6 +82,7 @@ func New() *Config {
 		securityConfig:            new(SecurityConfig),
 		reliableTopicConfigMap:    make(map[string]*ReliableTopicConfig),
 		loggerConfig:              NewLoggerConfig(),
+		connectionStrategyConfig:  NewConnectionStrategyConfig(),
 		labels:                    make([]string, 0),
 	}
 }
