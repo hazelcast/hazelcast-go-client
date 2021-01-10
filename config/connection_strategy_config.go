@@ -27,16 +27,24 @@ const (
 	ASYNC
 )
 
-type ClientConnectionStrategyConfig struct {
+type ConnectionStrategyConfig interface {
+	IsAsyncStart() bool
+}
+
+type connectionStrategyConfig struct {
 	AsyncStart            bool
 	ReconnectMode         ReconnectMode
 	ConnectionRetryConfig ConnectionRetryConfig
 }
 
-type ConnectionRetryConfig struct {
-	//TODO should implement it.
+func NewConnectionStrategyConfig() ConnectionStrategyConfig {
+	return &connectionStrategyConfig{}
 }
 
-func NewConnectionStrategyConfig() *ClientConnectionStrategyConfig {
-	return &ClientConnectionStrategyConfig{}
+func (c connectionStrategyConfig) IsAsyncStart() bool {
+	return c.AsyncStart
+}
+
+type ConnectionRetryConfig struct {
+	//TODO should implement it.
 }
