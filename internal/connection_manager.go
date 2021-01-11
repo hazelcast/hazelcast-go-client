@@ -59,6 +59,8 @@ type connectionManager interface {
 	NextConnectionID() int64
 	IsAlive() bool
 	shutdown()
+	start()
+	connectToAllClusterMembers()
 }
 
 func (cm *connectionManagerImpl) addListener(listener connectionListener) {
@@ -163,6 +165,7 @@ func (cm *connectionManagerImpl) shutdown() {
 
 type connectionManagerImpl struct {
 	client              *HazelcastClient
+	heartBeatService    *heartBeatService
 	connectionsMutex    sync.RWMutex
 	connections         map[string]*Connection
 	nextConnectionID    int64
@@ -172,21 +175,54 @@ type connectionManagerImpl struct {
 	isAlive             atomic.Value
 	credentials         security.Credentials
 	clientUUID          core.UUID
+	asyncStart          bool
 	logger              logger.Logger
 }
 
 func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
 	cm := connectionManagerImpl{
 		client:            client,
+		heartBeatService:  newHeartBeatService(client),
 		connections:       make(map[string]*Connection),
 		addressTranslator: addressTranslator,
 		credentials:       client.credentials,
 		clientUUID:        core.NewUUID(),
+		asyncStart:        client.Config.GetConnectionStrategyConfig().IsAsyncStart(),
 		logger:            client.logger,
 	}
 	cm.connectionListeners.Store(make([]connectionListener, 0))
 	cm.isAlive.Store(true)
 	return &cm
+}
+
+func (cm *connectionManagerImpl) start() {
+	if !cm.IsAlive() {
+		return
+	}
+	cm.heartBeatService.start()
+	cm.connectToCluster()
+}
+
+func (cm *connectionManagerImpl) connectToCluster() {
+	if cm.asyncStart {
+		cm.submitConnectToClusterTask()
+	} else {
+		cm.doConnectToCluster()
+	}
+}
+
+func (cm *connectionManagerImpl) submitConnectToClusterTask() {
+
+}
+
+func (cm *connectionManagerImpl) doConnectToCluster() {
+	//cm.connectToAllClusterMembers()
+}
+
+func (cm *connectionManagerImpl) connectToAllClusterMembers() {
+	for _, eachMember := range cm.client.ClusterService.GetMemberList() {
+		cm.getOrTriggerConnect(eachMember.Address())
+	}
 }
 
 func (cm *connectionManagerImpl) notifyListenersForClose(connection *Connection, cause error) {

@@ -158,13 +158,13 @@ func (cs *clusterService) RemoveMembershipListenerV2(uuid string) bool {
 	return !ok
 }
 
-func (cs *clusterService) StartV2(configuredListeners []MembershipListener) {
+func (cs *clusterService) startV2(configuredListeners []MembershipListener) {
 	for _, eachMembershipListener := range configuredListeners {
 		cs.AddMembershipListenerV2(eachMembershipListener)
 	}
 }
 
-func (cs *clusterService) WaitForInitialMemberList() error {
+func (cs *clusterService) waitForInitialMemberList() error {
 	await := cs.initialListFetchedLatch.Await(InitialMembersTimeout)
 	if !await {
 		return core.NewHazelcastIllegalStateError("Could not get initial member list from the cluster!", nil)
@@ -181,14 +181,16 @@ func (cs *clusterService) handleMembersViewEvent(memberListVersion int32, member
 		return
 	}
 
+	membershipEvents := make([]MembershipEvent, 0)
 	if memberListVersion >= memberListSnapshot.GetVersion() {
 		prevMembers := memberListSnapshot.GetMembers()
 		snapshot := createSnapshot(memberListVersion, memberInfos)
 		cs.memberListSnapshot.Store(snapshot)
 		currentMembers := snapshot.GetMemberList()
-		membershipEvents := cs.detectMembershipEvents(prevMembers, currentMembers)
-		cs.fireEvents(membershipEvents)
+		membershipEvents = append(membershipEvents, cs.detectMembershipEvents(prevMembers, currentMembers)...)
 	}
+
+	cs.fireEvents(membershipEvents)
 }
 
 func (cs *clusterService) applyInitialState(memberListVersion int32, memberInfos []proto.MemberInfo) {

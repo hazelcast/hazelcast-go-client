@@ -220,17 +220,27 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
-	//c.PartitionService.start()
-	err = c.ClusterService.start()
+	c.ClusterService.startV2(getMembershipListeners(c.Config))
 	c.clusterViewListenerService.start()
-	if err != nil {
-		return err
+	c.ConnectionManager.start()
+
+	if !c.Config.GetConnectionStrategyConfig().IsAsyncStart() {
+		c.ClusterService.waitForInitialMemberList()
+		c.ConnectionManager.connectToAllClusterMembers()
 	}
 
 	//c.HeartBeatService.start()
 	//c.statistics.start()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
+}
+
+func getMembershipListeners(c *config.Config) []MembershipListener {
+	membershipListeners := make([]MembershipListener, len(c.MembershipListeners()))
+	for _, eachMemberShip := range c.MembershipListeners() {
+		membershipListeners = append(membershipListeners, eachMemberShip.(MembershipListener))
+	}
+	return membershipListeners
 }
 
 func (c *HazelcastClient) nextClientID() int64 {
