@@ -57,6 +57,7 @@ type clusterService struct {
 	memberListSnapshot      atomic.Value
 	labels                  []string
 	initialListFetchedLatch TimedWaitGroup
+	clusterViewLockMu       sync.Mutex
 	logger                  logger.Logger
 }
 
@@ -132,6 +133,8 @@ func (cs *clusterService) GetLocalClient() core.ClientInfo {
 }
 
 func (cs *clusterService) AddMembershipListenerV2(listener MembershipListener) string {
+	cs.clusterViewLockMu.Lock()
+	defer cs.clusterViewLockMu.Unlock()
 	registrationId := core.NewUUID().ToString()
 	cs.listenersV2.Store(registrationId, listener)
 
@@ -175,19 +178,23 @@ func (cs *clusterService) waitForInitialMemberList() error {
 func (cs *clusterService) handleMembersViewEvent(memberListVersion int32, memberInfos []proto.MemberInfo) {
 	memberListSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
 	if reflect.DeepEqual(EmptySnapshot, memberListSnapshot) {
+		cs.clusterViewLockMu.Lock()
 		//this means this is the first time client connected to cluster
 		cs.applyInitialState(memberListVersion, memberInfos)
 		cs.initialListFetchedLatch.Done()
+		cs.clusterViewLockMu.Unlock()
 		return
 	}
 
 	membershipEvents := make([]MembershipEvent, 0)
 	if memberListVersion >= memberListSnapshot.GetVersion() {
+		cs.clusterViewLockMu.Lock()
 		prevMembers := memberListSnapshot.GetMembers()
 		snapshot := createSnapshot(memberListVersion, memberInfos)
 		cs.memberListSnapshot.Store(snapshot)
 		currentMembers := snapshot.GetMemberList()
 		membershipEvents = append(membershipEvents, cs.detectMembershipEvents(prevMembers, currentMembers)...)
+		cs.clusterViewLockMu.Unlock()
 	}
 
 	cs.fireEvents(membershipEvents)
