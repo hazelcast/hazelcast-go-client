@@ -4,19 +4,17 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"sync"
+	"sync/atomic"
 )
 
 type clusterViewListenerService struct {
 	client                  *HazelcastClient
-	listenerAddedConnection *Connection
+	listenerAddedConnection atomic.Value
 	logger                  logger.Logger
-	rwMu                    sync.RWMutex
 }
 
 func newClusterViewListenerService(client *HazelcastClient) clusterViewListenerService {
-	service := clusterViewListenerService{client: client, logger: client.logger}
-	return service
+	return clusterViewListenerService{client: client, logger: client.logger}
 }
 
 func (c *clusterViewListenerService) start() {
@@ -32,12 +30,12 @@ func (c *clusterViewListenerService) onConnectionClosed(connection *Connection, 
 }
 
 func (c *clusterViewListenerService) tryRegister(connection *Connection) {
-	c.rwMu.Lock()
-	if c.listenerAddedConnection != nil {
+	listenerConnection := c.listenerAddedConnection.Load()
+	if listenerConnection != nil {
 		return
 	}
-	c.listenerAddedConnection = connection
-	c.rwMu.Unlock()
+	c.listenerAddedConnection.Store(connection)
+
 	clientMessage := codec.ClientAddClusterViewListenerCodec.EncodeRequest()
 	invocation := newInvocation(clientMessage, -1, nil, connection, c.client)
 	invocation.eventHandler = func(clientMessage *proto.ClientMessage) {
@@ -55,12 +53,11 @@ func (c *clusterViewListenerService) tryRegister(connection *Connection) {
 }
 
 func (c *clusterViewListenerService) tryReRegisterToRandomConnection(oldConnection *Connection) {
-	c.rwMu.Lock()
-	if c.listenerAddedConnection != oldConnection {
+	listenerConnection := c.listenerAddedConnection.Load().(*Connection)
+	if listenerConnection != oldConnection {
 		return
 	}
-	c.listenerAddedConnection = nil
-	c.rwMu.Unlock()
+	c.listenerAddedConnection = atomic.Value{}
 	newConnection := c.client.ConnectionManager.getRandomConnection()
 	if newConnection != nil {
 		c.tryRegister(newConnection)
