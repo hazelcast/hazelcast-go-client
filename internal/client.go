@@ -235,10 +235,10 @@ func (c *HazelcastClient) init() error {
 	return nil
 }
 
-func getMembershipListeners(c *config.Config) []MembershipListener {
-	membershipListeners := make([]MembershipListener, len(c.MembershipListeners()))
+func getMembershipListeners(c *config.Config) []core.MembershipListener {
+	membershipListeners := make([]core.MembershipListener, len(c.MembershipListeners()))
 	for _, eachMemberShip := range c.MembershipListeners() {
-		membershipListeners = append(membershipListeners, eachMemberShip.(MembershipListener))
+		membershipListeners = append(membershipListeners, eachMemberShip.(core.MembershipListener))
 	}
 	return membershipListeners
 }

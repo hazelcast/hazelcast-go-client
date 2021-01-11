@@ -534,3 +534,41 @@ type ReliableMessageListener interface {
 	// MessageListener.OnMessage().
 	IsTerminal(err error) (bool, error)
 }
+
+type MembershipListener interface {
+
+	// MemberAdded Invoked when a new member is added to the cluster.
+	MemberAdded(membershipEvent MembershipEvent)
+
+	// MemberRemoved Invoked when an existing member leaves the cluster.
+	MemberRemoved(membershipEvent MembershipEvent)
+}
+
+type MemberEvent int
+
+const (
+	MemberEventAdded = iota + 1
+	MemberEventRemoved
+)
+
+type MembershipEvent interface {
+
+	// Removed or added member.
+	GetMember() Member
+
+	// Members list at the moment after this event.
+	GetMembers() []Member
+
+	// eventType is MemberEvent
+	GetEventType() MemberEvent
+}
+
+// An event that is sent when a initialMembershipListener registers itself on a cluster.
+type InitialMembershipEvent interface {
+	GetMembers() []Member
+}
+
+type InitialMembershipListener interface {
+	MembershipListener
+	Init(event InitialMembershipEvent)
+}
