@@ -214,7 +214,7 @@ func (c *HazelcastClient) init() error {
 	c.PartitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
 	c.LoadBalancer = c.initLoadBalancer(c.Config)
-	c.LoadBalancer.Init(c.ClusterService)
+	c.LoadBalancer.InitLoadBalancer(c.ClusterService)
 	c.initFactories()
 	c.SerializationService, err = spi.NewSerializationService(c.Config.SerializationConfig())
 	if err != nil {

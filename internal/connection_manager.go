@@ -142,7 +142,11 @@ func (cm *connectionManagerImpl) getClientUUID() core.UUID {
 }
 
 func (cm *connectionManagerImpl) getRandomConnection() *Connection {
-	panic("implement me")
+	for _, connection := range cm.getActiveConnections() {
+		return connection
+	}
+
+	return nil
 }
 
 func (cm *connectionManagerImpl) IsAlive() bool {
@@ -348,10 +352,7 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 	return cm.processAuthenticationResult(connection, asOwner, result)
 }
 
-func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool,
-	result *proto.ClientMessage) error {
-	//TODO
-	//status, address, uuid, ownerUUID, serializationVersion, serverHazelcastVersion , clientUnregisteredMembers
+func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool, result *proto.ClientMessage) error {
 	status, address, memberUuid, _, serverHazelcastVersion, _, _, _ := codec.ClientAuthenticationCodec.DecodeResponse(result)
 	switch status {
 	case authenticated:

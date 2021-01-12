@@ -25,7 +25,7 @@ func TestRandomLoadBalancer_NextAddressWithNoMembers(t *testing.T) {
 	cs := &clusterService{}
 	cs.members.Store(make([]*proto.Member, 0)) // initialize with empty member slice
 	lb := core.NewRandomLoadBalancer()
-	lb.Init(cs)
+	lb.InitLoadBalancer(cs)
 	member := lb.Next()
 	if member != nil {
 		t.Errorf("RandomLoadBalancer should return nil when there are no members.")

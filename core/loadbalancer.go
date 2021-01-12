@@ -22,21 +22,10 @@ import (
 
 // RandomLoadBalancer is a loadbalancer that selects members randomly from the given cluster service.
 type RandomLoadBalancer struct {
+	LoadBalancer
+	InitialMembershipListener
+	membersRef     atomic.Value
 	clusterService Cluster
-}
-
-func (b *RandomLoadBalancer) Init(cluster Cluster) {
-	b.clusterService = cluster
-}
-
-func (b *RandomLoadBalancer) Next() Member {
-	membersList := b.clusterService.GetMembers()
-	size := len(membersList)
-	if size > 0 {
-		randomIndex := rand.Intn(size)
-		return membersList[randomIndex]
-	}
-	return nil
 }
 
 // NewRandomLoadBalancer creates and returns a RandomLoadBalancer.
@@ -45,14 +34,89 @@ func NewRandomLoadBalancer() *RandomLoadBalancer {
 	return &RandomLoadBalancer{}
 }
 
+func (b *RandomLoadBalancer) InitLoadBalancer(cluster Cluster) {
+	b.clusterService = cluster
+	b.clusterService.AddMembershipListener(b)
+}
+
+func (b *RandomLoadBalancer) Init(event InitialMembershipEvent) {
+	b.setMembersRef()
+}
+
+func (b *RandomLoadBalancer) Next() Member {
+	membersList := b.getMembers()
+	if membersList == nil {
+		return nil
+	}
+	size := len(membersList)
+	if size > 0 {
+		randomIndex := rand.Intn(size)
+		return membersList[randomIndex]
+	}
+	return nil
+}
+
+func (b *RandomLoadBalancer) MemberAdded(membershipEvent MembershipEvent) {
+	b.setMembersRef()
+}
+
+func (b *RandomLoadBalancer) MemberRemoved(membershipEvent MembershipEvent) {
+	b.setMembersRef()
+}
+
+func (b *RandomLoadBalancer) setMembersRef() {
+	b.membersRef.Store(b.clusterService.GetMembers())
+}
+
+func (b *RandomLoadBalancer) getMembers() []Member {
+	membersRef := b.membersRef.Load()
+	if membersRef == nil {
+		return nil
+	}
+	return membersRef.([]Member)
+}
+
 // RoundRobinLoadBalancer is a loadbalancer where members are used with round robin logic.
 type RoundRobinLoadBalancer struct {
+	LoadBalancer
+	InitialMembershipListener
 	clusterService Cluster
+	membersRef     atomic.Value
 	index          int64
 }
 
-func (rrl *RoundRobinLoadBalancer) Init(cluster Cluster) {
+// NewRoundRobinLoadBalancer creates and returns a RoundLobinLoadBalancer.
+func NewRoundRobinLoadBalancer() *RoundRobinLoadBalancer {
+	return &RoundRobinLoadBalancer{}
+}
+
+func (rrl *RoundRobinLoadBalancer) InitLoadBalancer(cluster Cluster) {
 	rrl.clusterService = cluster
+	rrl.clusterService.AddMembershipListener(rrl)
+}
+
+func (rrl *RoundRobinLoadBalancer) Init(event InitialMembershipEvent) {
+	rrl.setMembersRef()
+}
+
+func (rrl *RoundRobinLoadBalancer) MemberAdded(membershipEvent MembershipEvent) {
+	rrl.setMembersRef()
+}
+
+func (rrl *RoundRobinLoadBalancer) MemberRemoved(membershipEvent MembershipEvent) {
+	rrl.setMembersRef()
+}
+
+func (rrl *RoundRobinLoadBalancer) setMembersRef() {
+	rrl.membersRef.Store(rrl.clusterService.GetMembers())
+}
+
+func (b *RoundRobinLoadBalancer) getMembers() []Member {
+	membersRef := b.membersRef.Load()
+	if membersRef == nil {
+		return nil
+	}
+	return membersRef.([]Member)
 }
 
 func (rrl *RoundRobinLoadBalancer) Next() Member {
@@ -63,11 +127,6 @@ func (rrl *RoundRobinLoadBalancer) Next() Member {
 		return members[index]
 	}
 	return nil
-}
-
-// NewRoundRobinLoadBalancer creates and returns a RoundLobinLoadBalancer.
-func NewRoundRobinLoadBalancer() *RoundRobinLoadBalancer {
-	return &RoundRobinLoadBalancer{}
 }
 
 func getAndIncrement(val *int64) int64 {
