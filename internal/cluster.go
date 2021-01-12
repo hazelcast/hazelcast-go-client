@@ -297,8 +297,7 @@ func (cs *clusterService) fireEvents(events []core.MembershipEvent) {
 
 func (cs *clusterService) clearMemberListVersion() {
 	clusterViewSnapshot := cs.memberListSnapshot.Load().(MemberListSnapshot)
-
-	if clusterViewSnapshot != EmptySnapshot {
+	if !reflect.DeepEqual(clusterViewSnapshot, EmptySnapshot) {
 		cs.memberListSnapshot.Store(NewMemberListSnapshot(0, clusterViewSnapshot.GetMembers()))
 	}
 }
@@ -689,7 +688,7 @@ func (cs *clusterService) onConnectionClosed(connection *Connection, cause error
 }
 
 func (cs *clusterService) onConnectionOpened(connection *Connection) {
-	panic("implement me")
+
 }
 
 func (cs *clusterService) shouldReconnect(connection *Connection) bool {
