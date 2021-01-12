@@ -385,7 +385,7 @@ type ItemRemovedListener interface {
 type LoadBalancer interface {
 	// Init initializes LoadBalancer with the given cluster.
 	// The given cluster is used to select members.
-	Init(cluster Cluster)
+	InitLoadBalancer(cluster Cluster)
 
 	// Next returns the next member to route to.
 	// It returns nil if no member is available.

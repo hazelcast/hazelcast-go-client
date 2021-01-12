@@ -25,7 +25,7 @@ type customLoadBalancer struct {
 	clusterService core.Cluster
 }
 
-func (clb *customLoadBalancer) Init(cluster core.Cluster) {
+func (clb *customLoadBalancer) InitLoadBalancer(cluster core.Cluster) {
 	clb.clusterService = cluster
 }
 

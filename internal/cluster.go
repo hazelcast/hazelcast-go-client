@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -218,7 +219,7 @@ func (cs *clusterService) applyInitialState(memberListVersion int32, memberInfos
 func membersString(snapshot MemberListSnapshot) string {
 	var sb strings.Builder
 	sb.WriteString("\n\nMembers [")
-	sb.WriteString(string(len(snapshot.GetMembers())))
+	sb.WriteString(strconv.Itoa(len(snapshot.GetMembers())))
 	sb.WriteString("] {")
 	for _, member := range snapshot.GetMembers() {
 		sb.WriteString("\n\t")
@@ -735,7 +736,7 @@ func (m memberListSnapshot) GetMembers() map[string]core.Member {
 }
 
 func (m memberListSnapshot) GetMemberList() []core.Member {
-	members := make([]core.Member, len(m.members))
+	members := make([]core.Member, 0)
 	for _, eachMember := range m.members {
 		members = append(members, eachMember)
 	}

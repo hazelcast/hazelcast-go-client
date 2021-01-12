@@ -94,7 +94,7 @@ func (m *Member) Attributes() map[string]string {
 }
 
 func (m *Member) String() string {
-	memberInfo := fmt.Sprintf("Member %s - %s", &m.address, m.UUID())
+	memberInfo := fmt.Sprintf("Member %s - %s", m.address.String(), m.UUID())
 	if m.IsLiteMember() {
 		memberInfo += " lite"
 	}
