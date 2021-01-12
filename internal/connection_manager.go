@@ -212,11 +212,10 @@ func (cm *connectionManagerImpl) connectToCluster() {
 }
 
 func (cm *connectionManagerImpl) submitConnectToClusterTask() {
-
 }
 
 func (cm *connectionManagerImpl) doConnectToCluster() {
-	//cm.connectToAllClusterMembers()
+	cm.client.ClusterService.connectToCluster()
 }
 
 func (cm *connectionManagerImpl) connectToAllClusterMembers() {

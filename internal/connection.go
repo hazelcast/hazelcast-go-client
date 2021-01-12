@@ -37,6 +37,7 @@ const (
 	kb              = 1024
 	bufferSize      = 128 * kb
 	protocolStarter = "CP2"
+	IntMask         = 0xffff
 )
 
 type Connection struct {
@@ -70,7 +71,7 @@ func newConnection(address core.Address, cm connectionManager, handleResponse fu
 	}
 	connection.socket = socket
 	connection.init()
-	connection.clientMessageReader = &clientMessageReader{}
+	connection.clientMessageReader = newClientMessageReader()
 	connection.sendProtocolStarter()
 	go connection.writePool()
 	go connection.readPool()
@@ -168,10 +169,9 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 }
 
 func (c *Connection) readPool() {
-
 	for {
 		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
-		buf := make([]byte, 1024)
+		buf := make([]byte, 4096)
 		n, err := c.socket.Read(buf)
 		if !c.isAlive() {
 			return
@@ -190,8 +190,9 @@ func (c *Connection) readPool() {
 			continue
 		}
 
-		c.clientMessageReader.Append(buf[:n])
+		c.clientMessageReader.Append(bytes.NewBuffer(buf[:n]))
 		c.receiveMessage()
+		c.clientMessageReader.Reset()
 	}
 }
 
@@ -206,13 +207,8 @@ func (c *Connection) StartTime() int64 {
 
 func (c *Connection) receiveMessage() {
 	clientMessage := c.clientMessageReader.Read()
-	for clientMessage != nil {
-		if clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
-			c.clientMessageBuilder.onMessage(clientMessage)
-		} else {
-			println("receiveMessage")
-		}
-		clientMessage = c.clientMessageReader.Read()
+	if clientMessage != nil && clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
+		c.clientMessageBuilder.onMessage(clientMessage)
 	}
 }
 
@@ -251,109 +247,91 @@ func (c *Connection) String() string {
 }
 
 type clientMessageReader struct {
-	chunks          [][]byte
-	chunksTotalSize int32
-	frameSize       int32
-	flags           uint16
-	clientMessage   *proto.ClientMessage
-	rwMutex         sync.RWMutex
+	src           *bytes.Buffer
+	readOffset    int
+	clientMessage *proto.ClientMessage
+	rwMutex       sync.RWMutex
 }
 
-func (c *clientMessageReader) Append(bytes []byte) {
+func newClientMessageReader() *clientMessageReader {
+	return &clientMessageReader{src: &bytes.Buffer{}, readOffset: -1}
+}
+
+func (c *clientMessageReader) Append(buffer *bytes.Buffer) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
-	c.chunksTotalSize += int32(len(bytes))
-	c.chunks = append(c.chunks, bytes)
+	c.src = buffer
 }
 
 func (c *clientMessageReader) Read() *proto.ClientMessage {
 	for {
-		if c.ReadFrame() {
+		if c.readFrame() {
 			if c.clientMessage.EndFrame.IsFinalFrame() {
-				clientMessage := c.clientMessage
-				c.Reset()
-				return clientMessage
+				return c.clientMessage
 			}
+			c.readOffset = -1
 		} else {
 			return nil
 		}
 	}
 }
-
-func (c *clientMessageReader) ReadFrame() bool {
+func (c *clientMessageReader) readFrame() bool {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
-	if c.chunksTotalSize < proto.SizeOfFrameLengthAndFlags {
+	// init internal buffer
+	remaining := c.src.Len()
+	if remaining < proto.SizeOfFrameLengthAndFlags {
 		// we don't have even the frame length and flags ready
 		return false
 	}
 
-	if c.frameSize == 0 {
-		c.readFrameSizeAndFlags()
-	}
-
-	if c.chunksTotalSize < c.frameSize {
-		return false
-	}
-
-	var buf []byte
-	if len(c.chunks) == 1 {
-		buf = c.chunks[0]
-	} else {
-		for i := 0; i < int(c.chunksTotalSize); i++ {
-			buf = append(buf, c.chunks[i]...)
+	if c.readOffset == -1 {
+		frameLength := binary.LittleEndian.Uint32(c.src.Next(proto.IntSizeInBytes))
+		if frameLength < proto.SizeOfFrameLengthAndFlags {
+			//TODO add exception
 		}
-	}
 
-	if c.chunksTotalSize >= c.frameSize {
-		if len(c.chunks) == 1 {
-			c.chunks[0] = buf[c.frameSize:]
+		flags := binary.LittleEndian.Uint16(c.src.Bytes())
+		c.src.Next(proto.ShortSizeInBytes)
+		size := frameLength - proto.SizeOfFrameLengthAndFlags
+		frame := proto.NewFrameWith(make([]byte, size), flags)
+		if c.clientMessage == nil {
+			c.clientMessage = proto.NewClientMessageForDecode(frame)
 		} else {
-			c.chunks = [][]byte{buf[0:c.frameSize]}
+			c.clientMessage.AddFrame(frame)
 		}
-		buf = buf[proto.SizeOfFrameLengthAndFlags:c.frameSize]
-	} else {
-		c.chunks = [][]byte{}
-		buf = buf[:proto.SizeOfFrameLengthAndFlags]
+		c.readOffset = 0
+		if size == 0 {
+			return true
+		}
 	}
 
-	c.chunksTotalSize -= c.frameSize
-	c.frameSize = 0
-	// No need to reset flags since it will be overwritten on the next readFrameSizeAndFlags call.
-	frame := proto.NewFrameWith(buf, c.flags)
-	if c.clientMessage == nil {
-		c.clientMessage = proto.NewClientMessageForDecode(frame)
-	} else {
-		c.clientMessage.AddFrame(frame)
-	}
-	return true
+	length := len(c.clientMessage.EndFrame.Content) - c.readOffset
+	return c.accumulate(c.src, length)
 }
 
-func (c *clientMessageReader) readFrameSizeAndFlags() {
-	if len(c.chunks[0]) >= proto.SizeOfFrameLengthAndFlags {
-		c.frameSize = int32(binary.LittleEndian.Uint32(c.chunks[0]))
-		c.flags = binary.LittleEndian.Uint16(c.chunks[0][proto.IntSizeInBytes:])
-		return
+func (c *clientMessageReader) accumulate(src *bytes.Buffer, length int) bool {
+	remaining := src.Len()
+	readLength := length
+	if remaining < length {
+		readLength = remaining
 	}
 
-	readChunksSize := 0
-	for i := 0; i < len(c.chunks); i++ {
-		readChunksSize += len(c.chunks[i])
-		if readChunksSize >= proto.SizeOfFrameLengthAndFlags {
-			buffer := bytes.Buffer{}
-			i2 := i + 1
-			for i := 0; i < i2; i++ {
-				buffer.Write(c.chunks[i])
-			}
-			merged := buffer.Bytes()[0:readChunksSize]
-			c.frameSize = int32(binary.LittleEndian.Uint32(merged))
-			c.flags = binary.LittleEndian.Uint16(merged[proto.IntSizeInBytes:])
-			return
+	if readLength > 0 {
+		end := c.readOffset + readLength
+		for i := c.readOffset; i < end; i++ {
+			c.clientMessage.EndFrame.Content[i], _ = src.ReadByte()
 		}
+		c.readOffset += readLength
+		return readLength == length
 	}
 
+	return false
 }
 
 func (c *clientMessageReader) Reset() {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
 	c.clientMessage = nil
+	c.readOffset = -1
 }
