@@ -65,7 +65,7 @@ func (b *RandomLoadBalancer) MemberRemoved(membershipEvent MembershipEvent) {
 }
 
 func (b *RandomLoadBalancer) setMembersRef() {
-	b.membersRef.Store(b.clusterService.GetMembers())
+	b.membersRef.Store(b.clusterService.GetMemberList())
 }
 
 func (b *RandomLoadBalancer) getMembers() []Member {
@@ -108,7 +108,7 @@ func (rrl *RoundRobinLoadBalancer) MemberRemoved(membershipEvent MembershipEvent
 }
 
 func (rrl *RoundRobinLoadBalancer) setMembersRef() {
-	rrl.membersRef.Store(rrl.clusterService.GetMembers())
+	rrl.membersRef.Store(rrl.clusterService.GetMemberList())
 }
 
 func (b *RoundRobinLoadBalancer) getMembers() []Member {
@@ -120,7 +120,7 @@ func (b *RoundRobinLoadBalancer) getMembers() []Member {
 }
 
 func (rrl *RoundRobinLoadBalancer) Next() Member {
-	members := rrl.clusterService.GetMembers()
+	members := rrl.clusterService.GetMemberList()
 	size := int64(len(members))
 	if size > 0 {
 		index := getAndIncrement(&rrl.index) % size

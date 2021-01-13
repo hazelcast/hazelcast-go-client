@@ -63,6 +63,43 @@ type connectionManager interface {
 	connectToAllClusterMembers()
 }
 
+//internal definitions and methods called inside connection manager process
+type connectionManagerImpl struct {
+	client                *HazelcastClient
+	heartBeatService      *heartBeatService
+	connectionsMutex      sync.RWMutex
+	connections           map[string]*Connection
+	nextConnectionID      int64
+	listenerMutex         sync.Mutex
+	connectionListeners   atomic.Value
+	addressTranslator     AddressTranslator
+	isAlive               atomic.Value
+	credentials           security.Credentials
+	clientUUID            core.UUID
+	asyncStart            bool
+	loadBalancer          core.LoadBalancer
+	isSmartRoutingEnabled bool
+	logger                logger.Logger
+}
+
+func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
+	cm := connectionManagerImpl{
+		client:                client,
+		heartBeatService:      newHeartBeatService(client),
+		connections:           make(map[string]*Connection),
+		addressTranslator:     addressTranslator,
+		credentials:           client.credentials,
+		clientUUID:            core.NewUUID(),
+		asyncStart:            client.Config.GetConnectionStrategyConfig().IsAsyncStart(),
+		loadBalancer:          client.Config.LoadBalancer(),
+		isSmartRoutingEnabled: client.Config.NetworkConfig().IsSmartRouting(),
+		logger:                client.logger,
+	}
+	cm.connectionListeners.Store(make([]connectionListener, 0))
+	cm.isAlive.Store(true)
+	return &cm
+}
+
 func (cm *connectionManagerImpl) addListener(listener connectionListener) {
 	cm.listenerMutex.Lock()
 	defer cm.listenerMutex.Unlock()
@@ -142,6 +179,14 @@ func (cm *connectionManagerImpl) getClientUUID() core.UUID {
 }
 
 func (cm *connectionManagerImpl) getRandomConnection() *Connection {
+
+	if cm.isSmartRoutingEnabled {
+		member := cm.loadBalancer.Next()
+		if member != nil {
+			return cm.getActiveConnections()[member.UUID()]
+		}
+	}
+
 	for _, connection := range cm.getActiveConnections() {
 		return connection
 	}
@@ -165,40 +210,6 @@ func (cm *connectionManagerImpl) shutdown() {
 	}
 }
 
-//internal definitions and methods called inside connection manager process
-
-type connectionManagerImpl struct {
-	client              *HazelcastClient
-	heartBeatService    *heartBeatService
-	connectionsMutex    sync.RWMutex
-	connections         map[string]*Connection
-	nextConnectionID    int64
-	listenerMutex       sync.Mutex
-	connectionListeners atomic.Value
-	addressTranslator   AddressTranslator
-	isAlive             atomic.Value
-	credentials         security.Credentials
-	clientUUID          core.UUID
-	asyncStart          bool
-	logger              logger.Logger
-}
-
-func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
-	cm := connectionManagerImpl{
-		client:            client,
-		heartBeatService:  newHeartBeatService(client),
-		connections:       make(map[string]*Connection),
-		addressTranslator: addressTranslator,
-		credentials:       client.credentials,
-		clientUUID:        core.NewUUID(),
-		asyncStart:        client.Config.GetConnectionStrategyConfig().IsAsyncStart(),
-		logger:            client.logger,
-	}
-	cm.connectionListeners.Store(make([]connectionListener, 0))
-	cm.isAlive.Store(true)
-	return &cm
-}
-
 func (cm *connectionManagerImpl) start() {
 	if !cm.IsAlive() {
 		return
@@ -216,6 +227,8 @@ func (cm *connectionManagerImpl) connectToCluster() {
 }
 
 func (cm *connectionManagerImpl) submitConnectToClusterTask() {
+	//TODO implement it
+	panic("implement me")
 }
 
 func (cm *connectionManagerImpl) doConnectToCluster() {
@@ -408,6 +421,6 @@ func (cm *connectionManagerImpl) canCreateConnection(asOwner bool) error {
 }
 
 type connectionListener interface {
-	onConnectionClosed(connection *Connection, cause error)
 	onConnectionOpened(connection *Connection)
+	onConnectionClosed(connection *Connection, cause error)
 }

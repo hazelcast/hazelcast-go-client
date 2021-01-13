@@ -133,7 +133,7 @@ func (cs *clusterService) GetLocalClient() core.ClientInfo {
 	return core.ClientInfo{UUID: uuid, LocalAddress: localAddress, ClientType: proto.ClientType, Name: clientName, Labels: cs.labels}
 }
 
-func (cs *clusterService) AddMembershipListenerV2(listener core.MembershipListener) string {
+func (cs *clusterService) AddMembershipListener(listener core.MembershipListener) string {
 	cs.clusterViewLockMu.Lock()
 	defer cs.clusterViewLockMu.Unlock()
 	registrationId := core.NewUUID().ToString()
@@ -164,7 +164,7 @@ func (cs *clusterService) RemoveMembershipListenerV2(uuid string) bool {
 
 func (cs *clusterService) startV2(configuredListeners []core.MembershipListener) {
 	for _, eachMembershipListener := range configuredListeners {
-		cs.AddMembershipListenerV2(eachMembershipListener)
+		cs.AddMembershipListener(eachMembershipListener)
 	}
 }
 
@@ -311,9 +311,9 @@ func (cs *clusterService) Reset() {
 }
 
 func (cs *clusterService) registerMembershipListeners() {
-	for _, membershipListener := range cs.config.MembershipListeners() {
+	/*for _, membershipListener := range cs.config.MembershipListeners() {
 		cs.AddMembershipListener(membershipListener)
-	}
+	}*/
 }
 
 func (cs *clusterService) start() error {
@@ -483,12 +483,6 @@ func (cs *clusterService) logMembers() {
 	}
 	membersInfo += "]\n"
 	cs.logger.Info(membersInfo)
-}
-
-func (cs *clusterService) AddMembershipListener(listener interface{}) string {
-	registrationID, _ := iputil.NewUUID()
-	cs.listeners.Store(registrationID, listener)
-	return registrationID
 }
 
 func (cs *clusterService) RemoveMembershipListener(registrationID string) bool {
