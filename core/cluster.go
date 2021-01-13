@@ -25,7 +25,7 @@ type Cluster interface {
 	// it will get events twice.
 	// The given listener should implement MemberAddedListener or MemberRemovedListener interfaces or both.
 	// If the given listener does not implement any of these, it will not have any effect.
-	AddMembershipListener(listener interface{}) string
+	AddMembershipListener(listener MembershipListener) string
 
 	// RemoveMembershipListener removes the listener with the given registrationID.
 	// RemoveMembershipListener returns true if successfully removed, false otherwise.
@@ -36,4 +36,6 @@ type Cluster interface {
 	// GetMembers returns a slice of current members in the cluster. The returned slice is
 	// a copy of current members.
 	GetMembers() []Member
+
+	GetMemberList() []Member
 }
