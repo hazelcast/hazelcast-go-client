@@ -31,7 +31,7 @@ type replicatedMapProxy struct {
 }
 
 func newReplicatedMapProxy(client *HazelcastClient, serviceName string, name string) *replicatedMapProxy {
-	partitionCount := client.PartitionService.getPartitionCount()
+	partitionCount := client.PartitionService.GetPartitionCount()
 	tarGetPartitionID := rand.Int31n(partitionCount)
 	return &replicatedMapProxy{proxy: &proxy{client, serviceName, name}, tarGetPartitionID: tarGetPartitionID}
 }

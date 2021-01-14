@@ -39,7 +39,9 @@ func (c *clusterViewListenerService) tryRegister(connection *Connection) {
 	clientMessage := codec.ClientAddClusterViewListenerCodec.EncodeRequest()
 	invocation := newInvocation(clientMessage, -1, nil, connection, c.client)
 	invocation.eventHandler = func(clientMessage *proto.ClientMessage) {
-		codec.ClientAddClusterViewListenerCodec.Handle(clientMessage, c.client.ClusterService.handleMembersViewEvent, nil)
+		codec.ClientAddClusterViewListenerCodec.Handle(clientMessage, c.client.ClusterService.handleMembersViewEvent, func(version int32, partitions []proto.Pair) {
+			c.client.PartitionService.handlePartitionsViewEvent(connection, version, partitions)
+		})
 	}
 	c.client.ClusterService.clearMemberListVersion()
 	message, invocationErr := c.client.InvocationService.sendInvocation(invocation).Result()
@@ -53,8 +55,11 @@ func (c *clusterViewListenerService) tryRegister(connection *Connection) {
 }
 
 func (c *clusterViewListenerService) tryReRegisterToRandomConnection(oldConnection *Connection) {
-	listenerConnection := c.listenerAddedConnection.Load().(*Connection)
-	if listenerConnection != oldConnection {
+	listenerConnection := c.listenerAddedConnection.Load()
+	if listenerConnection == nil {
+		return
+	}
+	if listenerConnection.(*Connection) != oldConnection {
 		return
 	}
 	c.listenerAddedConnection = atomic.Value{}

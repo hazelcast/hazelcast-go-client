@@ -56,4 +56,9 @@ var (
 	// LoggingLevel is used to configure logging level in the client.
 	// This is used only for default logging, if you use other loggers this has no effect.
 	LoggingLevel = NewHazelcastPropertyString("hazelcast.client.logging.level", "info")
+
+	// ShuffleMemberList is client shuffles the given member list to prevent all clients to connect to the same node when
+	// this property is set to true. When it is set to false, the client tries to connect to the nodes
+	// in the given order.
+	ShuffleMemberList = NewHazelcastPropertyBool("hazelcast.client.shuffle.member.list", false)
 )

@@ -66,14 +66,14 @@ type uuid struct {
 
 type Member struct {
 	address      core.Address
-	uuid         string
+	uuid         core.UUID
 	isLiteMember bool
 	attributes   map[string]string
 	version      MemberVersion
 	addressMap   map[EndpointQualifier]core.Address
 }
 
-func NewMember(address core.Address, uuid string, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]core.Address) *Member {
+func NewMember(address core.Address, uuid core.UUID, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]core.Address) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes, version: version, addressMap: addressMap}
 }
 
@@ -81,7 +81,7 @@ func (m *Member) Address() core.Address {
 	return m.address
 }
 
-func (m *Member) UUID() string {
+func (m *Member) UUID() core.UUID {
 	return m.uuid
 }
 

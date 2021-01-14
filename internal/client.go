@@ -343,7 +343,7 @@ func (c *HazelcastClient) Shutdown() {
 	if c.lifecycleService.isLive.Load().(bool) {
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
 		c.ConnectionManager.shutdown()
-		c.PartitionService.shutdown()
+		//c.PartitionService.shutdown()
 		c.ClusterService.shutdown()
 		c.InvocationService.shutdown()
 		c.HeartBeatService.shutdown()

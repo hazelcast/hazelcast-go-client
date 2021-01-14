@@ -295,12 +295,7 @@ func (is *invocationServiceImpl) invokeSmart(invocation *invocation) {
 	if invocation.boundConnection != nil {
 		is.sendToConnection(invocation, invocation.boundConnection)
 	} else if invocation.partitionID != -1 {
-		if target, ok := is.client.PartitionService.partitionOwner(invocation.partitionID); ok {
-			is.sendToAddress(invocation, target)
-		} else {
-			is.handleNotSentInvocation(invocation.request.Load().(*proto.ClientMessage).GetCorrelationID(),
-				core.NewHazelcastIOError(fmt.Sprintf("partition does not have an owner. partitionID: %d", invocation.partitionID), nil))
-		}
+		is.sendToRandomAddress(invocation)
 	} else if invocation.address != nil {
 		is.sendToAddress(invocation, invocation.address)
 	} else {

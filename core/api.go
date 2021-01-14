@@ -49,7 +49,7 @@ type Member interface {
 	Address() Address
 
 	// UUID returns the uuid of this member.
-	UUID() string
+	UUID() UUID
 
 	// IsLiteMember returns true if this member is a lite member.
 	IsLiteMember() bool

@@ -181,9 +181,9 @@ func (cm *connectionManagerImpl) getClientUUID() core.UUID {
 func (cm *connectionManagerImpl) getRandomConnection() *Connection {
 
 	if cm.isSmartRoutingEnabled {
-		member := cm.loadBalancer.Next()
+		member := cm.client.LoadBalancer.Next()
 		if member != nil {
-			return cm.getActiveConnections()[member.UUID()]
+			return cm.getActiveConnections()[member.UUID().ToString()]
 		}
 	}
 
@@ -366,7 +366,7 @@ func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bo
 }
 
 func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connection, asOwner bool, result *proto.ClientMessage) error {
-	status, address, memberUuid, _, serverHazelcastVersion, _, _, _ := codec.ClientAuthenticationCodec.DecodeResponse(result)
+	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, _, _ := codec.ClientAuthenticationCodec.DecodeResponse(result)
 	switch status {
 	case authenticated:
 		connection.setConnectedServerVersion(serverHazelcastVersion)
@@ -375,6 +375,7 @@ func (cm *connectionManagerImpl) processAuthenticationResult(connection *Connect
 		cm.connections[address.String()] = connection
 		go cm.fireConnectionAddedEvent(connection)
 		if asOwner {
+			cm.client.PartitionService.checkAndSetPartitionCount(partitionCount)
 			cm.client.ClusterService.ownerConnectionAddress.Store(address)
 			cm.client.ClusterService.ownerUUID.Store(memberUuid.ToString())
 			cm.client.ClusterService.uuid.Store(memberUuid.ToString())
