@@ -87,7 +87,7 @@ func (cs *clusterService) init() {
 	cs.initialListFetchedLatch.Add(1)
 }
 
-func (cs *clusterService) GetMemberV2(uuid string) core.Member {
+func (cs *clusterService) GetMemberV2(uuid core.UUID) core.Member {
 	return cs.memberListSnapshot.Load().(MemberListSnapshot).GetMembers()[uuid]
 }
 
@@ -230,10 +230,10 @@ func membersString(snapshot MemberListSnapshot) string {
 }
 
 func createSnapshot(memberListVersion int32, memberInfos []proto.MemberInfo) MemberListSnapshot {
-	newMembers := make(map[string]core.Member, len(memberInfos))
+	newMembers := make(map[core.UUID]core.Member, len(memberInfos))
 
 	for _, memberInfo := range memberInfos {
-		uuid := memberInfo.GetUuid().ToString()
+		uuid := memberInfo.GetUuid()
 		member := proto.NewMember(memberInfo.GetAddress(), uuid, memberInfo.GetLiteMember(),
 			memberInfo.GetAttributes(), memberInfo.GetVersion(), memberInfo.GetAddressMap())
 		newMembers[uuid] = member
@@ -242,9 +242,9 @@ func createSnapshot(memberListVersion int32, memberInfos []proto.MemberInfo) Mem
 	return NewMemberListSnapshot(memberListVersion, newMembers)
 }
 
-func (cs *clusterService) detectMembershipEvents(prevMembers map[string]core.Member, currentMembers []core.Member) []core.MembershipEvent {
+func (cs *clusterService) detectMembershipEvents(prevMembers map[core.UUID]core.Member, currentMembers []core.Member) []core.MembershipEvent {
 	newMembers := make([]core.Member, 0)
-	deadMembers := make(map[string]core.Member)
+	deadMembers := make(map[core.UUID]core.Member)
 	for _, eachMember := range prevMembers {
 		deadMembers[eachMember.UUID()] = eachMember
 	}
@@ -261,7 +261,7 @@ func (cs *clusterService) detectMembershipEvents(prevMembers map[string]core.Mem
 	membershipEvents := make([]core.MembershipEvent, 0)
 	for _, eachMember := range deadMembers {
 		membershipEvents = append(membershipEvents, NewMembershipEvent(eachMember, currentMembers, core.MemberEventRemoved))
-		connection, ok := cs.client.ConnectionManager.getActiveConnections()[eachMember.UUID()]
+		connection, ok := cs.client.ConnectionManager.getActiveConnections()[eachMember.UUID().ToString()]
 		if ok {
 			connection.close(core.NewHazelcastTargetDisconnectedError("The client has closed the connection to this"+
 				"member, after receiving a member left event from the cluster", nil))
@@ -504,7 +504,7 @@ func (cs *clusterService) handleMember(member *proto.Member, eventType int32) {
 }
 
 func (cs *clusterService) updatePartitionTable() {
-	cs.client.PartitionService.refresh <- struct{}{}
+	//cs.client.PartitionService.refresh <- struct{}{}
 }
 
 func (cs *clusterService) handleMemberList(members []*proto.Member) {
@@ -658,7 +658,7 @@ func (cs *clusterService) GetMember(address core.Address) core.Member {
 func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
 	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
-		if member.UUID() == uuid {
+		if member.UUID().ToString() == uuid {
 			return member
 		}
 	}
@@ -704,28 +704,28 @@ func (cs *clusterService) shutdown() {
 
 type MemberListSnapshot interface {
 	GetVersion() int32
-	GetMembers() map[string]core.Member
+	GetMembers() map[core.UUID]core.Member
 	GetMemberList() []core.Member
 }
 
 type memberListSnapshot struct {
 	version int32
-	members map[string]core.Member
+	members map[core.UUID]core.Member
 }
 
-func NewMemberListSnapshot(version int32, members map[string]core.Member) MemberListSnapshot {
+func NewMemberListSnapshot(version int32, members map[core.UUID]core.Member) MemberListSnapshot {
 	return memberListSnapshot{version, members}
 }
 
 func NewEmptyMemberListSnapshot() MemberListSnapshot {
-	return memberListSnapshot{-1, make(map[string]core.Member, 0)}
+	return memberListSnapshot{-1, make(map[core.UUID]core.Member, 0)}
 }
 
 func (m memberListSnapshot) GetVersion() int32 {
 	return m.version
 }
 
-func (m memberListSnapshot) GetMembers() map[string]core.Member {
+func (m memberListSnapshot) GetMembers() map[core.UUID]core.Member {
 	return m.members
 }
 

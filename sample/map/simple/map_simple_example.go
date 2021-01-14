@@ -16,7 +16,6 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client"
 )
 

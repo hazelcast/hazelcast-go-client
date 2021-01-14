@@ -43,5 +43,6 @@ func (mp *mapProxy) Get(key interface{}) (value interface{}, err error) {
 	}
 	request := codec.MapGetCodec.EncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
-	return codec.MapGetCodec.DecodeResponse(responseMessage), nil
+	response := codec.MapGetCodec.DecodeResponse(responseMessage)
+	return mp.toObject(response)
 }
