@@ -2344,10 +2344,10 @@ git checkout userRepo developmentBranch
 Follow the below steps to build and install Hazelcast Go client from its source:
 
 - Clone the GitHub repository [https://github.com/hazelcast/hazelcast-go-client.git](https://github.com/hazelcast/hazelcast-go-client.git).
-- Run `sh build.sh`.
+- Run `./build.sh` or equivalently `bash build.sh`.
 
 If you are planning to contribute, please run the style checker, as shown below, and fix the reported issues before sending a pull request.
-- `sh linter.sh`
+- `./linter.sh` or equivalently `bash linter.sh`
 
 ## 8.2. Testing
 In order to test Hazelcast Go client locally, you will need the following:
@@ -2357,7 +2357,13 @@ In order to test Hazelcast Go client locally, you will need the following:
 Following command starts the tests:
 
 ```
-sh local-test.sh
+./local-test.sh
+```
+
+or equivalently
+
+```
+bash local-test.sh
 ```
 
 Test script automatically downloads `hazelcast-remote-controller` and Hazelcast IMDG. The script uses Maven to download those.
