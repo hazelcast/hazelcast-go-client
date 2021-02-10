@@ -59,6 +59,8 @@ type HazelcastClient struct {
 	statistics                 *statistics
 	logger                     logger.Logger
 	clusterViewListenerService clusterViewListenerService
+	clientConnectionManager    ClientConnectionManager
+	clientInvocationService    ClientInvocationService
 }
 
 func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
@@ -351,4 +353,20 @@ func (c *HazelcastClient) Shutdown() {
 		c.statistics.shutdown()
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
+}
+
+func (c *HazelcastClient) getClientClusterService() *clusterService {
+	return c.ClusterService
+}
+
+func (c *HazelcastClient) getClientConnectionManager() ClientConnectionManager {
+	return c.clientConnectionManager
+}
+
+func (c *HazelcastClient) getPartitionService() *partitionService {
+	return c.PartitionService
+}
+
+func (c *HazelcastClient) getClientInvocationService() ClientInvocationService {
+	return c.clientInvocationService
 }

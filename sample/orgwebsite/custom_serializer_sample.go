@@ -52,6 +52,7 @@ func customSerializerSampleRun() {
 
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1
 	hz, _ := hazelcast.NewClientWithConfig(clientConfig)
+	hz.Name()
 	// CustomSerializer will serialize/deserialize CustomSerializable objects
 
 	// Shutdown this hazelcast client
