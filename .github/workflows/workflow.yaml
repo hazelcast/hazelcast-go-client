@@ -37,4 +37,6 @@ jobs:
           go-version: "1.15"
 
       - name: "Test"
-        run: "bash ./local-test.sh"
+        run: |
+            ls /home/runner/work/hazelcast-go-client/
+            bash ./local-test.sh"
