@@ -1,18 +1,5 @@
 #!/bin/bash
 
-# Set up environment
-export CLIENT_IMPORT_PATH="github.com/hazelcast/hazelcast-go-client"
-export PACKAGE_LIST=$(go list $CLIENT_IMPORT_PATH/... | grep -vE ".*/tests|.*/compatibility|.*/rc|.*/samples" | sed -e 'H;${x;s/\n/,/g;s/^,//;p;};d')
-echo $PACKAGE_LIST
-
-#run linter
-pushd $GOPATH/src/$CLIENT_IMPORT_PATH
-bash ./linter.sh
-
-if [ "$?" != "0" ]; then
-    exit 1
-fi
-popd
 set -ex
 
 HZ_VERSION="3.12.12"
