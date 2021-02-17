@@ -39,4 +39,4 @@ jobs:
       - name: "Test"
         run: |
             ls /home/runner/work/hazelcast-go-client/
-            bash ./local-test.sh"
+            bash ./local-test.sh
