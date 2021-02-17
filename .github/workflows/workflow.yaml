@@ -1,0 +1,29 @@
+name: Go
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+
+  build:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v2"
+
+      - name: "Install Dependencies"
+      - run: |
+          sudo apt update && sudo apt install -y openjdk-8-jdk-headless maven
+
+      - name: "Download and Start Hz Remote Controller"
+      - run: "bash ./start-rc.sh &"
+
+      - name: "Set up Go"
+        uses: "actions/setup-go@v2"
+        with:
+          go-version: 1.15
+
+      - name: "Test"
+      - run: "bash ./local-test.sh"
