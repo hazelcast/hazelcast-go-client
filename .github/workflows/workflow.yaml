@@ -38,5 +38,5 @@ jobs:
 
       - name: "Test"
         run: |
-            ls /home/runner/work/hazelcast-go-client/
+            go get github.com/stretchr/testify/assert
             bash ./local-test.sh
