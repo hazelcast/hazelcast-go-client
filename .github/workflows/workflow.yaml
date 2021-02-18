@@ -39,4 +39,8 @@ jobs:
       - name: "Test"
         run: |
             go get github.com/stretchr/testify/assert
+            go get github.com/apache/thrift/lib/go/thrift
+            cd $GOPATH/src/github.com/apache/thrift
+            git checkout tags/0.10.0
+            cd -
             bash ./local-test.sh
