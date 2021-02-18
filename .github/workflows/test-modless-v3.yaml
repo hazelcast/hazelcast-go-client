@@ -1,10 +1,7 @@
 
 name: "Test Go Client v3 (Modless)"
 
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
+on: ["push", "pull_request"]
 
 jobs:
   test:
