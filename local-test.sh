@@ -34,6 +34,5 @@ do
       fi
     fi
 done
-rm -f ./tmp.out
 
 kill -9 ${serverPid} || echo "no such process, but doesn't matter"

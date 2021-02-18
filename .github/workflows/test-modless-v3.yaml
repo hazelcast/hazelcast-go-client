@@ -27,9 +27,6 @@ jobs:
           sudo apt-get update &&\
           sudo apt-get install -y openjdk-8-jdk-headless maven
 
-      - name: "Download and Start Hazelcast Remote Controller"
-        run: "bash ./start-rc.sh &"
-
       - name: "Set up Go"
         uses: "actions/setup-go@v2"
         with:
@@ -43,3 +40,4 @@ jobs:
           git checkout tags/0.10.0
           cd -
           bash ./local-test.sh
+          cat tmp.out
