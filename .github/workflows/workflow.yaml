@@ -16,16 +16,17 @@ jobs:
     defaults:
       run:
         shell: "bash"
-        working-directory: "${{ env.GOPATH }}/src/github.com/${{ github.repository }}"
+        working-directory: "${{ env.GOPATH }}/src/github.com/hazelcast/hazelcast-go-client"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v2"
         with:
-          path: "${{ env.GOPATH }}/src/github.com/${{ github.repository }}"
+          path: "${{ env.GOPATH }}/src/github.com/hazelcast/hazelcast-go-client"
 
       - name: "Install Dependencies"
         run: |
           sudo apt-get update &&\
+          sudo apt-get upgrade &&\
           sudo apt-get install -y openjdk-8-jdk-headless maven
 
       - name: "Download and Start Hazelcast Remote Controller"
