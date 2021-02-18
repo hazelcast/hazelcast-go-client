@@ -16,12 +16,6 @@ echo "Starting Remote Controller ... oss ..."
 
 go build
 
-java -cp ${CLASSPATH} com.hazelcast.remotecontroller.Main&
-serverPid=$!
-echo ${serverPid}
-
-sleep 10
-
 # Run tests (JUnit plugin)
 echo "mode: set" > coverage.out
 for pkg in $(go list ./...);
@@ -34,5 +28,3 @@ do
       fi
     fi
 done
-
-kill -9 ${serverPid} || echo "no such process, but doesn't matter"
