@@ -1,5 +1,5 @@
 
-name: "Test Go Client v3 (Modless)"
+name: "Test Go Client v3"
 
 on: ["push", "pull_request"]
 
@@ -12,7 +12,7 @@ jobs:
     defaults:
       run:
         shell: "bash"
-        working-directory: "${{ env.GOPATH }}/src/github.com/hazelcast/hazelcast-go-client"
+        working-directory: "${{ env.GOPATH }}/src/github.com/hazelcast/hazelcast-go-client/v3"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v2"
@@ -29,16 +29,11 @@ jobs:
           bash ./start-rc.sh &
           sleep 10
 
-      - name: "Set up Go"
+      - name: "Setup Go"
         uses: "actions/setup-go@v2"
         with:
           go-version: "1.15"
 
-      - name: "Test"
+      - name: "Run All Tests"
         run: |
-          go get github.com/stretchr/testify/assert
-          go get github.com/apache/thrift/lib/go/thrift
-          cd $GOPATH/src/github.com/apache/thrift
-          git checkout tags/0.10.0
-          cd -
           bash ./local-test.sh
