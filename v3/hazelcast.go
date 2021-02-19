@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package hazelcast provides methods for creating Hazelcast clients and client configurations.
-package v3
+package hazelcast
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v3/config"
