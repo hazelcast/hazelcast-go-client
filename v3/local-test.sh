@@ -2,6 +2,11 @@
 
 set -ex
 
+if [ "x${HAZELCAST_ENTERPRISE_KEY}x" == "xx" ]; then
+  echo "Enterprise key was not set, quitting..."
+  exit 1
+fi
+
 HZ_VERSION="3.12.12"
 
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
