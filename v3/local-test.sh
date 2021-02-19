@@ -1,11 +1,14 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 if [ "x${HAZELCAST_ENTERPRISE_KEY}x" == "xx" ]; then
   echo "Enterprise key was not set, quitting..."
   exit 1
 fi
+
+# Turn on line tracing
+set -x
 
 HZ_VERSION="3.12.12"
 
