@@ -91,6 +91,16 @@ func (ps *partitionService) GetPartitionIDWithKey(key interface{}) (int32, error
 	return ps.GetPartitionID(data), nil
 }
 
+func (ps *partitionService) isClusterFormedByOnlyLiteMembers() bool {
+	members := ps.client.ClusterService.GetMembers()
+	for _, member := range members {
+		if !member.IsLiteMember() {
+			return false
+		}
+	}
+	return true
+}
+
 func (ps *partitionService) doRefresh() {
 	connection := ps.client.ConnectionManager.getOwnerConnection()
 	if connection == nil {
@@ -126,6 +136,10 @@ func (ps *partitionService) shutdown() {
 
 func (ps *partitionService) waitForPartitionsFetchedOnce() {
 	for len(ps.mp.Load().(map[int32]*proto.Address)) == 0 && ps.client.ConnectionManager.IsAlive() {
+		if ps.isClusterFormedByOnlyLiteMembers() {
+			ps.logger.Warn("Partitions cannot be assigned since all nodes in the cluster are lite members")
+			return
+		}
 		ps.doRefresh()
 	}
 }
