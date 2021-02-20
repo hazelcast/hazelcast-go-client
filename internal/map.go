@@ -22,27 +22,37 @@ type mapProxy struct {
 	*proxy
 }
 
+func (mp *mapProxy) Clear() error {
+	panic("not implemented")
+}
+
 func newMapProxy(client *HazelcastClient, serviceName string, name string) *mapProxy {
 	return &mapProxy{&proxy{client, serviceName, name}}
 }
 
-func (mp *mapProxy) Put(key interface{}, value interface{}) (oldValue interface{}, err error) {
+func (mp *mapProxy) Put(key interface{}, value interface{}) (interface{}, error) {
 	keyData, valueData, err := mp.validateAndSerialize2(key, value)
 	if err != nil {
 		return nil, err
 	}
 	request := codec.MapPutCodec.EncodeRequest(mp.name, keyData, valueData, threadID, ttlUnlimited)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
+	if err != nil {
+		return nil, err
+	}
 	return codec.MapPutCodec.DecodeResponse(responseMessage), nil
 }
 
-func (mp *mapProxy) Get(key interface{}) (value interface{}, err error) {
+func (mp *mapProxy) Get(key interface{}) (interface{}, error) {
 	keyData, err := mp.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
 	request := codec.MapGetCodec.EncodeRequest(mp.name, keyData, threadID)
 	responseMessage, err := mp.invokeOnKey(request, keyData)
+	if err != nil {
+		return nil, err
+	}
 	response := codec.MapGetCodec.DecodeResponse(responseMessage)
 	return mp.toObject(response)
 }

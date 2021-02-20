@@ -40,5 +40,5 @@ type Map interface {
 	Get(key interface{}) (value interface{}, err error)
 
 	// Clear clears the map and deletes the items from the backing map store.
-	Clear()
+	Clear() (err error)
 }
