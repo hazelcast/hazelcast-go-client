@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -47,18 +46,18 @@ func (clientAuthenticationCustomCodec) EncodeRequest(clusterName string, credent
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, ClientAuthenticationCustomCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCustomCodecRequestUuidOffset, uuid)
-	internal.FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCustomCodecRequestSerializationVersionOffset, serializationVersion)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCustomCodecRequestUuidOffset, uuid)
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCustomCodecRequestSerializationVersionOffset, serializationVersion)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAuthenticationCustomCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, clusterName)
-	internal.ByteArrayCodec.Encode(clientMessage, credentials)
-	internal.StringCodec.Encode(clientMessage, clientType)
-	internal.StringCodec.Encode(clientMessage, clientHazelcastVersion)
-	internal.StringCodec.Encode(clientMessage, clientName)
-	internal.ListMultiFrameCodec.EncodeForString(clientMessage, labels)
+	StringCodec.Encode(clientMessage, clusterName)
+	ByteArrayCodec.Encode(clientMessage, credentials)
+	StringCodec.Encode(clientMessage, clientType)
+	StringCodec.Encode(clientMessage, clientHazelcastVersion)
+	StringCodec.Encode(clientMessage, clientName)
+	ListMultiFrameCodec.EncodeForString(clientMessage, labels)
 
 	return clientMessage
 }
@@ -67,14 +66,14 @@ func (clientAuthenticationCustomCodec) DecodeResponse(clientMessage *proto.Clien
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	status = internal.FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationCustomResponseStatusOffset)
-	memberUuid = internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationCustomResponseMemberUuidOffset)
-	serializationVersion = internal.FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationCustomResponseSerializationVersionOffset)
-	partitionCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAuthenticationCustomResponsePartitionCountOffset)
-	clusterId = internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationCustomResponseClusterIdOffset)
-	failoverSupported = internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientAuthenticationCustomResponseFailoverSupportedOffset)
-	address = internal.CodecUtil.DecodeNullableForAddress(frameIterator)
-	serverHazelcastVersion = internal.StringCodec.Decode(frameIterator)
+	status = FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationCustomResponseStatusOffset)
+	memberUuid = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationCustomResponseMemberUuidOffset)
+	serializationVersion = FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationCustomResponseSerializationVersionOffset)
+	partitionCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAuthenticationCustomResponsePartitionCountOffset)
+	clusterId = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationCustomResponseClusterIdOffset)
+	failoverSupported = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientAuthenticationCustomResponseFailoverSupportedOffset)
+	address = CodecUtil.DecodeNullableForAddress(frameIterator)
+	serverHazelcastVersion = StringCodec.Decode(frameIterator)
 
 	return status, address, memberUuid, serializationVersion, serverHazelcastVersion, partitionCount, clusterId, failoverSupported
 }

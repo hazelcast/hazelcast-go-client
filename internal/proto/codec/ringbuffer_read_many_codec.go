@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -50,15 +50,15 @@ func (ringbufferReadManyCodec) EncodeRequest(name string, startSequence int64, m
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, RingbufferReadManyCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, RingbufferReadManyCodecRequestStartSequenceOffset, startSequence)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferReadManyCodecRequestMinCountOffset, minCount)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferReadManyCodecRequestMaxCountOffset, maxCount)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, RingbufferReadManyCodecRequestStartSequenceOffset, startSequence)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferReadManyCodecRequestMinCountOffset, minCount)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferReadManyCodecRequestMaxCountOffset, maxCount)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(RingbufferReadManyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.CodecUtil.EncodeNullable(clientMessage, filter, internal.DataCodec.Encode)
+	StringCodec.Encode(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, filter, DataCodec.Encode)
 
 	return clientMessage
 }
@@ -67,10 +67,10 @@ func (ringbufferReadManyCodec) DecodeResponse(clientMessage *proto.ClientMessage
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	readCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, RingbufferReadManyResponseReadCountOffset)
-	nextSeq = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferReadManyResponseNextSeqOffset)
-	items = internal.ListMultiFrameCodec.DecodeForData(frameIterator)
-	itemSeqs = internal.CodecUtil.DecodeNullableForLongArray(frameIterator)
+	readCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, RingbufferReadManyResponseReadCountOffset)
+	nextSeq = FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferReadManyResponseNextSeqOffset)
+	items = ListMultiFrameCodec.DecodeForData(frameIterator)
+	itemSeqs = CodecUtil.DecodeNullableForLongArray(frameIterator)
 
 	return readCount, items, itemSeqs, nextSeq
 }

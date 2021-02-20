@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -46,7 +45,7 @@ func (mapEventJournalSubscribeCodec) EncodeRequest(name string) *proto.ClientMes
 	clientMessage.SetMessageType(MapEventJournalSubscribeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -55,8 +54,8 @@ func (mapEventJournalSubscribeCodec) DecodeResponse(clientMessage *proto.ClientM
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	oldestSequence = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalSubscribeResponseOldestSequenceOffset)
-	newestSequence = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalSubscribeResponseNewestSequenceOffset)
+	oldestSequence = FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalSubscribeResponseOldestSequenceOffset)
+	newestSequence = FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalSubscribeResponseNewestSequenceOffset)
 
 	return oldestSequence, newestSequence
 }

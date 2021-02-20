@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -49,15 +48,15 @@ func (fencedlockLockCodec) EncodeRequest(groupId proto.RaftGroupId, name string,
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, FencedLockLockCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockLockCodecRequestSessionIdOffset, sessionId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockLockCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockLockCodecRequestInvocationUidOffset, invocationUid)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockLockCodecRequestSessionIdOffset, sessionId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockLockCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockLockCodecRequestInvocationUidOffset, invocationUid)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FencedLockLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -66,5 +65,5 @@ func (fencedlockLockCodec) DecodeResponse(clientMessage *proto.ClientMessage) in
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockLockResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockLockResponseResponseOffset)
 }

@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -42,12 +41,12 @@ func (flakeidgeneratorNewIdBatchCodec) EncodeRequest(name string, batchSize int3
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, FlakeIdGeneratorNewIdBatchCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchCodecRequestBatchSizeOffset, batchSize)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchCodecRequestBatchSizeOffset, batchSize)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FlakeIdGeneratorNewIdBatchCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -56,9 +55,9 @@ func (flakeidgeneratorNewIdBatchCodec) DecodeResponse(clientMessage *proto.Clien
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	base = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBaseOffset)
-	increment = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseIncrementOffset)
-	batchSize = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBatchSizeOffset)
+	base = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBaseOffset)
+	increment = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseIncrementOffset)
+	batchSize = FixSizedTypesCodec.DecodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBatchSizeOffset)
 
 	return base, increment, batchSize
 }

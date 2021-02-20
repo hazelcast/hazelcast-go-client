@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -44,14 +44,14 @@ func (mapTryRemoveCodec) EncodeRequest(name string, key serialization.Data, thre
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MapTryRemoveCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestTimeoutOffset, timeout)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestTimeoutOffset, timeout)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapTryRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
 
 	return clientMessage
 }
@@ -60,5 +60,5 @@ func (mapTryRemoveCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapTryRemoveResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapTryRemoveResponseResponseOffset)
 }

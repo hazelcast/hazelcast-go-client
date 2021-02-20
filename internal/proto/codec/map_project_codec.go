@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -42,8 +42,8 @@ func (mapProjectCodec) EncodeRequest(name string, projection serialization.Data)
 	clientMessage.SetMessageType(MapProjectCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, projection)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, projection)
 
 	return clientMessage
 }
@@ -53,5 +53,5 @@ func (mapProjectCodec) DecodeResponse(clientMessage *proto.ClientMessage) []seri
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.ListMultiFrameCodec.DecodeForDataContainsNullable(frameIterator)
+	return ListMultiFrameCodec.DecodeForDataContainsNullable(frameIterator)
 }

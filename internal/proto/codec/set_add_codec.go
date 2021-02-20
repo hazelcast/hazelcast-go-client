@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -49,8 +49,8 @@ func (setAddCodec) EncodeRequest(name string, value serialization.Data) *proto.C
 	clientMessage.SetMessageType(SetAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, value)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, value)
 
 	return clientMessage
 }
@@ -59,5 +59,5 @@ func (setAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SetAddResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SetAddResponseResponseOffset)
 }

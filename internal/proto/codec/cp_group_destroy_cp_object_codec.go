@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -42,9 +41,9 @@ func (cpgroupDestroyCPObjectCodec) EncodeRequest(groupId proto.RaftGroupId, serv
 	clientMessage.SetMessageType(CPGroupDestroyCPObjectCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, serviceName)
-	internal.StringCodec.Encode(clientMessage, objectName)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, serviceName)
+	StringCodec.Encode(clientMessage, objectName)
 
 	return clientMessage
 }

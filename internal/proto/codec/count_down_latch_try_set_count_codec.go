@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -42,13 +41,13 @@ func (countdownlatchTrySetCountCodec) EncodeRequest(groupId proto.RaftGroupId, n
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, CountDownLatchTrySetCountCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, CountDownLatchTrySetCountCodecRequestCountOffset, count)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, CountDownLatchTrySetCountCodecRequestCountOffset, count)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CountDownLatchTrySetCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -57,5 +56,5 @@ func (countdownlatchTrySetCountCodec) DecodeResponse(clientMessage *proto.Client
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, CountDownLatchTrySetCountResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, CountDownLatchTrySetCountResponseResponseOffset)
 }

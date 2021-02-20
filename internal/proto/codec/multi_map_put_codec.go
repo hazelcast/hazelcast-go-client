@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -41,14 +41,14 @@ func (multimapPutCodec) EncodeRequest(name string, key serialization.Data, value
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MultiMapPutCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapPutCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapPutCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapPutCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
-	internal.DataCodec.Encode(clientMessage, value)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
+	DataCodec.Encode(clientMessage, value)
 
 	return clientMessage
 }
@@ -57,5 +57,5 @@ func (multimapPutCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MultiMapPutResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MultiMapPutResponseResponseOffset)
 }

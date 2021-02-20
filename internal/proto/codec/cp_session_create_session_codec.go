@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -45,8 +44,8 @@ func (cpsessionCreateSessionCodec) EncodeRequest(groupId proto.RaftGroupId, endp
 	clientMessage.SetMessageType(CPSessionCreateSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, endpointName)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, endpointName)
 
 	return clientMessage
 }
@@ -55,9 +54,9 @@ func (cpsessionCreateSessionCodec) DecodeResponse(clientMessage *proto.ClientMes
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	sessionId = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, CPSessionCreateSessionResponseSessionIdOffset)
-	ttlMillis = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, CPSessionCreateSessionResponseTtlMillisOffset)
-	heartbeatMillis = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, CPSessionCreateSessionResponseHeartbeatMillisOffset)
+	sessionId = FixSizedTypesCodec.DecodeLong(initialFrame.Content, CPSessionCreateSessionResponseSessionIdOffset)
+	ttlMillis = FixSizedTypesCodec.DecodeLong(initialFrame.Content, CPSessionCreateSessionResponseTtlMillisOffset)
+	heartbeatMillis = FixSizedTypesCodec.DecodeLong(initialFrame.Content, CPSessionCreateSessionResponseHeartbeatMillisOffset)
 
 	return sessionId, ttlMillis, heartbeatMillis
 }

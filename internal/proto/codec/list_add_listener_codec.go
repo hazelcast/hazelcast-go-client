@@ -14,10 +14,10 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -48,13 +48,13 @@ func (listAddListenerCodec) EncodeRequest(name string, includeValue bool, localO
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, ListAddListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestIncludeValueOffset, includeValue)
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestIncludeValueOffset, includeValue)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListAddListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -63,7 +63,7 @@ func (listAddListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) c
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerResponseResponseOffset)
 }
 
 func (listAddListenerCodec) Handle(clientMessage *proto.ClientMessage, handleItemEvent func(item serialization.Data, uuid core.UUID, eventType int32)) {
@@ -71,9 +71,9 @@ func (listAddListenerCodec) Handle(clientMessage *proto.ClientMessage, handleIte
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ListAddListenerCodecEventItemMessageType {
 		initialFrame := frameIterator.Next()
-		uuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerEventItemUuidOffset)
-		eventType := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ListAddListenerEventItemEventTypeOffset)
-		item := internal.CodecUtil.DecodeNullableForData(frameIterator)
+		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerEventItemUuidOffset)
+		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ListAddListenerEventItemEventTypeOffset)
+		item := CodecUtil.DecodeNullableForData(frameIterator)
 		handleItemEvent(item, uuid, eventType)
 		return
 	}

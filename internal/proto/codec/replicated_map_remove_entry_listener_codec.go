@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -42,12 +41,12 @@ func (replicatedmapRemoveEntryListenerCodec) EncodeRequest(name string, registra
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapRemoveEntryListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ReplicatedMapRemoveEntryListenerCodecRequestRegistrationIdOffset, registrationId)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ReplicatedMapRemoveEntryListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapRemoveEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -56,5 +55,5 @@ func (replicatedmapRemoveEntryListenerCodec) DecodeResponse(clientMessage *proto
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ReplicatedMapRemoveEntryListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ReplicatedMapRemoveEntryListenerResponseResponseOffset)
 }

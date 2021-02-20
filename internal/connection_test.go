@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -9,8 +10,8 @@ func TestClientMessageReader(t *testing.T) {
 
 	//when
 	reader := clientMessageReader{}
-	reader.append([]byte("test-1"))
-	reader.append([]byte("test-2"))
+	reader.Append(bytes.NewBuffer([]byte("test-1")))
+	reader.Append(bytes.NewBuffer([]byte("test-2")))
 	println(reader.chunksTotalSize)
 
 	//then

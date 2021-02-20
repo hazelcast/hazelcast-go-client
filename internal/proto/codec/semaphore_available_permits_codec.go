@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -43,8 +42,8 @@ func (semaphoreAvailablePermitsCodec) EncodeRequest(groupId proto.RaftGroupId, n
 	clientMessage.SetMessageType(SemaphoreAvailablePermitsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -53,5 +52,5 @@ func (semaphoreAvailablePermitsCodec) DecodeResponse(clientMessage *proto.Client
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, SemaphoreAvailablePermitsResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, SemaphoreAvailablePermitsResponseResponseOffset)
 }

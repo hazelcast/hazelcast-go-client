@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -42,8 +41,8 @@ func (topicPublishCodec) EncodeRequest(name string, message serialization.Data) 
 	clientMessage.SetMessageType(TopicPublishCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, message)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, message)
 
 	return clientMessage
 }

@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -194,13 +193,13 @@ func (clientStatisticsCodec) EncodeRequest(timestamp int64, clientAttributes str
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, ClientStatisticsCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, ClientStatisticsCodecRequestTimestampOffset, timestamp)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, ClientStatisticsCodecRequestTimestampOffset, timestamp)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientStatisticsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, clientAttributes)
-	internal.ByteArrayCodec.Encode(clientMessage, metricsBlob)
+	StringCodec.Encode(clientMessage, clientAttributes)
+	ByteArrayCodec.Encode(clientMessage, metricsBlob)
 
 	return clientMessage
 }

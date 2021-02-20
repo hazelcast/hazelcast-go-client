@@ -14,10 +14,10 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -48,12 +48,12 @@ func (topicAddMessageListenerCodec) EncodeRequest(name string, localOnly bool) *
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, TopicAddMessageListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, TopicAddMessageListenerCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, TopicAddMessageListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(TopicAddMessageListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -62,7 +62,7 @@ func (topicAddMessageListenerCodec) DecodeResponse(clientMessage *proto.ClientMe
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
 }
 
 func (topicAddMessageListenerCodec) Handle(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid core.UUID)) {
@@ -70,9 +70,9 @@ func (topicAddMessageListenerCodec) Handle(clientMessage *proto.ClientMessage, h
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == TopicAddMessageListenerCodecEventTopicMessageType {
 		initialFrame := frameIterator.Next()
-		publishTime := internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, TopicAddMessageListenerEventTopicPublishTimeOffset)
-		uuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerEventTopicUuidOffset)
-		item := internal.DataCodec.Decode(frameIterator)
+		publishTime := FixSizedTypesCodec.DecodeLong(initialFrame.Content, TopicAddMessageListenerEventTopicPublishTimeOffset)
+		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerEventTopicUuidOffset)
+		item := DataCodec.Decode(frameIterator)
 		handleTopicEvent(item, publishTime, uuid)
 		return
 	}

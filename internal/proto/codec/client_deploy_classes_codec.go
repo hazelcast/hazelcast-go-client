@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -43,7 +42,7 @@ func (clientDeployClassesCodec) EncodeRequest(classDefinitions []proto.Pair) *pr
 	clientMessage.SetMessageType(ClientDeployClassesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.EntryListCodec.EncodeForStringAndByteArray(clientMessage, classDefinitions)
+	EntryListCodec.EncodeForStringAndByteArray(clientMessage, classDefinitions)
 
 	return clientMessage
 }

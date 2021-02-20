@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -47,19 +46,19 @@ func (clientAuthenticationCodec) EncodeRequest(clusterName string, username stri
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCodecRequestUuidOffset, uuid)
-	internal.FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCodecRequestSerializationVersionOffset, serializationVersion)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCodecRequestUuidOffset, uuid)
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCodecRequestSerializationVersionOffset, serializationVersion)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAuthenticationCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, clusterName)
-	internal.CodecUtil.EncodeNullableForString(clientMessage, username)
-	internal.CodecUtil.EncodeNullableForString(clientMessage, password)
-	internal.StringCodec.Encode(clientMessage, clientType)
-	internal.StringCodec.Encode(clientMessage, clientHazelcastVersion)
-	internal.StringCodec.Encode(clientMessage, clientName)
-	internal.ListMultiFrameCodec.EncodeForString(clientMessage, labels)
+	StringCodec.Encode(clientMessage, clusterName)
+	CodecUtil.EncodeNullableForString(clientMessage, username)
+	CodecUtil.EncodeNullableForString(clientMessage, password)
+	StringCodec.Encode(clientMessage, clientType)
+	StringCodec.Encode(clientMessage, clientHazelcastVersion)
+	StringCodec.Encode(clientMessage, clientName)
+	ListMultiFrameCodec.EncodeForString(clientMessage, labels)
 
 	return clientMessage
 }
@@ -68,14 +67,14 @@ func (clientAuthenticationCodec) DecodeResponse(clientMessage *proto.ClientMessa
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	status = internal.FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationResponseStatusOffset)
-	memberUuid = internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationResponseMemberUuidOffset)
-	serializationVersion = internal.FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationResponseSerializationVersionOffset)
-	partitionCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAuthenticationResponsePartitionCountOffset)
-	clusterId = internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationResponseClusterIdOffset)
-	failoverSupported = internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientAuthenticationResponseFailoverSupportedOffset)
-	address = internal.CodecUtil.DecodeNullableForAddress(frameIterator)
-	serverHazelcastVersion = internal.StringCodec.Decode(frameIterator)
+	status = FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationResponseStatusOffset)
+	memberUuid = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationResponseMemberUuidOffset)
+	serializationVersion = FixSizedTypesCodec.DecodeByte(initialFrame.Content, ClientAuthenticationResponseSerializationVersionOffset)
+	partitionCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAuthenticationResponsePartitionCountOffset)
+	clusterId = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationResponseClusterIdOffset)
+	failoverSupported = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientAuthenticationResponseFailoverSupportedOffset)
+	address = CodecUtil.DecodeNullableForAddress(frameIterator)
+	serverHazelcastVersion = StringCodec.Decode(frameIterator)
 
 	return status, address, memberUuid, serializationVersion, serverHazelcastVersion, partitionCount, clusterId, failoverSupported
 }

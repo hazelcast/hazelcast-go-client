@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -41,8 +40,8 @@ func (clientCreateProxyCodec) EncodeRequest(name string, serviceName string) *pr
 	clientMessage.SetMessageType(ClientCreateProxyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.StringCodec.Encode(clientMessage, serviceName)
+	StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, serviceName)
 
 	return clientMessage
 }

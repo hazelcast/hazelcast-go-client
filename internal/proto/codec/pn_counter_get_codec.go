@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -49,13 +48,13 @@ func (pncounterGetCodec) EncodeRequest(name string, replicaTimestamps []proto.Pa
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, PNCounterGetCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterGetCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterGetCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(PNCounterGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.EntryListUUIDLongCodec.Encode(clientMessage, replicaTimestamps)
+	StringCodec.Encode(clientMessage, name)
+	EntryListUUIDLongCodec.Encode(clientMessage, replicaTimestamps)
 
 	return clientMessage
 }
@@ -64,9 +63,9 @@ func (pncounterGetCodec) DecodeResponse(clientMessage *proto.ClientMessage) (val
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	value = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterGetResponseValueOffset)
-	replicaCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetResponseReplicaCountOffset)
-	replicaTimestamps = internal.EntryListUUIDLongCodec.Decode(frameIterator)
+	value = FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterGetResponseValueOffset)
+	replicaCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetResponseReplicaCountOffset)
+	replicaTimestamps = EntryListUUIDLongCodec.Decode(frameIterator)
 
 	return value, replicaTimestamps, replicaCount
 }

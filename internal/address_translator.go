@@ -14,7 +14,7 @@
 
 package internal
 
-import "github.com/hazelcast/hazelcast-go-client/core"
+import "github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 
 // AddressTranslator is used to resolve private ip address of cloud services.
 type AddressTranslator interface {

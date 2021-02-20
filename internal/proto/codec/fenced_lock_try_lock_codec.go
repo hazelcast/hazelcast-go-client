@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -51,16 +50,16 @@ func (fencedlockTryLockCodec) EncodeRequest(groupId proto.RaftGroupId, name stri
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, FencedLockTryLockCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockTryLockCodecRequestSessionIdOffset, sessionId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockTryLockCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockTryLockCodecRequestInvocationUidOffset, invocationUid)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockTryLockCodecRequestTimeoutMsOffset, timeoutMs)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockTryLockCodecRequestSessionIdOffset, sessionId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockTryLockCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockTryLockCodecRequestInvocationUidOffset, invocationUid)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockTryLockCodecRequestTimeoutMsOffset, timeoutMs)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FencedLockTryLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -69,5 +68,5 @@ func (fencedlockTryLockCodec) DecodeResponse(clientMessage *proto.ClientMessage)
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockTryLockResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockTryLockResponseResponseOffset)
 }

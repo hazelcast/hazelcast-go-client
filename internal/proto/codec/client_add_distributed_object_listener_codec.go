@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -46,7 +45,7 @@ func (clientAddDistributedObjectListenerCodec) EncodeRequest(localOnly bool) *pr
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, ClientAddDistributedObjectListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ClientAddDistributedObjectListenerCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ClientAddDistributedObjectListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAddDistributedObjectListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -58,7 +57,7 @@ func (clientAddDistributedObjectListenerCodec) DecodeResponse(clientMessage *pro
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseOffset)
 }
 
 func (clientAddDistributedObjectListenerCodec) Handle(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source core.UUID)) {
@@ -66,10 +65,10 @@ func (clientAddDistributedObjectListenerCodec) Handle(clientMessage *proto.Clien
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddDistributedObjectListenerCodecEventDistributedObjectMessageType {
 		initialFrame := frameIterator.Next()
-		source := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerEventDistributedObjectSourceOffset)
-		name := internal.StringCodec.Decode(frameIterator)
-		serviceName := internal.StringCodec.Decode(frameIterator)
-		eventType := internal.StringCodec.Decode(frameIterator)
+		source := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerEventDistributedObjectSourceOffset)
+		name := StringCodec.Decode(frameIterator)
+		serviceName := StringCodec.Decode(frameIterator)
+		eventType := StringCodec.Decode(frameIterator)
 		handleDistributedObjectEvent(name, serviceName, eventType, source)
 		return
 	}

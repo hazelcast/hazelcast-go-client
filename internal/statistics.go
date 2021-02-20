@@ -26,10 +26,10 @@ import (
 
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/config/property"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/config/property"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/versionutil"
 )
 
 const (

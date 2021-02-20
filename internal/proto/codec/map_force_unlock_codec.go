@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -40,13 +40,13 @@ func (mapForceUnlockCodec) EncodeRequest(name string, key serialization.Data, re
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, MapForceUnlockCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapForceUnlockCodecRequestReferenceIdOffset, referenceId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapForceUnlockCodecRequestReferenceIdOffset, referenceId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapForceUnlockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
 
 	return clientMessage
 }

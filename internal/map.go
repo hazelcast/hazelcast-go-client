@@ -15,7 +15,7 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 )
 
 type mapProxy struct {

@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -39,14 +39,14 @@ func (mapReplaceCodec) EncodeRequest(name string, key serialization.Data, value 
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MapReplaceCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapReplaceCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapReplaceCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapReplaceCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
-	internal.DataCodec.Encode(clientMessage, value)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
+	DataCodec.Encode(clientMessage, value)
 
 	return clientMessage
 }
@@ -56,5 +56,5 @@ func (mapReplaceCodec) DecodeResponse(clientMessage *proto.ClientMessage) serial
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.CodecUtil.DecodeNullableForData(frameIterator)
+	return CodecUtil.DecodeNullableForData(frameIterator)
 }

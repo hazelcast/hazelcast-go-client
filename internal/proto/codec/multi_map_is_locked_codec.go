@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -44,8 +44,8 @@ func (multimapIsLockedCodec) EncodeRequest(name string, key serialization.Data) 
 	clientMessage.SetMessageType(MultiMapIsLockedCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
 
 	return clientMessage
 }
@@ -54,5 +54,5 @@ func (multimapIsLockedCodec) DecodeResponse(clientMessage *proto.ClientMessage) 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MultiMapIsLockedResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MultiMapIsLockedResponseResponseOffset)
 }

@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -44,7 +43,7 @@ func (ringbufferTailSequenceCodec) EncodeRequest(name string) *proto.ClientMessa
 	clientMessage.SetMessageType(RingbufferTailSequenceCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -53,5 +52,5 @@ func (ringbufferTailSequenceCodec) DecodeResponse(clientMessage *proto.ClientMes
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferTailSequenceResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferTailSequenceResponseResponseOffset)
 }

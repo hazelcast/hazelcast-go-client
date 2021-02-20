@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -46,8 +45,8 @@ func (fencedlockGetLockOwnershipCodec) EncodeRequest(groupId proto.RaftGroupId, 
 	clientMessage.SetMessageType(FencedLockGetLockOwnershipCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -56,10 +55,10 @@ func (fencedlockGetLockOwnershipCodec) DecodeResponse(clientMessage *proto.Clien
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	fence = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockGetLockOwnershipResponseFenceOffset)
-	lockCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, FencedLockGetLockOwnershipResponseLockCountOffset)
-	sessionId = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockGetLockOwnershipResponseSessionIdOffset)
-	threadId = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockGetLockOwnershipResponseThreadIdOffset)
+	fence = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockGetLockOwnershipResponseFenceOffset)
+	lockCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, FencedLockGetLockOwnershipResponseLockCountOffset)
+	sessionId = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockGetLockOwnershipResponseSessionIdOffset)
+	threadId = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FencedLockGetLockOwnershipResponseThreadIdOffset)
 
 	return fence, lockCount, sessionId, threadId
 }

@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -47,16 +47,16 @@ func (mapTryLockCodec) EncodeRequest(name string, key serialization.Data, thread
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, MapTryLockCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestLeaseOffset, lease)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestTimeoutOffset, timeout)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestReferenceIdOffset, referenceId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestLeaseOffset, lease)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestTimeoutOffset, timeout)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestReferenceIdOffset, referenceId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapTryLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
 
 	return clientMessage
 }
@@ -65,5 +65,5 @@ func (mapTryLockCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapTryLockResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapTryLockResponseResponseOffset)
 }

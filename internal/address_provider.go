@@ -15,8 +15,8 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
 type AddressProvider interface {

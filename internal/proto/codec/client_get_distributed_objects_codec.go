@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -49,5 +48,5 @@ func (clientGetDistributedObjectsCodec) DecodeResponse(clientMessage *proto.Clie
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.ListMultiFrameCodec.DecodeForDistributedObjectInfo(frameIterator)
+	return ListMultiFrameCodec.DecodeForDistributedObjectInfo(frameIterator)
 }

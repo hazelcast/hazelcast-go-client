@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -47,15 +46,15 @@ func (fencedlockUnlockCodec) EncodeRequest(groupId proto.RaftGroupId, name strin
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, FencedLockUnlockCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockUnlockCodecRequestSessionIdOffset, sessionId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockUnlockCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockUnlockCodecRequestInvocationUidOffset, invocationUid)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockUnlockCodecRequestSessionIdOffset, sessionId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockUnlockCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockUnlockCodecRequestInvocationUidOffset, invocationUid)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FencedLockUnlockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -64,5 +63,5 @@ func (fencedlockUnlockCodec) DecodeResponse(clientMessage *proto.ClientMessage) 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, FencedLockUnlockResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, FencedLockUnlockResponseResponseOffset)
 }

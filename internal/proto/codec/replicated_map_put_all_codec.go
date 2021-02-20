@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -44,8 +43,8 @@ func (replicatedmapPutAllCodec) EncodeRequest(name string, entries []proto.Pair)
 	clientMessage.SetMessageType(ReplicatedMapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.EntryListCodec.EncodeForDataAndData(clientMessage, entries)
+	StringCodec.Encode(clientMessage, name)
+	EntryListCodec.EncodeForDataAndData(clientMessage, entries)
 
 	return clientMessage
 }

@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -47,7 +46,7 @@ func (clientAddPartitionLostListenerCodec) EncodeRequest(localOnly bool) *proto.
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, ClientAddPartitionLostListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ClientAddPartitionLostListenerCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ClientAddPartitionLostListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAddPartitionLostListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -59,7 +58,7 @@ func (clientAddPartitionLostListenerCodec) DecodeResponse(clientMessage *proto.C
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddPartitionLostListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddPartitionLostListenerResponseResponseOffset)
 }
 
 func (clientAddPartitionLostListenerCodec) Handle(clientMessage *proto.ClientMessage, handlePartitionLostEvent func(partitionId int32, lostBackupCount int32, source core.UUID)) {
@@ -67,9 +66,9 @@ func (clientAddPartitionLostListenerCodec) Handle(clientMessage *proto.ClientMes
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddPartitionLostListenerCodecEventPartitionLostMessageType {
 		initialFrame := frameIterator.Next()
-		partitionId := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddPartitionLostListenerEventPartitionLostPartitionIdOffset)
-		lostBackupCount := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddPartitionLostListenerEventPartitionLostLostBackupCountOffset)
-		source := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddPartitionLostListenerEventPartitionLostSourceOffset)
+		partitionId := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddPartitionLostListenerEventPartitionLostPartitionIdOffset)
+		lostBackupCount := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddPartitionLostListenerEventPartitionLostLostBackupCountOffset)
+		source := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddPartitionLostListenerEventPartitionLostSourceOffset)
 		handlePartitionLostEvent(partitionId, lostBackupCount, source)
 		return
 	}

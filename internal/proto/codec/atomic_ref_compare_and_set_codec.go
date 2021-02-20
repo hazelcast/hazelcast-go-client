@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -44,10 +43,10 @@ func (atomicrefCompareAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, name
 	clientMessage.SetMessageType(AtomicRefCompareAndSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.CodecUtil.EncodeNullable(clientMessage, oldValue, internal.DataCodec.Encode)
-	internal.CodecUtil.EncodeNullable(clientMessage, newValue, internal.DataCodec.Encode)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, oldValue, DataCodec.Encode)
+	CodecUtil.EncodeNullable(clientMessage, newValue, DataCodec.Encode)
 
 	return clientMessage
 }
@@ -56,5 +55,5 @@ func (atomicrefCompareAndSetCodec) DecodeResponse(clientMessage *proto.ClientMes
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, AtomicRefCompareAndSetResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, AtomicRefCompareAndSetResponseResponseOffset)
 }

@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -48,13 +48,13 @@ func (ringbufferAddAllCodec) EncodeRequest(name string, valueList []serializatio
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, RingbufferAddAllCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferAddAllCodecRequestOverflowPolicyOffset, overflowPolicy)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferAddAllCodecRequestOverflowPolicyOffset, overflowPolicy)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(RingbufferAddAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.ListMultiFrameCodec.EncodeForData(clientMessage, valueList)
+	StringCodec.Encode(clientMessage, name)
+	ListMultiFrameCodec.EncodeForData(clientMessage, valueList)
 
 	return clientMessage
 }
@@ -63,5 +63,5 @@ func (ringbufferAddAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferAddAllResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferAddAllResponseResponseOffset)
 }
