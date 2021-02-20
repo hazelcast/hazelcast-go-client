@@ -22,7 +22,7 @@ import (
 )
 
 func TestRandomLoadBalancer_NextAddressWithNoMembers(t *testing.T) {
-	cs := &clusterService{}
+	cs := &ClusterService{}
 	cs.members.Store(make([]*proto.Member, 0)) // initialize with empty member slice
 	lb := core.NewRandomLoadBalancer()
 	lb.Init(cs)

@@ -46,6 +46,13 @@ func NewHazelcastPropertyInt64WithTimeUnit(name string, defaultValue int64, time
 	}
 }
 
+func NewHazelcastPropertyInt(name string, defaultValue int) *HazelcastProperty {
+	return &HazelcastProperty{
+		name:         name,
+		defaultValue: strconv.Itoa(defaultValue),
+	}
+}
+
 // NewHazelcastProperty returns a Hazelcast property with the given name.
 func NewHazelcastProperty(name string) *HazelcastProperty {
 	return &HazelcastProperty{

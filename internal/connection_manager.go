@@ -101,7 +101,7 @@ func (cm *connectionManagerImpl) onConnectionClose(connection *Connection, cause
 		cm.notifyListenersForClose(connection, cause)
 	} else {
 		//Clean up unauthenticated Connection
-		cm.client.InvocationService.cleanupConnection(connection, cause)
+		cm.client.invocationService.cleanupConnection(connection, cause)
 	}
 }
 
@@ -292,7 +292,7 @@ func (cm *connectionManagerImpl) getAuthenticationDecoder() func(clientMessage *
 func (cm *connectionManagerImpl) authenticate(connection *Connection, asOwner bool) error {
 	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := cm.encodeAuthenticationRequest(asOwner)
-	invocationResult := cm.client.InvocationService.invokeOnConnection(request, connection)
+	invocationResult := cm.client.invocationService.invokeOnConnection(request, connection)
 	result, err := invocationResult.ResultWithTimeout(cm.client.HeartBeatService.heartBeatTimeout)
 	if err != nil {
 		return err
@@ -339,8 +339,10 @@ func (cm *connectionManagerImpl) createConnection(address core.Address, asOwner 
 	if err := cm.canCreateConnection(asOwner); err != nil {
 		return nil, err
 	}
-	con, err := newConnection(address, cm, cm.client.InvocationService.handleResponse, cm.client.Config.NetworkConfig(),
+	invocationService := cm.client.invocationService.(*invocationServiceImpl)
+	con, err := newConnection(address, cm, invocationService.handleResponse, cm.client.Config.NetworkConfig(),
 		cm.logger)
+
 	if err != nil {
 		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	}

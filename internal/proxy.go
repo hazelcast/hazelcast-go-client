@@ -57,6 +57,10 @@ func (p *proxy) ServiceName() string {
 	return p.serviceName
 }
 
+func (p *proxy) onShutdown() {
+
+}
+
 func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
@@ -158,26 +162,26 @@ func (p *proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 			return nil, err
 		}
 		pair := proto.NewPair(keyData, valueData)
-		partitionID := p.client.PartitionService.GetPartitionID(keyData)
+		partitionID := p.client.partitionService.GetPartitionID(keyData)
 		partitions[partitionID] = append(partitions[partitionID], pair)
 	}
 	return partitions, nil
 }
 
 func (p *proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnKeyOwner(request, keyData).Result()
+	return p.client.invocationService.invokeOnKeyOwner(request, keyData).Result()
 }
 
 func (p *proxy) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnRandomTarget(request).Result()
+	return p.client.invocationService.invokeOnRandomTarget(request).Result()
 }
 
 func (p *proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnPartitionOwner(request, partitionID).Result()
+	return p.client.invocationService.invokeOnPartitionOwner(request, partitionID).Result()
 }
 
 func (p *proxy) invokeOnAddress(request *proto.ClientMessage, address *proto.Address) (*proto.ClientMessage, error) {
-	return p.client.InvocationService.invokeOnTarget(request, address).Result()
+	return p.client.invocationService.InvokeOnTarget(request, address).Result()
 }
 
 func (p *proxy) toObject(data serialization.Data) (interface{}, error) {
@@ -243,9 +247,8 @@ type partitionSpecificProxy struct {
 
 func newPartitionSpecificProxy(client *HazelcastClient, serviceName string, name string) *partitionSpecificProxy {
 	parSpecProxy := &partitionSpecificProxy{proxy: &proxy{client, serviceName, name}}
-	parSpecProxy.partitionID, _ = parSpecProxy.client.PartitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
+	parSpecProxy.partitionID, _ = parSpecProxy.client.partitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey())
 	return parSpecProxy
-
 }
 
 func (parSpecProxy *partitionSpecificProxy) invoke(request *proto.ClientMessage) (*proto.ClientMessage, error) {

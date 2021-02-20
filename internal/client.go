@@ -27,7 +27,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
+	"github.com/hazelcast/hazelcast-go-client/internal/clientspi"
 	"github.com/hazelcast/hazelcast-go-client/internal/discovery"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/nearcache/nearcachespi"
 	"github.com/hazelcast/hazelcast-go-client/internal/predicate"
 	"github.com/hazelcast/hazelcast-go-client/internal/projection"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -41,19 +44,21 @@ import (
 var clientID int64
 
 type HazelcastClient struct {
-	InvocationService    invocationService
+	invocationService    InvocationService
 	Config               *config.Config
-	PartitionService     *partitionService
+	partitionService     *PartitionService
 	SerializationService spi.SerializationService
 	lifecycleService     *lifecycleService
 	ConnectionManager    connectionManager
 	ListenerService      *listenerService
-	ClusterService       *clusterService
+	ClusterService       *ClusterService
 	ProxyManager         *proxyManager
 	LoadBalancer         core.LoadBalancer
 	HeartBeatService     *heartBeatService
 	properties           *property.HazelcastProperties
+	nearcacheManager     nearcache.Manager
 	credentials          security.Credentials
+	repairingTask        nearcache.RepairingTask
 	name                 string
 	id                   int64
 	statistics           *statistics
@@ -67,6 +72,10 @@ func NewHazelcastClient(config *config.Config) (*HazelcastClient, error) {
 	client.statistics = newStatistics(client)
 	err := client.init()
 	return client, err
+}
+
+func (c *HazelcastClient) InvocationService() InvocationService {
+	return c.invocationService
 }
 
 func (c *HazelcastClient) Name() string {
@@ -194,6 +203,15 @@ func (c *HazelcastClient) initLogger() {
 	c.logger = newHazelcastLogger(setLogger, hazelcastPrefix)
 }
 
+func (c *HazelcastClient) PartitionService() clientspi.PartitionService {
+	return c.partitionService
+}
+
+func (c *HazelcastClient) initNearCacheRepairingTask() {
+	c.repairingTask = nearcachespi.NewRepairingTask(c.properties, c.SerializationService, c.partitionService,
+		c.invocationService, c.ClusterService, c.ClusterService.localUUID())
+}
+
 func (c *HazelcastClient) init() error {
 	c.initClientName()
 	c.initLogger()
@@ -205,11 +223,11 @@ func (c *HazelcastClient) init() error {
 	c.lifecycleService = newLifecycleService(c)
 	c.ConnectionManager = newConnectionManager(c, addressTranslator)
 	c.HeartBeatService = newHeartBeatService(c)
-	c.InvocationService = newInvocationService(c)
+	c.invocationService = newInvocationService(c)
 	addressProviders := c.createAddressProviders()
 	c.ClusterService = newClusterService(c, addressProviders)
 	c.ListenerService = newListenerService(c)
-	c.PartitionService = newPartitionService(c)
+	c.partitionService = newPartitionService(c)
 	c.ProxyManager = newProxyManager(c)
 	c.LoadBalancer = c.initLoadBalancer(c.Config)
 	c.LoadBalancer.Init(c.ClusterService)
@@ -218,14 +236,15 @@ func (c *HazelcastClient) init() error {
 	if err != nil {
 		return err
 	}
-	c.PartitionService.start()
+	c.partitionService.start()
 	err = c.ClusterService.start()
 	if err != nil {
 		return err
 	}
-
+	c.nearcacheManager = c.createNearCacheManager()
 	c.HeartBeatService.start()
 	c.statistics.start()
+	c.initNearCacheRepairingTask()
 	c.lifecycleService.fireLifecycleEvent(core.LifecycleStateStarted)
 	return nil
 }
@@ -326,16 +345,24 @@ func (c *HazelcastClient) getConnectionTimeout() time.Duration {
 	return connTimeout
 }
 
+func (c *HazelcastClient) createNearCacheManager() nearcache.Manager {
+	return nearcachespi.NewDefaultNearCacheManager(c.SerializationService, c.properties)
+}
+
 func (c *HazelcastClient) Shutdown() {
 	if c.lifecycleService.isLive.Load().(bool) {
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShuttingDown)
+		c.ProxyManager.destroy()
 		c.ConnectionManager.shutdown()
-		c.PartitionService.shutdown()
+		c.partitionService.shutdown()
 		c.ClusterService.shutdown()
-		c.InvocationService.shutdown()
+		c.invocationService.shutdown()
 		c.HeartBeatService.shutdown()
 		c.ListenerService.shutdown()
 		c.statistics.shutdown()
+		if c.repairingTask != nil {
+			c.repairingTask.Shutdown()
+		}
 		c.lifecycleService.fireLifecycleEvent(core.LifecycleStateShutdown)
 	}
 }

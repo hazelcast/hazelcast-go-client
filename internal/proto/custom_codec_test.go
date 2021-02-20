@@ -53,7 +53,7 @@ func TestDistributedObjectInfoCodecEncodeDecode(t *testing.T) {
 
 func TestMemberCodecEncodeDecode(t *testing.T) {
 	address := Address{"test-host", 8080}
-	uuid := "test-uuid"
+	uuid := "test-UUID"
 	isLiteMember := true
 	attributes := make(map[string]string)
 	attributes["key1"] = "value1"

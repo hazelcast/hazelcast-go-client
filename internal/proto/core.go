@@ -48,9 +48,13 @@ func (a *Address) String() string {
 	return a.Host() + ":" + strconv.Itoa(a.Port())
 }
 
-type uuid struct {
+type UUID struct {
 	msb int64
 	lsb int64
+}
+
+func (u *UUID) String() string {
+	return strconv.FormatInt(u.msb, 10) + "-" + strconv.FormatInt(u.lsb, 10)
 }
 
 type Member struct {
