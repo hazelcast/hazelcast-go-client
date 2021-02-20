@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -48,17 +47,17 @@ func (semaphoreAcquireCodec) EncodeRequest(groupId proto.RaftGroupId, name strin
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, SemaphoreAcquireCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestSessionIdOffset, sessionId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, SemaphoreAcquireCodecRequestInvocationUidOffset, invocationUid)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, SemaphoreAcquireCodecRequestPermitsOffset, permits)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestTimeoutMsOffset, timeoutMs)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestSessionIdOffset, sessionId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, SemaphoreAcquireCodecRequestInvocationUidOffset, invocationUid)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SemaphoreAcquireCodecRequestPermitsOffset, permits)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestTimeoutMsOffset, timeoutMs)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SemaphoreAcquireCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -67,5 +66,5 @@ func (semaphoreAcquireCodec) DecodeResponse(clientMessage *proto.ClientMessage) 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SemaphoreAcquireResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SemaphoreAcquireResponseResponseOffset)
 }

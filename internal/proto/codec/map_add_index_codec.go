@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -42,8 +41,8 @@ func (mapAddIndexCodec) EncodeRequest(name string, indexConfig config.IndexConfi
 	clientMessage.SetMessageType(MapAddIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.IndexConfigCodec.Encode(clientMessage, indexConfig)
+	StringCodec.Encode(clientMessage, name)
+	IndexConfigCodec.Encode(clientMessage, indexConfig)
 
 	return clientMessage
 }

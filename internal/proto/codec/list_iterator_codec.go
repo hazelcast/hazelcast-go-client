@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -42,7 +42,7 @@ func (listIteratorCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ListIteratorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -52,5 +52,5 @@ func (listIteratorCodec) DecodeResponse(clientMessage *proto.ClientMessage) []se
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.ListMultiFrameCodec.DecodeForData(frameIterator)
+	return ListMultiFrameCodec.DecodeForData(frameIterator)
 }

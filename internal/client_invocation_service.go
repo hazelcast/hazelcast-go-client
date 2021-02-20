@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"sync"
 )
 
@@ -108,6 +108,6 @@ func (c *clientInvocationServiceImpl) registerInvocation(clientInvocation Client
 }
 
 type ClientResponseHandler struct {
-	clientInvocationService clientInvocationService
+	clientInvocationService ClientInvocationService
 	responseChannel         chan interface{}
 }

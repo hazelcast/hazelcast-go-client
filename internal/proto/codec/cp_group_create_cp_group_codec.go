@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -41,7 +40,7 @@ func (cpgroupCreateCPGroupCodec) EncodeRequest(proxyName string) *proto.ClientMe
 	clientMessage.SetMessageType(CPGroupCreateCPGroupCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, proxyName)
+	StringCodec.Encode(clientMessage, proxyName)
 
 	return clientMessage
 }
@@ -51,5 +50,5 @@ func (cpgroupCreateCPGroupCodec) DecodeResponse(clientMessage *proto.ClientMessa
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.RaftGroupIdCodec.Decode(frameIterator)
+	return RaftGroupIdCodec.Decode(frameIterator)
 }

@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -40,13 +39,13 @@ func (atomiclongAddAndGetCodec) EncodeRequest(groupId proto.RaftGroupId, name st
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, AtomicLongAddAndGetCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, AtomicLongAddAndGetCodecRequestDeltaOffset, delta)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, AtomicLongAddAndGetCodecRequestDeltaOffset, delta)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(AtomicLongAddAndGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -55,5 +54,5 @@ func (atomiclongAddAndGetCodec) DecodeResponse(clientMessage *proto.ClientMessag
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, AtomicLongAddAndGetResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, AtomicLongAddAndGetResponseResponseOffset)
 }

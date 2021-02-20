@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -43,12 +43,12 @@ func (queueDrainToMaxSizeCodec) EncodeRequest(name string, maxSize int32) *proto
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, QueueDrainToMaxSizeCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, QueueDrainToMaxSizeCodecRequestMaxSizeOffset, maxSize)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, QueueDrainToMaxSizeCodecRequestMaxSizeOffset, maxSize)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueDrainToMaxSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -58,5 +58,5 @@ func (queueDrainToMaxSizeCodec) DecodeResponse(clientMessage *proto.ClientMessag
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.ListMultiFrameCodec.DecodeForData(frameIterator)
+	return ListMultiFrameCodec.DecodeForData(frameIterator)
 }

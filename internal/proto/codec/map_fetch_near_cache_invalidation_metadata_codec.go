@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -39,12 +38,12 @@ func (mapFetchNearCacheInvalidationMetadataCodec) EncodeRequest(names []string, 
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MapFetchNearCacheInvalidationMetadataCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MapFetchNearCacheInvalidationMetadataCodecRequestUuidOffset, uuid)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MapFetchNearCacheInvalidationMetadataCodecRequestUuidOffset, uuid)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFetchNearCacheInvalidationMetadataCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.ListMultiFrameCodec.EncodeForString(clientMessage, names)
+	ListMultiFrameCodec.EncodeForString(clientMessage, names)
 
 	return clientMessage
 }
@@ -53,8 +52,8 @@ func (mapFetchNearCacheInvalidationMetadataCodec) DecodeResponse(clientMessage *
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	namePartitionSequenceList = internal.EntryListCodec.DecodeForStringAndEntryListIntegerLong(frameIterator)
-	partitionUuidList = internal.EntryListIntegerUUIDCodec.Decode(frameIterator)
+	namePartitionSequenceList = EntryListCodec.DecodeForStringAndEntryListIntegerLong(frameIterator)
+	partitionUuidList = EntryListIntegerUUIDCodec.Decode(frameIterator)
 
 	return namePartitionSequenceList, partitionUuidList
 }

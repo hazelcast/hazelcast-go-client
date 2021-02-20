@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -39,12 +38,12 @@ func (cpsessionHeartbeatSessionCodec) EncodeRequest(groupId proto.RaftGroupId, s
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, CPSessionHeartbeatSessionCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, CPSessionHeartbeatSessionCodecRequestSessionIdOffset, sessionId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, CPSessionHeartbeatSessionCodecRequestSessionIdOffset, sessionId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPSessionHeartbeatSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
 
 	return clientMessage
 }

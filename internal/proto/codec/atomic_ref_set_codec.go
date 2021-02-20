@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -39,14 +39,14 @@ func (atomicrefSetCodec) EncodeRequest(groupId proto.RaftGroupId, name string, n
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, AtomicRefSetCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, AtomicRefSetCodecRequestReturnOldValueOffset, returnOldValue)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, AtomicRefSetCodecRequestReturnOldValueOffset, returnOldValue)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(AtomicRefSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.CodecUtil.EncodeNullable(clientMessage, newValue, internal.DataCodec.Encode)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, newValue, DataCodec.Encode)
 
 	return clientMessage
 }
@@ -56,5 +56,5 @@ func (atomicrefSetCodec) DecodeResponse(clientMessage *proto.ClientMessage) seri
 	// empty initial frame
 	frameIterator.Next()
 
-	return internal.CodecUtil.DecodeNullableForData(frameIterator)
+	return CodecUtil.DecodeNullableForData(frameIterator)
 }

@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -55,7 +54,7 @@ func (clientLocalBackupListenerCodec) DecodeResponse(clientMessage *proto.Client
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientLocalBackupListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientLocalBackupListenerResponseResponseOffset)
 }
 
 func (clientLocalBackupListenerCodec) Handle(clientMessage *proto.ClientMessage, handleBackupEvent func(sourceInvocationCorrelationId int64)) {
@@ -63,7 +62,7 @@ func (clientLocalBackupListenerCodec) Handle(clientMessage *proto.ClientMessage,
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientLocalBackupListenerCodecEventBackupMessageType {
 		initialFrame := frameIterator.Next()
-		sourceInvocationCorrelationId := internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, ClientLocalBackupListenerEventBackupSourceInvocationCorrelationIdOffset)
+		sourceInvocationCorrelationId := FixSizedTypesCodec.DecodeLong(initialFrame.Content, ClientLocalBackupListenerEventBackupSourceInvocationCorrelationIdOffset)
 		handleBackupEvent(sourceInvocationCorrelationId)
 		return
 	}

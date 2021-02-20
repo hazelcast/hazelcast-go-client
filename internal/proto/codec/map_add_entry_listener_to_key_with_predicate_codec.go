@@ -14,10 +14,10 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -51,16 +51,16 @@ func (mapAddEntryListenerToKeyWithPredicateCodec) EncodeRequest(name string, key
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MapAddEntryListenerToKeyWithPredicateCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestIncludeValueOffset, includeValue)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestListenerFlagsOffset, listenerFlags)
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestIncludeValueOffset, includeValue)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestListenerFlagsOffset, listenerFlags)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAddEntryListenerToKeyWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
-	internal.DataCodec.Encode(clientMessage, predicate)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
+	DataCodec.Encode(clientMessage, predicate)
 
 	return clientMessage
 }
@@ -69,7 +69,7 @@ func (mapAddEntryListenerToKeyWithPredicateCodec) DecodeResponse(clientMessage *
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateResponseResponseOffset)
 }
 
 func (mapAddEntryListenerToKeyWithPredicateCodec) Handle(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.UUID, numberOfAffectedEntries int32)) {
@@ -77,13 +77,13 @@ func (mapAddEntryListenerToKeyWithPredicateCodec) Handle(clientMessage *proto.Cl
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerToKeyWithPredicateCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryEventTypeOffset)
-		uuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryUuidOffset)
-		numberOfAffectedEntries := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryNumberOfAffectedEntriesOffset)
-		key := internal.CodecUtil.DecodeNullableForData(frameIterator)
-		value := internal.CodecUtil.DecodeNullableForData(frameIterator)
-		oldValue := internal.CodecUtil.DecodeNullableForData(frameIterator)
-		mergingValue := internal.CodecUtil.DecodeNullableForData(frameIterator)
+		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryEventTypeOffset)
+		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryUuidOffset)
+		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryNumberOfAffectedEntriesOffset)
+		key := CodecUtil.DecodeNullableForData(frameIterator)
+		value := CodecUtil.DecodeNullableForData(frameIterator)
+		oldValue := CodecUtil.DecodeNullableForData(frameIterator)
+		mergingValue := CodecUtil.DecodeNullableForData(frameIterator)
 		handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 		return
 	}

@@ -17,11 +17,11 @@ package colutil_test
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
-	"github.com/hazelcast/hazelcast-go-client/test/testutil"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/test/testutil"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/colutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,11 +50,13 @@ func TestDataToObjectCollectionError(t *testing.T) {
 func TestDataToObjectPairCollectionError(t *testing.T) {
 	service, _ := spi.NewSerializationService(serialization.NewConfig())
 
-	pairSlice := []*proto.Pair{proto.NewPair(testutil.NewSerializableData(), testutil.NewNonDeserializableData())}
+	pair1 := proto.NewPair(testutil.NewSerializableData(), testutil.NewNonDeserializableData())
+	pairSlice := []*proto.Pair{&pair1}
 	_, err := colutil.DataToObjectPairCollection(pairSlice, service)
 	assert.Error(t, err)
 
-	pairSlice = []*proto.Pair{proto.NewPair(testutil.NewNonDeserializableData(), testutil.NewSerializableData())}
+	pair2 := proto.NewPair(testutil.NewNonDeserializableData(), testutil.NewSerializableData())
+	pairSlice = []*proto.Pair{&pair2}
 	_, err = colutil.DataToObjectPairCollection(pairSlice, service)
 	assert.Error(t, err)
 

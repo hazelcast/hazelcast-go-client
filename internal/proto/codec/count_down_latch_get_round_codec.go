@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -44,8 +43,8 @@ func (countdownlatchGetRoundCodec) EncodeRequest(groupId proto.RaftGroupId, name
 	clientMessage.SetMessageType(CountDownLatchGetRoundCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -54,5 +53,5 @@ func (countdownlatchGetRoundCodec) DecodeResponse(clientMessage *proto.ClientMes
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, CountDownLatchGetRoundResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, CountDownLatchGetRoundResponseResponseOffset)
 }

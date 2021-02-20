@@ -14,10 +14,10 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -50,14 +50,14 @@ func (multimapAddEntryListenerToKeyCodec) EncodeRequest(name string, key seriali
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MultiMapAddEntryListenerToKeyCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerToKeyCodecRequestIncludeValueOffset, includeValue)
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerToKeyCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerToKeyCodecRequestIncludeValueOffset, includeValue)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerToKeyCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapAddEntryListenerToKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
 
 	return clientMessage
 }
@@ -66,7 +66,7 @@ func (multimapAddEntryListenerToKeyCodec) DecodeResponse(clientMessage *proto.Cl
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerToKeyResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerToKeyResponseResponseOffset)
 }
 
 func (multimapAddEntryListenerToKeyCodec) Handle(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.UUID, numberOfAffectedEntries int32)) {
@@ -74,13 +74,13 @@ func (multimapAddEntryListenerToKeyCodec) Handle(clientMessage *proto.ClientMess
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MultiMapAddEntryListenerToKeyCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, MultiMapAddEntryListenerToKeyEventEntryEventTypeOffset)
-		uuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerToKeyEventEntryUuidOffset)
-		numberOfAffectedEntries := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, MultiMapAddEntryListenerToKeyEventEntryNumberOfAffectedEntriesOffset)
-		key := internal.CodecUtil.DecodeNullableForData(frameIterator)
-		value := internal.CodecUtil.DecodeNullableForData(frameIterator)
-		oldValue := internal.CodecUtil.DecodeNullableForData(frameIterator)
-		mergingValue := internal.CodecUtil.DecodeNullableForData(frameIterator)
+		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MultiMapAddEntryListenerToKeyEventEntryEventTypeOffset)
+		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerToKeyEventEntryUuidOffset)
+		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MultiMapAddEntryListenerToKeyEventEntryNumberOfAffectedEntriesOffset)
+		key := CodecUtil.DecodeNullableForData(frameIterator)
+		value := CodecUtil.DecodeNullableForData(frameIterator)
+		oldValue := CodecUtil.DecodeNullableForData(frameIterator)
+		mergingValue := CodecUtil.DecodeNullableForData(frameIterator)
 		handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 		return
 	}

@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -44,14 +43,14 @@ func (countdownlatchCountDownCodec) EncodeRequest(groupId proto.RaftGroupId, nam
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, CountDownLatchCountDownCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, CountDownLatchCountDownCodecRequestInvocationUidOffset, invocationUid)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, CountDownLatchCountDownCodecRequestExpectedRoundOffset, expectedRound)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, CountDownLatchCountDownCodecRequestInvocationUidOffset, invocationUid)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, CountDownLatchCountDownCodecRequestExpectedRoundOffset, expectedRound)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CountDownLatchCountDownCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
-	internal.StringCodec.Encode(clientMessage, name)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }

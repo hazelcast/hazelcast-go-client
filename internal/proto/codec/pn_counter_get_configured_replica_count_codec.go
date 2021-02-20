@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -46,7 +45,7 @@ func (pncounterGetConfiguredReplicaCountCodec) EncodeRequest(name string) *proto
 	clientMessage.SetMessageType(PNCounterGetConfiguredReplicaCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -55,5 +54,5 @@ func (pncounterGetConfiguredReplicaCountCodec) DecodeResponse(clientMessage *pro
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetConfiguredReplicaCountResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetConfiguredReplicaCountResponseResponseOffset)
 }

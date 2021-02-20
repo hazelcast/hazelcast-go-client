@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -39,13 +39,13 @@ func (mapFetchKeysCodec) EncodeRequest(name string, iterationPointers []proto.Pa
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, MapFetchKeysCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapFetchKeysCodecRequestBatchOffset, batch)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapFetchKeysCodecRequestBatchOffset, batch)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFetchKeysCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
+	StringCodec.Encode(clientMessage, name)
+	EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
 
 	return clientMessage
 }
@@ -54,8 +54,8 @@ func (mapFetchKeysCodec) DecodeResponse(clientMessage *proto.ClientMessage) (ite
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	iterationPointers = internal.EntryListIntegerIntegerCodec.Decode(frameIterator)
-	keys = internal.ListMultiFrameCodec.DecodeForData(frameIterator)
+	iterationPointers = EntryListIntegerIntegerCodec.Decode(frameIterator)
+	keys = ListMultiFrameCodec.DecodeForData(frameIterator)
 
 	return iterationPointers, keys
 }

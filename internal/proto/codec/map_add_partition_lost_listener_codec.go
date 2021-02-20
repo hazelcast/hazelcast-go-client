@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -51,12 +50,12 @@ func (mapAddPartitionLostListenerCodec) EncodeRequest(name string, localOnly boo
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MapAddPartitionLostListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddPartitionLostListenerCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddPartitionLostListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAddPartitionLostListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -65,7 +64,7 @@ func (mapAddPartitionLostListenerCodec) DecodeResponse(clientMessage *proto.Clie
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerResponseResponseOffset)
 }
 
 func (mapAddPartitionLostListenerCodec) Handle(clientMessage *proto.ClientMessage, handleMapPartitionLostEvent func(partitionId int32, uuid core.UUID)) {
@@ -73,8 +72,8 @@ func (mapAddPartitionLostListenerCodec) Handle(clientMessage *proto.ClientMessag
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddPartitionLostListenerCodecEventMapPartitionLostMessageType {
 		initialFrame := frameIterator.Next()
-		partitionId := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddPartitionLostListenerEventMapPartitionLostPartitionIdOffset)
-		uuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerEventMapPartitionLostUuidOffset)
+		partitionId := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddPartitionLostListenerEventMapPartitionLostPartitionIdOffset)
+		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerEventMapPartitionLostUuidOffset)
 		handleMapPartitionLostEvent(partitionId, uuid)
 		return
 	}

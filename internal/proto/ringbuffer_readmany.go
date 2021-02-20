@@ -15,9 +15,9 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
 func ringbufferReadManyCalculateSize(name string, startSequence int64, minCount int32, maxCount int32, filter serialization.Data) int {

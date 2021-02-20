@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -40,12 +39,12 @@ func (cpsessionCloseSessionCodec) EncodeRequest(groupId proto.RaftGroupId, sessi
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, CPSessionCloseSessionCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, CPSessionCloseSessionCodecRequestSessionIdOffset, sessionId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, CPSessionCloseSessionCodecRequestSessionIdOffset, sessionId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPSessionCloseSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.RaftGroupIdCodec.Encode(clientMessage, groupId)
+	RaftGroupIdCodec.Encode(clientMessage, groupId)
 
 	return clientMessage
 }
@@ -54,5 +53,5 @@ func (cpsessionCloseSessionCodec) DecodeResponse(clientMessage *proto.ClientMess
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, CPSessionCloseSessionResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, CPSessionCloseSessionResponseResponseOffset)
 }

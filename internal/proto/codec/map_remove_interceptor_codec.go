@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -43,8 +42,8 @@ func (mapRemoveInterceptorCodec) EncodeRequest(name string, id string) *proto.Cl
 	clientMessage.SetMessageType(MapRemoveInterceptorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.StringCodec.Encode(clientMessage, id)
+	StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, id)
 
 	return clientMessage
 }
@@ -53,5 +52,5 @@ func (mapRemoveInterceptorCodec) DecodeResponse(clientMessage *proto.ClientMessa
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapRemoveInterceptorResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapRemoveInterceptorResponseResponseOffset)
 }

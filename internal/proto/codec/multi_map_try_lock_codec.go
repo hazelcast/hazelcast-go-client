@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -47,16 +47,16 @@ func (multimapTryLockCodec) EncodeRequest(name string, key serialization.Data, t
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, MultiMapTryLockCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestThreadIdOffset, threadId)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestLeaseOffset, lease)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestTimeoutOffset, timeout)
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestReferenceIdOffset, referenceId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestThreadIdOffset, threadId)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestLeaseOffset, lease)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestTimeoutOffset, timeout)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapTryLockCodecRequestReferenceIdOffset, referenceId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapTryLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.DataCodec.Encode(clientMessage, key)
+	StringCodec.Encode(clientMessage, name)
+	DataCodec.Encode(clientMessage, key)
 
 	return clientMessage
 }
@@ -65,5 +65,5 @@ func (multimapTryLockCodec) DecodeResponse(clientMessage *proto.ClientMessage) b
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MultiMapTryLockResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MultiMapTryLockResponseResponseOffset)
 }

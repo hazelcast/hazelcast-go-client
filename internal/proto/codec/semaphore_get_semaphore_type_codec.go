@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -43,7 +42,7 @@ func (semaphoreGetSemaphoreTypeCodec) EncodeRequest(proxyName string) *proto.Cli
 	clientMessage.SetMessageType(SemaphoreGetSemaphoreTypeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, proxyName)
+	StringCodec.Encode(clientMessage, proxyName)
 
 	return clientMessage
 }
@@ -52,5 +51,5 @@ func (semaphoreGetSemaphoreTypeCodec) DecodeResponse(clientMessage *proto.Client
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SemaphoreGetSemaphoreTypeResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SemaphoreGetSemaphoreTypeResponseResponseOffset)
 }

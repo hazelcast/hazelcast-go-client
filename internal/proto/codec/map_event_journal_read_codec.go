@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -51,16 +51,16 @@ func (mapEventJournalReadCodec) EncodeRequest(name string, startSequence int64, 
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, MapEventJournalReadCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapEventJournalReadCodecRequestStartSequenceOffset, startSequence)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapEventJournalReadCodecRequestMinSizeOffset, minSize)
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapEventJournalReadCodecRequestMaxSizeOffset, maxSize)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapEventJournalReadCodecRequestStartSequenceOffset, startSequence)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapEventJournalReadCodecRequestMinSizeOffset, minSize)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapEventJournalReadCodecRequestMaxSizeOffset, maxSize)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapEventJournalReadCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.CodecUtil.EncodeNullable(clientMessage, predicate, internal.DataCodec.Encode)
-	internal.CodecUtil.EncodeNullable(clientMessage, projection, internal.DataCodec.Encode)
+	StringCodec.Encode(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, predicate, DataCodec.Encode)
+	CodecUtil.EncodeNullable(clientMessage, projection, DataCodec.Encode)
 
 	return clientMessage
 }
@@ -69,10 +69,10 @@ func (mapEventJournalReadCodec) DecodeResponse(clientMessage *proto.ClientMessag
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	readCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapEventJournalReadResponseReadCountOffset)
-	nextSeq = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalReadResponseNextSeqOffset)
-	items = internal.ListMultiFrameCodec.DecodeForData(frameIterator)
-	itemSeqs = internal.CodecUtil.DecodeNullableForLongArray(frameIterator)
+	readCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapEventJournalReadResponseReadCountOffset)
+	nextSeq = FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalReadResponseNextSeqOffset)
+	items = ListMultiFrameCodec.DecodeForData(frameIterator)
+	itemSeqs = CodecUtil.DecodeNullableForLongArray(frameIterator)
 
 	return readCount, items, itemSeqs, nextSeq
 }

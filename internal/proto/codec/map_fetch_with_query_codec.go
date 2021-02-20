@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -40,15 +40,15 @@ func (mapFetchWithQueryCodec) EncodeRequest(name string, iterationPointers []pro
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrame(make([]byte, MapFetchWithQueryCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapFetchWithQueryCodecRequestBatchOffset, batch)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapFetchWithQueryCodecRequestBatchOffset, batch)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFetchWithQueryCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
-	internal.DataCodec.Encode(clientMessage, projection)
-	internal.DataCodec.Encode(clientMessage, predicate)
+	StringCodec.Encode(clientMessage, name)
+	EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
+	DataCodec.Encode(clientMessage, projection)
+	DataCodec.Encode(clientMessage, predicate)
 
 	return clientMessage
 }
@@ -57,8 +57,8 @@ func (mapFetchWithQueryCodec) DecodeResponse(clientMessage *proto.ClientMessage)
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	results = internal.ListMultiFrameCodec.DecodeForDataContainsNullable(frameIterator)
-	iterationPointers = internal.EntryListIntegerIntegerCodec.Decode(frameIterator)
+	results = ListMultiFrameCodec.DecodeForDataContainsNullable(frameIterator)
+	iterationPointers = EntryListIntegerIntegerCodec.Decode(frameIterator)
 
 	return results, iterationPointers
 }

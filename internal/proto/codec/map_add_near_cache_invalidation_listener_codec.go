@@ -14,10 +14,10 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const (
@@ -52,13 +52,13 @@ func (mapAddNearCacheInvalidationListenerCodec) EncodeRequest(name string, liste
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, MapAddNearCacheInvalidationListenerCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddNearCacheInvalidationListenerCodecRequestListenerFlagsOffset, listenerFlags)
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddNearCacheInvalidationListenerCodecRequestLocalOnlyOffset, localOnly)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddNearCacheInvalidationListenerCodecRequestListenerFlagsOffset, listenerFlags)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddNearCacheInvalidationListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAddNearCacheInvalidationListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
+	StringCodec.Encode(clientMessage, name)
 
 	return clientMessage
 }
@@ -67,7 +67,7 @@ func (mapAddNearCacheInvalidationListenerCodec) DecodeResponse(clientMessage *pr
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerResponseResponseOffset)
+	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerResponseResponseOffset)
 }
 
 func (mapAddNearCacheInvalidationListenerCodec) Handle(clientMessage *proto.ClientMessage, handleIMapInvalidationEvent func(key serialization.Data, sourceUuid core.UUID, partitionUuid core.UUID, sequence int64), handleIMapBatchInvalidationEvent func(keys []serialization.Data, sourceUuids []core.UUID, partitionUuids []core.UUID, sequences []int64)) {
@@ -75,20 +75,20 @@ func (mapAddNearCacheInvalidationListenerCodec) Handle(clientMessage *proto.Clie
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddNearCacheInvalidationListenerCodecEventIMapInvalidationMessageType {
 		initialFrame := frameIterator.Next()
-		sourceUuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerEventIMapInvalidationSourceUuidOffset)
-		partitionUuid := internal.FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerEventIMapInvalidationPartitionUuidOffset)
-		sequence := internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapAddNearCacheInvalidationListenerEventIMapInvalidationSequenceOffset)
-		key := internal.CodecUtil.DecodeNullableForData(frameIterator)
+		sourceUuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerEventIMapInvalidationSourceUuidOffset)
+		partitionUuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerEventIMapInvalidationPartitionUuidOffset)
+		sequence := FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapAddNearCacheInvalidationListenerEventIMapInvalidationSequenceOffset)
+		key := CodecUtil.DecodeNullableForData(frameIterator)
 		handleIMapInvalidationEvent(key, sourceUuid, partitionUuid, sequence)
 		return
 	}
 	if messageType == MapAddNearCacheInvalidationListenerCodecEventIMapBatchInvalidationMessageType {
 		//empty initial frame
 		frameIterator.Next()
-		keys := internal.ListMultiFrameCodec.DecodeForData(frameIterator)
-		sourceUuids := internal.ListUUIDCodec.Decode(frameIterator)
-		partitionUuids := internal.ListUUIDCodec.Decode(frameIterator)
-		sequences := internal.ListLongCodec.Decode(frameIterator)
+		keys := ListMultiFrameCodec.DecodeForData(frameIterator)
+		sourceUuids := ListUUIDCodec.Decode(frameIterator)
+		partitionUuids := ListUUIDCodec.Decode(frameIterator)
+		sequences := ListLongCodec.Decode(frameIterator)
 		handleIMapBatchInvalidationEvent(keys, sourceUuids, partitionUuids, sequences)
 		return
 	}

@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -44,8 +43,8 @@ func (mapEntriesWithPagingPredicateCodec) EncodeRequest(name string, predicate p
 	clientMessage.SetMessageType(MapEntriesWithPagingPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.PagingPredicateHolderCodec.Encode(clientMessage, predicate)
+	StringCodec.Encode(clientMessage, name)
+	PagingPredicateHolderCodec.Encode(clientMessage, predicate)
 
 	return clientMessage
 }
@@ -54,8 +53,8 @@ func (mapEntriesWithPagingPredicateCodec) DecodeResponse(clientMessage *proto.Cl
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	response = internal.EntryListCodec.DecodeForDataAndData(frameIterator)
-	anchorDataList = internal.AnchorDataListHolderCodec.Decode(frameIterator)
+	response = EntryListCodec.DecodeForDataAndData(frameIterator)
+	anchorDataList = AnchorDataListHolderCodec.Decode(frameIterator)
 
 	return response, anchorDataList
 }

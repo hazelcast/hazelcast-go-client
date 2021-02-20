@@ -14,8 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -58,15 +57,15 @@ func (clientAddClusterViewListenerCodec) Handle(clientMessage *proto.ClientMessa
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddClusterViewListenerCodecEventMembersViewMessageType {
 		initialFrame := frameIterator.Next()
-		version := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventMembersViewVersionOffset)
-		memberInfos := internal.ListMultiFrameCodec.DecodeForMemberInfo(frameIterator)
+		version := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventMembersViewVersionOffset)
+		memberInfos := ListMultiFrameCodec.DecodeForMemberInfo(frameIterator)
 		handleMembersViewEvent(version, memberInfos)
 		return
 	}
 	if messageType == ClientAddClusterViewListenerCodecEventPartitionsViewMessageType {
 		initialFrame := frameIterator.Next()
-		version := internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventPartitionsViewVersionOffset)
-		partitions := internal.EntryListUUIDListIntegerCodec.Decode(frameIterator)
+		version := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventPartitionsViewVersionOffset)
+		partitions := EntryListUUIDListIntegerCodec.Decode(frameIterator)
 		handlePartitionsViewEvent(version, partitions)
 		return
 	}

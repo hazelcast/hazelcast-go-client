@@ -14,9 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
 const (
@@ -52,15 +51,15 @@ func (pncounterAddCodec) EncodeRequest(name string, delta int64, getBeforeUpdate
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrame(make([]byte, PNCounterAddCodecRequestInitialFrameSize))
-	internal.FixSizedTypesCodec.EncodeLong(initialFrame.Content, PNCounterAddCodecRequestDeltaOffset, delta)
-	internal.FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, PNCounterAddCodecRequestGetBeforeUpdateOffset, getBeforeUpdate)
-	internal.FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterAddCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, PNCounterAddCodecRequestDeltaOffset, delta)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, PNCounterAddCodecRequestGetBeforeUpdateOffset, getBeforeUpdate)
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterAddCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(PNCounterAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	internal.StringCodec.Encode(clientMessage, name)
-	internal.EntryListUUIDLongCodec.Encode(clientMessage, replicaTimestamps)
+	StringCodec.Encode(clientMessage, name)
+	EntryListUUIDLongCodec.Encode(clientMessage, replicaTimestamps)
 
 	return clientMessage
 }
@@ -69,9 +68,9 @@ func (pncounterAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) (val
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	value = internal.FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterAddResponseValueOffset)
-	replicaCount = internal.FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterAddResponseReplicaCountOffset)
-	replicaTimestamps = internal.EntryListUUIDLongCodec.Decode(frameIterator)
+	value = FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterAddResponseValueOffset)
+	replicaCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterAddResponseReplicaCountOffset)
+	replicaTimestamps = EntryListUUIDLongCodec.Decode(frameIterator)
 
 	return value, replicaTimestamps, replicaCount
 }
