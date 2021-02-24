@@ -19,26 +19,27 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
-type anchordatalistholderCodec struct{}
+/*
+type anchordatalistholderCodec struct {}
 
 var AnchorDataListHolderCodec anchordatalistholderCodec
+*/
 
-func (anchordatalistholderCodec) Encode(clientMessage *proto.ClientMessage, anchorDataListHolder proto.AnchorDataListHolder) {
+func EncodeAnchorDataListHolder(clientMessage *proto.ClientMessage, anchorDataListHolder proto.AnchorDataListHolder) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 
-	ListIntegerCodec.Encode(clientMessage, anchorDataListHolder.GetAnchorPageList())
-	EntryListCodec.EncodeForDataAndData(clientMessage, anchorDataListHolder.GetAnchorDataList())
+	EncodeListInteger(clientMessage, anchorDataListHolder.AnchorPageList())
+	EncodeEntryListForDataAndData(clientMessage, anchorDataListHolder.AnchorDataList())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (anchordatalistholderCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.AnchorDataListHolder {
+func DecodeAnchorDataListHolder(frameIterator *proto.ForwardFrameIterator) proto.AnchorDataListHolder {
 	// begin frame
 	frameIterator.Next()
 
-	anchorPageList := ListIntegerCodec.Decode(frameIterator)
-	anchorDataList := EntryListCodec.Decode(frameIterator, DataCodec.Decode, DataCodec.DecodeNullable)
+	anchorPageList := DecodeListInteger(frameIterator)
+	anchorDataList := DecodeEntryList(frameIterator, DecodeData, DecodeNullableData)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewAnchorDataListHolder(anchorPageList, anchorDataList)
 }

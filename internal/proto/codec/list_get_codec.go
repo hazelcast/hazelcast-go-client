@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 )
 
 // Returns the element at the specified position in this list
-type listGetCodec struct{}
 
-var ListGetCodec listGetCodec
-
-func (listGetCodec) EncodeRequest(name string, index int32) *proto.ClientMessage {
+func EncodeListGetRequest(name string, index int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,12 +40,12 @@ func (listGetCodec) EncodeRequest(name string, index int32) *proto.ClientMessage
 	clientMessage.SetMessageType(ListGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (listGetCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeListGetResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

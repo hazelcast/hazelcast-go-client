@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 // Returns a set clone of the keys contained in this map. The set is NOT backed by the map, so changes to the map
 // are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may
 // throw a QueryResultSizeExceededException if query result size limit is configured.
-type mapKeySetCodec struct{}
 
-var MapKeySetCodec mapKeySetCodec
-
-func (mapKeySetCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapKeySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,15 +40,15 @@ func (mapKeySetCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MapKeySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapKeySetCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeMapKeySetResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

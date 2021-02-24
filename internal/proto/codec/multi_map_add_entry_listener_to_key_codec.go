@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -41,11 +40,8 @@ const (
 
 // Adds the specified entry listener for the specified key.The listener will be notified for all
 // add/remove/update/evict events for the specified key only.
-type multimapAddEntryListenerToKeyCodec struct{}
 
-var MultiMapAddEntryListenerToKeyCodec multimapAddEntryListenerToKeyCodec
-
-func (multimapAddEntryListenerToKeyCodec) EncodeRequest(name string, key serialization.Data, includeValue bool, localOnly bool) *proto.ClientMessage {
+func EncodeMultiMapAddEntryListenerToKeyRequest(name string, key serialization.Data, includeValue bool, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -56,13 +52,13 @@ func (multimapAddEntryListenerToKeyCodec) EncodeRequest(name string, key seriali
 	clientMessage.SetMessageType(MultiMapAddEntryListenerToKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (multimapAddEntryListenerToKeyCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeMultiMapAddEntryListenerToKeyResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

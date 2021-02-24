@@ -30,11 +30,8 @@ const (
 
 // Returns the current round. A round completes when the count value
 // reaches to 0 and a new round starts afterwards.
-type countdownlatchGetRoundCodec struct{}
 
-var CountDownLatchGetRoundCodec countdownlatchGetRoundCodec
-
-func (countdownlatchGetRoundCodec) EncodeRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeCountDownLatchGetRoundRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,13 +40,13 @@ func (countdownlatchGetRoundCodec) EncodeRequest(groupId proto.RaftGroupId, name
 	clientMessage.SetMessageType(CountDownLatchGetRoundCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (countdownlatchGetRoundCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeCountDownLatchGetRoundResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

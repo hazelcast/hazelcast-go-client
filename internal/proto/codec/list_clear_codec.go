@@ -27,11 +27,8 @@ const (
 )
 
 // Removes all of the elements from this list (optional operation). The list will be empty after this call returns.
-type listClearCodec struct{}
 
-var ListClearCodec listClearCodec
-
-func (listClearCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeListClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -40,7 +37,7 @@ func (listClearCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ListClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

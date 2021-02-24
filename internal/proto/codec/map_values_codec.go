@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 // The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
 // This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
 // if query result size limit is configured.
-type mapValuesCodec struct{}
 
-var MapValuesCodec mapValuesCodec
-
-func (mapValuesCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapValuesRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,15 +41,15 @@ func (mapValuesCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MapValuesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapValuesCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeMapValuesResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

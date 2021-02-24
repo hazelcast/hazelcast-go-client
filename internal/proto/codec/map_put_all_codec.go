@@ -34,11 +34,8 @@ const (
 // Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
 // matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
 // of these request messages for filling a request for a key set if the keys belong to different partitions.
-type mapPutAllCodec struct{}
 
-var MapPutAllCodec mapPutAllCodec
-
-func (mapPutAllCodec) EncodeRequest(name string, entries []proto.Pair, triggerMapLoader bool) *proto.ClientMessage {
+func EncodeMapPutAllRequest(name string, entries []proto.Pair, triggerMapLoader bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -48,8 +45,8 @@ func (mapPutAllCodec) EncodeRequest(name string, entries []proto.Pair, triggerMa
 	clientMessage.SetMessageType(MapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListCodec.EncodeForDataAndData(clientMessage, entries)
+	EncodeString(clientMessage, name)
+	EncodeEntryListForDataAndData(clientMessage, entries)
 
 	return clientMessage
 }

@@ -29,11 +29,8 @@ const (
 )
 
 // Return true if this map contains no key-value mappings
-type replicatedmapIsEmptyCodec struct{}
 
-var ReplicatedMapIsEmptyCodec replicatedmapIsEmptyCodec
-
-func (replicatedmapIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeReplicatedMapIsEmptyRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,12 +39,12 @@ func (replicatedmapIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage
 	clientMessage.SetMessageType(ReplicatedMapIsEmptyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (replicatedmapIsEmptyCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeReplicatedMapIsEmptyResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

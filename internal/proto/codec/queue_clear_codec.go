@@ -28,11 +28,8 @@ const (
 
 // Removes all of the elements from this collection (optional operation). The collection will be empty after this
 // method returns.
-type queueClearCodec struct{}
 
-var QueueClearCodec queueClearCodec
-
-func (queueClearCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeQueueClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -41,7 +38,7 @@ func (queueClearCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(QueueClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

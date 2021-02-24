@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -36,11 +35,8 @@ const (
 // The stipulation above does not imply that sets must accept all elements; sets may refuse to add any particular
 // element, including null, and throw an exception, as described in the specification for Collection
 // Individual set implementations should clearly document any restrictions on the elements that they may contain.
-type setAddCodec struct{}
 
-var SetAddCodec setAddCodec
-
-func (setAddCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeSetAddRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -49,13 +45,13 @@ func (setAddCodec) EncodeRequest(name string, value serialization.Data) *proto.C
 	clientMessage.SetMessageType(SetAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (setAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetAddResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -30,11 +30,8 @@ const (
 )
 
 // Alters the currently stored value by applying a function on it.
-type atomicrefCompareAndSetCodec struct{}
 
-var AtomicRefCompareAndSetCodec atomicrefCompareAndSetCodec
-
-func (atomicrefCompareAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, name string, oldValue serialization.Data, newValue serialization.Data) *proto.ClientMessage {
+func EncodeAtomicRefCompareAndSetRequest(groupId proto.RaftGroupId, name string, oldValue serialization.Data, newValue serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,15 +40,15 @@ func (atomicrefCompareAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, name
 	clientMessage.SetMessageType(AtomicRefCompareAndSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
-	CodecUtil.EncodeNullable(clientMessage, oldValue, DataCodec.Encode)
-	CodecUtil.EncodeNullable(clientMessage, newValue, DataCodec.Encode)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, oldValue, EncodeData)
+	CodecUtil.EncodeNullable(clientMessage, newValue, EncodeData)
 
 	return clientMessage
 }
 
-func (atomicrefCompareAndSetCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeAtomicRefCompareAndSetResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

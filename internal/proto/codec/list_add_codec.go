@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -34,11 +33,8 @@ const (
 // place limitations on what elements may be added to this list.  In particular, some lists will refuse to add null
 // elements, and others will impose restrictions on the type of elements that may be added. List classes should
 // clearly specify in their documentation any restrictions on what elements may be added.
-type listAddCodec struct{}
 
-var ListAddCodec listAddCodec
-
-func (listAddCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeListAddRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,13 +43,13 @@ func (listAddCodec) EncodeRequest(name string, value serialization.Data) *proto.
 	clientMessage.SetMessageType(ListAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (listAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeListAddResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

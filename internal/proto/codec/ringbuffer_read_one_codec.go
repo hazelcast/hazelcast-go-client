@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 // item is added. This method is not destructive unlike e.g. a queue.take. So the same item can be read by multiple
 // readers or it can be read multiple times by the same reader. Currently it isn't possible to control how long this
 // call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
-type ringbufferReadOneCodec struct{}
 
-var RingbufferReadOneCodec ringbufferReadOneCodec
-
-func (ringbufferReadOneCodec) EncodeRequest(name string, sequence int64) *proto.ClientMessage {
+func EncodeRingbufferReadOneRequest(name string, sequence int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -47,12 +43,12 @@ func (ringbufferReadOneCodec) EncodeRequest(name string, sequence int64) *proto.
 	clientMessage.SetMessageType(RingbufferReadOneCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (ringbufferReadOneCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeRingbufferReadOneResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

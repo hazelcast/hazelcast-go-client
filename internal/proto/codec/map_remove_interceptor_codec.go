@@ -29,11 +29,8 @@ const (
 )
 
 // Removes the given interceptor for this map so it will not intercept operations anymore.
-type mapRemoveInterceptorCodec struct{}
 
-var MapRemoveInterceptorCodec mapRemoveInterceptorCodec
-
-func (mapRemoveInterceptorCodec) EncodeRequest(name string, id string) *proto.ClientMessage {
+func EncodeMapRemoveInterceptorRequest(name string, id string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,13 +39,13 @@ func (mapRemoveInterceptorCodec) EncodeRequest(name string, id string) *proto.Cl
 	clientMessage.SetMessageType(MapRemoveInterceptorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	StringCodec.Encode(clientMessage, id)
+	EncodeString(clientMessage, name)
+	EncodeString(clientMessage, id)
 
 	return clientMessage
 }
 
-func (mapRemoveInterceptorCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapRemoveInterceptorResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -28,11 +28,8 @@ const (
 
 // Returns the set of key-value pairs in the multimap.The collection is NOT backed by the map, so changes to the map
 // are NOT reflected in the collection, and vice-versa
-type multimapEntrySetCodec struct{}
 
-var MultiMapEntrySetCodec multimapEntrySetCodec
-
-func (multimapEntrySetCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMultiMapEntrySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -41,15 +38,15 @@ func (multimapEntrySetCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MultiMapEntrySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (multimapEntrySetCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.Pair {
+func DecodeMultiMapEntrySetResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return EntryListCodec.DecodeForDataAndData(frameIterator)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 )
 
 // Returns whether the multimap contains the given key-value pair.
-type multimapContainsEntryCodec struct{}
 
-var MultiMapContainsEntryCodec multimapContainsEntryCodec
-
-func (multimapContainsEntryCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMultiMapContainsEntryRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,14 +42,14 @@ func (multimapContainsEntryCodec) EncodeRequest(name string, key serialization.D
 	clientMessage.SetMessageType(MultiMapContainsEntryCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (multimapContainsEntryCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapContainsEntryResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

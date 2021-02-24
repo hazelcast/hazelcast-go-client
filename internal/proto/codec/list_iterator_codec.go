@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Returns an iterator over the elements in this list in proper sequence.
-type listIteratorCodec struct{}
 
-var ListIteratorCodec listIteratorCodec
-
-func (listIteratorCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeListIteratorRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,15 +38,15 @@ func (listIteratorCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ListIteratorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (listIteratorCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeListIteratorResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

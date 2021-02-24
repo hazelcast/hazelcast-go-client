@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Applies the aggregation logic on map entries filtered with the Predicate and returns the result
-type mapAggregateWithPredicateCodec struct{}
 
-var MapAggregateWithPredicateCodec mapAggregateWithPredicateCodec
-
-func (mapAggregateWithPredicateCodec) EncodeRequest(name string, aggregator serialization.Data, predicate serialization.Data) *proto.ClientMessage {
+func EncodeMapAggregateWithPredicateRequest(name string, aggregator serialization.Data, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,14 +38,14 @@ func (mapAggregateWithPredicateCodec) EncodeRequest(name string, aggregator seri
 	clientMessage.SetMessageType(MapAggregateWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, aggregator)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, aggregator)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
 
-func (mapAggregateWithPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapAggregateWithPredicateResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

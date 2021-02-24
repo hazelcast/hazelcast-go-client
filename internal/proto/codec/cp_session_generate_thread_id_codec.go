@@ -30,11 +30,8 @@ const (
 
 // Generates a new ID for the caller thread. The ID is unique in the given
 // CP group.
-type cpsessionGenerateThreadIdCodec struct{}
 
-var CPSessionGenerateThreadIdCodec cpsessionGenerateThreadIdCodec
-
-func (cpsessionGenerateThreadIdCodec) EncodeRequest(groupId proto.RaftGroupId) *proto.ClientMessage {
+func EncodeCPSessionGenerateThreadIdRequest(groupId proto.RaftGroupId) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,12 +40,12 @@ func (cpsessionGenerateThreadIdCodec) EncodeRequest(groupId proto.RaftGroupId) *
 	clientMessage.SetMessageType(CPSessionGenerateThreadIdCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	EncodeRaftGroupId(clientMessage, groupId)
 
 	return clientMessage
 }
 
-func (cpsessionGenerateThreadIdCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeCPSessionGenerateThreadIdResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

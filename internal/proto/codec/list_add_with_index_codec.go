@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 
 // Inserts the specified element at the specified position in this list (optional operation). Shifts the element
 // currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
-type listAddWithIndexCodec struct{}
 
-var ListAddWithIndexCodec listAddWithIndexCodec
-
-func (listAddWithIndexCodec) EncodeRequest(name string, index int32, value serialization.Data) *proto.ClientMessage {
+func EncodeListAddWithIndexRequest(name string, index int32, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -45,8 +41,8 @@ func (listAddWithIndexCodec) EncodeRequest(name string, index int32, value seria
 	clientMessage.SetMessageType(ListAddWithIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }

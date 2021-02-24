@@ -29,11 +29,8 @@ const (
 )
 
 // Returns true if this collection contains no elements.
-type queueIsEmptyCodec struct{}
 
-var QueueIsEmptyCodec queueIsEmptyCodec
-
-func (queueIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeQueueIsEmptyRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,12 +39,12 @@ func (queueIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(QueueIsEmptyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (queueIsEmptyCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeQueueIsEmptyResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

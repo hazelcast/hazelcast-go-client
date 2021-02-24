@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -35,11 +34,8 @@ const (
 // for the specified key once the call returns.
 // This method breaks the contract of EntryListener. When an entry is removed by delete(), it fires an EntryEvent
 // with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
-type mapDeleteCodec struct{}
 
-var MapDeleteCodec mapDeleteCodec
-
-func (mapDeleteCodec) EncodeRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapDeleteRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -49,8 +45,8 @@ func (mapDeleteCodec) EncodeRequest(name string, key serialization.Data, threadI
 	clientMessage.SetMessageType(MapDeleteCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }

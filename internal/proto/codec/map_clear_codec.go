@@ -29,11 +29,8 @@ const (
 // This method clears the map and invokes MapStore#deleteAll deleteAll on MapStore which, if connected to a database,
 // will delete the records from that database. The MAP_CLEARED event is fired for any registered listeners.
 // To clear a map without calling MapStore#deleteAll, use #evictAll.
-type mapClearCodec struct{}
 
-var MapClearCodec mapClearCodec
-
-func (mapClearCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,7 +39,7 @@ func (mapClearCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MapClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

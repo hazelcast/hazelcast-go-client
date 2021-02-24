@@ -29,11 +29,8 @@ const (
 )
 
 // Returns the capacity of this Ringbuffer.
-type ringbufferCapacityCodec struct{}
 
-var RingbufferCapacityCodec ringbufferCapacityCodec
-
-func (ringbufferCapacityCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeRingbufferCapacityRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,12 +39,12 @@ func (ringbufferCapacityCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(RingbufferCapacityCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (ringbufferCapacityCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferCapacityResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

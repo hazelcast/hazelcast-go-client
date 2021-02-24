@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 )
 
 // Returns true if this list contains the specified element.
-type listContainsCodec struct{}
 
-var ListContainsCodec listContainsCodec
-
-func (listContainsCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeListContainsRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,13 +40,13 @@ func (listContainsCodec) EncodeRequest(name string, value serialization.Data) *p
 	clientMessage.SetMessageType(ListContainsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (listContainsCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeListContainsResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -30,11 +30,8 @@ const (
 
 // Returns the number of elements in this set (its cardinality). If this set contains more than Integer.MAX_VALUE
 // elements, returns Integer.MAX_VALUE.
-type setSizeCodec struct{}
 
-var SetSizeCodec setSizeCodec
-
-func (setSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeSetSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,12 +40,12 @@ func (setSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(SetSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (setSizeCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeSetSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

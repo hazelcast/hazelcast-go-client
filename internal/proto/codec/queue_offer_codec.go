@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 
 // Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
 // become available.
-type queueOfferCodec struct{}
 
-var QueueOfferCodec queueOfferCodec
-
-func (queueOfferCodec) EncodeRequest(name string, value serialization.Data, timeoutMillis int64) *proto.ClientMessage {
+func EncodeQueueOfferRequest(name string, value serialization.Data, timeoutMillis int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,13 +43,13 @@ func (queueOfferCodec) EncodeRequest(name string, value serialization.Data, time
 	clientMessage.SetMessageType(QueueOfferCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (queueOfferCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeQueueOfferResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

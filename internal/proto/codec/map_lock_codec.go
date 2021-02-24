@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -36,11 +35,8 @@ const (
 // has been acquired.
 // Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
 // so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
-type mapLockCodec struct{}
 
-var MapLockCodec mapLockCodec
-
-func (mapLockCodec) EncodeRequest(name string, key serialization.Data, threadId int64, ttl int64, referenceId int64) *proto.ClientMessage {
+func EncodeMapLockRequest(name string, key serialization.Data, threadId int64, ttl int64, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -52,8 +48,8 @@ func (mapLockCodec) EncodeRequest(name string, key serialization.Data, threadId 
 	clientMessage.SetMessageType(MapLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }

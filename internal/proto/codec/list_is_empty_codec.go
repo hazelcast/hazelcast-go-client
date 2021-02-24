@@ -29,11 +29,8 @@ const (
 )
 
 // Returns true if this list contains no elements
-type listIsEmptyCodec struct{}
 
-var ListIsEmptyCodec listIsEmptyCodec
-
-func (listIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeListIsEmptyRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,12 +39,12 @@ func (listIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ListIsEmptyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (listIsEmptyCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeListIsEmptyResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

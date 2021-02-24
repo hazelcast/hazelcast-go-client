@@ -233,9 +233,9 @@ func createSnapshot(memberListVersion int32, memberInfos []proto.MemberInfo) Mem
 	newMembers := make(map[core.UUID]core.Member, len(memberInfos))
 
 	for _, memberInfo := range memberInfos {
-		uuid := memberInfo.GetUuid()
-		member := proto.NewMember(memberInfo.GetAddress(), uuid, memberInfo.GetLiteMember(),
-			memberInfo.GetAttributes(), memberInfo.GetVersion(), memberInfo.GetAddressMap())
+		uuid := memberInfo.Uuid()
+		member := proto.NewMember(memberInfo.Address(), uuid, memberInfo.LiteMember(),
+			memberInfo.Attributes(), memberInfo.Version(), memberInfo.AddressMap())
 		newMembers[uuid] = member
 	}
 

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 // Associates a given value to the specified key and replicates it to the cluster. If there is an old value, it will
 // be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
 // to define when the value is outdated and thus should be removed from the replicated map.
-type replicatedmapPutCodec struct{}
 
-var ReplicatedMapPutCodec replicatedmapPutCodec
-
-func (replicatedmapPutCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, ttl int64) *proto.ClientMessage {
+func EncodeReplicatedMapPutRequest(name string, key serialization.Data, value serialization.Data, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,14 +42,14 @@ func (replicatedmapPutCodec) EncodeRequest(name string, key serialization.Data, 
 	clientMessage.SetMessageType(ReplicatedMapPutCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (replicatedmapPutCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeReplicatedMapPutResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

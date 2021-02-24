@@ -32,11 +32,8 @@ const (
 )
 
 // Returns current lock ownership status of the given FencedLock instance.
-type fencedlockGetLockOwnershipCodec struct{}
 
-var FencedLockGetLockOwnershipCodec fencedlockGetLockOwnershipCodec
-
-func (fencedlockGetLockOwnershipCodec) EncodeRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeFencedLockGetLockOwnershipRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,8 +42,8 @@ func (fencedlockGetLockOwnershipCodec) EncodeRequest(groupId proto.RaftGroupId, 
 	clientMessage.SetMessageType(FencedLockGetLockOwnershipCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

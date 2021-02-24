@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 // Removes the specified element from this set if it is present (optional operation).
 // Returns true if this set contained the element (or equivalently, if this set changed as a result of the call).
 // (This set will not contain the element once the call returns.)
-type setRemoveCodec struct{}
 
-var SetRemoveCodec setRemoveCodec
-
-func (setRemoveCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeSetRemoveRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,13 +42,13 @@ func (setRemoveCodec) EncodeRequest(name string, value serialization.Data) *prot
 	clientMessage.SetMessageType(SetRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (setRemoveCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetRemoveResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

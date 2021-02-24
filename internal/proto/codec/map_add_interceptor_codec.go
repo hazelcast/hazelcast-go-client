@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 
 // Adds an interceptor for this map. Added interceptor will intercept operations
 // and execute user defined methods and will cancel operations if user defined method throw exception.
-type mapAddInterceptorCodec struct{}
 
-var MapAddInterceptorCodec mapAddInterceptorCodec
-
-func (mapAddInterceptorCodec) EncodeRequest(name string, interceptor serialization.Data) *proto.ClientMessage {
+func EncodeMapAddInterceptorRequest(name string, interceptor serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,16 +39,16 @@ func (mapAddInterceptorCodec) EncodeRequest(name string, interceptor serializati
 	clientMessage.SetMessageType(MapAddInterceptorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, interceptor)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, interceptor)
 
 	return clientMessage
 }
 
-func (mapAddInterceptorCodec) DecodeResponse(clientMessage *proto.ClientMessage) string {
+func DecodeMapAddInterceptorResponse(clientMessage *proto.ClientMessage) string {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return StringCodec.Decode(frameIterator)
+	return DecodeString(frameIterator)
 }

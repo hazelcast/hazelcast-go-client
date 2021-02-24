@@ -27,11 +27,8 @@ const (
 )
 
 // Gets the list of distributed objects in the cluster.
-type clientGetDistributedObjectsCodec struct{}
 
-var ClientGetDistributedObjectsCodec clientGetDistributedObjectsCodec
-
-func (clientGetDistributedObjectsCodec) EncodeRequest() *proto.ClientMessage {
+func EncodeClientGetDistributedObjectsRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,10 +40,10 @@ func (clientGetDistributedObjectsCodec) EncodeRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func (clientGetDistributedObjectsCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.DistributedObjectInfo {
+func DecodeClientGetDistributedObjectsResponse(clientMessage *proto.ClientMessage) []proto.DistributedObjectInfo {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForDistributedObjectInfo(frameIterator)
+	return DecodeListMultiFrameForDistributedObjectInfo(frameIterator)
 }

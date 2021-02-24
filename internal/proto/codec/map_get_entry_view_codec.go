@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -35,11 +34,8 @@ const (
 // Returns the EntryView for the specified key.
 // This method returns a clone of original mapping, modifying the returned value does not change the actual value
 // in the map. One should put modified value back to make changes visible to all nodes.
-type mapGetEntryViewCodec struct{}
 
-var MapGetEntryViewCodec mapGetEntryViewCodec
-
-func (mapGetEntryViewCodec) EncodeRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapGetEntryViewRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,13 +45,13 @@ func (mapGetEntryViewCodec) EncodeRequest(name string, key serialization.Data, t
 	clientMessage.SetMessageType(MapGetEntryViewCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (mapGetEntryViewCodec) DecodeResponse(clientMessage *proto.ClientMessage) (response core.SimpleEntryView, maxIdle int64) {
+func (mapGetEntryViewCodec) DecodeResponse(clientMessage *proto.ClientMessage) (response *core.SimpleEntryView, maxIdle int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

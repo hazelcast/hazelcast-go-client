@@ -17,12 +17,7 @@ const (
 )
 
 // BitmapIndexOptions configures indexing options specific to bitmap indexes.
-type BitmapIndexOptions interface {
-	GetUniqueKey() string
-	GetUniqueKeyTransformation() int32
-}
-
-type bitmapIndexOptions struct {
+type BitmapIndexOptions struct {
 
 	// uniqueKey Unique key attribute configured in this index config. Defaults to __key.
 	//	The unique key attribute is used as a source of values which uniquely identify each entry being inserted into an index.
@@ -36,14 +31,14 @@ type bitmapIndexOptions struct {
 
 // NewBitmapIndexOptions create a new BitmapIndexOptions
 func NewBitmapIndexOptions(uniqueKey string, uniqueKeyTransformation int32) BitmapIndexOptions {
-	return bitmapIndexOptions{uniqueKey: uniqueKey, uniqueKeyTransformation: UniqueKeyTransformation(uniqueKeyTransformation)}
+	return BitmapIndexOptions{uniqueKey: uniqueKey, uniqueKeyTransformation: UniqueKeyTransformation(uniqueKeyTransformation)}
 }
 
-func (bitmapIndexOptions bitmapIndexOptions) GetUniqueKey() string {
+func (bitmapIndexOptions BitmapIndexOptions) UniqueKey() string {
 	return bitmapIndexOptions.uniqueKey
 }
 
-func (bitmapIndexOptions bitmapIndexOptions) GetUniqueKeyTransformation() int32 {
+func (bitmapIndexOptions BitmapIndexOptions) UniqueKeyTransformation() int32 {
 	return int32(bitmapIndexOptions.uniqueKeyTransformation)
 }
 
@@ -63,25 +58,25 @@ type IndexConfig struct {
 	name               string
 	_type              IndexType
 	attributes         []string
-	bitmapIndexOptions BitmapIndexOptions
+	bitmapIndexOptions *BitmapIndexOptions
 }
 
-func NewIndexConfig(name string, _type int32, attributes []string, bitmapIndexOptions BitmapIndexOptions) IndexConfig {
+func NewIndexConfig(name string, _type int32, attributes []string, bitmapIndexOptions *BitmapIndexOptions) IndexConfig {
 	return IndexConfig{name: name, _type: IndexType(_type), attributes: attributes, bitmapIndexOptions: bitmapIndexOptions}
 }
 
-func (indexConfig IndexConfig) GetName() string {
+func (indexConfig IndexConfig) Name() string {
 	return indexConfig.name
 }
 
-func (indexConfig IndexConfig) GetType() int32 {
+func (indexConfig IndexConfig) Type() int32 {
 	return int32(indexConfig._type)
 }
 
-func (indexConfig IndexConfig) GetAttributes() []string {
+func (indexConfig IndexConfig) Attributes() []string {
 	return indexConfig.attributes
 }
 
-func (indexConfig IndexConfig) GetBitmapIndexOptions() BitmapIndexOptions {
+func (indexConfig IndexConfig) BitmapIndexOptions() *BitmapIndexOptions {
 	return indexConfig.bitmapIndexOptions
 }

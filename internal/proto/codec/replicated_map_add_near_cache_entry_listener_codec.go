@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -40,11 +39,8 @@ const (
 )
 
 // Adds a near cache entry listener for this map. This listener will be notified when an entry is added/removed/updated/evicted/expired etc. so that the near cache entries can be invalidated.
-type replicatedmapAddNearCacheEntryListenerCodec struct{}
 
-var ReplicatedMapAddNearCacheEntryListenerCodec replicatedmapAddNearCacheEntryListenerCodec
-
-func (replicatedmapAddNearCacheEntryListenerCodec) EncodeRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
+func EncodeReplicatedMapAddNearCacheEntryListenerRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -55,12 +51,12 @@ func (replicatedmapAddNearCacheEntryListenerCodec) EncodeRequest(name string, in
 	clientMessage.SetMessageType(ReplicatedMapAddNearCacheEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (replicatedmapAddNearCacheEntryListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeReplicatedMapAddNearCacheEntryListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

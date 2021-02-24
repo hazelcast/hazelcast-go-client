@@ -11,18 +11,18 @@ func NewStackTraceElement(className, methodName, fileName string, lineNumber int
 	return StackTraceElement{className, methodName, fileName, lineNumber}
 }
 
-func (s StackTraceElement) GetClassName() string {
+func (s StackTraceElement) ClassName() string {
 	return s.className
 }
 
-func (s StackTraceElement) GetMethodName() string {
+func (s StackTraceElement) MethodName() string {
 	return s.methodName
 }
 
-func (s StackTraceElement) GetFileName() string {
+func (s StackTraceElement) FileName() string {
 	return s.fileName
 }
 
-func (s StackTraceElement) GetLineNumber() int32 {
+func (s StackTraceElement) LineNumber() int32 {
 	return s.lineNumber
 }

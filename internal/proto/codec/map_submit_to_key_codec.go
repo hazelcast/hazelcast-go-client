@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 // Applies the user defined EntryProcessor to the entry mapped by the key. Returns immediately with a Future
 // representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
 // operation of EntryProcessor.
-type mapSubmitToKeyCodec struct{}
 
-var MapSubmitToKeyCodec mapSubmitToKeyCodec
-
-func (mapSubmitToKeyCodec) EncodeRequest(name string, entryProcessor serialization.Data, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapSubmitToKeyRequest(name string, entryProcessor serialization.Data, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,14 +42,14 @@ func (mapSubmitToKeyCodec) EncodeRequest(name string, entryProcessor serializati
 	clientMessage.SetMessageType(MapSubmitToKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, entryProcessor)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, entryProcessor)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (mapSubmitToKeyCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapSubmitToKeyResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

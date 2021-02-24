@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -35,11 +34,8 @@ const (
 // Tries to put the given key and value into this map within a specified timeout value. If this method returns false,
 // it means that the caller thread could not acquire the lock for the key within the timeout duration,
 // thus the put operation is not successful.
-type mapTryPutCodec struct{}
 
-var MapTryPutCodec mapTryPutCodec
-
-func (mapTryPutCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
+func EncodeMapTryPutRequest(name string, key serialization.Data, value serialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -50,14 +46,14 @@ func (mapTryPutCodec) EncodeRequest(name string, key serialization.Data, value s
 	clientMessage.SetMessageType(MapTryPutCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapTryPutCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapTryPutResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

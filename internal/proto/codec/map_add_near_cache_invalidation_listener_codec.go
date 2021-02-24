@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -43,11 +42,8 @@ const (
 )
 
 // Adds listener to map. This listener will be used to listen near cache invalidation events.
-type mapAddNearCacheInvalidationListenerCodec struct{}
 
-var MapAddNearCacheInvalidationListenerCodec mapAddNearCacheInvalidationListenerCodec
-
-func (mapAddNearCacheInvalidationListenerCodec) EncodeRequest(name string, listenerFlags int32, localOnly bool) *proto.ClientMessage {
+func EncodeMapAddNearCacheInvalidationListenerRequest(name string, listenerFlags int32, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -58,12 +54,12 @@ func (mapAddNearCacheInvalidationListenerCodec) EncodeRequest(name string, liste
 	clientMessage.SetMessageType(MapAddNearCacheInvalidationListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapAddNearCacheInvalidationListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeMapAddNearCacheInvalidationListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
@@ -85,10 +81,10 @@ func (mapAddNearCacheInvalidationListenerCodec) Handle(clientMessage *proto.Clie
 	if messageType == MapAddNearCacheInvalidationListenerCodecEventIMapBatchInvalidationMessageType {
 		//empty initial frame
 		frameIterator.Next()
-		keys := ListMultiFrameCodec.DecodeForData(frameIterator)
-		sourceUuids := ListUUIDCodec.Decode(frameIterator)
-		partitionUuids := ListUUIDCodec.Decode(frameIterator)
-		sequences := ListLongCodec.Decode(frameIterator)
+		keys := DecodeListMultiFrameForData(frameIterator)
+		sourceUuids := DecodeListUUID(frameIterator)
+		partitionUuids := DecodeListUUID(frameIterator)
+		sequences := DecodeListLong(frameIterator)
 		handleIMapBatchInvalidationEvent(keys, sourceUuids, partitionUuids, sequences)
 		return
 	}

@@ -29,11 +29,8 @@ const (
 )
 
 // Returns the number of available permits.
-type semaphoreAvailablePermitsCodec struct{}
 
-var SemaphoreAvailablePermitsCodec semaphoreAvailablePermitsCodec
-
-func (semaphoreAvailablePermitsCodec) EncodeRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeSemaphoreAvailablePermitsRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,13 +39,13 @@ func (semaphoreAvailablePermitsCodec) EncodeRequest(groupId proto.RaftGroupId, n
 	clientMessage.SetMessageType(SemaphoreAvailablePermitsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (semaphoreAvailablePermitsCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeSemaphoreAvailablePermitsResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -31,11 +31,8 @@ const (
 // Returns the sequence of the head. The head is the side of the ringbuffer where the oldest items in the ringbuffer
 // are found. If the RingBuffer is empty, the head will be one more than the tail.
 // The initial value of the head is 0 (1 more than tail).
-type ringbufferHeadSequenceCodec struct{}
 
-var RingbufferHeadSequenceCodec ringbufferHeadSequenceCodec
-
-func (ringbufferHeadSequenceCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeRingbufferHeadSequenceRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,12 +41,12 @@ func (ringbufferHeadSequenceCodec) EncodeRequest(name string) *proto.ClientMessa
 	clientMessage.SetMessageType(RingbufferHeadSequenceCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (ringbufferHeadSequenceCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferHeadSequenceResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

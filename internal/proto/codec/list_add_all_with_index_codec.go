@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -36,11 +35,8 @@ const (
 // The new elements will appear in this list in the order that they are returned by the specified collection's iterator.
 // The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
 // (Note that this will occur if the specified collection is this list, and it's nonempty.)
-type listAddAllWithIndexCodec struct{}
 
-var ListAddAllWithIndexCodec listAddAllWithIndexCodec
-
-func (listAddAllWithIndexCodec) EncodeRequest(name string, index int32, valueList []serialization.Data) *proto.ClientMessage {
+func EncodeListAddAllWithIndexRequest(name string, index int32, valueList []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -50,13 +46,13 @@ func (listAddAllWithIndexCodec) EncodeRequest(name string, index int32, valueLis
 	clientMessage.SetMessageType(ListAddAllWithIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, valueList)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, valueList)
 
 	return clientMessage
 }
 
-func (listAddAllWithIndexCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeListAddAllWithIndexResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -30,11 +30,8 @@ const (
 // runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
 // in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
 // QueryResultSizeExceededException if query result size limit is configured.
-type mapEntriesWithPagingPredicateCodec struct{}
 
-var MapEntriesWithPagingPredicateCodec mapEntriesWithPagingPredicateCodec
-
-func (mapEntriesWithPagingPredicateCodec) EncodeRequest(name string, predicate proto.PagingPredicateHolder) *proto.ClientMessage {
+func EncodeMapEntriesWithPagingPredicateRequest(name string, predicate proto.PagingPredicateHolder) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,8 +40,8 @@ func (mapEntriesWithPagingPredicateCodec) EncodeRequest(name string, predicate p
 	clientMessage.SetMessageType(MapEntriesWithPagingPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	PagingPredicateHolderCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodePagingPredicateHolder(clientMessage, predicate)
 
 	return clientMessage
 }
@@ -53,8 +50,8 @@ func (mapEntriesWithPagingPredicateCodec) DecodeResponse(clientMessage *proto.Cl
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	response = EntryListCodec.DecodeForDataAndData(frameIterator)
-	anchorDataList = AnchorDataListHolderCodec.Decode(frameIterator)
+	response = DecodeEntryListForDataAndData(frameIterator)
+	anchorDataList = DecodeAnchorDataListHolder(frameIterator)
 
 	return response, anchorDataList
 }

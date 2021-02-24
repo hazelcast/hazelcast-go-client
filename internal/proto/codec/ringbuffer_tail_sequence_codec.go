@@ -30,11 +30,8 @@ const (
 
 // Returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
 // The initial value of the tail is -1.
-type ringbufferTailSequenceCodec struct{}
 
-var RingbufferTailSequenceCodec ringbufferTailSequenceCodec
-
-func (ringbufferTailSequenceCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeRingbufferTailSequenceRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,12 +40,12 @@ func (ringbufferTailSequenceCodec) EncodeRequest(name string) *proto.ClientMessa
 	clientMessage.SetMessageType(RingbufferTailSequenceCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (ringbufferTailSequenceCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferTailSequenceResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

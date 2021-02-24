@@ -35,11 +35,8 @@ const (
 
 // Releases the given number of permits and increases the number of
 // available permits by that amount.
-type semaphoreReleaseCodec struct{}
 
-var SemaphoreReleaseCodec semaphoreReleaseCodec
-
-func (semaphoreReleaseCodec) EncodeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID, permits int32) *proto.ClientMessage {
+func EncodeSemaphoreReleaseRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID, permits int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -52,13 +49,13 @@ func (semaphoreReleaseCodec) EncodeRequest(groupId proto.RaftGroupId, name strin
 	clientMessage.SetMessageType(SemaphoreReleaseCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (semaphoreReleaseCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSemaphoreReleaseResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

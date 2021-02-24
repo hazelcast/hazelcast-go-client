@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -35,11 +34,8 @@ const (
 // Tries to remove the entry with the given key from this map within the specified timeout value.
 // If the key is already locked by another thread and/or member, then this operation will wait the timeout
 // amount for acquiring the lock.
-type mapTryRemoveCodec struct{}
 
-var MapTryRemoveCodec mapTryRemoveCodec
-
-func (mapTryRemoveCodec) EncodeRequest(name string, key serialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
+func EncodeMapTryRemoveRequest(name string, key serialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -50,13 +46,13 @@ func (mapTryRemoveCodec) EncodeRequest(name string, key serialization.Data, thre
 	clientMessage.SetMessageType(MapTryRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (mapTryRemoveCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapTryRemoveResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

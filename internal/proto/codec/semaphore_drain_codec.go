@@ -33,11 +33,8 @@ const (
 )
 
 // Acquires all available permits at once and returns immediately.
-type semaphoreDrainCodec struct{}
 
-var SemaphoreDrainCodec semaphoreDrainCodec
-
-func (semaphoreDrainCodec) EncodeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID) *proto.ClientMessage {
+func EncodeSemaphoreDrainRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,13 +46,13 @@ func (semaphoreDrainCodec) EncodeRequest(groupId proto.RaftGroupId, name string,
 	clientMessage.SetMessageType(SemaphoreDrainCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (semaphoreDrainCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeSemaphoreDrainResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -44,11 +43,8 @@ const (
 // <b>Warning:</b>
 // <p>
 // Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-type mapSetTtlCodec struct{}
 
-var MapSetTtlCodec mapSetTtlCodec
-
-func (mapSetTtlCodec) EncodeRequest(name string, key serialization.Data, ttl int64) *proto.ClientMessage {
+func EncodeMapSetTtlRequest(name string, key serialization.Data, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -58,13 +54,13 @@ func (mapSetTtlCodec) EncodeRequest(name string, key serialization.Data, ttl int
 	clientMessage.SetMessageType(MapSetTtlCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (mapSetTtlCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapSetTtlResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

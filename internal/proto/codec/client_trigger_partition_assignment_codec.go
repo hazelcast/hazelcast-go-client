@@ -28,11 +28,8 @@ const (
 
 // Triggers partition assignment manually on the cluster.
 // Note that Partition based operations triggers this automatically
-type clientTriggerPartitionAssignmentCodec struct{}
 
-var ClientTriggerPartitionAssignmentCodec clientTriggerPartitionAssignmentCodec
-
-func (clientTriggerPartitionAssignmentCodec) EncodeRequest() *proto.ClientMessage {
+func EncodeClientTriggerPartitionAssignmentRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

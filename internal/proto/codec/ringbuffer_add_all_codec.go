@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -39,11 +38,8 @@ const (
 // overwritten. Therefor this call will not block. The items are inserted in the order of the Iterator of the collection.
 // If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
 // The result of the future contains the sequenceId of the last written item
-type ringbufferAddAllCodec struct{}
 
-var RingbufferAddAllCodec ringbufferAddAllCodec
-
-func (ringbufferAddAllCodec) EncodeRequest(name string, valueList []serialization.Data, overflowPolicy int32) *proto.ClientMessage {
+func EncodeRingbufferAddAllRequest(name string, valueList []serialization.Data, overflowPolicy int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -53,13 +49,13 @@ func (ringbufferAddAllCodec) EncodeRequest(name string, valueList []serializatio
 	clientMessage.SetMessageType(RingbufferAddAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, valueList)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, valueList)
 
 	return clientMessage
 }
 
-func (ringbufferAddAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferAddAllResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

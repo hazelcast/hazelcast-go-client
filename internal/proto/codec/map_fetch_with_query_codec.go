@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 
 // Fetches the specified number of entries from the specified partition starting from specified table index
 // that match the predicate and applies the projection logic on them.
-type mapFetchWithQueryCodec struct{}
 
-var MapFetchWithQueryCodec mapFetchWithQueryCodec
-
-func (mapFetchWithQueryCodec) EncodeRequest(name string, iterationPointers []proto.Pair, batch int32, projection serialization.Data, predicate serialization.Data) *proto.ClientMessage {
+func EncodeMapFetchWithQueryRequest(name string, iterationPointers []proto.Pair, batch int32, projection serialization.Data, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,10 +41,10 @@ func (mapFetchWithQueryCodec) EncodeRequest(name string, iterationPointers []pro
 	clientMessage.SetMessageType(MapFetchWithQueryCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
-	DataCodec.Encode(clientMessage, projection)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeEntryListIntegerInteger(clientMessage, iterationPointers)
+	EncodeData(clientMessage, projection)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
@@ -57,8 +53,8 @@ func (mapFetchWithQueryCodec) DecodeResponse(clientMessage *proto.ClientMessage)
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	results = ListMultiFrameCodec.DecodeForDataContainsNullable(frameIterator)
-	iterationPointers = EntryListIntegerIntegerCodec.Decode(frameIterator)
+	results = DecodeListMultiFrameForDataContainsNullable(frameIterator)
+	iterationPointers = DecodeEntryListIntegerInteger(frameIterator)
 
 	return results, iterationPointers
 }

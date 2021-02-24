@@ -32,11 +32,8 @@ const (
 // the given {@code name}.
 // The actual replica count may be less, depending on the number of data
 // members in the cluster (members that own data).
-type pncounterGetConfiguredReplicaCountCodec struct{}
 
-var PNCounterGetConfiguredReplicaCountCodec pncounterGetConfiguredReplicaCountCodec
-
-func (pncounterGetConfiguredReplicaCountCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodePNCounterGetConfiguredReplicaCountRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,12 +42,12 @@ func (pncounterGetConfiguredReplicaCountCodec) EncodeRequest(name string) *proto
 	clientMessage.SetMessageType(PNCounterGetConfiguredReplicaCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (pncounterGetConfiguredReplicaCountCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodePNCounterGetConfiguredReplicaCountResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

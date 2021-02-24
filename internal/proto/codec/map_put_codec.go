@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -34,29 +33,26 @@ const (
 // If ttl is 0, then the entry lives forever.This method returns a clone of the previous value, not the original
 // (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
 // rounded to the next closest second value.
-type mapPutCodec struct{}
 
-var MapPutCodec mapPutCodec
-
-func (mapPutCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapPutRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, MapPutCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrame(make([]byte, MapPutCodecRequestInitialFrameSize))
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutCodecRequestTtlOffset, ttl)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapPutCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapPutCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapPutResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

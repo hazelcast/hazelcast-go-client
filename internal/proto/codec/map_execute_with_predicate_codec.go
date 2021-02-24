@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 
 // Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
 // Returns the results mapped by each key in the map.
-type mapExecuteWithPredicateCodec struct{}
 
-var MapExecuteWithPredicateCodec mapExecuteWithPredicateCodec
-
-func (mapExecuteWithPredicateCodec) EncodeRequest(name string, entryProcessor serialization.Data, predicate serialization.Data) *proto.ClientMessage {
+func EncodeMapExecuteWithPredicateRequest(name string, entryProcessor serialization.Data, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,17 +39,17 @@ func (mapExecuteWithPredicateCodec) EncodeRequest(name string, entryProcessor se
 	clientMessage.SetMessageType(MapExecuteWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, entryProcessor)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, entryProcessor)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
 
-func (mapExecuteWithPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.Pair {
+func DecodeMapExecuteWithPredicateResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return EntryListCodec.DecodeForDataAndData(frameIterator)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

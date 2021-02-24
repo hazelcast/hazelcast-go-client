@@ -29,11 +29,8 @@ const (
 )
 
 // Returns the current count.
-type countdownlatchGetCountCodec struct{}
 
-var CountDownLatchGetCountCodec countdownlatchGetCountCodec
-
-func (countdownlatchGetCountCodec) EncodeRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeCountDownLatchGetCountRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,13 +39,13 @@ func (countdownlatchGetCountCodec) EncodeRequest(groupId proto.RaftGroupId, name
 	clientMessage.SetMessageType(CountDownLatchGetCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (countdownlatchGetCountCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeCountDownLatchGetCountResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

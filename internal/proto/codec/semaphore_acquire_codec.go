@@ -38,11 +38,8 @@ const (
 // the number of available permits. If no enough permits are available,
 // then the current thread becomes disabled for thread scheduling purposes
 // and lies dormant until other threads release enough permits.
-type semaphoreAcquireCodec struct{}
 
-var SemaphoreAcquireCodec semaphoreAcquireCodec
-
-func (semaphoreAcquireCodec) EncodeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID, permits int32, timeoutMs int64) *proto.ClientMessage {
+func EncodeSemaphoreAcquireRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID, permits int32, timeoutMs int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -56,13 +53,13 @@ func (semaphoreAcquireCodec) EncodeRequest(groupId proto.RaftGroupId, name strin
 	clientMessage.SetMessageType(SemaphoreAcquireCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (semaphoreAcquireCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSemaphoreAcquireResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

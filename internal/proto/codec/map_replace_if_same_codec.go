@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 )
 
 // Replaces the the entry for a key only if existing values equal to the testValue
-type mapReplaceIfSameCodec struct{}
 
-var MapReplaceIfSameCodec mapReplaceIfSameCodec
-
-func (mapReplaceIfSameCodec) EncodeRequest(name string, key serialization.Data, testValue serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapReplaceIfSameRequest(name string, key serialization.Data, testValue serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,15 +42,15 @@ func (mapReplaceIfSameCodec) EncodeRequest(name string, key serialization.Data, 
 	clientMessage.SetMessageType(MapReplaceIfSameCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, testValue)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, testValue)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapReplaceIfSameCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapReplaceIfSameResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

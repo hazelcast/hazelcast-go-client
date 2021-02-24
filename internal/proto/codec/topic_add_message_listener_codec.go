@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -39,11 +38,8 @@ const (
 
 // Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
 // MessageListener is called. More than one message listener can be added on one instance.
-type topicAddMessageListenerCodec struct{}
 
-var TopicAddMessageListenerCodec topicAddMessageListenerCodec
-
-func (topicAddMessageListenerCodec) EncodeRequest(name string, localOnly bool) *proto.ClientMessage {
+func EncodeTopicAddMessageListenerRequest(name string, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -53,12 +49,12 @@ func (topicAddMessageListenerCodec) EncodeRequest(name string, localOnly bool) *
 	clientMessage.SetMessageType(TopicAddMessageListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (topicAddMessageListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
@@ -72,7 +68,7 @@ func (topicAddMessageListenerCodec) Handle(clientMessage *proto.ClientMessage, h
 		initialFrame := frameIterator.Next()
 		publishTime := FixSizedTypesCodec.DecodeLong(initialFrame.Content, TopicAddMessageListenerEventTopicPublishTimeOffset)
 		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerEventTopicUuidOffset)
-		item := DataCodec.Decode(frameIterator)
+		item := DecodeData(frameIterator)
 		handleTopicEvent(item, publishTime, uuid)
 		return
 	}

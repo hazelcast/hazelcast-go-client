@@ -30,11 +30,8 @@ const (
 )
 
 // Closes the given session on the given CP group
-type cpsessionCloseSessionCodec struct{}
 
-var CPSessionCloseSessionCodec cpsessionCloseSessionCodec
-
-func (cpsessionCloseSessionCodec) EncodeRequest(groupId proto.RaftGroupId, sessionId int64) *proto.ClientMessage {
+func EncodeCPSessionCloseSessionRequest(groupId proto.RaftGroupId, sessionId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,12 +41,12 @@ func (cpsessionCloseSessionCodec) EncodeRequest(groupId proto.RaftGroupId, sessi
 	clientMessage.SetMessageType(CPSessionCloseSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	EncodeRaftGroupId(clientMessage, groupId)
 
 	return clientMessage
 }
 
-func (cpsessionCloseSessionCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeCPSessionCloseSessionResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

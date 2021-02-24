@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 
 // Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
 // to the left (subtracts one from their indices). Returns the element that was removed from the list.
-type listRemoveWithIndexCodec struct{}
 
-var ListRemoveWithIndexCodec listRemoveWithIndexCodec
-
-func (listRemoveWithIndexCodec) EncodeRequest(name string, index int32) *proto.ClientMessage {
+func EncodeListRemoveWithIndexRequest(name string, index int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -45,12 +41,12 @@ func (listRemoveWithIndexCodec) EncodeRequest(name string, index int32) *proto.C
 	clientMessage.SetMessageType(ListRemoveWithIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (listRemoveWithIndexCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeListRemoveWithIndexResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

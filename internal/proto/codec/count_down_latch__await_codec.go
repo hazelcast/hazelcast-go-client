@@ -47,11 +47,8 @@ const (
 // and the current thread's interrupted status is cleared. If the specified
 // waiting time elapses then the value false is returned.  If the time is
 // less than or equal to zero, the method will not wait at all.
-type countdownlatchAwaitCodec struct{}
 
-var CountDownLatchAwaitCodec countdownlatchAwaitCodec
-
-func (countdownlatchAwaitCodec) EncodeRequest(groupId proto.RaftGroupId, name string, invocationUid core.UUID, timeoutMs int64) *proto.ClientMessage {
+func EncodeCountDownLatchAwaitRequest(groupId proto.RaftGroupId, name string, invocationUid core.UUID, timeoutMs int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -62,13 +59,13 @@ func (countdownlatchAwaitCodec) EncodeRequest(groupId proto.RaftGroupId, name st
 	clientMessage.SetMessageType(CountDownLatchAwaitCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (countdownlatchAwaitCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeCountDownLatchAwaitResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

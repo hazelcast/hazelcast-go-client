@@ -25,33 +25,34 @@ const (
 	IndexConfigCodecTypeInitialFrameSize = IndexConfigCodecTypeFieldOffset + proto.IntSizeInBytes
 )
 
-type indexconfigCodec struct{}
+/*
+type indexconfigCodec struct {}
 
 var IndexConfigCodec indexconfigCodec
+*/
 
-func (indexconfigCodec) Encode(clientMessage *proto.ClientMessage, indexConfig config.IndexConfig) {
+func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig config.IndexConfig) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, IndexConfigCodecTypeInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, indexConfig.GetType())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type()))
 	clientMessage.AddFrame(initialFrame)
 
-	CodecUtil.EncodeNullableForString(clientMessage, indexConfig.GetName())
-	ListMultiFrameCodec.EncodeForString(clientMessage, indexConfig.GetAttributes())
-	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, indexConfig.GetBitmapIndexOptions())
+	CodecUtil.EncodeNullableForString(clientMessage, indexConfig.Name())
+	EncodeListMultiFrameForString(clientMessage, indexConfig.Attributes())
+	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, indexConfig.BitmapIndexOptions())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (indexconfigCodec) Decode(frameIterator *proto.ForwardFrameIterator) config.IndexConfig {
+func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) config.IndexConfig {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
 	_type := FixSizedTypesCodec.DecodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset)
 
 	name := CodecUtil.DecodeNullableForString(frameIterator)
-	attributes := ListMultiFrameCodec.DecodeForString(frameIterator)
+	attributes := DecodeListMultiFrameForString(frameIterator)
 	bitmapIndexOptions := CodecUtil.DecodeNullableForBitmapIndexOptions(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return config.NewIndexConfig(name, _type, attributes, bitmapIndexOptions)
 }

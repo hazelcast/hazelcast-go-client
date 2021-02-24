@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 )
 
 // Fetches specified number of keys from the specified partition starting from specified table index.
-type mapFetchKeysCodec struct{}
 
-var MapFetchKeysCodec mapFetchKeysCodec
-
-func (mapFetchKeysCodec) EncodeRequest(name string, iterationPointers []proto.Pair, batch int32) *proto.ClientMessage {
+func EncodeMapFetchKeysRequest(name string, iterationPointers []proto.Pair, batch int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,8 +40,8 @@ func (mapFetchKeysCodec) EncodeRequest(name string, iterationPointers []proto.Pa
 	clientMessage.SetMessageType(MapFetchKeysCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
+	EncodeString(clientMessage, name)
+	EncodeEntryListIntegerInteger(clientMessage, iterationPointers)
 
 	return clientMessage
 }
@@ -54,8 +50,8 @@ func (mapFetchKeysCodec) DecodeResponse(clientMessage *proto.ClientMessage) (ite
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	iterationPointers = EntryListIntegerIntegerCodec.Decode(frameIterator)
-	keys = ListMultiFrameCodec.DecodeForData(frameIterator)
+	iterationPointers = DecodeEntryListIntegerInteger(frameIterator)
+	keys = DecodeListMultiFrameForData(frameIterator)
 
 	return iterationPointers, keys
 }

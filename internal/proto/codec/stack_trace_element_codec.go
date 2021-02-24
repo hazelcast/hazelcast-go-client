@@ -24,33 +24,34 @@ const (
 	StackTraceElementCodecLineNumberInitialFrameSize = StackTraceElementCodecLineNumberFieldOffset + proto.IntSizeInBytes
 )
 
-type stacktraceelementCodec struct{}
+/*
+type stacktraceelementCodec struct {}
 
 var StackTraceElementCodec stacktraceelementCodec
+*/
 
-func (stacktraceelementCodec) Encode(clientMessage *proto.ClientMessage, stackTraceElement proto.StackTraceElement) {
+func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceElement proto.StackTraceElement) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, StackTraceElementCodecLineNumberInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, stackTraceElement.GetLineNumber())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, int32(stackTraceElement.LineNumber()))
 	clientMessage.AddFrame(initialFrame)
 
-	StringCodec.Encode(clientMessage, stackTraceElement.GetClassName())
-	StringCodec.Encode(clientMessage, stackTraceElement.GetMethodName())
-	CodecUtil.EncodeNullableForString(clientMessage, stackTraceElement.GetFileName())
+	EncodeString(clientMessage, stackTraceElement.ClassName())
+	EncodeString(clientMessage, stackTraceElement.MethodName())
+	CodecUtil.EncodeNullableForString(clientMessage, stackTraceElement.FileName())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (stacktraceelementCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.StackTraceElement {
+func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) proto.StackTraceElement {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
 	lineNumber := FixSizedTypesCodec.DecodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset)
 
-	className := StringCodec.Decode(frameIterator)
-	methodName := StringCodec.Decode(frameIterator)
+	className := DecodeString(frameIterator)
+	methodName := DecodeString(frameIterator)
 	fileName := CodecUtil.DecodeNullableForString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewStackTraceElement(className, methodName, fileName, lineNumber)
 }

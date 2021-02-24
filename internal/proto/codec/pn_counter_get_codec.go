@@ -39,11 +39,8 @@ const (
 // The target replica is determined by the {@code targetReplica} parameter.
 // If smart routing is disabled, the actual member processing the client
 // message may act as a proxy.
-type pncounterGetCodec struct{}
 
-var PNCounterGetCodec pncounterGetCodec
-
-func (pncounterGetCodec) EncodeRequest(name string, replicaTimestamps []proto.Pair, targetReplicaUUID core.UUID) *proto.ClientMessage {
+func EncodePNCounterGetRequest(name string, replicaTimestamps []proto.Pair, targetReplicaUUID core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -53,8 +50,8 @@ func (pncounterGetCodec) EncodeRequest(name string, replicaTimestamps []proto.Pa
 	clientMessage.SetMessageType(PNCounterGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListUUIDLongCodec.Encode(clientMessage, replicaTimestamps)
+	EncodeString(clientMessage, name)
+	EncodeEntryListUUIDLong(clientMessage, replicaTimestamps)
 
 	return clientMessage
 }
@@ -65,7 +62,7 @@ func (pncounterGetCodec) DecodeResponse(clientMessage *proto.ClientMessage) (val
 
 	value = FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterGetResponseValueOffset)
 	replicaCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetResponseReplicaCountOffset)
-	replicaTimestamps = EntryListUUIDLongCodec.Decode(frameIterator)
+	replicaTimestamps = DecodeEntryListUUIDLong(frameIterator)
 
 	return value, replicaTimestamps, replicaCount
 }

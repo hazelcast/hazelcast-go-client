@@ -30,11 +30,8 @@ const (
 )
 
 // Atomically adds the given value to the current value.
-type atomiclongGetAndAddCodec struct{}
 
-var AtomicLongGetAndAddCodec atomiclongGetAndAddCodec
-
-func (atomiclongGetAndAddCodec) EncodeRequest(groupId proto.RaftGroupId, name string, delta int64) *proto.ClientMessage {
+func EncodeAtomicLongGetAndAddRequest(groupId proto.RaftGroupId, name string, delta int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,13 +41,13 @@ func (atomiclongGetAndAddCodec) EncodeRequest(groupId proto.RaftGroupId, name st
 	clientMessage.SetMessageType(AtomicLongGetAndAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (atomiclongGetAndAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeAtomicLongGetAndAddResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

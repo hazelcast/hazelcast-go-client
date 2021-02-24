@@ -32,11 +32,8 @@ const (
 
 // Removes the specified distributed object listener. If there is no such listener added before, this call does no
 // change in the cluster and returns false.
-type clientRemoveDistributedObjectListenerCodec struct{}
 
-var ClientRemoveDistributedObjectListenerCodec clientRemoveDistributedObjectListenerCodec
-
-func (clientRemoveDistributedObjectListenerCodec) EncodeRequest(registrationId core.UUID) *proto.ClientMessage {
+func EncodeClientRemoveDistributedObjectListenerRequest(registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,7 +46,7 @@ func (clientRemoveDistributedObjectListenerCodec) EncodeRequest(registrationId c
 	return clientMessage
 }
 
-func (clientRemoveDistributedObjectListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeClientRemoveDistributedObjectListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

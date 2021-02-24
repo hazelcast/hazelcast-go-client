@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 
 // Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
 // with a value. Entry will expire and get evicted after the ttl.
-type mapPutIfAbsentCodec struct{}
 
-var MapPutIfAbsentCodec mapPutIfAbsentCodec
-
-func (mapPutIfAbsentCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapPutIfAbsentRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,14 +43,14 @@ func (mapPutIfAbsentCodec) EncodeRequest(name string, key serialization.Data, va
 	clientMessage.SetMessageType(MapPutIfAbsentCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapPutIfAbsentCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapPutIfAbsentResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

@@ -29,11 +29,8 @@ const (
 )
 
 // Returns the number of key-value pairs in the multimap.
-type multimapSizeCodec struct{}
 
-var MultiMapSizeCodec multimapSizeCodec
-
-func (multimapSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMultiMapSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,12 +39,12 @@ func (multimapSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MultiMapSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (multimapSizeCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeMultiMapSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -32,11 +32,8 @@ const (
 
 // Removes the specified partition lost listener. If there is no such listener added before, this call does no change
 // in the cluster and returns false.
-type clientRemovePartitionLostListenerCodec struct{}
 
-var ClientRemovePartitionLostListenerCodec clientRemovePartitionLostListenerCodec
-
-func (clientRemovePartitionLostListenerCodec) EncodeRequest(registrationId core.UUID) *proto.ClientMessage {
+func EncodeClientRemovePartitionLostListenerRequest(registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,7 +46,7 @@ func (clientRemovePartitionLostListenerCodec) EncodeRequest(registrationId core.
 	return clientMessage
 }
 
-func (clientRemovePartitionLostListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeClientRemovePartitionLostListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

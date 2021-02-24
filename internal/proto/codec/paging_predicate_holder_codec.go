@@ -26,27 +26,29 @@ const (
 	PagingPredicateHolderCodecIterationTypeIdInitialFrameSize = PagingPredicateHolderCodecIterationTypeIdFieldOffset + proto.ByteSizeInBytes
 )
 
-type pagingpredicateholderCodec struct{}
+/*
+type pagingpredicateholderCodec struct {}
 
 var PagingPredicateHolderCodec pagingpredicateholderCodec
+*/
 
-func (pagingpredicateholderCodec) Encode(clientMessage *proto.ClientMessage, pagingPredicateHolder proto.PagingPredicateHolder) {
+func EncodePagingPredicateHolder(clientMessage *proto.ClientMessage, pagingPredicateHolder proto.PagingPredicateHolder) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, PagingPredicateHolderCodecIterationTypeIdInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, PagingPredicateHolderCodecPageSizeFieldOffset, pagingPredicateHolder.GetPageSize())
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, PagingPredicateHolderCodecPageFieldOffset, pagingPredicateHolder.GetPage())
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, PagingPredicateHolderCodecIterationTypeIdFieldOffset, pagingPredicateHolder.GetIterationTypeId())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, PagingPredicateHolderCodecPageSizeFieldOffset, int32(pagingPredicateHolder.PageSize()))
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, PagingPredicateHolderCodecPageFieldOffset, int32(pagingPredicateHolder.Page()))
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, PagingPredicateHolderCodecIterationTypeIdFieldOffset, pagingPredicateHolder.IterationTypeId())
 	clientMessage.AddFrame(initialFrame)
 
-	AnchorDataListHolderCodec.Encode(clientMessage, pagingPredicateHolder.GetAnchorDataListHolder())
-	CodecUtil.EncodeNullableForData(clientMessage, pagingPredicateHolder.GetPredicateData())
-	CodecUtil.EncodeNullableForData(clientMessage, pagingPredicateHolder.GetComparatorData())
-	CodecUtil.EncodeNullableForData(clientMessage, pagingPredicateHolder.GetPartitionKeyData())
+	EncodeAnchorDataListHolder(clientMessage, pagingPredicateHolder.AnchorDataListHolder())
+	CodecUtil.EncodeNullableForData(clientMessage, pagingPredicateHolder.PredicateData())
+	CodecUtil.EncodeNullableForData(clientMessage, pagingPredicateHolder.ComparatorData())
+	CodecUtil.EncodeNullableForData(clientMessage, pagingPredicateHolder.PartitionKeyData())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (pagingpredicateholderCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.PagingPredicateHolder {
+func DecodePagingPredicateHolder(frameIterator *proto.ForwardFrameIterator) proto.PagingPredicateHolder {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -54,11 +56,10 @@ func (pagingpredicateholderCodec) Decode(frameIterator *proto.ForwardFrameIterat
 	page := FixSizedTypesCodec.DecodeInt(initialFrame.Content, PagingPredicateHolderCodecPageFieldOffset)
 	iterationTypeId := FixSizedTypesCodec.DecodeByte(initialFrame.Content, PagingPredicateHolderCodecIterationTypeIdFieldOffset)
 
-	anchorDataListHolder := AnchorDataListHolderCodec.Decode(frameIterator)
+	anchorDataListHolder := DecodeAnchorDataListHolder(frameIterator)
 	predicateData := CodecUtil.DecodeNullableForData(frameIterator)
 	comparatorData := CodecUtil.DecodeNullableForData(frameIterator)
 	partitionKeyData := CodecUtil.DecodeNullableForData(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewPagingPredicateHolder(anchorDataListHolder, predicateData, comparatorData, pageSize, page, iterationTypeId, partitionKeyData)
 }

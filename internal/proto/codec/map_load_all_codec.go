@@ -28,11 +28,8 @@ const (
 )
 
 // Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
-type mapLoadAllCodec struct{}
 
-var MapLoadAllCodec mapLoadAllCodec
-
-func (mapLoadAllCodec) EncodeRequest(name string, replaceExistingValues bool) *proto.ClientMessage {
+func EncodeMapLoadAllRequest(name string, replaceExistingValues bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,7 +39,7 @@ func (mapLoadAllCodec) EncodeRequest(name string, replaceExistingValues bool) *p
 	clientMessage.SetMessageType(MapLoadAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

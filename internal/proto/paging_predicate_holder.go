@@ -18,30 +18,30 @@ func NewPagingPredicateHolder(anchorDataListHolder AnchorDataListHolder, predica
 		pageSize, page, iterationTypeID, partitionKeyData}
 }
 
-func (p PagingPredicateHolder) GetAnchorDataListHolder() AnchorDataListHolder {
+func (p PagingPredicateHolder) AnchorDataListHolder() AnchorDataListHolder {
 	return p.anchorDataListHolder
 }
 
-func (p PagingPredicateHolder) GetPredicateData() serialization.Data {
+func (p PagingPredicateHolder) PredicateData() serialization.Data {
 	return p.predicateData
 }
 
-func (p PagingPredicateHolder) GetComparatorData() serialization.Data {
+func (p PagingPredicateHolder) ComparatorData() serialization.Data {
 	return p.comparatorData
 }
 
-func (p PagingPredicateHolder) GetPageSize() int32 {
-	return p.GetPageSize()
+func (p PagingPredicateHolder) PageSize() int32 {
+	return p.PageSize()
 }
 
-func (p PagingPredicateHolder) GetPage() int32 {
+func (p PagingPredicateHolder) Page() int32 {
 	return p.page
 }
 
-func (p PagingPredicateHolder) GetIterationTypeId() byte {
+func (p PagingPredicateHolder) IterationTypeId() byte {
 	return p.iterationTypeID
 }
 
-func (p PagingPredicateHolder) GetPartitionKeyData() serialization.Data {
+func (p PagingPredicateHolder) PartitionKeyData() serialization.Data {
 	return p.partitionKeyData
 }

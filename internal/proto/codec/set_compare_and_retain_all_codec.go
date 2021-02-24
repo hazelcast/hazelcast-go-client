@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -34,11 +33,8 @@ const (
 // In other words, removes from this set all of its elements that are not contained in the specified collection.
 // If the specified collection is also a set, this operation effectively modifies this set so that its value is the
 // intersection of the two sets.
-type setCompareAndRetainAllCodec struct{}
 
-var SetCompareAndRetainAllCodec setCompareAndRetainAllCodec
-
-func (setCompareAndRetainAllCodec) EncodeRequest(name string, values []serialization.Data) *proto.ClientMessage {
+func EncodeSetCompareAndRetainAllRequest(name string, values []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,13 +43,13 @@ func (setCompareAndRetainAllCodec) EncodeRequest(name string, values []serializa
 	clientMessage.SetMessageType(SetCompareAndRetainAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, values)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, values)
 
 	return clientMessage
 }
 
-func (setCompareAndRetainAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetCompareAndRetainAllResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

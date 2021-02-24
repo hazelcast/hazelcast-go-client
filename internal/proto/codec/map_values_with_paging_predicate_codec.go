@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 // runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
 // in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
 // QueryResultSizeExceededException if query result size limit is configured.
-type mapValuesWithPagingPredicateCodec struct{}
 
-var MapValuesWithPagingPredicateCodec mapValuesWithPagingPredicateCodec
-
-func (mapValuesWithPagingPredicateCodec) EncodeRequest(name string, predicate proto.PagingPredicateHolder) *proto.ClientMessage {
+func EncodeMapValuesWithPagingPredicateRequest(name string, predicate proto.PagingPredicateHolder) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,8 +41,8 @@ func (mapValuesWithPagingPredicateCodec) EncodeRequest(name string, predicate pr
 	clientMessage.SetMessageType(MapValuesWithPagingPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	PagingPredicateHolderCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodePagingPredicateHolder(clientMessage, predicate)
 
 	return clientMessage
 }
@@ -55,8 +51,8 @@ func (mapValuesWithPagingPredicateCodec) DecodeResponse(clientMessage *proto.Cli
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	response = ListMultiFrameCodec.DecodeForData(frameIterator)
-	anchorDataList = AnchorDataListHolderCodec.Decode(frameIterator)
+	response = DecodeListMultiFrameForData(frameIterator)
+	anchorDataList = DecodeAnchorDataListHolder(frameIterator)
 
 	return response, anchorDataList
 }

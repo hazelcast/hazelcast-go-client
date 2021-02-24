@@ -34,32 +34,34 @@ const (
 	SimpleEntryViewCodecMaxIdleInitialFrameSize   = SimpleEntryViewCodecMaxIdleFieldOffset + proto.LongSizeInBytes
 )
 
-type simpleentryviewCodec struct{}
+/*
+type simpleentryviewCodec struct {}
 
 var SimpleEntryViewCodec simpleentryviewCodec
+*/
 
-func (simpleentryviewCodec) Encode(clientMessage *proto.ClientMessage, simpleEntryView core.SimpleEntryView) {
+func EncodeSimpleEntryView(clientMessage *proto.ClientMessage, simpleEntryView *core.SimpleEntryView) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, SimpleEntryViewCodecMaxIdleInitialFrameSize))
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecCostFieldOffset, simpleEntryView.GetCost())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecCreationTimeFieldOffset, simpleEntryView.GetCreationTime())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecExpirationTimeFieldOffset, simpleEntryView.GetExpirationTime())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecHitsFieldOffset, simpleEntryView.GetHits())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecLastAccessTimeFieldOffset, simpleEntryView.GetLastAccessTime())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecLastStoredTimeFieldOffset, simpleEntryView.GetLastStoredTime())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecLastUpdateTimeFieldOffset, simpleEntryView.GetLastUpdateTime())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecVersionFieldOffset, simpleEntryView.GetVersion())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecTtlFieldOffset, simpleEntryView.GetTtl())
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecMaxIdleFieldOffset, simpleEntryView.GetMaxIdle())
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecCostFieldOffset, int64(simpleEntryView.Cost()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecCreationTimeFieldOffset, int64(simpleEntryView.CreationTime()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecExpirationTimeFieldOffset, int64(simpleEntryView.ExpirationTime()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecHitsFieldOffset, int64(simpleEntryView.Hits()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecLastAccessTimeFieldOffset, int64(simpleEntryView.LastAccessTime()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecLastStoredTimeFieldOffset, int64(simpleEntryView.LastStoredTime()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecLastUpdateTimeFieldOffset, int64(simpleEntryView.LastUpdateTime()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecVersionFieldOffset, int64(simpleEntryView.Version()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecTtlFieldOffset, int64(simpleEntryView.Ttl()))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecMaxIdleFieldOffset, int64(simpleEntryView.MaxIdle()))
 	clientMessage.AddFrame(initialFrame)
 
-	DataCodec.Encode(clientMessage, simpleEntryView.GetKey())
-	DataCodec.Encode(clientMessage, simpleEntryView.GetValue())
+	EncodeData(clientMessage, simpleEntryView.Key())
+	EncodeData(clientMessage, simpleEntryView.Value())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (simpleentryviewCodec) Decode(frameIterator *proto.ForwardFrameIterator) core.SimpleEntryView {
+func DecodeSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *core.SimpleEntryView {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -74,9 +76,8 @@ func (simpleentryviewCodec) Decode(frameIterator *proto.ForwardFrameIterator) co
 	ttl := FixSizedTypesCodec.DecodeLong(initialFrame.Content, SimpleEntryViewCodecTtlFieldOffset)
 	maxIdle := FixSizedTypesCodec.DecodeLong(initialFrame.Content, SimpleEntryViewCodecMaxIdleFieldOffset)
 
-	key := DataCodec.Decode(frameIterator)
-	value := DataCodec.Decode(frameIterator)
+	key := DecodeData(frameIterator)
+	value := DecodeData(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return core.NewSimpleEntryView(key, value, cost, creationTime, expirationTime, hits, lastAccessTime, lastStoredTime, lastUpdateTime, version, ttl, maxIdle)
 }

@@ -34,11 +34,8 @@ const (
 )
 
 // Adds listener for backup acks
-type clientLocalBackupListenerCodec struct{}
 
-var ClientLocalBackupListenerCodec clientLocalBackupListenerCodec
-
-func (clientLocalBackupListenerCodec) EncodeRequest() *proto.ClientMessage {
+func EncodeClientLocalBackupListenerRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -50,7 +47,7 @@ func (clientLocalBackupListenerCodec) EncodeRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func (clientLocalBackupListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeClientLocalBackupListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

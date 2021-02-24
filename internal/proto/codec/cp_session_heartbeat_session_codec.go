@@ -29,11 +29,8 @@ const (
 
 // Commits a heartbeat for the given session on the given cP group and
 // extends its session expiration time.
-type cpsessionHeartbeatSessionCodec struct{}
 
-var CPSessionHeartbeatSessionCodec cpsessionHeartbeatSessionCodec
-
-func (cpsessionHeartbeatSessionCodec) EncodeRequest(groupId proto.RaftGroupId, sessionId int64) *proto.ClientMessage {
+func EncodeCPSessionHeartbeatSessionRequest(groupId proto.RaftGroupId, sessionId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,7 +40,7 @@ func (cpsessionHeartbeatSessionCodec) EncodeRequest(groupId proto.RaftGroupId, s
 	clientMessage.SetMessageType(CPSessionHeartbeatSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
+	EncodeRaftGroupId(clientMessage, groupId)
 
 	return clientMessage
 }

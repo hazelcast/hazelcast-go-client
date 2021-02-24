@@ -32,11 +32,8 @@ const (
 // constraints) accept without blocking, or Integer.MAX_VALUE if there is no intrinsic limit. Note that you cannot
 // always tell if an attempt to insert an element will succeed by inspecting remainingCapacity because it may be
 // the case that another thread is about to insert or remove an element.
-type queueRemainingCapacityCodec struct{}
 
-var QueueRemainingCapacityCodec queueRemainingCapacityCodec
-
-func (queueRemainingCapacityCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeQueueRemainingCapacityRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -45,12 +42,12 @@ func (queueRemainingCapacityCodec) EncodeRequest(name string) *proto.ClientMessa
 	clientMessage.SetMessageType(QueueRemainingCapacityCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (queueRemainingCapacityCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeQueueRemainingCapacityResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

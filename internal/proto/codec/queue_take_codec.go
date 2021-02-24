@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
-type queueTakeCodec struct{}
 
-var QueueTakeCodec queueTakeCodec
-
-func (queueTakeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeQueueTakeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,12 +38,12 @@ func (queueTakeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(QueueTakeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (queueTakeCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeQueueTakeResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

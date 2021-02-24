@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 )
 
 // Removes from this list all of its elements that are contained in the specified collection (optional operation).
-type listCompareAndRemoveAllCodec struct{}
 
-var ListCompareAndRemoveAllCodec listCompareAndRemoveAllCodec
-
-func (listCompareAndRemoveAllCodec) EncodeRequest(name string, values []serialization.Data) *proto.ClientMessage {
+func EncodeListCompareAndRemoveAllRequest(name string, values []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,13 +40,13 @@ func (listCompareAndRemoveAllCodec) EncodeRequest(name string, values []serializ
 	clientMessage.SetMessageType(ListCompareAndRemoveAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, values)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, values)
 
 	return clientMessage
 }
 
-func (listCompareAndRemoveAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeListCompareAndRemoveAllResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

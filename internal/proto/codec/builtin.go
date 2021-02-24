@@ -49,15 +49,15 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 	if strings.TrimSpace(value) == "" {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
-		StringCodec.Encode(message, value)
+		EncodeString(message, value)
 	}
 }
 
-func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options config.BitmapIndexOptions) {
+func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options *config.BitmapIndexOptions) {
 	if options == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
-		BitmapIndexOptionsCodec.Encode(message, options)
+		EncodeBitmapIndexOptions(message, options)
 	}
 }
 
@@ -65,7 +65,7 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data serial
 	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
-		DataCodec.Encode(message, data)
+		EncodeData(message, data)
 	}
 }
 
@@ -73,28 +73,29 @@ func (codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return DataCodec.Decode(frameIterator)
+	return DecodeData(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) core.Address {
+func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *proto.Address {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return AddressCodec.Decode(frameIterator)
+	addr := DecodeAddress(frameIterator)
+	return &addr
 }
 
 func (codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return LongArrayCodec.Decode(frameIterator)
+	return DecodeLongArray(frameIterator)
 }
 
 func (codecUtil) DecodeNullableForString(frameIterator *proto.ForwardFrameIterator) string {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return ""
 	}
-	return StringCodec.Decode(frameIterator)
+	return DecodeString(frameIterator)
 }
 
 func (codecUtil) NextFrameIsDataStructureEndFrame(frameIterator *proto.ForwardFrameIterator) bool {
@@ -109,45 +110,35 @@ func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator)
 	return isNullFrame
 }
 
-func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) config.BitmapIndexOptions {
+func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) *config.BitmapIndexOptions {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()
 	}
-	return BitmapIndexOptionsCodec.Decode(frameIterator)
+	return DecodeBitmapIndexOptions(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) core.SimpleEntryView {
+func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *core.SimpleEntryView {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()
 	}
-	return SimpleEntryViewCodec.Decode(frameIterator)
+	return DecodeSimpleEntryView(frameIterator)
 }
 
-// ByteArrayCodec
-type byteArrayCodec struct{}
-
-var ByteArrayCodec byteArrayCodec
-
-func (byteArrayCodec) Encode(message *proto.ClientMessage, value []byte) {
+func EncodeByteArray(message *proto.ClientMessage, value []byte) {
 	message.AddFrame(proto.NewFrame(value))
 }
 
-func (byteArrayCodec) Decode(frameIterator *proto.ForwardFrameIterator) []byte {
+func DecodeByteArray(frameIterator *proto.ForwardFrameIterator) []byte {
 	return frameIterator.Next().Content
 }
 
-// DataCodec
-type dataCodec struct{}
-
-var DataCodec dataCodec
-
-func (dataCodec) Encode(message *proto.ClientMessage, value interface{}) {
+func EncodeData(message *proto.ClientMessage, value interface{}) {
 	message.AddFrame(proto.NewFrame(value.(serialization.Data).ToByteArray()))
 }
 
-func (dataCodec) EncodeNullable(message *proto.ClientMessage, data serialization.Data) {
+func EncodeNullableData(message *proto.ClientMessage, data serialization.Data) {
 	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
@@ -155,23 +146,18 @@ func (dataCodec) EncodeNullable(message *proto.ClientMessage, data serialization
 	}
 }
 
-func (dataCodec) Decode(frameIterator *proto.ForwardFrameIterator) serialization.Data {
+func DecodeData(frameIterator *proto.ForwardFrameIterator) serialization.Data {
 	return spi.NewData(frameIterator.Next().Content)
 }
 
-func (dataCodec) DecodeNullable(frameIterator *proto.ForwardFrameIterator) serialization.Data {
+func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) serialization.Data {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return DataCodec.Decode(frameIterator)
+	return DecodeData(frameIterator)
 }
 
-//EntryListCodec
-type entryListCodec struct{}
-
-var EntryListCodec entryListCodec
-
-func (entryListCodec) Encode(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
+func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
 		keyEncoder(message, value.Key())
@@ -180,52 +166,52 @@ func (entryListCodec) Encode(message *proto.ClientMessage, entries []proto.Pair,
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (entryListCodec) EncodeForStringAndString(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		StringCodec.Encode(message, value.Key())
-		StringCodec.Encode(message, value.Value())
+		EncodeString(message, value.Key())
+		EncodeString(message, value.Value())
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (entryListCodec) EncodeForStringAndByteArray(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		StringCodec.Encode(message, value.Key())
-		ByteArrayCodec.Encode(message, value.Value().([]byte))
+		EncodeString(message, value.Key())
+		EncodeByteArray(message, value.Value().([]byte))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 
 }
 
-func (entryListCodec) EncodeForDataAndData(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		DataCodec.Encode(message, value.Key())
-		DataCodec.Encode(message, value.Value())
+		EncodeData(message, value.Key())
+		EncodeData(message, value.Value())
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (entryListCodec) EncodeForDataAndListData(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeEntryListForDataAndListData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		DataCodec.Encode(message, value.Key())
-		ListDataCodec.Encode(message, value.Value().([]serialization.Data))
+		EncodeData(message, value.Key())
+		EncodeListData(message, value.Value().([]serialization.Data))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (entryListCodec) EncodeNullable(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
+func EncodeNullableEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
 	if len(entries) == 0 {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
-		EntryListCodec.Encode(message, entries, keyEncoder, valueEncoder)
+		EncodeEntryList(message, entries, keyEncoder, valueEncoder)
 	}
 }
 
-func (entryListCodec) Decode(frameIterator *proto.ForwardFrameIterator, keyDecoder, valueDecoder Decoder) []proto.Pair {
+func DecodeEntryList(frameIterator *proto.ForwardFrameIterator, keyDecoder, valueDecoder Decoder) []proto.Pair {
 	result := make([]proto.Pair, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
@@ -237,43 +223,38 @@ func (entryListCodec) Decode(frameIterator *proto.ForwardFrameIterator, keyDecod
 	return result
 }
 
-func (entryListCodec) DecodeNullable(frameIterator *proto.ForwardFrameIterator, keyDecoder, valueDecoder Decoder) []proto.Pair {
+func DecodeNullableEntryList(frameIterator *proto.ForwardFrameIterator, keyDecoder, valueDecoder Decoder) []proto.Pair {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return EntryListCodec.Decode(frameIterator, keyDecoder, valueDecoder)
+	return DecodeEntryList(frameIterator, keyDecoder, valueDecoder)
 }
 
-func (entryListCodec) DecodeForStringAndEntryListIntegerLong(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+func DecodeEntryListForStringAndEntryListIntegerLong(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	result := make([]proto.Pair, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		key := StringCodec.Decode(frameIterator)
-		value := EntryListIntegerLongCodec.Decode(frameIterator)
+		key := DecodeString(frameIterator)
+		value := DecodeEntryListIntegerLong(frameIterator)
 		result = append(result, proto.NewPair(key, value))
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (entryListCodec) DecodeForDataAndData(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	result := make([]proto.Pair, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		key := DataCodec.Decode(frameIterator)
-		value := DataCodec.Decode(frameIterator)
+		key := DecodeData(frameIterator)
+		value := DecodeData(frameIterator)
 		result = append(result, proto.NewPair(key, value))
 	}
 	frameIterator.Next()
 	return result
 }
 
-//EntryListIntegerIntegerCodec
-type entryListIntegerIntegerCodec struct{}
-
-var EntryListIntegerIntegerCodec entryListIntegerIntegerCodec
-
-func (entryListIntegerIntegerCodec) Encode(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeListIntegerIntegerInteger(message *proto.ClientMessage, entries []proto.Pair) {
 	entryCount := len(entries)
 	frame := proto.NewFrame(make([]byte, entryCount*proto.EntrySizeInBytes))
 	for i := 0; i < entryCount; i++ {
@@ -283,7 +264,7 @@ func (entryListIntegerIntegerCodec) Encode(message *proto.ClientMessage, entries
 	message.AddFrame(frame)
 }
 
-func (entryListIntegerIntegerCodec) Decode(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+func DecodeListIntegerIntegerInteger(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	frame := frameIterator.Next()
 	itemCount := len(frame.Content) / proto.EntrySizeInBytes
 	result := make([]proto.Pair, itemCount)
@@ -295,12 +276,7 @@ func (entryListIntegerIntegerCodec) Decode(frameIterator *proto.ForwardFrameIter
 	return result
 }
 
-// EntryListUUIDLongCodec
-type entryListUUIDLongCodec struct{}
-
-var EntryListUUIDLongCodec entryListUUIDLongCodec
-
-func (entryListUUIDLongCodec) Encode(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair) {
 	size := len(entries)
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
@@ -313,7 +289,20 @@ func (entryListUUIDLongCodec) Encode(message *proto.ClientMessage, entries []pro
 	message.AddFrame(newFrame)
 }
 
-func (entryListUUIDLongCodec) Decode(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+func EncodeEntryListIntegerInteger(message *proto.ClientMessage, entries []proto.Pair) {
+	size := len(entries)
+	content := make([]byte, size*proto.EntrySizeInBytes)
+	newFrame := proto.NewFrame(content)
+	for i, entry := range entries {
+		key := entry.Key().(int32)
+		value := entry.Value().(int32)
+		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
+		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
+	}
+	message.AddFrame(newFrame)
+}
+
+func DecodeEntryListUUIDLong(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	nextFrame := frameIterator.Next()
 	itemCount := len(nextFrame.Content) / proto.EntrySizeInBytes
 	content := make([]proto.Pair, itemCount)
@@ -325,12 +314,19 @@ func (entryListUUIDLongCodec) Decode(frameIterator *proto.ForwardFrameIterator) 
 	return content
 }
 
-// EntryListUUIDListIntegerCodec
-type entryListUUIDListIntegerCodec struct{}
+func DecodeEntryListIntegerInteger(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+	nextFrame := frameIterator.Next()
+	itemCount := len(nextFrame.Content) / proto.EntrySizeInBytes
+	content := make([]proto.Pair, itemCount)
+	for i := 0; i < itemCount; i++ {
+		key := FixSizedTypesCodec.DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
+		value := FixSizedTypesCodec.DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		content[i] = proto.NewPair(key, value)
+	}
+	return content
+}
 
-var EntryListUUIDListIntegerCodec entryListUUIDListIntegerCodec
-
-func (entryListUUIDListIntegerCodec) Encode(message *proto.ClientMessage, entries []proto.Pair) {
+func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []proto.Pair) {
 	entryCount := len(entries)
 	uuids := make([]core.UUID, entryCount)
 	message.AddFrame(proto.BeginFrame)
@@ -339,15 +335,15 @@ func (entryListUUIDListIntegerCodec) Encode(message *proto.ClientMessage, entrie
 		key := entry.Key().(core.UUID)
 		value := entry.Value().([]int32)
 		uuids[i] = key
-		ListIntegerCodec.Encode(message, value)
+		EncodeListInteger(message, value)
 	}
 	message.AddFrame(proto.EndFrame)
-	ListUUIDCodec.Encode(message, uuids)
+	EncodeListUUID(message, uuids)
 }
 
-func (entryListUUIDListIntegerCodec) Decode(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	values := ListMultiFrameCodec.DecodeWithListInteger(frameIterator)
-	keys := ListUUIDCodec.Decode(frameIterator)
+func DecodeEntryListUUIDListInteger(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+	values := DecodeListMultiFrameWithListInteger(frameIterator)
+	keys := DecodeListUUID(frameIterator)
 	keySize := len(keys)
 	result := make([]proto.Pair, keySize)
 	for i := 0; i < keySize; i++ {
@@ -356,11 +352,7 @@ func (entryListUUIDListIntegerCodec) Decode(frameIterator *proto.ForwardFrameIte
 	return result
 }
 
-type entryListIntegerUUIDCodec struct{}
-
-var EntryListIntegerUUIDCodec entryListIntegerUUIDCodec
-
-func (entryListIntegerUUIDCodec) Decode(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+func DecodeEntryListIntegerUUID(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	frame := frameIterator.Next()
 	entryCount := len(frame.Content) / proto.EntrySizeInBytes
 	result := make([]proto.Pair, entryCount)
@@ -372,12 +364,7 @@ func (entryListIntegerUUIDCodec) Decode(frameIterator *proto.ForwardFrameIterato
 	return result
 }
 
-// entryListIntegerUUIDCodec
-type entryListIntegerLongCodec struct{}
-
-var EntryListIntegerLongCodec entryListIntegerLongCodec
-
-func (entryListIntegerLongCodec) Decode(iterator *proto.ForwardFrameIterator) []proto.Pair {
+func DecodeEntryListIntegerLong(iterator *proto.ForwardFrameIterator) []proto.Pair {
 	frame := iterator.Next()
 	entryCount := len(frame.Content) / proto.EntrySizeInBytes
 	result := make([]proto.Pair, entryCount)
@@ -455,12 +442,7 @@ func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) core.UUID {
 	return core.NewUUIDWith(mostSignificant, leastSignificant)
 }
 
-// ListIntegerCodec
-type listIntegerCodec struct{}
-
-var ListIntegerCodec listIntegerCodec
-
-func (listIntegerCodec) Encode(message *proto.ClientMessage, entries []int32) {
+func EncodeListInteger(message *proto.ClientMessage, entries []int32) {
 	itemCount := len(entries)
 	content := make([]byte, itemCount*proto.IntSizeInBytes)
 	newFrame := proto.NewFrame(content)
@@ -470,7 +452,7 @@ func (listIntegerCodec) Encode(message *proto.ClientMessage, entries []int32) {
 	message.AddFrame(newFrame)
 }
 
-func (listIntegerCodec) Decode(frameIterator *proto.ForwardFrameIterator) []int32 {
+func DecodeListInteger(frameIterator *proto.ForwardFrameIterator) []int32 {
 	frame := frameIterator.Next()
 	itemCount := len(frame.Content) / proto.IntSizeInBytes
 	result := make([]int32, itemCount)
@@ -480,12 +462,7 @@ func (listIntegerCodec) Decode(frameIterator *proto.ForwardFrameIterator) []int3
 	return result
 }
 
-// ListLongCodec
-type listLongCodec struct{}
-
-var ListLongCodec listLongCodec
-
-func (listLongCodec) Encode(message *proto.ClientMessage, entries []int64) {
+func EncodeListLong(message *proto.ClientMessage, entries []int64) {
 	itemCount := len(entries)
 	frame := proto.NewFrame(make([]byte, itemCount*proto.LongSizeInBytes))
 	for i := 0; i < itemCount; i++ {
@@ -494,7 +471,7 @@ func (listLongCodec) Encode(message *proto.ClientMessage, entries []int64) {
 	message.AddFrame(frame)
 }
 
-func (listLongCodec) Decode(frameIterator *proto.ForwardFrameIterator) []int64 {
+func DecodeListLong(frameIterator *proto.ForwardFrameIterator) []int64 {
 	frame := frameIterator.Next()
 	itemCount := len(frame.Content) / proto.LongSizeInBytes
 	result := make([]int64, itemCount)
@@ -504,12 +481,7 @@ func (listLongCodec) Decode(frameIterator *proto.ForwardFrameIterator) []int64 {
 	return result
 }
 
-//ListMultiFrameCodec
-type listMultiFrameCodec struct{}
-
-var ListMultiFrameCodec listMultiFrameCodec
-
-func (listMultiFrameCodec) Encode(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
+func EncodeListMultiFrame(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < len(values); i++ {
 		encoder(message, values[i])
@@ -517,31 +489,31 @@ func (listMultiFrameCodec) Encode(message *proto.ClientMessage, values []seriali
 	message.AddFrame(proto.EndFrame)
 }
 
-func (listMultiFrameCodec) EncodeForData(message *proto.ClientMessage, values []serialization.Data) {
+func EncodeListMultiFrameForData(message *proto.ClientMessage, values []serialization.Data) {
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < len(values); i++ {
-		DataCodec.Encode(message, values[i])
+		EncodeData(message, values[i])
 	}
 	message.AddFrame(proto.EndFrame)
 }
 
-func (c listMultiFrameCodec) EncodeForString(message *proto.ClientMessage, values []string) {
+func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string) {
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < len(values); i++ {
-		StringCodec.Encode(message, values[i])
+		EncodeString(message, values[i])
 	}
 	message.AddFrame(proto.EndFrame)
 }
 
-func (c listMultiFrameCodec) EncodeForStackTraceElement(message *proto.ClientMessage, values []proto.StackTraceElement) {
+func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []proto.StackTraceElement) {
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < len(values); i++ {
-		StackTraceElementCodec.Encode(message, values[i])
+		EncodeStackTraceElement(message, values[i])
 	}
 	message.AddFrame(proto.EndFrame)
 }
 
-func (listMultiFrameCodec) EncodeContainsNullable(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
+func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < len(values); i++ {
 		if values[i] == nil {
@@ -553,107 +525,97 @@ func (listMultiFrameCodec) EncodeContainsNullable(message *proto.ClientMessage, 
 	message.AddFrame(proto.EndFrame)
 }
 
-func (listMultiFrameCodec) EncodeNullable(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
+func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
 	if len(values) == 0 {
 		message.AddFrame(proto.NullFrame)
 	} else {
-		ListMultiFrameCodec.Encode(message, values, encoder)
+		EncodeListMultiFrame(message, values, encoder)
 	}
 }
 
-func (listMultiFrameCodec) DecodeForData(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
+func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
 	result := make([]serialization.Data, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, DataCodec.Decode(frameIterator))
+		result = append(result, DecodeData(frameIterator))
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (c listMultiFrameCodec) DecodeWithListInteger(frameIterator *proto.ForwardFrameIterator) []int32 {
+func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterator) []int32 {
 	result := make([]int32, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, ListIntegerCodec.Decode(frameIterator)...)
+		result = append(result, DecodeListInteger(frameIterator)...)
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (c listMultiFrameCodec) DecodeForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []proto.DistributedObjectInfo {
+func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []proto.DistributedObjectInfo {
 	result := make([]proto.DistributedObjectInfo, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, DistributedObjectInfoCodec.Decode(frameIterator))
+		result = append(result, DecodeDistributedObjectInfo(frameIterator))
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (c listMultiFrameCodec) DecodeForMemberInfo(frameIterator *proto.ForwardFrameIterator) []proto.MemberInfo {
+func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator) []proto.MemberInfo {
 	result := make([]proto.MemberInfo, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, MemberInfoCodec.Decode(frameIterator))
+		result = append(result, DecodeMemberInfo(frameIterator))
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (listMultiFrameCodec) DecodeForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []proto.StackTraceElement {
+func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []proto.StackTraceElement {
 	result := make([]proto.StackTraceElement, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, StackTraceElementCodec.Decode(frameIterator))
+		result = append(result, DecodeStackTraceElement(frameIterator))
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (listMultiFrameCodec) DecodeForString(frameIterator *proto.ForwardFrameIterator) []string {
+func DecodeListMultiFrameForString(frameIterator *proto.ForwardFrameIterator) []string {
 	result := make([]string, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, StringCodec.Decode(frameIterator))
+		result = append(result, DecodeString(frameIterator))
 	}
 	frameIterator.Next()
 	return result
 }
 
-func (listMultiFrameCodec) DecodeForDataContainsNullable(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
+func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
 	result := make([]serialization.Data, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 			result = append(result, nil)
 		} else {
-			result = append(result, DataCodec.Decode(frameIterator))
+			result = append(result, DecodeData(frameIterator))
 		}
 	}
 	frameIterator.Next()
 	return result
 }
 
-// listDataCodec
-type listDataCodec struct{}
-
-var ListDataCodec listDataCodec
-
-func (listDataCodec) Encode(message *proto.ClientMessage, entries []serialization.Data) {
-	ListMultiFrameCodec.EncodeForData(message, entries)
+func EncodeListData(message *proto.ClientMessage, entries []serialization.Data) {
+	EncodeListMultiFrameForData(message, entries)
 }
 
-func (listDataCodec) Decode(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+func DecodeListData(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
+	return DecodeListMultiFrameForData(frameIterator)
 }
 
-// listUUIDCodec
-type listUUIDCodec struct{}
-
-var ListUUIDCodec listUUIDCodec
-
-func (listUUIDCodec) Encode(message *proto.ClientMessage, entries []core.UUID) {
+func EncodeListUUID(message *proto.ClientMessage, entries []core.UUID) {
 	itemCount := len(entries)
 	content := make([]byte, itemCount*proto.UUIDSizeInBytes)
 	newFrame := proto.NewFrame(content)
@@ -663,7 +625,7 @@ func (listUUIDCodec) Encode(message *proto.ClientMessage, entries []core.UUID) {
 	message.AddFrame(newFrame)
 }
 
-func (listUUIDCodec) Decode(frameIterator *proto.ForwardFrameIterator) []core.UUID {
+func DecodeListUUID(frameIterator *proto.ForwardFrameIterator) []core.UUID {
 	frame := frameIterator.Next()
 	itemCount := len(frame.Content) / proto.UUIDSizeInBytes
 	result := make([]core.UUID, itemCount)
@@ -673,12 +635,7 @@ func (listUUIDCodec) Decode(frameIterator *proto.ForwardFrameIterator) []core.UU
 	return result
 }
 
-// LongArrayCodec
-type longArrayCodec struct{}
-
-var LongArrayCodec longArrayCodec
-
-func (longArrayCodec) Encode(message *proto.ClientMessage, entries []int64) {
+func EncodeLongArray(message *proto.ClientMessage, entries []int64) {
 	itemCount := len(entries)
 	frame := proto.NewFrame(make([]byte, itemCount*proto.LongSizeInBytes))
 	for i := 0; i < itemCount; i++ {
@@ -687,7 +644,7 @@ func (longArrayCodec) Encode(message *proto.ClientMessage, entries []int64) {
 	message.AddFrame(frame)
 }
 
-func (longArrayCodec) Decode(frameIterator *proto.ForwardFrameIterator) []int64 {
+func DecodeLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
 	frame := frameIterator.Next()
 	itemCount := len(frame.Content) / proto.LongSizeInBytes
 	result := make([]int64, itemCount)
@@ -697,66 +654,52 @@ func (longArrayCodec) Decode(frameIterator *proto.ForwardFrameIterator) []int64 
 	return result
 }
 
-// MapCodec
-type mapCodec struct{}
-
-var MapCodec mapCodec
-
-func (mapCodec) EncodeForStringAndString(message *proto.ClientMessage, values map[string]string) {
+func EncodeMapForStringAndString(message *proto.ClientMessage, values map[string]string) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {
-		StringCodec.Encode(message, key)
-		StringCodec.Encode(message, value)
+		EncodeString(message, key)
+		EncodeString(message, value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (mapCodec) EncodeForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[proto.EndpointQualifier]core.Address) {
+func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[proto.EndpointQualifier]proto.Address) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {
-		EndpointQualifierCodec.Encode(message, key)
-		AddressCodec.Encode(message, value)
+		EncodeEndpointQualifier(message, key)
+		EncodeAddress(message, value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func (c mapCodec) DecodeForStringAndString(iterator *proto.ForwardFrameIterator) map[string]string {
+func DecodeMapForStringAndString(iterator *proto.ForwardFrameIterator) map[string]string {
 	result := map[string]string{}
-
 	iterator.Next()
 	for !iterator.PeekNext().IsEndFrame() {
-		key := StringCodec.Decode(iterator)
-		value := StringCodec.Decode(iterator)
+		key := DecodeString(iterator)
+		value := DecodeString(iterator)
 		result[key] = value
 	}
 	iterator.Next()
-
 	return result
 }
 
-func (c mapCodec) DecodeForEndpointQualifierAndAddress(iterator *proto.ForwardFrameIterator) interface{} {
-	result := map[proto.EndpointQualifier]core.Address{}
-
+func DecodeMapForEndpointQualifierAndAddress(iterator *proto.ForwardFrameIterator) interface{} {
+	result := map[proto.EndpointQualifier]proto.Address{}
 	iterator.Next()
 	for !iterator.PeekNext().IsEndFrame() {
-		key := EndpointQualifierCodec.Decode(iterator)
-		value := AddressCodec.Decode(iterator)
+		key := DecodeEndpointQualifier(iterator)
+		value := DecodeAddress(iterator)
 		result[key] = value
 	}
 	iterator.Next()
-
 	return result
 }
 
-// StringCodec
-type stringCodec struct{}
-
-var StringCodec stringCodec
-
-func (stringCodec) Encode(message *proto.ClientMessage, value interface{}) {
+func EncodeString(message *proto.ClientMessage, value interface{}) {
 	message.AddFrame(proto.NewFrame([]byte(value.(string))))
 }
 
-func (stringCodec) Decode(frameIterator *proto.ForwardFrameIterator) string {
+func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 	return string(frameIterator.Next().Content)
 }

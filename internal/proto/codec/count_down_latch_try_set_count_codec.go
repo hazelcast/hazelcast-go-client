@@ -32,11 +32,8 @@ const (
 // Sets the count to the given value if the current count is zero.
 // If the count is not zero, then this method does nothing
 // and returns false
-type countdownlatchTrySetCountCodec struct{}
 
-var CountDownLatchTrySetCountCodec countdownlatchTrySetCountCodec
-
-func (countdownlatchTrySetCountCodec) EncodeRequest(groupId proto.RaftGroupId, name string, count int32) *proto.ClientMessage {
+func EncodeCountDownLatchTrySetCountRequest(groupId proto.RaftGroupId, name string, count int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,13 +43,13 @@ func (countdownlatchTrySetCountCodec) EncodeRequest(groupId proto.RaftGroupId, n
 	clientMessage.SetMessageType(CountDownLatchTrySetCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (countdownlatchTrySetCountCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeCountDownLatchTrySetCountResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

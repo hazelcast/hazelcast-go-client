@@ -28,11 +28,8 @@ const (
 )
 
 // Applies a function on the value, the actual stored value will not change
-type atomiclongApplyCodec struct{}
 
-var AtomicLongApplyCodec atomiclongApplyCodec
-
-func (atomiclongApplyCodec) EncodeRequest(groupId proto.RaftGroupId, name string, function serialization.Data) *proto.ClientMessage {
+func EncodeAtomicLongApplyRequest(groupId proto.RaftGroupId, name string, function serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -41,14 +38,14 @@ func (atomiclongApplyCodec) EncodeRequest(groupId proto.RaftGroupId, name string
 	clientMessage.SetMessageType(AtomicLongApplyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, function)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, function)
 
 	return clientMessage
 }
 
-func (atomiclongApplyCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeAtomicLongApplyResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -42,11 +41,8 @@ const (
 // use the returned sequence as initial  id. On the reading side, this dummy item should be discard. Please keep in mind that
 // this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
 // to find that item.
-type ringbufferAddCodec struct{}
 
-var RingbufferAddCodec ringbufferAddCodec
-
-func (ringbufferAddCodec) EncodeRequest(name string, overflowPolicy int32, value serialization.Data) *proto.ClientMessage {
+func EncodeRingbufferAddRequest(name string, overflowPolicy int32, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -56,13 +52,13 @@ func (ringbufferAddCodec) EncodeRequest(name string, overflowPolicy int32, value
 	clientMessage.SetMessageType(RingbufferAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (ringbufferAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferAddResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

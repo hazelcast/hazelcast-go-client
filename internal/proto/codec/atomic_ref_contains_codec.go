@@ -30,11 +30,8 @@ const (
 )
 
 // Checks if the reference contains the value.
-type atomicrefContainsCodec struct{}
 
-var AtomicRefContainsCodec atomicrefContainsCodec
-
-func (atomicrefContainsCodec) EncodeRequest(groupId proto.RaftGroupId, name string, value serialization.Data) *proto.ClientMessage {
+func EncodeAtomicRefContainsRequest(groupId proto.RaftGroupId, name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,14 +40,14 @@ func (atomicrefContainsCodec) EncodeRequest(groupId proto.RaftGroupId, name stri
 	clientMessage.SetMessageType(AtomicRefContainsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
-	CodecUtil.EncodeNullable(clientMessage, value, DataCodec.Encode)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, value, EncodeData)
 
 	return clientMessage
 }
 
-func (atomicrefContainsCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeAtomicRefContainsResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

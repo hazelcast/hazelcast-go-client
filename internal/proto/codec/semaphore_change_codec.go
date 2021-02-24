@@ -34,11 +34,8 @@ const (
 )
 
 // Increases or decreases the number of permits by the given value.
-type semaphoreChangeCodec struct{}
 
-var SemaphoreChangeCodec semaphoreChangeCodec
-
-func (semaphoreChangeCodec) EncodeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID, permits int32) *proto.ClientMessage {
+func EncodeSemaphoreChangeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID, permits int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -51,13 +48,13 @@ func (semaphoreChangeCodec) EncodeRequest(groupId proto.RaftGroupId, name string
 	clientMessage.SetMessageType(SemaphoreChangeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (semaphoreChangeCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSemaphoreChangeResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
