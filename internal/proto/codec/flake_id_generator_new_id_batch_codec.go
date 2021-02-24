@@ -32,11 +32,8 @@ const (
 )
 
 // Fetches a new batch of ids for the given flake id generator.
-type flakeidgeneratorNewIdBatchCodec struct{}
 
-var FlakeIdGeneratorNewIdBatchCodec flakeidgeneratorNewIdBatchCodec
-
-func (flakeidgeneratorNewIdBatchCodec) EncodeRequest(name string, batchSize int32) *proto.ClientMessage {
+func EncodeFlakeIdGeneratorNewIdBatchRequest(name string, batchSize int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,7 +43,7 @@ func (flakeidgeneratorNewIdBatchCodec) EncodeRequest(name string, batchSize int3
 	clientMessage.SetMessageType(FlakeIdGeneratorNewIdBatchCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

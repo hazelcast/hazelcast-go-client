@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Removes all entries which match with the supplied predicate
-type mapRemoveAllCodec struct{}
 
-var MapRemoveAllCodec mapRemoveAllCodec
-
-func (mapRemoveAllCodec) EncodeRequest(name string, predicate serialization.Data) *proto.ClientMessage {
+func EncodeMapRemoveAllRequest(name string, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,8 +38,8 @@ func (mapRemoveAllCodec) EncodeRequest(name string, predicate serialization.Data
 	clientMessage.SetMessageType(MapRemoveAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -38,11 +37,8 @@ const (
 // released.If the lock is not available, then the current thread becomes disabled for thread scheduling
 // purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
 // the specified waiting time elapses.
-type mapTryLockCodec struct{}
 
-var MapTryLockCodec mapTryLockCodec
-
-func (mapTryLockCodec) EncodeRequest(name string, key serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *proto.ClientMessage {
+func EncodeMapTryLockRequest(name string, key serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -55,13 +51,13 @@ func (mapTryLockCodec) EncodeRequest(name string, key serialization.Data, thread
 	clientMessage.SetMessageType(MapTryLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (mapTryLockCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapTryLockResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

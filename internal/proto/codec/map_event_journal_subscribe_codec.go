@@ -32,11 +32,8 @@ const (
 // Performs the initial subscription to the map event journal.
 // This includes retrieving the event journal sequences of the
 // oldest and newest event in the journal.
-type mapEventJournalSubscribeCodec struct{}
 
-var MapEventJournalSubscribeCodec mapEventJournalSubscribeCodec
-
-func (mapEventJournalSubscribeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapEventJournalSubscribeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,7 +42,7 @@ func (mapEventJournalSubscribeCodec) EncodeRequest(name string) *proto.ClientMes
 	clientMessage.SetMessageType(MapEventJournalSubscribeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

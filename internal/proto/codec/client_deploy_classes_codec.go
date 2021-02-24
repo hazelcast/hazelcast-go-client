@@ -29,11 +29,8 @@ const (
 // Deploys the list of classes to cluster
 // Each item is a Map.Entry<String, byte[]> in the list.
 // key of entry is full class name, and byte[] is the class definition.
-type clientDeployClassesCodec struct{}
 
-var ClientDeployClassesCodec clientDeployClassesCodec
-
-func (clientDeployClassesCodec) EncodeRequest(classDefinitions []proto.Pair) *proto.ClientMessage {
+func EncodeClientDeployClassesRequest(classDefinitions []proto.Pair) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,7 +39,7 @@ func (clientDeployClassesCodec) EncodeRequest(classDefinitions []proto.Pair) *pr
 	clientMessage.SetMessageType(ClientDeployClassesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	EntryListCodec.EncodeForStringAndByteArray(clientMessage, classDefinitions)
+	EncodeEntryListForStringAndByteArray(clientMessage, classDefinitions)
 
 	return clientMessage
 }

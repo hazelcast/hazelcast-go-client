@@ -27,11 +27,8 @@ const (
 )
 
 // Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this proxy.
-type clientDestroyProxyCodec struct{}
 
-var ClientDestroyProxyCodec clientDestroyProxyCodec
-
-func (clientDestroyProxyCodec) EncodeRequest(name string, serviceName string) *proto.ClientMessage {
+func EncodeClientDestroyProxyRequest(name string, serviceName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -40,8 +37,8 @@ func (clientDestroyProxyCodec) EncodeRequest(name string, serviceName string) *p
 	clientMessage.SetMessageType(ClientDestroyProxyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	StringCodec.Encode(clientMessage, serviceName)
+	EncodeString(clientMessage, name)
+	EncodeString(clientMessage, serviceName)
 
 	return clientMessage
 }

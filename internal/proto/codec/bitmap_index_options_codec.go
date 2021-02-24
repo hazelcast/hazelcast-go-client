@@ -16,7 +16,6 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -25,29 +24,30 @@ const (
 	BitmapIndexOptionsCodecUniqueKeyTransformationInitialFrameSize = BitmapIndexOptionsCodecUniqueKeyTransformationFieldOffset + proto.IntSizeInBytes
 )
 
-type bitmapindexoptionsCodec struct{}
+/*
+type bitmapindexoptionsCodec struct {}
 
 var BitmapIndexOptionsCodec bitmapindexoptionsCodec
+*/
 
-func (bitmapindexoptionsCodec) Encode(clientMessage *proto.ClientMessage, bitmapIndexOptions config.BitmapIndexOptions) {
+func EncodeBitmapIndexOptions(clientMessage *proto.ClientMessage, bitmapIndexOptions config.BitmapIndexOptions) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, BitmapIndexOptionsCodecUniqueKeyTransformationInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, BitmapIndexOptionsCodecUniqueKeyTransformationFieldOffset, bitmapIndexOptions.GetUniqueKeyTransformation())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, BitmapIndexOptionsCodecUniqueKeyTransformationFieldOffset, int32(bitmapIndexOptions.UniqueKeyTransformation()))
 	clientMessage.AddFrame(initialFrame)
 
-	StringCodec.Encode(clientMessage, bitmapIndexOptions.GetUniqueKey())
+	EncodeString(clientMessage, bitmapIndexOptions.UniqueKey())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (bitmapindexoptionsCodec) Decode(frameIterator *proto.ForwardFrameIterator) config.BitmapIndexOptions {
+func DecodeBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) config.BitmapIndexOptions {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
 	uniqueKeyTransformation := FixSizedTypesCodec.DecodeInt(initialFrame.Content, BitmapIndexOptionsCodecUniqueKeyTransformationFieldOffset)
 
-	uniqueKey := StringCodec.Decode(frameIterator)
+	uniqueKey := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return config.NewBitmapIndexOptions(uniqueKey, uniqueKeyTransformation)
 }

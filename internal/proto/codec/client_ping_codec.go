@@ -27,15 +27,12 @@ const (
 )
 
 // Sends a ping to the given connection.
-type clientPingCodec struct{}
 
-var ClientPingCodec clientPingCodec
-
-func (clientPingCodec) EncodeRequest() *proto.ClientMessage {
+func EncodeClientPingRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ClientPingCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrame(make([]byte, ClientPingCodecRequestInitialFrameSize))
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientPingCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

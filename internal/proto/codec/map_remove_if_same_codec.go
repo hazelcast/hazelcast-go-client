@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 )
 
 // Removes the mapping for a key from this map if existing value equal to the this value
-type mapRemoveIfSameCodec struct{}
 
-var MapRemoveIfSameCodec mapRemoveIfSameCodec
-
-func (mapRemoveIfSameCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapRemoveIfSameRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,14 +42,14 @@ func (mapRemoveIfSameCodec) EncodeRequest(name string, key serialization.Data, v
 	clientMessage.SetMessageType(MapRemoveIfSameCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapRemoveIfSameCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapRemoveIfSameResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -37,11 +37,8 @@ const (
 )
 
 // Adds a partition lost listener to the cluster.
-type clientAddPartitionLostListenerCodec struct{}
 
-var ClientAddPartitionLostListenerCodec clientAddPartitionLostListenerCodec
-
-func (clientAddPartitionLostListenerCodec) EncodeRequest(localOnly bool) *proto.ClientMessage {
+func EncodeClientAddPartitionLostListenerRequest(localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -54,7 +51,7 @@ func (clientAddPartitionLostListenerCodec) EncodeRequest(localOnly bool) *proto.
 	return clientMessage
 }
 
-func (clientAddPartitionLostListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeClientAddPartitionLostListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

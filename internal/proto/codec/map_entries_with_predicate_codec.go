@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 // runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
 // in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
 // QueryResultSizeExceededException if query result size limit is configured.
-type mapEntriesWithPredicateCodec struct{}
 
-var MapEntriesWithPredicateCodec mapEntriesWithPredicateCodec
-
-func (mapEntriesWithPredicateCodec) EncodeRequest(name string, predicate serialization.Data) *proto.ClientMessage {
+func EncodeMapEntriesWithPredicateRequest(name string, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,16 +41,16 @@ func (mapEntriesWithPredicateCodec) EncodeRequest(name string, predicate seriali
 	clientMessage.SetMessageType(MapEntriesWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
 
-func (mapEntriesWithPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.Pair {
+func DecodeMapEntriesWithPredicateResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return EntryListCodec.DecodeForDataAndData(frameIterator)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

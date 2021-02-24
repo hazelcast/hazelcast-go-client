@@ -36,15 +36,12 @@ const (
 )
 
 // Adds a cluster view listener to a connection.
-type clientAddClusterViewListenerCodec struct{}
 
-var ClientAddClusterViewListenerCodec clientAddClusterViewListenerCodec
-
-func (clientAddClusterViewListenerCodec) EncodeRequest() *proto.ClientMessage {
+func EncodeClientAddClusterViewListenerRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ClientAddClusterViewListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrame(make([]byte, ClientAddClusterViewListenerCodecRequestInitialFrameSize))
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAddClusterViewListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -58,14 +55,14 @@ func (clientAddClusterViewListenerCodec) Handle(clientMessage *proto.ClientMessa
 	if messageType == ClientAddClusterViewListenerCodecEventMembersViewMessageType {
 		initialFrame := frameIterator.Next()
 		version := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventMembersViewVersionOffset)
-		memberInfos := ListMultiFrameCodec.DecodeForMemberInfo(frameIterator)
+		memberInfos := DecodeListMultiFrameForMemberInfo(frameIterator)
 		handleMembersViewEvent(version, memberInfos)
 		return
 	}
 	if messageType == ClientAddClusterViewListenerCodecEventPartitionsViewMessageType {
 		initialFrame := frameIterator.Next()
 		version := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventPartitionsViewVersionOffset)
-		partitions := EntryListUUIDListIntegerCodec.Decode(frameIterator)
+		partitions := DecodeEntryListUUIDListInteger(frameIterator)
 		handlePartitionsViewEvent(version, partitions)
 		return
 	}

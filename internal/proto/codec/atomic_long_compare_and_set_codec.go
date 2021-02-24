@@ -32,11 +32,8 @@ const (
 
 // Atomically sets the value to the given updated value only if the current
 // value the expected value.
-type atomiclongCompareAndSetCodec struct{}
 
-var AtomicLongCompareAndSetCodec atomiclongCompareAndSetCodec
-
-func (atomiclongCompareAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, name string, expected int64, updated int64) *proto.ClientMessage {
+func EncodeAtomicLongCompareAndSetRequest(groupId proto.RaftGroupId, name string, expected int64, updated int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,13 +44,13 @@ func (atomiclongCompareAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, nam
 	clientMessage.SetMessageType(AtomicLongCompareAndSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (atomiclongCompareAndSetCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeAtomicLongCompareAndSetResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

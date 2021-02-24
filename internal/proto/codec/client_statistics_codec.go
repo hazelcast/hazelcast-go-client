@@ -34,7 +34,7 @@ const (
 // The second parameter, the clientAttribute is a String that is composed of key=value pairs separated by ','. The
 // following characters ('=' '.' ',' '\') should be escaped.
 //
-// Please note that if any client implementation can not provide the value for a statistics, the corresponding key, value
+// Please note that if any client implementation can not provide the value for statistics, the corresponding key, value
 // pair will not be presented in the statistics string. Only the ones, that the client can provide will be added.
 //
 // The third parameter, metrics is a compressed byte array containing all metrics recorded by the client.
@@ -59,6 +59,8 @@ const (
 // | Size of dictionary blob         |   4 bytes (int)    |
 // +---------------------------------+--------------------+
 // | ZLIB compressed dictionary blob |   variable size    |
+// +---------------------------------+--------------------+
+// | Number of metrics in the blob   |   4 bytes (int)    |
 // +---------------------------------+--------------------+
 // | ZLIB compressed metrics blob    |   variable size    |
 // +---------------------------------+--------------------+
@@ -124,11 +126,12 @@ const (
 // THE METRIC BLOB
 // ===============
 //
-// The compressed dictionary blob is followed by the compressed metrics blob
-// with the following layout:
+// The compressed dictionary blob is followed by the number of metrics
+// (int) present in the metrics blob.
 //
-// +------------------------------------------------+--------------------+
-// | Number of metrics                              |   4 bytes (int)    |
+// The number of metrics is followed by the compressed metrics blob with
+// the following layout:
+//
 // +------------------------------------------------+--------------------+
 // | Metrics mask                                   |   1 byte           |
 // +------------------------------------------------+--------------------+
@@ -184,11 +187,8 @@ const (
 // previous metric.
 //
 // The metrics blob constructed this way is then gets ZLIB compressed.
-type clientStatisticsCodec struct{}
 
-var ClientStatisticsCodec clientStatisticsCodec
-
-func (clientStatisticsCodec) EncodeRequest(timestamp int64, clientAttributes string, metricsBlob []byte) *proto.ClientMessage {
+func EncodeClientStatisticsRequest(timestamp int64, clientAttributes string, metricsBlob []byte) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -198,8 +198,8 @@ func (clientStatisticsCodec) EncodeRequest(timestamp int64, clientAttributes str
 	clientMessage.SetMessageType(ClientStatisticsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, clientAttributes)
-	ByteArrayCodec.Encode(clientMessage, metricsBlob)
+	EncodeString(clientMessage, clientAttributes)
+	EncodeByteArray(clientMessage, metricsBlob)
 
 	return clientMessage
 }

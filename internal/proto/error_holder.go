@@ -11,18 +11,18 @@ func NewErrorHolder(errorCode int32, className, message string, stackTraceElemen
 	return ErrorHolder{errorCode, className, message, stackTraceElements}
 }
 
-func (e ErrorHolder) GetErrorCode() int32 {
+func (e ErrorHolder) ErrorCode() int32 {
 	return e.errorCode
 }
 
-func (e ErrorHolder) GetClassName() string {
+func (e ErrorHolder) ClassName() string {
 	return e.className
 }
 
-func (e ErrorHolder) GetMessage() string {
+func (e ErrorHolder) Message() string {
 	return e.message
 }
 
-func (e ErrorHolder) GetStackTraceElements() []StackTraceElement {
+func (e ErrorHolder) StackTraceElements() []StackTraceElement {
 	return e.stackTraceElements
 }

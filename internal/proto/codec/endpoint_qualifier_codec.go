@@ -24,22 +24,24 @@ const (
 	EndpointQualifierCodecTypeInitialFrameSize = EndpointQualifierCodecTypeFieldOffset + proto.IntSizeInBytes
 )
 
-type endpointqualifierCodec struct{}
+/*
+type endpointqualifierCodec struct {}
 
 var EndpointQualifierCodec endpointqualifierCodec
+*/
 
-func (endpointqualifierCodec) Encode(clientMessage *proto.ClientMessage, endpointQualifier proto.EndpointQualifier) {
+func EncodeEndpointQualifier(clientMessage *proto.ClientMessage, endpointQualifier proto.EndpointQualifier) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, EndpointQualifierCodecTypeInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, EndpointQualifierCodecTypeFieldOffset, endpointQualifier.GetType())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, EndpointQualifierCodecTypeFieldOffset, int32(endpointQualifier.Type()))
 	clientMessage.AddFrame(initialFrame)
 
-	CodecUtil.EncodeNullableForString(clientMessage, endpointQualifier.GetIdentifier())
+	CodecUtil.EncodeNullableForString(clientMessage, endpointQualifier.Identifier())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (endpointqualifierCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.EndpointQualifier {
+func DecodeEndpointQualifier(frameIterator *proto.ForwardFrameIterator) proto.EndpointQualifier {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -47,6 +49,5 @@ func (endpointqualifierCodec) Decode(frameIterator *proto.ForwardFrameIterator) 
 
 	identifier := CodecUtil.DecodeNullableForString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewEndpointQualifier(_type, identifier)
 }

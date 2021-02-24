@@ -32,11 +32,8 @@ const (
 
 // Removes the specified item listener. If there is no such listener added before, this call does no change in the
 // cluster and returns false.
-type setRemoveListenerCodec struct{}
 
-var SetRemoveListenerCodec setRemoveListenerCodec
-
-func (setRemoveListenerCodec) EncodeRequest(name string, registrationId core.UUID) *proto.ClientMessage {
+func EncodeSetRemoveListenerRequest(name string, registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,12 +43,12 @@ func (setRemoveListenerCodec) EncodeRequest(name string, registrationId core.UUI
 	clientMessage.SetMessageType(SetRemoveListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (setRemoveListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetRemoveListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

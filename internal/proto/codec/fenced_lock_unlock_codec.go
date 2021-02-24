@@ -37,11 +37,8 @@ const (
 // If the session is closed while holding the lock, the call fails with
 // {@code LockOwnershipLostException}. Returns true if the lock is still
 // held by the caller after a successful unlock() call, false otherwise.
-type fencedlockUnlockCodec struct{}
 
-var FencedLockUnlockCodec fencedlockUnlockCodec
-
-func (fencedlockUnlockCodec) EncodeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID) *proto.ClientMessage {
+func EncodeFencedLockUnlockRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -53,13 +50,13 @@ func (fencedlockUnlockCodec) EncodeRequest(groupId proto.RaftGroupId, name strin
 	clientMessage.SetMessageType(FencedLockUnlockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (fencedlockUnlockCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeFencedLockUnlockResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

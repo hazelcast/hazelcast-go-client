@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 
 // Returns true if this set contains all of the elements of the specified collection. If the specified collection is
 // also a set, this method returns true if it is a subset of this set.
-type setContainsAllCodec struct{}
 
-var SetContainsAllCodec setContainsAllCodec
-
-func (setContainsAllCodec) EncodeRequest(name string, items []serialization.Data) *proto.ClientMessage {
+func EncodeSetContainsAllRequest(name string, items []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -45,13 +41,13 @@ func (setContainsAllCodec) EncodeRequest(name string, items []serialization.Data
 	clientMessage.SetMessageType(SetContainsAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, items)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, items)
 
 	return clientMessage
 }
 
-func (setContainsAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetContainsAllResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

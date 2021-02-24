@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
@@ -32,12 +31,12 @@ type Address struct {
 	port int
 }
 
-func NewAddress(Host string, Port int32) *Address {
-	return &Address{Host, int(Port)}
+func NewAddress(Host string, Port int32) Address {
+	return Address{Host, int(Port)}
 }
 
-func NewAddressWithParameters(Host string, Port int) *Address {
-	return &Address{Host, Port}
+func NewAddressWithParameters(Host string, Port int) Address {
+	return Address{Host, Port}
 }
 
 func (a Address) Host() string {
@@ -49,14 +48,7 @@ func (a Address) Port() int {
 }
 
 func (a Address) String() string {
-	return a.Host() + ":" + strconv.Itoa(a.Port())
-}
-func (a Address) GetHost() string {
-	return a.host
-}
-
-func (a Address) GetPort() int32 {
-	return int32(a.port)
+	return fmt.Sprintf("%s:%d", a.host, a.port)
 }
 
 type uuid struct {
@@ -65,19 +57,19 @@ type uuid struct {
 }
 
 type Member struct {
-	address      core.Address
+	address      Address
 	uuid         core.UUID
 	isLiteMember bool
 	attributes   map[string]string
 	version      MemberVersion
-	addressMap   map[EndpointQualifier]core.Address
+	addressMap   map[EndpointQualifier]Address
 }
 
-func NewMember(address core.Address, uuid core.UUID, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]core.Address) *Member {
+func NewMember(address Address, uuid core.UUID, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]Address) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes, version: version, addressMap: addressMap}
 }
 
-func (m *Member) Address() core.Address {
+func (m *Member) Address() Address {
 	return m.address
 }
 
@@ -574,22 +566,22 @@ func NewMemberVersion(major, minor, patch byte) MemberVersion {
 	return MemberVersion{int8(major), int8(minor), int8(patch)}
 }
 
-func (memberVersion MemberVersion) GetMajor() byte {
+func (memberVersion MemberVersion) Major() byte {
 	return byte(memberVersion.major)
 }
 
-func (memberVersion MemberVersion) GetMinor() byte {
+func (memberVersion MemberVersion) Minor() byte {
 	return byte(memberVersion.minor)
 }
 
-func (memberVersion MemberVersion) GetPatch() byte {
+func (memberVersion MemberVersion) Patch() byte {
 	return byte(memberVersion.patch)
 }
 
 // MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
 type MemberInfo struct {
 	// address is proto.Address: Address of the member.
-	address core.Address
+	address Address
 
 	// uuid is core.UUID: UUID of the member.
 	uuid core.UUID
@@ -604,36 +596,36 @@ type MemberInfo struct {
 	version MemberVersion
 
 	// addressMap
-	addressMap map[EndpointQualifier]core.Address
+	addressMap map[EndpointQualifier]Address
 }
 
-func NewMemberInfo(address core.Address, uuid core.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
+func NewMemberInfo(address Address, uuid core.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
 	isAddressMapExists bool, addressMap interface{}) MemberInfo {
 	return MemberInfo{address: address, uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
-		addressMap: addressMap.(map[EndpointQualifier]core.Address)}
+		addressMap: addressMap.(map[EndpointQualifier]Address)}
 }
 
-func (memberInfo MemberInfo) GetAddress() core.Address {
+func (memberInfo MemberInfo) Address() Address {
 	return memberInfo.address
 }
 
-func (memberInfo MemberInfo) GetUuid() core.UUID {
+func (memberInfo MemberInfo) Uuid() core.UUID {
 	return memberInfo.uuid
 }
 
-func (memberInfo MemberInfo) GetAttributes() map[string]string {
+func (memberInfo MemberInfo) Attributes() map[string]string {
 	return memberInfo.attributes
 }
 
-func (memberInfo MemberInfo) GetLiteMember() bool {
+func (memberInfo MemberInfo) LiteMember() bool {
 	return memberInfo.liteMember
 }
 
-func (memberInfo MemberInfo) GetVersion() MemberVersion {
+func (memberInfo MemberInfo) Version() MemberVersion {
 	return memberInfo.version
 }
 
-func (memberInfo MemberInfo) GetAddressMap() map[EndpointQualifier]core.Address {
+func (memberInfo MemberInfo) AddressMap() map[EndpointQualifier]Address {
 	return memberInfo.addressMap
 }
 
@@ -646,10 +638,10 @@ func NewEndpointQualifier(_type int32, identifier string) EndpointQualifier {
 	return EndpointQualifier{_type, identifier}
 }
 
-func (e EndpointQualifier) GetType() int32 {
+func (e EndpointQualifier) Type() int32 {
 	return e._type
 }
 
-func (e EndpointQualifier) GetIdentifier() string {
+func (e EndpointQualifier) Identifier() string {
 	return e.identifier
 }

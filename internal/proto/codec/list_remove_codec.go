@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 // Removes the first occurrence of the specified element from this list, if it is present (optional operation).
 // If this list does not contain the element, it is unchanged.
 // Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
-type listRemoveCodec struct{}
 
-var ListRemoveCodec listRemoveCodec
-
-func (listRemoveCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeListRemoveRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,13 +42,13 @@ func (listRemoveCodec) EncodeRequest(name string, value serialization.Data) *pro
 	clientMessage.SetMessageType(ListRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (listRemoveCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeListRemoveResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

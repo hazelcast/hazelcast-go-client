@@ -28,11 +28,8 @@ const (
 )
 
 // Fetches specified number of entries from the specified partition starting from specified table index.
-type mapFetchEntriesCodec struct{}
 
-var MapFetchEntriesCodec mapFetchEntriesCodec
-
-func (mapFetchEntriesCodec) EncodeRequest(name string, iterationPointers []proto.Pair, batch int32) *proto.ClientMessage {
+func EncodeMapFetchEntriesRequest(name string, iterationPointers []proto.Pair, batch int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,8 +39,8 @@ func (mapFetchEntriesCodec) EncodeRequest(name string, iterationPointers []proto
 	clientMessage.SetMessageType(MapFetchEntriesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListIntegerIntegerCodec.Encode(clientMessage, iterationPointers)
+	EncodeString(clientMessage, name)
+	EncodeEntryListIntegerInteger(clientMessage, iterationPointers)
 
 	return clientMessage
 }
@@ -52,8 +49,8 @@ func (mapFetchEntriesCodec) DecodeResponse(clientMessage *proto.ClientMessage) (
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	iterationPointers = EntryListIntegerIntegerCodec.Decode(frameIterator)
-	entries = EntryListCodec.DecodeForDataAndData(frameIterator)
+	iterationPointers = DecodeEntryListIntegerInteger(frameIterator)
+	entries = DecodeEntryListForDataAndData(frameIterator)
 
 	return iterationPointers, entries
 }

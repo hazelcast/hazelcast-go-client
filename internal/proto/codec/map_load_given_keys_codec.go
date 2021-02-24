@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 )
 
 // Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
-type mapLoadGivenKeysCodec struct{}
 
-var MapLoadGivenKeysCodec mapLoadGivenKeysCodec
-
-func (mapLoadGivenKeysCodec) EncodeRequest(name string, keys []serialization.Data, replaceExistingValues bool) *proto.ClientMessage {
+func EncodeMapLoadGivenKeysRequest(name string, keys []serialization.Data, replaceExistingValues bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,8 +40,8 @@ func (mapLoadGivenKeysCodec) EncodeRequest(name string, keys []serialization.Dat
 	clientMessage.SetMessageType(MapLoadGivenKeysCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, keys)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, keys)
 
 	return clientMessage
 }

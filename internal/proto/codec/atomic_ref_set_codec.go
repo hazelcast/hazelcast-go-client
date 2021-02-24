@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 )
 
 // Atomically sets the given value
-type atomicrefSetCodec struct{}
 
-var AtomicRefSetCodec atomicrefSetCodec
-
-func (atomicrefSetCodec) EncodeRequest(groupId proto.RaftGroupId, name string, newValue serialization.Data, returnOldValue bool) *proto.ClientMessage {
+func EncodeAtomicRefSetRequest(groupId proto.RaftGroupId, name string, newValue serialization.Data, returnOldValue bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,14 +40,14 @@ func (atomicrefSetCodec) EncodeRequest(groupId proto.RaftGroupId, name string, n
 	clientMessage.SetMessageType(AtomicRefSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
-	CodecUtil.EncodeNullable(clientMessage, newValue, DataCodec.Encode)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, newValue, EncodeData)
 
 	return clientMessage
 }
 
-func (atomicrefSetCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeAtomicRefSetResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

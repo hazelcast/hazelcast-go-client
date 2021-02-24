@@ -26,22 +26,24 @@ const (
 	MemberVersionCodecPatchInitialFrameSize = MemberVersionCodecPatchFieldOffset + proto.ByteSizeInBytes
 )
 
-type memberversionCodec struct{}
+/*
+type memberversionCodec struct {}
 
 var MemberVersionCodec memberversionCodec
+*/
 
-func (memberversionCodec) Encode(clientMessage *proto.ClientMessage, memberVersion proto.MemberVersion) {
+func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion proto.MemberVersion) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberVersionCodecPatchInitialFrameSize))
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.GetMajor())
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset, memberVersion.GetMinor())
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset, memberVersion.GetPatch())
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.Major())
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset, memberVersion.Minor())
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset, memberVersion.Patch())
 	clientMessage.AddFrame(initialFrame)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (memberversionCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.MemberVersion {
+func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) proto.MemberVersion {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -49,6 +51,5 @@ func (memberversionCodec) Decode(frameIterator *proto.ForwardFrameIterator) prot
 	minor := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset)
 	patch := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewMemberVersion(major, minor, patch)
 }

@@ -30,11 +30,8 @@ const (
 
 // Returns the number of elements in this list.  If this list contains more than Integer.MAX_VALUE elements, returns
 // Integer.MAX_VALUE.
-type listSizeCodec struct{}
 
-var ListSizeCodec listSizeCodec
-
-func (listSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeListSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,12 +40,12 @@ func (listSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ListSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (listSizeCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeListSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

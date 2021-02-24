@@ -29,11 +29,8 @@ const (
 )
 
 // Returns true if this set contains no elements.
-type setIsEmptyCodec struct{}
 
-var SetIsEmptyCodec setIsEmptyCodec
-
-func (setIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeSetIsEmptyRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,12 +39,12 @@ func (setIsEmptyCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(SetIsEmptyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (setIsEmptyCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetIsEmptyResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

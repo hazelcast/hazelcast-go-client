@@ -9,10 +9,10 @@ func NewAnchorDataListHolder(anchorPageList []int32, anchorDataList []Pair) Anch
 	return AnchorDataListHolder{anchorPageList, anchorDataList}
 }
 
-func (a AnchorDataListHolder) GetAnchorPageList() []int32 {
+func (a AnchorDataListHolder) AnchorPageList() []int32 {
 	return a.anchorPageList
 }
 
-func (a AnchorDataListHolder) GetAnchorDataList() []Pair {
+func (a AnchorDataListHolder) AnchorDataList() []Pair {
 	return a.anchorDataList
 }

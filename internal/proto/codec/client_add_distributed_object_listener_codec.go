@@ -36,11 +36,8 @@ const (
 
 // Adds a distributed object listener to the cluster. This listener will be notified
 // when a distributed object is created or destroyed.
-type clientAddDistributedObjectListenerCodec struct{}
 
-var ClientAddDistributedObjectListenerCodec clientAddDistributedObjectListenerCodec
-
-func (clientAddDistributedObjectListenerCodec) EncodeRequest(localOnly bool) *proto.ClientMessage {
+func EncodeClientAddDistributedObjectListenerRequest(localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -53,7 +50,7 @@ func (clientAddDistributedObjectListenerCodec) EncodeRequest(localOnly bool) *pr
 	return clientMessage
 }
 
-func (clientAddDistributedObjectListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeClientAddDistributedObjectListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
@@ -66,9 +63,9 @@ func (clientAddDistributedObjectListenerCodec) Handle(clientMessage *proto.Clien
 	if messageType == ClientAddDistributedObjectListenerCodecEventDistributedObjectMessageType {
 		initialFrame := frameIterator.Next()
 		source := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerEventDistributedObjectSourceOffset)
-		name := StringCodec.Decode(frameIterator)
-		serviceName := StringCodec.Decode(frameIterator)
-		eventType := StringCodec.Decode(frameIterator)
+		name := DecodeString(frameIterator)
+		serviceName := DecodeString(frameIterator)
+		eventType := DecodeString(frameIterator)
 		handleDistributedObjectEvent(name, serviceName, eventType, source)
 		return
 	}

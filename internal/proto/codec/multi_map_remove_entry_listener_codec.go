@@ -32,11 +32,8 @@ const (
 
 // Removes the specified entry listener. If there is no such listener added before, this call does no change in the
 // cluster and returns false.
-type multimapRemoveEntryListenerCodec struct{}
 
-var MultiMapRemoveEntryListenerCodec multimapRemoveEntryListenerCodec
-
-func (multimapRemoveEntryListenerCodec) EncodeRequest(name string, registrationId core.UUID) *proto.ClientMessage {
+func EncodeMultiMapRemoveEntryListenerRequest(name string, registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,12 +43,12 @@ func (multimapRemoveEntryListenerCodec) EncodeRequest(name string, registrationI
 	clientMessage.SetMessageType(MultiMapRemoveEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (multimapRemoveEntryListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapRemoveEntryListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

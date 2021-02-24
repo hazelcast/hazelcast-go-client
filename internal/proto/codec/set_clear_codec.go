@@ -27,11 +27,8 @@ const (
 )
 
 // Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
-type setClearCodec struct{}
 
-var SetClearCodec setClearCodec
-
-func (setClearCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeSetClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -40,7 +37,7 @@ func (setClearCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(SetClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

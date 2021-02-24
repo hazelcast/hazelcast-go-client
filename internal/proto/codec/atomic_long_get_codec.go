@@ -29,11 +29,8 @@ const (
 )
 
 // Gets the current value.
-type atomiclongGetCodec struct{}
 
-var AtomicLongGetCodec atomiclongGetCodec
-
-func (atomiclongGetCodec) EncodeRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeAtomicLongGetRequest(groupId proto.RaftGroupId, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,13 +39,13 @@ func (atomiclongGetCodec) EncodeRequest(groupId proto.RaftGroupId, name string) 
 	clientMessage.SetMessageType(AtomicLongGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (atomiclongGetCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeAtomicLongGetResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

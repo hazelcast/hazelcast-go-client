@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 // Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
 // matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
 // of these request messages for filling a request for a key set if the keys belong to different partitions.
-type mapGetAllCodec struct{}
 
-var MapGetAllCodec mapGetAllCodec
-
-func (mapGetAllCodec) EncodeRequest(name string, keys []serialization.Data) *proto.ClientMessage {
+func EncodeMapGetAllRequest(name string, keys []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,16 +42,16 @@ func (mapGetAllCodec) EncodeRequest(name string, keys []serialization.Data) *pro
 	clientMessage.SetMessageType(MapGetAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, keys)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, keys)
 
 	return clientMessage
 }
 
-func (mapGetAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.Pair {
+func DecodeMapGetAllResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return EntryListCodec.DecodeForDataAndData(frameIterator)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

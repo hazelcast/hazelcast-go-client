@@ -18,6 +18,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"net"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/nilutil"
 )
 
+/*
 // Address represents an address of a member in the cluster.
 type Address interface {
 	fmt.Stringer
@@ -33,6 +35,7 @@ type Address interface {
 	GetHost() string
 	GetPort() int32
 }
+*/
 
 type ClientInfo struct {
 	UUID         UUID
@@ -46,7 +49,7 @@ type ClientInfo struct {
 type Member interface {
 	fmt.Stringer
 	// Address returns the address of this member.
-	Address() Address
+	Address() proto.Address
 
 	// UUID returns the uuid of this member.
 	UUID() UUID
@@ -123,57 +126,57 @@ type SimpleEntryView struct {
 }
 
 func NewSimpleEntryView(key, value interface{}, cost, creationTime, expirationTime, hits, lastAccessTime,
-	lastStoredTime, lastUpdateTime, version, ttl, maxIdle int64) SimpleEntryView {
-	return SimpleEntryView{key, value, cost, creationTime, expirationTime,
+	lastStoredTime, lastUpdateTime, version, ttl, maxIdle int64) *SimpleEntryView {
+	return &SimpleEntryView{key, value, cost, creationTime, expirationTime,
 		hits, lastAccessTime, lastStoredTime, lastUpdateTime,
 		version, ttl, maxIdle}
 }
 
-func (s SimpleEntryView) GetKey() interface{} {
+func (s SimpleEntryView) Key() interface{} {
 	return s.key
 }
 
-func (s SimpleEntryView) GetValue() interface{} {
+func (s SimpleEntryView) Value() interface{} {
 	return s.value
 }
 
-func (s SimpleEntryView) GetCost() int64 {
+func (s SimpleEntryView) Cost() int64 {
 	return s.cost
 }
 
-func (s SimpleEntryView) GetCreationTime() int64 {
+func (s SimpleEntryView) CreationTime() int64 {
 	return s.creationTime
 }
 
-func (s SimpleEntryView) GetExpirationTime() int64 {
+func (s SimpleEntryView) ExpirationTime() int64 {
 	return s.expirationTime
 }
 
-func (s SimpleEntryView) GetHits() int64 {
+func (s SimpleEntryView) Hits() int64 {
 	return s.hits
 }
 
-func (s SimpleEntryView) GetLastAccessTime() int64 {
+func (s SimpleEntryView) LastAccessTime() int64 {
 	return s.lastAccessTime
 }
 
-func (s SimpleEntryView) GetLastStoredTime() int64 {
+func (s SimpleEntryView) LastStoredTime() int64 {
 	return s.lastStoredTime
 }
 
-func (s SimpleEntryView) GetLastUpdateTime() int64 {
+func (s SimpleEntryView) LastUpdateTime() int64 {
 	return s.lastUpdateTime
 }
 
-func (s SimpleEntryView) GetVersion() int64 {
+func (s SimpleEntryView) Version() int64 {
 	return s.version
 }
 
-func (s SimpleEntryView) GetTtl() int64 {
+func (s SimpleEntryView) Ttl() int64 {
 	return s.ttl
 }
 
-func (s SimpleEntryView) GetMaxIdle() int64 {
+func (s SimpleEntryView) MaxIdle() int64 {
 	return s.maxIdle
 }
 

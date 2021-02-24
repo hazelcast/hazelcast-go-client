@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -42,11 +41,8 @@ const (
 
 // Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
 // sub-interface for that event.
-type mapAddEntryListenerToKeyWithPredicateCodec struct{}
 
-var MapAddEntryListenerToKeyWithPredicateCodec mapAddEntryListenerToKeyWithPredicateCodec
-
-func (mapAddEntryListenerToKeyWithPredicateCodec) EncodeRequest(name string, key serialization.Data, predicate serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *proto.ClientMessage {
+func EncodeMapAddEntryListenerToKeyWithPredicateRequest(name string, key serialization.Data, predicate serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -58,14 +54,14 @@ func (mapAddEntryListenerToKeyWithPredicateCodec) EncodeRequest(name string, key
 	clientMessage.SetMessageType(MapAddEntryListenerToKeyWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
 
-func (mapAddEntryListenerToKeyWithPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeMapAddEntryListenerToKeyWithPredicateResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

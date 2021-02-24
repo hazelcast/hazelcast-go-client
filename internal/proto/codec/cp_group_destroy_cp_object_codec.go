@@ -28,11 +28,8 @@ const (
 
 // Destroys the distributed object with the given name on the requested
 // CP group
-type cpgroupDestroyCPObjectCodec struct{}
 
-var CPGroupDestroyCPObjectCodec cpgroupDestroyCPObjectCodec
-
-func (cpgroupDestroyCPObjectCodec) EncodeRequest(groupId proto.RaftGroupId, serviceName string, objectName string) *proto.ClientMessage {
+func EncodeCPGroupDestroyCPObjectRequest(groupId proto.RaftGroupId, serviceName string, objectName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -41,9 +38,9 @@ func (cpgroupDestroyCPObjectCodec) EncodeRequest(groupId proto.RaftGroupId, serv
 	clientMessage.SetMessageType(CPGroupDestroyCPObjectCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, serviceName)
-	StringCodec.Encode(clientMessage, objectName)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, serviceName)
+	EncodeString(clientMessage, objectName)
 
 	return clientMessage
 }

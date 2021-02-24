@@ -30,11 +30,8 @@ const (
 
 // Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
 // elements, returns Integer.MAX_VALUE
-type queueSizeCodec struct{}
 
-var QueueSizeCodec queueSizeCodec
-
-func (queueSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeQueueSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,12 +40,12 @@ func (queueSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(QueueSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (queueSizeCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeQueueSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -35,11 +34,8 @@ const (
 // If ttl is 0, then the entry lives forever.This method returns a clone of the previous value, not the original
 // (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
 // rounded to the next closest second value.
-type mapPutWithMaxIdleCodec struct{}
 
-var MapPutWithMaxIdleCodec mapPutWithMaxIdleCodec
-
-func (mapPutWithMaxIdleCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
+func EncodeMapPutWithMaxIdleRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -51,14 +47,14 @@ func (mapPutWithMaxIdleCodec) EncodeRequest(name string, key serialization.Data,
 	clientMessage.SetMessageType(MapPutWithMaxIdleCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapPutWithMaxIdleCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapPutWithMaxIdleResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

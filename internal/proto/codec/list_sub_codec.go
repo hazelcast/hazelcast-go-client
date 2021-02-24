@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -41,11 +40,8 @@ const (
 // The semantics of the list returned by this method become undefined if the backing list (i.e., this list) is
 // structurally modified in any way other than via the returned list.(Structural modifications are those that change
 // the size of this list, or otherwise perturb it in such a fashion that iterations in progress may yield incorrect results.)
-type listSubCodec struct{}
 
-var ListSubCodec listSubCodec
-
-func (listSubCodec) EncodeRequest(name string, from int32, to int32) *proto.ClientMessage {
+func EncodeListSubRequest(name string, from int32, to int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -56,15 +52,15 @@ func (listSubCodec) EncodeRequest(name string, from int32, to int32) *proto.Clie
 	clientMessage.SetMessageType(ListSubCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (listSubCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeListSubResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

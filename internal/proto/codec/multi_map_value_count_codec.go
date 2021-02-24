@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 )
 
 // Returns the number of values that match the given key in the multimap.
-type multimapValueCountCodec struct{}
 
-var MultiMapValueCountCodec multimapValueCountCodec
-
-func (multimapValueCountCodec) EncodeRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMultiMapValueCountRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,13 +42,13 @@ func (multimapValueCountCodec) EncodeRequest(name string, key serialization.Data
 	clientMessage.SetMessageType(MultiMapValueCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (multimapValueCountCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeMultiMapValueCountResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 // collection c may result in elements being in neither, either or both collections when the associated exception is
 // thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
 // this operation is undefined if the specified collection is modified while the operation is in progress.
-type queueDrainToCodec struct{}
 
-var QueueDrainToCodec queueDrainToCodec
-
-func (queueDrainToCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeQueueDrainToRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -46,15 +42,15 @@ func (queueDrainToCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(QueueDrainToCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (queueDrainToCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeQueueDrainToResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

@@ -30,11 +30,8 @@ const (
 )
 
 // Applies a function on the value
-type atomicrefApplyCodec struct{}
 
-var AtomicRefApplyCodec atomicrefApplyCodec
-
-func (atomicrefApplyCodec) EncodeRequest(groupId proto.RaftGroupId, name string, function serialization.Data, returnValueType int32, alter bool) *proto.ClientMessage {
+func EncodeAtomicRefApplyRequest(groupId proto.RaftGroupId, name string, function serialization.Data, returnValueType int32, alter bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -45,14 +42,14 @@ func (atomicrefApplyCodec) EncodeRequest(groupId proto.RaftGroupId, name string,
 	clientMessage.SetMessageType(AtomicRefApplyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, function)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, function)
 
 	return clientMessage
 }
 
-func (atomicrefApplyCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeAtomicRefApplyResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

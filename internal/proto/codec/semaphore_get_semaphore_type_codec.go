@@ -29,11 +29,8 @@ const (
 )
 
 // Returns true if the semaphore is JDK compatible
-type semaphoreGetSemaphoreTypeCodec struct{}
 
-var SemaphoreGetSemaphoreTypeCodec semaphoreGetSemaphoreTypeCodec
-
-func (semaphoreGetSemaphoreTypeCodec) EncodeRequest(proxyName string) *proto.ClientMessage {
+func EncodeSemaphoreGetSemaphoreTypeRequest(proxyName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,12 +39,12 @@ func (semaphoreGetSemaphoreTypeCodec) EncodeRequest(proxyName string) *proto.Cli
 	clientMessage.SetMessageType(SemaphoreGetSemaphoreTypeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, proxyName)
+	EncodeString(clientMessage, proxyName)
 
 	return clientMessage
 }
 
-func (semaphoreGetSemaphoreTypeCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSemaphoreGetSemaphoreTypeResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

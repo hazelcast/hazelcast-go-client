@@ -29,11 +29,8 @@ const (
 )
 
 // Fetches invalidation metadata from partitions of map.
-type mapFetchNearCacheInvalidationMetadataCodec struct{}
 
-var MapFetchNearCacheInvalidationMetadataCodec mapFetchNearCacheInvalidationMetadataCodec
-
-func (mapFetchNearCacheInvalidationMetadataCodec) EncodeRequest(names []string, uuid core.UUID) *proto.ClientMessage {
+func EncodeMapFetchNearCacheInvalidationMetadataRequest(names []string, uuid core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,7 +40,7 @@ func (mapFetchNearCacheInvalidationMetadataCodec) EncodeRequest(names []string, 
 	clientMessage.SetMessageType(MapFetchNearCacheInvalidationMetadataCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	ListMultiFrameCodec.EncodeForString(clientMessage, names)
+	EncodeListMultiFrameForString(clientMessage, names)
 
 	return clientMessage
 }
@@ -52,8 +49,8 @@ func (mapFetchNearCacheInvalidationMetadataCodec) DecodeResponse(clientMessage *
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	namePartitionSequenceList = EntryListCodec.DecodeForStringAndEntryListIntegerLong(frameIterator)
-	partitionUuidList = EntryListIntegerUUIDCodec.Decode(frameIterator)
+	namePartitionSequenceList = DecodeEntryListForStringAndEntryListIntegerLong(frameIterator)
+	partitionUuidList = DecodeEntryListIntegerUUID(frameIterator)
 
 	return namePartitionSequenceList, partitionUuidList
 }

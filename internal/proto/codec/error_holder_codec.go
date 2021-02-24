@@ -24,33 +24,34 @@ const (
 	ErrorHolderCodecErrorCodeInitialFrameSize = ErrorHolderCodecErrorCodeFieldOffset + proto.IntSizeInBytes
 )
 
-type errorholderCodec struct{}
+/*
+type errorholderCodec struct {}
 
 var ErrorHolderCodec errorholderCodec
+*/
 
-func (errorholderCodec) Encode(clientMessage *proto.ClientMessage, errorHolder proto.ErrorHolder) {
+func EncodeErrorHolder(clientMessage *proto.ClientMessage, errorHolder proto.ErrorHolder) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, ErrorHolderCodecErrorCodeInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset, errorHolder.GetErrorCode())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset, int32(errorHolder.ErrorCode()))
 	clientMessage.AddFrame(initialFrame)
 
-	StringCodec.Encode(clientMessage, errorHolder.GetClassName())
-	CodecUtil.EncodeNullableForString(clientMessage, errorHolder.GetMessage())
-	ListMultiFrameCodec.EncodeForStackTraceElement(clientMessage, errorHolder.GetStackTraceElements())
+	EncodeString(clientMessage, errorHolder.ClassName())
+	CodecUtil.EncodeNullableForString(clientMessage, errorHolder.Message())
+	EncodeListMultiFrameForStackTraceElement(clientMessage, errorHolder.StackTraceElements())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (errorholderCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.ErrorHolder {
+func DecodeErrorHolder(frameIterator *proto.ForwardFrameIterator) proto.ErrorHolder {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
 	errorCode := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset)
 
-	className := StringCodec.Decode(frameIterator)
+	className := DecodeString(frameIterator)
 	message := CodecUtil.DecodeNullableForString(frameIterator)
-	stackTraceElements := ListMultiFrameCodec.DecodeForStackTraceElement(frameIterator)
+	stackTraceElements := DecodeListMultiFrameForStackTraceElement(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewErrorHolder(errorCode, className, message, stackTraceElements)
 }

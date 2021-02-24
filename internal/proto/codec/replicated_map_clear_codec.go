@@ -30,11 +30,8 @@ const (
 // implementation, so be aware that this might be a slow operation. If some node fails on executing the operation,
 // it is retried for at most 3 times (on the failing nodes only). If it does not work after the third time, this
 // method throws a OPERATION_TIMEOUT back to the caller.
-type replicatedmapClearCodec struct{}
 
-var ReplicatedMapClearCodec replicatedmapClearCodec
-
-func (replicatedmapClearCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeReplicatedMapClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,7 +40,7 @@ func (replicatedmapClearCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ReplicatedMapClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

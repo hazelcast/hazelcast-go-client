@@ -30,11 +30,8 @@ const (
 
 // Returns number of items in the ringbuffer. If no ttl is set, the size will always be equal to capacity after the
 // head completed the first looparound the ring. This is because no items are getting retired.
-type ringbufferSizeCodec struct{}
 
-var RingbufferSizeCodec ringbufferSizeCodec
-
-func (ringbufferSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeRingbufferSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,12 +40,12 @@ func (ringbufferSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(RingbufferSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (ringbufferSizeCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferSizeResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

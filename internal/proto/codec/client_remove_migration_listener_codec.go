@@ -30,12 +30,9 @@ const (
 	ClientRemoveMigrationListenerResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Removes the specifiec migration listener.
-type clientRemoveMigrationListenerCodec struct{}
+// Removes the specified migration listener.
 
-var ClientRemoveMigrationListenerCodec clientRemoveMigrationListenerCodec
-
-func (clientRemoveMigrationListenerCodec) EncodeRequest(registrationId core.UUID) *proto.ClientMessage {
+func EncodeClientRemoveMigrationListenerRequest(registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -48,7 +45,7 @@ func (clientRemoveMigrationListenerCodec) EncodeRequest(registrationId core.UUID
 	return clientMessage
 }
 
-func (clientRemoveMigrationListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeClientRemoveMigrationListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

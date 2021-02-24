@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 
 // Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
 // are NOT reflected in the collection, and vice-versa.
-type multimapValuesCodec struct{}
 
-var MultiMapValuesCodec multimapValuesCodec
-
-func (multimapValuesCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMultiMapValuesRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,15 +39,15 @@ func (multimapValuesCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MultiMapValuesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (multimapValuesCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeMultiMapValuesResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

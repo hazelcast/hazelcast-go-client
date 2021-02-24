@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -30,11 +29,8 @@ const (
 )
 
 // Removes the given key value pair from the multimap.
-type multimapRemoveCodec struct{}
 
-var MultiMapRemoveCodec multimapRemoveCodec
-
-func (multimapRemoveCodec) EncodeRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMultiMapRemoveRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,16 +40,16 @@ func (multimapRemoveCodec) EncodeRequest(name string, key serialization.Data, th
 	clientMessage.SetMessageType(MultiMapRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (multimapRemoveCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeMultiMapRemoveResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Return the all elements of this collection
-type setGetAllCodec struct{}
 
-var SetGetAllCodec setGetAllCodec
-
-func (setGetAllCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeSetGetAllRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,15 +38,15 @@ func (setGetAllCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(SetGetAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (setGetAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeSetGetAllResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

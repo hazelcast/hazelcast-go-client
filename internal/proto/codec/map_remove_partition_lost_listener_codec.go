@@ -32,11 +32,8 @@ const (
 
 // Removes the specified map partition lost listener. If there is no such listener added before, this call does no
 // change in the cluster and returns false.
-type mapRemovePartitionLostListenerCodec struct{}
 
-var MapRemovePartitionLostListenerCodec mapRemovePartitionLostListenerCodec
-
-func (mapRemovePartitionLostListenerCodec) EncodeRequest(name string, registrationId core.UUID) *proto.ClientMessage {
+func EncodeMapRemovePartitionLostListenerRequest(name string, registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,12 +43,12 @@ func (mapRemovePartitionLostListenerCodec) EncodeRequest(name string, registrati
 	clientMessage.SetMessageType(MapRemovePartitionLostListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapRemovePartitionLostListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapRemovePartitionLostListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 
 // Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
 // the process() method of EntryProcessor.
-type mapExecuteOnKeyCodec struct{}
 
-var MapExecuteOnKeyCodec mapExecuteOnKeyCodec
-
-func (mapExecuteOnKeyCodec) EncodeRequest(name string, entryProcessor serialization.Data, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapExecuteOnKeyRequest(name string, entryProcessor serialization.Data, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -45,14 +41,14 @@ func (mapExecuteOnKeyCodec) EncodeRequest(name string, entryProcessor serializat
 	clientMessage.SetMessageType(MapExecuteOnKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, entryProcessor)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, entryProcessor)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (mapExecuteOnKeyCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapExecuteOnKeyResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

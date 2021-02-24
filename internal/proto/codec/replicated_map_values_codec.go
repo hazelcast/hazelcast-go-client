@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Returns a lazy collection view of the values contained in this map.
-type replicatedmapValuesCodec struct{}
 
-var ReplicatedMapValuesCodec replicatedmapValuesCodec
-
-func (replicatedmapValuesCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeReplicatedMapValuesRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,15 +38,15 @@ func (replicatedmapValuesCodec) EncodeRequest(name string) *proto.ClientMessage 
 	clientMessage.SetMessageType(ReplicatedMapValuesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (replicatedmapValuesCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeReplicatedMapValuesResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

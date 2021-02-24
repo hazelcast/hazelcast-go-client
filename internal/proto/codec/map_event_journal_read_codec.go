@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -42,11 +41,8 @@ const (
 // call will wait until it has sufficient items.
 // The predicate, filter and projection may be {@code null} in which case all elements are returned
 // and no projection is applied.
-type mapEventJournalReadCodec struct{}
 
-var MapEventJournalReadCodec mapEventJournalReadCodec
-
-func (mapEventJournalReadCodec) EncodeRequest(name string, startSequence int64, minSize int32, maxSize int32, predicate serialization.Data, projection serialization.Data) *proto.ClientMessage {
+func EncodeMapEventJournalReadRequest(name string, startSequence int64, minSize int32, maxSize int32, predicate serialization.Data, projection serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -58,9 +54,9 @@ func (mapEventJournalReadCodec) EncodeRequest(name string, startSequence int64, 
 	clientMessage.SetMessageType(MapEventJournalReadCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	CodecUtil.EncodeNullable(clientMessage, predicate, DataCodec.Encode)
-	CodecUtil.EncodeNullable(clientMessage, projection, DataCodec.Encode)
+	EncodeString(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, predicate, EncodeData)
+	CodecUtil.EncodeNullable(clientMessage, projection, EncodeData)
 
 	return clientMessage
 }
@@ -71,7 +67,7 @@ func (mapEventJournalReadCodec) DecodeResponse(clientMessage *proto.ClientMessag
 
 	readCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapEventJournalReadResponseReadCountOffset)
 	nextSeq = FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapEventJournalReadResponseNextSeqOffset)
-	items = ListMultiFrameCodec.DecodeForData(frameIterator)
+	items = DecodeListMultiFrameForData(frameIterator)
 	itemSeqs = CodecUtil.DecodeNullableForLongArray(frameIterator)
 
 	return readCount, items, itemSeqs, nextSeq

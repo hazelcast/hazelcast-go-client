@@ -28,11 +28,8 @@ const (
 
 // If this map has a MapStore, this method flushes all the local dirty entries by calling MapStore.storeAll()
 // and/or MapStore.deleteAll().
-type mapFlushCodec struct{}
 
-var MapFlushCodec mapFlushCodec
-
-func (mapFlushCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapFlushRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -41,7 +38,7 @@ func (mapFlushCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MapFlushCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

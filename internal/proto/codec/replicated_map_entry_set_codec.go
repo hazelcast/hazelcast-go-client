@@ -27,11 +27,8 @@ const (
 )
 
 // Gets a lazy set view of the mappings contained in this map.
-type replicatedmapEntrySetCodec struct{}
 
-var ReplicatedMapEntrySetCodec replicatedmapEntrySetCodec
-
-func (replicatedmapEntrySetCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeReplicatedMapEntrySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -40,15 +37,15 @@ func (replicatedmapEntrySetCodec) EncodeRequest(name string) *proto.ClientMessag
 	clientMessage.SetMessageType(ReplicatedMapEntrySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (replicatedmapEntrySetCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.Pair {
+func DecodeReplicatedMapEntrySetResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return EntryListCodec.DecodeForDataAndData(frameIterator)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

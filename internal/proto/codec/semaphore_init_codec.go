@@ -31,11 +31,8 @@ const (
 
 // Initializes the ISemaphore instance with the given permit number, if not
 // initialized before.
-type semaphoreInitCodec struct{}
 
-var SemaphoreInitCodec semaphoreInitCodec
-
-func (semaphoreInitCodec) EncodeRequest(groupId proto.RaftGroupId, name string, permits int32) *proto.ClientMessage {
+func EncodeSemaphoreInitRequest(groupId proto.RaftGroupId, name string, permits int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,13 +42,13 @@ func (semaphoreInitCodec) EncodeRequest(groupId proto.RaftGroupId, name string, 
 	clientMessage.SetMessageType(SemaphoreInitCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (semaphoreInitCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSemaphoreInitResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

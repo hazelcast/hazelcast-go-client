@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 
 // Same as put except that MapStore, if defined, will not be called to store/persist the entry.
 // If ttl is 0, then the entry lives forever.
-type mapPutTransientCodec struct{}
 
-var MapPutTransientCodec mapPutTransientCodec
-
-func (mapPutTransientCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapPutTransientRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,9 +43,9 @@ func (mapPutTransientCodec) EncodeRequest(name string, key serialization.Data, v
 	clientMessage.SetMessageType(MapPutTransientCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }

@@ -16,7 +16,6 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -25,29 +24,30 @@ const (
 	AddressCodecPortInitialFrameSize = AddressCodecPortFieldOffset + proto.IntSizeInBytes
 )
 
-type addressCodec struct{}
+/*
+type addressCodec struct {}
 
 var AddressCodec addressCodec
+*/
 
-func (addressCodec) Encode(clientMessage *proto.ClientMessage, address core.Address) {
+func EncodeAddress(clientMessage *proto.ClientMessage, address proto.Address) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, AddressCodecPortInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, address.GetPort())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(address.Port()))
 	clientMessage.AddFrame(initialFrame)
 
-	StringCodec.Encode(clientMessage, address.GetHost())
+	EncodeString(clientMessage, address.Host())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (addressCodec) Decode(frameIterator *proto.ForwardFrameIterator) core.Address {
+func DecodeAddress(frameIterator *proto.ForwardFrameIterator) proto.Address {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
 	port := FixSizedTypesCodec.DecodeInt(initialFrame.Content, AddressCodecPortFieldOffset)
 
-	host := StringCodec.Decode(frameIterator)
+	host := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewAddress(host, port)
 }

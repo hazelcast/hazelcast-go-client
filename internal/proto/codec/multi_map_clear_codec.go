@@ -27,11 +27,8 @@ const (
 )
 
 // Clears the multimap. Removes all key-value pairs.
-type multimapClearCodec struct{}
 
-var MultiMapClearCodec multimapClearCodec
-
-func (multimapClearCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMultiMapClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -40,7 +37,7 @@ func (multimapClearCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MultiMapClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -29,11 +28,8 @@ const (
 )
 
 // Applies the projection logic on map entries filtered with the Predicate and returns the result
-type mapProjectWithPredicateCodec struct{}
 
-var MapProjectWithPredicateCodec mapProjectWithPredicateCodec
-
-func (mapProjectWithPredicateCodec) EncodeRequest(name string, projection serialization.Data, predicate serialization.Data) *proto.ClientMessage {
+func EncodeMapProjectWithPredicateRequest(name string, projection serialization.Data, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -42,17 +38,17 @@ func (mapProjectWithPredicateCodec) EncodeRequest(name string, projection serial
 	clientMessage.SetMessageType(MapProjectWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, projection)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, projection)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
 
-func (mapProjectWithPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeMapProjectWithPredicateResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForDataContainsNullable(frameIterator)
+	return DecodeListMultiFrameForDataContainsNullable(frameIterator)
 }

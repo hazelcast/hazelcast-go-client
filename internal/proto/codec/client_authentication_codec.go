@@ -37,33 +37,30 @@ const (
 )
 
 // Makes an authentication request to the cluster.
-type clientAuthenticationCodec struct{}
 
-var ClientAuthenticationCodec clientAuthenticationCodec
-
-func (clientAuthenticationCodec) EncodeRequest(clusterName string, username string, password string, uuid core.UUID, clientType string, serializationVersion byte, clientHazelcastVersion string, clientName string, labels []string) *proto.ClientMessage {
+func EncodeClientAuthenticationRequest(clusterName string, username string, password string, uuid core.UUID, clientType string, serializationVersion byte, clientHazelcastVersion string, clientName string, labels []string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrame(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize))
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCodecRequestUuidOffset, uuid)
 	FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCodecRequestSerializationVersionOffset, serializationVersion)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAuthenticationCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, clusterName)
-	CodecUtil.EncodeNullableForString(clientMessage, username)
-	CodecUtil.EncodeNullableForString(clientMessage, password)
-	StringCodec.Encode(clientMessage, clientType)
-	StringCodec.Encode(clientMessage, clientHazelcastVersion)
-	StringCodec.Encode(clientMessage, clientName)
-	ListMultiFrameCodec.EncodeForString(clientMessage, labels)
+	EncodeString(clientMessage, clusterName)
+	CodecUtil.EncodeNullable(clientMessage, username, EncodeString)
+	CodecUtil.EncodeNullable(clientMessage, password, EncodeString)
+	EncodeString(clientMessage, clientType)
+	EncodeString(clientMessage, clientHazelcastVersion)
+	EncodeString(clientMessage, clientName)
+	EncodeListMultiFrameForString(clientMessage, labels)
 
 	return clientMessage
 }
 
-func (clientAuthenticationCodec) DecodeResponse(clientMessage *proto.ClientMessage) (status byte, address core.Address, memberUuid core.UUID, serializationVersion byte, serverHazelcastVersion string, partitionCount int32, clusterId core.UUID, failoverSupported bool) {
+func (clientAuthenticationCodec) DecodeResponse(clientMessage *proto.ClientMessage) (status byte, address proto.Address, memberUuid core.UUID, serializationVersion byte, serverHazelcastVersion string, partitionCount int32, clusterId core.UUID, failoverSupported bool) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
@@ -74,7 +71,7 @@ func (clientAuthenticationCodec) DecodeResponse(clientMessage *proto.ClientMessa
 	clusterId = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationResponseClusterIdOffset)
 	failoverSupported = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientAuthenticationResponseFailoverSupportedOffset)
 	address = CodecUtil.DecodeNullableForAddress(frameIterator)
-	serverHazelcastVersion = StringCodec.Decode(frameIterator)
+	serverHazelcastVersion = DecodeString(frameIterator)
 
 	return status, address, memberUuid, serializationVersion, serverHazelcastVersion, partitionCount, clusterId, failoverSupported
 }

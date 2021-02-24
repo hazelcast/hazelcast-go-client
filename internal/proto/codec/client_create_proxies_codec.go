@@ -31,11 +31,8 @@ const (
 // Any proxy creation failure is logged on the server side.
 // Exceptions related to a proxy creation failure is not send to the client.
 // A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
-type clientCreateProxiesCodec struct{}
 
-var ClientCreateProxiesCodec clientCreateProxiesCodec
-
-func (clientCreateProxiesCodec) EncodeRequest(proxies []proto.Pair) *proto.ClientMessage {
+func EncodeClientCreateProxiesRequest(proxies []proto.Pair) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,7 +41,7 @@ func (clientCreateProxiesCodec) EncodeRequest(proxies []proto.Pair) *proto.Clien
 	clientMessage.SetMessageType(ClientCreateProxiesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	EntryListCodec.EncodeForStringAndString(clientMessage, proxies)
+	EncodeEntryListForStringAndString(clientMessage, proxies)
 
 	return clientMessage
 }

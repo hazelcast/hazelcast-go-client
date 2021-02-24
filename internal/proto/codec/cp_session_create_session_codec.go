@@ -31,11 +31,8 @@ const (
 )
 
 // Creates a session for the caller on the given CP group.
-type cpsessionCreateSessionCodec struct{}
 
-var CPSessionCreateSessionCodec cpsessionCreateSessionCodec
-
-func (cpsessionCreateSessionCodec) EncodeRequest(groupId proto.RaftGroupId, endpointName string) *proto.ClientMessage {
+func EncodeCPSessionCreateSessionRequest(groupId proto.RaftGroupId, endpointName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,8 +41,8 @@ func (cpsessionCreateSessionCodec) EncodeRequest(groupId proto.RaftGroupId, endp
 	clientMessage.SetMessageType(CPSessionCreateSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, endpointName)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, endpointName)
 
 	return clientMessage
 }

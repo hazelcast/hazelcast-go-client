@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -39,11 +38,8 @@ const (
 )
 
 // Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
-type setAddListenerCodec struct{}
 
-var SetAddListenerCodec setAddListenerCodec
-
-func (setAddListenerCodec) EncodeRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
+func EncodeSetAddListenerRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -54,12 +50,12 @@ func (setAddListenerCodec) EncodeRequest(name string, includeValue bool, localOn
 	clientMessage.SetMessageType(SetAddListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (setAddListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeSetAddListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

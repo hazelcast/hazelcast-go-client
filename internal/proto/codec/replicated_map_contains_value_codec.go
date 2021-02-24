@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 
 // Returns true if this map maps one or more keys to the specified value.
 // This operation will probably require time linear in the map size for most implementations of the Map interface.
-type replicatedmapContainsValueCodec struct{}
 
-var ReplicatedMapContainsValueCodec replicatedmapContainsValueCodec
-
-func (replicatedmapContainsValueCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeReplicatedMapContainsValueRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,13 +41,13 @@ func (replicatedmapContainsValueCodec) EncodeRequest(name string, value serializ
 	clientMessage.SetMessageType(ReplicatedMapContainsValueCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (replicatedmapContainsValueCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeReplicatedMapContainsValueResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

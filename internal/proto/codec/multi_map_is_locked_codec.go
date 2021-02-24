@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 )
 
 // Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
-type multimapIsLockedCodec struct{}
 
-var MultiMapIsLockedCodec multimapIsLockedCodec
-
-func (multimapIsLockedCodec) EncodeRequest(name string, key serialization.Data) *proto.ClientMessage {
+func EncodeMultiMapIsLockedRequest(name string, key serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -44,13 +40,13 @@ func (multimapIsLockedCodec) EncodeRequest(name string, key serialization.Data) 
 	clientMessage.SetMessageType(MultiMapIsLockedCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (multimapIsLockedCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapIsLockedResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

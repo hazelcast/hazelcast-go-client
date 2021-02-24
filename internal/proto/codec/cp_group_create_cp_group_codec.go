@@ -27,11 +27,8 @@ const (
 )
 
 // Creates a new CP group with the given name
-type cpgroupCreateCPGroupCodec struct{}
 
-var CPGroupCreateCPGroupCodec cpgroupCreateCPGroupCodec
-
-func (cpgroupCreateCPGroupCodec) EncodeRequest(proxyName string) *proto.ClientMessage {
+func EncodeCPGroupCreateCPGroupRequest(proxyName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -40,15 +37,15 @@ func (cpgroupCreateCPGroupCodec) EncodeRequest(proxyName string) *proto.ClientMe
 	clientMessage.SetMessageType(CPGroupCreateCPGroupCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, proxyName)
+	EncodeString(clientMessage, proxyName)
 
 	return clientMessage
 }
 
-func (cpgroupCreateCPGroupCodec) DecodeResponse(clientMessage *proto.ClientMessage) proto.RaftGroupId {
+func DecodeCPGroupCreateCPGroupResponse(clientMessage *proto.ClientMessage) proto.RaftGroupId {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return RaftGroupIdCodec.Decode(frameIterator)
+	return DecodeRaftGroupId(frameIterator)
 }

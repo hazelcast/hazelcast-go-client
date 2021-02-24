@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -41,11 +40,8 @@ const (
 // If the filter is null, all items are read. If the filter is not null, only items where the filter function returns
 // true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
 // This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
-type ringbufferReadManyCodec struct{}
 
-var RingbufferReadManyCodec ringbufferReadManyCodec
-
-func (ringbufferReadManyCodec) EncodeRequest(name string, startSequence int64, minCount int32, maxCount int32, filter serialization.Data) *proto.ClientMessage {
+func EncodeRingbufferReadManyRequest(name string, startSequence int64, minCount int32, maxCount int32, filter serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -57,8 +53,8 @@ func (ringbufferReadManyCodec) EncodeRequest(name string, startSequence int64, m
 	clientMessage.SetMessageType(RingbufferReadManyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	CodecUtil.EncodeNullable(clientMessage, filter, DataCodec.Encode)
+	EncodeString(clientMessage, name)
+	CodecUtil.EncodeNullable(clientMessage, filter, EncodeData)
 
 	return clientMessage
 }
@@ -69,7 +65,7 @@ func (ringbufferReadManyCodec) DecodeResponse(clientMessage *proto.ClientMessage
 
 	readCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, RingbufferReadManyResponseReadCountOffset)
 	nextSeq = FixSizedTypesCodec.DecodeLong(initialFrame.Content, RingbufferReadManyResponseNextSeqOffset)
-	items = ListMultiFrameCodec.DecodeForData(frameIterator)
+	items = DecodeListMultiFrameForData(frameIterator)
 	itemSeqs = CodecUtil.DecodeNullableForLongArray(frameIterator)
 
 	return readCount, items, itemSeqs, nextSeq

@@ -30,11 +30,8 @@ const (
 // equivalent to that of calling put(Object,Object) put(k, v) on this map once for each mapping from key k to value
 // v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
 // operation is in progress.
-type replicatedmapPutAllCodec struct{}
 
-var ReplicatedMapPutAllCodec replicatedmapPutAllCodec
-
-func (replicatedmapPutAllCodec) EncodeRequest(name string, entries []proto.Pair) *proto.ClientMessage {
+func EncodeReplicatedMapPutAllRequest(name string, entries []proto.Pair) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,8 +40,8 @@ func (replicatedmapPutAllCodec) EncodeRequest(name string, entries []proto.Pair)
 	clientMessage.SetMessageType(ReplicatedMapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListCodec.EncodeForDataAndData(clientMessage, entries)
+	EncodeString(clientMessage, name)
+	EncodeEntryListForDataAndData(clientMessage, entries)
 
 	return clientMessage
 }

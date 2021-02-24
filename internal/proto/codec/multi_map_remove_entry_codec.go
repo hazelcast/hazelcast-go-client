@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 
 // Removes all the entries with the given key. The collection is NOT backed by the map, so changes to the map are
 // NOT reflected in the collection, and vice-versa.
-type multimapRemoveEntryCodec struct{}
 
-var MultiMapRemoveEntryCodec multimapRemoveEntryCodec
-
-func (multimapRemoveEntryCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMultiMapRemoveEntryRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,14 +43,14 @@ func (multimapRemoveEntryCodec) EncodeRequest(name string, key serialization.Dat
 	clientMessage.SetMessageType(MultiMapRemoveEntryCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (multimapRemoveEntryCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMultiMapRemoveEntryResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

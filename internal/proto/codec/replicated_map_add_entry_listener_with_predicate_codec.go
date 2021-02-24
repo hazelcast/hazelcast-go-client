@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -40,11 +39,8 @@ const (
 
 // Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
 // events filtered by the given predicate.
-type replicatedmapAddEntryListenerWithPredicateCodec struct{}
 
-var ReplicatedMapAddEntryListenerWithPredicateCodec replicatedmapAddEntryListenerWithPredicateCodec
-
-func (replicatedmapAddEntryListenerWithPredicateCodec) EncodeRequest(name string, predicate serialization.Data, localOnly bool) *proto.ClientMessage {
+func EncodeReplicatedMapAddEntryListenerWithPredicateRequest(name string, predicate serialization.Data, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -54,13 +50,13 @@ func (replicatedmapAddEntryListenerWithPredicateCodec) EncodeRequest(name string
 	clientMessage.SetMessageType(ReplicatedMapAddEntryListenerWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, predicate)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, predicate)
 
 	return clientMessage
 }
 
-func (replicatedmapAddEntryListenerWithPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeReplicatedMapAddEntryListenerWithPredicateResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

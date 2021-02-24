@@ -30,11 +30,8 @@ const (
 
 // Returns the remaining capacity of the ringbuffer. The returned value could be stale as soon as it is returned.
 // If ttl is not set, the remaining capacity will always be the capacity.
-type ringbufferRemainingCapacityCodec struct{}
 
-var RingbufferRemainingCapacityCodec ringbufferRemainingCapacityCodec
-
-func (ringbufferRemainingCapacityCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeRingbufferRemainingCapacityRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,12 +40,12 @@ func (ringbufferRemainingCapacityCodec) EncodeRequest(name string) *proto.Client
 	clientMessage.SetMessageType(RingbufferRemainingCapacityCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (ringbufferRemainingCapacityCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeRingbufferRemainingCapacityResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

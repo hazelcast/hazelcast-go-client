@@ -31,11 +31,8 @@ const (
 )
 
 // Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
-type topicRemoveMessageListenerCodec struct{}
 
-var TopicRemoveMessageListenerCodec topicRemoveMessageListenerCodec
-
-func (topicRemoveMessageListenerCodec) EncodeRequest(name string, registrationId core.UUID) *proto.ClientMessage {
+func EncodeTopicRemoveMessageListenerRequest(name string, registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,12 +42,12 @@ func (topicRemoveMessageListenerCodec) EncodeRequest(name string, registrationId
 	clientMessage.SetMessageType(TopicRemoveMessageListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (topicRemoveMessageListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeTopicRemoveMessageListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

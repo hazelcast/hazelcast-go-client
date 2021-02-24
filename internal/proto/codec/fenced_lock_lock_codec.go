@@ -39,11 +39,8 @@ const (
 // the caller thread is blocked until the lock is released. If the session
 // is closed between reentrant acquires, the call fails with
 // {@code LockOwnershipLostException}.
-type fencedlockLockCodec struct{}
 
-var FencedLockLockCodec fencedlockLockCodec
-
-func (fencedlockLockCodec) EncodeRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID) *proto.ClientMessage {
+func EncodeFencedLockLockRequest(groupId proto.RaftGroupId, name string, sessionId int64, threadId int64, invocationUid core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -55,13 +52,13 @@ func (fencedlockLockCodec) EncodeRequest(groupId proto.RaftGroupId, name string,
 	clientMessage.SetMessageType(FencedLockLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (fencedlockLockCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeFencedLockLockResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

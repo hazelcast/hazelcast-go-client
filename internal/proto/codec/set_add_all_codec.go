@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -34,11 +33,8 @@ const (
 // (optional operation). If the specified collection is also a set, the addAll operation effectively modifies this
 // set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
 // collection is modified while the operation is in progress.
-type setAddAllCodec struct{}
 
-var SetAddAllCodec setAddAllCodec
-
-func (setAddAllCodec) EncodeRequest(name string, valueList []serialization.Data) *proto.ClientMessage {
+func EncodeSetAddAllRequest(name string, valueList []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -47,13 +43,13 @@ func (setAddAllCodec) EncodeRequest(name string, valueList []serialization.Data)
 	clientMessage.SetMessageType(SetAddAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	ListMultiFrameCodec.EncodeForData(clientMessage, valueList)
+	EncodeString(clientMessage, name)
+	EncodeListMultiFrameForData(clientMessage, valueList)
 
 	return clientMessage
 }
 
-func (setAddAllCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeSetAddAllResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

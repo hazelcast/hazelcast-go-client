@@ -30,11 +30,8 @@ const (
 // The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
 // This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
 // if query result size limit is configured.
-type mapEntrySetCodec struct{}
 
-var MapEntrySetCodec mapEntrySetCodec
-
-func (mapEntrySetCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapEntrySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,15 +40,15 @@ func (mapEntrySetCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MapEntrySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapEntrySetCodec) DecodeResponse(clientMessage *proto.ClientMessage) []proto.Pair {
+func DecodeMapEntrySetResponse(clientMessage *proto.ClientMessage) []proto.Pair {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return EntryListCodec.DecodeForDataAndData(frameIterator)
+	return DecodeEntryListForDataAndData(frameIterator)
 }

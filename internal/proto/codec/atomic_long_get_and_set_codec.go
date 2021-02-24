@@ -30,11 +30,8 @@ const (
 )
 
 // Atomically sets the given value and returns the old value.
-type atomiclongGetAndSetCodec struct{}
 
-var AtomicLongGetAndSetCodec atomiclongGetAndSetCodec
-
-func (atomiclongGetAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, name string, newValue int64) *proto.ClientMessage {
+func EncodeAtomicLongGetAndSetRequest(groupId proto.RaftGroupId, name string, newValue int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -44,13 +41,13 @@ func (atomiclongGetAndSetCodec) EncodeRequest(groupId proto.RaftGroupId, name st
 	clientMessage.SetMessageType(AtomicLongGetAndSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (atomiclongGetAndSetCodec) DecodeResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeAtomicLongGetAndSetResponse(clientMessage *proto.ClientMessage) int64 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

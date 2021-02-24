@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 
 // Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not
 // contain the element.
-type listLastIndexOfCodec struct{}
 
-var ListLastIndexOfCodec listLastIndexOfCodec
-
-func (listLastIndexOfCodec) EncodeRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeListLastIndexOfRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,13 +41,13 @@ func (listLastIndexOfCodec) EncodeRequest(name string, value serialization.Data)
 	clientMessage.SetMessageType(ListLastIndexOfCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (listLastIndexOfCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeListLastIndexOfResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

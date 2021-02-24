@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -34,11 +33,8 @@ const (
 // like java.util.Set#contains(Object) and java.util.Set#containsAll(java.util.Collection) which would result in
 // very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
 // the data, please copy the resulting set into a new java.util.HashSet.
-type replicatedmapKeySetCodec struct{}
 
-var ReplicatedMapKeySetCodec replicatedmapKeySetCodec
-
-func (replicatedmapKeySetCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeReplicatedMapKeySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -47,15 +43,15 @@ func (replicatedmapKeySetCodec) EncodeRequest(name string) *proto.ClientMessage 
 	clientMessage.SetMessageType(ReplicatedMapKeySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (replicatedmapKeySetCodec) DecodeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeReplicatedMapKeySetResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return ListMultiFrameCodec.DecodeForData(frameIterator)
+	return DecodeListMultiFrameForData(frameIterator)
 }

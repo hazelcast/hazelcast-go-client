@@ -25,42 +25,43 @@ const (
 	MemberInfoCodecLiteMemberInitialFrameSize = MemberInfoCodecLiteMemberFieldOffset + proto.BooleanSizeInBytes
 )
 
-type memberinfoCodec struct{}
+/*
+type memberinfoCodec struct {}
 
 var MemberInfoCodec memberinfoCodec
+*/
 
-func (memberinfoCodec) Encode(clientMessage *proto.ClientMessage, memberInfo proto.MemberInfo) {
+func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo proto.MemberInfo) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberInfoCodecLiteMemberInitialFrameSize))
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.GetUuid())
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.GetLiteMember())
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.Uuid())
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.LiteMember())
 	clientMessage.AddFrame(initialFrame)
 
-	AddressCodec.Encode(clientMessage, memberInfo.GetAddress())
-	MapCodec.EncodeForStringAndString(clientMessage, memberInfo.GetAttributes())
-	MemberVersionCodec.Encode(clientMessage, memberInfo.GetVersion())
-	MapCodec.EncodeForEndpointQualifierAndAddress(clientMessage, memberInfo.GetAddressMap())
+	EncodeAddress(clientMessage, memberInfo.Address())
+	EncodeMapForStringAndString(clientMessage, memberInfo.Attributes())
+	EncodeMemberVersion(clientMessage, memberInfo.Version())
+	EncodeMapForEndpointQualifierAndAddress(clientMessage, memberInfo.AddressMap())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func (memberinfoCodec) Decode(frameIterator *proto.ForwardFrameIterator) proto.MemberInfo {
+func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) proto.MemberInfo {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
 	uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset)
 	liteMember := FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset)
 
-	address := AddressCodec.Decode(frameIterator)
-	attributes := MapCodec.DecodeForStringAndString(frameIterator)
-	version := MemberVersionCodec.Decode(frameIterator)
+	address := DecodeAddress(frameIterator)
+	attributes := DecodeMapForStringAndString(frameIterator)
+	version := DecodeMemberVersion(frameIterator)
 	isAddressMapExists := false
 	var addressMap interface{}
 	if !frameIterator.PeekNext().IsEndFrame() {
-		addressMap = MapCodec.DecodeForEndpointQualifierAndAddress(frameIterator)
+		addressMap = DecodeMapForEndpointQualifierAndAddress(frameIterator)
 		isAddressMapExists = true
 	}
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-
 	return proto.NewMemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap)
 }

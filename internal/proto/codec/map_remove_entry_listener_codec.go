@@ -32,11 +32,8 @@ const (
 
 // Removes the specified entry listener. If there is no such listener added before, this call does no change in the
 // cluster and returns false.
-type mapRemoveEntryListenerCodec struct{}
 
-var MapRemoveEntryListenerCodec mapRemoveEntryListenerCodec
-
-func (mapRemoveEntryListenerCodec) EncodeRequest(name string, registrationId core.UUID) *proto.ClientMessage {
+func EncodeMapRemoveEntryListenerRequest(name string, registrationId core.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,12 +43,12 @@ func (mapRemoveEntryListenerCodec) EncodeRequest(name string, registrationId cor
 	clientMessage.SetMessageType(MapRemoveEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapRemoveEntryListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) bool {
+func DecodeMapRemoveEntryListenerResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

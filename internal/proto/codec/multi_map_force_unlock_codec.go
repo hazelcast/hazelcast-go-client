@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -31,11 +30,8 @@ const (
 
 // Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
 // never blocks and returns immediately.
-type multimapForceUnlockCodec struct{}
 
-var MultiMapForceUnlockCodec multimapForceUnlockCodec
-
-func (multimapForceUnlockCodec) EncodeRequest(name string, key serialization.Data, referenceId int64) *proto.ClientMessage {
+func EncodeMultiMapForceUnlockRequest(name string, key serialization.Data, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,8 +41,8 @@ func (multimapForceUnlockCodec) EncodeRequest(name string, key serialization.Dat
 	clientMessage.SetMessageType(MultiMapForceUnlockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }

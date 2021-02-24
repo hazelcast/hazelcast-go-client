@@ -27,21 +27,18 @@ const (
 )
 
 // Creates a cluster-wide proxy with the given name and service.
-type clientCreateProxyCodec struct{}
 
-var ClientCreateProxyCodec clientCreateProxyCodec
-
-func (clientCreateProxyCodec) EncodeRequest(name string, serviceName string) *proto.ClientMessage {
+func EncodeClientCreateProxyRequest(name string, serviceName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, ClientCreateProxyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrame(make([]byte, ClientCreateProxyCodecRequestInitialFrameSize))
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientCreateProxyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	StringCodec.Encode(clientMessage, serviceName)
+	EncodeString(clientMessage, name)
+	EncodeString(clientMessage, serviceName)
 
 	return clientMessage
 }

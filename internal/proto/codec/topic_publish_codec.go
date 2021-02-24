@@ -28,11 +28,8 @@ const (
 )
 
 // Publishes the message to all subscribers of this topic
-type topicPublishCodec struct{}
 
-var TopicPublishCodec topicPublishCodec
-
-func (topicPublishCodec) EncodeRequest(name string, message serialization.Data) *proto.ClientMessage {
+func EncodeTopicPublishRequest(name string, message serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -41,8 +38,8 @@ func (topicPublishCodec) EncodeRequest(name string, message serialization.Data) 
 	clientMessage.SetMessageType(TopicPublishCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, message)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, message)
 
 	return clientMessage
 }

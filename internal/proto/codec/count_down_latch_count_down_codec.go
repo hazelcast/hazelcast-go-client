@@ -34,11 +34,8 @@ const (
 // it is decremented. If the new count is zero: All waiting threads are
 // re-enabled for thread scheduling purposes, and Countdown owner is set to
 // null. If the current count equals zero, then nothing happens.
-type countdownlatchCountDownCodec struct{}
 
-var CountDownLatchCountDownCodec countdownlatchCountDownCodec
-
-func (countdownlatchCountDownCodec) EncodeRequest(groupId proto.RaftGroupId, name string, invocationUid core.UUID, expectedRound int32) *proto.ClientMessage {
+func EncodeCountDownLatchCountDownRequest(groupId proto.RaftGroupId, name string, invocationUid core.UUID, expectedRound int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,8 +46,8 @@ func (countdownlatchCountDownCodec) EncodeRequest(groupId proto.RaftGroupId, nam
 	clientMessage.SetMessageType(CountDownLatchCountDownCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	RaftGroupIdCodec.Encode(clientMessage, groupId)
-	StringCodec.Encode(clientMessage, name)
+	EncodeRaftGroupId(clientMessage, groupId)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }

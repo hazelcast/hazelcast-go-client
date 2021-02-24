@@ -30,11 +30,8 @@ const (
 // equivalent to that of calling put(k, v) on this MultiMap iteratively for each value in the mapping from key k to value
 // v in the specified MultiMap. The behavior of this operation is undefined if the specified map is modified while the
 // operation is in progress.
-type multimapPutAllCodec struct{}
 
-var MultiMapPutAllCodec multimapPutAllCodec
-
-func (multimapPutAllCodec) EncodeRequest(name string, entries []proto.Pair) *proto.ClientMessage {
+func EncodeMultiMapPutAllRequest(name string, entries []proto.Pair) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -43,8 +40,8 @@ func (multimapPutAllCodec) EncodeRequest(name string, entries []proto.Pair) *pro
 	clientMessage.SetMessageType(MultiMapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	EntryListCodec.EncodeForDataAndListData(clientMessage, entries)
+	EncodeString(clientMessage, name)
+	EncodeEntryListForDataAndListData(clientMessage, entries)
 
 	return clientMessage
 }

@@ -41,11 +41,8 @@ const (
 // IMPORTANT: Please see com.hazelcast.partition.PartitionLostListener for weaknesses.
 // IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
 // to design limitations.
-type mapAddPartitionLostListenerCodec struct{}
 
-var MapAddPartitionLostListenerCodec mapAddPartitionLostListenerCodec
-
-func (mapAddPartitionLostListenerCodec) EncodeRequest(name string, localOnly bool) *proto.ClientMessage {
+func EncodeMapAddPartitionLostListenerRequest(name string, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -55,12 +52,12 @@ func (mapAddPartitionLostListenerCodec) EncodeRequest(name string, localOnly boo
 	clientMessage.SetMessageType(MapAddPartitionLostListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (mapAddPartitionLostListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeMapAddPartitionLostListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

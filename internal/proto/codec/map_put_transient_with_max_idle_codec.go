@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -33,11 +32,8 @@ const (
 
 // Same as put except that MapStore, if defined, will not be called to store/persist the entry.
 // If ttl and maxIdle are 0, then the entry lives forever.
-type mapPutTransientWithMaxIdleCodec struct{}
 
-var MapPutTransientWithMaxIdleCodec mapPutTransientWithMaxIdleCodec
-
-func (mapPutTransientWithMaxIdleCodec) EncodeRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
+func EncodeMapPutTransientWithMaxIdleRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -49,14 +45,14 @@ func (mapPutTransientWithMaxIdleCodec) EncodeRequest(name string, key serializat
 	clientMessage.SetMessageType(MapPutTransientWithMaxIdleCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
-	DataCodec.Encode(clientMessage, value)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
+	EncodeData(clientMessage, value)
 
 	return clientMessage
 }
 
-func (mapPutTransientWithMaxIdleCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapPutTransientWithMaxIdleResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

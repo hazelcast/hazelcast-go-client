@@ -15,7 +15,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -32,11 +31,8 @@ const (
 // If this map permits null values, then a return value of null does not
 // necessarily indicate that the map contains no mapping for the key; it's also possible that the map
 // explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
-type replicatedmapGetCodec struct{}
 
-var ReplicatedMapGetCodec replicatedmapGetCodec
-
-func (replicatedmapGetCodec) EncodeRequest(name string, key serialization.Data) *proto.ClientMessage {
+func EncodeReplicatedMapGetRequest(name string, key serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -45,13 +41,13 @@ func (replicatedmapGetCodec) EncodeRequest(name string, key serialization.Data) 
 	clientMessage.SetMessageType(ReplicatedMapGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
-	DataCodec.Encode(clientMessage, key)
+	EncodeString(clientMessage, name)
+	EncodeData(clientMessage, key)
 
 	return clientMessage
 }
 
-func (replicatedmapGetCodec) DecodeResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeReplicatedMapGetResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

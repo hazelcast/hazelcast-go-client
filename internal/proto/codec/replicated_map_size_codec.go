@@ -30,11 +30,8 @@ const (
 
 // Returns the number of key-value mappings in this map. If the map contains more than Integer.MAX_VALUE elements,
 // returns Integer.MAX_VALUE.
-type replicatedmapSizeCodec struct{}
 
-var ReplicatedMapSizeCodec replicatedmapSizeCodec
-
-func (replicatedmapSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeReplicatedMapSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -43,12 +40,12 @@ func (replicatedmapSizeCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(ReplicatedMapSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (replicatedmapSizeCodec) DecodeResponse(clientMessage *proto.ClientMessage) int32 {
+func DecodeReplicatedMapSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

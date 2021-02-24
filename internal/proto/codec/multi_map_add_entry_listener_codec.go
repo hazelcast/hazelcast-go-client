@@ -16,7 +16,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
@@ -40,11 +39,8 @@ const (
 )
 
 // Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
-type multimapAddEntryListenerCodec struct{}
 
-var MultiMapAddEntryListenerCodec multimapAddEntryListenerCodec
-
-func (multimapAddEntryListenerCodec) EncodeRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
+func EncodeMultiMapAddEntryListenerRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -55,12 +51,12 @@ func (multimapAddEntryListenerCodec) EncodeRequest(name string, includeValue boo
 	clientMessage.SetMessageType(MultiMapAddEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
 
-func (multimapAddEntryListenerCodec) DecodeResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeMultiMapAddEntryListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

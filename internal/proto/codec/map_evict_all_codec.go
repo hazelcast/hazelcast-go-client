@@ -29,11 +29,8 @@ const (
 // Evicts all keys from this map except the locked ones. If a MapStore is defined for this map, deleteAll is not
 // called by this method. If you do want to deleteAll to be called use the clear method. The EVICT_ALL event is
 // fired for any registered listeners.
-type mapEvictAllCodec struct{}
 
-var MapEvictAllCodec mapEvictAllCodec
-
-func (mapEvictAllCodec) EncodeRequest(name string) *proto.ClientMessage {
+func EncodeMapEvictAllRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -42,7 +39,7 @@ func (mapEvictAllCodec) EncodeRequest(name string) *proto.ClientMessage {
 	clientMessage.SetMessageType(MapEvictAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	StringCodec.Encode(clientMessage, name)
+	EncodeString(clientMessage, name)
 
 	return clientMessage
 }
