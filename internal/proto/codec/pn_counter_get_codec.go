@@ -56,7 +56,7 @@ func EncodePNCounterGetRequest(name string, replicaTimestamps []proto.Pair, targ
 	return clientMessage
 }
 
-func (pncounterGetCodec) DecodeResponse(clientMessage *proto.ClientMessage) (value int64, replicaTimestamps []proto.Pair, replicaCount int32) {
+func DecodePNCounterGetResponse(clientMessage *proto.ClientMessage) (value int64, replicaTimestamps []proto.Pair, replicaCount int32) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

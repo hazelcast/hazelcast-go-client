@@ -48,7 +48,7 @@ func EncodeFencedLockGetLockOwnershipRequest(groupId proto.RaftGroupId, name str
 	return clientMessage
 }
 
-func (fencedlockGetLockOwnershipCodec) DecodeResponse(clientMessage *proto.ClientMessage) (fence int64, lockCount int32, sessionId int64, threadId int64) {
+func DecodeFencedLockGetLockOwnershipResponse(clientMessage *proto.ClientMessage) (fence int64, lockCount int32, sessionId int64, threadId int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

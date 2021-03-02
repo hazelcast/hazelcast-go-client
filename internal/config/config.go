@@ -27,6 +27,9 @@ const (
 
 type Properties map[string]string
 
+type ClientConfig interface {
+}
+
 // Config is the main configuration to setup a Hazelcast client.
 type Config struct {
 	// membershipListeners is the array of cluster membership listeners.

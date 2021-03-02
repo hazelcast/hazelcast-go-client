@@ -22,11 +22,11 @@ import (
 
 type Message struct {
 	publishTime      int64
-	publisherAddress core.Address
+	publisherAddress *core.Address
 	payload          serialization.Data
 }
 
-func NewMessage(payload serialization.Data, publisherAddr core.Address) *Message {
+func NewMessage(payload serialization.Data, publisherAddr *core.Address) *Message {
 	return &Message{
 		publishTime:      timeutil.GetCurrentTimeInMillis(),
 		payload:          payload,
@@ -42,7 +42,7 @@ func (r *Message) PublishTime() int64 {
 	return r.publishTime
 }
 
-func (r *Message) PublisherAddress() core.Address {
+func (r *Message) PublisherAddress() *core.Address {
 	return r.publisherAddress
 }
 
@@ -75,7 +75,7 @@ func (r *Message) WriteData(output serialization.DataOutput) (err error) {
 func (r *Message) ReadData(input serialization.DataInput) (err error) {
 	r.publishTime = input.ReadInt64()
 	addrObj := input.ReadObject()
-	if addr, ok := addrObj.(core.Address); ok {
+	if addr, ok := addrObj.(*core.Address); ok {
 		r.publisherAddress = addr
 	}
 	r.payload = input.ReadData()

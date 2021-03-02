@@ -21,20 +21,19 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/stretchr/testify/assert"
 )
 
-var expectedAddresses map[string]core.Address
+var expectedAddresses map[string]*core.Address
 var provider *HzCloudAddrProvider
 var provider2 *HzCloudAddrProvider
 
 func TestHzCloudAddrProvider(t *testing.T) {
-	expectedAddresses = make(map[string]core.Address)
-	expectedAddresses["10.0.0.1:5701"] = proto.NewAddressWithParameters("198.51.100.1", 5701)
-	expectedAddresses["10.0.0.1:5702"] = proto.NewAddressWithParameters("198.51.100.1", 5702)
-	expectedAddresses["10.0.0.2:5701"] = proto.NewAddressWithParameters("198.51.100.2", 5701)
-	var mockProvider = func() (map[string]core.Address, error) {
+	expectedAddresses = make(map[string]*core.Address)
+	expectedAddresses["10.0.0.1:5701"] = core.NewAddressWithParameters("198.51.100.1", 5701)
+	expectedAddresses["10.0.0.1:5702"] = core.NewAddressWithParameters("198.51.100.1", 5702)
+	expectedAddresses["10.0.0.2:5701"] = core.NewAddressWithParameters("198.51.100.2", 5701)
+	var mockProvider = func() (map[string]*core.Address, error) {
 		return expectedAddresses, nil
 	}
 
@@ -63,7 +62,7 @@ func testHzCloudAddrProviderLoadAddresses(t *testing.T) {
 }
 
 func testHzCloudAddrProviderLoadAddressesNone(t *testing.T) {
-	var mockProvider2 = func() (map[string]core.Address, error) {
+	var mockProvider2 = func() (map[string]*core.Address, error) {
 		return nil, errors.New("error")
 	}
 	provider2.cloudDiscovery.discoverNodes = mockProvider2

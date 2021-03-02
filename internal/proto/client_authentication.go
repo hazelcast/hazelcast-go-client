@@ -15,8 +15,19 @@
 package proto
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
+
+type ClientAuthenticationDecodeResponseDelegate func(clientMessage *ClientMessage) (
+	status uint8,
+	address *core.Address,
+	uuid core.UUID,
+	ownerUuid core.UUID,
+	serializationVersion uint8,
+	serverHazelcastVersion string,
+	partitionCount int32,
+	clientUnregisteredMembers []*Member)
 
 func clientAuthenticationCalculateSize(username string, password string, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
 	// Calculates the request payload size
@@ -38,17 +49,24 @@ func clientAuthenticationCalculateSize(username string, password string, uuid st
 	return dataSize
 }
 
-// ClientAuthenticationEncodeRequest creates and encodes a client message
+// EncodeClientAuthenticationRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func ClientAuthenticationEncodeRequest(username string, password string, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
-	//TODO
+func EncodeClientAuthenticationRequest(username string, password string, uuid core.UUID, ownerUuid core.UUID, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
+	//return codec.EncodeClientAuthenticationRequest()
 	return nil
 }
 
-// ClientAuthenticationDecodeResponse decodes the given client message.
-// It returns a function which returns the response parameters.
-func ClientAuthenticationDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string, clientUnregisteredMembers []*Member) {
-	//TODO
-	return nil
+// DecodeClientAuthenticationResponse decodes the given client message.
+func DecodeClientAuthenticationResponse(clientMessage *ClientMessage) (
+	status uint8,
+	address *core.Address,
+	uuid core.UUID,
+	ownerUuid core.UUID,
+	serializationVersion uint8,
+	serverHazelcastVersion string,
+	partitionCount int32,
+	clientUnregisteredMembers []*Member) {
+	// TODO:
+	return
 }

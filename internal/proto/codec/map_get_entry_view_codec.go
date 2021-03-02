@@ -51,7 +51,7 @@ func EncodeMapGetEntryViewRequest(name string, key serialization.Data, threadId 
 	return clientMessage
 }
 
-func (mapGetEntryViewCodec) DecodeResponse(clientMessage *proto.ClientMessage) (response *core.SimpleEntryView, maxIdle int64) {
+func DecodeMapGetEntryViewResponse(clientMessage *proto.ClientMessage) (response *core.SimpleEntryView, maxIdle int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

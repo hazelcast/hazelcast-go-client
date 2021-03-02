@@ -19,12 +19,12 @@ import "github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 /*
 Address Codec
 */
-func AddressCodecEncode(msg *ClientMessage, address *Address) {
+func AddressCodecEncode(msg *ClientMessage, address *core.Address) {
 	//TODO
 
 }
 
-func AddressCodecDecode(msg *ClientMessage) *Address {
+func AddressCodecDecode(msg *ClientMessage) *core.Address {
 	//TODO
 	return nil
 }

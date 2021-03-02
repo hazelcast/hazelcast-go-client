@@ -19,12 +19,12 @@ import (
 )
 
 type PortableContext struct {
-	service         *Service
+	service         *ServiceImpl
 	portableVersion int32
 	classDefContext map[int32]*ClassDefinitionContext
 }
 
-func NewPortableContext(service *Service, portableVersion int32) *PortableContext {
+func NewPortableContext(service *ServiceImpl, portableVersion int32) *PortableContext {
 	return &PortableContext{service, portableVersion, make(map[int32]*ClassDefinitionContext)}
 }
 

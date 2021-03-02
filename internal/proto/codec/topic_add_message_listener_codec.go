@@ -61,7 +61,7 @@ func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) c
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
 }
 
-func (topicAddMessageListenerCodec) Handle(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid core.UUID)) {
+func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid core.UUID)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == TopicAddMessageListenerCodecEventTopicMessageType {

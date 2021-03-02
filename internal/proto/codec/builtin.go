@@ -4,13 +4,11 @@ import (
 	"encoding/binary"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
 )
 
 // Encoder for ClientMessage and value
@@ -57,7 +55,7 @@ func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessag
 	if options == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
-		EncodeBitmapIndexOptions(message, options)
+		EncodeBitmapIndexOptions(message, *options)
 	}
 }
 
@@ -76,12 +74,12 @@ func (codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator
 	return DecodeData(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *proto.Address {
+func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *core.Address {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	addr := DecodeAddress(frameIterator)
-	return &addr
+	return addr
 }
 
 func (codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
@@ -424,8 +422,8 @@ func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid core.UUID
 		return
 	}
 	bufferOffset := offset + proto.BooleanSizeInBytes
-	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset, int64(uuid.GetMostSignificantBits()))
-	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.GetLeastSignificantBits()))
+	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset, int64(uuid.MostSignificantBits()))
+	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.LeastSignificantBits()))
 }
 
 func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) core.UUID {
@@ -663,7 +661,7 @@ func EncodeMapForStringAndString(message *proto.ClientMessage, values map[string
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[proto.EndpointQualifier]proto.Address) {
+func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[proto.EndpointQualifier]*core.Address) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {
 		EncodeEndpointQualifier(message, key)
@@ -685,7 +683,7 @@ func DecodeMapForStringAndString(iterator *proto.ForwardFrameIterator) map[strin
 }
 
 func DecodeMapForEndpointQualifierAndAddress(iterator *proto.ForwardFrameIterator) interface{} {
-	result := map[proto.EndpointQualifier]proto.Address{}
+	result := map[proto.EndpointQualifier]*core.Address{}
 	iterator.Next()
 	for !iterator.PeekNext().IsEndFrame() {
 		key := DecodeEndpointQualifier(iterator)

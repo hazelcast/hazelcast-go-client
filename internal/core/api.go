@@ -18,7 +18,6 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"net"
 	"time"
 
@@ -49,13 +48,13 @@ type ClientInfo struct {
 type Member interface {
 	fmt.Stringer
 	// Address returns the address of this member.
-	Address() proto.Address
+	Address() *Address
 
 	// UUID returns the uuid of this member.
 	UUID() UUID
 
 	// IsLiteMember returns true if this member is a lite member.
-	IsLiteMember() bool
+	LiteMember() bool
 
 	// Attributes returns configured attributes for this member.
 	Attributes() map[string]string

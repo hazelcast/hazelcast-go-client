@@ -24,7 +24,7 @@ import (
 // HzCloudAddrTranslator is used to translate private addresses to public addresses.
 type HzCloudAddrTranslator struct {
 	cloudDiscovery  *HazelcastCloud
-	privateToPublic map[string]core.Address
+	privateToPublic map[string]*core.Address
 	logger          logger.Logger
 }
 
@@ -49,21 +49,17 @@ func NewHzCloudAddrTranslatorWithCloudDisc(cloudDisc *HazelcastCloud, logger log
 }
 
 // Translate translates the given addr to its public address.
-func (at *HzCloudAddrTranslator) Translate(addr core.Address) core.Address {
+func (at *HzCloudAddrTranslator) Translate(addr *core.Address) *core.Address {
 	if addr == nil {
 		return nil
 	}
-
 	if publicAddr, found := at.privateToPublic[addr.String()]; found {
 		return publicAddr
 	}
-
 	at.Refresh()
-
 	if publicAddr, found := at.privateToPublic[addr.String()]; found {
 		return publicAddr
 	}
-
 	return nil
 }
 

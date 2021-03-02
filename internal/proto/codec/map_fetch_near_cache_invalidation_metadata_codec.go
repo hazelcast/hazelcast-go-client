@@ -45,7 +45,7 @@ func EncodeMapFetchNearCacheInvalidationMetadataRequest(names []string, uuid cor
 	return clientMessage
 }
 
-func (mapFetchNearCacheInvalidationMetadataCodec) DecodeResponse(clientMessage *proto.ClientMessage) (namePartitionSequenceList []proto.Pair, partitionUuidList []proto.Pair) {
+func DecodeMapFetchNearCacheInvalidationMetadataResponse(clientMessage *proto.ClientMessage) (namePartitionSequenceList []proto.Pair, partitionUuidList []proto.Pair) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 

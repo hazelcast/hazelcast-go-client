@@ -84,7 +84,7 @@ func (s *CustomArtistSerializer) Write(output DataOutput, obj interface{}) error
 	}
 	payload := (&network).Bytes()
 	output.WriteInt32(obj.(artist).Type())
-	output.WriteData(NewData(payload))
+	output.WriteData(NewSerializationData(payload))
 	return nil
 }
 
@@ -118,7 +118,7 @@ func (s *GlobalSerializer) Write(output DataOutput, obj interface{}) error {
 		return err
 	}
 	payload := (&network).Bytes()
-	output.WriteData(NewData(payload))
+	output.WriteData(NewSerializationData(payload))
 	return nil
 }
 
@@ -276,7 +276,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 }
 
 func TestSerializeData(t *testing.T) {
-	data := NewData([]byte{10, 20, 0, 30, 5, 7, 6})
+	data := NewSerializationData([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := NewConfig()
 	service, _ := NewService(config)
 	serializedData, _ := service.ToData(data)

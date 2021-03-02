@@ -72,7 +72,7 @@ func TestObjectDataOutput_WriteInt32(t *testing.T) {
 }
 
 func TestObjectDataInput_AssertAvailable(t *testing.T) {
-	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
+	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &ServiceImpl{}, true)
 	ret := o.AssertAvailable(2)
 	if ret == nil {
 		t.Errorf("AssertAvailable() should return error %v but it returns nil!", ret)
@@ -81,7 +81,7 @@ func TestObjectDataInput_AssertAvailable(t *testing.T) {
 }
 
 func TestObjectDataInput_AssertAvailable2(t *testing.T) {
-	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
+	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &ServiceImpl{}, true)
 	ret := o.AssertAvailable(2)
 	if _, ok := ret.(*core.HazelcastEOFError); !ok {
 		t.Errorf("AssertAvailable() should return error type *common.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
@@ -104,10 +104,10 @@ func TestObjectDataInput_ReadByte(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadBool(t *testing.T) {
-	o := NewObjectDataOutput(9, &Service{}, false)
+	o := NewObjectDataOutput(9, &ServiceImpl{}, false)
 	o.WriteFloat64(1.234)
 	o.WriteBool(true)
-	i := NewObjectDataInput(o.buffer, 8, &Service{}, false)
+	i := NewObjectDataInput(o.buffer, 8, &ServiceImpl{}, false)
 	var expectedRet = true
 	var ret bool
 	ret = i.ReadBool()
@@ -117,10 +117,10 @@ func TestObjectDataInput_ReadBool(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadBoolWithPosition(t *testing.T) {
-	o := NewObjectDataOutput(9, &Service{}, false)
+	o := NewObjectDataOutput(9, &ServiceImpl{}, false)
 	o.WriteFloat64(1.234)
 	o.WriteBool(true)
-	i := NewObjectDataInput(o.buffer, 7, &Service{}, false)
+	i := NewObjectDataInput(o.buffer, 7, &ServiceImpl{}, false)
 	var expectedRet = true
 	var ret bool
 	ret = i.ReadBoolWithPosition(8)

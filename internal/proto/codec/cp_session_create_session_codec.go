@@ -47,7 +47,7 @@ func EncodeCPSessionCreateSessionRequest(groupId proto.RaftGroupId, endpointName
 	return clientMessage
 }
 
-func (cpsessionCreateSessionCodec) DecodeResponse(clientMessage *proto.ClientMessage) (sessionId int64, ttlMillis int64, heartbeatMillis int64) {
+func DecodeCPSessionCreateSessionResponse(clientMessage *proto.ClientMessage) (sessionId int64, ttlMillis int64, heartbeatMillis int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

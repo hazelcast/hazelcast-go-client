@@ -30,8 +30,8 @@ type BitmapIndexOptions struct {
 }
 
 // NewBitmapIndexOptions create a new BitmapIndexOptions
-func NewBitmapIndexOptions(uniqueKey string, uniqueKeyTransformation int32) BitmapIndexOptions {
-	return BitmapIndexOptions{uniqueKey: uniqueKey, uniqueKeyTransformation: UniqueKeyTransformation(uniqueKeyTransformation)}
+func NewBitmapIndexOptions(uniqueKey string, uniqueKeyTransformation int32) *BitmapIndexOptions {
+	return &BitmapIndexOptions{uniqueKey: uniqueKey, uniqueKeyTransformation: UniqueKeyTransformation(uniqueKeyTransformation)}
 }
 
 func (bitmapIndexOptions BitmapIndexOptions) UniqueKey() string {

@@ -170,7 +170,7 @@ func TestGetMembers(t *testing.T) {
 	members := client.Cluster().GetMembers()
 	assert.Equalf(t, len(members), memberAmount, "GetMembers returned wrong number of members")
 	for _, member := range members {
-		assert.Equalf(t, member.IsLiteMember(), false, "member shouldnt be a lite member")
+		assert.Equalf(t, member.LiteMember(), false, "member shouldnt be a lite member")
 		assert.Equalf(t, len(member.Attributes()), 0, "member shouldnt have any attributes")
 	}
 }

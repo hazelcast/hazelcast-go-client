@@ -66,7 +66,7 @@ func DecodeMapAddNearCacheInvalidationListenerResponse(clientMessage *proto.Clie
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddNearCacheInvalidationListenerResponseResponseOffset)
 }
 
-func (mapAddNearCacheInvalidationListenerCodec) Handle(clientMessage *proto.ClientMessage, handleIMapInvalidationEvent func(key serialization.Data, sourceUuid core.UUID, partitionUuid core.UUID, sequence int64), handleIMapBatchInvalidationEvent func(keys []serialization.Data, sourceUuids []core.UUID, partitionUuids []core.UUID, sequences []int64)) {
+func HandleMapAddNearCacheInvalidationListener(clientMessage *proto.ClientMessage, handleIMapInvalidationEvent func(key serialization.Data, sourceUuid core.UUID, partitionUuid core.UUID, sequence int64), handleIMapBatchInvalidationEvent func(keys []serialization.Data, sourceUuids []core.UUID, partitionUuids []core.UUID, sequences []int64)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddNearCacheInvalidationListenerCodecEventIMapInvalidationMessageType {

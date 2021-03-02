@@ -16,6 +16,7 @@
 package codec
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -41,7 +42,7 @@ func EncodeBitmapIndexOptions(clientMessage *proto.ClientMessage, bitmapIndexOpt
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) config.BitmapIndexOptions {
+func DecodeBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) *config.BitmapIndexOptions {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
