@@ -22,6 +22,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
+func CreateHazelcastError(err *proto.ServerError) core.HazelcastError {
+	return createHazelcastError(err)
+}
+
 func createHazelcastError(err *proto.ServerError) core.HazelcastError {
 	stackTrace := ""
 	for _, trace := range err.StackTrace() {

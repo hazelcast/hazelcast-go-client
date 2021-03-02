@@ -394,8 +394,8 @@ func TestFixSizedTypesCodec_EncodeUUID(t *testing.T) {
 
 	//then
 	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), false)
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(buffer, offset+proto.BooleanSizeInBytes), int64(uuid.GetMostSignificantBits()))
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(buffer, offset+proto.BooleanSizeInBytes+proto.LongSizeInBytes), int64(uuid.GetLeastSignificantBits()))
+	assert.Equal(t, FixSizedTypesCodec.DecodeLong(buffer, offset+proto.BooleanSizeInBytes), int64(uuid.MostSignificantBits()))
+	assert.Equal(t, FixSizedTypesCodec.DecodeLong(buffer, offset+proto.BooleanSizeInBytes+proto.LongSizeInBytes), int64(uuid.LeastSignificantBits()))
 }
 
 func TestFixSizedTypesCodec_EncodeUUID_When_UUID_Is_Nil(t *testing.T) {
@@ -422,9 +422,9 @@ func TestFixSizedTypesCodec_DecodeUUID(t *testing.T) {
 
 	//then
 	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), false)
-	assert.Equal(t, uuid.ToString(), decodeUUID.ToString())
-	assert.Equal(t, uuid.GetMostSignificantBits(), decodeUUID.GetMostSignificantBits())
-	assert.Equal(t, uuid.GetLeastSignificantBits(), decodeUUID.GetLeastSignificantBits())
+	assert.Equal(t, uuid.String(), decodeUUID.String())
+	assert.Equal(t, uuid.MostSignificantBits(), decodeUUID.MostSignificantBits())
+	assert.Equal(t, uuid.LeastSignificantBits(), decodeUUID.LeastSignificantBits())
 }
 
 func TestEntryListUUIDLongCodec_Encode(t *testing.T) {
@@ -441,7 +441,7 @@ func TestEntryListUUIDLongCodec_Encode(t *testing.T) {
 
 	// then
 	frame := pairs[0]
-	assert.Equal(t, frame.Key().(core.UUID).ToString(), key.ToString())
+	assert.Equal(t, frame.Key().(core.UUID).String(), key.String())
 	assert.Equal(t, frame.Value().(int64), value)
 }
 
@@ -459,9 +459,9 @@ func TestListUUIDCodec_Encode(t *testing.T) {
 	// then
 	frame := message.FrameIterator().Next()
 	decodeUUID1 := FixSizedTypesCodec.DecodeUUID(frame.Content, 0)
-	assert.Equal(t, value1.ToString(), decodeUUID1.ToString())
+	assert.Equal(t, value1.String(), decodeUUID1.String())
 	decodeUUID2 := FixSizedTypesCodec.DecodeUUID(frame.Content, 17)
-	assert.Equal(t, value2.ToString(), decodeUUID2.ToString())
+	assert.Equal(t, value2.String(), decodeUUID2.String())
 }
 
 func TestListIntegerCodec_Encode(t *testing.T) {
@@ -548,7 +548,7 @@ func TestEntryListUUIDListIntegerCodec_Encode(t *testing.T) {
 	assert.Equal(t, FixSizedTypesCodec.DecodeInt(integerValues.Content, 8), int32(3))
 	assert.Equal(t, iterator.Next().IsEndFrame(), true)
 	uuid := FixSizedTypesCodec.DecodeUUID(iterator.Next().Content, 0)
-	assert.Equal(t, uuid.ToString(), key.ToString())
+	assert.Equal(t, uuid.String(), key.String())
 }
 
 func TestEntryListUUIDListIntegerCodec_Decode(t *testing.T) {
@@ -567,7 +567,7 @@ func TestEntryListUUIDListIntegerCodec_Decode(t *testing.T) {
 
 	// then
 	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Key().([]core.UUID)[0].ToString(), key.ToString())
+	assert.Equal(t, result[0].Key().([]core.UUID)[0].String(), key.String())
 	assert.EqualValues(t, result[0].Value().([]int32), value)
 }
 

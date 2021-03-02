@@ -48,7 +48,7 @@ func EncodeFlakeIdGeneratorNewIdBatchRequest(name string, batchSize int32) *prot
 	return clientMessage
 }
 
-func (flakeidgeneratorNewIdBatchCodec) DecodeResponse(clientMessage *proto.ClientMessage) (base int64, increment int64, batchSize int32) {
+func DecodeFlakeIdGeneratorNewIdBatchResponse(clientMessage *proto.ClientMessage) (base int64, increment int64, batchSize int32) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

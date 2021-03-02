@@ -34,7 +34,7 @@ type dataMemberSelector struct {
 }
 
 func (*dataMemberSelector) Select(member Member) (selected bool) {
-	return !member.IsLiteMember()
+	return !member.LiteMember()
 }
 
 type selectors struct {

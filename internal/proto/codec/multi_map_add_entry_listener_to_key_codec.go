@@ -65,7 +65,7 @@ func DecodeMultiMapAddEntryListenerToKeyResponse(clientMessage *proto.ClientMess
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MultiMapAddEntryListenerToKeyResponseResponseOffset)
 }
 
-func (multimapAddEntryListenerToKeyCodec) Handle(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.UUID, numberOfAffectedEntries int32)) {
+func HandleMultiMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MultiMapAddEntryListenerToKeyCodecEventEntryMessageType {

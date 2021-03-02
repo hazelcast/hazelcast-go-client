@@ -54,7 +54,7 @@ func DecodeClientLocalBackupListenerResponse(clientMessage *proto.ClientMessage)
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientLocalBackupListenerResponseResponseOffset)
 }
 
-func (clientLocalBackupListenerCodec) Handle(clientMessage *proto.ClientMessage, handleBackupEvent func(sourceInvocationCorrelationId int64)) {
+func HandleClientLocalBackupListener(clientMessage *proto.ClientMessage, handleBackupEvent func(sourceInvocationCorrelationId int64)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientLocalBackupListenerCodecEventBackupMessageType {

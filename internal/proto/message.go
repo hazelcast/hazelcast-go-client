@@ -70,6 +70,7 @@ type ClientMessage struct {
 	StartFrame *Frame
 	EndFrame   *Frame
 	Retryable  bool
+	Err        error
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
@@ -178,6 +179,10 @@ func (clientMessage *ClientMessage) GetBytes(bytes []byte) int {
 
 func (clientMessage *ClientMessage) DropFragmentationFrame() {
 	clientMessage.StartFrame = clientMessage.StartFrame.next
+}
+
+func (m *ClientMessage) DecodeError() *ServerError {
+	return ErrorCodecDecode(m)
 }
 
 // ForwardFrameIterator

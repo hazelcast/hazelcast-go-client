@@ -25,7 +25,7 @@ func NewSerializationService(serializationConfig *serialization.Config) (Seriali
 
 // NewData return serialization Data with the given payload.
 func NewData(payload []byte) serialization.Data {
-	return serialization.NewData(payload)
+	return serialization.NewSerializationData(payload)
 }
 
 // SerializationService is used to serialize user objects to Data and deserialize data to objects.

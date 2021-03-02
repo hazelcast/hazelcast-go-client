@@ -22,16 +22,24 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
-// Service serializes user objects to Data and back to Object.
+type Service interface {
+	ToData(object interface{}) (Data, error)
+	ToObject(data Data) (interface{}, error)
+	WriteObject(output DataOutput, object interface{}) error
+	ReadObject(input DataInput) (interface{}, error)
+	FindSerializerFor(obj interface{}) (Serializer, error)
+}
+
+// ServiceImpl serializes user objects to Data and back to Object.
 // Data is the internal representation of binary Data in Hazelcast.
-type Service struct {
+type ServiceImpl struct {
 	serializationConfig *Config
 	registry            map[int32]Serializer
 	nameToID            map[string]int32
 }
 
-func NewService(serializationConfig *Config) (*Service, error) {
-	v1 := Service{serializationConfig: serializationConfig, nameToID: make(map[string]int32),
+func NewService(serializationConfig *Config) (*ServiceImpl, error) {
+	v1 := ServiceImpl{serializationConfig: serializationConfig, nameToID: make(map[string]int32),
 		registry: make(map[int32]Serializer)}
 	err := v1.registerDefaultSerializers()
 	if err != nil {
@@ -45,7 +53,7 @@ func NewService(serializationConfig *Config) (*Service, error) {
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (Data, error) {
+func (s *ServiceImpl) ToData(object interface{}) (Data, error) {
 	if _, ok := object.(*SerializationData); ok {
 		return object.(*SerializationData), nil
 	}
@@ -64,11 +72,11 @@ func (s *Service) ToData(object interface{}) (Data, error) {
 // It can safely be called on an object that is already deserialized. In that case, that instance
 // is returned.
 // If this is called with nil, nil is returned.
-func (s *Service) ToObject(data Data) (interface{}, error) {
+func (s *ServiceImpl) ToObject(data Data) (interface{}, error) {
 	if data == nil {
 		return nil, nil
 	}
-	typeID := data.GetType()
+	typeID := data.Type()
 	if typeID == 0 {
 		return data, nil
 	}
@@ -80,7 +88,7 @@ func (s *Service) ToObject(data Data) (interface{}, error) {
 	return serializer.Read(dataInput)
 }
 
-func (s *Service) WriteObject(output DataOutput, object interface{}) error {
+func (s *ServiceImpl) WriteObject(output DataOutput, object interface{}) error {
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
 		return err
@@ -89,7 +97,7 @@ func (s *Service) WriteObject(output DataOutput, object interface{}) error {
 	return serializer.Write(output, object)
 }
 
-func (s *Service) ReadObject(input DataInput) (interface{}, error) {
+func (s *ServiceImpl) ReadObject(input DataInput) (interface{}, error) {
 	serializerID := input.ReadInt32()
 	if input.Error() != nil {
 		return nil, input.Error()
@@ -98,7 +106,7 @@ func (s *Service) ReadObject(input DataInput) (interface{}, error) {
 	return serializer.Read(input)
 }
 
-func (s *Service) FindSerializerFor(obj interface{}) (Serializer, error) {
+func (s *ServiceImpl) FindSerializerFor(obj interface{}) (Serializer, error) {
 	var serializer Serializer
 	if obj == nil {
 		serializer = s.registry[s.nameToID["nil"]]
@@ -126,7 +134,7 @@ func (s *Service) FindSerializerFor(obj interface{}) (Serializer, error) {
 	return serializer, nil
 }
 
-func (s *Service) registerDefaultSerializers() error {
+func (s *ServiceImpl) registerDefaultSerializers() error {
 	// XXX: errors are not handled
 	s.registerSerializer(&ByteSerializer{})
 	s.nameToID["uint8"] = ConstantTypeByte
@@ -206,13 +214,13 @@ func (s *Service) registerDefaultSerializers() error {
 
 }
 
-func (s *Service) registerCustomSerializers(customSerializers map[reflect.Type]Serializer) {
+func (s *ServiceImpl) registerCustomSerializers(customSerializers map[reflect.Type]Serializer) {
 	for _, customSerializer := range customSerializers {
 		s.registerSerializer(customSerializer)
 	}
 }
 
-func (s *Service) registerSerializer(serializer Serializer) error {
+func (s *ServiceImpl) registerSerializer(serializer Serializer) error {
 	if s.registry[serializer.ID()] != nil {
 		return core.NewHazelcastSerializationError("this serializer is already in the registry", nil)
 	}
@@ -220,20 +228,20 @@ func (s *Service) registerSerializer(serializer Serializer) error {
 	return nil
 }
 
-func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
+func (s *ServiceImpl) registerClassDefinitions(portableSerializer *PortableSerializer,
 	classDefinitions []ClassDefinition) {
 	for _, cd := range classDefinitions {
 		portableSerializer.portableContext.RegisterClassDefinition(cd)
 	}
 }
 
-func (s *Service) registerGlobalSerializer(globalSerializer Serializer) {
+func (s *ServiceImpl) registerGlobalSerializer(globalSerializer Serializer) {
 	if globalSerializer != nil {
 		s.registerSerializer(globalSerializer)
 	}
 }
 
-func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
+func (s *ServiceImpl) getIDByObject(obj interface{}) (int32, bool) {
 	typ := reflect.TypeOf(obj).String()
 	if typ == "int" || typ == "[]int" {
 		typ = typ + strconv.Itoa(64)
@@ -244,7 +252,7 @@ func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
 	return 0, false
 }
 
-func (s *Service) lookUpDefaultSerializer(obj interface{}) Serializer {
+func (s *ServiceImpl) lookUpDefaultSerializer(obj interface{}) Serializer {
 	var serializer Serializer
 	if isIdentifiedDataSerializable(obj) {
 		return s.registry[s.nameToID["identified"]]
@@ -260,7 +268,7 @@ func (s *Service) lookUpDefaultSerializer(obj interface{}) Serializer {
 	return serializer
 }
 
-func (s *Service) lookUpCustomSerializer(obj interface{}) Serializer {
+func (s *ServiceImpl) lookUpCustomSerializer(obj interface{}) Serializer {
 	for key, val := range s.serializationConfig.CustomSerializers() {
 		if key.Kind() == reflect.Interface {
 			if reflect.TypeOf(obj).Implements(key) {
@@ -275,11 +283,11 @@ func (s *Service) lookUpCustomSerializer(obj interface{}) Serializer {
 	return nil
 }
 
-func (s *Service) lookUpGlobalSerializer() Serializer {
+func (s *ServiceImpl) lookUpGlobalSerializer() Serializer {
 	return s.serializationConfig.GlobalSerializer()
 }
 
-func (s *Service) registerIdentifiedFactories() error {
+func (s *ServiceImpl) registerIdentifiedFactories() error {
 	factories := make(map[int32]IdentifiedDataSerializableFactory)
 	for id := range s.serializationConfig.DataSerializableFactories() {
 		factories[id] = s.serializationConfig.DataSerializableFactories()[id]

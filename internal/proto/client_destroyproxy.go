@@ -14,6 +14,7 @@
 
 package proto
 
+// TODO: Should we reverse the argument order?
 func clientDestroyProxyCalculateSize(name string, serviceName string) int {
 	// Calculates the request payload size
 	dataSize := 0
@@ -25,6 +26,7 @@ func clientDestroyProxyCalculateSize(name string, serviceName string) int {
 // ClientDestroyProxyEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
+// TODO: Should we reverse the argument order?
 func ClientDestroyProxyEncodeRequest(name string, serviceName string) *ClientMessage {
 	// Encode request into clientMessage
 	//TODO

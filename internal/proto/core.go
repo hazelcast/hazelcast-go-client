@@ -17,39 +17,14 @@ package proto
 import (
 	"bytes"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"reflect"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/timeutil"
 )
-
-type Address struct {
-	host string
-	port int
-}
-
-func NewAddress(Host string, Port int32) Address {
-	return Address{Host, int(Port)}
-}
-
-func NewAddressWithParameters(Host string, Port int) Address {
-	return Address{Host, Port}
-}
-
-func (a Address) Host() string {
-	return a.host
-}
-
-func (a Address) Port() int {
-	return int(a.port)
-}
-
-func (a Address) String() string {
-	return fmt.Sprintf("%s:%d", a.host, a.port)
-}
 
 type uuid struct {
 	msb int64
@@ -57,37 +32,37 @@ type uuid struct {
 }
 
 type Member struct {
-	address      Address
+	address      *core.Address
 	uuid         core.UUID
 	isLiteMember bool
 	attributes   map[string]string
 	version      MemberVersion
-	addressMap   map[EndpointQualifier]Address
+	addressMap   map[EndpointQualifier]*core.Address
 }
 
-func NewMember(address Address, uuid core.UUID, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]Address) *Member {
+func NewMember(address *core.Address, uuid core.UUID, isLiteMember bool, attributes map[string]string, version MemberVersion, addressMap map[EndpointQualifier]*core.Address) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes, version: version, addressMap: addressMap}
 }
 
-func (m *Member) Address() Address {
+func (m Member) Address() *core.Address {
 	return m.address
 }
 
-func (m *Member) UUID() core.UUID {
+func (m Member) UUID() core.UUID {
 	return m.uuid
 }
 
-func (m *Member) IsLiteMember() bool {
+func (m Member) LiteMember() bool {
 	return m.isLiteMember
 }
 
-func (m *Member) Attributes() map[string]string {
+func (m Member) Attributes() map[string]string {
 	return m.attributes
 }
 
 func (m *Member) String() string {
 	memberInfo := fmt.Sprintf("Member %s - %s", m.address.String(), m.UUID())
-	if m.IsLiteMember() {
+	if m.LiteMember() {
 		memberInfo += " lite"
 	}
 	return memberInfo
@@ -581,7 +556,7 @@ func (memberVersion MemberVersion) Patch() byte {
 // MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
 type MemberInfo struct {
 	// address is proto.Address: Address of the member.
-	address Address
+	address *core.Address
 
 	// uuid is core.UUID: UUID of the member.
 	uuid core.UUID
@@ -596,16 +571,19 @@ type MemberInfo struct {
 	version MemberVersion
 
 	// addressMap
-	addressMap map[EndpointQualifier]Address
+	addressMap map[EndpointQualifier]*core.Address
 }
 
-func NewMemberInfo(address Address, uuid core.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
+func NewMemberInfo(address *core.Address, uuid core.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
 	isAddressMapExists bool, addressMap interface{}) MemberInfo {
-	return MemberInfo{address: address, uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
-		addressMap: addressMap.(map[EndpointQualifier]Address)}
+	// TODO: Convert addressMap to map[EndpointQualifier]*Address
+	// copy address
+	addressCopy := *address
+	return MemberInfo{address: &addressCopy, uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
+		addressMap: addressMap.(map[EndpointQualifier]*core.Address)}
 }
 
-func (memberInfo MemberInfo) Address() Address {
+func (memberInfo MemberInfo) Address() *core.Address {
 	return memberInfo.address
 }
 
@@ -625,7 +603,7 @@ func (memberInfo MemberInfo) Version() MemberVersion {
 	return memberInfo.version
 }
 
-func (memberInfo MemberInfo) AddressMap() map[EndpointQualifier]Address {
+func (memberInfo MemberInfo) AddressMap() map[EndpointQualifier]*core.Address {
 	return memberInfo.addressMap
 }
 

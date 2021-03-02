@@ -25,12 +25,12 @@ import (
 
 type ObjectDataOutput struct {
 	buffer    []byte
-	service   *Service
+	service   *ServiceImpl
 	bigEndian bool
 	position  int32
 }
 
-func NewObjectDataOutput(length int, service *Service, bigEndian bool) *ObjectDataOutput {
+func NewObjectDataOutput(length int, service *ServiceImpl, bigEndian bool) *ObjectDataOutput {
 	return &ObjectDataOutput{make([]byte, length), service, bigEndian, 0}
 }
 
@@ -280,13 +280,13 @@ func (o *ObjectDataOutput) WriteData(data Data) {
 type ObjectDataInput struct {
 	buffer    []byte
 	offset    int32
-	service   *Service
+	service   *ServiceImpl
 	bigEndian bool
 	position  int32
 	err       error
 }
 
-func NewObjectDataInput(buffer []byte, offset int32, service *Service, bigEndian bool) *ObjectDataInput {
+func NewObjectDataInput(buffer []byte, offset int32, service *ServiceImpl, bigEndian bool) *ObjectDataInput {
 	return &ObjectDataInput{buffer, offset, service, bigEndian, offset, nil}
 }
 
@@ -1109,7 +1109,7 @@ type PositionalObjectDataOutput struct {
 	*ObjectDataOutput
 }
 
-func NewPositionalObjectDataOutput(length int, service *Service, bigEndian bool) *PositionalObjectDataOutput {
+func NewPositionalObjectDataOutput(length int, service *ServiceImpl, bigEndian bool) *PositionalObjectDataOutput {
 	return &PositionalObjectDataOutput{NewObjectDataOutput(length, service, bigEndian)}
 }
 

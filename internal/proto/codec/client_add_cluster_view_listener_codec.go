@@ -49,7 +49,7 @@ func EncodeClientAddClusterViewListenerRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func (clientAddClusterViewListenerCodec) Handle(clientMessage *proto.ClientMessage, handleMembersViewEvent func(version int32, memberInfos []proto.MemberInfo), handlePartitionsViewEvent func(version int32, partitions []proto.Pair)) {
+func HandleClientAddClusterViewListener(clientMessage *proto.ClientMessage, handleMembersViewEvent func(version int32, memberInfos []proto.MemberInfo), handlePartitionsViewEvent func(version int32, partitions []proto.Pair)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddClusterViewListenerCodecEventMembersViewMessageType {

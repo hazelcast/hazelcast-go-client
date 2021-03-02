@@ -59,7 +59,7 @@ func EncodeRingbufferReadManyRequest(name string, startSequence int64, minCount 
 	return clientMessage
 }
 
-func (ringbufferReadManyCodec) DecodeResponse(clientMessage *proto.ClientMessage) (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
+func DecodeRingbufferReadManyResponse(clientMessage *proto.ClientMessage) (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

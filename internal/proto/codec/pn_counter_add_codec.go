@@ -61,7 +61,7 @@ func EncodePNCounterAddRequest(name string, delta int64, getBeforeUpdate bool, r
 	return clientMessage
 }
 
-func (pncounterAddCodec) DecodeResponse(clientMessage *proto.ClientMessage) (value int64, replicaTimestamps []proto.Pair, replicaCount int32) {
+func DecodePNCounterAddResponse(clientMessage *proto.ClientMessage) (value int64, replicaTimestamps []proto.Pair, replicaCount int32) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

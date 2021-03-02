@@ -18,22 +18,21 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/stretchr/testify/assert"
 )
 
-var lookup map[string]core.Address
-var privateAddress core.Address
-var publicAddress core.Address
+var lookup map[string]*core.Address
+var privateAddress *core.Address
+var publicAddress *core.Address
 var translator *HzCloudAddrTranslator
 
 func TestHzCloudAddrTranslator_Translate(t *testing.T) {
-	lookup = make(map[string]core.Address)
-	privateAddress = proto.NewAddressWithParameters("127.0.0.1", 5701)
-	publicAddress = proto.NewAddressWithParameters("192.168.0.1", 5701)
+	lookup = make(map[string]*core.Address)
+	privateAddress = core.NewAddressWithParameters("127.0.0.1", 5701)
+	publicAddress = core.NewAddressWithParameters("192.168.0.1", 5701)
 	lookup[privateAddress.String()] = publicAddress
-	lookup["127.0.0.2:5701"] = proto.NewAddressWithParameters("192.168.0.2", 5701)
-	var mockProvider = func() (map[string]core.Address, error) {
+	lookup["127.0.0.2:5701"] = core.NewAddressWithParameters("192.168.0.2", 5701)
+	var mockProvider = func() (map[string]*core.Address, error) {
 		return lookup, nil
 	}
 
@@ -63,7 +62,7 @@ func testHzCloudAddrTranslatorTranslatePrivateToPublic(t *testing.T) {
 }
 
 func testHzCloudAddrTranslatorTranslateWhenNotFoundReturnNil(t *testing.T) {
-	notAvailableAddr := proto.NewAddressWithParameters("127.0.0.3", 5701)
+	notAvailableAddr := core.NewAddressWithParameters("127.0.0.3", 5701)
 
 	if actual := translator.Translate(notAvailableAddr); actual != nil {
 		t.Error("hzCloudAddTranslator.Translate() should return nil for not found address.")

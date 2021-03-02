@@ -15,6 +15,7 @@
 package proto
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
@@ -48,6 +49,14 @@ func ClientAuthenticationCustomEncodeRequest(credentials serialization.Data, uui
 
 // ClientAuthenticationCustomDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func ClientAuthenticationCustomDecodeResponse(clientMessage *ClientMessage) func() (status uint8, address *Address, uuid string, ownerUuid string, serializationVersion uint8, serverHazelcastVersion string, clientUnregisteredMembers []*Member) {
-	return nil
+func ClientAuthenticationCustomDecodeResponse(clientMessage *ClientMessage) (
+	status uint8,
+	address *core.Address,
+	uuid core.UUID,
+	ownerUuid core.UUID,
+	serializationVersion uint8,
+	serverHazelcastVersion string,
+	partitionCount int32,
+	clientUnregisteredMembers []*Member) {
+	return
 }

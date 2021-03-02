@@ -19,7 +19,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/iputil"
 )
 
@@ -50,16 +49,16 @@ func NewHzCloudAddrProviderWithCloudDisc(cloudDisc *HazelcastCloud, logger logge
 }
 
 // LoadAddresses returns a slice of addresses.
-func (ap *HzCloudAddrProvider) LoadAddresses() []core.Address {
+func (ap *HzCloudAddrProvider) LoadAddresses() []*core.Address {
 	privateToPublicAddrs, err := ap.cloudDiscovery.discoverNodes()
 	if err != nil {
 		ap.logger.Warn("Failed to load addresses from hazelcast.cloud ", err)
 	}
-	addrSlice := make([]core.Address, 0)
+	addrSlice := make([]*core.Address, 0)
 	// Appends private keys
 	for address := range privateToPublicAddrs {
 		ip, port := iputil.GetIPAndPort(address)
-		addrSlice = append(addrSlice, proto.NewAddressWithParameters(ip, port))
+		addrSlice = append(addrSlice, core.NewAddressWithParameters(ip, port))
 	}
 	return addrSlice
 }

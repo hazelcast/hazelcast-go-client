@@ -9,9 +9,9 @@ import (
 
 // UUID for generation UUID string
 type UUID interface {
-	ToString() string
-	GetMostSignificantBits() uint64
-	GetLeastSignificantBits() uint64
+	String() string
+	MostSignificantBits() uint64
+	LeastSignificantBits() uint64
 }
 
 type uuid struct {
@@ -36,15 +36,20 @@ func NewUUIDWith(mostSigBits, leastSigBits uint64) UUID {
 	return uuid{mostSigBits, leastSigBits}
 }
 
-func (u uuid) ToString() string {
+func NewUUIDFromString(uuidStr string) UUID {
+	// TODO:
+	return NewUUID()
+}
+
+func (u uuid) String() string {
 	return string(u.marshalText())
 }
 
-func (u uuid) GetMostSignificantBits() uint64 {
+func (u uuid) MostSignificantBits() uint64 {
 	return u.mostSigBits
 }
 
-func (u uuid) GetLeastSignificantBits() uint64 {
+func (u uuid) LeastSignificantBits() uint64 {
 	return u.leastSigBits
 }
 

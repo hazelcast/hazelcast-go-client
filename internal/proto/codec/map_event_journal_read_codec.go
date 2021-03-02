@@ -61,7 +61,7 @@ func EncodeMapEventJournalReadRequest(name string, startSequence int64, minSize 
 	return clientMessage
 }
 
-func (mapEventJournalReadCodec) DecodeResponse(clientMessage *proto.ClientMessage) (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
+func DecodeMapEventJournalReadResponse(clientMessage *proto.ClientMessage) (readCount int32, items []serialization.Data, itemSeqs []int64, nextSeq int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

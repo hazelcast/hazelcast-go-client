@@ -35,8 +35,9 @@ func (d *SerializationData) ToByteArray() []byte {
 	return d.Payload
 }
 
-// NewData return serialization Data with the given payload.
-func NewData(payload []byte) Data {
+// NewSerializationData returns serialization Data with the given payload.
+// Ownership of Payload is transferred, so it mustn't be used after passed to NewSerializationData
+func NewSerializationData(payload []byte) Data {
 	return &SerializationData{payload}
 }
 
@@ -44,7 +45,7 @@ func (d *SerializationData) Buffer() []byte {
 	return d.Payload
 }
 
-func (d *SerializationData) GetType() int32 {
+func (d *SerializationData) Type() int32 {
 	if d.TotalSize() == 0 {
 		return 0
 	}
@@ -59,9 +60,10 @@ func (d *SerializationData) TotalSize() int {
 }
 
 func (d *SerializationData) DataSize() int {
+	// TODO: Remove conversion to float64, amd math.Max
 	return int(math.Max(float64(d.TotalSize()-heapDataOverhead), 0))
 }
 
-func (d *SerializationData) GetPartitionHash() int32 {
+func (d *SerializationData) PartitionHash() int32 {
 	return murmur.Default3A(d.Payload, DataOffset, d.DataSize())
 }

@@ -21,17 +21,17 @@ type AddressTranslator interface {
 
 	// Translate translates the given address to another address specific
 	// to network or service
-	Translate(address core.Address) core.Address
+	Translate(address *core.Address) *core.Address
 }
 
 // defaultAddressTranslator is a no-op. It always returns the given address.
 type defaultAddressTranslator struct {
 }
 
-func newDefaultAddressTranslator() *defaultAddressTranslator {
+func NewDefaultAddressTranslator() *defaultAddressTranslator {
 	return &defaultAddressTranslator{}
 }
 
-func (dat *defaultAddressTranslator) Translate(address core.Address) core.Address {
+func (dat *defaultAddressTranslator) Translate(address *core.Address) *core.Address {
 	return address
 }

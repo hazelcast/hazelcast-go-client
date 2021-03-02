@@ -45,7 +45,7 @@ func EncodeMapFetchEntriesRequest(name string, iterationPointers []proto.Pair, b
 	return clientMessage
 }
 
-func (mapFetchEntriesCodec) DecodeResponse(clientMessage *proto.ClientMessage) (iterationPointers []proto.Pair, entries []proto.Pair) {
+func DecodeMapFetchEntriesResponse(clientMessage *proto.ClientMessage) (iterationPointers []proto.Pair, entries []proto.Pair) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 

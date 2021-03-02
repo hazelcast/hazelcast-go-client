@@ -15,8 +15,7 @@
 package hazelcast
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/client"
 )
 
 // NewClient creates and returns a new Client.
@@ -25,8 +24,8 @@ import (
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClient() (Client, error) {
-	return NewClientWithConfig(config.New())
+func NewClient() Client {
+	return NewClientWithConfig(DefaultConfig())
 }
 
 // NewClientWithConfig creates and returns a new Client with the given config.
@@ -35,11 +34,18 @@ func NewClient() (Client, error) {
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClientWithConfig(config *config.Config) (Client, error) {
-	return internal.NewHazelcastClient(config)
+func NewClientWithConfig(config ClientConfig) Client {
+	return client.NewImpl("", config)
 }
 
-// NewConfig creates and returns a new config.
-func NewConfig() *config.Config {
-	return config.New()
+func NewClientConfigBuilder() client.ConfigBuilder {
+	return client.NewConfigBuilderImpl()
+}
+
+func DefaultConfig() ClientConfig {
+	if config, err := client.NewConfigBuilderImpl().Config(); err != nil {
+		panic(err)
+	} else {
+		return config
+	}
 }

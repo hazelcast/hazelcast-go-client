@@ -57,7 +57,7 @@ func DecodeClientAddDistributedObjectListenerResponse(clientMessage *proto.Clien
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseOffset)
 }
 
-func (clientAddDistributedObjectListenerCodec) Handle(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source core.UUID)) {
+func HandleClientAddDistributedObjectListener(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source core.UUID)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddDistributedObjectListenerCodecEventDistributedObjectMessageType {

@@ -19,7 +19,7 @@ type ClassDefinitionBuilder struct {
 // NewClassDefinitionBuilder returns a ClassDefinitionBuilder.
 // You can use a default portableVersion (0) for non-versioned classes.
 // Make sure to specify the portableVersion compatible with
-// portableVersion in the serialization.Service.
+// portableVersion in the serialization.ServiceImpl.
 func NewClassDefinitionBuilder(factoryID int32, classID int32, version int32) *ClassDefinitionBuilder {
 	return &ClassDefinitionBuilder{factoryID, classID, version, make(map[string]FieldDefinition), 0, false}
 }

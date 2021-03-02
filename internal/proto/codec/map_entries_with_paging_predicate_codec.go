@@ -46,7 +46,7 @@ func EncodeMapEntriesWithPagingPredicateRequest(name string, predicate proto.Pag
 	return clientMessage
 }
 
-func (mapEntriesWithPagingPredicateCodec) DecodeResponse(clientMessage *proto.ClientMessage) (response []proto.Pair, anchorDataList proto.AnchorDataListHolder) {
+func DecodeMapEntriesWithPagingPredicateResponse(clientMessage *proto.ClientMessage) (response []proto.Pair, anchorDataList proto.AnchorDataListHolder) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 

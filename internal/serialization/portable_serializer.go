@@ -22,12 +22,12 @@ import (
 )
 
 type PortableSerializer struct {
-	service         *Service
+	service         *ServiceImpl
 	portableContext *PortableContext
 	factories       map[int32]PortableFactory
 }
 
-func NewPortableSerializer(service *Service, portableFactories map[int32]PortableFactory,
+func NewPortableSerializer(service *ServiceImpl, portableFactories map[int32]PortableFactory,
 	portableVersion int32) *PortableSerializer {
 	return &PortableSerializer{service, NewPortableContext(service, portableVersion), portableFactories}
 }

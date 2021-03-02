@@ -77,7 +77,7 @@ func newClusterService(client *HazelcastClient, addressProviders []AddressProvid
 }
 
 func (cs *clusterService) init() {
-	cs.ownerConnectionAddress.Store(&proto.Address{})
+	cs.ownerConnectionAddress.Store(&core.Address{})
 	cs.members.Store(make([]*proto.Member, 0)) //Initialize
 	cs.initialMemberListWg = new(sync.WaitGroup)
 	cs.ownerUUID.Store("") //Initialize
@@ -136,7 +136,7 @@ func (cs *clusterService) GetLocalClient() core.ClientInfo {
 func (cs *clusterService) AddMembershipListener(listener core.MembershipListener) string {
 	cs.clusterViewLockMu.Lock()
 	defer cs.clusterViewLockMu.Unlock()
-	registrationId := core.NewUUID().ToString()
+	registrationId := core.NewUUID().String()
 	cs.listenersV2.Store(registrationId, listener)
 
 	if isInitialMembershipListener(listener) {
@@ -261,7 +261,7 @@ func (cs *clusterService) detectMembershipEvents(prevMembers map[core.UUID]core.
 	membershipEvents := make([]core.MembershipEvent, 0)
 	for _, eachMember := range deadMembers {
 		membershipEvents = append(membershipEvents, NewMembershipEvent(eachMember, currentMembers, core.MemberEventRemoved))
-		connection, ok := cs.client.ConnectionManager.getActiveConnections()[eachMember.UUID().ToString()]
+		connection, ok := cs.client.ConnectionManager.getActiveConnections()[eachMember.UUID().String()]
 		if ok {
 			connection.close(core.NewHazelcastTargetDisconnectedError("The client has closed the connection to this"+
 				"member, after receiving a member left event from the cluster", nil))
@@ -320,23 +320,21 @@ func (cs *clusterService) start() error {
 	return cs.connectToCluster()
 }
 
-func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
-	seen := make(map[proto.Address]struct{})
-	addrs := make([]core.Address, 0)
+func (cs *clusterService) getPossibleMemberAddresses() []*core.Address {
+	seen := make(map[core.Address]struct{})
+	addrs := make([]*core.Address, 0)
 	memberList := cs.GetMembers()
-
 	for _, member := range memberList {
-		a := *member.Address().(*proto.Address)
+		a := *member.Address()
 		if _, found := seen[a]; !found {
 			addrs = append(addrs, member.Address())
 			seen[a] = struct{}{}
 		}
 	}
-
 	for _, provider := range cs.addressProviders {
 		providerAddrs := provider.LoadAddresses()
 		for _, addr := range providerAddrs {
-			a := *addr.(*proto.Address)
+			a := *addr
 			if _, found := seen[a]; !found {
 				addrs = append(addrs, addr)
 				seen[a] = struct{}{}
@@ -346,29 +344,29 @@ func (cs *clusterService) getPossibleMemberAddresses() []core.Address {
 	return addrs
 }
 
-func createAddressesFromString(addressesInString []string) []proto.Address {
+func createAddressesFromString(addressesInString []string) []*core.Address {
 	if addressesInString == nil {
 		addressesInString = make([]string, 0)
 	}
-	addressesSet := make(map[proto.Address]struct{}, len(addressesInString))
+	addressesSet := make(map[core.Address]struct{}, len(addressesInString))
 	for _, address := range addressesInString {
 		ip, port := iputil.GetIPAndPort(address)
 		if port == -1 {
-			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
-			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
-			addressesSet[*proto.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
+			addressesSet[*core.NewAddressWithParameters(ip, defaultPort)] = struct{}{}
+			addressesSet[*core.NewAddressWithParameters(ip, defaultPort+1)] = struct{}{}
+			addressesSet[*core.NewAddressWithParameters(ip, defaultPort+2)] = struct{}{}
 		} else {
-			addressesSet[*proto.NewAddressWithParameters(ip, port)] = struct{}{}
+			addressesSet[*core.NewAddressWithParameters(ip, port)] = struct{}{}
 		}
 	}
-	addresses := make([]proto.Address, len(addressesSet))
+	addresses := make([]*core.Address, len(addressesSet))
 	index := 0
 	for k := range addressesSet {
-		addresses[index] = k
+		addresses[index] = &k
 		index++
 	}
 	if len(addresses) == 0 {
-		addresses = append(addresses, *proto.NewAddressWithParameters(defaultAddress, defaultPort))
+		addresses = append(addresses, core.NewAddressWithParameters(defaultAddress, defaultPort))
 	}
 	return addresses
 }
@@ -431,7 +429,7 @@ func (cs *clusterService) connectToPossibleAddresses(currentAttempt, attemptLimi
 	return false, core.NewHazelcastIllegalStateError("could not connect to any addresses", nil)
 }
 
-func (cs *clusterService) connectToAddress(address core.Address) error {
+func (cs *clusterService) connectToAddress(address *core.Address) error {
 	cs.logger.Info("Trying to connect to", address, "as owner member.")
 	_, err := cs.client.ConnectionManager.getOrConnect(address, true)
 	if err != nil {
@@ -439,10 +437,10 @@ func (cs *clusterService) connectToAddress(address core.Address) error {
 		return err
 	}
 
-	/*	err = cs.initMembershipListener(connection)
-		if err != nil {
-			return err
-		}
+	/*		err = cs.initMembershipListener(connection)
+			if err != nil {
+				return err
+			}
 	*/
 	cs.client.lifecycleService.fireLifecycleEvent(core.LifecycleStateConnected)
 	return nil
@@ -561,7 +559,7 @@ func (cs *clusterService) memberRemoved(member *proto.Member) {
 }
 
 func (cs *clusterService) closeRemovedMembersConnection(member *proto.Member) {
-	connection := cs.client.ConnectionManager.getActiveConnection(member.Address().(*proto.Address))
+	connection := cs.client.ConnectionManager.getActiveConnection(member.Address())
 	if connection != nil {
 		connection.close(core.NewHazelcastTargetDisconnectedError("the client"+
 			"has closed the Connection to this member after receiving a member left event from the cluster", nil))
@@ -642,13 +640,13 @@ func (cs *clusterService) GetMembersWithSelector(selector core.MemberSelector) (
 	return
 }
 
-func (cs *clusterService) GetMember(address core.Address) core.Member {
+func (cs *clusterService) GetMember(address *core.Address) core.Member {
 	if address == nil {
 		return nil
 	}
 	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
-		if *member.Address().(*proto.Address) == *address.(*proto.Address) {
+		if *member.Address() == *address {
 			return member
 		}
 	}
@@ -658,15 +656,15 @@ func (cs *clusterService) GetMember(address core.Address) core.Member {
 func (cs *clusterService) GetMemberByUUID(uuid string) core.Member {
 	membersList := cs.members.Load().([]*proto.Member)
 	for _, member := range membersList {
-		if member.UUID().ToString() == uuid {
+		if member.UUID().String() == uuid {
 			return member
 		}
 	}
 	return nil
 }
 
-func (cs *clusterService) getOwnerConnectionAddress() *proto.Address {
-	address, ok := cs.ownerConnectionAddress.Load().(*proto.Address)
+func (cs *clusterService) getOwnerConnectionAddress() *core.Address {
+	address, ok := cs.ownerConnectionAddress.Load().(*core.Address)
 	if ok {
 		return address
 	}
@@ -687,7 +685,7 @@ func (cs *clusterService) onConnectionOpened(connection *Connection) {
 }
 
 func (cs *clusterService) shouldReconnect(connection *Connection) bool {
-	address, ok := connection.endpoint.Load().(*proto.Address)
+	address, ok := connection.endpoint.Load().(*core.Address)
 	ownerConnectionAddress := cs.getOwnerConnectionAddress()
 	return ok && ownerConnectionAddress != nil &&
 		*address == *ownerConnectionAddress && cs.client.lifecycleService.isLive.Load().(bool)
@@ -695,7 +693,7 @@ func (cs *clusterService) shouldReconnect(connection *Connection) bool {
 }
 
 func (cs *clusterService) clearOwnerConnectionAddress() {
-	cs.ownerConnectionAddress.Store(&proto.Address{})
+	cs.ownerConnectionAddress.Store(&core.Address{})
 }
 
 func (cs *clusterService) shutdown() {

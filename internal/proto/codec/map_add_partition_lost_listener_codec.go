@@ -64,7 +64,7 @@ func DecodeMapAddPartitionLostListenerResponse(clientMessage *proto.ClientMessag
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerResponseResponseOffset)
 }
 
-func (mapAddPartitionLostListenerCodec) Handle(clientMessage *proto.ClientMessage, handleMapPartitionLostEvent func(partitionId int32, uuid core.UUID)) {
+func HandleMapAddPartitionLostListener(clientMessage *proto.ClientMessage, handleMapPartitionLostEvent func(partitionId int32, uuid core.UUID)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddPartitionLostListenerCodecEventMapPartitionLostMessageType {

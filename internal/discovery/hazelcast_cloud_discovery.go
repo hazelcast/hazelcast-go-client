@@ -28,7 +28,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/config/property"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/iputil"
 )
 
@@ -39,7 +38,7 @@ const (
 var CloudURLBaseProperty = property.NewHazelcastPropertyString("hazelcast.client.cloud.url",
 	"https://coordinator.hazelcast.cloud")
 
-type nodeDiscoverer func() (map[string]core.Address, error)
+type nodeDiscoverer func() (map[string]*core.Address, error)
 
 type addr struct {
 	PrivAddr   string `json:"private-address"`
@@ -69,11 +68,11 @@ func NewHazelcastCloud(endpointURL string, connectionTimeout time.Duration, cert
 	return hzCloud
 }
 
-func (hzC *HazelcastCloud) discoverNodesInternal() (map[string]core.Address, error) {
+func (hzC *HazelcastCloud) discoverNodesInternal() (map[string]*core.Address, error) {
 	return hzC.callService()
 }
 
-func (hzC *HazelcastCloud) callService() (map[string]core.Address, error) {
+func (hzC *HazelcastCloud) callService() (map[string]*core.Address, error) {
 	url := hzC.endPointURL
 	resp, err := hzC.client.Get(url)
 	if err != nil {
@@ -103,9 +102,9 @@ func (hzC *HazelcastCloud) checkCertificates(response *http.Response) bool {
 	return true
 }
 
-func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]core.Address, error) {
+func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]*core.Address, error) {
 	var target = make([]addr, 0)
-	var privateToPublicAddrs = make(map[string]core.Address)
+	var privateToPublicAddrs = make(map[string]*core.Address)
 	resp, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -120,7 +119,7 @@ func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]co
 		// TODO:: use addressProvider
 		privateAddress := hzC.createAddress(addr.PrivAddr)
 		if privateAddress.Port() == -1 {
-			privateAddress = proto.NewAddressWithParameters(addr.PrivAddr, publicAddress.Port())
+			privateAddress = core.NewAddressWithParameters(addr.PrivAddr, publicAddress.Port())
 		}
 
 		privateToPublicAddrs[privateAddress.String()] = publicAddress
@@ -134,8 +133,7 @@ func CreateURLEndpoint(hazelcastProperties *property.HazelcastProperties, cloudT
 	return cloudBaseURL + cloudURLPath + cloudToken
 }
 
-func (hzC *HazelcastCloud) createAddress(hostname string) core.Address {
+func (hzC *HazelcastCloud) createAddress(hostname string) *core.Address {
 	ip, port := iputil.GetIPAndPort(hostname)
-	addr := proto.NewAddressWithParameters(ip, port)
-	return addr
+	return core.NewAddressWithParameters(ip, port)
 }

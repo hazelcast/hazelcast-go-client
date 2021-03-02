@@ -23,7 +23,7 @@ import (
 )
 
 func TestNilSerializer_Write(t *testing.T) {
-	service := &Service{}
+	service := &ServiceImpl{}
 	serializer := &NilSerializer{}
 	o := NewObjectDataOutput(0, service, false)
 	serializer.Write(o, nil)

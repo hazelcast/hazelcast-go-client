@@ -63,7 +63,7 @@ func DecodeReplicatedMapAddEntryListenerWithPredicateResponse(clientMessage *pro
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerWithPredicateResponseResponseOffset)
 }
 
-func (replicatedmapAddEntryListenerWithPredicateCodec) Handle(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.UUID, numberOfAffectedEntries int32)) {
+func HandleReplicatedMapAddEntryListenerWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid core.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ReplicatedMapAddEntryListenerWithPredicateCodecEventEntryMessageType {

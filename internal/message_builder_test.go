@@ -33,7 +33,7 @@ func TestClientMessageBuilder_OnMessage(t *testing.T) {
 
 	testString := "testString"
 	serverVersion := "3.9"
-	expectedClientMessage := proto.ClientAuthenticationEncodeRequest(testString, testString, testString, testString, false,
+	expectedClientMessage := proto.EncodeClientAuthenticationRequest(testString, testString, testString, testString, false,
 		testString, 1, serverVersion)
 	expectedClientMessage.SetFlags(bufutil.BeginEndFlag)
 	expectedClientMessage.SetCorrelationID(1)

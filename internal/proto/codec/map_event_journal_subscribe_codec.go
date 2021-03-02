@@ -47,7 +47,7 @@ func EncodeMapEventJournalSubscribeRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func (mapEventJournalSubscribeCodec) DecodeResponse(clientMessage *proto.ClientMessage) (oldestSequence int64, newestSequence int64) {
+func DecodeMapEventJournalSubscribeResponse(clientMessage *proto.ClientMessage) (oldestSequence int64, newestSequence int64) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

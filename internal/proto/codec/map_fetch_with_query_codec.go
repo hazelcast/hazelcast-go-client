@@ -49,7 +49,7 @@ func EncodeMapFetchWithQueryRequest(name string, iterationPointers []proto.Pair,
 	return clientMessage
 }
 
-func (mapFetchWithQueryCodec) DecodeResponse(clientMessage *proto.ClientMessage) (results []serialization.Data, iterationPointers []proto.Pair) {
+func DecodeMapFetchWithQueryResponse(clientMessage *proto.ClientMessage) (results []serialization.Data, iterationPointers []proto.Pair) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
