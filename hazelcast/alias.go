@@ -16,11 +16,10 @@ package hazelcast
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/client"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 )
 
 type Client = client.Client
 type ClientConfig = client.Config
 type ClientConfigProvider = client.ConfigProvider
-type Map = core.Map
+type Map = proxy.Map
