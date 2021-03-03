@@ -4,32 +4,38 @@ import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/connection"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/partition"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
 	"sync/atomic"
 	"time"
 )
 
 var nextId int32
 
+type Client interface {
+	Name() string
+	GetMap(name string) (proxy.Map, error)
+}
+
 type Impl struct {
 	// configuration
 	name          string
 	clusterName   string
-	networkConfig *NetworkConfig
-	logger        logger.Logger
+	networkConfig *cluster.NetworkConfig
 
-	proxyManager         proxy.Manager
-	serializationService spi.SerializationService
-	partitionService     partition.Service
-	invocationService    invocation.Service
-	clusterService       cluster.Service
-	connectionManager    connection.Manager
+	// components
+	proxyManager proxy.Manager
+	//serializationService spi.SerializationService
+	//partitionService     cluster.PartitionService
+	//invocationService    invocation.Service
+	//clusterService       cluster.Service
+	connectionManager cluster.ConnectionManager
+	logger            logger.Logger
+
+	// state
+	started bool
 }
 
 func NewImpl(name string, config Config) *Impl {
@@ -49,30 +55,32 @@ func NewImpl(name string, config Config) *Impl {
 	}
 	smartRouting := config.Network.SmartRouting
 	addressTranslator := internal.NewDefaultAddressTranslator()
-	clusterService := cluster.NewServiceImpl()
-	partitionService := partition.NewServiceImpl(partition.CreationBundle{
+	addressProviders := []cluster.AddressProvider{
+		cluster.NewDefaultAddressProvider(config.Network),
+	}
+	clusterService := cluster.NewServiceImpl(addressProviders)
+	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
 		Logger:               clientLogger,
 	})
-	connectionManager := connection.NewManagerImpl(connection.CreationBundle{
+	connectionManager := cluster.NewConnectionManagerImpl(cluster.ConnectionManagerCreationBundle{
 		SmartRouting:      smartRouting,
 		Logger:            clientLogger,
 		AddressTranslator: addressTranslator,
 	})
-	invocationHandler := connection.NewInvocationHandler(connection.InvocationHandlerCreationBundle{
+	invocationHandler := cluster.NewConnectionInvocationHandler(cluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
 		SmartRouting:      smartRouting,
 		Logger:            clientLogger,
 	})
-	invocationService := invocation.NewServiceImpl(invocation.CreationBundle{
-		SmartRouting:     smartRouting,
-		PartitionService: partitionService,
-		Handler:          invocationHandler,
-		Logger:           clientLogger,
+	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
+		SmartRouting: smartRouting,
+		Handler:      invocationHandler,
+		Logger:       clientLogger,
 	})
-	invocationFactory := connection.NewInvocationFactory(partitionService, 120*time.Second)
-	proxyManagerServiceBundle := proxy.CreationBundle{
+	invocationFactory := cluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
+	proxyManagerServiceBundle := proxy.ProxyCreationBundle{
 		SerializationService: serializationService,
 		PartitionService:     partitionService,
 		InvocationService:    invocationService,
@@ -86,29 +94,35 @@ func NewImpl(name string, config Config) *Impl {
 		networkConfig:     &config.Network,
 		proxyManager:      proxy.NewManagerImpl(proxyManagerServiceBundle),
 		connectionManager: connectionManager,
-		invocationService: invocationService,
-		logger:            clientLogger,
+		//invocationService: invocationService,
+		logger: clientLogger,
 	}
 }
 
-func (c Impl) Name() string {
+func (c *Impl) Name() string {
 	return c.name
 }
 
-func (c Impl) GetMap(name string) (proxy.Map, error) {
+func (c *Impl) GetMap(name string) (proxy.Map, error) {
 	return c.proxyManager.GetMap(name)
 }
 
+func (c *Impl) Start() error {
+	// TODO: Recover from panics and return as error
+	if c.started {
+		return nil
+	}
+	c.connectionManager.Start()
+	c.started = true
+	return nil
+}
+
 /*
-func (c Impl) ClusterName() string {
+func (c ConnectionImpl) ClusterName() string {
 	return c.clusterName
 }
 
-func (c Impl) NetworkConfig() *NetworkConfig {
+func (c ConnectionImpl) NetworkConfig() *NetworkConfig {
 	return c.networkConfig
 }
 */
-
-func defaultConfig() Config {
-	return Config{}
-}

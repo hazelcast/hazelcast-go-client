@@ -1,4 +1,4 @@
-package connection
+package cluster
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
@@ -7,27 +7,27 @@ import (
 	"time"
 )
 
-type BoundInvocation interface {
+type ConnectionBoundInvocation interface {
 	invocation.Invocation
-	Connection() *Impl
+	Connection() *ConnectionImpl
 }
 
 type invocationImpl = invocation.Impl
 
 type BoundInvocationImpl struct {
 	*invocationImpl
-	boundConnection *Impl
+	boundConnection *ConnectionImpl
 }
 
-func NewBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address *core.Address,
-	connection *Impl, timeout time.Duration) *BoundInvocationImpl {
+func NewConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address *core.Address,
+	connection *ConnectionImpl, timeout time.Duration) *BoundInvocationImpl {
 	return &BoundInvocationImpl{
 		invocationImpl:  invocation.NewImpl(clientMessage, partitionID, address, timeout),
 		boundConnection: connection,
 	}
 }
 
-func (i *BoundInvocationImpl) Connection() *Impl {
+func (i *BoundInvocationImpl) Connection() *ConnectionImpl {
 	return i.boundConnection
 }
 

@@ -58,7 +58,7 @@ func (ap *HzCloudAddrProvider) LoadAddresses() []*core.Address {
 	// Appends private keys
 	for address := range privateToPublicAddrs {
 		ip, port := iputil.GetIPAndPort(address)
-		addrSlice = append(addrSlice, core.NewAddressWithParameters(ip, port))
+		addrSlice = append(addrSlice, core.NewAddressWithHostPort(ip, port))
 	}
 	return addrSlice
 }

@@ -5,13 +5,18 @@ import (
 	"sync"
 )
 
+type Manager interface {
+	GetMap(name string) (Map, error)
+	Remove(serviceName string, objectName string) error
+}
+
 type ManagerImpl struct {
 	mu            *sync.RWMutex
 	proxies       map[string]*Impl
-	serviceBundle CreationBundle
+	serviceBundle ProxyCreationBundle
 }
 
-func NewManagerImpl(bundle CreationBundle) *ManagerImpl {
+func NewManagerImpl(bundle ProxyCreationBundle) *ManagerImpl {
 	bundle.Check()
 	return &ManagerImpl{
 		mu:            &sync.RWMutex{},

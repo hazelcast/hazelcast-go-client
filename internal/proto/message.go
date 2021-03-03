@@ -128,7 +128,7 @@ func (clientMessage *ClientMessage) SetCorrelationID(correlationID int64) {
 	binary.LittleEndian.PutUint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
 }
 
-func (clientMessage *ClientMessage) GetCorrelationID() int64 {
+func (clientMessage *ClientMessage) CorrelationID() int64 {
 	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:]))
 }
 
