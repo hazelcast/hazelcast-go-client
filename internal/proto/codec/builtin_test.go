@@ -25,7 +25,7 @@ func TestCodecUtil_FastForwardToEndFrame(t *testing.T) {
 
 	//then
 	assert.False(t, iterator.HasNext())
-	println(message.GetCorrelationID())
+	println(message.CorrelationID())
 }
 
 func TestCodecUtil_EncodeNullable(t *testing.T) {

@@ -4,13 +4,27 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/partition"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+type ServiceCreationBundle struct {
+	Handler      Handler
+	SmartRouting bool
+	Logger       logger.Logger
+}
+
+func (b ServiceCreationBundle) Check() {
+	if b.Handler == nil {
+		panic("Handler is nil")
+	}
+	if b.Logger == nil {
+		panic("Logger is nil")
+	}
+}
 
 type Service interface {
 	Send(invocation Invocation) Result
@@ -40,14 +54,11 @@ type ServiceImpl struct {
 	smartRouting      bool
 	handler           Handler
 	logger            logger.Logger
-
-	partitionService partition.Service
 }
 
-func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
+func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 	bundle.Check()
 	service := &ServiceImpl{
-		partitionService:  bundle.PartitionService,
 		invocationsLock:   &sync.RWMutex{},
 		invocations:       map[int64]Invocation{},
 		invocationTimeout: 120 * time.Second,
@@ -103,7 +114,7 @@ func (s *ServiceImpl) sendInvocation(invocation Invocation) Result {
 }
 
 func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
-	correlationID := msg.GetCorrelationID()
+	correlationID := msg.CorrelationID()
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
 		s.eventHandlersLock.RLock()
 		handler, found := s.eventHandlers[correlationID]
@@ -127,12 +138,12 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	}
 }
 
-func (s *ServiceImpl) handleError(invocation Invocation, err error) {
-	correlationID := invocation.Request().GetCorrelationID()
+func (s *ServiceImpl) handleError(invocation Invocation, invocationErr error) {
+	correlationID := invocation.Request().CorrelationID()
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		panic("implement me!")
 	} else {
-		s.logger.Trace("no invocation found with the correlation id: ", correlationID)
+		s.logger.Trace("no invocation found with correlation id: ", correlationID)
 	}
 }
 

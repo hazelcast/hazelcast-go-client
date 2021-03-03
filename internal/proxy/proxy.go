@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/partition"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
 	"reflect"
 
@@ -35,11 +34,46 @@ const (
 	ttlUnlimited = 0
 )
 
+type Proxy interface {
+	Destroy() error
+	Smart() bool
+	Name() string
+	ServiceName() string
+	PartitionKey() string
+}
+
+type ProxyCreationBundle struct {
+	SerializationService spi.SerializationService
+	PartitionService     cluster.PartitionService
+	InvocationService    invocation.Service
+	ClusterService       cluster.Service
+	InvocationFactory    invocation.Factory
+	SmartRouting         bool
+}
+
+func (b ProxyCreationBundle) Check() {
+	if b.SerializationService == nil {
+		panic("SerializationService is nil")
+	}
+	if b.PartitionService == nil {
+		panic("PartitionService is nil")
+	}
+	if b.InvocationService == nil {
+		panic("InvocationService is nil")
+	}
+	if b.ClusterService == nil {
+		panic("ClusterService is nil")
+	}
+	if b.InvocationFactory == nil {
+		panic("ConnectionInvocationFactory is nil")
+	}
+}
+
 type Impl struct {
 	//client               *HazelcastClient
 	//proxyManager         Manager
 	serializationService spi.SerializationService
-	partitionService     partition.Service
+	partitionService     cluster.PartitionService
 	invocationService    invocation.Service
 	clusterService       cluster.Service
 	invocationFactory    invocation.Factory
@@ -48,7 +82,7 @@ type Impl struct {
 	name                 string
 }
 
-func NewImpl(bundle CreationBundle, serviceName string, objectName string) *Impl {
+func NewImpl(bundle ProxyCreationBundle, serviceName string, objectName string) *Impl {
 	bundle.Check()
 	return &Impl{
 		serviceName:          serviceName,
@@ -295,7 +329,7 @@ type partitionSpecificProxy struct {
 
 func newPartitionSpecificProxy(
 	serializationService spi.SerializationService,
-	partitionService partition.Service,
+	partitionService cluster.PartitionService,
 	invocationService invocation.Service,
 	clusterService cluster.Service,
 	smartRouting bool,

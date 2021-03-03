@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connection
+package cluster
 
 import (
 	"bytes"
@@ -38,7 +38,10 @@ const (
 	IntMask         = 0xffff
 )
 
-type Impl struct {
+type Connection interface {
+}
+
+type ConnectionImpl struct {
 	pending                   chan *proto.ClientMessage
 	received                  chan *proto.ClientMessage
 	socket                    net.Conn
@@ -53,15 +56,15 @@ type Impl struct {
 	readBuffer                []byte
 	clientMessageReader       *clientMessageReader
 	connectionID              int64
-	connectionManager         Manager
+	connectionManager         ConnectionManager
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64
 	logger                    logger.Logger
 }
 
-func newConnection(address *core.Address, cm Manager, handleResponse func(interface{}),
-	networkCfg *config.NetworkConfig, logger logger.Logger) (*Impl, error) {
+func newConnection(address *core.Address, cm ConnectionManager, handleResponse func(interface{}),
+	networkCfg *config.NetworkConfig, logger logger.Logger) (*ConnectionImpl, error) {
 	connection := createDefaultConnection(cm, handleResponse, logger)
 	socket, err := connection.createSocket(networkCfg, address)
 	if err != nil {
@@ -76,12 +79,12 @@ func newConnection(address *core.Address, cm Manager, handleResponse func(interf
 	return connection, nil
 }
 
-func createDefaultConnection(cm Manager, handleResponse func(interface{}), logger logger.Logger) *Impl {
+func createDefaultConnection(cm ConnectionManager, handleResponse func(interface{}), logger logger.Logger) *ConnectionImpl {
 	builder := &clientMessageBuilder{
 		handleResponse:     handleResponse,
 		incompleteMessages: make(map[int64]*proto.ClientMessage),
 	}
-	return &Impl{
+	return &ConnectionImpl{
 		pending:              make(chan *proto.ClientMessage, 1),
 		received:             make(chan *proto.ClientMessage, 1),
 		closed:               make(chan struct{}),
@@ -94,11 +97,11 @@ func createDefaultConnection(cm Manager, handleResponse func(interface{}), logge
 	}
 }
 
-func (c *Impl) sendProtocolStarter() {
+func (c *ConnectionImpl) sendProtocolStarter() {
 	c.socket.Write([]byte(protocolStarter))
 }
 
-func (c *Impl) createSocket(networkCfg *config.NetworkConfig, address *core.Address) (net.Conn, error) {
+func (c *ConnectionImpl) createSocket(networkCfg *config.NetworkConfig, address *core.Address) (net.Conn, error) {
 	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
 	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
 	if err != nil {
@@ -110,35 +113,35 @@ func (c *Impl) createSocket(networkCfg *config.NetworkConfig, address *core.Addr
 	return socket, err
 }
 
-func (c *Impl) dialToAddressWithTimeout(address *core.Address, conTimeout time.Duration) (net.Conn, error) {
+func (c *ConnectionImpl) dialToAddressWithTimeout(address *core.Address, conTimeout time.Duration) (net.Conn, error) {
 	return net.DialTimeout("tcp", address.String(), conTimeout)
 }
 
-func (c *Impl) init() {
+func (c *ConnectionImpl) init() {
 	c.lastWrite.Store(time.Time{})
 	c.closedTime.Store(time.Time{})
 	c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
 	c.lastRead.Store(time.Now())
 }
 
-func (c *Impl) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn) (net.Conn, error) {
+func (c *ConnectionImpl) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn) (net.Conn, error) {
 	tlsCon := tls.Client(conn, sslCfg.Config)
 	err := tlsCon.Handshake()
 	return tlsCon, err
 }
 
-func (c *Impl) isAlive() bool {
+func (c *ConnectionImpl) isAlive() bool {
 	return atomic.LoadInt32(&c.status) == 0
 }
 
-func (c *Impl) writePool() {
+func (c *ConnectionImpl) writePool() {
 	//Writer process
 	for {
 		select {
 		case request := <-c.pending:
 			err := c.write(request)
 			if err != nil {
-				c.clientMessageBuilder.handleResponse(request.GetCorrelationID())
+				c.clientMessageBuilder.handleResponse(request.CorrelationID())
 			} else {
 				c.lastWrite.Store(time.Now())
 			}
@@ -148,7 +151,7 @@ func (c *Impl) writePool() {
 	}
 }
 
-func (c *Impl) send(clientMessage *proto.ClientMessage) bool {
+func (c *ConnectionImpl) send(clientMessage *proto.ClientMessage) bool {
 	select {
 	case <-c.closed:
 		return false
@@ -157,14 +160,14 @@ func (c *Impl) send(clientMessage *proto.ClientMessage) bool {
 	}
 }
 
-func (c *Impl) write(clientMessage *proto.ClientMessage) error {
+func (c *ConnectionImpl) write(clientMessage *proto.ClientMessage) error {
 	bytes := make([]byte, clientMessage.GetTotalLength())
 	clientMessage.GetBytes(bytes)
 	c.socket.Write(bytes)
 	return nil
 }
 
-func (c *Impl) readPool() {
+func (c *ConnectionImpl) readPool() {
 	for {
 		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
 		buf := make([]byte, 4096)
@@ -192,43 +195,43 @@ func (c *Impl) readPool() {
 	}
 }
 
-func (c *Impl) isTimeoutError(err error) bool {
+func (c *ConnectionImpl) isTimeoutError(err error) bool {
 	netErr, ok := err.(net.Error)
 	return ok && netErr.Timeout()
 }
 
-func (c *Impl) StartTime() int64 {
+func (c *ConnectionImpl) StartTime() int64 {
 	return c.startTime
 }
 
-func (c *Impl) receiveMessage() {
+func (c *ConnectionImpl) receiveMessage() {
 	clientMessage := c.clientMessageReader.Read()
 	if clientMessage != nil && clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
 		c.clientMessageBuilder.onMessage(clientMessage)
 	}
 }
 
-func (c *Impl) localAddress() net.Addr {
+func (c *ConnectionImpl) localAddress() net.Addr {
 	return c.socket.LocalAddr()
 }
 
-func (c *Impl) setConnectedServerVersion(connectedServerVersion string) {
+func (c *ConnectionImpl) setConnectedServerVersion(connectedServerVersion string) {
 	c.connectedServerVersionStr = connectedServerVersion
 	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
 }
 
-func (c *Impl) close(err error) {
+func (c *ConnectionImpl) close(err error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	c.logger.Warn("Impl :", c, " closed, err: ", err)
+	c.logger.Warn("ConnectionImpl :", c, " closed, err: ", err)
 	close(c.closed)
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.connectionManager.notifyConnectionClosed(c, core.NewHazelcastTargetDisconnectedError(err.Error(), err))
 }
 
-func (c *Impl) String() string {
+func (c *ConnectionImpl) String() string {
 	return fmt.Sprintf("ClientConnection{"+
 		"isAlive=%t"+
 		", connectionID=%d"+

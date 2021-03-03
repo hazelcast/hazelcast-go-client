@@ -67,6 +67,7 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 func (l *DefaultLogger) Trace(args ...interface{}) {
 	if l.canLogTrace() {
 		callerName := l.findCallerFuncName()
+		// TODO: fix me!
 		s := callerName + "\n" + tracePrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
 	}

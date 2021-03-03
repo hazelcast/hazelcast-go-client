@@ -1,4 +1,4 @@
-package partition
+package cluster
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
@@ -8,23 +8,37 @@ import (
 	"sync/atomic"
 )
 
-type Service interface {
-	GetPartitionCount() int32
+type PartitionService interface {
+	PartitionCount() int32
 	GetPartitionID(keyData serialization.Data) int32
 	GetPartitionIDWithKey(key interface{}) (int32, error)
 	GetPartitionOwner(partitionId int32) core.UUID
 }
 
-type ServiceImpl struct {
+type PartitionServiceCreationBundle struct {
+	SerializationService serialization.Service
+	Logger               logger.Logger
+}
+
+func (b PartitionServiceCreationBundle) Check() {
+	if b.SerializationService == nil {
+		panic("SerializationService is nil")
+	}
+	if b.Logger == nil {
+		panic("Logger is nil")
+	}
+}
+
+type PartitionServiceImpl struct {
 	serializationService serialization.Service
 	partitionTable       atomic.Value
 	partitionCount       uint32
 	logger               logger.Logger
 }
 
-func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
+func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionServiceImpl {
 	bundle.Check()
-	service := &ServiceImpl{
+	service := &PartitionServiceImpl{
 		serializationService: bundle.SerializationService,
 		logger:               bundle.Logger,
 	}
@@ -32,16 +46,16 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 	return service
 }
 
-func (s *ServiceImpl) GetPartitionOwner(partitionId int32) core.UUID {
+func (s *PartitionServiceImpl) GetPartitionOwner(partitionId int32) core.UUID {
 	return s.partitionTable.Load().(partitionTable).partitions[partitionId]
 }
 
-func (s *ServiceImpl) GetPartitionCount() int32 {
+func (s *PartitionServiceImpl) PartitionCount() int32 {
 	return int32(atomic.LoadUint32(&s.partitionCount))
 }
 
-func (s *ServiceImpl) GetPartitionID(keyData serialization.Data) int32 {
-	if count := s.GetPartitionCount(); count == 0 {
+func (s *PartitionServiceImpl) GetPartitionID(keyData serialization.Data) int32 {
+	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
 		// We are initializing the partition count with the value coming from the server with authentication.
@@ -54,7 +68,7 @@ func (s *ServiceImpl) GetPartitionID(keyData serialization.Data) int32 {
 	}
 }
 
-func (s *ServiceImpl) GetPartitionIDWithKey(key interface{}) (int32, error) {
+func (s *PartitionServiceImpl) GetPartitionIDWithKey(key interface{}) (int32, error) {
 	if data, err := s.serializationService.ToData(key); err != nil {
 		return 0, err
 	} else {

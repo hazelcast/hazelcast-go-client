@@ -119,7 +119,7 @@ func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]*c
 		// TODO:: use addressProvider
 		privateAddress := hzC.createAddress(addr.PrivAddr)
 		if privateAddress.Port() == -1 {
-			privateAddress = core.NewAddressWithParameters(addr.PrivAddr, publicAddress.Port())
+			privateAddress = core.NewAddressWithHostPort(addr.PrivAddr, publicAddress.Port())
 		}
 
 		privateToPublicAddrs[privateAddress.String()] = publicAddress
@@ -135,5 +135,5 @@ func CreateURLEndpoint(hazelcastProperties *property.HazelcastProperties, cloudT
 
 func (hzC *HazelcastCloud) createAddress(hostname string) *core.Address {
 	ip, port := iputil.GetIPAndPort(hostname)
-	return core.NewAddressWithParameters(ip, port)
+	return core.NewAddressWithHostPort(ip, port)
 }

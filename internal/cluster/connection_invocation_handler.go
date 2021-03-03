@@ -1,20 +1,20 @@
-package connection
+package cluster
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 )
 
-type InvocationHandlerCreationBundle struct {
-	ConnectionManager Manager
-	ClusterService    cluster.Service
+type ConnectionInvocationHandlerCreationBundle struct {
+	ConnectionManager ConnectionManager
+	ClusterService    Service
 	SmartRouting      bool
 	Logger            logger.Logger
 }
 
-func (b InvocationHandlerCreationBundle) Check() {
+func (b ConnectionInvocationHandlerCreationBundle) Check() {
 	if b.ConnectionManager == nil {
 		panic("ConnectionManager is nil")
 	}
@@ -26,16 +26,16 @@ func (b InvocationHandlerCreationBundle) Check() {
 	}
 }
 
-type InvocationHandler struct {
-	connectionManager Manager
-	clusterService    cluster.Service
+type ConnectionInvocationHandler struct {
+	connectionManager ConnectionManager
+	clusterService    Service
 	smart             bool
 	logger            logger.Logger
 }
 
-func NewInvocationHandler(bundle InvocationHandlerCreationBundle) *InvocationHandler {
+func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
-	return &InvocationHandler{
+	return &ConnectionInvocationHandler{
 		connectionManager: bundle.ConnectionManager,
 		clusterService:    bundle.ClusterService,
 		smart:             bundle.SmartRouting,
@@ -43,7 +43,7 @@ func NewInvocationHandler(bundle InvocationHandlerCreationBundle) *InvocationHan
 	}
 }
 
-func (h InvocationHandler) Invoke(invocation invocation.Invocation) error {
+func (h ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) error {
 	if h.smart {
 		return h.invokeSmart(invocation)
 	} else {
@@ -51,8 +51,8 @@ func (h InvocationHandler) Invoke(invocation invocation.Invocation) error {
 	}
 }
 
-func (h InvocationHandler) invokeSmart(inv invocation.Invocation) error {
-	if boundInvocation, ok := inv.(BoundInvocation); ok {
+func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
+	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
 		return h.sendToConnection(inv, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
 		// XXX: ???
@@ -64,8 +64,8 @@ func (h InvocationHandler) invokeSmart(inv invocation.Invocation) error {
 	}
 }
 
-func (h InvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
-	if boundInvocation, ok := inv.(BoundInvocation); ok {
+func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
+	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
 		return h.sendToConnection(inv, boundInvocation.Connection())
 	} else if addr := h.clusterService.OwnerConnectionAddress(); addr == nil {
 		return core.NewHazelcastIOError("no address found to invoke", nil)
@@ -74,7 +74,7 @@ func (h InvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
 	}
 }
 
-func (h InvocationHandler) sendToConnection(inv invocation.Invocation, conn *Impl) error {
+func (h ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *ConnectionImpl) error {
 	if sent := conn.send(inv.Request()); !sent {
 		return core.NewHazelcastIOError("packet is not sent", nil)
 	}
@@ -82,15 +82,15 @@ func (h InvocationHandler) sendToConnection(inv invocation.Invocation, conn *Imp
 	return nil
 }
 
-func (n InvocationHandler) sendToAddress(inv invocation.Invocation, addr *core.Address) error {
-	if conn, err := n.connectionManager.ConnectionForAddress(addr); err != nil {
-		n.logger.Trace("Sending invocation to ", inv.Address(), " failed, err: ", err)
-		return err
+func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr *core.Address) error {
+	if conn := n.connectionManager.GetConnectionForAddress(addr); conn == nil {
+		n.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
+		return internal.ErrAddressNotFound
 	} else {
 		return n.sendToConnection(inv, conn)
 	}
 }
 
-func (n InvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
+func (n ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
 	panic("implement me!")
 }
