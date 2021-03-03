@@ -23,3 +23,4 @@ import (
 type Client = internalhazelcast.Client
 type Config = config.Config
 type Map = core.Map
+type JSONValue = core.HazelcastJSONValue

@@ -17,6 +17,7 @@ package hazelcast
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
 // NewClient creates and returns a new Client.
@@ -42,4 +43,9 @@ func NewClientWithConfig(config *config.Config) (Client, error) {
 // NewConfig creates and returns a new config.
 func NewConfig() *config.Config {
 	return config.New()
+}
+
+// CreateJSONValueFromString returns *JSONValue initialized with the given string
+func CreateJSONValueFromString(jsonString string) *JSONValue {
+	return core.CreateHazelcastJSONValueFromString(jsonString)
 }
