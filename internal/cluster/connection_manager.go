@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"errors"
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
@@ -21,6 +23,7 @@ type ConnectionManagerCreationBundle struct {
 	SmartRouting      bool
 	Logger            logger.Logger
 	AddressTranslator internal.AddressTranslator
+	ClusterService    *ServiceImpl
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -33,6 +36,9 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.AddressTranslator == nil {
 		panic("AddressTranslator is nil")
 	}
+	if b.ClusterService == nil {
+		panic("ClusterService is nil")
+	}
 }
 
 type ConnectionManagerImpl struct {
@@ -41,6 +47,8 @@ type ConnectionManagerImpl struct {
 	listenersMu   *sync.RWMutex
 	listeners     []Listener
 	//invocationService invocation.Service
+	// TODO: depend on the interface
+	clusterService    *ServiceImpl
 	nextConnectionID  int64
 	addressTranslator internal.AddressTranslator
 	smartRouting      bool
@@ -59,17 +67,21 @@ func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *Connectio
 		addressTranslator: bundle.AddressTranslator,
 		smartRouting:      bundle.SmartRouting,
 		logger:            bundle.Logger,
+		clusterService:    bundle.ClusterService,
 	}
 	manager.alive.Store(true)
 	return manager
 }
 
-func (m *ConnectionManagerImpl) Start() {
+func (m *ConnectionManagerImpl) Start() error {
 	if m.started {
-		return
+		return nil
+	}
+	if err := m.connectCluster(); err != nil {
+		return err
 	}
 	m.started = true
-	panic("implement me")
+	return nil
 }
 
 func (m *ConnectionManagerImpl) AddListener(listener Listener) {
@@ -89,6 +101,21 @@ func (m *ConnectionManagerImpl) GetConnectionForAddress(addr *core.Address) *Con
 		return conn
 	}
 	return nil
+}
+
+func (m *ConnectionManagerImpl) connectCluster() error {
+	for _, addr := range m.clusterService.memberCandidateAddrs() {
+		if err := m.connectAddr(addr); err == nil {
+			return nil
+		} else {
+			m.logger.Info(fmt.Sprintf("cannot connect to %s", addr.String()), err)
+		}
+	}
+	return errors.New("cannot connect to any adddress in the cluster")
+}
+
+func (m *ConnectionManagerImpl) connectAddr(addr *core.Address) error {
+
 }
 
 func (m *ConnectionManagerImpl) notifyConnectionClosed(conn *ConnectionImpl, connErr error) {
