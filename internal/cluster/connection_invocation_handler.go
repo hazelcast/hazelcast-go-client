@@ -67,7 +67,7 @@ func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) erro
 func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
 	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
 		return h.sendToConnection(inv, boundInvocation.Connection())
-	} else if addr := h.clusterService.OwnerConnectionAddress(); addr == nil {
+	} else if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
 		return core.NewHazelcastIOError("no address found to invoke", nil)
 	} else {
 		return h.sendToAddress(inv, addr)
