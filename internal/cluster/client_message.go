@@ -9,11 +9,10 @@ import (
 
 type clientMessageBuilder struct {
 	incompleteMessages map[int64]*proto.ClientMessage
-	handleResponse     func(interface{})
+	handleResponse     func(msg *proto.ClientMessage)
 }
 
 func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
-
 	if msg.StartFrame.HasUnFragmentedMessageFlags() {
 		mb.handleResponse(msg)
 	} else {

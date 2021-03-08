@@ -63,53 +63,20 @@ type ConnectionImpl struct {
 	logger                    logger.Logger
 }
 
-func newConnection(address *core.Address, cm ConnectionManager, handleResponse func(interface{}),
-	networkCfg *config.NetworkConfig, logger logger.Logger) (*ConnectionImpl, error) {
-	connection := createDefaultConnection(cm, handleResponse, logger)
-	socket, err := connection.createSocket(networkCfg, address)
-	if err != nil {
-		return nil, err
-	}
-	connection.socket = socket
-	connection.init()
-	connection.clientMessageReader = newClientMessageReader()
-	connection.sendProtocolStarter()
-	go connection.writePool()
-	go connection.readPool()
-	return connection, nil
+func (c *ConnectionImpl) sendProtocolStarter() error {
+	_, err := c.socket.Write([]byte(protocolStarter))
+	return err
 }
 
-func createDefaultConnection(cm ConnectionManager, handleResponse func(interface{}), logger logger.Logger) *ConnectionImpl {
-	builder := &clientMessageBuilder{
-		handleResponse:     handleResponse,
-		incompleteMessages: make(map[int64]*proto.ClientMessage),
-	}
-	return &ConnectionImpl{
-		pending:              make(chan *proto.ClientMessage, 1),
-		received:             make(chan *proto.ClientMessage, 1),
-		closed:               make(chan struct{}),
-		clientMessageBuilder: builder,
-		readBuffer:           make([]byte, 0),
-		connectionID:         cm.NextConnectionID(),
-		connectionManager:    cm,
-		status:               0,
-		logger:               logger,
-	}
-}
-
-func (c *ConnectionImpl) sendProtocolStarter() {
-	c.socket.Write([]byte(protocolStarter))
-}
-
-func (c *ConnectionImpl) createSocket(networkCfg *config.NetworkConfig, address *core.Address) (net.Conn, error) {
+func (c *ConnectionImpl) createSocket(networkCfg NetworkConfig, address *core.Address) (net.Conn, error) {
 	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
 	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
 	if err != nil {
 		return nil, err
 	}
-	if networkCfg.SSLConfig().Enabled() {
-		socket, err = c.openTLSConnection(networkCfg.SSLConfig(), socket)
-	}
+	//if networkCfg.SSLConfig().Enabled() {
+	//	socket, err = c.openTLSConnection(networkCfg.SSLConfig(), socket)
+	//}
 	return socket, err
 }
 
@@ -141,7 +108,7 @@ func (c *ConnectionImpl) writePool() {
 		case request := <-c.pending:
 			err := c.write(request)
 			if err != nil {
-				c.clientMessageBuilder.handleResponse(request.CorrelationID())
+				c.clientMessageBuilder.handleResponse(request)
 			} else {
 				c.lastWrite.Store(time.Now())
 			}

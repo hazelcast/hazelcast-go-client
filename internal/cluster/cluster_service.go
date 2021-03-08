@@ -14,6 +14,8 @@ type Service interface {
 type ServiceImpl struct {
 	ownerConnectionAddr atomic.Value
 	addrProviders       []AddressProvider
+	ownerUUID           atomic.Value
+	uuid                atomic.Value
 }
 
 func NewServiceImpl(addrProviders []AddressProvider) *ServiceImpl {
@@ -38,7 +40,7 @@ func (s *ServiceImpl) OwnerConnectionAddr() *core.Address {
 }
 
 func (s *ServiceImpl) memberCandidateAddrs() []*core.Address {
-	addrSet := AddrSet{}
+	addrSet := NewAddrSet()
 	for _, addrProvider := range s.addrProviders {
 		addrSet.AddAddrs(addrProvider.Addresses())
 	}
@@ -47,6 +49,10 @@ func (s *ServiceImpl) memberCandidateAddrs() []*core.Address {
 
 type AddrSet struct {
 	addrs map[string]*core.Address
+}
+
+func NewAddrSet() AddrSet {
+	return AddrSet{addrs: map[string]*core.Address{}}
 }
 
 func (a AddrSet) AddAddr(addr *core.Address) {

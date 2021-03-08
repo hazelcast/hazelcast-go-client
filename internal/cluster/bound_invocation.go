@@ -31,6 +31,6 @@ func (i *BoundInvocationImpl) Connection() *ConnectionImpl {
 	return i.boundConnection
 }
 
-func (i *BoundInvocationImpl) isBoundToSingleConnection() bool {
+func (i *BoundInvocationImpl) boundToSingleConnection() bool {
 	return i.boundConnection != nil
 }
