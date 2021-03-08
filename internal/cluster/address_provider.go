@@ -12,8 +12,8 @@ type DefaultAddressProvider struct {
 
 func NewDefaultAddressProvider(networkConfig NetworkConfig) *DefaultAddressProvider {
 	var err error
-	addresses := make([]*AddressImpl, len(networkConfig.Addresses))
-	for i, addr := range networkConfig.Addresses {
+	addresses := make([]*AddressImpl, len(networkConfig.Addrs()))
+	for i, addr := range networkConfig.Addrs() {
 		if addresses[i], err = core.ParseAddress(addr); err != nil {
 			panic(err)
 		}

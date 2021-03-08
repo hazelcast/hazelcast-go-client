@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	defaultHost = "localhost"
-	defaultPort = 5701
+	DefaultHost = "localhost"
+	DefaultPort = 5701
 )
 
 type Address struct {
 	host string
 	port int
+	// TODO: add address hash
 }
 
 func NewAddress(Host string, Port int32) *Address {
@@ -34,10 +35,10 @@ func ParseAddress(addr string) (*Address, error) {
 	} else if index < 0 {
 		if addr == "" {
 			// default address
-			return NewAddressWithHostPort(defaultHost, defaultPort), nil
+			return NewAddressWithHostPort(DefaultHost, DefaultPort), nil
 		}
 		// this is probably a string with only the host
-		return NewAddressWithHostPort(addr, defaultPort), nil
+		return NewAddressWithHostPort(addr, DefaultPort), nil
 	}
 	if host, portStr, err := net.SplitHostPort(addr); err != nil {
 		return nil, fmt.Errorf("error parsing address: %w", err)

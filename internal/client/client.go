@@ -7,6 +7,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"sync/atomic"
 	"time"
@@ -17,6 +18,7 @@ var nextId int32
 type Client interface {
 	Name() string
 	GetMap(name string) (proxy.Map, error)
+	Start() error
 }
 
 type Impl struct {
@@ -35,7 +37,7 @@ type Impl struct {
 	logger            logger.Logger
 
 	// state
-	started bool
+	started atomic.Value
 }
 
 func NewImpl(name string, config Config) *Impl {
@@ -53,20 +55,32 @@ func NewImpl(name string, config Config) *Impl {
 	if err != nil {
 		panic(fmt.Errorf("error creating client: %w", err))
 	}
-	smartRouting := config.Network.SmartRouting
+	smartRouting := config.Network.SmartRouting()
 	addressTranslator := internal.NewDefaultAddressTranslator()
 	addressProviders := []cluster.AddressProvider{
 		cluster.NewDefaultAddressProvider(config.Network),
 	}
+	credentials := security.NewUsernamePasswordCredentials("", "")
 	clusterService := cluster.NewServiceImpl(addressProviders)
 	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
 		Logger:               clientLogger,
 	})
+	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
+		SmartRouting: smartRouting,
+		Logger:       clientLogger,
+	})
 	connectionManager := cluster.NewConnectionManagerImpl(cluster.ConnectionManagerCreationBundle{
-		SmartRouting:      smartRouting,
-		Logger:            clientLogger,
-		AddressTranslator: addressTranslator,
+		SmartRouting:         smartRouting,
+		Logger:               clientLogger,
+		AddressTranslator:    addressTranslator,
+		InvocationService:    invocationService,
+		ClusterService:       clusterService,
+		PartitionService:     partitionService,
+		SerializationService: serializationService,
+		NetworkConfig:        config.Network,
+		Credentials:          credentials,
+		ClientName:           name,
 	})
 	invocationHandler := cluster.NewConnectionInvocationHandler(cluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
@@ -74,11 +88,7 @@ func NewImpl(name string, config Config) *Impl {
 		SmartRouting:      smartRouting,
 		Logger:            clientLogger,
 	})
-	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
-		SmartRouting: smartRouting,
-		Handler:      invocationHandler,
-		Logger:       clientLogger,
-	})
+	invocationService.SetHandler(invocationHandler)
 	invocationFactory := cluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
 	proxyManagerServiceBundle := proxy.ProxyCreationBundle{
 		SerializationService: serializationService,
@@ -88,7 +98,7 @@ func NewImpl(name string, config Config) *Impl {
 		SmartRouting:         smartRouting,
 		InvocationFactory:    invocationFactory,
 	}
-	return &Impl{
+	impl := &Impl{
 		name:              name,
 		clusterName:       config.ClusterName,
 		networkConfig:     &config.Network,
@@ -97,6 +107,8 @@ func NewImpl(name string, config Config) *Impl {
 		//invocationService: invocationService,
 		logger: clientLogger,
 	}
+	impl.started.Store(false)
+	return impl
 }
 
 func (c *Impl) Name() string {
@@ -104,17 +116,26 @@ func (c *Impl) Name() string {
 }
 
 func (c *Impl) GetMap(name string) (proxy.Map, error) {
+	c.ensureStarted()
 	return c.proxyManager.GetMap(name)
 }
 
 func (c *Impl) Start() error {
 	// TODO: Recover from panics and return as error
-	if c.started {
+	if c.started.Load() == true {
 		return nil
 	}
-	c.connectionManager.Start()
-	c.started = true
+	if err := c.connectionManager.Start(); err != nil {
+		return err
+	}
+	c.started.Store(true)
 	return nil
+}
+
+func (c *Impl) ensureStarted() {
+	if c.started.Load() == false {
+		panic("client not started")
+	}
 }
 
 /*

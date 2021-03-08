@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"testing"
+	"time"
 )
 
 func TestNewClientGetMap(t *testing.T) {
@@ -12,6 +13,11 @@ func TestNewClientGetMap(t *testing.T) {
 		t.Errorf("client is nil")
 		return
 	}
+	if err := client.Start(); err != nil {
+		t.Error(err)
+		return
+	}
+	time.Sleep(2 * time.Second)
 	m, err := client.GetMap("my-map")
 	if err != nil {
 		t.Error(err)

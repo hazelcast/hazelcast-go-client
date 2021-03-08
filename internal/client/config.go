@@ -25,7 +25,9 @@ type ConfigBuilderImpl struct {
 }
 
 func NewConfigBuilderImpl() *ConfigBuilderImpl {
-	return &ConfigBuilderImpl{}
+	return &ConfigBuilderImpl{
+		networkConfigBuilder: cluster.NewNetworkConfigBuilderImpl(),
+	}
 }
 
 func (c *ConfigBuilderImpl) SetClientName(name string) ConfigBuilder {

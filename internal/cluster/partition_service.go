@@ -76,6 +76,10 @@ func (s *PartitionServiceImpl) GetPartitionIDWithKey(key interface{}) (int32, er
 	}
 }
 
+func (s *PartitionServiceImpl) checkAndSetPartitionCount(newPartitionCount int32) {
+	atomic.CompareAndSwapUint32(&s.partitionCount, 0, uint32(newPartitionCount))
+}
+
 type partitionTable struct {
 	//connection           *connection.Impl
 	partitionStateVersion int32

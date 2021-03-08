@@ -18,9 +18,7 @@ type ServiceCreationBundle struct {
 }
 
 func (b ServiceCreationBundle) Check() {
-	if b.Handler == nil {
-		panic("Handler is nil")
-	}
+	// Handler can be nil
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
@@ -28,6 +26,9 @@ func (b ServiceCreationBundle) Check() {
 
 type Service interface {
 	Send(invocation Invocation) Result
+	// SetHandler should be called only before client is started
+	SetHandler(handler Handler)
+	InvocationTimeout() time.Duration
 	//InvokeOnPartitionOwner(message *proto.ClientMessage, partitionID int32) Result
 	//InvokeOnRandomTarget(message *proto.ClientMessage) Result
 	//InvokeOnKeyOwner(message *proto.ClientMessage, data serialization.Data) Result
@@ -37,7 +38,8 @@ type Service interface {
 	//removeEventHandler(correlationID int64)
 	//sendInvocation(invocation *invocation) invocationResult
 	//InvocationTimeout() time.Duration
-	//handleResponse(response interface{})
+	// TODO: make HandleResponse private
+	HandleResponse(response *proto.ClientMessage)
 	//shutdown()
 }
 
@@ -49,7 +51,7 @@ type ServiceImpl struct {
 	retryPause        time.Duration
 	eventHandlersLock *sync.RWMutex
 	eventHandlers     map[int64]EventHandler
-	responseChannel   chan *proto.ClientMessage
+	responseCh        chan *proto.ClientMessage
 	shutDown          atomic.Value
 	smartRouting      bool
 	handler           Handler
@@ -58,6 +60,10 @@ type ServiceImpl struct {
 
 func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 	bundle.Check()
+	handler := bundle.Handler
+	if handler == nil {
+		handler = &DefaultHandler{}
+	}
 	service := &ServiceImpl{
 		invocationsLock:   &sync.RWMutex{},
 		invocations:       map[int64]Invocation{},
@@ -65,7 +71,7 @@ func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 		retryPause:        1 * time.Second,
 		eventHandlersLock: &sync.RWMutex{},
 		eventHandlers:     map[int64]EventHandler{},
-		responseChannel:   make(chan *proto.ClientMessage, 1),
+		responseCh:        make(chan *proto.ClientMessage, 1),
 		smartRouting:      bundle.SmartRouting,
 		handler:           bundle.Handler,
 		logger:            bundle.Logger,
@@ -77,6 +83,14 @@ func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 
 func (s *ServiceImpl) Send(invocation Invocation) Result {
 	return s.sendInvocation(invocation)
+}
+
+func (s *ServiceImpl) SetHandler(handler Handler) {
+	s.handler = handler
+}
+
+func (s *ServiceImpl) InvocationTimeout() time.Duration {
+	return 120 * time.Second
 }
 
 /*
@@ -94,7 +108,7 @@ func (s *ServiceImpl) CleanupConnection(conn *connection.Impl, connErr error) {
 */
 
 func (s *ServiceImpl) startProcess() {
-	for msg := range s.responseChannel {
+	for msg := range s.responseCh {
 		if msg.Err != nil {
 			panic("implement me!")
 		}
@@ -145,6 +159,13 @@ func (s *ServiceImpl) handleError(invocation Invocation, invocationErr error) {
 	} else {
 		s.logger.Trace("no invocation found with correlation id: ", correlationID)
 	}
+}
+
+func (s *ServiceImpl) HandleResponse(response *proto.ClientMessage) {
+	if s.shutDown.Load() == true {
+		return
+	}
+	s.responseCh <- response
 }
 
 func (s *ServiceImpl) registerInvocation(invocation Invocation) {
