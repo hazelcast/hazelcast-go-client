@@ -20,11 +20,6 @@ import (
 
 const MapServiceName = "hz:impl:mapService"
 
-type Map interface {
-	Get(key interface{}) (interface{}, error)
-	Put(key interface{}, value interface{}) (interface{}, error)
-}
-
 type MapImpl struct {
 	*Impl
 }

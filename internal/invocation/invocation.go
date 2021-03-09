@@ -47,11 +47,15 @@ func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *cor
 }
 
 func (i *Impl) Complete(message *proto.ClientMessage) {
-	panic("implement me")
+	if atomic.CompareAndSwapInt32(&i.completed, 0, 1) {
+		i.response <- message
+	}
 }
 
 func (i *Impl) CompleteWithErr(err error) {
-	panic("implement me")
+	if atomic.CompareAndSwapInt32(&i.completed, 0, 1) {
+		i.response <- err
+	}
 }
 
 func (i *Impl) Completed() bool {

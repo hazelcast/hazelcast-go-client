@@ -14,10 +14,6 @@
 
 package hazelcast
 
-import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/client"
-)
-
 // NewClient creates and returns a new Client.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
@@ -34,16 +30,16 @@ func NewClient() Client {
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClientWithConfig(config ClientConfig) Client {
-	return client.NewImpl("", config)
+func NewClientWithConfig(config Config) Client {
+	return newClient("", config)
 }
 
-func NewClientConfigBuilder() client.ConfigBuilder {
-	return client.NewConfigBuilderImpl()
+func NewClientConfigBuilder() ConfigBuilder {
+	return newConfigBuilderImpl()
 }
 
-func DefaultConfig() ClientConfig {
-	if config, err := client.NewConfigBuilderImpl().Config(); err != nil {
+func DefaultConfig() Config {
+	if config, err := newConfigBuilderImpl().Config(); err != nil {
 		panic(err)
 	} else {
 		return config
