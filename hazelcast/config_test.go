@@ -1,13 +1,13 @@
-package client_test
+package hazelcast_test
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/client"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"reflect"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
-	configBuilder := client.NewConfigBuilderImpl()
+	configBuilder := hazelcast.NewClientConfigBuilder()
 	configBuilder.SetClusterName("my-cluster")
 	configBuilder.Network().SetAddresses("192.168.1.2")
 	config, err := configBuilder.Config()
@@ -18,8 +18,8 @@ func TestConfig(t *testing.T) {
 	if "my-cluster" != config.ClusterName {
 		t.Errorf("target: my-cluster != %v", config.ClusterName)
 	}
-	if !reflect.DeepEqual([]string{"192.168.1.2"}, config.Network.Addresses) {
-		t.Errorf("target: %v != %v", []string{"192.168.1.2"}, config.ClusterName)
+	targetAddrs := []string{"192.168.1.2"}
+	if !reflect.DeepEqual(targetAddrs, config.Network.Addrs()) {
+		t.Errorf("target: %v != %v", targetAddrs, config.Network.Addrs())
 	}
-
 }

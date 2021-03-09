@@ -1,4 +1,4 @@
-package client
+package hazelcast
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+	pubproxy "github.com/hazelcast/hazelcast-go-client/v4/proxy"
 	"sync/atomic"
 	"time"
 )
@@ -17,11 +18,11 @@ var nextId int32
 
 type Client interface {
 	Name() string
-	GetMap(name string) (proxy.Map, error)
+	GetMap(name string) (pubproxy.Map, error)
 	Start() error
 }
 
-type Impl struct {
+type clientImpl struct {
 	// configuration
 	name          string
 	clusterName   string
@@ -40,7 +41,7 @@ type Impl struct {
 	started atomic.Value
 }
 
-func NewImpl(name string, config Config) *Impl {
+func newClient(name string, config Config) *clientImpl {
 	id := atomic.AddInt32(&nextId, 1)
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
@@ -98,7 +99,7 @@ func NewImpl(name string, config Config) *Impl {
 		SmartRouting:         smartRouting,
 		InvocationFactory:    invocationFactory,
 	}
-	impl := &Impl{
+	impl := &clientImpl{
 		name:              name,
 		clusterName:       config.ClusterName,
 		networkConfig:     &config.Network,
@@ -111,16 +112,16 @@ func NewImpl(name string, config Config) *Impl {
 	return impl
 }
 
-func (c *Impl) Name() string {
+func (c *clientImpl) Name() string {
 	return c.name
 }
 
-func (c *Impl) GetMap(name string) (proxy.Map, error) {
+func (c *clientImpl) GetMap(name string) (pubproxy.Map, error) {
 	c.ensureStarted()
 	return c.proxyManager.GetMap(name)
 }
 
-func (c *Impl) Start() error {
+func (c *clientImpl) Start() error {
 	// TODO: Recover from panics and return as error
 	if c.started.Load() == true {
 		return nil
@@ -132,7 +133,7 @@ func (c *Impl) Start() error {
 	return nil
 }
 
-func (c *Impl) ensureStarted() {
+func (c *clientImpl) ensureStarted() {
 	if c.started.Load() == false {
 		panic("client not started")
 	}

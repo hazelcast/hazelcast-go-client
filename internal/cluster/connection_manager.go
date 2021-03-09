@@ -162,7 +162,7 @@ func (m *ConnectionManagerImpl) connectCluster() error {
 			m.logger.Info(fmt.Sprintf("cannot connect to %s", addr.String()), err)
 		}
 	}
-	return errors.New("cannot connect to any adddress in the cluster")
+	return errors.New("cannot connect to any address in the cluster")
 }
 
 func (m *ConnectionManagerImpl) connectAddr(addr *core.Address) error {

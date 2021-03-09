@@ -159,6 +159,7 @@ func (s *ServiceImpl) handleError(invocation Invocation, invocationErr error) {
 	} else {
 		s.logger.Trace("no invocation found with correlation id: ", correlationID)
 	}
+	panic("implement me")
 }
 
 func (s *ServiceImpl) HandleResponse(response *proto.ClientMessage) {
