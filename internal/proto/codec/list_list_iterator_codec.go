@@ -37,7 +37,7 @@ func EncodeListListIteratorRequest(name string, index int32) *proto.ClientMessag
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ListListIteratorCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListListIteratorCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ListListIteratorCodecRequestIndexOffset, index)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListListIteratorCodecRequestMessageType)

@@ -40,7 +40,7 @@ func EncodeListAddAllWithIndexRequest(name string, index int32, valueList []seri
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ListAddAllWithIndexCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListAddAllWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ListAddAllWithIndexCodecRequestIndexOffset, index)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListAddAllWithIndexCodecRequestMessageType)

@@ -33,7 +33,7 @@ func EncodeMapAddIndexRequest(name string, indexConfig config.IndexConfig) *prot
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapAddIndexCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapAddIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAddIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

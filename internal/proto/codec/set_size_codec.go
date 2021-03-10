@@ -35,7 +35,7 @@ func EncodeSetSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, SetSizeCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SetSizeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

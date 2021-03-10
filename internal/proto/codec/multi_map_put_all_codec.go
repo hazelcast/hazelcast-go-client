@@ -35,7 +35,7 @@ func EncodeMultiMapPutAllRequest(name string, entries []proto.Pair) *proto.Clien
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapPutAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapPutAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -32,7 +32,7 @@ func EncodeCPGroupCreateCPGroupRequest(proxyName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CPGroupCreateCPGroupCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CPGroupCreateCPGroupCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPGroupCreateCPGroupCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

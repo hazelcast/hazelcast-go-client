@@ -35,7 +35,7 @@ func EncodeCPSessionCloseSessionRequest(groupId proto.RaftGroupId, sessionId int
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CPSessionCloseSessionCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CPSessionCloseSessionCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, CPSessionCloseSessionCodecRequestSessionIdOffset, sessionId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPSessionCloseSessionCodecRequestMessageType)

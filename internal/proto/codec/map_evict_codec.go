@@ -37,7 +37,7 @@ func EncodeMapEvictRequest(name string, key serialization.Data, threadId int64) 
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapEvictCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapEvictCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapEvictCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapEvictCodecRequestMessageType)

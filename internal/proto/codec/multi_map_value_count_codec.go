@@ -36,7 +36,7 @@ func EncodeMultiMapValueCountRequest(name string, key serialization.Data, thread
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapValueCountCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapValueCountCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapValueCountCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapValueCountCodecRequestMessageType)

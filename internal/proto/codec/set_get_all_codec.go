@@ -33,7 +33,7 @@ func EncodeSetGetAllRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, SetGetAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SetGetAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetGetAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

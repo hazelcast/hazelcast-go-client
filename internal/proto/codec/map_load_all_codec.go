@@ -33,7 +33,7 @@ func EncodeMapLoadAllRequest(name string, replaceExistingValues bool) *proto.Cli
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapLoadAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapLoadAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapLoadAllCodecRequestReplaceExistingValuesOffset, replaceExistingValues)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapLoadAllCodecRequestMessageType)

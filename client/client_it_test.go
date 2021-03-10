@@ -1,10 +1,8 @@
 package client_test
 
 import (
-	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/client"
 	"testing"
-	"time"
 )
 
 func TestNewClientGetMap(t *testing.T) {
@@ -17,16 +15,19 @@ func TestNewClientGetMap(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	time.Sleep(2 * time.Second)
 	m, err := hz.GetMap("my-map")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	value, err := m.Get("foo")
-	if err != nil {
-		t.Error(err)
-		return
+	targetValue := "value"
+	if _, err := m.Put("key", targetValue); err != nil {
+		t.Fatal(err)
 	}
-	fmt.Println(value)
+	if value, err := m.Get("key"); err != nil {
+		t.Fatal(err)
+		return
+	} else if targetValue != value {
+		t.Fatalf("target %v != %v", targetValue, value)
+	}
 }

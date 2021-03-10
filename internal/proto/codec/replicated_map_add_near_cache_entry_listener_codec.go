@@ -44,7 +44,7 @@ func EncodeReplicatedMapAddNearCacheEntryListenerRequest(name string, includeVal
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapAddNearCacheEntryListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapAddNearCacheEntryListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerCodecRequestIncludeValueOffset, includeValue)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)

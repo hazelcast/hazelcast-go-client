@@ -37,7 +37,7 @@ func EncodeMapEventJournalSubscribeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapEventJournalSubscribeCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapEventJournalSubscribeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapEventJournalSubscribeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

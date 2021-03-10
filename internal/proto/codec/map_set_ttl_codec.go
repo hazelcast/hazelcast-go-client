@@ -48,7 +48,7 @@ func EncodeMapSetTtlRequest(name string, key serialization.Data, ttl int64) *pro
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapSetTtlCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapSetTtlCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapSetTtlCodecRequestTtlOffset, ttl)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapSetTtlCodecRequestMessageType)

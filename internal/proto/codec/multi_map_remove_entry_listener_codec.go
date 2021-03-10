@@ -37,7 +37,7 @@ func EncodeMultiMapRemoveEntryListenerRequest(name string, registrationId core.U
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapRemoveEntryListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapRemoveEntryListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MultiMapRemoveEntryListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapRemoveEntryListenerCodecRequestMessageType)

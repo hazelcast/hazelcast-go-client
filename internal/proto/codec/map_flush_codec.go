@@ -33,7 +33,7 @@ func EncodeMapFlushRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapFlushCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapFlushCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFlushCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

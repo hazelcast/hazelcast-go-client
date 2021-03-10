@@ -35,7 +35,7 @@ func EncodeMultiMapForceUnlockRequest(name string, key serialization.Data, refer
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapForceUnlockCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapForceUnlockCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MultiMapForceUnlockCodecRequestReferenceIdOffset, referenceId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapForceUnlockCodecRequestMessageType)

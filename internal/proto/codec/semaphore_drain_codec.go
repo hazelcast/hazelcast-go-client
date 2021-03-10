@@ -38,7 +38,7 @@ func EncodeSemaphoreDrainRequest(groupId proto.RaftGroupId, name string, session
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, SemaphoreDrainCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SemaphoreDrainCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreDrainCodecRequestSessionIdOffset, sessionId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreDrainCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, SemaphoreDrainCodecRequestInvocationUidOffset, invocationUid)

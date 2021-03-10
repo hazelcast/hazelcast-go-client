@@ -32,7 +32,7 @@ func EncodeClientPingRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientPingCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientPingCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientPingCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

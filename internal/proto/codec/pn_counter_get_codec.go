@@ -44,7 +44,7 @@ func EncodePNCounterGetRequest(name string, replicaTimestamps []proto.Pair, targ
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, PNCounterGetCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, PNCounterGetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterGetCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(PNCounterGetCodecRequestMessageType)

@@ -35,7 +35,7 @@ func EncodeMapFetchWithQueryRequest(name string, iterationPointers []proto.Pair,
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapFetchWithQueryCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapFetchWithQueryCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapFetchWithQueryCodecRequestBatchOffset, batch)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFetchWithQueryCodecRequestMessageType)

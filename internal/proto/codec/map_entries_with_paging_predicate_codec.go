@@ -35,7 +35,7 @@ func EncodeMapEntriesWithPagingPredicateRequest(name string, predicate proto.Pag
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapEntriesWithPagingPredicateCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapEntriesWithPagingPredicateCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapEntriesWithPagingPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -37,7 +37,7 @@ func EncodeSetRemoveListenerRequest(name string, registrationId core.UUID) *prot
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, SetRemoveListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SetRemoveListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, SetRemoveListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetRemoveListenerCodecRequestMessageType)

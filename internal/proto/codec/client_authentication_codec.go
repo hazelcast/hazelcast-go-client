@@ -42,7 +42,7 @@ func EncodeClientAuthenticationRequest(clusterName string, username string, pass
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientAuthenticationCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCodecRequestUuidOffset, uuid)
 	FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCodecRequestSerializationVersionOffset, serializationVersion)
 	clientMessage.AddFrame(initialFrame)
@@ -50,8 +50,8 @@ func EncodeClientAuthenticationRequest(clusterName string, username string, pass
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, clusterName)
-	CodecUtil.EncodeNullable(clientMessage, username, EncodeString)
-	CodecUtil.EncodeNullable(clientMessage, password, EncodeString)
+	CodecUtil.EncodeNullableForString(clientMessage, username)
+	CodecUtil.EncodeNullableForString(clientMessage, password)
 	EncodeString(clientMessage, clientType)
 	EncodeString(clientMessage, clientHazelcastVersion)
 	EncodeString(clientMessage, clientName)

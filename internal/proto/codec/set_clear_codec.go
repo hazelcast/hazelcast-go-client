@@ -32,7 +32,7 @@ func EncodeSetClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, SetClearCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SetClearCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -45,7 +45,7 @@ func EncodeMultiMapAddEntryListenerToKeyRequest(name string, key serialization.D
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapAddEntryListenerToKeyCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapAddEntryListenerToKeyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerToKeyCodecRequestIncludeValueOffset, includeValue)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerToKeyCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)

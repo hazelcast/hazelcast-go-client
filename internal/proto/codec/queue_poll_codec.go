@@ -35,7 +35,7 @@ func EncodeQueuePollRequest(name string, timeoutMillis int64) *proto.ClientMessa
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueuePollCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueuePollCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, QueuePollCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueuePollCodecRequestMessageType)

@@ -37,7 +37,7 @@ func EncodeRingbufferReadOneRequest(name string, sequence int64) *proto.ClientMe
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, RingbufferReadOneCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, RingbufferReadOneCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, RingbufferReadOneCodecRequestSequenceOffset, sequence)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(RingbufferReadOneCodecRequestMessageType)

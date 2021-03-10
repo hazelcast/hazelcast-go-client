@@ -36,7 +36,7 @@ func EncodeMapPutTransientRequest(name string, key serialization.Data, value ser
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapPutTransientCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapPutTransientCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutTransientCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutTransientCodecRequestTtlOffset, ttl)
 	clientMessage.AddFrame(initialFrame)

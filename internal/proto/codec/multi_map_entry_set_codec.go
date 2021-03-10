@@ -33,7 +33,7 @@ func EncodeMultiMapEntrySetRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapEntrySetCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapEntrySetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapEntrySetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

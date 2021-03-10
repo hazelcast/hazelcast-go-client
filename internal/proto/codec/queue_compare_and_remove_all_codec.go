@@ -36,7 +36,7 @@ func EncodeQueueCompareAndRemoveAllRequest(name string, dataList []serialization
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueCompareAndRemoveAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueCompareAndRemoveAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueCompareAndRemoveAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

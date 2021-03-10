@@ -37,7 +37,7 @@ func EncodeClientRemoveDistributedObjectListenerRequest(registrationId core.UUID
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientRemoveDistributedObjectListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientRemoveDistributedObjectListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientRemoveDistributedObjectListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientRemoveDistributedObjectListenerCodecRequestMessageType)

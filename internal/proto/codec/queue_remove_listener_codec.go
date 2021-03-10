@@ -37,7 +37,7 @@ func EncodeQueueRemoveListenerRequest(name string, registrationId core.UUID) *pr
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueRemoveListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueRemoveListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, QueueRemoveListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueRemoveListenerCodecRequestMessageType)

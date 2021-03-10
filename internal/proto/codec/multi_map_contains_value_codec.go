@@ -35,7 +35,7 @@ func EncodeMultiMapContainsValueRequest(name string, value serialization.Data) *
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapContainsValueCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapContainsValueCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MultiMapContainsValueCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

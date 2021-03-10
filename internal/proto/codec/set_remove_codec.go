@@ -37,7 +37,7 @@ func EncodeSetRemoveRequest(name string, value serialization.Data) *proto.Client
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, SetRemoveCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SetRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

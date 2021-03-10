@@ -44,7 +44,7 @@ func EncodeMultiMapAddEntryListenerRequest(name string, includeValue bool, local
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MultiMapAddEntryListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MultiMapAddEntryListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerCodecRequestIncludeValueOffset, includeValue)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MultiMapAddEntryListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)

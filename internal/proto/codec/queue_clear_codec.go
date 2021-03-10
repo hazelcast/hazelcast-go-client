@@ -33,7 +33,7 @@ func EncodeQueueClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueClearCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueClearCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

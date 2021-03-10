@@ -37,7 +37,7 @@ func EncodeFlakeIdGeneratorNewIdBatchRequest(name string, batchSize int32) *prot
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, FlakeIdGeneratorNewIdBatchCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, FlakeIdGeneratorNewIdBatchCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchCodecRequestBatchSizeOffset, batchSize)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FlakeIdGeneratorNewIdBatchCodecRequestMessageType)

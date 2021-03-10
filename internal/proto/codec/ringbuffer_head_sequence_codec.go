@@ -36,7 +36,7 @@ func EncodeRingbufferHeadSequenceRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, RingbufferHeadSequenceCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, RingbufferHeadSequenceCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(RingbufferHeadSequenceCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

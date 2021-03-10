@@ -37,7 +37,7 @@ func EncodeFencedLockGetLockOwnershipRequest(groupId proto.RaftGroupId, name str
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, FencedLockGetLockOwnershipCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, FencedLockGetLockOwnershipCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FencedLockGetLockOwnershipCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

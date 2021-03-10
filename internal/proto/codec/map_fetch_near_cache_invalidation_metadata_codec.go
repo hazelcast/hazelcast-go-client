@@ -34,7 +34,7 @@ func EncodeMapFetchNearCacheInvalidationMetadataRequest(names []string, uuid cor
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapFetchNearCacheInvalidationMetadataCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapFetchNearCacheInvalidationMetadataCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MapFetchNearCacheInvalidationMetadataCodecRequestUuidOffset, uuid)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFetchNearCacheInvalidationMetadataCodecRequestMessageType)

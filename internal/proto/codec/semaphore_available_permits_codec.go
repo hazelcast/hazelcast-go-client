@@ -34,7 +34,7 @@ func EncodeSemaphoreAvailablePermitsRequest(groupId proto.RaftGroupId, name stri
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, SemaphoreAvailablePermitsCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SemaphoreAvailablePermitsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SemaphoreAvailablePermitsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

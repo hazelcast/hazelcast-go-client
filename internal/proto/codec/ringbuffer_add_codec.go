@@ -46,7 +46,7 @@ func EncodeRingbufferAddRequest(name string, overflowPolicy int32, value seriali
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, RingbufferAddCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, RingbufferAddCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferAddCodecRequestOverflowPolicyOffset, overflowPolicy)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(RingbufferAddCodecRequestMessageType)

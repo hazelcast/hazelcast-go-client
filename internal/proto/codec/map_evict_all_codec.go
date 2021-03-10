@@ -34,7 +34,7 @@ func EncodeMapEvictAllRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapEvictAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapEvictAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapEvictAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -36,7 +36,7 @@ func EncodeMapRemoveIfSameRequest(name string, key serialization.Data, value ser
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapRemoveIfSameCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapRemoveIfSameCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapRemoveIfSameCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapRemoveIfSameCodecRequestMessageType)

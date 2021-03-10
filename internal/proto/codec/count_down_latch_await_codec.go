@@ -52,7 +52,7 @@ func EncodeCountDownLatchAwaitRequest(groupId proto.RaftGroupId, name string, in
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CountDownLatchAwaitCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CountDownLatchAwaitCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, CountDownLatchAwaitCodecRequestInvocationUidOffset, invocationUid)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, CountDownLatchAwaitCodecRequestTimeoutMsOffset, timeoutMs)
 	clientMessage.AddFrame(initialFrame)

@@ -36,7 +36,7 @@ func EncodeListLastIndexOfRequest(name string, value serialization.Data) *proto.
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ListLastIndexOfCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListLastIndexOfCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListLastIndexOfCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

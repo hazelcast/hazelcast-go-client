@@ -44,7 +44,7 @@ func EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(name string, k
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapAddEntryListenerToKeyWithPredicateCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapAddEntryListenerToKeyWithPredicateCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ReplicatedMapAddEntryListenerToKeyWithPredicateCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapAddEntryListenerToKeyWithPredicateCodecRequestMessageType)

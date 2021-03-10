@@ -33,7 +33,7 @@ func EncodeClientTriggerPartitionAssignmentRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientTriggerPartitionAssignmentCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientTriggerPartitionAssignmentCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientTriggerPartitionAssignmentCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

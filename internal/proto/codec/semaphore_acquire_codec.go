@@ -43,7 +43,7 @@ func EncodeSemaphoreAcquireRequest(groupId proto.RaftGroupId, name string, sessi
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, SemaphoreAcquireCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SemaphoreAcquireCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestSessionIdOffset, sessionId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SemaphoreAcquireCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, SemaphoreAcquireCodecRequestInvocationUidOffset, invocationUid)

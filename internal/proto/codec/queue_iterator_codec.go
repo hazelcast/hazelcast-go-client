@@ -34,7 +34,7 @@ func EncodeQueueIteratorRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueIteratorCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueIteratorCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueIteratorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

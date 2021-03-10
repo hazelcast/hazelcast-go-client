@@ -34,7 +34,7 @@ func EncodeCountDownLatchGetCountRequest(groupId proto.RaftGroupId, name string)
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CountDownLatchGetCountCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CountDownLatchGetCountCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CountDownLatchGetCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

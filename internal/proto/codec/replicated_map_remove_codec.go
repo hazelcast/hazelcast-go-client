@@ -36,7 +36,7 @@ func EncodeReplicatedMapRemoveRequest(name string, key serialization.Data) *prot
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapRemoveCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

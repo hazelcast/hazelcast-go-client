@@ -37,7 +37,7 @@ func EncodeReplicatedMapRemoveEntryListenerRequest(name string, registrationId c
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapRemoveEntryListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapRemoveEntryListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ReplicatedMapRemoveEntryListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapRemoveEntryListenerCodecRequestMessageType)

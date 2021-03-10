@@ -44,7 +44,7 @@ func EncodeFencedLockLockRequest(groupId proto.RaftGroupId, name string, session
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, FencedLockLockCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, FencedLockLockCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockLockCodecRequestSessionIdOffset, sessionId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, FencedLockLockCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, FencedLockLockCodecRequestInvocationUidOffset, invocationUid)

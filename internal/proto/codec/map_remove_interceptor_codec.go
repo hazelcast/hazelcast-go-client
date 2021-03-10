@@ -34,7 +34,7 @@ func EncodeMapRemoveInterceptorRequest(name string, id string) *proto.ClientMess
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapRemoveInterceptorCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapRemoveInterceptorCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapRemoveInterceptorCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
