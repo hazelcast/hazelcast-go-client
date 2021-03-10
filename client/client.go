@@ -1,4 +1,4 @@
-package hazelcast
+package client
 
 import (
 	"fmt"
