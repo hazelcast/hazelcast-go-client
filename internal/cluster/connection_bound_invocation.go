@@ -10,29 +10,24 @@ import (
 type ConnectionBoundInvocation interface {
 	invocation.Invocation
 	Connection() *ConnectionImpl
+	StoreSentConnection(conn interface{})
 }
 
 type invocationImpl = invocation.Impl
 
-type BoundInvocationImpl struct {
+type ConnectionBoundInvocationImpl struct {
 	*invocationImpl
 	boundConnection *ConnectionImpl
 }
 
 func NewConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address *core.Address,
-	connection *ConnectionImpl, timeout time.Duration) *BoundInvocationImpl {
-	return &BoundInvocationImpl{
+	connection *ConnectionImpl, timeout time.Duration) *ConnectionBoundInvocationImpl {
+	return &ConnectionBoundInvocationImpl{
 		invocationImpl:  invocation.NewImpl(clientMessage, partitionID, address, timeout),
 		boundConnection: connection,
 	}
 }
 
-func (i *BoundInvocationImpl) Connection() *ConnectionImpl {
+func (i *ConnectionBoundInvocationImpl) Connection() *ConnectionImpl {
 	return i.boundConnection
 }
-
-/*
-func (i *BoundInvocationImpl) boundToSingleConnection() bool {
-	return i.boundConnection != nil
-}
-*/

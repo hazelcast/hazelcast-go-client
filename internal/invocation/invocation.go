@@ -11,7 +11,6 @@ type EventHandler func(clientMessage *proto.ClientMessage)
 
 type Invocation interface {
 	Complete(message *proto.ClientMessage)
-	CompleteWithErr(err error)
 	Completed() bool
 	EventHandler() EventHandler
 	Get() (*proto.ClientMessage, error)
@@ -19,12 +18,11 @@ type Invocation interface {
 	PartitionID() int32
 	Request() *proto.ClientMessage
 	Address() *core.Address
-	StoreSentConnection(conn interface{})
 }
 
 type Impl struct {
-	request         atomic.Value
-	response        chan interface{}
+	request         *proto.ClientMessage
+	response        chan *proto.ClientMessage
 	completed       int32
 	boundConnection *Impl
 	address         *core.Address
@@ -34,27 +32,19 @@ type Impl struct {
 	deadline        time.Time
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *core.Address,
-	timeout time.Duration) *Impl {
-	inv := &Impl{
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *core.Address, timeout time.Duration) *Impl {
+	return &Impl{
 		partitionID: partitionID,
 		address:     address,
-		response:    make(chan interface{}, 1),
+		request:     clientMessage,
+		response:    make(chan *proto.ClientMessage, 1),
 		deadline:    time.Now().Add(timeout),
 	}
-	inv.request.Store(clientMessage)
-	return inv
 }
 
 func (i *Impl) Complete(message *proto.ClientMessage) {
 	if atomic.CompareAndSwapInt32(&i.completed, 0, 1) {
 		i.response <- message
-	}
-}
-
-func (i *Impl) CompleteWithErr(err error) {
-	if atomic.CompareAndSwapInt32(&i.completed, 0, 1) {
-		i.response <- err
 	}
 }
 
@@ -88,7 +78,7 @@ func (i Impl) PartitionID() int32 {
 }
 
 func (i Impl) Request() *proto.ClientMessage {
-	return i.request.Load().(*proto.ClientMessage)
+	return i.request
 }
 
 func (i Impl) Address() *core.Address {

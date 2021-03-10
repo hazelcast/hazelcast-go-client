@@ -6,6 +6,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
@@ -20,6 +21,7 @@ type Client interface {
 	Name() string
 	GetMap(name string) (pubproxy.Map, error)
 	Start() error
+	Shutdown()
 }
 
 type clientImpl struct {
@@ -29,11 +31,7 @@ type clientImpl struct {
 	networkConfig *cluster.NetworkConfig
 
 	// components
-	proxyManager proxy.Manager
-	//serializationService spi.SerializationService
-	//partitionService     cluster.PartitionService
-	//invocationService    invocation.Service
-	//clusterService       cluster.Service
+	proxyManager      proxy.Manager
 	connectionManager cluster.ConnectionManager
 	logger            logger.Logger
 
@@ -51,64 +49,14 @@ func newClient(name string, config Config) *clientImpl {
 		name = config.ClientName
 	}
 	clientLogger := logger.New()
-	// TODO: create services
-	serializationService, err := serialization.NewService(serialization.NewConfig())
-	if err != nil {
-		panic(fmt.Errorf("error creating client: %w", err))
-	}
-	smartRouting := config.Network.SmartRouting()
-	addressTranslator := internal.NewDefaultAddressTranslator()
-	addressProviders := []cluster.AddressProvider{
-		cluster.NewDefaultAddressProvider(config.Network),
-	}
-	credentials := security.NewUsernamePasswordCredentials("dev", "dev-pass")
-	clusterService := cluster.NewServiceImpl(addressProviders)
-	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
-		SerializationService: serializationService,
-		Logger:               clientLogger,
-	})
-	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
-		SmartRouting: smartRouting,
-		Logger:       clientLogger,
-	})
-	connectionManager := cluster.NewConnectionManagerImpl(cluster.ConnectionManagerCreationBundle{
-		SmartRouting:         smartRouting,
-		Logger:               clientLogger,
-		AddressTranslator:    addressTranslator,
-		InvocationService:    invocationService,
-		ClusterService:       clusterService,
-		PartitionService:     partitionService,
-		SerializationService: serializationService,
-		NetworkConfig:        config.Network,
-		Credentials:          credentials,
-		ClientName:           name,
-	})
-	invocationHandler := cluster.NewConnectionInvocationHandler(cluster.ConnectionInvocationHandlerCreationBundle{
-		ConnectionManager: connectionManager,
-		ClusterService:    clusterService,
-		SmartRouting:      smartRouting,
-		Logger:            clientLogger,
-	})
-	invocationService.SetHandler(invocationHandler)
-	invocationFactory := cluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
-	proxyManagerServiceBundle := proxy.ProxyCreationBundle{
-		SerializationService: serializationService,
-		PartitionService:     partitionService,
-		InvocationService:    invocationService,
-		ClusterService:       clusterService,
-		SmartRouting:         smartRouting,
-		InvocationFactory:    invocationFactory,
-	}
 	impl := &clientImpl{
-		name:              name,
-		clusterName:       config.ClusterName,
-		networkConfig:     &config.Network,
-		proxyManager:      proxy.NewManagerImpl(proxyManagerServiceBundle),
-		connectionManager: connectionManager,
-		//invocationService: invocationService,
-		logger: clientLogger,
+		name:          name,
+		clusterName:   config.ClusterName,
+		networkConfig: &config.Network,
+		logger:        clientLogger,
 	}
 	impl.started.Store(false)
+	impl.createComponents(&config)
 	return impl
 }
 
@@ -133,10 +81,72 @@ func (c *clientImpl) Start() error {
 	return nil
 }
 
+func (c clientImpl) Shutdown() {
+
+}
+
 func (c *clientImpl) ensureStarted() {
 	if c.started.Load() == false {
 		panic("client not started")
 	}
+}
+
+func (c *clientImpl) createComponents(config *Config) {
+	credentials := security.NewUsernamePasswordCredentials("dev", "dev-pass")
+	serializationService, err := serialization.NewService(serialization.NewConfig())
+	if err != nil {
+		panic(fmt.Errorf("error creating client: %w", err))
+	}
+	smartRouting := config.Network.SmartRouting()
+	addressTranslator := internal.NewDefaultAddressTranslator()
+	addressProviders := []cluster.AddressProvider{
+		cluster.NewDefaultAddressProvider(config.Network),
+	}
+	clusterService := cluster.NewServiceImpl(addressProviders)
+	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
+		SerializationService: serializationService,
+		Logger:               c.logger,
+	})
+	invocationCh := make(chan invocation.Invocation, 1)
+	responseCh := make(chan *proto.ClientMessage, 1)
+	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
+		InvocationCh: invocationCh,
+		ResponseCh:   responseCh,
+		SmartRouting: smartRouting,
+		Logger:       c.logger,
+	})
+	connectionManager := cluster.NewConnectionManagerImpl(cluster.ConnectionManagerCreationBundle{
+		InvocationCh:         invocationCh,
+		ResponseCh:           responseCh,
+		SmartRouting:         smartRouting,
+		Logger:               c.logger,
+		AddressTranslator:    addressTranslator,
+		ClusterService:       clusterService,
+		PartitionService:     partitionService,
+		SerializationService: serializationService,
+		NetworkConfig:        config.Network,
+		Credentials:          credentials,
+		ClientName:           c.name,
+	})
+	invocationHandler := cluster.NewConnectionInvocationHandler(cluster.ConnectionInvocationHandlerCreationBundle{
+		ConnectionManager: connectionManager,
+		ClusterService:    clusterService,
+		SmartRouting:      smartRouting,
+		Logger:            c.logger,
+	})
+	invocationService.SetHandler(invocationHandler)
+	invocationFactory := cluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
+	proxyManagerServiceBundle := proxy.CreationBundle{
+		InvocationCh:         invocationCh,
+		SerializationService: serializationService,
+		PartitionService:     partitionService,
+		ClusterService:       clusterService,
+		SmartRouting:         smartRouting,
+		InvocationFactory:    invocationFactory,
+	}
+	proxyManager := proxy.NewManagerImpl(proxyManagerServiceBundle)
+	c.connectionManager = connectionManager
+	c.proxyManager = proxyManager
 }
 
 /*
