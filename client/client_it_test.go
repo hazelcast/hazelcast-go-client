@@ -1,24 +1,24 @@
-package hazelcast_test
+package client_test
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
+	"github.com/hazelcast/hazelcast-go-client/v4/client"
 	"testing"
 	"time"
 )
 
 func TestNewClientGetMap(t *testing.T) {
-	client := hazelcast.NewClient()
-	if client == nil {
+	hz := client.NewClient()
+	if hz == nil {
 		t.Errorf("client is nil")
 		return
 	}
-	if err := client.Start(); err != nil {
+	if err := hz.Start(); err != nil {
 		t.Error(err)
 		return
 	}
 	time.Sleep(2 * time.Second)
-	m, err := client.GetMap("my-map")
+	m, err := hz.GetMap("my-map")
 	if err != nil {
 		t.Error(err)
 		return
