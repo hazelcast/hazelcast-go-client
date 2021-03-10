@@ -34,7 +34,7 @@ func EncodeCPSessionHeartbeatSessionRequest(groupId proto.RaftGroupId, sessionId
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CPSessionHeartbeatSessionCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CPSessionHeartbeatSessionCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, CPSessionHeartbeatSessionCodecRequestSessionIdOffset, sessionId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPSessionHeartbeatSessionCodecRequestMessageType)

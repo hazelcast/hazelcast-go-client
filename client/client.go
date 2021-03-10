@@ -61,7 +61,7 @@ func newClient(name string, config Config) *clientImpl {
 	addressProviders := []cluster.AddressProvider{
 		cluster.NewDefaultAddressProvider(config.Network),
 	}
-	credentials := security.NewUsernamePasswordCredentials("", "")
+	credentials := security.NewUsernamePasswordCredentials("dev", "dev-pass")
 	clusterService := cluster.NewServiceImpl(addressProviders)
 	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,

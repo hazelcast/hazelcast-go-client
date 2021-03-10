@@ -36,7 +36,7 @@ func EncodeClientCreateProxiesRequest(proxies []proto.Pair) *proto.ClientMessage
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientCreateProxiesCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientCreateProxiesCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientCreateProxiesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

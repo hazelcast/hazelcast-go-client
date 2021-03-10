@@ -35,7 +35,7 @@ func EncodeRingbufferRemainingCapacityRequest(name string) *proto.ClientMessage 
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, RingbufferRemainingCapacityCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, RingbufferRemainingCapacityCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(RingbufferRemainingCapacityCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

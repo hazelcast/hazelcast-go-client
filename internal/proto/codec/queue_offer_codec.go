@@ -37,7 +37,7 @@ func EncodeQueueOfferRequest(name string, value serialization.Data, timeoutMilli
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueOfferCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueOfferCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, QueueOfferCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueOfferCodecRequestMessageType)

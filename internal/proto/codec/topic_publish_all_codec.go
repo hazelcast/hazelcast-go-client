@@ -33,7 +33,7 @@ func EncodeTopicPublishAllRequest(name string, messages []serialization.Data) *p
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, TopicPublishAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, TopicPublishAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(TopicPublishAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

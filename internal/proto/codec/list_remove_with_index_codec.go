@@ -35,7 +35,7 @@ func EncodeListRemoveWithIndexRequest(name string, index int32) *proto.ClientMes
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ListRemoveWithIndexCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListRemoveWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ListRemoveWithIndexCodecRequestIndexOffset, index)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListRemoveWithIndexCodecRequestMessageType)

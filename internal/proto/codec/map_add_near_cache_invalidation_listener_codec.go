@@ -47,7 +47,7 @@ func EncodeMapAddNearCacheInvalidationListenerRequest(name string, listenerFlags
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapAddNearCacheInvalidationListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapAddNearCacheInvalidationListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddNearCacheInvalidationListenerCodecRequestListenerFlagsOffset, listenerFlags)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddNearCacheInvalidationListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)

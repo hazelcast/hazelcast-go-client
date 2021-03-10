@@ -35,7 +35,7 @@ func EncodeReplicatedMapContainsKeyRequest(name string, key serialization.Data) 
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapContainsKeyCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapContainsKeyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapContainsKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

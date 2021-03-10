@@ -111,8 +111,9 @@ func (s *ServiceImpl) startProcess() {
 	for msg := range s.responseCh {
 		if msg.Err != nil {
 			panic("implement me!")
+			// handleError
 		}
-
+		s.handleClientMessage(msg)
 	}
 }
 

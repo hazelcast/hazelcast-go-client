@@ -33,7 +33,7 @@ func EncodeMapProjectRequest(name string, projection serialization.Data) *proto.
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapProjectCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapProjectCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapProjectCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

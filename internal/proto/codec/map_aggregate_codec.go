@@ -33,7 +33,7 @@ func EncodeMapAggregateRequest(name string, aggregator serialization.Data) *prot
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapAggregateCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapAggregateCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAggregateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

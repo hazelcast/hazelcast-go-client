@@ -35,7 +35,7 @@ func EncodeAtomicLongGetAndSetRequest(groupId proto.RaftGroupId, name string, ne
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, AtomicLongGetAndSetCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongGetAndSetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, AtomicLongGetAndSetCodecRequestNewValueOffset, newValue)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(AtomicLongGetAndSetCodecRequestMessageType)

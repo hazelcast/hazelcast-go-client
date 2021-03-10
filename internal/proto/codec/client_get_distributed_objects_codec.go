@@ -32,7 +32,7 @@ func EncodeClientGetDistributedObjectsRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientGetDistributedObjectsCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientGetDistributedObjectsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientGetDistributedObjectsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

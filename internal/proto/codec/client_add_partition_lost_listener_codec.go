@@ -42,7 +42,7 @@ func EncodeClientAddPartitionLostListenerRequest(localOnly bool) *proto.ClientMe
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientAddPartitionLostListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientAddPartitionLostListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ClientAddPartitionLostListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAddPartitionLostListenerCodecRequestMessageType)

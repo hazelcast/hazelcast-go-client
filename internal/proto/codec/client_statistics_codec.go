@@ -192,7 +192,7 @@ func EncodeClientStatisticsRequest(timestamp int64, clientAttributes string, met
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientStatisticsCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientStatisticsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, ClientStatisticsCodecRequestTimestampOffset, timestamp)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientStatisticsCodecRequestMessageType)

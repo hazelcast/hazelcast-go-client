@@ -32,7 +32,7 @@ func EncodeClientDestroyProxyRequest(name string, serviceName string) *proto.Cli
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientDestroyProxyCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientDestroyProxyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientDestroyProxyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

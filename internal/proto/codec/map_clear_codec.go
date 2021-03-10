@@ -34,7 +34,7 @@ func EncodeMapClearRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapClearCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapClearCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapClearCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

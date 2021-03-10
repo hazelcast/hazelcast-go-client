@@ -46,7 +46,7 @@ func EncodeMapEventJournalReadRequest(name string, startSequence int64, minSize 
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapEventJournalReadCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapEventJournalReadCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapEventJournalReadCodecRequestStartSequenceOffset, startSequence)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapEventJournalReadCodecRequestMinSizeOffset, minSize)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapEventJournalReadCodecRequestMaxSizeOffset, maxSize)

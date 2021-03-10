@@ -33,7 +33,7 @@ func EncodeCPGroupDestroyCPObjectRequest(groupId proto.RaftGroupId, serviceName 
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CPGroupDestroyCPObjectCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CPGroupDestroyCPObjectCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPGroupDestroyCPObjectCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

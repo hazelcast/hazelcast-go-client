@@ -34,7 +34,7 @@ func EncodeMapLoadGivenKeysRequest(name string, keys []serialization.Data, repla
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapLoadGivenKeysCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapLoadGivenKeysCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapLoadGivenKeysCodecRequestReplaceExistingValuesOffset, replaceExistingValues)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapLoadGivenKeysCodecRequestMessageType)

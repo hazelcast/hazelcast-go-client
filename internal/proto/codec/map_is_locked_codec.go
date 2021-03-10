@@ -35,7 +35,7 @@ func EncodeMapIsLockedRequest(name string, key serialization.Data) *proto.Client
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapIsLockedCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapIsLockedCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapIsLockedCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

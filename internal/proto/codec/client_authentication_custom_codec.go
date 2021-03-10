@@ -42,7 +42,7 @@ func EncodeClientAuthenticationCustomRequest(clusterName string, credentials []b
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientAuthenticationCustomCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientAuthenticationCustomCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientAuthenticationCustomCodecRequestUuidOffset, uuid)
 	FixSizedTypesCodec.EncodeByte(initialFrame.Content, ClientAuthenticationCustomCodecRequestSerializationVersionOffset, serializationVersion)
 	clientMessage.AddFrame(initialFrame)

@@ -34,7 +34,7 @@ func EncodeClientDeployClassesRequest(classDefinitions []proto.Pair) *proto.Clie
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientDeployClassesCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientDeployClassesCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientDeployClassesCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

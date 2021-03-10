@@ -36,7 +36,7 @@ func EncodeMapPutIfAbsentRequest(name string, key serialization.Data, value seri
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapPutIfAbsentCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapPutIfAbsentCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutIfAbsentCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutIfAbsentCodecRequestTtlOffset, ttl)
 	clientMessage.AddFrame(initialFrame)

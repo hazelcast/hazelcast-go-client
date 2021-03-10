@@ -34,7 +34,7 @@ func EncodeSemaphoreGetSemaphoreTypeRequest(proxyName string) *proto.ClientMessa
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, SemaphoreGetSemaphoreTypeCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SemaphoreGetSemaphoreTypeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SemaphoreGetSemaphoreTypeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

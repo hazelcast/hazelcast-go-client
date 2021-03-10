@@ -35,7 +35,7 @@ func EncodeAtomicRefContainsRequest(groupId proto.RaftGroupId, name string, valu
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, AtomicRefContainsCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicRefContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(AtomicRefContainsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -38,7 +38,7 @@ func EncodeSetCompareAndRetainAllRequest(name string, values []serialization.Dat
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, SetCompareAndRetainAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SetCompareAndRetainAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetCompareAndRetainAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

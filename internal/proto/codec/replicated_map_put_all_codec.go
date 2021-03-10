@@ -35,7 +35,7 @@ func EncodeReplicatedMapPutAllRequest(name string, entries []proto.Pair) *proto.
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapPutAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapPutAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -35,7 +35,7 @@ func EncodeListAddWithIndexRequest(name string, index int32, value serialization
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ListAddWithIndexCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListAddWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ListAddWithIndexCodecRequestIndexOffset, index)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListAddWithIndexCodecRequestMessageType)

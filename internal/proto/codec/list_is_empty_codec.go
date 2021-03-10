@@ -34,7 +34,7 @@ func EncodeListIsEmptyRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ListIsEmptyCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListIsEmptyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListIsEmptyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

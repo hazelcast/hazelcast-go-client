@@ -33,7 +33,7 @@ func EncodeQueuePeekRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueuePeekCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueuePeekCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueuePeekCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

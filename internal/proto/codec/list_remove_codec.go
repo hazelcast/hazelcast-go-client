@@ -37,7 +37,7 @@ func EncodeListRemoveRequest(name string, value serialization.Data) *proto.Clien
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ListRemoveCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -39,7 +39,7 @@ func EncodeClientLocalBackupListenerRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientLocalBackupListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientLocalBackupListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientLocalBackupListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

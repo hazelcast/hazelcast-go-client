@@ -37,7 +37,7 @@ func EncodeMapGetAllRequest(name string, keys []serialization.Data) *proto.Clien
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapGetAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapGetAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapGetAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

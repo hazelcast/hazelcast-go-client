@@ -40,7 +40,7 @@ func EncodeMapLockRequest(name string, key serialization.Data, threadId int64, t
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapLockCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapLockCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapLockCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapLockCodecRequestTtlOffset, ttl)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapLockCodecRequestReferenceIdOffset, referenceId)

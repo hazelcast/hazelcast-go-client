@@ -36,7 +36,7 @@ func EncodeMapReplaceIfSameRequest(name string, key serialization.Data, testValu
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapReplaceIfSameCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapReplaceIfSameCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapReplaceIfSameCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapReplaceIfSameCodecRequestMessageType)

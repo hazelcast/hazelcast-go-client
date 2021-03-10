@@ -35,7 +35,7 @@ func EncodeAtomicRefCompareAndSetRequest(groupId proto.RaftGroupId, name string,
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, AtomicRefCompareAndSetCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicRefCompareAndSetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(AtomicRefCompareAndSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

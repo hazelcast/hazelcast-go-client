@@ -46,7 +46,7 @@ func EncodeMapAddEntryListenerWithPredicateRequest(name string, predicate serial
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapAddEntryListenerWithPredicateCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapAddEntryListenerWithPredicateCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerWithPredicateCodecRequestIncludeValueOffset, includeValue)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddEntryListenerWithPredicateCodecRequestListenerFlagsOffset, listenerFlags)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerWithPredicateCodecRequestLocalOnlyOffset, localOnly)

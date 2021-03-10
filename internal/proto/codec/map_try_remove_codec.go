@@ -39,7 +39,7 @@ func EncodeMapTryRemoveRequest(name string, key serialization.Data, threadId int
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, MapTryRemoveCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapTryRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestThreadIdOffset, threadId)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestTimeoutOffset, timeout)
 	clientMessage.AddFrame(initialFrame)

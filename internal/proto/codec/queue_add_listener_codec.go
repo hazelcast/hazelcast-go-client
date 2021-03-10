@@ -43,7 +43,7 @@ func EncodeQueueAddListenerRequest(name string, includeValue bool, localOnly boo
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueAddListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueAddListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, QueueAddListenerCodecRequestIncludeValueOffset, includeValue)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, QueueAddListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)

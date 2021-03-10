@@ -36,7 +36,7 @@ func EncodeQueueRemoveRequest(name string, value serialization.Data) *proto.Clie
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueRemoveCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

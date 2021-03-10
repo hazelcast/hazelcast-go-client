@@ -35,7 +35,7 @@ func EncodeListSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ListSizeCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ListSizeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -34,7 +34,7 @@ func EncodeMapIsEmptyRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapIsEmptyCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapIsEmptyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapIsEmptyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

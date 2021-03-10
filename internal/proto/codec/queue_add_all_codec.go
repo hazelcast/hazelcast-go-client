@@ -38,7 +38,7 @@ func EncodeQueueAddAllRequest(name string, dataList []serialization.Data) *proto
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueAddAllCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueAddAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueAddAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

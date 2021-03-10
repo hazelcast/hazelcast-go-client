@@ -45,7 +45,7 @@ func EncodeRingbufferReadManyRequest(name string, startSequence int64, minCount 
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, RingbufferReadManyCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, RingbufferReadManyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, RingbufferReadManyCodecRequestStartSequenceOffset, startSequence)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferReadManyCodecRequestMinCountOffset, minCount)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, RingbufferReadManyCodecRequestMaxCountOffset, maxCount)

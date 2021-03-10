@@ -37,7 +37,7 @@ func EncodeQueueRemainingCapacityRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, QueueRemainingCapacityCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, QueueRemainingCapacityCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueRemainingCapacityCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

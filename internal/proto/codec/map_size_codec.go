@@ -35,7 +35,7 @@ func EncodeMapSizeRequest(name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapSizeCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapSizeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

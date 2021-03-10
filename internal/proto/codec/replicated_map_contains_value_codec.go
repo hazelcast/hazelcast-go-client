@@ -36,7 +36,7 @@ func EncodeReplicatedMapContainsValueRequest(name string, value serialization.Da
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, ReplicatedMapContainsValueCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapContainsValueCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapContainsValueCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

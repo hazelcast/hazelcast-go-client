@@ -36,7 +36,7 @@ func EncodeCPSessionCreateSessionRequest(groupId proto.RaftGroupId, endpointName
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, CPSessionCreateSessionCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, CPSessionCreateSessionCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(CPSessionCreateSessionCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

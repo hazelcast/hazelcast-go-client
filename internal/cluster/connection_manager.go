@@ -99,7 +99,7 @@ type ConnectionManagerImpl struct {
 	smartRouting      bool
 	alive             atomic.Value
 	logger            logger.Logger
-	started           bool
+	started           atomic.Value
 }
 
 func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *ConnectionManagerImpl {
@@ -120,18 +120,19 @@ func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *Connectio
 		smartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
 	}
-	manager.alive.Store(true)
+	manager.alive.Store(false)
+	manager.started.Store(false)
 	return manager
 }
 
 func (m *ConnectionManagerImpl) Start() error {
-	if m.started {
+	if m.started.Load() == true {
 		return nil
 	}
 	if err := m.connectCluster(); err != nil {
 		return err
 	}
-	m.started = true
+	m.started.Store(true)
 	return nil
 }
 
@@ -290,6 +291,7 @@ func (cm *ConnectionManagerImpl) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	//uuid := cm.client.ClusterService.uuid.Load().(string)
 	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	// TODO: use credentials from config
 	return codec.EncodeClientAuthenticationRequest(
 		"dev",
 		"",

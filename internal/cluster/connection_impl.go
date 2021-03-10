@@ -106,8 +106,9 @@ func (c *ConnectionImpl) writePool() {
 	for {
 		select {
 		case request := <-c.pending:
-			err := c.write(request)
-			if err != nil {
+			if err := c.write(request); err != nil {
+				// XXX: create a new client message?
+				request.Err = err
 				c.clientMessageBuilder.handleResponse(request)
 			} else {
 				c.lastWrite.Store(time.Now())
@@ -128,10 +129,10 @@ func (c *ConnectionImpl) send(clientMessage *proto.ClientMessage) bool {
 }
 
 func (c *ConnectionImpl) write(clientMessage *proto.ClientMessage) error {
-	bytes := make([]byte, clientMessage.GetTotalLength())
-	clientMessage.GetBytes(bytes)
-	c.socket.Write(bytes)
-	return nil
+	buf := make([]byte, clientMessage.GetTotalLength())
+	clientMessage.GetBytes(buf)
+	_, err := c.socket.Write(buf)
+	return err
 }
 
 func (c *ConnectionImpl) readPool() {
@@ -199,15 +200,6 @@ func (c *ConnectionImpl) close(err error) {
 }
 
 func (c *ConnectionImpl) String() string {
-	return fmt.Sprintf("ClientConnection{"+
-		"isAlive=%t"+
-		", connectionID=%d"+
-		", endpoint=%s"+
-		", lastReadTime=%s"+
-		", lastWriteTime=%s"+
-		", closedTime=%s"+
-		", connected server version=%s", c.isAlive(), c.connectionID,
-		c.endpoint.Load().(core.Address),
-		c.lastRead.Load().(time.Time), c.lastWrite.Load().(time.Time),
-		c.closedTime.Load().(time.Time), c.connectedServerVersionStr)
+	return fmt.Sprintf("ClientConnection{isAlive=%t, connectionID=%d, endpoint=%s, lastReadTime=%s, lastWriteTime=%s, closedTime=%s, connected server version=%s",
+		c.isAlive(), c.connectionID, c.endpoint.Load(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
 }

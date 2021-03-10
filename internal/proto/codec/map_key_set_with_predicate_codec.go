@@ -36,7 +36,7 @@ func EncodeMapKeySetWithPredicateRequest(name string, predicate serialization.Da
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, MapKeySetWithPredicateCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, MapKeySetWithPredicateCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapKeySetWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

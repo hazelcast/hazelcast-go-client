@@ -41,7 +41,7 @@ func EncodeClientAddClusterViewListenerRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, ClientAddClusterViewListenerCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, ClientAddClusterViewListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAddClusterViewListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
