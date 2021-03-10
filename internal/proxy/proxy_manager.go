@@ -14,10 +14,10 @@ type Manager interface {
 type ManagerImpl struct {
 	mu            *sync.RWMutex
 	proxies       map[string]*Impl
-	serviceBundle ProxyCreationBundle
+	serviceBundle CreationBundle
 }
 
-func NewManagerImpl(bundle ProxyCreationBundle) *ManagerImpl {
+func NewManagerImpl(bundle CreationBundle) *ManagerImpl {
 	bundle.Check()
 	return &ManagerImpl{
 		mu:            &sync.RWMutex{},

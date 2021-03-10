@@ -42,25 +42,29 @@ type Proxy interface {
 	PartitionKey() string
 }
 
-type ProxyCreationBundle struct {
+type CreationBundle struct {
+	InvocationCh         chan<- invocation.Invocation
 	SerializationService spi.SerializationService
 	PartitionService     cluster.PartitionService
-	InvocationService    invocation.Service
-	ClusterService       cluster.Service
-	InvocationFactory    invocation.Factory
-	SmartRouting         bool
+	//InvocationService    invocation.Service
+	ClusterService    cluster.Service
+	InvocationFactory invocation.Factory
+	SmartRouting      bool
 }
 
-func (b ProxyCreationBundle) Check() {
+func (b CreationBundle) Check() {
+	if b.InvocationCh == nil {
+		panic("InvocationCh is nil")
+	}
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
 	}
 	if b.PartitionService == nil {
 		panic("PartitionService is nil")
 	}
-	if b.InvocationService == nil {
-		panic("InvocationService is nil")
-	}
+	//if b.InvocationService == nil {
+	//	panic("InvocationService is nil")
+	//}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
 	}
@@ -70,36 +74,37 @@ func (b ProxyCreationBundle) Check() {
 }
 
 type Impl struct {
-	//client               *HazelcastClient
-	//proxyManager         Manager
+	invocationCh         chan<- invocation.Invocation
 	serializationService spi.SerializationService
 	partitionService     cluster.PartitionService
-	invocationService    invocation.Service
-	clusterService       cluster.Service
-	invocationFactory    invocation.Factory
-	smartRouting         bool
-	serviceName          string
-	name                 string
+	//invocationService    invocation.Service
+	clusterService    cluster.Service
+	invocationFactory invocation.Factory
+	smartRouting      bool
+	serviceName       string
+	name              string
 }
 
-func NewImpl(bundle ProxyCreationBundle, serviceName string, objectName string) *Impl {
+func NewImpl(bundle CreationBundle, serviceName string, objectName string) *Impl {
 	bundle.Check()
 	return &Impl{
 		serviceName:          serviceName,
 		name:                 objectName,
+		invocationCh:         bundle.InvocationCh,
 		serializationService: bundle.SerializationService,
-		invocationService:    bundle.InvocationService,
-		partitionService:     bundle.PartitionService,
-		clusterService:       bundle.ClusterService,
-		invocationFactory:    bundle.InvocationFactory,
-		smartRouting:         bundle.SmartRouting,
+		//invocationService:    bundle.InvocationService,
+		partitionService:  bundle.PartitionService,
+		clusterService:    bundle.ClusterService,
+		invocationFactory: bundle.InvocationFactory,
+		smartRouting:      bundle.SmartRouting,
 	}
 }
 
 func (p *Impl) Destroy() error {
 	request := proto.ClientDestroyProxyEncodeRequest(p.name, p.serviceName)
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request)
-	if _, err := p.invocationService.Send(inv).Get(); err != nil {
+	p.invocationCh <- inv
+	if _, err := inv.Get(); err != nil {
 		return fmt.Errorf("error destroying proxy: %w", err)
 	}
 	return nil
@@ -230,22 +235,26 @@ func (p *Impl) validateAndSerializeMapAndGetPartitions(entries map[interface{}]i
 
 func (p *Impl) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
 	inv := p.invocationFactory.NewInvocationOnKeyOwner(request, keyData)
-	return p.invocationService.Send(inv).Get()
+	p.invocationCh <- inv
+	return inv.Get()
 }
 
 func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request)
-	return p.invocationService.Send(inv).Get()
+	p.invocationCh <- inv
+	return inv.Get()
 }
 
 func (p *Impl) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
-	return p.invocationService.Send(inv).Get()
+	p.invocationCh <- inv
+	return inv.Get()
 }
 
 func (p *Impl) invokeOnAddress(request *proto.ClientMessage, address *core.Address) (*proto.ClientMessage, error) {
 	inv := p.invocationFactory.NewInvocationOnTarget(request, address)
-	return p.invocationService.Send(inv).Get()
+	p.invocationCh <- inv
+	return inv.Get()
 }
 
 func (p *Impl) toObject(data serialization.Data) (interface{}, error) {
@@ -330,7 +339,8 @@ type partitionSpecificProxy struct {
 func newPartitionSpecificProxy(
 	serializationService spi.SerializationService,
 	partitionService cluster.PartitionService,
-	invocationService invocation.Service,
+	//invocationService invocation.Service,
+	invocationCh chan<- invocation.Invocation,
 	clusterService cluster.Service,
 	smartRouting bool,
 	serviceName string,
@@ -338,9 +348,9 @@ func newPartitionSpecificProxy(
 ) *partitionSpecificProxy {
 	parSpecProxy := &partitionSpecificProxy{
 		Impl: &Impl{
+			invocationCh:         invocationCh,
 			serializationService: serializationService,
 			partitionService:     partitionService,
-			invocationService:    invocationService,
 			clusterService:       clusterService,
 			smartRouting:         smartRouting,
 			serviceName:          serviceName,

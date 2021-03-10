@@ -36,7 +36,8 @@ type ConnectionManager interface {
 }
 
 type ConnectionManagerCreationBundle struct {
-	InvocationService    invocation.Service
+	InvocationCh         chan<- invocation.Invocation
+	ResponseCh           chan<- *proto.ClientMessage
 	SmartRouting         bool
 	Logger               logger.Logger
 	AddressTranslator    internal.AddressTranslator
@@ -49,8 +50,11 @@ type ConnectionManagerCreationBundle struct {
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
-	if b.InvocationService == nil {
-		panic("InvocationService is nil")
+	if b.InvocationCh == nil {
+		panic("InvocationCh is nil")
+	}
+	if b.ResponseCh == nil {
+		panic("ResponseCh is nil")
 	}
 	if b.Logger == nil {
 		panic("Logger is nil")
@@ -79,7 +83,8 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManagerImpl struct {
-	invocationService invocation.Service
+	invocationCh chan<- invocation.Invocation
+	responseCh   chan<- *proto.ClientMessage
 	// TODO: depend on the interface
 	clusterService       *ServiceImpl
 	partitionService     *PartitionServiceImpl
@@ -88,6 +93,7 @@ type ConnectionManagerImpl struct {
 	credentials          security.Credentials
 	heartbeatTimeout     time.Duration
 	clientName           string
+	invocationTimeout    time.Duration
 
 	connectionsMu *sync.RWMutex
 	connections   map[string]*ConnectionImpl
@@ -105,13 +111,15 @@ type ConnectionManagerImpl struct {
 func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *ConnectionManagerImpl {
 	bundle.Check()
 	manager := &ConnectionManagerImpl{
-		invocationService:    bundle.InvocationService,
+		invocationCh:         bundle.InvocationCh,
+		responseCh:           bundle.ResponseCh,
 		clusterService:       bundle.ClusterService,
 		partitionService:     bundle.PartitionService,
 		serializationService: bundle.SerializationService,
 		networkConfig:        bundle.NetworkConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
+		invocationTimeout:    120 * time.Second,
 		heartbeatTimeout:     60 * time.Second,
 		connectionsMu:        &sync.RWMutex{},
 		connections:          map[string]*ConnectionImpl{},
@@ -224,30 +232,30 @@ func (m *ConnectionManagerImpl) createConnection(addr *core.Address) (*Connectio
 }
 
 func (m *ConnectionManagerImpl) createDefaultConnection() *ConnectionImpl {
-	builder := &clientMessageBuilder{
-		handleResponse:     m.invocationService.HandleResponse,
-		incompleteMessages: make(map[int64]*proto.ClientMessage),
-	}
+	//builder := &clientMessageBuilder{
+	//	handleResponse:     m.invocationService.HandleResponse,
+	//	incompleteMessages: make(map[int64]*proto.ClientMessage),
+	//}
 	return &ConnectionImpl{
-		pending:              make(chan *proto.ClientMessage, 1),
-		received:             make(chan *proto.ClientMessage, 1),
-		closed:               make(chan struct{}),
-		clientMessageBuilder: builder,
-		readBuffer:           make([]byte, 0),
-		connectionID:         m.NextConnectionID(),
-		connectionManager:    m,
-		status:               0,
-		logger:               m.logger,
+		responseCh:        m.responseCh,
+		pending:           make(chan *proto.ClientMessage, 1),
+		received:          make(chan *proto.ClientMessage, 1),
+		closed:            make(chan struct{}),
+		readBuffer:        make([]byte, 0),
+		connectionID:      m.NextConnectionID(),
+		connectionManager: m,
+		status:            0,
+		logger:            m.logger,
 	}
 }
 
 func (cm *ConnectionManagerImpl) authenticate(connection *ConnectionImpl, asOwner bool) error {
 	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := cm.encodeAuthenticationRequest(asOwner)
-	invTimeout := cm.invocationService.InvocationTimeout()
-	inv := NewConnectionBoundInvocation(request, -1, nil, connection, invTimeout)
-	invocationResult := cm.invocationService.Send(inv)
-	result, err := invocationResult.GetWithTimeout(cm.heartbeatTimeout)
+	inv := NewConnectionBoundInvocation(request, -1, nil, connection, cm.invocationTimeout)
+	cm.invocationCh <- inv
+	//invocationResult := cm.invocationService.Send(inv)
+	result, err := inv.GetWithTimeout(cm.heartbeatTimeout)
 	if err != nil {
 		return err
 	}

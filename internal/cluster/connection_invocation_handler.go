@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"errors"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
@@ -53,7 +54,7 @@ func (h ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) er
 
 func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
 	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
-		return h.sendToConnection(inv, boundInvocation.Connection())
+		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
 		// XXX: ???
 		return h.sendToRandomAddress(inv)
@@ -66,7 +67,7 @@ func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) erro
 
 func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
 	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
-		return h.sendToConnection(inv, boundInvocation.Connection())
+		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
 		return core.NewHazelcastIOError("no address found to invoke", nil)
 	} else {
@@ -74,11 +75,10 @@ func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) e
 	}
 }
 
-func (h ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *ConnectionImpl) error {
-	if sent := conn.send(inv.Request()); !sent {
+func (h ConnectionInvocationHandler) sendToConnection(inv ConnectionBoundInvocation, conn *ConnectionImpl) error {
+	if sent := conn.send(inv); !sent {
 		return core.NewHazelcastIOError("packet is not sent", nil)
 	}
-	inv.StoreSentConnection(conn)
 	return nil
 }
 
@@ -86,8 +86,14 @@ func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, ad
 	if conn := n.connectionManager.GetConnectionForAddress(addr); conn == nil {
 		n.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
 		return internal.ErrAddressNotFound
+	} else if invImpl, ok := inv.(*invocation.Impl); ok {
+		boundInv := &ConnectionBoundInvocationImpl{
+			invocationImpl:  invImpl,
+			boundConnection: conn,
+		}
+		return n.sendToConnection(boundInv, conn)
 	} else {
-		return n.sendToConnection(inv, conn)
+		return errors.New("only invocations of time *invocationImpl is supported")
 	}
 }
 

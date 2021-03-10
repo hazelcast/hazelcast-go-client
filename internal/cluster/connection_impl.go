@@ -38,14 +38,17 @@ const (
 	IntMask         = 0xffff
 )
 
+type ResponseHandler func(msg *proto.ClientMessage)
+
 type Connection interface {
 }
 
 type ConnectionImpl struct {
-	pending                   chan *proto.ClientMessage
-	received                  chan *proto.ClientMessage
-	socket                    net.Conn
-	clientMessageBuilder      *clientMessageBuilder
+	responseCh chan<- *proto.ClientMessage
+	pending    chan *proto.ClientMessage
+	received   chan *proto.ClientMessage
+	socket     net.Conn
+	//responseHandler ResponseHandler
 	closed                    chan struct{}
 	endpoint                  atomic.Value
 	status                    int32
@@ -109,7 +112,7 @@ func (c *ConnectionImpl) writePool() {
 			if err := c.write(request); err != nil {
 				// XXX: create a new client message?
 				request.Err = err
-				c.clientMessageBuilder.handleResponse(request)
+				c.responseCh <- request
 			} else {
 				c.lastWrite.Store(time.Now())
 			}
@@ -119,11 +122,12 @@ func (c *ConnectionImpl) writePool() {
 	}
 }
 
-func (c *ConnectionImpl) send(clientMessage *proto.ClientMessage) bool {
+func (c *ConnectionImpl) send(inv ConnectionBoundInvocation) bool {
 	select {
 	case <-c.closed:
 		return false
-	case c.pending <- clientMessage:
+	case c.pending <- inv.Request():
+		inv.StoreSentConnection(c)
 		return true
 	}
 }
@@ -175,7 +179,7 @@ func (c *ConnectionImpl) StartTime() int64 {
 func (c *ConnectionImpl) receiveMessage() {
 	clientMessage := c.clientMessageReader.Read()
 	if clientMessage != nil && clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
-		c.clientMessageBuilder.onMessage(clientMessage)
+		c.responseCh <- clientMessage
 	}
 }
 
