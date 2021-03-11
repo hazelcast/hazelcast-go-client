@@ -107,16 +107,16 @@ func (c *clientImpl) createComponents(config *Config) {
 		SerializationService: serializationService,
 		Logger:               c.logger,
 	})
-	invocationCh := make(chan invocation.Invocation, 1)
+	requestCh := make(chan invocation.Invocation, 1)
 	responseCh := make(chan *proto.ClientMessage, 1)
 	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
-		InvocationCh: invocationCh,
+		RequestCh:    requestCh,
 		ResponseCh:   responseCh,
 		SmartRouting: smartRouting,
 		Logger:       c.logger,
 	})
 	connectionManager := cluster.NewConnectionManagerImpl(cluster.ConnectionManagerCreationBundle{
-		InvocationCh:         invocationCh,
+		RequestCh:            requestCh,
 		ResponseCh:           responseCh,
 		SmartRouting:         smartRouting,
 		Logger:               c.logger,
@@ -137,7 +137,7 @@ func (c *clientImpl) createComponents(config *Config) {
 	invocationService.SetHandler(invocationHandler)
 	invocationFactory := cluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
 	proxyManagerServiceBundle := proxy.CreationBundle{
-		InvocationCh:         invocationCh,
+		RequestCh:            requestCh,
 		SerializationService: serializationService,
 		PartitionService:     partitionService,
 		ClusterService:       clusterService,
