@@ -11,7 +11,7 @@ import (
 
 type ServiceCreationBundle struct {
 	Handler      Handler
-	InvocationCh <-chan Invocation
+	RequestCh    <-chan Invocation
 	ResponseCh   <-chan *proto.ClientMessage
 	SmartRouting bool
 	Logger       logger.Logger
@@ -22,8 +22,8 @@ func (b ServiceCreationBundle) Check() {
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
-	if b.InvocationCh == nil {
-		panic("InvocationCh is nil")
+	if b.RequestCh == nil {
+		panic("RequestCh is nil")
 	}
 	if b.ResponseCh == nil {
 		panic("ResponseCh is nil")
@@ -38,16 +38,16 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	nextCorrelationID    int64
-	incomingInvocationCh <-chan Invocation
-	incomingResponseCh   <-chan *proto.ClientMessage
-	invocations          map[int64]Invocation
-	invocationTimeout    time.Duration
-	retryPause           time.Duration
-	shutDown             atomic.Value
-	smartRouting         bool
-	handler              Handler
-	logger               logger.Logger
+	nextCorrelationID int64
+	requestCh         <-chan Invocation
+	responseCh        <-chan *proto.ClientMessage
+	invocations       map[int64]Invocation
+	invocationTimeout time.Duration
+	retryPause        time.Duration
+	shutDown          atomic.Value
+	smartRouting      bool
+	handler           Handler
+	logger            logger.Logger
 }
 
 func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
@@ -57,14 +57,14 @@ func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 		handler = &DefaultHandler{}
 	}
 	service := &ServiceImpl{
-		incomingInvocationCh: bundle.InvocationCh,
-		incomingResponseCh:   bundle.ResponseCh,
-		invocations:          map[int64]Invocation{},
-		invocationTimeout:    120 * time.Second,
-		retryPause:           1 * time.Second,
-		smartRouting:         bundle.SmartRouting,
-		handler:              bundle.Handler,
-		logger:               bundle.Logger,
+		requestCh:         bundle.RequestCh,
+		responseCh:        bundle.ResponseCh,
+		invocations:       map[int64]Invocation{},
+		invocationTimeout: 120 * time.Second,
+		retryPause:        1 * time.Second,
+		smartRouting:      bundle.SmartRouting,
+		handler:           bundle.Handler,
+		logger:            bundle.Logger,
 	}
 	service.shutDown.Store(false)
 	go service.processIncoming()
@@ -78,9 +78,9 @@ func (s *ServiceImpl) SetHandler(handler Handler) {
 func (s *ServiceImpl) processIncoming() {
 	for {
 		select {
-		case inv := <-s.incomingInvocationCh:
+		case inv := <-s.requestCh:
 			s.sendInvocation(inv)
-		case msg := <-s.incomingResponseCh:
+		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
 		}
 	}

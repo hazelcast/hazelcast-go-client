@@ -36,7 +36,7 @@ type ConnectionManager interface {
 }
 
 type ConnectionManagerCreationBundle struct {
-	InvocationCh         chan<- invocation.Invocation
+	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
 	SmartRouting         bool
 	Logger               logger.Logger
@@ -50,8 +50,8 @@ type ConnectionManagerCreationBundle struct {
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
-	if b.InvocationCh == nil {
-		panic("InvocationCh is nil")
+	if b.RequestCh == nil {
+		panic("RequestCh is nil")
 	}
 	if b.ResponseCh == nil {
 		panic("ResponseCh is nil")
@@ -83,8 +83,8 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManagerImpl struct {
-	invocationCh chan<- invocation.Invocation
-	responseCh   chan<- *proto.ClientMessage
+	requestCh  chan<- invocation.Invocation
+	responseCh chan<- *proto.ClientMessage
 	// TODO: depend on the interface
 	clusterService       *ServiceImpl
 	partitionService     *PartitionServiceImpl
@@ -111,7 +111,7 @@ type ConnectionManagerImpl struct {
 func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *ConnectionManagerImpl {
 	bundle.Check()
 	manager := &ConnectionManagerImpl{
-		invocationCh:         bundle.InvocationCh,
+		requestCh:            bundle.RequestCh,
 		responseCh:           bundle.ResponseCh,
 		clusterService:       bundle.ClusterService,
 		partitionService:     bundle.PartitionService,
@@ -253,7 +253,7 @@ func (cm *ConnectionManagerImpl) authenticate(connection *ConnectionImpl, asOwne
 	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := cm.encodeAuthenticationRequest(asOwner)
 	inv := NewConnectionBoundInvocation(request, -1, nil, connection, cm.invocationTimeout)
-	cm.invocationCh <- inv
+	cm.requestCh <- inv
 	//invocationResult := cm.invocationService.Send(inv)
 	result, err := inv.GetWithTimeout(cm.heartbeatTimeout)
 	if err != nil {
