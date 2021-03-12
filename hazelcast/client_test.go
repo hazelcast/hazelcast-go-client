@@ -1,12 +1,12 @@
-package client_test
+package hazelcast_test
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/client"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"testing"
 )
 
 func TestNewClientConfigBuilder(t *testing.T) {
-	builder := client.NewClientConfigBuilder()
+	builder := hazelcast.NewClientConfigBuilder()
 	builder.SetClusterName("my-cluster")
 	builder.Network().SetAddresses("192.168.1.1")
 	config, err := builder.Config()
@@ -19,7 +19,7 @@ func TestNewClientConfigBuilder(t *testing.T) {
 }
 
 func TestNewClient(t *testing.T) {
-	hz := client.NewClient()
+	hz := hazelcast.NewClient()
 	targetName := "hz.client_1"
 	if targetName != hz.Name() {
 		t.Errorf("target: %v != %v", targetName, hz.Name())
@@ -28,14 +28,14 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestNewClientWithConfig(t *testing.T) {
-	builder := client.NewClientConfigBuilder()
+	builder := hazelcast.NewClientConfigBuilder()
 	builder.SetClientName("my-client")
 	config, err := builder.Config()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	hz := client.NewClientWithConfig(config)
+	hz := hazelcast.NewClientWithConfig(config)
 	targetClientName := "my-client"
 	if targetClientName != hz.Name() {
 		t.Errorf("target: %v != %v", targetClientName, hz.Name())

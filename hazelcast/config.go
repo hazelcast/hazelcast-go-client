@@ -1,4 +1,4 @@
-package client
+package hazelcast
 
 import "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 

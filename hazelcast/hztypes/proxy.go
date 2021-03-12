@@ -1,4 +1,4 @@
-package proxy
+package hztypes
 
 type Map interface {
 	Get(key interface{}) (interface{}, error)

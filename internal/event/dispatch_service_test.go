@@ -15,10 +15,6 @@ func (e sampleEvent) Name() string {
 	return "sample.event"
 }
 
-func (e sampleEvent) Payload() interface{} {
-	panic("implement me")
-}
-
 func TestDispatchServiceSubscribePublish(t *testing.T) {
 	goroutineCount := 10000
 	wg := &sync.WaitGroup{}
@@ -29,7 +25,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		wg.Done()
 	}
 	service := event.NewDispatchServiceImpl()
-	service.Subscribe("sample.event", handler)
+	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
 	}
@@ -49,10 +45,10 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	service.Subscribe("sample.event", handler)
+	service.Subscribe("sample.event", 100, handler)
 	service.Publish(sampleEvent{})
 	wg.Wait()
-	service.Unsubscribe("sample.event", handler)
+	service.Unsubscribe("sample.event", 100, handler)
 	service.Publish(sampleEvent{})
 	wg.Wait()
 	time.Sleep(100 * time.Millisecond)
