@@ -1,13 +1,13 @@
-package client_test
+package hazelcast_test
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/client"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"reflect"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
-	configBuilder := client.NewClientConfigBuilder()
+	configBuilder := hazelcast.NewClientConfigBuilder()
 	configBuilder.SetClusterName("my-cluster")
 	configBuilder.Network().SetAddresses("192.168.1.2")
 	config, err := configBuilder.Config()

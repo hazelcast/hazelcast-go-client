@@ -1,27 +1,40 @@
-package client
+package hazelcast
 
 import (
 	"fmt"
+	"reflect"
+	"sync/atomic"
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
+	internallifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	pubproxy "github.com/hazelcast/hazelcast-go-client/v4/proxy"
-	"sync/atomic"
-	"time"
 )
 
 var nextId int32
 
 type Client interface {
+	// attributes
 	Name() string
-	GetMap(name string) (pubproxy.Map, error)
+
+	// control
 	Start() error
 	Shutdown()
+
+	// events
+	ListenLifecycleStateChange(handler lifecycle.StateChangeHandler)
+
+	// access to data structures
+	GetMap(name string) (hztypes.Map, error)
 }
 
 type clientImpl struct {
@@ -33,6 +46,7 @@ type clientImpl struct {
 	// components
 	proxyManager      proxy.Manager
 	connectionManager cluster.ConnectionManager
+	eventDispatcher   event.DispatchService
 	logger            logger.Logger
 
 	// state
@@ -64,7 +78,7 @@ func (c *clientImpl) Name() string {
 	return c.name
 }
 
-func (c *clientImpl) GetMap(name string) (pubproxy.Map, error) {
+func (c *clientImpl) GetMap(name string) (hztypes.Map, error) {
 	c.ensureStarted()
 	return c.proxyManager.GetMap(name)
 }
@@ -78,11 +92,26 @@ func (c *clientImpl) Start() error {
 		return err
 	}
 	c.started.Store(true)
+	c.eventDispatcher.Publish(internallifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
 	return nil
 }
 
 func (c clientImpl) Shutdown() {
+	// TODO: shutdown
+	c.eventDispatcher.Publish(internallifecycle.NewStateChangedImpl(lifecycle.StateClientDisconnected))
+}
 
+func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
+	// derive subscriptionID from the handler
+	subscriptionID := int(reflect.ValueOf(handler).Pointer())
+	c.eventDispatcher.Subscribe(internallifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
+		// cast event to StateChanged
+		if stateChangeEvent, ok := event.(lifecycle.StateChanged); ok {
+			handler(stateChangeEvent)
+		} else {
+			panic("cannot cast event to lifecycle.StateChanged event")
+		}
+	})
 }
 
 func (c *clientImpl) ensureStarted() {
@@ -102,6 +131,7 @@ func (c *clientImpl) createComponents(config *Config) {
 	addressProviders := []cluster.AddressProvider{
 		cluster.NewDefaultAddressProvider(config.Network),
 	}
+	eventDispatcher := event.NewDispatchServiceImpl()
 	clusterService := cluster.NewServiceImpl(addressProviders)
 	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
@@ -145,16 +175,8 @@ func (c *clientImpl) createComponents(config *Config) {
 		InvocationFactory:    invocationFactory,
 	}
 	proxyManager := proxy.NewManagerImpl(proxyManagerServiceBundle)
+
+	c.eventDispatcher = eventDispatcher
 	c.connectionManager = connectionManager
 	c.proxyManager = proxyManager
 }
-
-/*
-func (c ConnectionImpl) ClusterName() string {
-	return c.clusterName
-}
-
-func (c ConnectionImpl) NetworkConfig() *NetworkConfig {
-	return c.networkConfig
-}
-*/

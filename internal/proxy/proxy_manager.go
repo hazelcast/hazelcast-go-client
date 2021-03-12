@@ -2,12 +2,12 @@ package proxy
 
 import (
 	"fmt"
-	pubproxy "github.com/hazelcast/hazelcast-go-client/v4/proxy"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"sync"
 )
 
 type Manager interface {
-	GetMap(name string) (pubproxy.Map, error)
+	GetMap(name string) (hztypes.Map, error)
 	Remove(serviceName string, objectName string) error
 }
 
@@ -26,7 +26,7 @@ func NewManagerImpl(bundle CreationBundle) *ManagerImpl {
 	}
 }
 
-func (m *ManagerImpl) GetMap(objectName string) (pubproxy.Map, error) {
+func (m *ManagerImpl) GetMap(objectName string) (hztypes.Map, error) {
 	if proxy, err := m.proxyFor(MapServiceName, objectName); err != nil {
 		return nil, err
 	} else {

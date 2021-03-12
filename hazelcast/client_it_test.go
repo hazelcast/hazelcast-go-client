@@ -1,20 +1,17 @@
-package client_test
+package hazelcast_test
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/client"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"sync"
 	"testing"
 )
 
 func TestNewClientGetMap(t *testing.T) {
-	hz := client.NewClient()
-	if hz == nil {
-		t.Fatalf("client is nil")
-	}
-	if err := hz.Start(); err != nil {
+	client := hazelcast.NewClient()
+	if err := client.Start(); err != nil {
 		t.Fatal(err)
 	}
-	m, err := hz.GetMap("my-map")
+	m, err := client.GetMap("my-map")
 	if err != nil {
 		t.Fatal(err)
 	}
