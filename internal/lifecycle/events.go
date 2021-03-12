@@ -15,3 +15,7 @@ func NewStateChangedImpl(state lifecycle.State) *StateChangedImpl {
 func (e *StateChangedImpl) Name() string {
 	return EventStateChanged
 }
+
+func (e *StateChangedImpl) State() lifecycle.State {
+	return e.state
+}
