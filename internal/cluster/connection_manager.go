@@ -6,6 +6,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
@@ -28,11 +29,10 @@ const serializationVersion = 1
 var ClientVersion = "4.0.0"
 
 type ConnectionManager interface {
-	AddListener(listener Listener)
 	NextConnectionID() int64
 	GetConnectionForAddress(addr *core.Address) *ConnectionImpl
 	Start() error
-	notifyConnectionClosed(connection *ConnectionImpl, cause error)
+	Stop()
 }
 
 type ConnectionManagerCreationBundle struct {
@@ -44,6 +44,7 @@ type ConnectionManagerCreationBundle struct {
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionServiceImpl
 	SerializationService spi.SerializationService
+	EventDispatcher      event.DispatchService
 	NetworkConfig        NetworkConfig
 	Credentials          security.Credentials
 	ClientName           string
@@ -71,6 +72,9 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
 	}
+	if b.EventDispatcher == nil {
+		panic("EventDispatcher is nil")
+	}
 	if b.NetworkConfig == nil {
 		panic("NetworkConfig is nil")
 	}
@@ -89,6 +93,7 @@ type ConnectionManagerImpl struct {
 	clusterService       *ServiceImpl
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
+	eventDispatcher      event.DispatchService
 	networkConfig        NetworkConfig
 	credentials          security.Credentials
 	heartbeatTimeout     time.Duration
@@ -97,8 +102,6 @@ type ConnectionManagerImpl struct {
 
 	connectionsMu *sync.RWMutex
 	connections   map[string]*ConnectionImpl
-	listenersMu   *sync.RWMutex
-	listeners     []Listener
 
 	nextConnectionID  int64
 	addressTranslator internal.AddressTranslator
@@ -116,6 +119,7 @@ func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *Connectio
 		clusterService:       bundle.ClusterService,
 		partitionService:     bundle.PartitionService,
 		serializationService: bundle.SerializationService,
+		eventDispatcher:      bundle.EventDispatcher,
 		networkConfig:        bundle.NetworkConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
@@ -123,7 +127,6 @@ func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *Connectio
 		heartbeatTimeout:     60 * time.Second,
 		connectionsMu:        &sync.RWMutex{},
 		connections:          map[string]*ConnectionImpl{},
-		listenersMu:          &sync.RWMutex{},
 		addressTranslator:    bundle.AddressTranslator,
 		smartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
@@ -144,10 +147,17 @@ func (m *ConnectionManagerImpl) Start() error {
 	return nil
 }
 
-func (m *ConnectionManagerImpl) AddListener(listener Listener) {
-	m.listenersMu.Lock()
-	defer m.listenersMu.Unlock()
-	m.listeners = append(m.listeners, listener)
+func (m *ConnectionManagerImpl) Stop() {
+	if m.started.Load() == false {
+		return
+	}
+	m.connectionsMu.Lock()
+	for _, conn := range m.connections {
+		conn.close(nil)
+	}
+	m.connections = nil
+	m.connectionsMu.Unlock()
+	m.started.Store(false)
 }
 
 func (m *ConnectionManagerImpl) NextConnectionID() int64 {
@@ -237,15 +247,15 @@ func (m *ConnectionManagerImpl) createDefaultConnection() *ConnectionImpl {
 	//	incompleteMessages: make(map[int64]*proto.ClientMessage),
 	//}
 	return &ConnectionImpl{
-		responseCh:        m.responseCh,
-		pending:           make(chan *proto.ClientMessage, 1),
-		received:          make(chan *proto.ClientMessage, 1),
-		closed:            make(chan struct{}),
-		readBuffer:        make([]byte, 0),
-		connectionID:      m.NextConnectionID(),
-		connectionManager: m,
-		status:            0,
-		logger:            m.logger,
+		responseCh:      m.responseCh,
+		pending:         make(chan *proto.ClientMessage, 1),
+		received:        make(chan *proto.ClientMessage, 1),
+		closed:          make(chan struct{}),
+		readBuffer:      make([]byte, 0),
+		connectionID:    m.NextConnectionID(),
+		eventDispatcher: m.eventDispatcher,
+		status:          0,
+		logger:          m.logger,
 	}
 }
 
@@ -262,22 +272,21 @@ func (cm *ConnectionManagerImpl) authenticate(connection *ConnectionImpl, asOwne
 	return cm.processAuthenticationResult(connection, asOwner, result)
 }
 
-func (cm *ConnectionManagerImpl) processAuthenticationResult(connection *ConnectionImpl, asOwner bool, result *proto.ClientMessage) error {
+func (cm *ConnectionManagerImpl) processAuthenticationResult(conn *ConnectionImpl, asOwner bool, result *proto.ClientMessage) error {
 	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
 	switch status {
 	case authenticated:
-		connection.setConnectedServerVersion(serverHazelcastVersion)
-		connection.endpoint.Store(address)
-		connection.isOwnerConnection = asOwner
-		cm.connections[address.String()] = connection
-		// TODO:
-		//go cm.fireConnectionAddedEvent(connection)
+		conn.setConnectedServerVersion(serverHazelcastVersion)
+		conn.endpoint.Store(address)
+		conn.isOwnerConnection = asOwner
+		cm.connections[address.String()] = conn
+		cm.eventDispatcher.Publish(NewConnectionOpened(conn))
 		if asOwner {
 			cm.partitionService.checkAndSetPartitionCount(partitionCount)
 			cm.clusterService.ownerConnectionAddr.Store(address)
 			cm.clusterService.ownerUUID.Store(memberUuid.String())
 			cm.clusterService.uuid.Store(memberUuid.String())
-			cm.logger.Info("Setting ", connection, " as owner.")
+			cm.logger.Info("Setting ", conn, " as owner.")
 		}
 	case credentialsFailed:
 		return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
@@ -354,45 +363,6 @@ func (cm *ConnectionManagerImpl) getAuthenticationDecoder() AuthenticationDecode
 		authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
 	}
 	return authenticationDecoder
-}
-
-func (m *ConnectionManagerImpl) notifyConnectionClosed(conn *ConnectionImpl, connErr error) {
-	if addr, ok := conn.endpoint.Load().(*core.Address); ok {
-		// delete authenticated connection
-		m.connectionsMu.Lock()
-		delete(m.connections, addr.String())
-		m.connectionsMu.Unlock()
-		listeners := m.copyListeners()
-		if len(listeners) > 0 {
-			// running listeners in a goroutine in order to protect against long-running listeners
-			go m.notifyListenersConnectionClosed(listeners, conn, connErr)
-		}
-	} else {
-		// delete unauthenticated connection
-		//m.invocationService.CleanupConnection(conn, connErr)
-	}
-}
-
-func (m *ConnectionManagerImpl) notifyListenersConnectionClosed(listeners []Listener, conn *ConnectionImpl, connErr error) {
-	defer func() {
-		if err := recover(); err != nil {
-			m.logger.Error("recovered", err)
-		}
-	}()
-	for _, listener := range listeners {
-		listener.ConnectionClosed(conn, connErr)
-	}
-}
-
-func (m *ConnectionManagerImpl) copyListeners() []Listener {
-	m.listenersMu.RLock()
-	defer m.listenersMu.RUnlock()
-	if len(m.listeners) == 0 {
-		return nil
-	}
-	listeners := make([]Listener, len(m.listeners))
-	copy(listeners, m.listeners)
-	return listeners
 }
 
 func checkOwnerConn(owner bool, conn *ConnectionImpl) bool {

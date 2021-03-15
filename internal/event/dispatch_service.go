@@ -37,8 +37,8 @@ type DispatchServiceImpl struct {
 	subscriptions map[string]map[int]EventHandler
 	eventCh       chan Event
 	controlCh     chan controlMessage
-	doneCh        chan struct{}
-	running       atomic.Value
+	//doneCh        chan struct{}
+	running atomic.Value
 }
 
 func NewDispatchServiceImpl() *DispatchServiceImpl {
@@ -46,7 +46,6 @@ func NewDispatchServiceImpl() *DispatchServiceImpl {
 		subscriptions: map[string]map[int]EventHandler{},
 		eventCh:       make(chan Event, 1),
 		controlCh:     make(chan controlMessage, 1),
-		doneCh:        make(chan struct{}, 1),
 	}
 	service.running.Store(false)
 	service.start()
@@ -97,9 +96,14 @@ func (s *DispatchServiceImpl) start() {
 		wg.Done()
 		for {
 			select {
-			case event := <-s.eventCh:
-				s.dispatch(event)
-			case control := <-s.controlCh:
+			case event, ok := <-s.eventCh:
+				if ok {
+					s.dispatch(event)
+				}
+			case control, ok := <-s.controlCh:
+				if !ok {
+					continue
+				}
 				switch control.controlType {
 				case subscribe:
 					s.subscribe(control.eventName, control.subscriptionID, control.handler)
@@ -108,8 +112,6 @@ func (s *DispatchServiceImpl) start() {
 				default:
 					panic(fmt.Sprintf("unknown control type: %d", control.controlType))
 				}
-			case <-s.doneCh:
-				return
 			}
 		}
 	}()
@@ -123,8 +125,8 @@ func (s *DispatchServiceImpl) Stop() {
 		return
 	}
 	s.running.Store(false)
-	s.doneCh <- struct{}{}
-	close(s.doneCh)
+	//s.doneCh <- struct{}{}
+	//close(s.doneCh)
 	close(s.eventCh)
 	close(s.controlCh)
 }
