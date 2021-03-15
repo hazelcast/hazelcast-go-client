@@ -9,11 +9,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
+	icluster "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	internallifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
+	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
@@ -28,7 +28,7 @@ type Client interface {
 
 	// control
 	Start() error
-	Shutdown()
+	Stop()
 
 	// events
 	ListenLifecycleStateChange(handler lifecycle.StateChangeHandler)
@@ -41,11 +41,11 @@ type clientImpl struct {
 	// configuration
 	name          string
 	clusterName   string
-	networkConfig *cluster.NetworkConfig
+	networkConfig *icluster.NetworkConfig
 
 	// components
 	proxyManager      proxy.Manager
-	connectionManager cluster.ConnectionManager
+	connectionManager icluster.ConnectionManager
 	eventDispatcher   event.DispatchService
 	logger            logger.Logger
 
@@ -92,19 +92,20 @@ func (c *clientImpl) Start() error {
 		return err
 	}
 	c.started.Store(true)
-	c.eventDispatcher.Publish(internallifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
+	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
 	return nil
 }
 
-func (c clientImpl) Shutdown() {
+func (c clientImpl) Stop() {
 	// TODO: shutdown
-	c.eventDispatcher.Publish(internallifecycle.NewStateChangedImpl(lifecycle.StateClientDisconnected))
+	c.connectionManager.Stop()
+	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientDisconnected))
 }
 
 func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
 	// derive subscriptionID from the handler
 	subscriptionID := int(reflect.ValueOf(handler).Pointer())
-	c.eventDispatcher.Subscribe(internallifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
+	c.eventDispatcher.Subscribe(ilifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
 		// cast event to StateChanged
 		if stateChangeEvent, ok := event.(lifecycle.StateChanged); ok {
 			handler(stateChangeEvent)
@@ -128,12 +129,12 @@ func (c *clientImpl) createComponents(config *Config) {
 	}
 	smartRouting := config.Network.SmartRouting()
 	addressTranslator := internal.NewDefaultAddressTranslator()
-	addressProviders := []cluster.AddressProvider{
-		cluster.NewDefaultAddressProvider(config.Network),
+	addressProviders := []icluster.AddressProvider{
+		icluster.NewDefaultAddressProvider(config.Network),
 	}
 	eventDispatcher := event.NewDispatchServiceImpl()
-	clusterService := cluster.NewServiceImpl(addressProviders)
-	partitionService := cluster.NewPartitionServiceImpl(cluster.PartitionServiceCreationBundle{
+	clusterService := icluster.NewServiceImpl(addressProviders)
+	partitionService := icluster.NewPartitionServiceImpl(icluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
 		Logger:               c.logger,
 	})
@@ -145,7 +146,7 @@ func (c *clientImpl) createComponents(config *Config) {
 		SmartRouting: smartRouting,
 		Logger:       c.logger,
 	})
-	connectionManager := cluster.NewConnectionManagerImpl(cluster.ConnectionManagerCreationBundle{
+	connectionManager := icluster.NewConnectionManagerImpl(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
 		ResponseCh:           responseCh,
 		SmartRouting:         smartRouting,
@@ -154,18 +155,19 @@ func (c *clientImpl) createComponents(config *Config) {
 		ClusterService:       clusterService,
 		PartitionService:     partitionService,
 		SerializationService: serializationService,
+		EventDispatcher:      eventDispatcher,
 		NetworkConfig:        config.Network,
 		Credentials:          credentials,
 		ClientName:           c.name,
 	})
-	invocationHandler := cluster.NewConnectionInvocationHandler(cluster.ConnectionInvocationHandlerCreationBundle{
+	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
 		SmartRouting:      smartRouting,
 		Logger:            c.logger,
 	})
 	invocationService.SetHandler(invocationHandler)
-	invocationFactory := cluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
+	invocationFactory := icluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
 	proxyManagerServiceBundle := proxy.CreationBundle{
 		RequestCh:            requestCh,
 		SerializationService: serializationService,

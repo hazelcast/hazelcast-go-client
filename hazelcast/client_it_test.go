@@ -59,7 +59,7 @@ func TestLifecycleEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(1 * time.Millisecond)
-	client.Shutdown()
+	client.Stop()
 	time.Sleep(1 * time.Millisecond)
 	targetStates := []lifecycle.State{lifecycle.StateClientConnected, lifecycle.StateClientDisconnected}
 	if !reflect.DeepEqual(targetStates, receivedStates) {

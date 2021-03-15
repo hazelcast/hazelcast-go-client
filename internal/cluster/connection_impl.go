@@ -17,6 +17,7 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"net"
 	"sync/atomic"
 	"time"
@@ -44,11 +45,10 @@ type Connection interface {
 }
 
 type ConnectionImpl struct {
-	responseCh chan<- *proto.ClientMessage
-	pending    chan *proto.ClientMessage
-	received   chan *proto.ClientMessage
-	socket     net.Conn
-	//responseHandler ResponseHandler
+	responseCh                chan<- *proto.ClientMessage
+	pending                   chan *proto.ClientMessage
+	received                  chan *proto.ClientMessage
+	socket                    net.Conn
 	closed                    chan struct{}
 	endpoint                  atomic.Value
 	status                    int32
@@ -59,7 +59,7 @@ type ConnectionImpl struct {
 	readBuffer                []byte
 	clientMessageReader       *clientMessageReader
 	connectionID              int64
-	connectionManager         ConnectionManager
+	eventDispatcher           event.DispatchService
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64
@@ -108,7 +108,10 @@ func (c *ConnectionImpl) writePool() {
 	//Writer process
 	for {
 		select {
-		case request := <-c.pending:
+		case request, ok := <-c.pending:
+			if !ok {
+				continue
+			}
 			if err := c.write(request); err != nil {
 				// XXX: create a new client message?
 				request.Err = err
@@ -192,15 +195,15 @@ func (c *ConnectionImpl) setConnectedServerVersion(connectedServerVersion string
 	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
 }
 
-func (c *ConnectionImpl) close(err error) {
+func (c *ConnectionImpl) close(closeErr error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	c.logger.Warn("ConnectionImpl :", c, " closed, err: ", err)
+	//c.logger.Warn("ConnectionImpl :", c, " closed, err: ", closeErr)
 	close(c.closed)
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
-	c.connectionManager.notifyConnectionClosed(c, core.NewHazelcastTargetDisconnectedError(err.Error(), err))
+	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
 }
 
 func (c *ConnectionImpl) String() string {
