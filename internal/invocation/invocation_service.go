@@ -1,10 +1,12 @@
 package invocation
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
+	"os"
 	"sync/atomic"
 	"time"
 )
@@ -76,11 +78,18 @@ func (s *ServiceImpl) SetHandler(handler Handler) {
 }
 
 func (s *ServiceImpl) processIncoming() {
+	requestCount := 0
+	responseCount := 0
 	for {
 		select {
 		case inv := <-s.requestCh:
+			requestCount++
+			fmt.Fprintln(os.Stderr, "req:", requestCount, "resp:", responseCount)
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
+			responseCount++
+			fmt.Fprintln(os.Stderr, "processIncoming:", msg)
+			fmt.Fprintln(os.Stderr, "req:", requestCount, "resp:", responseCount)
 			s.handleClientMessage(msg)
 		}
 	}
@@ -92,15 +101,20 @@ func (s *ServiceImpl) sendInvocation(invocation Invocation) Result {
 	//}
 	s.registerInvocation(invocation)
 	if err := s.handler.Invoke(invocation); err != nil {
-		s.handleError(invocation, err)
+		s.handleError(invocation.Request().CorrelationID(), err)
 	}
 	return invocation
 }
 
 func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	if msg.Err != nil {
-		panic("implement me!")
-		// handleError
+		s.logger.Error(msg.Err)
+		if msg.StartFrame != nil {
+			s.handleError(msg.CorrelationID(), msg.Err)
+		} else {
+
+		}
+		return
 	}
 	correlationID := msg.CorrelationID()
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
@@ -113,8 +127,8 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	}
 	if invocation := s.unregisterInvocation(correlationID); invocation != nil {
 		if msg.GetMessageType() == int32(bufutil.MessageTypeException) {
-			err := internal.CreateHazelcastError(msg.DecodeError())
-			s.handleError(invocation, err)
+			err := ihzerror.CreateHazelcastError(msg.DecodeError())
+			s.handleError(correlationID, err)
 		} else {
 			invocation.Complete(msg)
 		}
@@ -123,14 +137,15 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	}
 }
 
-func (s *ServiceImpl) handleError(invocation Invocation, invocationErr error) {
-	correlationID := invocation.Request().CorrelationID()
+func (s *ServiceImpl) handleError(correlationID int64, invocationErr error) {
+	//correlationID := invocation.Request().CorrelationID()
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
-		panic("implement me!")
+		s.logger.Error(invocationErr)
+		inv.Complete(&proto.ClientMessage{Err: invocationErr})
+		//panic("handleError: implement me!")
 	} else {
 		s.logger.Trace("no invocation found with correlation id: ", correlationID)
 	}
-	panic("implement me")
 }
 
 func (s *ServiceImpl) registerInvocation(invocation Invocation) {

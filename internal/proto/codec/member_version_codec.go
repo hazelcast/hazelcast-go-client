@@ -16,6 +16,7 @@
 package codec
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -32,7 +33,7 @@ type memberversionCodec struct {}
 var MemberVersionCodec memberversionCodec
 */
 
-func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion proto.MemberVersion) {
+func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion cluster.MemberVersion) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberVersionCodecPatchInitialFrameSize))
 	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.Major())
@@ -43,7 +44,7 @@ func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion proto
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) proto.MemberVersion {
+func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) cluster.MemberVersion {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -51,5 +52,5 @@ func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) proto.Member
 	minor := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset)
 	patch := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return proto.NewMemberVersion(major, minor, patch)
+	return cluster.NewMemberVersion(major, minor, patch)
 }

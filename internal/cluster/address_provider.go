@@ -1,26 +1,28 @@
 package cluster
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+import (
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+)
 
 type AddressProvider interface {
-	Addresses() []*AddressImpl
+	Addresses() []pubcluster.Address
 }
 
 type DefaultAddressProvider struct {
-	addresses []*AddressImpl
+	addresses []pubcluster.Address
 }
 
-func NewDefaultAddressProvider(networkConfig NetworkConfig) *DefaultAddressProvider {
+func NewDefaultAddressProvider(networkConfig pubcluster.NetworkConfig) *DefaultAddressProvider {
 	var err error
-	addresses := make([]*AddressImpl, len(networkConfig.Addrs()))
+	addresses := make([]pubcluster.Address, len(networkConfig.Addrs()))
 	for i, addr := range networkConfig.Addrs() {
-		if addresses[i], err = core.ParseAddress(addr); err != nil {
+		if addresses[i], err = pubcluster.ParseAddress(addr); err != nil {
 			panic(err)
 		}
 	}
 	return &DefaultAddressProvider{addresses: addresses}
 }
 
-func (p DefaultAddressProvider) Addresses() []*AddressImpl {
+func (p DefaultAddressProvider) Addresses() []pubcluster.Address {
 	return p.addresses
 }

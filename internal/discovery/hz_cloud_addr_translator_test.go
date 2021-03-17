@@ -15,6 +15,7 @@
 package discovery
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
@@ -28,10 +29,10 @@ var translator *HzCloudAddrTranslator
 
 func TestHzCloudAddrTranslator_Translate(t *testing.T) {
 	lookup = make(map[string]*core.Address)
-	privateAddress = core.NewAddressWithHostPort("127.0.0.1", 5701)
-	publicAddress = core.NewAddressWithHostPort("192.168.0.1", 5701)
+	privateAddress = internal.NewAddressWithHostPort("127.0.0.1", 5701)
+	publicAddress = internal.NewAddressWithHostPort("192.168.0.1", 5701)
 	lookup[privateAddress.String()] = publicAddress
-	lookup["127.0.0.2:5701"] = core.NewAddressWithHostPort("192.168.0.2", 5701)
+	lookup["127.0.0.2:5701"] = internal.NewAddressWithHostPort("192.168.0.2", 5701)
 	var mockProvider = func() (map[string]*core.Address, error) {
 		return lookup, nil
 	}
@@ -62,7 +63,7 @@ func testHzCloudAddrTranslatorTranslatePrivateToPublic(t *testing.T) {
 }
 
 func testHzCloudAddrTranslatorTranslateWhenNotFoundReturnNil(t *testing.T) {
-	notAvailableAddr := core.NewAddressWithHostPort("127.0.0.3", 5701)
+	notAvailableAddr := internal.NewAddressWithHostPort("127.0.0.3", 5701)
 
 	if actual := translator.Translate(notAvailableAddr); actual != nil {
 		t.Error("hzCloudAddTranslator.Translate() should return nil for not found address.")

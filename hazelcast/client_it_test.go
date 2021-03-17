@@ -15,27 +15,20 @@ func TestNewClientGetMap(t *testing.T) {
 	if err := client.Start(); err != nil {
 		t.Fatal(err)
 	}
-	m, err := client.GetMap("my-map")
+	m, err := client.GetMap("1my-map")
 	if err != nil {
 		t.Fatal(err)
 	}
-	wg := &sync.WaitGroup{}
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			targetValue := "value"
-			if _, err := m.Put("key", targetValue); err != nil {
-				t.Fatal(err)
-			}
-			if value, err := m.Get("key"); err != nil {
-				t.Fatal(err)
-			} else if targetValue != value {
-				t.Fatalf("target %v != %v", targetValue, value)
-			}
-			wg.Done()
-		}()
+	targetValue := "value"
+	if _, err := m.Put("key", targetValue); err != nil {
+		t.Fatal(err)
 	}
-	wg.Wait()
+	if value, err := m.Get("key"); err != nil {
+		t.Fatal(err)
+	} else if targetValue != value {
+		t.Fatalf("target %v != %v", targetValue, value)
+	}
+	client.Shutdown()
 }
 
 func TestLifecycleEvents(t *testing.T) {
@@ -46,6 +39,14 @@ func TestLifecycleEvents(t *testing.T) {
 		receivedStatesMu.Lock()
 		defer receivedStatesMu.Unlock()
 		switch event.State() {
+		case lifecycle.StateStarting:
+			fmt.Println("Received starting state")
+		case lifecycle.StateStarted:
+			fmt.Println("Received started state")
+		case lifecycle.StateShuttingDown:
+			fmt.Println("Received shutting down state")
+		case lifecycle.StateShutDown:
+			fmt.Println("Received shut down state")
 		case lifecycle.StateClientConnected:
 			fmt.Println("Received client connected state")
 		case lifecycle.StateClientDisconnected:
@@ -59,9 +60,15 @@ func TestLifecycleEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(1 * time.Millisecond)
-	client.Stop()
+	client.Shutdown()
 	time.Sleep(1 * time.Millisecond)
-	targetStates := []lifecycle.State{lifecycle.StateClientConnected, lifecycle.StateClientDisconnected}
+	targetStates := []lifecycle.State{
+		lifecycle.StateStarting,
+		lifecycle.StateClientConnected,
+		lifecycle.StateStarted,
+		lifecycle.StateShuttingDown,
+		lifecycle.StateShutDown,
+	}
 	if !reflect.DeepEqual(targetStates, receivedStates) {
 		t.Fatalf("target %v != %v", targetStates, receivedStates)
 	}

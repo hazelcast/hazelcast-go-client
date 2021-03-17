@@ -16,17 +16,16 @@ package cluster
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"net"
+	"os"
 	"sync/atomic"
 	"time"
 
-	"crypto/tls"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	publogger "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/versionutil"
@@ -42,6 +41,7 @@ const (
 type ResponseHandler func(msg *proto.ClientMessage)
 
 type Connection interface {
+	ConnectionID() int64
 }
 
 type ConnectionImpl struct {
@@ -63,7 +63,11 @@ type ConnectionImpl struct {
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64
-	logger                    logger.Logger
+	logger                    publogger.Logger
+}
+
+func (c *ConnectionImpl) ConnectionID() int64 {
+	return c.connectionID
 }
 
 func (c *ConnectionImpl) sendProtocolStarter() error {
@@ -71,7 +75,7 @@ func (c *ConnectionImpl) sendProtocolStarter() error {
 	return err
 }
 
-func (c *ConnectionImpl) createSocket(networkCfg NetworkConfig, address *core.Address) (net.Conn, error) {
+func (c *ConnectionImpl) createSocket(networkCfg pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
 	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
 	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
 	if err != nil {
@@ -83,7 +87,7 @@ func (c *ConnectionImpl) createSocket(networkCfg NetworkConfig, address *core.Ad
 	return socket, err
 }
 
-func (c *ConnectionImpl) dialToAddressWithTimeout(address *core.Address, conTimeout time.Duration) (net.Conn, error) {
+func (c *ConnectionImpl) dialToAddressWithTimeout(address pubcluster.Address, conTimeout time.Duration) (net.Conn, error) {
 	return net.DialTimeout("tcp", address.String(), conTimeout)
 }
 
@@ -92,12 +96,6 @@ func (c *ConnectionImpl) init() {
 	c.closedTime.Store(time.Time{})
 	c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
 	c.lastRead.Store(time.Now())
-}
-
-func (c *ConnectionImpl) openTLSConnection(sslCfg *config.SSLConfig, conn net.Conn) (net.Conn, error) {
-	tlsCon := tls.Client(conn, sslCfg.Config)
-	err := tlsCon.Handshake()
-	return tlsCon, err
 }
 
 func (c *ConnectionImpl) isAlive() bool {
@@ -115,6 +113,7 @@ func (c *ConnectionImpl) writePool() {
 			if err := c.write(request); err != nil {
 				// XXX: create a new client message?
 				request.Err = err
+				fmt.Fprintln(os.Stderr, "WRITE with err:", request)
 				c.responseCh <- request
 			} else {
 				c.lastWrite.Store(time.Now())
@@ -171,8 +170,11 @@ func (c *ConnectionImpl) readPool() {
 }
 
 func (c *ConnectionImpl) isTimeoutError(err error) bool {
-	netErr, ok := err.(net.Error)
-	return ok && netErr.Timeout()
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return netErr.Timeout()
+	}
+	return false
 }
 
 func (c *ConnectionImpl) StartTime() int64 {

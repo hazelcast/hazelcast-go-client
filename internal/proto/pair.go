@@ -8,10 +8,10 @@ func NewPair(key, value interface{}) Pair {
 	return Pair{key, value}
 }
 
-func (p Pair) GetKey() interface{} {
+func (p Pair) Key() interface{} {
 	return p.key
 }
 
-func (p Pair) GetValue() interface{} {
+func (p Pair) Value() interface{} {
 	return p.value
 }

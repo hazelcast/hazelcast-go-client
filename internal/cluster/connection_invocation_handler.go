@@ -2,9 +2,10 @@ package cluster
 
 import (
 	"errors"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 )
 
@@ -69,7 +70,7 @@ func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) e
 	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
-		return core.NewHazelcastIOError("no address found to invoke", nil)
+		return hzerror.NewHazelcastIOError("no address found to invoke", nil)
 	} else {
 		return h.sendToAddress(inv, addr)
 	}
@@ -77,15 +78,15 @@ func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) e
 
 func (h ConnectionInvocationHandler) sendToConnection(inv ConnectionBoundInvocation, conn *ConnectionImpl) error {
 	if sent := conn.send(inv); !sent {
-		return core.NewHazelcastIOError("packet is not sent", nil)
+		return hzerror.NewHazelcastIOError("packet is not sent", nil)
 	}
 	return nil
 }
 
-func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr *core.Address) error {
+func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	if conn := n.connectionManager.GetConnectionForAddress(addr); conn == nil {
 		n.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
-		return internal.ErrAddressNotFound
+		return ihzerror.ErrAddressNotFound
 	} else if invImpl, ok := inv.(*invocation.Impl); ok {
 		boundInv := &ConnectionBoundInvocationImpl{
 			invocationImpl:  invImpl,
@@ -98,5 +99,5 @@ func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, ad
 }
 
 func (n ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
-	panic("implement me!")
+	panic("sendToRandomAddress: implement me!")
 }

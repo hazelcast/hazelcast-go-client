@@ -16,6 +16,7 @@
 package codec
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -31,7 +32,7 @@ type memberinfoCodec struct {}
 var MemberInfoCodec memberinfoCodec
 */
 
-func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo proto.MemberInfo) {
+func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo cluster.MemberInfo) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberInfoCodecLiteMemberInitialFrameSize))
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.Uuid())
@@ -46,7 +47,7 @@ func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo proto.Membe
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) proto.MemberInfo {
+func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) cluster.MemberInfo {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -63,5 +64,5 @@ func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) proto.MemberInf
 		isAddressMapExists = true
 	}
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return proto.NewMemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap)
+	return cluster.NewMemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap)
 }

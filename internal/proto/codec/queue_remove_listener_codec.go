@@ -14,7 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -33,7 +33,7 @@ const (
 // Removes the specified item listener. If there is no such listener added before, this call does no change in the
 // cluster and returns false.
 
-func EncodeQueueRemoveListenerRequest(name string, registrationId core.UUID) *proto.ClientMessage {
+func EncodeQueueRemoveListenerRequest(name string, registrationId internal.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

@@ -14,7 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -47,7 +47,7 @@ func EncodeClientLocalBackupListenerRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeClientLocalBackupListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeClientLocalBackupListenerResponse(clientMessage *proto.ClientMessage) internal.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

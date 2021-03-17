@@ -15,7 +15,7 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 )
 
 type ClassDefinitionWriter struct {
@@ -67,7 +67,7 @@ func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
 
 func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable Portable) error {
 	if portable == nil {
-		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
 	nestedCD, err := cdw.portableContext.LookUpOrRegisterClassDefiniton(portable)
 	if err != nil {
@@ -81,7 +81,7 @@ func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryID i
 	var version int32
 	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if nestedCD == nil {
-		return core.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
 	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
 	return nil
@@ -125,10 +125,10 @@ func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []Portable) error {
 	if portables == nil {
-		return core.NewHazelcastSerializationError("non nil value expected", nil)
+		return hzerror.NewHazelcastSerializationError("non nil value expected", nil)
 	}
 	if len(portables) == 0 || portables == nil {
-		return core.NewHazelcastSerializationError("cannot write empty array", nil)
+		return hzerror.NewHazelcastSerializationError("cannot write empty array", nil)
 	}
 	var sample = portables[0]
 	var nestedCD, err = cdw.portableContext.LookUpOrRegisterClassDefiniton(sample)

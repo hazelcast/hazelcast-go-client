@@ -14,6 +14,8 @@
 
 package core
 
+import "github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 // Ringbuffer is a data-structure where the content is stored in a ring like structure. A ringbuffer has a capacity so it
 // won't grow beyond that capacity and endanger the stability of the system. If that capacity is exceeded, than the oldest
 // item in the ringbuffer is overwritten.
@@ -29,7 +31,7 @@ package core
 // is not available anymore.
 type Ringbuffer interface {
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// Capacity returns capacity of this ringbuffer.
 	Capacity() (capacity int64, err error)

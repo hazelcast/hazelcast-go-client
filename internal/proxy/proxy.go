@@ -16,15 +16,14 @@ package proxy
 
 import (
 	"fmt"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
-	"reflect"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/nilutil"
 )
@@ -128,7 +127,7 @@ func (p *Impl) ServiceName() string {
 
 func (p *Impl) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	return
@@ -137,7 +136,7 @@ func (p *Impl) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Da
 func (p *Impl) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
-		return nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	if err != nil {
@@ -150,7 +149,7 @@ func (p *Impl) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Da
 func (p *Impl) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, arg3Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
-		return nil, nil, nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, nil, nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	if err != nil {
@@ -166,7 +165,7 @@ func (p *Impl) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 in
 
 func (p *Impl) validateAndSerializePredicate(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
-		return nil, core.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
 	}
 	arg1Data, err = p.toData(arg1)
 	return
@@ -174,51 +173,57 @@ func (p *Impl) validateAndSerializePredicate(arg1 interface{}) (arg1Data seriali
 
 func (p *Impl) validateAndSerializeSlice(elements []interface{}) (elementsData []serialization.Data, err error) {
 	if elements == nil {
-		return nil, core.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
 	}
 	elementsData, err = colutil.ObjectToDataCollection(elements, p.serializationService)
 	return
 }
 
 func (p *Impl) validateItemListener(listener interface{}) (err error) {
-	switch listener.(type) {
-	case core.ItemAddedListener:
-	case core.ItemRemovedListener:
-	default:
-		return core.NewHazelcastIllegalArgumentError("listener argument type must be one of ItemAddedListener,"+
-			" ItemRemovedListener", nil)
-	}
+	/*
+		switch listener.(type) {
+		case core.ItemAddedListener:
+		case core.ItemRemovedListener:
+		default:
+			return core.NewHazelcastIllegalArgumentError("listener argument type must be one of ItemAddedListener,"+
+				" ItemRemovedListener", nil)
+		}
+		return nil
+	*/
 	return nil
 }
 
 func (p *Impl) validateEntryListener(listener interface{}) (err error) {
-	argErr := core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
-		reflect.TypeOf(listener)), nil)
-	if p.serviceName == bufutil.ServiceNameReplicatedMap {
-		switch listener.(type) {
-		case core.EntryAddedListener:
-		case core.EntryRemovedListener:
-		case core.EntryUpdatedListener:
-		case core.EntryEvictedListener:
-		case core.MapClearedListener:
-		default:
-			err = argErr
+	/*
+		argErr := core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
+			reflect.TypeOf(listener)), nil)
+		if p.serviceName == bufutil.ServiceNameReplicatedMap {
+			switch listener.(type) {
+			case core.EntryAddedListener:
+			case core.EntryRemovedListener:
+			case core.EntryUpdatedListener:
+			case core.EntryEvictedListener:
+			case core.MapClearedListener:
+			default:
+				err = argErr
+			}
+		} else if p.serviceName == bufutil.ServiceNameMultiMap {
+			switch listener.(type) {
+			case core.EntryAddedListener:
+			case core.EntryRemovedListener:
+			case core.MapClearedListener:
+			default:
+				err = argErr
+			}
 		}
-	} else if p.serviceName == bufutil.ServiceNameMultiMap {
-		switch listener.(type) {
-		case core.EntryAddedListener:
-		case core.EntryRemovedListener:
-		case core.MapClearedListener:
-		default:
-			err = argErr
-		}
-	}
-	return
+		return
+	*/
+	return nil
 }
 
 func (p *Impl) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*proto.Pair, error) {
 	if entries == nil {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
 	}
 	partitions := make(map[int32][]*proto.Pair)
 	for key, value := range entries {
@@ -237,6 +242,14 @@ func (p *Impl) invokeOnKey(request *proto.ClientMessage, keyData serialization.D
 	inv := p.invocationFactory.NewInvocationOnKeyOwner(request, keyData)
 	p.requestCh <- inv
 	return inv.Get()
+	//select {
+	//case p.requestCh <- inv:
+	//	return inv.GetWithTimeout(100 * time.Millisecond)
+	//case <-time.After(100 * time.Millisecond):
+	//	return nil, errors.New("timeout")
+
+	//}
+
 }
 
 func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
@@ -251,7 +264,7 @@ func (p *Impl) invokeOnPartition(request *proto.ClientMessage, partitionID int32
 	return inv.Get()
 }
 
-func (p *Impl) invokeOnAddress(request *proto.ClientMessage, address *core.Address) (*proto.ClientMessage, error) {
+func (p *Impl) invokeOnAddress(request *proto.ClientMessage, address pubcluster.Address) (*proto.ClientMessage, error) {
 	inv := p.invocationFactory.NewInvocationOnTarget(request, address)
 	p.requestCh <- inv
 	return inv.Get()
@@ -313,6 +326,7 @@ func (p *Impl) decodeToInt64AndError(responseMessage *proto.ClientMessage, input
 	return decodeFunc(responseMessage)(), nil
 }
 
+/*
 func (p *Impl) createOnItemEvent(listener interface{}) func(itemData serialization.Data, uuid string, eventType int32) {
 	return func(itemData serialization.Data, uuid string, eventType int32) {
 		var item interface{}
@@ -330,6 +344,7 @@ func (p *Impl) createOnItemEvent(listener interface{}) func(itemData serializati
 		}
 	}
 }
+*/
 
 type partitionSpecificProxy struct {
 	*Impl

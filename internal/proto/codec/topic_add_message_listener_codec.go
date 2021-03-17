@@ -14,7 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
@@ -54,14 +54,14 @@ func EncodeTopicAddMessageListenerRequest(name string, localOnly bool) *proto.Cl
 	return clientMessage
 }
 
-func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) internal.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
 }
 
-func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid core.UUID)) {
+func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid internal.UUID)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == TopicAddMessageListenerCodecEventTopicMessageType {

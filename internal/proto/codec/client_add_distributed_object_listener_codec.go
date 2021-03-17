@@ -14,7 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -50,14 +50,14 @@ func EncodeClientAddDistributedObjectListenerRequest(localOnly bool) *proto.Clie
 	return clientMessage
 }
 
-func DecodeClientAddDistributedObjectListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeClientAddDistributedObjectListenerResponse(clientMessage *proto.ClientMessage) internal.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseOffset)
 }
 
-func HandleClientAddDistributedObjectListener(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source core.UUID)) {
+func HandleClientAddDistributedObjectListener(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source internal.UUID)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddDistributedObjectListenerCodecEventDistributedObjectMessageType {

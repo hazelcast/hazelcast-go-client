@@ -18,15 +18,6 @@ func TestNewClientConfigBuilder(t *testing.T) {
 	}
 }
 
-func TestNewClient(t *testing.T) {
-	hz := hazelcast.NewClient()
-	targetName := "hz.client_1"
-	if targetName != hz.Name() {
-		t.Errorf("target: %v != %v", targetName, hz.Name())
-		return
-	}
-}
-
 func TestNewClientWithConfig(t *testing.T) {
 	builder := hazelcast.NewClientConfigBuilder()
 	builder.SetClientName("my-client")

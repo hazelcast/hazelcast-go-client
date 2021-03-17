@@ -14,13 +14,15 @@
 
 package core
 
+import "github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 // Map is concurrent, distributed, observable and queryable.
 // This map is sync (blocking). Blocking calls return the value of the call and block
 // the execution until the return value is calculated.
 // It does not allow nil to be used as a key or value.
 type Map interface {
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// Put returns the value with the specified key in this map.
 	// If the map previously contained a mapping for

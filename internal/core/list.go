@@ -14,6 +14,8 @@
 
 package core
 
+import "github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 // List is a concurrent, distributed, ordered collection. The user of this
 // interface has precise control over where in the list each element is
 // inserted.  The user can access elements by their integer index (position in the list),
@@ -24,7 +26,7 @@ package core
 type List interface {
 
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// Add appends the specified element to the end of this list.
 	// Add returns true if the list has changed as a result of this operation, false otherwise.

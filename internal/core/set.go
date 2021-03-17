@@ -14,11 +14,13 @@
 
 package core
 
+import "github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 // Set is the concurrent, distributed implementation of collection that contains no duplicate elements.
 // As implied by its name, this interface models the mathematical 'set' abstraction.
 type Set interface {
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// Add adds the specified item to this set if not already present.
 	// Add returns true if the item was added, false otherwise.

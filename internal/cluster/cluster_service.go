@@ -1,14 +1,15 @@
 package cluster
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"sync/atomic"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 )
 
 type Service interface {
-	GetMemberByUUID(uuid string) core.Member
-	Members() []core.Member
-	OwnerConnectionAddr() *core.Address
+	GetMemberByUUID(uuid string) pubcluster.Member
+	Members() []pubcluster.Member
+	OwnerConnectionAddr() pubcluster.Address
 }
 
 type ServiceImpl struct {
@@ -20,26 +21,26 @@ type ServiceImpl struct {
 
 func NewServiceImpl(addrProviders []AddressProvider) *ServiceImpl {
 	service := &ServiceImpl{addrProviders: addrProviders}
-	service.ownerConnectionAddr.Store(&core.Address{})
+	service.ownerConnectionAddr.Store(&pubcluster.AddressImpl{})
 	return service
 }
 
-func (s *ServiceImpl) GetMemberByUUID(uuid string) core.Member {
+func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
 	panic("implement me")
 }
 
-func (s *ServiceImpl) Members() []core.Member {
+func (s *ServiceImpl) Members() []pubcluster.Member {
 	panic("implement me")
 }
 
-func (s *ServiceImpl) OwnerConnectionAddr() *core.Address {
-	if addr, ok := s.ownerConnectionAddr.Load().(*core.Address); ok {
+func (s *ServiceImpl) OwnerConnectionAddr() pubcluster.Address {
+	if addr, ok := s.ownerConnectionAddr.Load().(pubcluster.Address); ok {
 		return addr
 	}
 	return nil
 }
 
-func (s *ServiceImpl) memberCandidateAddrs() []*core.Address {
+func (s *ServiceImpl) memberCandidateAddrs() []pubcluster.Address {
 	addrSet := NewAddrSet()
 	for _, addrProvider := range s.addrProviders {
 		addrSet.AddAddrs(addrProvider.Addresses())
@@ -48,25 +49,25 @@ func (s *ServiceImpl) memberCandidateAddrs() []*core.Address {
 }
 
 type AddrSet struct {
-	addrs map[string]*core.Address
+	addrs map[string]pubcluster.Address
 }
 
 func NewAddrSet() AddrSet {
-	return AddrSet{addrs: map[string]*core.Address{}}
+	return AddrSet{addrs: map[string]pubcluster.Address{}}
 }
 
-func (a AddrSet) AddAddr(addr *core.Address) {
+func (a AddrSet) AddAddr(addr pubcluster.Address) {
 	a.addrs[addr.String()] = addr
 }
 
-func (a AddrSet) AddAddrs(addrs []*core.Address) {
+func (a AddrSet) AddAddrs(addrs []pubcluster.Address) {
 	for _, addr := range addrs {
 		a.AddAddr(addr)
 	}
 }
 
-func (a AddrSet) Addrs() []*core.Address {
-	addrs := make([]*core.Address, 0, len(a.addrs))
+func (a AddrSet) Addrs() []pubcluster.Address {
+	addrs := make([]pubcluster.Address, 0, len(a.addrs))
 	for _, addr := range a.addrs {
 		addrs = append(addrs, addr)
 	}

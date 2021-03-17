@@ -15,6 +15,7 @@
 package proto
 
 import (
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
@@ -46,10 +47,10 @@ func ClientAddMembershipListenerDecodeResponse(clientMessage *ClientMessage) fun
 }
 
 // ClientAddMembershipListenerHandleEventMemberFunc is the event handler function.
-type ClientAddMembershipListenerHandleEventMemberFunc func(*Member, int32)
+type ClientAddMembershipListenerHandleEventMemberFunc func(pubcluster.Member, int32)
 
 // ClientAddMembershipListenerHandleEventMemberListFunc is the event handler function.
-type ClientAddMembershipListenerHandleEventMemberListFunc func([]*Member)
+type ClientAddMembershipListenerHandleEventMemberListFunc func([]pubcluster.Member)
 
 // ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc is the event handler function.
 type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(string, string, int32, string)
@@ -58,7 +59,7 @@ type ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc func(string
 // from the given client message.
 // It returns the result parameters for the event.
 func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) (
-	member *Member, eventType int32) {
+	member pubcluster.Member, eventType int32) {
 	//TODO
 	return nil, 0
 }
@@ -67,7 +68,7 @@ func ClientAddMembershipListenerEventMemberDecode(clientMessage *ClientMessage) 
 // from the given client message.
 // It returns the result parameters for the event.
 func ClientAddMembershipListenerEventMemberListDecode(clientMessage *ClientMessage) (
-	members []*Member) {
+	members []pubcluster.Member) {
 	//TODO
 	return nil
 

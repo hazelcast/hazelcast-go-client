@@ -16,10 +16,9 @@ package serialization
 
 import (
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"reflect"
 	"strconv"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
 type ClassDefinitionContext struct {
@@ -40,7 +39,7 @@ func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (Clas
 		return nil, nil
 	}
 	if classDefinition.FactoryID() != c.factoryID {
-		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.",
+		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.",
 			c.factoryID, classDefinition.FactoryID()), nil)
 	}
 	classDefKey := encodeVersionedClassID(classDefinition.ClassID(), classDefinition.Version())
@@ -50,7 +49,7 @@ func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (Clas
 		return classDefinition, nil
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
-		return nil, core.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d",
+		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d",
 			classDefinition.ClassID()), nil)
 	}
 	return classDefinition, nil

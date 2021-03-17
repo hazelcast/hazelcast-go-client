@@ -14,7 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -57,14 +57,14 @@ func EncodeMapAddPartitionLostListenerRequest(name string, localOnly bool) *prot
 	return clientMessage
 }
 
-func DecodeMapAddPartitionLostListenerResponse(clientMessage *proto.ClientMessage) core.UUID {
+func DecodeMapAddPartitionLostListenerResponse(clientMessage *proto.ClientMessage) internal.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddPartitionLostListenerResponseResponseOffset)
 }
 
-func HandleMapAddPartitionLostListener(clientMessage *proto.ClientMessage, handleMapPartitionLostEvent func(partitionId int32, uuid core.UUID)) {
+func HandleMapAddPartitionLostListener(clientMessage *proto.ClientMessage, handleMapPartitionLostEvent func(partitionId int32, uuid internal.UUID)) {
 	messageType := clientMessage.GetMessageType()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddPartitionLostListenerCodecEventMapPartitionLostMessageType {
