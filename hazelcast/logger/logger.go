@@ -15,9 +15,8 @@
 package logger
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
 const (
@@ -79,7 +78,7 @@ func isValidLogLevel(logLevel string) bool {
 // GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
 func GetLogLevel(logLevel string) (int, error) {
 	if !isValidLogLevel(logLevel) {
-		return 0, core.NewHazelcastIllegalArgumentError("no log level found for "+logLevel, nil)
+		return 0, hzerror.NewHazelcastIllegalArgumentError("no log level found for "+logLevel, nil)
 	}
 	return nameToLevel[logLevel], nil
 }

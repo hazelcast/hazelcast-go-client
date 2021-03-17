@@ -21,7 +21,6 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"net"
-	"os"
 	"sync/atomic"
 	"time"
 
@@ -113,7 +112,6 @@ func (c *ConnectionImpl) writePool() {
 			if err := c.write(request); err != nil {
 				// XXX: create a new client message?
 				request.Err = err
-				fmt.Fprintln(os.Stderr, "WRITE with err:", request)
 				c.responseCh <- request
 			} else {
 				c.lastWrite.Store(time.Now())
