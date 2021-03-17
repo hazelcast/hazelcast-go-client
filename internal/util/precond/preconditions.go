@@ -14,7 +14,7 @@
 
 package precond
 
-import "github.com/hazelcast/hazelcast-go-client/core"
+import "github.com/hazelcast/hazelcast-go-client/v3/core"
 
 func CheckHasText(argument string, errorMessage string) (err error) {
 	if argument == "" {

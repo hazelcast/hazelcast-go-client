@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/util/nilutil"
 )
 
 // Address represents an address of a member in the cluster.

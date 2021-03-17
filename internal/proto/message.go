@@ -18,9 +18,9 @@ import (
 	"encoding/binary"
 	"unicode/utf8"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization/spi"
 )
 
 // ClientMessage is the carrier framed data as defined below.

@@ -3,9 +3,9 @@ package classdef
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization/internal/classdef"
 )
 
 // ClassDefinitionBuilder is used to build and register class definitions manually.

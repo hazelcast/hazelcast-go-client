@@ -20,8 +20,8 @@ import (
 
 	"errors"
 
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization/internal/classdef"
 	"github.com/stretchr/testify/assert"
 )
 

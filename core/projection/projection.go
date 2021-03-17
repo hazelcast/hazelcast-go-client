@@ -14,7 +14,7 @@
 
 package projection
 
-import "github.com/hazelcast/hazelcast-go-client/internal/projection"
+import "github.com/hazelcast/hazelcast-go-client/v3/internal/projection"
 
 // SingleAttribute returns a projection that extracts the value of the given `attributePath`.
 // `attributePath` must not be empty.

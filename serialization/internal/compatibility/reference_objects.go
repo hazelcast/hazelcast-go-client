@@ -14,7 +14,7 @@
 
 package compatibility
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
+import "github.com/hazelcast/hazelcast-go-client/v3/serialization"
 
 const (
 	// PORTABLE IDS

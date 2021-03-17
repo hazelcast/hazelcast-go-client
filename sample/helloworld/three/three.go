@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "github.com/hazelcast/hazelcast-go-client"
+import "github.com/hazelcast/hazelcast-go-client/v3"
 
 /* The routine reads data from Hazelcast, that was placed there
  * by two.go

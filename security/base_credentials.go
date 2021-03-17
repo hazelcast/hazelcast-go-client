@@ -14,7 +14,7 @@
 
 package security
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
+import "github.com/hazelcast/hazelcast-go-client/v3/serialization"
 
 const (
 	factoryID = 1

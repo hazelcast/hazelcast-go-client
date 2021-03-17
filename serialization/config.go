@@ -17,7 +17,7 @@ package serialization
 import (
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
 )
 
 // Config contains the serialization configuration of a Hazelcast instance.

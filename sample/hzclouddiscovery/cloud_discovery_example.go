@@ -17,8 +17,8 @@ package main
 import (
 	"log"
 
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/v3"
+	"github.com/hazelcast/hazelcast-go-client/v3/config"
 )
 
 func main() {

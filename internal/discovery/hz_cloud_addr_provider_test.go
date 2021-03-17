@@ -19,9 +19,9 @@ import (
 
 	"errors"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto"
 	"github.com/stretchr/testify/assert"
 )
 

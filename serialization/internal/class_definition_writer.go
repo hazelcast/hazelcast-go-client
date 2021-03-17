@@ -15,9 +15,9 @@
 package internal
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization/classdef"
 )
 
 type ClassDefinitionWriter struct {

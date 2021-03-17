@@ -17,8 +17,8 @@ package proto
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization/spi"
 )
 
 func TestAddressCodecEncodeDecode(t *testing.T) {

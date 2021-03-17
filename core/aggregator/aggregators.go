@@ -27,7 +27,7 @@
 package aggregator
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/aggregation"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/aggregation"
 )
 
 // Count returns a Count aggregator that counts the input values from

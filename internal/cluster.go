@@ -20,11 +20,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/core/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/iputil"
+	"github.com/hazelcast/hazelcast-go-client/v3/config"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/util/iputil"
 )
 
 const (

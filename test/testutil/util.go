@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/config"
-	"github.com/hazelcast/hazelcast-go-client/rc"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/serialization/spi"
+	"github.com/hazelcast/hazelcast-go-client/v3"
+	"github.com/hazelcast/hazelcast-go-client/v3/config"
+	"github.com/hazelcast/hazelcast-go-client/v3/rc"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization/spi"
 )
 
 const (

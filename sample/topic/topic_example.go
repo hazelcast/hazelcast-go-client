@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/core"
+	"github.com/hazelcast/hazelcast-go-client/v3"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
 )
 
 func main() {

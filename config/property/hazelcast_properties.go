@@ -25,7 +25,7 @@ import (
 
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/v3/config"
 )
 
 // HazelcastProperties is a container for configured Hazelcast properties.

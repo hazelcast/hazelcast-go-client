@@ -17,8 +17,8 @@ package internal
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto"
 )
 
 func TestRandomLoadBalancer_NextAddressWithNoMembers(t *testing.T) {

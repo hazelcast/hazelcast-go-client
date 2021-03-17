@@ -17,9 +17,9 @@ package internal
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/v3/internal/proto/bufutil"
 )
 
 func createHazelcastError(err *proto.ServerError) core.HazelcastError {

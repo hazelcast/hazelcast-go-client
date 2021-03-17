@@ -14,7 +14,7 @@
 
 package orgwebsite
 
-import "github.com/hazelcast/hazelcast-go-client"
+import "github.com/hazelcast/hazelcast-go-client/v3"
 
 func mapSampleRun() {
 	// Start the Hazelcast Client and connect to an already running Hazelcast Cluster on 127.0.0.1

@@ -17,7 +17,7 @@ package orgwebsite
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/v3"
 )
 
 func replicatedMapSampleRun() {

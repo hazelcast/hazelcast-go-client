@@ -21,7 +21,7 @@ import (
 
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/config"
+	"github.com/hazelcast/hazelcast-go-client/v3/config"
 )
 
 func TestHazelcastProperties_GetStringWithConfig(t *testing.T) {

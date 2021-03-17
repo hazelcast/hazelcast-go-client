@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "github.com/hazelcast/hazelcast-go-client"
+import "github.com/hazelcast/hazelcast-go-client/v3"
 
 /* The routine writes data in Hazelcast and closes down.
  * If Hazelcast doesn't close down too, then the data stays

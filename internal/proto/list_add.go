@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
 )
 
 func listAddCalculateSize(name string, value serialization.Data) int {

@@ -15,7 +15,7 @@
 package predicate
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
 )
 
 const FactoryID = -32

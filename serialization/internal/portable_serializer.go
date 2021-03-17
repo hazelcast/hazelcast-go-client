@@ -19,8 +19,8 @@ import (
 
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/v3/core"
+	"github.com/hazelcast/hazelcast-go-client/v3/serialization"
 )
 
 type PortableSerializer struct {
