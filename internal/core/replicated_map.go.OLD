@@ -15,6 +15,7 @@
 package core
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"time"
 )
 
@@ -29,7 +30,7 @@ import (
 // values from older nodes and replicate them locally.
 type ReplicatedMap interface {
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// Put associates a given value to the specified key and replicates it to the
 	// cluster. If there is an old value, it will be replaced by the specified

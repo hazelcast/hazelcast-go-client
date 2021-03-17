@@ -187,10 +187,9 @@ func (m *ConnectionManagerImpl) GetConnectionForAddress(addr pubcluster.Address)
 }
 
 func (m *ConnectionManagerImpl) handleConnectionClosed(event event.Event) {
-	fmt.Println("Connection closed", event)
 	if connectionClosedEvent, ok := event.(ConnectionClosed); ok {
 		if err := connectionClosedEvent.Err(); err != nil {
-			fmt.Println("Connection closed err:", err.Error())
+			panic("implement me!")
 		}
 
 		//m.connectionsMu.Lock()

@@ -1,12 +1,10 @@
 package invocation
 
 import (
-	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
-	"os"
 	"sync/atomic"
 	"time"
 )
@@ -84,12 +82,9 @@ func (s *ServiceImpl) processIncoming() {
 		select {
 		case inv := <-s.requestCh:
 			requestCount++
-			fmt.Fprintln(os.Stderr, "req:", requestCount, "resp:", responseCount)
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
 			responseCount++
-			fmt.Fprintln(os.Stderr, "processIncoming:", msg)
-			fmt.Fprintln(os.Stderr, "req:", requestCount, "resp:", responseCount)
 			s.handleClientMessage(msg)
 		}
 	}

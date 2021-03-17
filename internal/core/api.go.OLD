@@ -17,10 +17,12 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"net"
 	"time"
 
+	icluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/nilutil"
 )
@@ -37,36 +39,11 @@ type Address interface {
 */
 
 type ClientInfo struct {
-	UUID         UUID
+	UUID         internal.UUID
 	LocalAddress net.Addr
 	ClientType   string
 	Name         string
 	Labels       []string
-}
-
-// Member represents a member in the cluster with its address, uuid, lite member status and attributes.
-type Member interface {
-	fmt.Stringer
-	// Address returns the address of this member.
-	Address() *Address
-
-	// UUID returns the uuid of this member.
-	UUID() UUID
-
-	// IsLiteMember returns true if this member is a lite member.
-	LiteMember() bool
-
-	// Attributes returns configured attributes for this member.
-	Attributes() map[string]string
-}
-
-// Pair represents Map entry pair.
-type Pair interface {
-	// Key returns key of entry.
-	Key() interface{}
-
-	// Values returns value of entry.
-	Value() interface{}
 }
 
 // EntryView represents a readonly view of a map entry.
@@ -185,7 +162,7 @@ type AbstractMapEvent interface {
 	Name() string
 
 	// Member returns the member that fired this event.
-	Member() Member
+	Member() icluster.Member
 
 	// EventType returns the type of entry event.
 	EventType() int32
@@ -234,7 +211,7 @@ type ItemEvent interface {
 	EventType() int32
 
 	// Member is the member that sent the event.
-	Member() Member
+	Member() icluster.Member
 }
 
 // MemberAttributeEvent is an event for member attribute changes.
@@ -249,7 +226,7 @@ type MemberAttributeEvent interface {
 	Value() string
 
 	// Member returns the member for this MemberAttributeEvent.
-	Member() Member
+	Member() icluster.Member
 }
 
 // EntryAddedListener is invoked upon addition of an entry.
@@ -313,13 +290,13 @@ type MapClearedListener interface {
 // MemberAddedListener is invoked when a new member is added to the cluster.
 type MemberAddedListener interface {
 	// MemberAdded is invoked when a new member is added to the cluster.
-	MemberAdded(member Member)
+	MemberAdded(member icluster.Member)
 }
 
 // MemberRemovedListener is invoked when an existing member leaves the cluster.
 type MemberRemovedListener interface {
 	// MemberRemoved is invoked when an existing member leaves the cluster.
-	MemberRemoved(member Member)
+	MemberRemoved(member icluster.Member)
 }
 
 const (
@@ -365,7 +342,7 @@ type Message interface {
 	// The member can be nil if:
 	//    - The message was sent by a client and not a member.
 	//    - The member, that sent the message, left the cluster before the message was processed.
-	PublishingMember() Member
+	PublishingMember() icluster.Member
 }
 
 // ItemAddedListener is invoked when an item is added.
@@ -391,7 +368,7 @@ type LoadBalancer interface {
 
 	// Next returns the next member to route to.
 	// It returns nil if no member is available.
-	Next() Member
+	Next() icluster.Member
 }
 
 // HazelcastJSONValue is a wrapper for JSON formatted strings. It is
@@ -417,7 +394,7 @@ func CreateHazelcastJSONValueFromString(jsonString string) *HazelcastJSONValue {
 // if nil, channel, complex or function values are given, method returns error
 func CreateHazelcastJSONValue(object interface{}) (*HazelcastJSONValue, error) {
 	if nilutil.IsNil(object) {
-		return nil, NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
 	byteArray, err := json.Marshal(object)
 	if err != nil {
@@ -435,50 +412,6 @@ func (h *HazelcastJSONValue) Unmarshal(v interface{}) error {
 // ToString returns unaltered string that was used to create this object.
 func (h *HazelcastJSONValue) ToString() string {
 	return string(h.jsonString)
-}
-
-// StackTraceElement contains stacktrace information for server side exception.
-type StackTraceElement interface {
-	// DeclaringClass returns the fully qualified name of the class containing
-	// the execution point represented by the stack trace element.
-	DeclaringClass() string
-
-	// MethodName returns the name of the method containing the execution point
-	// represented by this stack trace element.
-	MethodName() string
-
-	// FileName returns the name of the file containing the execution point
-	// represented by the stack trace element, or nil if
-	// this information is unavailable.
-	FileName() string
-
-	// LineNumber returns the line number of the source line containing the
-	// execution point represented by this stack trace element, or
-	// a negative number if this information is unavailable. A value
-	// of -2 indicates that the method containing the execution point
-	// is a native method.
-	LineNumber() int32
-}
-
-// ServerError contains error information that occurred in the server.
-type ServerError interface {
-	// ErrorCode returns the error code.
-	ErrorCode() int32
-
-	// ClassName returns the class name where error occurred.
-	ClassName() string
-
-	// Message returns the error message.
-	Message() string
-
-	// StackTrace returns a slice of StackTraceElement.
-	StackTrace() []StackTraceElement
-
-	// CauseErrorCode returns the cause error code.
-	CauseErrorCode() int32
-
-	// CauseClassName returns the cause class name.
-	CauseClassName() string
 }
 
 // ReliableMessageListener is to better integrate with the reliable topic.
@@ -556,10 +489,10 @@ const (
 type MembershipEvent interface {
 
 	// Removed or added member.
-	GetMember() Member
+	GetMember() icluster.Member
 
 	// Members list at the moment after this event.
-	GetMembers() []Member
+	GetMembers() []icluster.Member
 
 	// eventType is MemberEvent
 	GetEventType() MemberEvent
@@ -567,7 +500,7 @@ type MembershipEvent interface {
 
 // An event that is sent when a initialMembershipListener registers itself on a cluster.
 type InitialMembershipEvent interface {
-	GetMembers() []Member
+	GetMembers() []icluster.Member
 }
 
 type InitialMembershipListener interface {
