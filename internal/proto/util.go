@@ -15,7 +15,7 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
@@ -34,7 +34,7 @@ func int64CalculateSize(v int64) int {
 	return bufutil.Int64SizeInBytes
 }
 
-func addressCalculateSize(a *core.Address) int {
+func addressCalculateSize(a pubcluster.Address) int {
 	dataSize := 0
 	dataSize += stringCalculateSize(a.Host())
 	dataSize += bufutil.Int32SizeInBytes

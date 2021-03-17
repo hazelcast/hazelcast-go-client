@@ -14,7 +14,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -32,7 +32,7 @@ const (
 
 // Removes the specified migration listener.
 
-func EncodeClientRemoveMigrationListenerRequest(registrationId core.UUID) *proto.ClientMessage {
+func EncodeClientRemoveMigrationListenerRequest(registrationId internal.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

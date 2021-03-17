@@ -1,7 +1,8 @@
 package invocation
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	pubhzerror "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"sync/atomic"
 	"time"
@@ -17,7 +18,7 @@ type Invocation interface {
 	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
-	Address() *core.Address
+	Address() pubcluster.Address
 }
 
 type Impl struct {
@@ -25,14 +26,14 @@ type Impl struct {
 	response        chan *proto.ClientMessage
 	completed       int32
 	boundConnection *Impl
-	address         *core.Address
+	address         pubcluster.Address
 	partitionID     int32
 	sentConnection  atomic.Value
 	eventHandler    func(clientMessage *proto.ClientMessage)
 	deadline        time.Time
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *core.Address, timeout time.Duration) *Impl {
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address, timeout time.Duration) *Impl {
 	return &Impl{
 		partitionID: partitionID,
 		address:     address,
@@ -63,13 +64,11 @@ func (i *Impl) Get() (*proto.ClientMessage, error) {
 }
 
 func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error) {
-	for {
-		select {
-		case response := <-i.response:
-			return i.unwrapResponse(response)
-		case <-time.After(duration):
-			return nil, core.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
-		}
+	select {
+	case response := <-i.response:
+		return i.unwrapResponse(response)
+	case <-time.After(duration):
+		return nil, pubhzerror.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
 	}
 }
 
@@ -81,7 +80,7 @@ func (i Impl) Request() *proto.ClientMessage {
 	return i.request
 }
 
-func (i Impl) Address() *core.Address {
+func (i Impl) Address() pubcluster.Address {
 	return i.address
 }
 
@@ -89,13 +88,9 @@ func (i Impl) StoreSentConnection(conn interface{}) {
 	i.sentConnection.Store(conn)
 }
 
-func (i *Impl) unwrapResponse(response interface{}) (*proto.ClientMessage, error) {
-	switch res := response.(type) {
-	case *proto.ClientMessage:
-		return res, nil
-	case error:
-		return nil, res
-	default:
-		panic("Unexpected response in invocation ")
+func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {
+	if response.Err != nil {
+		return nil, response.Err
 	}
+	return response, nil
 }

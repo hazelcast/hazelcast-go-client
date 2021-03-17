@@ -15,6 +15,7 @@
 package discovery
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"net/http"
 
 	"encoding/json"
@@ -119,7 +120,7 @@ func (hzC *HazelcastCloud) parseResponse(response *http.Response) (map[string]*c
 		// TODO:: use addressProvider
 		privateAddress := hzC.createAddress(addr.PrivAddr)
 		if privateAddress.Port() == -1 {
-			privateAddress = core.NewAddressWithHostPort(addr.PrivAddr, publicAddress.Port())
+			privateAddress = internal.NewAddressWithHostPort(addr.PrivAddr, publicAddress.Port())
 		}
 
 		privateToPublicAddrs[privateAddress.String()] = publicAddress
@@ -135,5 +136,5 @@ func CreateURLEndpoint(hazelcastProperties *property.HazelcastProperties, cloudT
 
 func (hzC *HazelcastCloud) createAddress(hostname string) *core.Address {
 	ip, port := iputil.GetIPAndPort(hostname)
-	return core.NewAddressWithHostPort(ip, port)
+	return internal.NewAddressWithHostPort(ip, port)
 }

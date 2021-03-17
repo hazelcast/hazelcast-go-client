@@ -16,7 +16,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -31,7 +31,7 @@ type addressCodec struct {}
 var AddressCodec addressCodec
 */
 
-func EncodeAddress(clientMessage *proto.ClientMessage, address *core.Address) {
+func EncodeAddress(clientMessage *proto.ClientMessage, address cluster.Address) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, AddressCodecPortInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(address.Port()))
@@ -42,7 +42,7 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address *core.Address) {
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeAddress(frameIterator *proto.ForwardFrameIterator) *core.Address {
+func DecodeAddress(frameIterator *proto.ForwardFrameIterator) cluster.Address {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -50,5 +50,5 @@ func DecodeAddress(frameIterator *proto.ForwardFrameIterator) *core.Address {
 
 	host := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return core.NewAddress(host, port)
+	return cluster.NewAddress(host, port)
 }

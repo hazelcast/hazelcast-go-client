@@ -15,6 +15,7 @@
 package discovery
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"testing"
 
 	"errors"
@@ -30,9 +31,9 @@ var provider2 *HzCloudAddrProvider
 
 func TestHzCloudAddrProvider(t *testing.T) {
 	expectedAddresses = make(map[string]*core.Address)
-	expectedAddresses["10.0.0.1:5701"] = core.NewAddressWithHostPort("198.51.100.1", 5701)
-	expectedAddresses["10.0.0.1:5702"] = core.NewAddressWithHostPort("198.51.100.1", 5702)
-	expectedAddresses["10.0.0.2:5701"] = core.NewAddressWithHostPort("198.51.100.2", 5701)
+	expectedAddresses["10.0.0.1:5701"] = internal.NewAddressWithHostPort("198.51.100.1", 5701)
+	expectedAddresses["10.0.0.1:5702"] = internal.NewAddressWithHostPort("198.51.100.1", 5702)
+	expectedAddresses["10.0.0.2:5701"] = internal.NewAddressWithHostPort("198.51.100.2", 5701)
 	var mockProvider = func() (map[string]*core.Address, error) {
 		return expectedAddresses, nil
 	}

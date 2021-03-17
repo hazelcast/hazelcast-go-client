@@ -15,19 +15,20 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
 type ClientAuthenticationDecodeResponseDelegate func(clientMessage *ClientMessage) (
 	status uint8,
-	address *core.Address,
-	uuid core.UUID,
-	ownerUuid core.UUID,
+	address pubcluster.Address,
+	uuid internal.UUID,
+	ownerUuid internal.UUID,
 	serializationVersion uint8,
 	serverHazelcastVersion string,
 	partitionCount int32,
-	clientUnregisteredMembers []*Member)
+	clientUnregisteredMembers []pubcluster.Member)
 
 func clientAuthenticationCalculateSize(username string, password string, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {
 	// Calculates the request payload size
@@ -52,7 +53,7 @@ func clientAuthenticationCalculateSize(username string, password string, uuid st
 // EncodeClientAuthenticationRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func EncodeClientAuthenticationRequest(username string, password string, uuid core.UUID, ownerUuid core.UUID, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
+func EncodeClientAuthenticationRequest(username string, password string, uuid internal.UUID, ownerUuid internal.UUID, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) *ClientMessage {
 	//return codec.EncodeClientAuthenticationRequest()
 	return nil
 }
@@ -60,13 +61,13 @@ func EncodeClientAuthenticationRequest(username string, password string, uuid co
 // DecodeClientAuthenticationResponse decodes the given client message.
 func DecodeClientAuthenticationResponse(clientMessage *ClientMessage) (
 	status uint8,
-	address *core.Address,
-	uuid core.UUID,
-	ownerUuid core.UUID,
+	address pubcluster.Address,
+	uuid internal.UUID,
+	ownerUuid internal.UUID,
 	serializationVersion uint8,
 	serverHazelcastVersion string,
 	partitionCount int32,
-	clientUnregisteredMembers []*Member) {
+	clientUnregisteredMembers []pubcluster.Member) {
 	// TODO:
 	return
 }

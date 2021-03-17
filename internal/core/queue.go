@@ -14,14 +14,17 @@
 
 package core
 
-import "time"
+import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+	"time"
+)
 
 // Queue is a concurrent, blocking, distributed, observable queue. Queue is not a partitioned data-structure.
 // All of the Queue content is stored in a single machine (and in the backup).
 // Queue will not scale by adding more members in the cluster.
 type Queue interface {
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// AddAll adds all the items. If items slice changes during this operation, behavior is unspecified.
 	// AddAll returns true if the queue has changed, false otherwise.

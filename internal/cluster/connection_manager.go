@@ -3,18 +3,23 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
+	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
+	"reflect"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const (
@@ -30,9 +35,9 @@ var ClientVersion = "4.0.0"
 
 type ConnectionManager interface {
 	NextConnectionID() int64
-	GetConnectionForAddress(addr *core.Address) *ConnectionImpl
+	GetConnectionForAddress(addr pubcluster.Address) *ConnectionImpl
 	Start() error
-	Stop()
+	Stop() chan struct{}
 }
 
 type ConnectionManagerCreationBundle struct {
@@ -40,12 +45,12 @@ type ConnectionManagerCreationBundle struct {
 	ResponseCh           chan<- *proto.ClientMessage
 	SmartRouting         bool
 	Logger               logger.Logger
-	AddressTranslator    internal.AddressTranslator
+	AddressTranslator    pubcluster.AddressTranslator
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionServiceImpl
 	SerializationService spi.SerializationService
 	EventDispatcher      event.DispatchService
-	NetworkConfig        NetworkConfig
+	NetworkConfig        pubcluster.NetworkConfig
 	Credentials          security.Credentials
 	ClientName           string
 }
@@ -94,7 +99,7 @@ type ConnectionManagerImpl struct {
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
 	eventDispatcher      event.DispatchService
-	networkConfig        NetworkConfig
+	networkConfig        pubcluster.NetworkConfig
 	credentials          security.Credentials
 	heartbeatTimeout     time.Duration
 	clientName           string
@@ -104,7 +109,7 @@ type ConnectionManagerImpl struct {
 	connections   map[string]*ConnectionImpl
 
 	nextConnectionID  int64
-	addressTranslator internal.AddressTranslator
+	addressTranslator pubcluster.AddressTranslator
 	smartRouting      bool
 	alive             atomic.Value
 	logger            logger.Logger
@@ -143,34 +148,55 @@ func (m *ConnectionManagerImpl) Start() error {
 	if err := m.connectCluster(); err != nil {
 		return err
 	}
+	subscriptionID := int(reflect.ValueOf(m.handleConnectionClosed).Pointer())
+	m.eventDispatcher.Subscribe(EventConnectionClosed, subscriptionID, m.handleConnectionClosed)
 	m.started.Store(true)
 	return nil
 }
 
-func (m *ConnectionManagerImpl) Stop() {
+func (m *ConnectionManagerImpl) Stop() chan struct{} {
+	doneCh := make(chan struct{}, 1)
 	if m.started.Load() == false {
-		return
+		doneCh <- struct{}{}
+	} else {
+		go func() {
+			m.connectionsMu.Lock()
+			for _, conn := range m.connections {
+				conn.close(nil)
+			}
+			m.connections = nil
+			m.connectionsMu.Unlock()
+			m.started.Store(false)
+			doneCh <- struct{}{}
+		}()
 	}
-	m.connectionsMu.Lock()
-	for _, conn := range m.connections {
-		conn.close(nil)
-	}
-	m.connections = nil
-	m.connectionsMu.Unlock()
-	m.started.Store(false)
+	return doneCh
 }
 
 func (m *ConnectionManagerImpl) NextConnectionID() int64 {
 	return atomic.AddInt64(&m.nextConnectionID, 1)
 }
 
-func (m *ConnectionManagerImpl) GetConnectionForAddress(addr *core.Address) *ConnectionImpl {
+func (m *ConnectionManagerImpl) GetConnectionForAddress(addr pubcluster.Address) *ConnectionImpl {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	if conn, ok := m.connections[addr.String()]; ok {
 		return conn
 	}
 	return nil
+}
+
+func (m *ConnectionManagerImpl) handleConnectionClosed(event event.Event) {
+	fmt.Println("Connection closed", event)
+	if connectionClosedEvent, ok := event.(ConnectionClosed); ok {
+		if err := connectionClosedEvent.Err(); err != nil {
+			fmt.Println("Connection closed err:", err.Error())
+		}
+
+		//m.connectionsMu.Lock()
+		//defer m.connectionsMu.Unlock()
+		//delete(m.connections, connectionClosedEvent.Conn())
+	}
 }
 
 func (m *ConnectionManagerImpl) connectCluster() error {
@@ -184,12 +210,12 @@ func (m *ConnectionManagerImpl) connectCluster() error {
 	return errors.New("cannot connect to any address in the cluster")
 }
 
-func (m *ConnectionManagerImpl) connectAddr(addr *core.Address) error {
+func (m *ConnectionManagerImpl) connectAddr(addr pubcluster.Address) error {
 	_, err := m.ensureConnection(addr, true)
 	return err
 }
 
-func (m *ConnectionManagerImpl) ensureConnection(addr *core.Address, owner bool) (*ConnectionImpl, error) {
+func (m *ConnectionManagerImpl) ensureConnection(addr pubcluster.Address, owner bool) (*ConnectionImpl, error) {
 	if conn := m.getConnection(addr, owner); conn != nil {
 		return conn, nil
 	}
@@ -197,7 +223,7 @@ func (m *ConnectionManagerImpl) ensureConnection(addr *core.Address, owner bool)
 	return m.maybeCreateConnection(addr, owner)
 }
 
-func (m *ConnectionManagerImpl) getConnection(addr *core.Address, owner bool) *ConnectionImpl {
+func (m *ConnectionManagerImpl) getConnection(addr pubcluster.Address, owner bool) *ConnectionImpl {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	if conn, found := m.connections[addr.String()]; found {
@@ -206,17 +232,18 @@ func (m *ConnectionManagerImpl) getConnection(addr *core.Address, owner bool) *C
 	return nil
 }
 
-func (m *ConnectionManagerImpl) maybeCreateConnection(addr *core.Address, owner bool) (*ConnectionImpl, error) {
+func (m *ConnectionManagerImpl) maybeCreateConnection(addr pubcluster.Address, owner bool) (*ConnectionImpl, error) {
 	//// check whether the connection exists before creating it
 	//if conn, found := m.connections[addr.String()]; found {
 	//	return conn, nil
 	//}
 	// TODO: check whether we can create a connection
 	if conn, err := m.createConnection(addr); err != nil {
-		return nil, core.NewHazelcastTargetDisconnectedError(err.Error(), err)
+		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn, owner); err != nil {
 		return nil, err
 	} else {
+		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 		m.connectionsMu.Lock()
 		defer m.connectionsMu.Unlock()
 		m.connections[addr.String()] = conn
@@ -224,7 +251,7 @@ func (m *ConnectionManagerImpl) maybeCreateConnection(addr *core.Address, owner 
 	}
 }
 
-func (m *ConnectionManagerImpl) createConnection(addr *core.Address) (*ConnectionImpl, error) {
+func (m *ConnectionManagerImpl) createConnection(addr pubcluster.Address) (*ConnectionImpl, error) {
 	connection := m.createDefaultConnection()
 	if socket, err := connection.createSocket(m.networkConfig, addr); err != nil {
 		return nil, err
@@ -247,9 +274,9 @@ func (m *ConnectionManagerImpl) createDefaultConnection() *ConnectionImpl {
 	//	incompleteMessages: make(map[int64]*proto.ClientMessage),
 	//}
 	return &ConnectionImpl{
-		responseCh:      m.responseCh,
-		pending:         make(chan *proto.ClientMessage, 1),
-		received:        make(chan *proto.ClientMessage, 1),
+		responseCh: m.responseCh,
+		pending:    make(chan *proto.ClientMessage, 1024),
+		//received:        make(chan *proto.ClientMessage, 1),
 		closed:          make(chan struct{}),
 		readBuffer:      make([]byte, 0),
 		connectionID:    m.NextConnectionID(),
@@ -269,6 +296,7 @@ func (cm *ConnectionManagerImpl) authenticate(connection *ConnectionImpl, asOwne
 	if err != nil {
 		return err
 	}
+	cm.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
 	return cm.processAuthenticationResult(connection, asOwner, result)
 }
 
@@ -289,9 +317,9 @@ func (cm *ConnectionManagerImpl) processAuthenticationResult(conn *ConnectionImp
 			cm.logger.Info("Setting ", conn, " as owner.")
 		}
 	case credentialsFailed:
-		return core.NewHazelcastAuthenticationError("invalid credentials!", nil)
+		return hzerror.NewHazelcastAuthenticationError("invalid credentials!", nil)
 	case serializationVersionMismatch:
-		return core.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
+		return hzerror.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
 	}
 	return nil
 }
@@ -313,7 +341,7 @@ func (cm *ConnectionManagerImpl) createAuthenticationRequest(asOwner bool,
 		"dev",
 		"",
 		"",
-		core.NewUUID(),
+		internal.NewUUID(),
 		proto.ClientType,
 		byte(serializationVersion),
 		ClientVersion,
@@ -346,13 +374,13 @@ func (cm *ConnectionManagerImpl) createCustomAuthenticationRequest(asOwner bool)
 //	clientUnregisteredMembers []*proto.Member)
 type AuthenticationDecoder func(clientMessage *proto.ClientMessage) (
 	status uint8,
-	address *core.Address,
-	uuid core.UUID,
-	ownerUuid core.UUID,
+	address pubcluster.Address,
+	uuid internal.UUID,
+	ownerUuid internal.UUID,
 	serializationVersion uint8,
 	serverHazelcastVersion string,
 	partitionCount int32,
-	clientUnregisteredMembers []*proto.Member)
+	clientUnregisteredMembers []pubcluster.Member)
 
 func (cm *ConnectionManagerImpl) getAuthenticationDecoder() AuthenticationDecoder {
 	var authenticationDecoder AuthenticationDecoder

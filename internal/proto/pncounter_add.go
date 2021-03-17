@@ -15,11 +15,11 @@
 package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
-func pncounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *core.Address) int {
+func pncounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica pubcluster.Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -39,7 +39,7 @@ func pncounterAddCalculateSize(name string, delta int64, getBeforeUpdate bool, r
 // PNCounterAddEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica *core.Address) *ClientMessage {
+func PNCounterAddEncodeRequest(name string, delta int64, getBeforeUpdate bool, replicaTimestamps []*Pair, targetReplica pubcluster.Address) *ClientMessage {
 	// Encode request into clientMessage
 	//TODO
 	return nil

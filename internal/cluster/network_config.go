@@ -2,15 +2,10 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	icluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"time"
 )
-
-type NetworkConfig interface {
-	Addrs() []string
-	SmartRouting() bool
-	ConnectionTimeout() time.Duration
-}
 
 type NetworkConfigImpl struct {
 	addresses         []string
@@ -19,7 +14,7 @@ type NetworkConfigImpl struct {
 }
 
 func NewNetworkConfigImpl() *NetworkConfigImpl {
-	defaultAddr := fmt.Sprintf("%s:%d", core.DefaultHost, core.DefaultPort)
+	defaultAddr := fmt.Sprintf("%s:%d", internal.DefaultHost, internal.DefaultPort)
 	return &NetworkConfigImpl{
 		addresses:         []string{defaultAddr},
 		connectionTimeout: 5 * time.Second,
@@ -38,16 +33,6 @@ func (n NetworkConfigImpl) SmartRouting() bool {
 	return n.smartRouting
 }
 
-type NetworkConfigBuilder interface {
-	SetAddresses(addr ...string) NetworkConfigBuilder
-	Config() (NetworkConfig, error)
-}
-
-type NetworkConfigProvider interface {
-	Addresses() []string
-	ConnectionTimeout() time.Duration
-}
-
 type NetworkConfigBuilderImpl struct {
 	networkConfig *NetworkConfigImpl
 	err           error
@@ -59,7 +44,7 @@ func NewNetworkConfigBuilderImpl() *NetworkConfigBuilderImpl {
 	}
 }
 
-func (n *NetworkConfigBuilderImpl) SetAddresses(addresses ...string) NetworkConfigBuilder {
+func (n *NetworkConfigBuilderImpl) SetAddresses(addresses ...string) icluster.NetworkConfigBuilder {
 	selfAddresses := make([]string, len(addresses))
 	for i, addr := range addresses {
 		if err := checkAddress(addr); err != nil {
@@ -72,12 +57,12 @@ func (n *NetworkConfigBuilderImpl) SetAddresses(addresses ...string) NetworkConf
 	return n
 }
 
-func (n *NetworkConfigBuilderImpl) SetConnectionTimeout(timeout time.Duration) NetworkConfigBuilder {
+func (n *NetworkConfigBuilderImpl) SetConnectionTimeout(timeout time.Duration) icluster.NetworkConfigBuilder {
 	n.networkConfig.connectionTimeout = timeout
 	return n
 }
 
-func (n NetworkConfigBuilderImpl) Config() (NetworkConfig, error) {
+func (n NetworkConfigBuilderImpl) Config() (icluster.NetworkConfig, error) {
 	if n.err != nil {
 		return n.networkConfig, n.err
 	}

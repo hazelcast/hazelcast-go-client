@@ -16,6 +16,7 @@ package proto
 
 import (
 	"encoding/binary"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 )
 
 const (
@@ -181,7 +182,7 @@ func (clientMessage *ClientMessage) DropFragmentationFrame() {
 	clientMessage.StartFrame = clientMessage.StartFrame.next
 }
 
-func (m *ClientMessage) DecodeError() *ServerError {
+func (m *ClientMessage) DecodeError() *ihzerror.ServerErrorImpl {
 	return ErrorCodecDecode(m)
 }
 

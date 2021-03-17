@@ -15,9 +15,8 @@
 package serialization
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"reflect"
-
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
 // Config contains the serialization configuration of a Hazelcast instance.
@@ -121,7 +120,7 @@ func (sc *Config) AddCustomSerializer(typ reflect.Type, serializer Serializer) e
 	if serializer.ID() > 0 {
 		sc.customSerializers[typ] = serializer
 	} else {
-		return core.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
+		return hzerror.NewHazelcastSerializationError("custom serializer should have its typeId greater than or equal to 1", nil)
 	}
 	return nil
 }
@@ -131,7 +130,7 @@ func (sc *Config) SetGlobalSerializer(serializer Serializer) error {
 	if serializer.ID() > 0 {
 		sc.globalSerializer = serializer
 	} else {
-		return core.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
+		return hzerror.NewHazelcastSerializationError("global serializer should have its typeId greater than or equal to 1", nil)
 	}
 	return nil
 }

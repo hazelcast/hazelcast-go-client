@@ -15,6 +15,7 @@
 package discovery
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
@@ -58,7 +59,7 @@ func (ap *HzCloudAddrProvider) LoadAddresses() []*core.Address {
 	// Appends private keys
 	for address := range privateToPublicAddrs {
 		ip, port := iputil.GetIPAndPort(address)
-		addrSlice = append(addrSlice, core.NewAddressWithHostPort(ip, port))
+		addrSlice = append(addrSlice, internal.NewAddressWithHostPort(ip, port))
 	}
 	return addrSlice
 }

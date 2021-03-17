@@ -1,6 +1,9 @@
 package hazelcast
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
+import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	icluster "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
+)
 
 type Config struct {
 	ClientName  string
@@ -21,12 +24,12 @@ type ConfigBuilder interface {
 
 type configBuilderImpl struct {
 	config               Config
-	networkConfigBuilder *cluster.NetworkConfigBuilderImpl
+	networkConfigBuilder *icluster.NetworkConfigBuilderImpl
 }
 
 func newConfigBuilderImpl() *configBuilderImpl {
 	return &configBuilderImpl{
-		networkConfigBuilder: cluster.NewNetworkConfigBuilderImpl(),
+		networkConfigBuilder: icluster.NewNetworkConfigBuilderImpl(),
 	}
 }
 
@@ -42,7 +45,7 @@ func (c *configBuilderImpl) SetClusterName(name string) ConfigBuilder {
 
 func (c *configBuilderImpl) Network() cluster.NetworkConfigBuilder {
 	if c.networkConfigBuilder == nil {
-		c.networkConfigBuilder = &cluster.NetworkConfigBuilderImpl{}
+		c.networkConfigBuilder = &icluster.NetworkConfigBuilderImpl{}
 	}
 	return c.networkConfigBuilder
 }

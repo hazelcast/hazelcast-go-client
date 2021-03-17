@@ -16,6 +16,7 @@
 package codec
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -30,7 +31,7 @@ type endpointqualifierCodec struct {}
 var EndpointQualifierCodec endpointqualifierCodec
 */
 
-func EncodeEndpointQualifier(clientMessage *proto.ClientMessage, endpointQualifier proto.EndpointQualifier) {
+func EncodeEndpointQualifier(clientMessage *proto.ClientMessage, endpointQualifier internal.EndpointQualifier) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, EndpointQualifierCodecTypeInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, EndpointQualifierCodecTypeFieldOffset, int32(endpointQualifier.Type()))
@@ -41,7 +42,7 @@ func EncodeEndpointQualifier(clientMessage *proto.ClientMessage, endpointQualifi
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeEndpointQualifier(frameIterator *proto.ForwardFrameIterator) proto.EndpointQualifier {
+func DecodeEndpointQualifier(frameIterator *proto.ForwardFrameIterator) internal.EndpointQualifier {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -49,5 +50,5 @@ func DecodeEndpointQualifier(frameIterator *proto.ForwardFrameIterator) proto.En
 
 	identifier := CodecUtil.DecodeNullableForString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return proto.NewEndpointQualifier(_type, identifier)
+	return internal.NewEndpointQualifier(_type, identifier)
 }

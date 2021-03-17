@@ -2,10 +2,11 @@ package codec
 
 import (
 	"encoding/binary"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/config"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
@@ -51,11 +52,11 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 	}
 }
 
-func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options *config.BitmapIndexOptions) {
+func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options internal.BitmapIndexOptions) {
 	if options == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
-		EncodeBitmapIndexOptions(message, *options)
+		EncodeBitmapIndexOptions(message, options)
 	}
 }
 
@@ -74,12 +75,11 @@ func (codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator
 	return DecodeData(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *core.Address {
+func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) pubcluster.Address {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	addr := DecodeAddress(frameIterator)
-	return addr
+	return DecodeAddress(frameIterator)
 }
 
 func (codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
@@ -108,7 +108,7 @@ func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator)
 	return isNullFrame
 }
 
-func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) *config.BitmapIndexOptions {
+func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) internal.BitmapIndexOptions {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()
@@ -116,7 +116,7 @@ func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.Forwar
 	return DecodeBitmapIndexOptions(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *core.SimpleEntryView {
+func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *internal.SimpleEntryView {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()
@@ -279,7 +279,7 @@ func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair)
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(core.UUID)
+		key := entry.Key().(internal.UUID)
 		value := entry.Value().(int64)
 		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
@@ -326,11 +326,11 @@ func DecodeEntryListIntegerInteger(frameIterator *proto.ForwardFrameIterator) []
 
 func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []proto.Pair) {
 	entryCount := len(entries)
-	uuids := make([]core.UUID, entryCount)
+	uuids := make([]internal.UUID, entryCount)
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < entryCount; i++ {
 		entry := entries[i]
-		key := entry.Key().(core.UUID)
+		key := entry.Key().(internal.UUID)
 		value := entry.Value().([]int32)
 		uuids[i] = key
 		EncodeListInteger(message, value)
@@ -415,7 +415,7 @@ func (fixSizedTypesCodec) DecodeByte(buffer []byte, offset int32) byte {
 	return buffer[offset]
 }
 
-func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid core.UUID) {
+func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid internal.UUID) {
 	isNullEncode := uuid == nil
 	FixSizedTypesCodec.EncodeBoolean(buffer, offset, isNullEncode)
 	if isNullEncode {
@@ -426,7 +426,7 @@ func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid core.UUID
 	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.LeastSignificantBits()))
 }
 
-func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) core.UUID {
+func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) internal.UUID {
 	isNull := FixSizedTypesCodec.DecodeBoolean(buffer, offset)
 	if isNull {
 		return nil
@@ -437,7 +437,7 @@ func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) core.UUID {
 	mostSignificant := uint64(FixSizedTypesCodec.DecodeLong(buffer, mostSignificantOffset))
 	leastSignificant := uint64(FixSizedTypesCodec.DecodeLong(buffer, leastSignificantOffset))
 
-	return core.NewUUIDWith(mostSignificant, leastSignificant)
+	return internal.NewUUIDWith(mostSignificant, leastSignificant)
 }
 
 func EncodeListInteger(message *proto.ClientMessage, entries []int32) {
@@ -551,8 +551,8 @@ func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterat
 	return result
 }
 
-func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []proto.DistributedObjectInfo {
-	result := make([]proto.DistributedObjectInfo, 0)
+func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []internal.DistributedObjectInfo {
+	result := make([]internal.DistributedObjectInfo, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeDistributedObjectInfo(frameIterator))
@@ -561,8 +561,8 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 	return result
 }
 
-func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator) []proto.MemberInfo {
-	result := make([]proto.MemberInfo, 0)
+func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator) []pubcluster.MemberInfo {
+	result := make([]pubcluster.MemberInfo, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeMemberInfo(frameIterator))
@@ -571,8 +571,8 @@ func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator
 	return result
 }
 
-func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []proto.StackTraceElement {
-	result := make([]proto.StackTraceElement, 0)
+func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []hzerror.StackTraceElement {
+	result := make([]hzerror.StackTraceElement, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeStackTraceElement(frameIterator))
@@ -613,7 +613,7 @@ func DecodeListData(frameIterator *proto.ForwardFrameIterator) []serialization.D
 	return DecodeListMultiFrameForData(frameIterator)
 }
 
-func EncodeListUUID(message *proto.ClientMessage, entries []core.UUID) {
+func EncodeListUUID(message *proto.ClientMessage, entries []internal.UUID) {
 	itemCount := len(entries)
 	content := make([]byte, itemCount*proto.UUIDSizeInBytes)
 	newFrame := proto.NewFrame(content)
@@ -623,10 +623,10 @@ func EncodeListUUID(message *proto.ClientMessage, entries []core.UUID) {
 	message.AddFrame(newFrame)
 }
 
-func DecodeListUUID(frameIterator *proto.ForwardFrameIterator) []core.UUID {
+func DecodeListUUID(frameIterator *proto.ForwardFrameIterator) []internal.UUID {
 	frame := frameIterator.Next()
 	itemCount := len(frame.Content) / proto.UUIDSizeInBytes
-	result := make([]core.UUID, itemCount)
+	result := make([]internal.UUID, itemCount)
 	for i := 0; i < itemCount; i++ {
 		result[i] = FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.UUIDSizeInBytes))
 	}
@@ -661,7 +661,7 @@ func EncodeMapForStringAndString(message *proto.ClientMessage, values map[string
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[proto.EndpointQualifier]*core.Address) {
+func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[internal.EndpointQualifier]pubcluster.Address) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {
 		EncodeEndpointQualifier(message, key)
@@ -683,7 +683,7 @@ func DecodeMapForStringAndString(iterator *proto.ForwardFrameIterator) map[strin
 }
 
 func DecodeMapForEndpointQualifierAndAddress(iterator *proto.ForwardFrameIterator) interface{} {
-	result := map[proto.EndpointQualifier]*core.Address{}
+	result := map[internal.EndpointQualifier]pubcluster.Address{}
 	iterator.Next()
 	for !iterator.PeekNext().IsEndFrame() {
 		key := DecodeEndpointQualifier(iterator)

@@ -14,6 +14,8 @@
 
 package core
 
+import "github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 // PNCounter is PN (Positive-Negative) CRDT counter.
 //
 // The counter supports adding and subtracting values as well as
@@ -51,7 +53,7 @@ package core
 // PNCounter requires Hazelcast 3.10.
 type PNCounter interface {
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// Get returns the current value of the counter.
 	// It returns HazelcastNoDataMemberInClusterError if the cluster does not contain any data members,

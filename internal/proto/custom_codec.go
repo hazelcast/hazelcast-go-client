@@ -14,17 +14,23 @@
 
 package proto
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+import (
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+)
 
 /*
 Address Codec
 */
-func AddressCodecEncode(msg *ClientMessage, address *core.Address) {
+func AddressCodecEncode(msg *ClientMessage, address pubcluster.Address) {
 	//TODO
 
 }
 
-func AddressCodecDecode(msg *ClientMessage) *core.Address {
+func AddressCodecDecode(msg *ClientMessage) pubcluster.Address {
 	//TODO
 	return nil
 }
@@ -33,7 +39,7 @@ func AddressCodecDecode(msg *ClientMessage) *core.Address {
 DistributedObjectInfo Codec
 */
 
-func DistributedObjectInfoCodecDecode(msg *ClientMessage) *DistributedObjectInfo {
+func DistributedObjectInfoCodecDecode(msg *ClientMessage) *internal.DistributedObjectInfo {
 	//TODO
 	return nil
 }
@@ -42,21 +48,21 @@ func DistributedObjectInfoCodecDecode(msg *ClientMessage) *DistributedObjectInfo
 Member Codec
 */
 
-func MemberCodecDecode(msg *ClientMessage) *Member {
+func MemberCodecDecode(msg *ClientMessage) pubcluster.Member {
 	//TODO
 	return nil
 }
 
-func DataEntryViewCodecDecode(msg *ClientMessage) *DataEntryView {
+func DataEntryViewCodecDecode(msg *ClientMessage) *serialization.DataEntryView {
 	//TODO
 	return nil
 }
 
-func UUIDCodecEncode(msg *ClientMessage, uuid uuid) {
+func UUIDCodecEncode(msg *ClientMessage, uuid internal.UUID) {
 
 }
 
-func UUIDCodecDecode(msg *ClientMessage) *uuid {
+func UUIDCodecDecode(msg *ClientMessage) internal.UUID {
 	//TODO
 	return nil
 }
@@ -65,13 +71,13 @@ func UUIDCodecDecode(msg *ClientMessage) *uuid {
 	Error Codec
 */
 
-func ErrorCodecDecode(msg *ClientMessage) *ServerError {
+func ErrorCodecDecode(msg *ClientMessage) *ihzerror.ServerErrorImpl {
 	//TODO
 	return nil
 
 }
 
-func DecodeStackTrace(msg *ClientMessage) core.StackTraceElement {
+func DecodeStackTrace(msg *ClientMessage) hzerror.StackTraceElement {
 	//TODO
 	return nil
 }

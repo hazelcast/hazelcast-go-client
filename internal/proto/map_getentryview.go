@@ -40,7 +40,7 @@ func MapGetEntryViewEncodeRequest(name string, key serialization.Data, threadId 
 
 // MapGetEntryViewDecodeResponse decodes the given client message.
 // It returns a function which returns the response parameters.
-func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) func() (response *DataEntryView) {
+func MapGetEntryViewDecodeResponse(clientMessage *ClientMessage) func() (response *serialization.DataEntryView) {
 	// Decode response from client message
 	//TODO
 	return nil

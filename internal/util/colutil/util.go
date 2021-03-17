@@ -15,7 +15,7 @@
 package colutil
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
@@ -24,12 +24,12 @@ import (
 
 func ObjectToDataCollection(objects []interface{}, service spi.SerializationService) ([]serialization.Data, error) {
 	if objects == nil {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
 	elementsData := make([]serialization.Data, len(objects))
 	for index, element := range objects {
 		if element == nil {
-			return nil, core.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
+			return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 		}
 		elementData, err := service.ToData(element)
 		if err != nil {
@@ -42,7 +42,7 @@ func ObjectToDataCollection(objects []interface{}, service spi.SerializationServ
 
 func DataToObjectCollection(dataSlice []serialization.Data, service spi.SerializationService) ([]interface{}, error) {
 	if dataSlice == nil {
-		return nil, core.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
+		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
 	elements := make([]interface{}, len(dataSlice))
 	for index, data := range dataSlice {

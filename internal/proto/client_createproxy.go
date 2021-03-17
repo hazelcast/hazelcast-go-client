@@ -14,9 +14,11 @@
 
 package proto
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/core"
+import (
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+)
 
-func clientCreateProxyCalculateSize(name string, serviceName string, target *core.Address) int {
+func clientCreateProxyCalculateSize(name string, serviceName string, target pubcluster.Address) int {
 	// Calculates the request payload size
 	dataSize := 0
 	dataSize += stringCalculateSize(name)
@@ -28,7 +30,7 @@ func clientCreateProxyCalculateSize(name string, serviceName string, target *cor
 // ClientCreateProxyEncodeRequest creates and encodes a client message
 // with the given parameters.
 // It returns the encoded client message.
-func ClientCreateProxyEncodeRequest(name string, serviceName string, target *core.Address) *ClientMessage {
+func ClientCreateProxyEncodeRequest(name string, serviceName string, target pubcluster.Address) *ClientMessage {
 	// Encode request into clientMessage
 	//TODO
 	return nil

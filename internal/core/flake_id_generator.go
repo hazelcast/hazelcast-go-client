@@ -14,6 +14,8 @@
 
 package core
 
+import "github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 // FlakeIDGenerator is a cluster-wide unique ID generator. Generated IDs are 'int64' primitive values
 // and are k-ordered (roughly ordered). IDs are in the range from `0` to `math.MaxInt64`.
 //
@@ -39,7 +41,7 @@ package core
 type FlakeIDGenerator interface {
 
 	// DistributedObject is the base interface for all distributed objects.
-	DistributedObject
+	internal.DistributedObject
 
 	// NewID generates and returns a cluster-wide unique ID.
 	//

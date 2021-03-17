@@ -1,8 +1,8 @@
 package cluster
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/murmur"
 	"sync/atomic"
@@ -12,7 +12,7 @@ type PartitionService interface {
 	PartitionCount() int32
 	GetPartitionID(keyData serialization.Data) int32
 	GetPartitionIDWithKey(key interface{}) (int32, error)
-	GetPartitionOwner(partitionId int32) core.UUID
+	GetPartitionOwner(partitionId int32) internal.UUID
 }
 
 type PartitionServiceCreationBundle struct {
@@ -46,7 +46,7 @@ func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionSe
 	return service
 }
 
-func (s *PartitionServiceImpl) GetPartitionOwner(partitionId int32) core.UUID {
+func (s *PartitionServiceImpl) GetPartitionOwner(partitionId int32) internal.UUID {
 	return s.partitionTable.Load().(partitionTable).partitions[partitionId]
 }
 
@@ -83,14 +83,14 @@ func (s *PartitionServiceImpl) checkAndSetPartitionCount(newPartitionCount int32
 type partitionTable struct {
 	//connection           *connection.Impl
 	partitionStateVersion int32
-	partitions            map[int32]core.UUID
+	partitions            map[int32]internal.UUID
 }
 
 func defaultPartitionTable() partitionTable {
 	//return partitionTable{nil, -1, map[int32]core.UUID{}}
 	return partitionTable{
 		partitionStateVersion: -1,
-		partitions:            map[int32]core.UUID{},
+		partitions:            map[int32]internal.UUID{},
 	}
 }
 

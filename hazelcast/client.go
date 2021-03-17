@@ -2,15 +2,15 @@ package hazelcast
 
 import (
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"reflect"
 	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	icluster "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
@@ -28,7 +28,7 @@ type Client interface {
 
 	// control
 	Start() error
-	Stop()
+	Shutdown()
 
 	// events
 	ListenLifecycleStateChange(handler lifecycle.StateChangeHandler)
@@ -41,7 +41,7 @@ type clientImpl struct {
 	// configuration
 	name          string
 	clusterName   string
-	networkConfig *icluster.NetworkConfig
+	networkConfig *cluster.NetworkConfig
 
 	// components
 	proxyManager      proxy.Manager
@@ -88,18 +88,25 @@ func (c *clientImpl) Start() error {
 	if c.started.Load() == true {
 		return nil
 	}
+	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
 	if err := c.connectionManager.Start(); err != nil {
 		return err
 	}
 	c.started.Store(true)
-	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
+	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarted))
 	return nil
 }
 
-func (c clientImpl) Stop() {
-	// TODO: shutdown
-	c.connectionManager.Stop()
-	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientDisconnected))
+// Shutdown disconnects the client from the cluster.
+// This call is blocking.
+func (c clientImpl) Shutdown() {
+	if c.started.Load() != true {
+		return
+	}
+	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShuttingDown))
+	<-c.connectionManager.Stop()
+	time.Sleep(1 * time.Millisecond)
+	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShutDown))
 }
 
 func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
@@ -128,7 +135,7 @@ func (c *clientImpl) createComponents(config *Config) {
 		panic(fmt.Errorf("error creating client: %w", err))
 	}
 	smartRouting := config.Network.SmartRouting()
-	addressTranslator := internal.NewDefaultAddressTranslator()
+	addressTranslator := cluster.NewDefaultAddressTranslator()
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(config.Network),
 	}
@@ -138,8 +145,8 @@ func (c *clientImpl) createComponents(config *Config) {
 		SerializationService: serializationService,
 		Logger:               c.logger,
 	})
-	requestCh := make(chan invocation.Invocation, 1)
-	responseCh := make(chan *proto.ClientMessage, 1)
+	requestCh := make(chan invocation.Invocation, 1024)
+	responseCh := make(chan *proto.ClientMessage, 1024)
 	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
 		RequestCh:    requestCh,
 		ResponseCh:   responseCh,
