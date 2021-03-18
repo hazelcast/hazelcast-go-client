@@ -63,7 +63,7 @@ func DecodeQueueAddListenerResponse(clientMessage *proto.ClientMessage) internal
 }
 
 func HandleQueueAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item serialization.Data, uuid internal.UUID, eventType int32)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == QueueAddListenerCodecEventItemMessageType {
 		initialFrame := frameIterator.Next()

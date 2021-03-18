@@ -59,7 +59,7 @@ func DecodeClientAddPartitionLostListenerResponse(clientMessage *proto.ClientMes
 }
 
 func HandleClientAddPartitionLostListener(clientMessage *proto.ClientMessage, handlePartitionLostEvent func(partitionId int32, lostBackupCount int32, source internal.UUID)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddPartitionLostListenerCodecEventPartitionLostMessageType {
 		initialFrame := frameIterator.Next()

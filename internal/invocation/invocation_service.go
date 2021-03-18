@@ -76,15 +76,11 @@ func (s *ServiceImpl) SetHandler(handler Handler) {
 }
 
 func (s *ServiceImpl) processIncoming() {
-	requestCount := 0
-	responseCount := 0
 	for {
 		select {
 		case inv := <-s.requestCh:
-			requestCount++
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
-			responseCount++
 			s.handleClientMessage(msg)
 		}
 	}
@@ -107,7 +103,7 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 		if msg.StartFrame != nil {
 			s.handleError(msg.CorrelationID(), msg.Err)
 		} else {
-
+			panic("implement me: handleClientMessage")
 		}
 		return
 	}
@@ -120,12 +116,13 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 		}
 		return
 	}
-	if invocation := s.unregisterInvocation(correlationID); invocation != nil {
-		if msg.GetMessageType() == int32(bufutil.MessageTypeException) {
+	// TODO: unregister inv
+	if inv, ok := s.invocations[correlationID]; ok {
+		if msg.Type() == int32(bufutil.MessageTypeException) {
 			err := ihzerror.CreateHazelcastError(msg.DecodeError())
 			s.handleError(correlationID, err)
 		} else {
-			invocation.Complete(msg)
+			inv.Complete(msg)
 		}
 	} else {
 		s.logger.Trace("no invocation found with the correlation id: ", correlationID)
@@ -133,7 +130,6 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 }
 
 func (s *ServiceImpl) handleError(correlationID int64, invocationErr error) {
-	//correlationID := invocation.Request().CorrelationID()
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		s.logger.Error(invocationErr)
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})

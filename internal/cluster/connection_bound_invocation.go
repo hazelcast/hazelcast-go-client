@@ -31,3 +31,7 @@ func NewConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionI
 func (i *ConnectionBoundInvocationImpl) Connection() *ConnectionImpl {
 	return i.boundConnection
 }
+
+func (i *ConnectionBoundInvocationImpl) SetEventHandler(handler proto.ClientMessageHandler) {
+	i.invocationImpl.SetEventHandler(handler)
+}

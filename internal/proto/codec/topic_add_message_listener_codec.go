@@ -62,7 +62,7 @@ func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) i
 }
 
 func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid internal.UUID)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == TopicAddMessageListenerCodecEventTopicMessageType {
 		initialFrame := frameIterator.Next()

@@ -186,6 +186,16 @@ func (m *ConnectionManagerImpl) GetConnectionForAddress(addr pubcluster.Address)
 	return nil
 }
 
+func (m *ConnectionManagerImpl) GetActiveConnections() []*ConnectionImpl {
+	conns := make([]*ConnectionImpl, 0, len(m.connections))
+	m.connectionsMu.RLock()
+	defer m.connectionsMu.RUnlock()
+	for _, conn := range m.connections {
+		conns = append(conns, conn)
+	}
+	return conns
+}
+
 func (m *ConnectionManagerImpl) handleConnectionClosed(event event.Event) {
 	if connectionClosedEvent, ok := event.(ConnectionClosed); ok {
 		if err := connectionClosedEvent.Err(); err != nil {

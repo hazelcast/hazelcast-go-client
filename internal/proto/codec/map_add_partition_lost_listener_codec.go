@@ -65,7 +65,7 @@ func DecodeMapAddPartitionLostListenerResponse(clientMessage *proto.ClientMessag
 }
 
 func HandleMapAddPartitionLostListener(clientMessage *proto.ClientMessage, handleMapPartitionLostEvent func(partitionId int32, uuid internal.UUID)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddPartitionLostListenerCodecEventMapPartitionLostMessageType {
 		initialFrame := frameIterator.Next()

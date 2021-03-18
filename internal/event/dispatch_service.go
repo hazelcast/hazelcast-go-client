@@ -16,6 +16,7 @@ type controlType int
 
 const (
 	subscribe controlType = iota
+	subscribeSync
 	unsubscribe
 )
 
@@ -28,24 +29,26 @@ type controlMessage struct {
 
 type DispatchService interface {
 	Subscribe(eventName string, subscriptionID int, handler EventHandler)
+	SubscribeSync(eventName string, subscriptionID int, handler EventHandler)
 	Unsubscribe(eventName string, subscriptionID int, handler EventHandler)
 	Publish(event Event)
 	Stop() // experimental
 }
 
 type DispatchServiceImpl struct {
-	subscriptions map[string]map[int]EventHandler
-	eventCh       chan Event
-	controlCh     chan controlMessage
-	//doneCh        chan struct{}
-	running atomic.Value
+	subscriptions     map[string]map[int]EventHandler
+	syncSubscriptions map[string]map[int]EventHandler
+	eventCh           chan Event
+	controlCh         chan controlMessage
+	running           atomic.Value
 }
 
 func NewDispatchServiceImpl() *DispatchServiceImpl {
 	service := &DispatchServiceImpl{
-		subscriptions: map[string]map[int]EventHandler{},
-		eventCh:       make(chan Event, 1),
-		controlCh:     make(chan controlMessage, 1),
+		subscriptions:     map[string]map[int]EventHandler{},
+		syncSubscriptions: map[string]map[int]EventHandler{},
+		eventCh:           make(chan Event, 1),
+		controlCh:         make(chan controlMessage, 1),
 	}
 	service.running.Store(false)
 	service.start()
@@ -61,6 +64,21 @@ func (s *DispatchServiceImpl) Subscribe(eventName string, subscriptionID int, ha
 	}
 	s.controlCh <- controlMessage{
 		controlType:    subscribe,
+		eventName:      eventName,
+		subscriptionID: subscriptionID,
+		handler:        handler,
+	}
+}
+
+// Subscribe attaches handler to listen for events with eventName.
+// Do not rely on the order of handlers, they may be shuffled.
+func (s *DispatchServiceImpl) SubscribeSync(eventName string, subscriptionID int, handler EventHandler) {
+	// subscribing to a not-runnning service is no-op
+	if s.running.Load() != true {
+		return
+	}
+	s.controlCh <- controlMessage{
+		controlType:    subscribeSync,
 		eventName:      eventName,
 		subscriptionID: subscriptionID,
 		handler:        handler,
@@ -107,6 +125,8 @@ func (s *DispatchServiceImpl) start() {
 				switch control.controlType {
 				case subscribe:
 					s.subscribe(control.eventName, control.subscriptionID, control.handler)
+				case subscribeSync:
+					s.subscribeSync(control.eventName, control.subscriptionID, control.handler)
 				case unsubscribe:
 					s.unsubscribe(control.eventName, control.subscriptionID, control.handler)
 				default:
@@ -132,6 +152,13 @@ func (s *DispatchServiceImpl) Stop() {
 }
 
 func (s *DispatchServiceImpl) dispatch(event Event) {
+	// first dispatch sync handlers
+	if handlers, ok := s.syncSubscriptions[event.Name()]; ok {
+		for _, handler := range handlers {
+			handler(event)
+		}
+	}
+	// then dispatch async handlers
 	if handlers, ok := s.subscriptions[event.Name()]; ok {
 		for _, handler := range handlers {
 			go handler(event)
@@ -144,6 +171,15 @@ func (s *DispatchServiceImpl) subscribe(eventName string, subscriptionID int, ha
 	if !ok {
 		subscriptionHandlers = map[int]EventHandler{}
 		s.subscriptions[eventName] = subscriptionHandlers
+	}
+	subscriptionHandlers[subscriptionID] = handler
+}
+
+func (s *DispatchServiceImpl) subscribeSync(eventName string, subscriptionID int, handler EventHandler) {
+	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
+	if !ok {
+		subscriptionHandlers = map[int]EventHandler{}
+		s.syncSubscriptions[eventName] = subscriptionHandlers
 	}
 	subscriptionHandlers[subscriptionID] = handler
 }

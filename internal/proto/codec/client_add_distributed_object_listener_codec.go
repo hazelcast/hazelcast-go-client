@@ -58,7 +58,7 @@ func DecodeClientAddDistributedObjectListenerResponse(clientMessage *proto.Clien
 }
 
 func HandleClientAddDistributedObjectListener(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source internal.UUID)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddDistributedObjectListenerCodecEventDistributedObjectMessageType {
 		initialFrame := frameIterator.Next()

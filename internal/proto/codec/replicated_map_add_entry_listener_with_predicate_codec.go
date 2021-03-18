@@ -64,7 +64,7 @@ func DecodeReplicatedMapAddEntryListenerWithPredicateResponse(clientMessage *pro
 }
 
 func HandleReplicatedMapAddEntryListenerWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid internal.UUID, numberOfAffectedEntries int32)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ReplicatedMapAddEntryListenerWithPredicateCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
