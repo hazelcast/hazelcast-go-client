@@ -15,7 +15,11 @@
 package proxy
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
+	"reflect"
 )
 
 const MapServiceName = "hz:impl:mapService"
@@ -57,4 +61,34 @@ func (m *MapImpl) Get(key interface{}) (interface{}, error) {
 	}
 	response := codec.DecodeMapGetResponse(responseMessage)
 	return m.toObject(response)
+}
+
+func (m *MapImpl) ListenEntryNotified(flags int32, includeValue bool, handler hztypes.EntryNotifiedHandler) error {
+	request := codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
+	err := m.listenerBinder.Add(request, func(msg *proto.ClientMessage) {
+		//if msg.Type() == bufutil.EventEntry {
+		binKey, binValue, binOldValue, binMergingValue, _, uuid, _ := codec.HandleMapAddEntryListener(msg)
+		key := m.mustToInterface(binKey, "invalid key at ListenEntryNotified")
+		value := m.mustToInterface(binValue, "invalid value at ListenEntryNotified")
+		oldValue := m.mustToInterface(binOldValue, "invalid oldValue at ListenEntryNotified")
+		mergingValue := m.mustToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotified")
+		//numberOfAffectedEntries := m.mustToInterface(binNumberofAffectedEntries, "invalid numberOfAffectedEntries at ListenEntryNotified")
+		m.eventDispatcher.Publish(NewEntryNotifiedEventImpl(m.name, "FIX-ME:"+uuid.String(), key, value, oldValue, mergingValue))
+		//}
+	})
+	if err != nil {
+		return err
+	}
+	// derive subscriptionID from the handler
+	subscriptionID := int(reflect.ValueOf(handler).Pointer())
+	m.eventDispatcher.Subscribe(EventEntryNotified, subscriptionID, func(event event.Event) {
+		if entryAddedEvent, ok := event.(hztypes.EntryNotifiedEvent); ok {
+			if entryAddedEvent.OwnerName() == m.name {
+				handler(entryAddedEvent)
+			}
+		} else {
+			panic("cannot cast event to hztypes.EntryNotifiedEvent event")
+		}
+	})
+	return nil
 }

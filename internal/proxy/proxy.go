@@ -19,6 +19,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
@@ -45,10 +46,11 @@ type CreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	SerializationService spi.SerializationService
 	PartitionService     cluster.PartitionService
-	//InvocationService    invocation.Service
-	ClusterService    cluster.Service
-	InvocationFactory invocation.Factory
-	SmartRouting      bool
+	EventDispatcher      event.DispatchService
+	ClusterService       cluster.Service
+	InvocationFactory    invocation.Factory
+	SmartRouting         bool
+	ListenerBinder       proto.ListenerBinder
 }
 
 func (b CreationBundle) Check() {
@@ -61,14 +63,17 @@ func (b CreationBundle) Check() {
 	if b.PartitionService == nil {
 		panic("PartitionService is nil")
 	}
-	//if b.InvocationService == nil {
-	//	panic("InvocationService is nil")
-	//}
+	if b.EventDispatcher == nil {
+		panic("EventDispatcher is nil")
+	}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
 	}
 	if b.InvocationFactory == nil {
 		panic("ConnectionInvocationFactory is nil")
+	}
+	if b.ListenerBinder == nil {
+		panic("ListenerBinder is nil")
 	}
 }
 
@@ -76,12 +81,13 @@ type Impl struct {
 	requestCh            chan<- invocation.Invocation
 	serializationService spi.SerializationService
 	partitionService     cluster.PartitionService
-	//invocationService    invocation.Service
-	clusterService    cluster.Service
-	invocationFactory invocation.Factory
-	smartRouting      bool
-	serviceName       string
-	name              string
+	eventDispatcher      event.DispatchService
+	clusterService       cluster.Service
+	invocationFactory    invocation.Factory
+	listenerBinder       proto.ListenerBinder
+	smartRouting         bool
+	serviceName          string
+	name                 string
 }
 
 func NewImpl(bundle CreationBundle, serviceName string, objectName string) *Impl {
@@ -91,11 +97,12 @@ func NewImpl(bundle CreationBundle, serviceName string, objectName string) *Impl
 		name:                 objectName,
 		requestCh:            bundle.RequestCh,
 		serializationService: bundle.SerializationService,
-		//invocationService:    bundle.InvocationService,
-		partitionService:  bundle.PartitionService,
-		clusterService:    bundle.ClusterService,
-		invocationFactory: bundle.InvocationFactory,
-		smartRouting:      bundle.SmartRouting,
+		eventDispatcher:      bundle.EventDispatcher,
+		partitionService:     bundle.PartitionService,
+		clusterService:       bundle.ClusterService,
+		invocationFactory:    bundle.InvocationFactory,
+		listenerBinder:       bundle.ListenerBinder,
+		smartRouting:         bundle.SmartRouting,
 	}
 }
 
@@ -272,6 +279,14 @@ func (p *Impl) invokeOnAddress(request *proto.ClientMessage, address pubcluster.
 
 func (p *Impl) toObject(data serialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
+}
+
+func (p *Impl) mustToInterface(data serialization.Data, panicMsg string) interface{} {
+	if value, err := p.serializationService.ToObject(data); err != nil {
+		panic(panicMsg)
+	} else {
+		return value
+	}
 }
 
 func (p *Impl) toData(object interface{}) (serialization.Data, error) {

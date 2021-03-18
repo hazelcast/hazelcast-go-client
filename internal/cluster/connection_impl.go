@@ -133,8 +133,8 @@ func (c *ConnectionImpl) send(inv ConnectionBoundInvocation) bool {
 }
 
 func (c *ConnectionImpl) write(clientMessage *proto.ClientMessage) error {
-	buf := make([]byte, clientMessage.GetTotalLength())
-	clientMessage.GetBytes(buf)
+	buf := make([]byte, clientMessage.TotalLength())
+	clientMessage.Bytes(buf)
 	_, err := c.socket.Write(buf)
 	return err
 }

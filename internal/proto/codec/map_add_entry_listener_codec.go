@@ -66,19 +66,18 @@ func DecodeMapAddEntryListenerResponse(clientMessage *proto.ClientMessage) inter
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerResponseResponseOffset)
 }
 
-func HandleMapAddEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid internal.UUID, numberOfAffectedEntries int32)) {
-	messageType := clientMessage.GetMessageType()
+func HandleMapAddEntryListener(clientMessage *proto.ClientMessage) (key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid internal.UUID, numberOfAffectedEntries int32) {
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerEventEntryEventTypeOffset)
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerEventEntryUuidOffset)
-		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerEventEntryNumberOfAffectedEntriesOffset)
-		key := CodecUtil.DecodeNullableForData(frameIterator)
-		value := CodecUtil.DecodeNullableForData(frameIterator)
-		oldValue := CodecUtil.DecodeNullableForData(frameIterator)
-		mergingValue := CodecUtil.DecodeNullableForData(frameIterator)
-		handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
-		return
+		eventType = FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerEventEntryEventTypeOffset)
+		uuid = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerEventEntryUuidOffset)
+		numberOfAffectedEntries = FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerEventEntryNumberOfAffectedEntriesOffset)
+		key = CodecUtil.DecodeNullableForData(frameIterator)
+		value = CodecUtil.DecodeNullableForData(frameIterator)
+		oldValue = CodecUtil.DecodeNullableForData(frameIterator)
+		mergingValue = CodecUtil.DecodeNullableForData(frameIterator)
 	}
+	return
 }

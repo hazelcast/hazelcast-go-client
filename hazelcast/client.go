@@ -109,11 +109,12 @@ func (c clientImpl) Shutdown() {
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShutDown))
 }
 
+// ListenLifecycleStateChange adds a lifecycle state change handler.
+// The handler must not block.
 func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
 	// derive subscriptionID from the handler
 	subscriptionID := int(reflect.ValueOf(handler).Pointer())
-	c.eventDispatcher.Subscribe(ilifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
-		// cast event to StateChanged
+	c.eventDispatcher.SubscribeSync(ilifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(lifecycle.StateChanged); ok {
 			handler(stateChangeEvent)
 		} else {
@@ -175,6 +176,7 @@ func (c *clientImpl) createComponents(config *Config) {
 	})
 	invocationService.SetHandler(invocationHandler)
 	invocationFactory := icluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
+	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, requestCh)
 	proxyManagerServiceBundle := proxy.CreationBundle{
 		RequestCh:            requestCh,
 		SerializationService: serializationService,
@@ -182,6 +184,8 @@ func (c *clientImpl) createComponents(config *Config) {
 		ClusterService:       clusterService,
 		SmartRouting:         smartRouting,
 		InvocationFactory:    invocationFactory,
+		EventDispatcher:      eventDispatcher,
+		ListenerBinder:       listenerBinder,
 	}
 	proxyManager := proxy.NewManagerImpl(proxyManagerServiceBundle)
 

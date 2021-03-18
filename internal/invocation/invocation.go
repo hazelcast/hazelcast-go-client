@@ -8,12 +8,10 @@ import (
 	"time"
 )
 
-type EventHandler func(clientMessage *proto.ClientMessage)
-
 type Invocation interface {
 	Complete(message *proto.ClientMessage)
 	Completed() bool
-	EventHandler() EventHandler
+	EventHandler() proto.ClientMessageHandler
 	Get() (*proto.ClientMessage, error)
 	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 	PartitionID() int32
@@ -53,7 +51,7 @@ func (i *Impl) Completed() bool {
 	return i.completed != 0
 }
 
-func (i *Impl) EventHandler() EventHandler {
+func (i *Impl) EventHandler() proto.ClientMessageHandler {
 	return i.eventHandler
 }
 
@@ -72,20 +70,26 @@ func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, err
 	}
 }
 
-func (i Impl) PartitionID() int32 {
+func (i *Impl) PartitionID() int32 {
 	return i.partitionID
 }
 
-func (i Impl) Request() *proto.ClientMessage {
+func (i *Impl) Request() *proto.ClientMessage {
 	return i.request
 }
 
-func (i Impl) Address() pubcluster.Address {
+func (i *Impl) Address() pubcluster.Address {
 	return i.address
 }
 
-func (i Impl) StoreSentConnection(conn interface{}) {
+func (i *Impl) StoreSentConnection(conn interface{}) {
 	i.sentConnection.Store(conn)
+}
+
+// SetEventHandler sets the event handler for the invocation.
+// It should only be called at the site of creation.
+func (i *Impl) SetEventHandler(handler proto.ClientMessageHandler) {
+	i.eventHandler = handler
 }
 
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {

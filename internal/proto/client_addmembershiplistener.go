@@ -91,7 +91,7 @@ func ClientAddMembershipListenerHandle(clientMessage *ClientMessage,
 	handleEventMemberAttributeChange ClientAddMembershipListenerHandleEventMemberAttributeChangeFunc) {
 	//TODO
 	// Event handler
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	if messageType == bufutil.EventMember && handleEventMember != nil {
 		handleEventMember(ClientAddMembershipListenerEventMemberDecode(clientMessage))
 	}

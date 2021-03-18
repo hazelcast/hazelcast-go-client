@@ -55,7 +55,7 @@ func DecodeClientLocalBackupListenerResponse(clientMessage *proto.ClientMessage)
 }
 
 func HandleClientLocalBackupListener(clientMessage *proto.ClientMessage, handleBackupEvent func(sourceInvocationCorrelationId int64)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientLocalBackupListenerCodecEventBackupMessageType {
 		initialFrame := frameIterator.Next()

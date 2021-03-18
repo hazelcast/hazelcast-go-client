@@ -63,7 +63,7 @@ func DecodeListAddListenerResponse(clientMessage *proto.ClientMessage) internal.
 }
 
 func HandleListAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item serialization.Data, uuid internal.UUID, eventType int32)) {
-	messageType := clientMessage.GetMessageType()
+	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ListAddListenerCodecEventItemMessageType {
 		initialFrame := frameIterator.Next()

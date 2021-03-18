@@ -121,7 +121,7 @@ func (clientMessage *ClientMessage) AddFrame(frame *Frame) {
 	}
 }
 
-func (clientMessage *ClientMessage) GetMessageType() int32 {
+func (clientMessage *ClientMessage) Type() int32 {
 	return int32(binary.LittleEndian.Uint32(clientMessage.StartFrame.Content[TypeFieldOffset:]))
 }
 
@@ -133,11 +133,11 @@ func (clientMessage *ClientMessage) CorrelationID() int64 {
 	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:]))
 }
 
-func (clientMessage *ClientMessage) GetFragmentationID() int64 {
+func (clientMessage *ClientMessage) FragmentationID() int64 {
 	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[FragmentationIDOffset:]))
 }
 
-func (clientMessage *ClientMessage) GetNumberOfBackupAcks() uint8 {
+func (clientMessage *ClientMessage) NumberOfBackupAcks() uint8 {
 	return clientMessage.StartFrame.Content[ResponseBackupAcksOffset]
 }
 
@@ -149,7 +149,7 @@ func (clientMessage *ClientMessage) SetPartitionId(partitionId int32) {
 	binary.LittleEndian.PutUint32(clientMessage.StartFrame.Content[PartitionIDOffset:], uint32(partitionId))
 }
 
-func (clientMessage *ClientMessage) GetTotalLength() int {
+func (clientMessage *ClientMessage) TotalLength() int {
 	totalLength := 0
 	currentFrame := clientMessage.StartFrame
 	for currentFrame != nil {
@@ -159,7 +159,7 @@ func (clientMessage *ClientMessage) GetTotalLength() int {
 	return totalLength
 }
 
-func (clientMessage *ClientMessage) GetBytes(bytes []byte) int {
+func (clientMessage *ClientMessage) Bytes(bytes []byte) int {
 	pos := 0
 	currentFrame := clientMessage.StartFrame
 	for currentFrame != nil {

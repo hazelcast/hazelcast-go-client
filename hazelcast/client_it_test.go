@@ -3,6 +3,7 @@ package hazelcast_test
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"reflect"
 	"sync"
@@ -71,5 +72,30 @@ func TestLifecycleEvents(t *testing.T) {
 	}
 	if !reflect.DeepEqual(targetStates, receivedStates) {
 		t.Fatalf("target %v != %v", targetStates, receivedStates)
+	}
+}
+
+func TestMapEntryAddedEvent(t *testing.T) {
+	client := hazelcast.NewClient()
+	if err := client.Start(); err != nil {
+		t.Fatal(err)
+	}
+	m, err := client.GetMap("test-map4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	handlerCalled := false
+	flags := hztypes.NotifyEntryAdded | hztypes.NotifyEntryUpdated
+	if err := m.ListenEntryNotified(flags, true, func(event hztypes.EntryNotifiedEvent) {
+		handlerCalled = true
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Put("k1", "v1"); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(1 * time.Second)
+	if !handlerCalled {
+		t.Fatalf("handler was not called")
 	}
 }
