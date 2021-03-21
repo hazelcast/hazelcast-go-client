@@ -247,34 +247,19 @@ func (m *ConnectionManagerImpl) maybeCreateConnection(addr pubcluster.Address, o
 	//	return conn, nil
 	//}
 	// TODO: check whether we can create a connection
-	if conn, err := m.createConnection(addr); err != nil {
+	conn := m.createDefaultConnection()
+	if err := conn.start(m.networkConfig, addr); err != nil {
 		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn, owner); err != nil {
 		return nil, err
-	} else {
-		m.eventDispatcher.Publish(NewConnectionOpened(conn))
-		m.connectionsMu.Lock()
-		defer m.connectionsMu.Unlock()
-		m.connections[addr.String()] = conn
-		return conn, nil
 	}
-}
-
-func (m *ConnectionManagerImpl) createConnection(addr pubcluster.Address) (*ConnectionImpl, error) {
-	connection := m.createDefaultConnection()
-	if socket, err := connection.createSocket(m.networkConfig, addr); err != nil {
-		return nil, err
-	} else {
-		connection.socket = socket
-		connection.init()
-		connection.clientMessageReader = newClientMessageReader()
-		if err := connection.sendProtocolStarter(); err != nil {
-			return nil, err
-		}
-		go connection.writePool()
-		go connection.readPool()
-		return connection, nil
-	}
+	return conn, nil
+	//} else {
+	//	m.eventDispatcher.Publish(NewConnectionOpened(conn))
+	//	m.connectionsMu.Lock()
+	//	defer m.connectionsMu.Unlock()
+	//	m.connections[addr.String()] = conn
+	//	return conn, nil
 }
 
 func (m *ConnectionManagerImpl) createDefaultConnection() *ConnectionImpl {

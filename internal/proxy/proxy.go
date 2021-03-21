@@ -30,8 +30,12 @@ import (
 )
 
 const (
-	threadID     = 1
+	ttlDefault   = -1
 	ttlUnlimited = 0
+
+	maxIdleDefault = -1
+
+	threadID = 1
 )
 
 type Proxy interface {
@@ -266,9 +270,13 @@ func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.Client
 }
 
 func (p *Impl) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+	return p.invokeOnPartitionAsync(request, partitionID).Get()
+}
+
+func (p *Impl) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
-	return inv.Get()
+	return inv
 }
 
 func (p *Impl) invokeOnAddress(request *proto.ClientMessage, address pubcluster.Address) (*proto.ClientMessage, error) {

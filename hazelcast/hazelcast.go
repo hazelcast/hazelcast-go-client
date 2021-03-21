@@ -14,6 +14,24 @@
 
 package hazelcast
 
+func StartNewClient() (Client, error) {
+	client := NewClient()
+	if err := client.Start(); err != nil {
+		return nil, err
+	} else {
+		return client, nil
+	}
+}
+
+func StartNewClientWithConfig(config Config) (Client, error) {
+	client := NewClientWithConfig(config)
+	if err := client.Start(); err != nil {
+		return nil, err
+	} else {
+		return client, nil
+	}
+}
+
 // NewClient creates and returns a new Client.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the

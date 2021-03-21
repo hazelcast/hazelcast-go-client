@@ -105,7 +105,6 @@ func (c clientImpl) Shutdown() {
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShuttingDown))
 	<-c.connectionManager.Stop()
-	time.Sleep(1 * time.Millisecond)
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShutDown))
 }
 

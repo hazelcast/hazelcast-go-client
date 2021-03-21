@@ -31,10 +31,8 @@ import (
 )
 
 const (
-	kb              = 1024
-	bufferSize      = 128 * kb
+	bufferSize      = 128 * 1024
 	protocolStarter = "CP2"
-	IntMask         = 0xffff
 )
 
 type ResponseHandler func(msg *proto.ClientMessage)
@@ -56,7 +54,6 @@ type ConnectionImpl struct {
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
 	readBuffer                []byte
-	clientMessageReader       *clientMessageReader
 	connectionID              int64
 	eventDispatcher           event.DispatchService
 	connectedServerVersion    int32
@@ -67,6 +64,21 @@ type ConnectionImpl struct {
 
 func (c *ConnectionImpl) ConnectionID() int64 {
 	return c.connectionID
+}
+
+func (c *ConnectionImpl) start(networkCfg pubcluster.NetworkConfig, addr pubcluster.Address) error {
+	if socket, err := c.createSocket(networkCfg, addr); err != nil {
+		return err
+	} else {
+		c.socket = socket
+		c.init()
+		if err := c.sendProtocolStarter(); err != nil {
+			return err
+		}
+		go c.socketReadLoop()
+		go c.socketWriteLoop()
+		return nil
+	}
 }
 
 func (c *ConnectionImpl) sendProtocolStarter() error {
@@ -86,8 +98,17 @@ func (c *ConnectionImpl) createSocket(networkCfg pubcluster.NetworkConfig, addre
 	return socket, err
 }
 
-func (c *ConnectionImpl) dialToAddressWithTimeout(address pubcluster.Address, conTimeout time.Duration) (net.Conn, error) {
-	return net.DialTimeout("tcp", address.String(), conTimeout)
+func (c *ConnectionImpl) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
+	if tcpAddr, err := net.ResolveTCPAddr("tcp", addr.String()); err != nil {
+		return nil, err
+	} else if conn, err := net.DialTCP("tcp", nil, tcpAddr); err != nil {
+		return nil, err
+	} else {
+		conn.SetNoDelay(true)
+		conn.SetReadBuffer(bufferSize)
+		conn.SetWriteBuffer(bufferSize)
+		return conn, nil
+	}
 }
 
 func (c *ConnectionImpl) init() {
@@ -101,13 +122,12 @@ func (c *ConnectionImpl) isAlive() bool {
 	return atomic.LoadInt32(&c.status) == 0
 }
 
-func (c *ConnectionImpl) writePool() {
-	//Writer process
+func (c *ConnectionImpl) socketWriteLoop() {
 	for {
 		select {
 		case request, ok := <-c.pending:
 			if !ok {
-				continue
+				return
 			}
 			if err := c.write(request); err != nil {
 				// XXX: create a new client message?
@@ -119,6 +139,37 @@ func (c *ConnectionImpl) writePool() {
 		case <-c.closed:
 			return
 		}
+	}
+}
+
+func (c *ConnectionImpl) socketReadLoop() {
+	buf := make([]byte, bufferSize)
+	clientMessageReader := newClientMessageReader()
+	for {
+		c.socket.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
+		n, err := c.socket.Read(buf)
+		//if !c.isAlive() {
+		//	return
+		//}
+		if err != nil {
+			if c.isTimeoutError(err) {
+				continue
+			}
+			if err.Error() == "EOF" {
+				continue
+			}
+			c.close(err)
+			return
+		}
+		if n == 0 {
+			continue
+		}
+		clientMessageReader.Append(bytes.NewBuffer(buf[:n]))
+		clientMessage := clientMessageReader.Read()
+		if clientMessage != nil && clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
+			c.responseCh <- clientMessage
+		}
+		clientMessageReader.Reset()
 	}
 }
 
@@ -135,36 +186,9 @@ func (c *ConnectionImpl) send(inv ConnectionBoundInvocation) bool {
 func (c *ConnectionImpl) write(clientMessage *proto.ClientMessage) error {
 	buf := make([]byte, clientMessage.TotalLength())
 	clientMessage.Bytes(buf)
+	c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
 	_, err := c.socket.Write(buf)
 	return err
-}
-
-func (c *ConnectionImpl) readPool() {
-	for {
-		c.socket.SetDeadline(time.Now().Add(2 * time.Second))
-		buf := make([]byte, 4096)
-		n, err := c.socket.Read(buf)
-		if !c.isAlive() {
-			return
-		}
-		if err != nil {
-			if c.isTimeoutError(err) {
-				continue
-			}
-			if err.Error() == "EOF" {
-				continue
-			}
-			c.close(err)
-			return
-		}
-		if n == 0 {
-			continue
-		}
-
-		c.clientMessageReader.Append(bytes.NewBuffer(buf[:n]))
-		c.receiveMessage()
-		c.clientMessageReader.Reset()
-	}
 }
 
 func (c *ConnectionImpl) isTimeoutError(err error) bool {
@@ -177,13 +201,6 @@ func (c *ConnectionImpl) isTimeoutError(err error) bool {
 
 func (c *ConnectionImpl) StartTime() int64 {
 	return c.startTime
-}
-
-func (c *ConnectionImpl) receiveMessage() {
-	clientMessage := c.clientMessageReader.Read()
-	if clientMessage != nil && clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
-		c.responseCh <- clientMessage
-	}
 }
 
 func (c *ConnectionImpl) localAddress() net.Addr {
