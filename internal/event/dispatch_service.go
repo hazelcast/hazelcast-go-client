@@ -30,7 +30,7 @@ type controlMessage struct {
 type DispatchService interface {
 	Subscribe(eventName string, subscriptionID int, handler EventHandler)
 	SubscribeSync(eventName string, subscriptionID int, handler EventHandler)
-	Unsubscribe(eventName string, subscriptionID int, handler EventHandler)
+	Unsubscribe(eventName string, subscriptionID int)
 	Publish(event Event)
 	Stop() // experimental
 }
@@ -85,7 +85,7 @@ func (s *DispatchServiceImpl) SubscribeSync(eventName string, subscriptionID int
 	}
 }
 
-func (s *DispatchServiceImpl) Unsubscribe(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchServiceImpl) Unsubscribe(eventName string, subscriptionID int) {
 	// unsubscribing from a not-runnning service is no-op
 	if s.running.Load() != true {
 		return
@@ -95,7 +95,6 @@ func (s *DispatchServiceImpl) Unsubscribe(eventName string, subscriptionID int, 
 		controlType:    unsubscribe,
 		eventName:      eventName,
 		subscriptionID: subscriptionID,
-		handler:        handler,
 	}
 }
 
@@ -128,7 +127,7 @@ func (s *DispatchServiceImpl) start() {
 				case subscribeSync:
 					s.subscribeSync(control.eventName, control.subscriptionID, control.handler)
 				case unsubscribe:
-					s.unsubscribe(control.eventName, control.subscriptionID, control.handler)
+					s.unsubscribe(control.eventName, control.subscriptionID)
 				default:
 					panic(fmt.Sprintf("unknown control type: %d", control.controlType))
 				}
@@ -184,7 +183,7 @@ func (s *DispatchServiceImpl) subscribeSync(eventName string, subscriptionID int
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchServiceImpl) unsubscribe(eventName string, unsubscribeSubscriptionID int, unsubscribedHandler EventHandler) {
+func (s *DispatchServiceImpl) unsubscribe(eventName string, unsubscribeSubscriptionID int) {
 	if handlers, ok := s.subscriptions[eventName]; ok {
 		for subscriptionID, _ := range handlers {
 			if subscriptionID == unsubscribeSubscriptionID {

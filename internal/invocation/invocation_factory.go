@@ -6,6 +6,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
+type MessageKeyData struct {
+	Message *proto.ClientMessage
+	KeyData serialization.Data
+}
+
 type Factory interface {
 	NewInvocationOnPartitionOwner(message *proto.ClientMessage, partitionID int32) Invocation
 	NewInvocationOnRandomTarget(message *proto.ClientMessage) Invocation

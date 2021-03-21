@@ -26,13 +26,12 @@ import (
 Address Codec
 */
 func AddressCodecEncode(msg *ClientMessage, address pubcluster.Address) {
-	//TODO
+	panic("implement me: AddressCodecEncode")
 
 }
 
 func AddressCodecDecode(msg *ClientMessage) pubcluster.Address {
-	//TODO
-	return nil
+	panic("implement me: AddressCodecDecode")
 }
 
 /*
@@ -40,8 +39,7 @@ DistributedObjectInfo Codec
 */
 
 func DistributedObjectInfoCodecDecode(msg *ClientMessage) *internal.DistributedObjectInfo {
-	//TODO
-	return nil
+	panic("implement me: DistributedObjectInfoCodecDecode")
 }
 
 /*
@@ -49,22 +47,19 @@ Member Codec
 */
 
 func MemberCodecDecode(msg *ClientMessage) pubcluster.Member {
-	//TODO
-	return nil
+	panic("implement me: MemberCodecDecode")
 }
 
 func DataEntryViewCodecDecode(msg *ClientMessage) *serialization.DataEntryView {
-	//TODO
-	return nil
+	panic("implement me: DataEntryViewCodecDecode")
 }
 
 func UUIDCodecEncode(msg *ClientMessage, uuid internal.UUID) {
-
+	panic("implement me: UUIDCodecEncode")
 }
 
 func UUIDCodecDecode(msg *ClientMessage) internal.UUID {
-	//TODO
-	return nil
+	panic("implement me: UUIDCodecDecode")
 }
 
 /*
@@ -72,12 +67,9 @@ func UUIDCodecDecode(msg *ClientMessage) internal.UUID {
 */
 
 func ErrorCodecDecode(msg *ClientMessage) *ihzerror.ServerErrorImpl {
-	//TODO
-	return nil
-
+	panic("implement me: ErrorCodecDecode")
 }
 
 func DecodeStackTrace(msg *ClientMessage) hzerror.StackTraceElement {
-	//TODO
-	return nil
+	panic("implement me: DecodeStackTrace")
 }

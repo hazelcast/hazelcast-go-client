@@ -125,8 +125,8 @@ func (c *clientMessageReader) accumulate(src *bytes.Buffer, length int) bool {
 }
 
 func (c *clientMessageReader) Reset() {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
+	//c.rwMutex.Lock()
+	//defer c.rwMutex.Unlock()
 	c.clientMessage = nil
 	c.readOffset = -1
 }
