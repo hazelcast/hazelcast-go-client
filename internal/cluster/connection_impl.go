@@ -146,7 +146,7 @@ func (c *ConnectionImpl) socketReadLoop() {
 	buf := make([]byte, bufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
-		c.socket.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
+		c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
 		n, err := c.socket.Read(buf)
 		//if !c.isAlive() {
 		//	return
