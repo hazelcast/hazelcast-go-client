@@ -5,6 +5,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
+	"math/rand"
 	"reflect"
 	"sync"
 	"testing"
@@ -141,6 +142,24 @@ func TestGetAll(t *testing.T) {
 	client.Shutdown()
 }
 
+func TestGetKeySet(t *testing.T) {
+	client, m := getClientMap(t, "my-map-getall")
+	targetKeySet := []interface{}{"k1", "k2", "k3"}
+	hz.Must(m.Set("k1", "v1"))
+	hz.Must(m.Set("k2", "v2"))
+	hz.Must(m.Set("k3", "v3"))
+	time.Sleep(1 * time.Second)
+	assertEquals(t, "v1", hz.MustValue(m.Get("k1")))
+	assertEquals(t, "v2", hz.MustValue(m.Get("k2")))
+	assertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+	if keys, err := m.GetKeySet(); err != nil {
+		t.Fatal(err)
+	} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
+		t.Fatalf("target: %#v != %#v", targetKeySet, keys)
+	}
+	client.Shutdown()
+}
+
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetKeySet
@@ -251,7 +270,8 @@ func getClientMap(t *testing.T, name string) (hz.Client, hztypes.Map) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m, err := client.GetMap(name); err != nil {
+	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
+	if m, err := client.GetMap(mapName); err != nil {
 		t.Fatal(err)
 		return nil, nil
 	} else {
@@ -263,4 +283,12 @@ func assertEquals(t *testing.T, target, value interface{}) {
 	if !reflect.DeepEqual(target, value) {
 		t.Fatalf("target: %#v != %#v", target, value)
 	}
+}
+
+func makeStringSet(items []interface{}) map[string]struct{} {
+	result := map[string]struct{}{}
+	for _, item := range items {
+		result[item.(string)] = struct{}{}
+	}
+	return result
 }

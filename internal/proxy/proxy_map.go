@@ -177,11 +177,11 @@ func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 	} else {
 		keyDatas := codec.DecodeMapKeySetResponse(response)
 		keys := make([]interface{}, len(keyDatas))
-		for _, keyData := range keyDatas {
+		for i, keyData := range keyDatas {
 			if key, err := m.toObject(keyData); err != nil {
 				return nil, err
 			} else {
-				keys = append(keys, key)
+				keys[i] = key
 			}
 		}
 		return keys, nil
