@@ -170,6 +170,37 @@ func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, erro
 	return results, nil
 }
 
+func (m *MapImpl) GetKeySet() ([]interface{}, error) {
+	request := codec.EncodeMapKeySetRequest(m.name)
+	if response, err := m.invokeOnRandomTarget(request); err != nil {
+		return nil, err
+	} else {
+		keyDatas := codec.DecodeMapKeySetResponse(response)
+		keys := make([]interface{}, len(keyDatas))
+		for _, keyData := range keyDatas {
+			if key, err := m.toObject(keyData); err != nil {
+				return nil, err
+			} else {
+				keys = append(keys, key)
+			}
+		}
+		return keys, nil
+	}
+}
+
+func (m *MapImpl) GetValues(keys ...interface{}) ([]interface{}, error) {
+	// TODO: use the corresponding API
+	if kvs, err := m.GetAll(keys...); err != nil {
+		return nil, err
+	} else {
+		values := make([]interface{}, len(kvs))
+		for _, value := range kvs {
+			values = append(values, value)
+		}
+		return values, nil
+	}
+}
+
 func (m *MapImpl) IsEmpty() (bool, error) {
 	request := codec.EncodeMapIsEmptyRequest(m.name)
 	if response, err := m.invokeOnRandomTarget(request); err != nil {
@@ -190,6 +221,14 @@ func (m *MapImpl) IsLocked(key interface{}) (bool, error) {
 			return codec.DecodeMapIsLockedResponse(response), nil
 		}
 	}
+}
+
+func (m *MapImpl) LoadAll(keys ...interface{}) error {
+	return m.loadAll(false, keys...)
+}
+
+func (m *MapImpl) LoadAllReplacingExisting(keys ...interface{}) error {
+	return m.loadAll(true, keys...)
 }
 
 func (m *MapImpl) Lock(key interface{}) error {
@@ -395,6 +434,23 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, handler hz
 		}
 	})
 	return nil
+}
+
+func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	keyDatas := make([]serialization.Data, len(keys))
+	for _, key := range keys {
+		if keyData, err := m.toData(key); err != nil {
+			return err
+		} else {
+			keyDatas = append(keyDatas, keyData)
+		}
+	}
+	request := codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
+	_, err := m.invokeOnRandomTarget(request)
+	return err
 }
 
 func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (interface{}, error) {

@@ -46,8 +46,13 @@ type Map interface {
 	// GetAll returns the entries for the given keys.
 	GetAll(keys ...interface{}) (map[interface{}]interface{}, error)
 
+	// GetKeySet returns keys contained in this map
+	GetKeySet() ([]interface{}, error)
+
+	// GetValues returns a list clone of the values contained in this map
+	GetValues(keys ...interface{}) ([]interface{}, error)
+
 	// TODO: GetEntryView
-	// TODO: GetKeySet
 
 	// IsEmpty returns true if this map contains no key-value mappings.
 	IsEmpty() (bool, error)
@@ -55,7 +60,12 @@ type Map interface {
 	// IsLocked checks the lock for the specified key.
 	IsLocked(key interface{}) (bool, error)
 
-	// TODO: LoadAll
+	// LoadAll loads all keys from the store at server side or loads the given keys if provided.
+	LoadAll(keys ...interface{}) error
+
+	// LoadAll loads all keys from the store at server side or loads the given keys if provided.
+	// Replaces existing keys.
+	LoadAllReplacingExisting(keys ...interface{}) error
 
 	// Lock acquires the lock for the specified key infinitely or for the specified lease time if provided.
 	// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
@@ -170,8 +180,6 @@ type Map interface {
 
 	// Unlock releases the lock for the specified key.
 	Unlock(key interface{}) error
-
-	// TODO: GetValues
 
 	ListenEntryNotified(flags int32, handler EntryNotifiedHandler) error
 	ListenEntryNotifiedIncludingValue(flags int32, handler EntryNotifiedHandler) error
