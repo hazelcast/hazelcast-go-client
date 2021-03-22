@@ -15,14 +15,12 @@
 package proxy
 
 import (
-	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	"os"
 	"reflect"
 	"time"
 )
@@ -149,7 +147,6 @@ func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, erro
 		inv := m.invokeOnPartitionAsync(codec.EncodeMapGetAllRequest(m.name, keys), partitionID)
 		invs = append(invs, inv)
 	}
-	fmt.Fprintln(os.Stderr, "INVS", invs, len(invs))
 	// wait for responses and decode them
 	results := map[interface{}]interface{}{}
 	for _, inv := range invs {
@@ -157,7 +154,6 @@ func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, erro
 			// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
 			return nil, err
 		} else {
-			fmt.Fprintln(os.Stderr, "RESP", response)
 			for _, pair := range codec.DecodeMapGetAllResponse(response) {
 				key, err := m.toObject(pair.Key().(serialization.Data))
 				if err != nil {
@@ -168,7 +164,6 @@ func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, erro
 					return nil, err
 				}
 				results[key] = value
-				fmt.Fprintln(os.Stderr, key, value)
 			}
 		}
 	}
