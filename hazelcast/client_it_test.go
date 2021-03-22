@@ -143,8 +143,12 @@ func TestGetAll(t *testing.T) {
 
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
+// TODO: Test Map GetKeySet
+// TODO: Test Map GetValues
 // TODO: Test Map IsEmpty
 // TODO: Test Map IsLocked
+// TODO: Test Map LoadAll
+// TODO: Test Map LoadAllReplacingExisting
 // TODO: Test Map Lock
 // TODO: Test Map SetWithTTL
 // TODO: Test Map Size
