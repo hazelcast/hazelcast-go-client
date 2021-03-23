@@ -181,7 +181,7 @@ type Map interface {
 	// Unlock releases the lock for the specified key.
 	Unlock(key interface{}) error
 
-	ListenEntryNotified(flags int32, handler EntryNotifiedHandler) error
-	ListenEntryNotifiedIncludingValue(flags int32, handler EntryNotifiedHandler) error
-	UnlistenEntryNotified(handler EntryNotifiedHandler) error
+	ListenEntryNotification(flags int32, handler EntryNotifiedHandler) error
+	ListenEntryNotificationIncludingValue(flags int32, handler EntryNotifiedHandler) error
+	UnlistenEntryNotification(handler EntryNotifiedHandler) error
 }

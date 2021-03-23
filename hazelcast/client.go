@@ -3,7 +3,6 @@ package hazelcast
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"reflect"
 	"sync/atomic"
 	"time"
 
@@ -45,7 +44,9 @@ type clientImpl struct {
 
 	// components
 	proxyManager      proxy.Manager
-	connectionManager icluster.ConnectionManager
+	connectionManager *icluster.ConnectionManager
+	clusterService    *icluster.ServiceImpl
+	partitionService  *icluster.PartitionServiceImpl
 	eventDispatcher   event.DispatchService
 	logger            logger.Logger
 
@@ -89,9 +90,12 @@ func (c *clientImpl) Start() error {
 		return nil
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
+	clusterServiceStartCh := c.clusterService.Start()
 	if err := c.connectionManager.Start(); err != nil {
 		return err
 	}
+	<-clusterServiceStartCh
+	c.partitionService.Start()
 	c.started.Store(true)
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarted))
 	return nil
@@ -104,6 +108,8 @@ func (c clientImpl) Shutdown() {
 		return
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShuttingDown))
+	c.clusterService.Stop()
+	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShutDown))
 }
@@ -112,7 +118,7 @@ func (c clientImpl) Shutdown() {
 // The handler must not block.
 func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
 	// derive subscriptionID from the handler
-	subscriptionID := int(reflect.ValueOf(handler).Pointer())
+	subscriptionID := event.MakeSubscriptionID(handler)
 	c.eventDispatcher.SubscribeSync(ilifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(lifecycle.StateChanged); ok {
 			handler(stateChangeEvent)
@@ -140,12 +146,20 @@ func (c *clientImpl) createComponents(config *Config) {
 		icluster.NewDefaultAddressProvider(config.Network),
 	}
 	eventDispatcher := event.NewDispatchServiceImpl()
-	clusterService := icluster.NewServiceImpl(addressProviders)
+	requestCh := make(chan invocation.Invocation, 1024)
 	partitionService := icluster.NewPartitionServiceImpl(icluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
+		EventDispatcher:      eventDispatcher,
 		Logger:               c.logger,
 	})
-	requestCh := make(chan invocation.Invocation, 1024)
+	invocationFactory := icluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
+	clusterService := icluster.NewServiceImpl(icluster.CreationBundle{
+		AddrProviders:     addressProviders,
+		RequestCh:         requestCh,
+		InvocationFactory: invocationFactory,
+		EventDispatcher:   eventDispatcher,
+		Logger:            c.logger,
+	})
 	responseCh := make(chan *proto.ClientMessage, 1024)
 	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
 		RequestCh:    requestCh,
@@ -153,7 +167,7 @@ func (c *clientImpl) createComponents(config *Config) {
 		SmartRouting: smartRouting,
 		Logger:       c.logger,
 	})
-	connectionManager := icluster.NewConnectionManagerImpl(icluster.ConnectionManagerCreationBundle{
+	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
 		ResponseCh:           responseCh,
 		SmartRouting:         smartRouting,
@@ -174,7 +188,6 @@ func (c *clientImpl) createComponents(config *Config) {
 		Logger:            c.logger,
 	})
 	invocationService.SetHandler(invocationHandler)
-	invocationFactory := icluster.NewConnectionInvocationFactory(partitionService, 120*time.Second)
 	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, requestCh)
 	proxyManagerServiceBundle := proxy.CreationBundle{
 		RequestCh:            requestCh,
@@ -190,5 +203,7 @@ func (c *clientImpl) createComponents(config *Config) {
 
 	c.eventDispatcher = eventDispatcher
 	c.connectionManager = connectionManager
+	c.clusterService = clusterService
+	c.partitionService = partitionService
 	c.proxyManager = proxyManager
 }

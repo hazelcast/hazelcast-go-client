@@ -14,13 +14,13 @@ type registration struct {
 }
 
 type connRegistration struct {
-	conn   *ConnectionImpl
+	conn   *Connection
 	client int
 	server internal.UUID
 }
 
 type ConnectionListenerBinderImpl struct {
-	connectionManager *ConnectionManagerImpl
+	connectionManager *ConnectionManager
 	requestCh         chan<- invocation.Invocation
 	// connectionID -> clientRegistrationID -> serverRegistrationID
 	connToRegistration   map[int64]map[int]internal.UUID
@@ -28,7 +28,7 @@ type ConnectionListenerBinderImpl struct {
 }
 
 func NewConnectionListenerBinderImpl(
-	connManager *ConnectionManagerImpl,
+	connManager *ConnectionManager,
 	requestCh chan<- invocation.Invocation) *ConnectionListenerBinderImpl {
 	return &ConnectionListenerBinderImpl{
 		connectionManager:    connManager,

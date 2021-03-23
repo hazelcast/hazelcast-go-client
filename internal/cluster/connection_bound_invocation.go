@@ -7,31 +7,25 @@ import (
 	"time"
 )
 
-type ConnectionBoundInvocation interface {
-	invocation.Invocation
-	Connection() *ConnectionImpl
-	StoreSentConnection(conn interface{})
-}
-
 type invocationImpl = invocation.Impl
 
-type ConnectionBoundInvocationImpl struct {
+type ConnectionBoundInvocation struct {
 	*invocationImpl
-	boundConnection *ConnectionImpl
+	boundConnection *Connection
 }
 
 func NewConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address,
-	connection *ConnectionImpl, timeout time.Duration) *ConnectionBoundInvocationImpl {
-	return &ConnectionBoundInvocationImpl{
+	connection *Connection, timeout time.Duration) *ConnectionBoundInvocation {
+	return &ConnectionBoundInvocation{
 		invocationImpl:  invocation.NewImpl(clientMessage, partitionID, address, timeout),
 		boundConnection: connection,
 	}
 }
 
-func (i *ConnectionBoundInvocationImpl) Connection() *ConnectionImpl {
+func (i *ConnectionBoundInvocation) Connection() *Connection {
 	return i.boundConnection
 }
 
-func (i *ConnectionBoundInvocationImpl) SetEventHandler(handler proto.ClientMessageHandler) {
+func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageHandler) {
 	i.invocationImpl.SetEventHandler(handler)
 }

@@ -27,8 +27,10 @@ func (f ConnectionInvocationFactory) NewInvocationOnPartitionOwner(message *prot
 	return invocation.NewImpl(message, partitionID, nil, f.invocationTimeout)
 }
 
-func (f ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage) invocation.Invocation {
-	return invocation.NewImpl(message, -1, nil, f.invocationTimeout)
+func (f ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage, handler proto.ClientMessageHandler) invocation.Invocation {
+	inv := invocation.NewImpl(message, -1, nil, f.invocationTimeout)
+	inv.SetEventHandler(handler)
+	return inv
 }
 
 func (f ConnectionInvocationFactory) NewInvocationOnKeyOwner(message *proto.ClientMessage, data serialization.Data) invocation.Invocation {

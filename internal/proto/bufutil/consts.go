@@ -163,6 +163,10 @@ const (
 )
 
 const (
+	MessageTypeEventMembersView = 770
+)
+
+const (
 	ByteSizeInBytes    = 1
 	BoolSizeInBytes    = 1
 	Uint8SizeInBytes   = 1

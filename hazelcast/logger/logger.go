@@ -65,6 +65,8 @@ type Logger interface {
 	Warn(args ...interface{})
 	// Error logs the given args at error level.
 	Error(args ...interface{})
+	// Error logs the given args at error level with the given format
+	Errorf(format string, values ...interface{})
 }
 
 // isValidLogLevel returns true if the given log level is valid.

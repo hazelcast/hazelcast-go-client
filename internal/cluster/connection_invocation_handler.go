@@ -10,7 +10,7 @@ import (
 )
 
 type ConnectionInvocationHandlerCreationBundle struct {
-	ConnectionManager ConnectionManager
+	ConnectionManager *ConnectionManager
 	ClusterService    Service
 	SmartRouting      bool
 	Logger            logger.Logger
@@ -29,7 +29,7 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 }
 
 type ConnectionInvocationHandler struct {
-	connectionManager ConnectionManager
+	connectionManager *ConnectionManager
 	clusterService    Service
 	smart             bool
 	logger            logger.Logger
@@ -54,7 +54,7 @@ func (h ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) er
 }
 
 func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
-	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
+	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
 		// XXX: ???
@@ -67,7 +67,7 @@ func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) erro
 }
 
 func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
-	if boundInvocation, ok := inv.(ConnectionBoundInvocation); ok {
+	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
 		return hzerror.NewHazelcastIOError("no address found to invoke", nil)
@@ -76,7 +76,7 @@ func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) e
 	}
 }
 
-func (h ConnectionInvocationHandler) sendToConnection(inv ConnectionBoundInvocation, conn *ConnectionImpl) error {
+func (h ConnectionInvocationHandler) sendToConnection(inv *ConnectionBoundInvocation, conn *Connection) error {
 	if sent := conn.send(inv); !sent {
 		return hzerror.NewHazelcastIOError("packet is not sent", nil)
 	}
@@ -88,7 +88,7 @@ func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, ad
 		n.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
 		return ihzerror.ErrAddressNotFound
 	} else if invImpl, ok := inv.(*invocation.Impl); ok {
-		boundInv := &ConnectionBoundInvocationImpl{
+		boundInv := &ConnectionBoundInvocation{
 			invocationImpl:  invImpl,
 			boundConnection: conn,
 		}

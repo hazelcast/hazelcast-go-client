@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
-	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,13 +31,6 @@ const serializationVersion = 1
 
 // TODO: This should be replace with a build time version variable, BuildInfo etc.
 var ClientVersion = "4.0.0"
-
-type ConnectionManager interface {
-	NextConnectionID() int64
-	GetConnectionForAddress(addr pubcluster.Address) *ConnectionImpl
-	Start() error
-	Stop() chan struct{}
-}
 
 type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
@@ -91,7 +83,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 	}
 }
 
-type ConnectionManagerImpl struct {
+type ConnectionManager struct {
 	requestCh  chan<- invocation.Invocation
 	responseCh chan<- *proto.ClientMessage
 	// TODO: depend on the interface
@@ -106,7 +98,8 @@ type ConnectionManagerImpl struct {
 	invocationTimeout    time.Duration
 
 	connectionsMu *sync.RWMutex
-	connections   map[string]*ConnectionImpl
+	// connections maps connection address to connection
+	connections map[string]*Connection
 
 	nextConnectionID  int64
 	addressTranslator pubcluster.AddressTranslator
@@ -116,9 +109,9 @@ type ConnectionManagerImpl struct {
 	started           atomic.Value
 }
 
-func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *ConnectionManagerImpl {
+func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
 	bundle.Check()
-	manager := &ConnectionManagerImpl{
+	manager := &ConnectionManager{
 		requestCh:            bundle.RequestCh,
 		responseCh:           bundle.ResponseCh,
 		clusterService:       bundle.ClusterService,
@@ -131,7 +124,7 @@ func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *Connectio
 		invocationTimeout:    120 * time.Second,
 		heartbeatTimeout:     60 * time.Second,
 		connectionsMu:        &sync.RWMutex{},
-		connections:          map[string]*ConnectionImpl{},
+		connections:          map[string]*Connection{},
 		addressTranslator:    bundle.AddressTranslator,
 		smartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
@@ -141,30 +134,37 @@ func NewConnectionManagerImpl(bundle ConnectionManagerCreationBundle) *Connectio
 	return manager
 }
 
-func (m *ConnectionManagerImpl) Start() error {
+func (m *ConnectionManager) Start() error {
 	if m.started.Load() == true {
 		return nil
 	}
 	if err := m.connectCluster(); err != nil {
 		return err
 	}
-	subscriptionID := int(reflect.ValueOf(m.handleConnectionClosed).Pointer())
-	m.eventDispatcher.Subscribe(EventConnectionClosed, subscriptionID, m.handleConnectionClosed)
+	connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
+	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionClosedSubscriptionID, m.handleConnectionClosed)
+	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMemberAdded)
+	m.eventDispatcher.Subscribe(EventMemberAdded, memberAddedSubscriptionID, m.handleMemberAdded)
 	m.started.Store(true)
+	m.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
 	return nil
 }
 
-func (m *ConnectionManagerImpl) Stop() chan struct{} {
+func (m *ConnectionManager) Stop() chan struct{} {
 	doneCh := make(chan struct{}, 1)
 	if m.started.Load() == false {
 		doneCh <- struct{}{}
 	} else {
 		go func() {
+			connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
+			m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionClosedSubscriptionID)
+			memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMemberAdded)
+			m.eventDispatcher.Unsubscribe(EventMemberAdded, memberAddedSubscriptionID)
 			m.connectionsMu.Lock()
 			for _, conn := range m.connections {
 				conn.close(nil)
 			}
-			m.connections = nil
+			m.connections = map[string]*Connection{}
 			m.connectionsMu.Unlock()
 			m.started.Store(false)
 			doneCh <- struct{}{}
@@ -173,11 +173,11 @@ func (m *ConnectionManagerImpl) Stop() chan struct{} {
 	return doneCh
 }
 
-func (m *ConnectionManagerImpl) NextConnectionID() int64 {
+func (m *ConnectionManager) NextConnectionID() int64 {
 	return atomic.AddInt64(&m.nextConnectionID, 1)
 }
 
-func (m *ConnectionManagerImpl) GetConnectionForAddress(addr pubcluster.Address) *ConnectionImpl {
+func (m *ConnectionManager) GetConnectionForAddress(addr pubcluster.Address) *Connection {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	if conn, ok := m.connections[addr.String()]; ok {
@@ -186,8 +186,8 @@ func (m *ConnectionManagerImpl) GetConnectionForAddress(addr pubcluster.Address)
 	return nil
 }
 
-func (m *ConnectionManagerImpl) GetActiveConnections() []*ConnectionImpl {
-	conns := make([]*ConnectionImpl, 0, len(m.connections))
+func (m *ConnectionManager) GetActiveConnections() []*Connection {
+	conns := make([]*Connection, 0, len(m.connections))
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	for _, conn := range m.connections {
@@ -196,19 +196,47 @@ func (m *ConnectionManagerImpl) GetActiveConnections() []*ConnectionImpl {
 	return conns
 }
 
-func (m *ConnectionManagerImpl) handleConnectionClosed(event event.Event) {
+func (m *ConnectionManager) handleMemberAdded(event event.Event) {
+	if m.started.Load() != true {
+		return
+	}
+	if memberAddedEvent, ok := event.(MemberAdded); ok {
+		member := memberAddedEvent.Member()
+		addr := member.Address()
+		m.logger.Info("connectionManager member added", addr.String())
+		m.connectionsMu.RLock()
+		// TODO: check whether m.connections is not nil
+		_, exists := m.connections[addr.String()]
+		m.connectionsMu.RUnlock()
+		if !exists {
+			if err := m.connectAddr(addr); err != nil {
+				m.logger.Errorf("error connecting addr: %w", err)
+			}
+		}
+	}
+}
+
+func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
+	if m.started.Load() != true {
+		return
+	}
 	if connectionClosedEvent, ok := event.(ConnectionClosed); ok {
 		if err := connectionClosedEvent.Err(); err != nil {
 			panic("implement me!")
 		}
-
-		//m.connectionsMu.Lock()
-		//defer m.connectionsMu.Unlock()
-		//delete(m.connections, connectionClosedEvent.Conn())
+		m.connectionsMu.Lock()
+		defer m.connectionsMu.Unlock()
+		eventConn := connectionClosedEvent.Conn()
+		for addr, conn := range m.connections {
+			if conn.connectionID == eventConn.connectionID {
+				delete(m.connections, addr)
+				break
+			}
+		}
 	}
 }
 
-func (m *ConnectionManagerImpl) connectCluster() error {
+func (m *ConnectionManager) connectCluster() error {
 	for _, addr := range m.clusterService.memberCandidateAddrs() {
 		if err := m.connectAddr(addr); err == nil {
 			return nil
@@ -219,12 +247,12 @@ func (m *ConnectionManagerImpl) connectCluster() error {
 	return errors.New("cannot connect to any address in the cluster")
 }
 
-func (m *ConnectionManagerImpl) connectAddr(addr pubcluster.Address) error {
+func (m *ConnectionManager) connectAddr(addr pubcluster.Address) error {
 	_, err := m.ensureConnection(addr, true)
 	return err
 }
 
-func (m *ConnectionManagerImpl) ensureConnection(addr pubcluster.Address, owner bool) (*ConnectionImpl, error) {
+func (m *ConnectionManager) ensureConnection(addr pubcluster.Address, owner bool) (*Connection, error) {
 	if conn := m.getConnection(addr, owner); conn != nil {
 		return conn, nil
 	}
@@ -232,7 +260,7 @@ func (m *ConnectionManagerImpl) ensureConnection(addr pubcluster.Address, owner 
 	return m.maybeCreateConnection(addr, owner)
 }
 
-func (m *ConnectionManagerImpl) getConnection(addr pubcluster.Address, owner bool) *ConnectionImpl {
+func (m *ConnectionManager) getConnection(addr pubcluster.Address, owner bool) *Connection {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	if conn, found := m.connections[addr.String()]; found {
@@ -241,7 +269,7 @@ func (m *ConnectionManagerImpl) getConnection(addr pubcluster.Address, owner boo
 	return nil
 }
 
-func (m *ConnectionManagerImpl) maybeCreateConnection(addr pubcluster.Address, owner bool) (*ConnectionImpl, error) {
+func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address, owner bool) (*Connection, error) {
 	//// check whether the connection exists before creating it
 	//if conn, found := m.connections[addr.String()]; found {
 	//	return conn, nil
@@ -262,15 +290,14 @@ func (m *ConnectionManagerImpl) maybeCreateConnection(addr pubcluster.Address, o
 	//	return conn, nil
 }
 
-func (m *ConnectionManagerImpl) createDefaultConnection() *ConnectionImpl {
+func (m *ConnectionManager) createDefaultConnection() *Connection {
 	//builder := &clientMessageBuilder{
 	//	handleResponse:     m.invocationService.HandleResponse,
 	//	incompleteMessages: make(map[int64]*proto.ClientMessage),
 	//}
-	return &ConnectionImpl{
-		responseCh: m.responseCh,
-		pending:    make(chan *proto.ClientMessage, 1024),
-		//received:        make(chan *proto.ClientMessage, 1),
+	return &Connection{
+		responseCh:      m.responseCh,
+		pending:         make(chan *proto.ClientMessage, 1),
 		closed:          make(chan struct{}),
 		readBuffer:      make([]byte, 0),
 		connectionID:    m.NextConnectionID(),
@@ -280,35 +307,33 @@ func (m *ConnectionManagerImpl) createDefaultConnection() *ConnectionImpl {
 	}
 }
 
-func (cm *ConnectionManagerImpl) authenticate(connection *ConnectionImpl, asOwner bool) error {
-	cm.credentials.SetEndpoint(connection.socket.LocalAddr().String())
-	request := cm.encodeAuthenticationRequest(asOwner)
-	inv := NewConnectionBoundInvocation(request, -1, nil, connection, cm.invocationTimeout)
-	cm.requestCh <- inv
-	//invocationResult := cm.invocationService.Send(inv)
-	result, err := inv.GetWithTimeout(cm.heartbeatTimeout)
-	if err != nil {
+func (m *ConnectionManager) authenticate(connection *Connection, asOwner bool) error {
+	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
+	request := m.encodeAuthenticationRequest(asOwner)
+	inv := NewConnectionBoundInvocation(request, -1, nil, connection, m.invocationTimeout)
+	m.requestCh <- inv
+	if result, err := inv.GetWithTimeout(m.heartbeatTimeout); err != nil {
 		return err
+	} else {
+		return m.processAuthenticationResult(connection, asOwner, result)
 	}
-	cm.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
-	return cm.processAuthenticationResult(connection, asOwner, result)
 }
 
-func (cm *ConnectionManagerImpl) processAuthenticationResult(conn *ConnectionImpl, asOwner bool, result *proto.ClientMessage) error {
+func (m *ConnectionManager) processAuthenticationResult(conn *Connection, asOwner bool, result *proto.ClientMessage) error {
 	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.endpoint.Store(address)
 		conn.isOwnerConnection = asOwner
-		cm.connections[address.String()] = conn
-		cm.eventDispatcher.Publish(NewConnectionOpened(conn))
+		m.connections[address.String()] = conn
+		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 		if asOwner {
-			cm.partitionService.checkAndSetPartitionCount(partitionCount)
-			cm.clusterService.ownerConnectionAddr.Store(address)
-			cm.clusterService.ownerUUID.Store(memberUuid.String())
-			cm.clusterService.uuid.Store(memberUuid.String())
-			cm.logger.Info("Setting ", conn, " as owner.")
+			m.partitionService.checkAndSetPartitionCount(partitionCount)
+			m.clusterService.ownerConnectionAddr.Store(address)
+			m.clusterService.ownerUUID.Store(memberUuid.String())
+			m.clusterService.uuid.Store(memberUuid.String())
+			m.logger.Info("Setting ", conn, " as owner.")
 		}
 	case credentialsFailed:
 		return hzerror.NewHazelcastAuthenticationError("invalid credentials!", nil)
@@ -318,18 +343,18 @@ func (cm *ConnectionManagerImpl) processAuthenticationResult(conn *ConnectionImp
 	return nil
 }
 
-func (cm *ConnectionManagerImpl) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
-	if creds, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
-		return cm.createAuthenticationRequest(asOwner, creds)
+func (m *ConnectionManager) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
+	if creds, ok := m.credentials.(*security.UsernamePasswordCredentials); ok {
+		return m.createAuthenticationRequest(asOwner, creds)
 	}
-	return cm.createCustomAuthenticationRequest(asOwner)
+	return m.createCustomAuthenticationRequest(asOwner)
 
 }
 
-func (cm *ConnectionManagerImpl) createAuthenticationRequest(asOwner bool,
+func (m *ConnectionManager) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
-	//uuid := cm.client.ClusterService.uuid.Load().(string)
-	//ownerUUID := cm.client.ClusterService.ownerUUID.Load().(string)
+	//uuid := m.client.ClusterService.uuid.Load().(string)
+	//ownerUUID := m.client.ClusterService.ownerUUID.Load().(string)
 	// TODO: use credentials from config
 	return codec.EncodeClientAuthenticationRequest(
 		"dev",
@@ -339,17 +364,17 @@ func (cm *ConnectionManagerImpl) createAuthenticationRequest(asOwner bool,
 		proto.ClientType,
 		byte(serializationVersion),
 		ClientVersion,
-		cm.clientName,
+		m.clientName,
 		nil,
 	)
 }
 
-func (cm *ConnectionManagerImpl) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
-	uuid := cm.clusterService.uuid.Load().(string)
-	ownerUUID := cm.clusterService.ownerUUID.Load().(string)
-	credsData, err := cm.serializationService.ToData(cm.credentials)
+func (m *ConnectionManager) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
+	uuid := m.clusterService.uuid.Load().(string)
+	ownerUUID := m.clusterService.ownerUUID.Load().(string)
+	credsData, err := m.serializationService.ToData(m.credentials)
 	if err != nil {
-		cm.logger.Error("Credentials cannot be serialized!")
+		m.logger.Error("Credentials cannot be serialized!")
 		return nil
 	}
 	return proto.ClientAuthenticationCustomEncodeRequest(
@@ -376,7 +401,7 @@ type AuthenticationDecoder func(clientMessage *proto.ClientMessage) (
 	partitionCount int32,
 	clientUnregisteredMembers []pubcluster.Member)
 
-func (cm *ConnectionManagerImpl) getAuthenticationDecoder() AuthenticationDecoder {
+func (cm *ConnectionManager) getAuthenticationDecoder() AuthenticationDecoder {
 	var authenticationDecoder AuthenticationDecoder
 	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
 		authenticationDecoder = proto.DecodeClientAuthenticationResponse
@@ -387,6 +412,6 @@ func (cm *ConnectionManagerImpl) getAuthenticationDecoder() AuthenticationDecode
 	return authenticationDecoder
 }
 
-func checkOwnerConn(owner bool, conn *ConnectionImpl) bool {
+func checkOwnerConn(owner bool, conn *Connection) bool {
 	return owner && conn.isOwnerConnection
 }

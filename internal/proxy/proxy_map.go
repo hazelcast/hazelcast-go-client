@@ -49,7 +49,7 @@ func (m *MapImpl) ContainsKey(key interface{}) (bool, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapContainsKeyRequest(m.name, keyData, threadID)
+		request := codec.EncodeMapContainsKeyRequest(m.name, keyData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
@@ -75,7 +75,7 @@ func (m *MapImpl) Delete(key interface{}) error {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapDeleteRequest(m.name, keyData, threadID)
+		request := codec.EncodeMapDeleteRequest(m.name, keyData, threadID())
 		_, err := m.invokeOnKey(request, keyData)
 		return err
 	}
@@ -85,7 +85,7 @@ func (m *MapImpl) Evict(key interface{}) (bool, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapEvictRequest(m.name, keyData, threadID)
+		request := codec.EncodeMapEvictRequest(m.name, keyData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
@@ -121,11 +121,11 @@ func (m *MapImpl) Get(key interface{}) (interface{}, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapGetRequest(m.name, keyData, threadID)
+		request := codec.EncodeMapGetRequest(m.name, keyData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.toObject(codec.DecodeMapGetResponse(response))
+			return m.convertToObject(codec.DecodeMapGetResponse(response))
 		}
 	}
 }
@@ -155,11 +155,11 @@ func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, erro
 			return nil, err
 		} else {
 			for _, pair := range codec.DecodeMapGetAllResponse(response) {
-				key, err := m.toObject(pair.Key().(serialization.Data))
+				key, err := m.convertToObject(pair.Key().(serialization.Data))
 				if err != nil {
 					return nil, err
 				}
-				value, err := m.toObject(pair.Value().(serialization.Data))
+				value, err := m.convertToObject(pair.Value().(serialization.Data))
 				if err != nil {
 					return nil, err
 				}
@@ -178,7 +178,7 @@ func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 		keyDatas := codec.DecodeMapKeySetResponse(response)
 		keys := make([]interface{}, len(keyDatas))
 		for i, keyData := range keyDatas {
-			if key, err := m.toObject(keyData); err != nil {
+			if key, err := m.convertToObject(keyData); err != nil {
 				return nil, err
 			} else {
 				keys[i] = key
@@ -236,7 +236,7 @@ func (m *MapImpl) Lock(key interface{}) error {
 		return err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapLockRequest(m.name, keyData, threadID, ttlDefault, refID)
+		request := codec.EncodeMapLockRequest(m.name, keyData, threadID(), ttlDefault, refID)
 		_, err = m.invokeOnKey(request, keyData)
 		return err
 	}
@@ -246,11 +246,11 @@ func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, threadID, ttlDefault)
+		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, threadID(), ttlDefault)
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.toObject(codec.DecodeMapPutResponse(response))
+			return m.convertToObject(codec.DecodeMapPutResponse(response))
 		}
 	}
 }
@@ -283,11 +283,11 @@ func (m *MapImpl) Remove(key interface{}) (interface{}, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapRemoveRequest(m.name, keyData, threadID)
+		request := codec.EncodeMapRemoveRequest(m.name, keyData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.toObject(codec.DecodeMapRemoveResponse(response))
+			return m.convertToObject(codec.DecodeMapRemoveResponse(response))
 		}
 	}
 }
@@ -296,7 +296,7 @@ func (m *MapImpl) RemoveIfSame(key interface{}, value interface{}) (bool, error)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, threadID)
+		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
@@ -309,11 +309,11 @@ func (m *MapImpl) Replace(key interface{}, value interface{}) (interface{}, erro
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, threadID)
+		request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.toObject(codec.DecodeMapReplaceResponse(response))
+			return m.convertToObject(codec.DecodeMapReplaceResponse(response))
 		}
 	}
 }
@@ -322,7 +322,7 @@ func (m *MapImpl) ReplaceIfSame(key interface{}, oldValue interface{}, newValue 
 	if keyData, oldValueData, newValueData, err := m.validateAndSerialize3(key, oldValue, newValue); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, threadID)
+		request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, threadID())
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
@@ -385,21 +385,21 @@ func (m *MapImpl) Unlock(key interface{}) error {
 		return err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapUnlockRequest(m.name, keyData, threadID, refID)
+		request := codec.EncodeMapUnlockRequest(m.name, keyData, threadID(), refID)
 		_, err = m.invokeOnKey(request, keyData)
 		return err
 	}
 }
 
-func (m *MapImpl) ListenEntryNotified(flags int32, handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) ListenEntryNotification(flags int32, handler hztypes.EntryNotifiedHandler) error {
 	return m.listenEntryNotified(flags, false, handler)
 }
 
-func (m *MapImpl) ListenEntryNotifiedIncludingValue(flags int32, handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) ListenEntryNotificationIncludingValue(flags int32, handler hztypes.EntryNotifiedHandler) error {
 	return m.listenEntryNotified(flags, true, handler)
 }
 
-func (m *MapImpl) UnlistenEntryNotified(handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler) error {
 	// derive subscriptionID from the handler
 	subscriptionID := int(reflect.ValueOf(handler).Pointer())
 	m.eventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
@@ -413,11 +413,11 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, handler hz
 	err := m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		//if msg.Type() == bufutil.EventEntry {
 		binKey, binValue, binOldValue, binMergingValue, _, uuid, _ := codec.HandleMapAddEntryListener(msg)
-		key := m.mustToInterface(binKey, "invalid key at ListenEntryNotified")
-		value := m.mustToInterface(binValue, "invalid value at ListenEntryNotified")
-		oldValue := m.mustToInterface(binOldValue, "invalid oldValue at ListenEntryNotified")
-		mergingValue := m.mustToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotified")
-		//numberOfAffectedEntries := m.mustToInterface(binNumberofAffectedEntries, "invalid numberOfAffectedEntries at ListenEntryNotified")
+		key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
+		value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
+		oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
+		mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
+		//numberOfAffectedEntries := m.mustConvertToInterface(binNumberofAffectedEntries, "invalid numberOfAffectedEntries at ListenEntryNotification")
 		m.eventDispatcher.Publish(NewEntryNotifiedEventImpl(m.name, "FIX-ME:"+uuid.String(), key, value, oldValue, mergingValue))
 		//}
 	})
@@ -440,9 +440,9 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	keyDatas := make([]serialization.Data, len(keys))
+	keyDatas := make([]serialization.Data, 0, len(keys))
 	for _, key := range keys {
-		if keyData, err := m.toData(key); err != nil {
+		if keyData, err := m.convertToData(key); err != nil {
 			return err
 		} else {
 			keyDatas = append(keyDatas, keyData)
@@ -457,7 +457,7 @@ func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (in
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, threadID, ttl)
+		request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, threadID(), ttl)
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -472,9 +472,9 @@ func (m *MapImpl) putTransient(key interface{}, value interface{}, ttl int64, ma
 	} else {
 		var request *proto.ClientMessage
 		if maxIdle >= 0 {
-			request = codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, threadID, ttl, maxIdle)
+			request = codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, threadID(), ttl, maxIdle)
 		} else {
-			request = codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, threadID, ttl)
+			request = codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, threadID(), ttl)
 		}
 		_, err = m.invokeOnKey(request, keyData)
 		return err
@@ -485,7 +485,7 @@ func (m *MapImpl) set(key interface{}, value interface{}, ttl int64) error {
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapSetRequest(m.name, keyData, valueData, threadID, ttl)
+		request := codec.EncodeMapSetRequest(m.name, keyData, valueData, threadID(), ttl)
 		_, err := m.invokeOnKey(request, keyData)
 		return err
 	}
@@ -496,7 +496,7 @@ func (m *MapImpl) tryLock(key interface{}, lease int64, timeout int64) (bool, er
 		return false, err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapTryLockRequest(m.name, keyData, threadID, lease, timeout, refID)
+		request := codec.EncodeMapTryLockRequest(m.name, keyData, threadID(), lease, timeout, refID)
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
@@ -509,7 +509,7 @@ func (m *MapImpl) tryPut(key interface{}, value interface{}, timeout int64) (int
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, threadID, timeout)
+		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, threadID(), timeout)
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -522,7 +522,7 @@ func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapTryRemoveRequest(m.name, keyData, threadID, timeout)
+		request := codec.EncodeMapTryRemoveRequest(m.name, keyData, threadID(), timeout)
 		if response, err := m.invokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {

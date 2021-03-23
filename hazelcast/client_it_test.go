@@ -39,7 +39,7 @@ func TestPutGetMap(t *testing.T) {
 	client.Shutdown()
 }
 
-func TestSetGet100(t *testing.T) {
+func TestSetGet1000(t *testing.T) {
 	const setGetCount = 1000
 	client, m := getClientMap(t, "my-map")
 	for i := 0; i < setGetCount; i++ {
@@ -239,7 +239,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 	handler := func(event hztypes.EntryNotifiedEvent) {
 		handlerCalled = true
 	}
-	if err := m.ListenEntryNotifiedIncludingValue(flags, handler); err != nil {
+	if err := m.ListenEntryNotificationIncludingValue(flags, handler); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(1 * time.Second)
@@ -251,7 +251,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		t.Fatalf("handler was not called")
 	}
 	handlerCalled = false
-	if err := m.UnlistenEntryNotified(handler); err != nil {
+	if err := m.UnlistenEntryNotification(handler); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(1 * time.Second)

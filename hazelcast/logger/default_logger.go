@@ -93,10 +93,20 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 
 // Error logs the given arguments at error level if the level is greater than or equal to error level.
 func (l *DefaultLogger) Error(args ...interface{}) {
+	// TODO: remove variadic stuff
 	if l.canLogError() {
 		callerName := l.findCallerFuncName()
 		s := callerName + "\n" + errorPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
+	}
+}
+
+func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
+	if l.canLogError() {
+		callerName := l.findCallerFuncName()
+		format = fmt.Sprintf("%s: %s", callerName, format)
+		err := fmt.Errorf(format, values...)
+		l.Output(logCallDepth, err.Error())
 	}
 }
 
