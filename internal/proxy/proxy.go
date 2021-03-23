@@ -30,12 +30,10 @@ import (
 )
 
 const (
-	ttlDefault   = -1
-	ttlUnlimited = 0
-
+	ttlDefault     = -1
+	ttlUnlimited   = 0
 	maxIdleDefault = -1
-
-	threadID = 1
+	//threadID       = 1
 )
 
 type Proxy interface {
@@ -112,7 +110,7 @@ func NewImpl(bundle CreationBundle, serviceName string, objectName string) *Impl
 
 func (p *Impl) Destroy() error {
 	request := proto.ClientDestroyProxyEncodeRequest(p.name, p.serviceName)
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request)
+	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv
 	if _, err := inv.Get(); err != nil {
 		return fmt.Errorf("error destroying proxy: %w", err)
@@ -140,7 +138,7 @@ func (p *Impl) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Da
 	if nilutil.IsNil(arg1) {
 		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
-	arg1Data, err = p.toData(arg1)
+	arg1Data, err = p.convertToData(arg1)
 	return
 }
 
@@ -149,11 +147,11 @@ func (p *Impl) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Da
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
 		return nil, nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
-	arg1Data, err = p.toData(arg1)
+	arg1Data, err = p.convertToData(arg1)
 	if err != nil {
 		return
 	}
-	arg2Data, err = p.toData(arg2)
+	arg2Data, err = p.convertToData(arg2)
 	return
 }
 
@@ -162,15 +160,15 @@ func (p *Impl) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 in
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
 		return nil, nil, nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
-	arg1Data, err = p.toData(arg1)
+	arg1Data, err = p.convertToData(arg1)
 	if err != nil {
 		return
 	}
-	arg2Data, err = p.toData(arg2)
+	arg2Data, err = p.convertToData(arg2)
 	if err != nil {
 		return
 	}
-	arg3Data, err = p.toData(arg3)
+	arg3Data, err = p.convertToData(arg3)
 	return
 }
 
@@ -178,7 +176,7 @@ func (p *Impl) validateAndSerializePredicate(arg1 interface{}) (arg1Data seriali
 	if nilutil.IsNil(arg1) {
 		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
 	}
-	arg1Data, err = p.toData(arg1)
+	arg1Data, err = p.convertToData(arg1)
 	return
 }
 
@@ -188,48 +186,6 @@ func (p *Impl) validateAndSerializeSlice(elements []interface{}) (elementsData [
 	}
 	elementsData, err = colutil.ObjectToDataCollection(elements, p.serializationService)
 	return
-}
-
-func (p *Impl) validateItemListener(listener interface{}) (err error) {
-	/*
-		switch listener.(type) {
-		case core.ItemAddedListener:
-		case core.ItemRemovedListener:
-		default:
-			return core.NewHazelcastIllegalArgumentError("listener argument type must be one of ItemAddedListener,"+
-				" ItemRemovedListener", nil)
-		}
-		return nil
-	*/
-	return nil
-}
-
-func (p *Impl) validateEntryListener(listener interface{}) (err error) {
-	/*
-		argErr := core.NewHazelcastIllegalArgumentError(fmt.Sprintf("not a supported listener type: %v",
-			reflect.TypeOf(listener)), nil)
-		if p.serviceName == bufutil.ServiceNameReplicatedMap {
-			switch listener.(type) {
-			case core.EntryAddedListener:
-			case core.EntryRemovedListener:
-			case core.EntryUpdatedListener:
-			case core.EntryEvictedListener:
-			case core.MapClearedListener:
-			default:
-				err = argErr
-			}
-		} else if p.serviceName == bufutil.ServiceNameMultiMap {
-			switch listener.(type) {
-			case core.EntryAddedListener:
-			case core.EntryRemovedListener:
-			case core.MapClearedListener:
-			default:
-				err = argErr
-			}
-		}
-		return
-	*/
-	return nil
 }
 
 func (p *Impl) validateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*proto.Pair, error) {
@@ -264,7 +220,7 @@ func (p *Impl) invokeOnKey(request *proto.ClientMessage, keyData serialization.D
 }
 
 func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request)
+	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv
 	return inv.Get()
 }
@@ -285,11 +241,11 @@ func (p *Impl) invokeOnAddress(request *proto.ClientMessage, address pubcluster.
 	return inv.Get()
 }
 
-func (p *Impl) toObject(data serialization.Data) (interface{}, error) {
+func (p *Impl) convertToObject(data serialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
 }
 
-func (p *Impl) mustToInterface(data serialization.Data, panicMsg string) interface{} {
+func (p *Impl) mustConvertToInterface(data serialization.Data, panicMsg string) interface{} {
 	if value, err := p.serializationService.ToObject(data); err != nil {
 		panic(panicMsg)
 	} else {
@@ -297,7 +253,7 @@ func (p *Impl) mustToInterface(data serialization.Data, panicMsg string) interfa
 	}
 }
 
-func (p *Impl) toData(object interface{}) (serialization.Data, error) {
+func (p *Impl) convertToData(object interface{}) (serialization.Data, error) {
 	return p.serializationService.ToData(object)
 }
 
@@ -306,7 +262,7 @@ func (p *Impl) decodeToObjectAndError(responseMessage *proto.ClientMessage, inpu
 	if inputError != nil {
 		return nil, inputError
 	}
-	return p.toObject(decodeFunc(responseMessage)())
+	return p.convertToObject(decodeFunc(responseMessage)())
 }
 
 func (p *Impl) decodeToBoolAndError(responseMessage *proto.ClientMessage, inputError error,
@@ -348,26 +304,6 @@ func (p *Impl) decodeToInt64AndError(responseMessage *proto.ClientMessage, input
 	}
 	return decodeFunc(responseMessage)(), nil
 }
-
-/*
-func (p *Impl) createOnItemEvent(listener interface{}) func(itemData serialization.Data, uuid string, eventType int32) {
-	return func(itemData serialization.Data, uuid string, eventType int32) {
-		var item interface{}
-		item, _ = p.toObject(itemData)
-		member := p.clusterService.GetMemberByUUID(uuid)
-		itemEvent := proto.NewItemEvent(p.name, item, eventType, member.(*proto.Member))
-		if eventType == bufutil.ItemAdded {
-			if _, ok := listener.(core.ItemAddedListener); ok {
-				listener.(core.ItemAddedListener).ItemAdded(itemEvent)
-			}
-		} else if eventType == bufutil.ItemRemoved {
-			if _, ok := listener.(core.ItemRemovedListener); ok {
-				listener.(core.ItemRemovedListener).ItemRemoved(itemEvent)
-			}
-		}
-	}
-}
-*/
 
 type partitionSpecificProxy struct {
 	*Impl

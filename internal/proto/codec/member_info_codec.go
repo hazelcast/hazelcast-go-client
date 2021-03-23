@@ -35,14 +35,14 @@ var MemberInfoCodec memberinfoCodec
 func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo cluster.MemberInfo) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberInfoCodecLiteMemberInitialFrameSize))
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.Uuid())
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.UUID())
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.LiteMember())
 	clientMessage.AddFrame(initialFrame)
 
 	EncodeAddress(clientMessage, memberInfo.Address())
 	EncodeMapForStringAndString(clientMessage, memberInfo.Attributes())
 	EncodeMemberVersion(clientMessage, memberInfo.Version())
-	EncodeMapForEndpointQualifierAndAddress(clientMessage, memberInfo.AddressMap())
+	EncodeMapForEndpointQualifierAndAddress(clientMessage, memberInfo.AddrMap())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }

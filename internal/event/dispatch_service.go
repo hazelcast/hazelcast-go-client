@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 )
 
+const DefaultSubscriptionID = -1
+
 type Event interface {
 	Name() string
 }
@@ -61,6 +63,9 @@ func (s *DispatchServiceImpl) Subscribe(eventName string, subscriptionID int, ha
 	// subscribing to a not-runnning service is no-op
 	if s.running.Load() != true {
 		return
+	}
+	if subscriptionID == DefaultSubscriptionID {
+		subscriptionID = MakeSubscriptionID(handler)
 	}
 	s.controlCh <- controlMessage{
 		controlType:    subscribe,

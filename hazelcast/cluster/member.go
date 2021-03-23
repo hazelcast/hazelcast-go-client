@@ -8,8 +8,8 @@ import (
 // Member represents a member in the cluster with its address, uuid, lite member status and attributes.
 type Member interface {
 	fmt.Stringer
-	// Address returns the address of this member.
-	Address() *Address
+	// Addr returns the address of this member.
+	Address() Address
 
 	// UUID returns the uuid of this member.
 	UUID() internal.UUID
@@ -61,38 +61,42 @@ type MemberInfo struct {
 	// version is core.MemberVersion: Hazelcast codebase version of the member.
 	version MemberVersion
 
-	// addressMap
-	addressMap map[internal.EndpointQualifier]Address
+	// addrMap
+	addrMap map[internal.EndpointQualifier]Address
 }
 
 func NewMemberInfo(address Address, uuid internal.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
 	isAddressMapExists bool, addressMap interface{}) MemberInfo {
-	// TODO: Convert addressMap to map[EndpointQualifier]*Address
+	// TODO: Convert addrMap to map[EndpointQualifier]*Address
 	// copy address
 	return MemberInfo{address: address.Clone(), uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
-		addressMap: addressMap.(map[internal.EndpointQualifier]Address)}
+		addrMap: addressMap.(map[internal.EndpointQualifier]Address)}
 }
 
-func (memberInfo MemberInfo) Address() Address {
-	return memberInfo.address
+func (mi MemberInfo) Address() Address {
+	return mi.address
 }
 
-func (memberInfo MemberInfo) Uuid() internal.UUID {
-	return memberInfo.uuid
+func (mi MemberInfo) UUID() internal.UUID {
+	return mi.uuid
 }
 
-func (memberInfo MemberInfo) Attributes() map[string]string {
-	return memberInfo.attributes
+func (mi MemberInfo) LiteMember() bool {
+	return mi.liteMember
 }
 
-func (memberInfo MemberInfo) LiteMember() bool {
-	return memberInfo.liteMember
+func (mi MemberInfo) Attributes() map[string]string {
+	return mi.attributes
 }
 
-func (memberInfo MemberInfo) Version() MemberVersion {
-	return memberInfo.version
+func (mi MemberInfo) Version() MemberVersion {
+	return mi.version
 }
 
-func (memberInfo MemberInfo) AddressMap() map[internal.EndpointQualifier]Address {
-	return memberInfo.addressMap
+func (mi MemberInfo) AddrMap() map[internal.EndpointQualifier]Address {
+	return mi.addrMap
+}
+
+func (mi MemberInfo) String() string {
+	return fmt.Sprintf("%s:%s", mi.address, mi.uuid)
 }

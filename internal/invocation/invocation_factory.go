@@ -13,7 +13,7 @@ type MessageKeyData struct {
 
 type Factory interface {
 	NewInvocationOnPartitionOwner(message *proto.ClientMessage, partitionID int32) Invocation
-	NewInvocationOnRandomTarget(message *proto.ClientMessage) Invocation
+	NewInvocationOnRandomTarget(message *proto.ClientMessage, messageHandler proto.ClientMessageHandler) Invocation
 	NewInvocationOnKeyOwner(message *proto.ClientMessage, data serialization.Data) Invocation
 	NewInvocationOnTarget(message *proto.ClientMessage, address pubcluster.Address) Invocation
 }

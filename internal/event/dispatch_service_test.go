@@ -48,7 +48,7 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 	service.Subscribe("sample.event", 100, handler)
 	service.Publish(sampleEvent{})
 	wg.Wait()
-	service.Unsubscribe("sample.event", 100, handler)
+	service.Unsubscribe("sample.event", 100)
 	service.Publish(sampleEvent{})
 	wg.Wait()
 	time.Sleep(100 * time.Millisecond)

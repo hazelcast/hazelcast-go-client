@@ -37,11 +37,7 @@ const (
 
 type ResponseHandler func(msg *proto.ClientMessage)
 
-type Connection interface {
-	ConnectionID() int64
-}
-
-type ConnectionImpl struct {
+type Connection struct {
 	responseCh                chan<- *proto.ClientMessage
 	pending                   chan *proto.ClientMessage
 	received                  chan *proto.ClientMessage
@@ -62,11 +58,11 @@ type ConnectionImpl struct {
 	logger                    publogger.Logger
 }
 
-func (c *ConnectionImpl) ConnectionID() int64 {
+func (c *Connection) ConnectionID() int64 {
 	return c.connectionID
 }
 
-func (c *ConnectionImpl) start(networkCfg pubcluster.NetworkConfig, addr pubcluster.Address) error {
+func (c *Connection) start(networkCfg pubcluster.NetworkConfig, addr pubcluster.Address) error {
 	if socket, err := c.createSocket(networkCfg, addr); err != nil {
 		return err
 	} else {
@@ -81,12 +77,12 @@ func (c *ConnectionImpl) start(networkCfg pubcluster.NetworkConfig, addr pubclus
 	}
 }
 
-func (c *ConnectionImpl) sendProtocolStarter() error {
+func (c *Connection) sendProtocolStarter() error {
 	_, err := c.socket.Write([]byte(protocolStarter))
 	return err
 }
 
-func (c *ConnectionImpl) createSocket(networkCfg pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
+func (c *Connection) createSocket(networkCfg pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
 	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
 	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
 	if err != nil {
@@ -98,7 +94,7 @@ func (c *ConnectionImpl) createSocket(networkCfg pubcluster.NetworkConfig, addre
 	return socket, err
 }
 
-func (c *ConnectionImpl) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
+func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
 	if tcpAddr, err := net.ResolveTCPAddr("tcp", addr.String()); err != nil {
 		return nil, err
 	} else if conn, err := net.DialTCP("tcp", nil, tcpAddr); err != nil {
@@ -111,18 +107,18 @@ func (c *ConnectionImpl) dialToAddressWithTimeout(addr pubcluster.Address, conTi
 	}
 }
 
-func (c *ConnectionImpl) init() {
+func (c *Connection) init() {
 	c.lastWrite.Store(time.Time{})
 	c.closedTime.Store(time.Time{})
 	c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
 	c.lastRead.Store(time.Now())
 }
 
-func (c *ConnectionImpl) isAlive() bool {
+func (c *Connection) isAlive() bool {
 	return atomic.LoadInt32(&c.status) == 0
 }
 
-func (c *ConnectionImpl) socketWriteLoop() {
+func (c *Connection) socketWriteLoop() {
 	for {
 		select {
 		case request, ok := <-c.pending:
@@ -142,7 +138,7 @@ func (c *ConnectionImpl) socketWriteLoop() {
 	}
 }
 
-func (c *ConnectionImpl) socketReadLoop() {
+func (c *Connection) socketReadLoop() {
 	buf := make([]byte, bufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
@@ -173,7 +169,7 @@ func (c *ConnectionImpl) socketReadLoop() {
 	}
 }
 
-func (c *ConnectionImpl) send(inv ConnectionBoundInvocation) bool {
+func (c *Connection) send(inv *ConnectionBoundInvocation) bool {
 	select {
 	case <-c.closed:
 		return false
@@ -183,7 +179,7 @@ func (c *ConnectionImpl) send(inv ConnectionBoundInvocation) bool {
 	}
 }
 
-func (c *ConnectionImpl) write(clientMessage *proto.ClientMessage) error {
+func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	buf := make([]byte, clientMessage.TotalLength())
 	clientMessage.Bytes(buf)
 	c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
@@ -191,7 +187,7 @@ func (c *ConnectionImpl) write(clientMessage *proto.ClientMessage) error {
 	return err
 }
 
-func (c *ConnectionImpl) isTimeoutError(err error) bool {
+func (c *Connection) isTimeoutError(err error) bool {
 	var netErr net.Error
 	if errors.As(err, &netErr) {
 		return netErr.Timeout()
@@ -199,31 +195,31 @@ func (c *ConnectionImpl) isTimeoutError(err error) bool {
 	return false
 }
 
-func (c *ConnectionImpl) StartTime() int64 {
+func (c *Connection) StartTime() int64 {
 	return c.startTime
 }
 
-func (c *ConnectionImpl) localAddress() net.Addr {
+func (c *Connection) localAddress() net.Addr {
 	return c.socket.LocalAddr()
 }
 
-func (c *ConnectionImpl) setConnectedServerVersion(connectedServerVersion string) {
+func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
 	c.connectedServerVersionStr = connectedServerVersion
 	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
 }
 
-func (c *ConnectionImpl) close(closeErr error) {
+func (c *Connection) close(closeErr error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	//c.logger.Warn("ConnectionImpl :", c, " closed, err: ", closeErr)
+	//c.logger.Warn("Connection :", c, " closed, err: ", closeErr)
 	close(c.closed)
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
 }
 
-func (c *ConnectionImpl) String() string {
+func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{isAlive=%t, connectionID=%d, endpoint=%s, lastReadTime=%s, lastWriteTime=%s, closedTime=%s, connected server version=%s",
 		c.isAlive(), c.connectionID, c.endpoint.Load(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
 }
