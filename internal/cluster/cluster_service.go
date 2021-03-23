@@ -1,6 +1,11 @@
 package cluster
 
 import (
+	"reflect"
+	"sync"
+	"sync/atomic"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	publifecycle "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
@@ -8,16 +13,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
-	"reflect"
-	"sync"
-	"sync/atomic"
-
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 )
 
 type Service interface {
-	GetMemberByUUID(uuid string) pubcluster.Member
-	Members() []pubcluster.Member
+	//GetMemberByUUID(uuid string) pubcluster.Member
+	//Members() []pubcluster.Member
 	OwnerConnectionAddr() pubcluster.Address
 }
 
@@ -33,8 +33,7 @@ type ServiceImpl struct {
 	eventDispatcher     event.DispatchService
 	logger              logger.Logger
 
-	members   map[string]pubcluster.Member
-	membersMu *sync.RWMutex
+	membersMap membersMap
 }
 
 type CreationBundle struct {
@@ -73,31 +72,30 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		logger:            bundle.Logger,
-		members:           map[string]pubcluster.Member{},
-		membersMu:         &sync.RWMutex{},
+		membersMap:        newMembersMap(),
 	}
 	service.ownerConnectionAddr.Store(&pubcluster.AddressImpl{})
 	return service
 }
 
-func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
-	s.membersMu.RLock()
-	defer s.membersMu.RUnlock()
-	if member, ok := s.members[uuid]; ok {
-		return member
-	}
-	return nil
-}
+//func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
+//	s.membersMu.RLock()
+//	defer s.membersMu.RUnlock()
+//	if member, ok := s.members[uuid]; ok {
+//		return member
+//	}
+//	return nil
+//}
 
-func (s *ServiceImpl) Members() []pubcluster.Member {
-	s.membersMu.RLock()
-	defer s.membersMu.RUnlock()
-	members := make([]pubcluster.Member, 0, len(s.members))
-	for _, member := range s.members {
-		members = append(members, member)
-	}
-	return members
-}
+//func (s *ServiceImpl) Members() []pubcluster.Member {
+//	s.membersMu.RLock()
+//	defer s.membersMu.RUnlock()
+//	members := make([]pubcluster.Member, 0, len(s.members))
+//	for _, member := range s.members {
+//		members = append(members, member)
+//	}
+//	return members
+//}
 
 func (s *ServiceImpl) OwnerConnectionAddr() pubcluster.Address {
 	if addr, ok := s.ownerConnectionAddr.Load().(pubcluster.Address); ok {
@@ -135,19 +133,7 @@ func (s *ServiceImpl) handleLifecycleStateChanged(event event.Event) {
 
 func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 	if membersUpdateEvent, ok := event.(MembersUpdated); ok {
-		newMembers := []*Member{}
-		s.membersMu.Lock()
-		for _, member := range membersUpdateEvent.Members() {
-			uuid := member.UUID().String()
-			if _, ok := s.members[uuid]; !ok {
-				// TODO: get the version
-				memberVersion := pubcluster.MemberVersion{}
-				newMember := NewMember(member.Address(), member.UUID(), member.LiteMember(), member.Attributes(), memberVersion, nil)
-				s.members[uuid] = newMember
-				newMembers = append(newMembers, newMember)
-			}
-		}
-		s.membersMu.Unlock()
+		added, removed := s.membersMap.Update(membersUpdateEvent.Members(), membersUpdateEvent.Version())
 		// XXX:
 		s.startChMu.Lock()
 		if s.startCh != nil {
@@ -155,10 +141,11 @@ func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 			s.startCh = nil
 		}
 		s.startChMu.Unlock()
-		if len(newMembers) > 0 {
-			for _, member := range newMembers {
-				s.eventDispatcher.Publish(NewMemberAdded(member))
-			}
+		for _, member := range added {
+			s.eventDispatcher.Publish(NewMemberAdded(member))
+		}
+		for _, member := range removed {
+			s.eventDispatcher.Publish(NewMemberRemoved(member))
 		}
 	}
 }
@@ -202,4 +189,44 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 		addrs = append(addrs, addr)
 	}
 	return addrs
+}
+
+type membersMap struct {
+	members   map[string]*Member
+	membersMu *sync.RWMutex
+	version   int32
+}
+
+func newMembersMap() membersMap {
+	return membersMap{
+		members:   map[string]*Member{},
+		membersMu: &sync.RWMutex{},
+		version:   -1,
+	}
+}
+
+func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (added []*Member, removed []*Member) {
+	m.membersMu.Lock()
+	defer m.membersMu.Unlock()
+	if version > m.version {
+		membersMap := map[string]pubcluster.Member{}
+		added = []*Member{}
+		for _, member := range members {
+			uuid := member.UUID().String()
+			membersMap[uuid] = member
+			if _, ok := m.members[uuid]; !ok {
+				newMember := NewMember(member.Address(), member.UUID(), member.LiteMember(), member.Attributes(), member.Version(), nil)
+				m.members[uuid] = newMember
+				added = append(added, newMember)
+			}
+		}
+		removed = []*Member{}
+		for _, member := range m.members {
+			uuid := member.UUID().String()
+			if _, ok := membersMap[uuid]; !ok {
+				removed = append(removed, member)
+			}
+		}
+	}
+	return
 }

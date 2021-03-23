@@ -84,9 +84,8 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManager struct {
-	requestCh  chan<- invocation.Invocation
-	responseCh chan<- *proto.ClientMessage
-	// TODO: depend on the interface
+	requestCh            chan<- invocation.Invocation
+	responseCh           chan<- *proto.ClientMessage
 	clusterService       *ServiceImpl
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
