@@ -141,11 +141,11 @@ func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 			s.startCh = nil
 		}
 		s.startChMu.Unlock()
-		for _, member := range added {
-			s.eventDispatcher.Publish(NewMemberAdded(member))
+		if len(added) > 0 {
+			s.eventDispatcher.Publish(NewMembersAdded(added))
 		}
-		for _, member := range removed {
-			s.eventDispatcher.Publish(NewMemberRemoved(member))
+		if len(removed) > 0 {
+			s.eventDispatcher.Publish(NewMemberRemoved(removed))
 		}
 	}
 }
@@ -205,12 +205,12 @@ func newMembersMap() membersMap {
 	}
 }
 
-func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (added []*Member, removed []*Member) {
+func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (added []pubcluster.Member, removed []pubcluster.Member) {
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
 		membersMap := map[string]pubcluster.Member{}
-		added = []*Member{}
+		added = []pubcluster.Member{}
 		for _, member := range members {
 			uuid := member.UUID().String()
 			membersMap[uuid] = member
@@ -220,7 +220,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				added = append(added, newMember)
 			}
 		}
-		removed = []*Member{}
+		removed = []pubcluster.Member{}
 		for _, member := range m.members {
 			uuid := member.UUID().String()
 			if _, ok := membersMap[uuid]; !ok {

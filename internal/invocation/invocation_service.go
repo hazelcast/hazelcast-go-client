@@ -33,8 +33,6 @@ func (b ServiceCreationBundle) Check() {
 type Service interface {
 	// SetHandler should be called only before client is started
 	SetHandler(handler Handler)
-	// TODO: make HandleResponse private
-	//shutdown()
 }
 
 type ServiceImpl struct {

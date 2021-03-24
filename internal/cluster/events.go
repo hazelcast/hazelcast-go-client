@@ -13,8 +13,8 @@ const (
 	EventMembersUpdated    = "internal.cluster.membersupdated"
 	EventPartitionsUpdated = "internal.cluster.partitionsupdates"
 
-	EventMemberAdded   = "internal.cluster.memberadded"
-	EventMemberRemoved = "internal.cluster.memberremoved"
+	EventMembersAdded   = "internal.cluster.membersadded"
+	EventMembersRemoved = "internal.cluster.membersremoved"
 )
 
 type ConnectionOpened interface {
@@ -34,14 +34,14 @@ type MembersUpdated interface {
 	Version() int32
 }
 
-type MemberAdded interface {
+type MembersAdded interface {
 	event.Event
-	Member() cluster.Member
+	Members() []cluster.Member
 }
 
-type MemberRemoved interface {
+type MembersRemoved interface {
 	event.Event
-	Member() cluster.Member
+	Members() []cluster.Member
 }
 
 type PartitionsUpdated interface {
@@ -94,35 +94,35 @@ func (c ConnectionClosedImpl) Err() error {
 }
 
 type MemberAddedImpl struct {
-	member *Member
+	members []cluster.Member
 }
 
-func NewMemberAdded(member *Member) *MemberAddedImpl {
-	return &MemberAddedImpl{member: member}
+func NewMembersAdded(members []cluster.Member) *MemberAddedImpl {
+	return &MemberAddedImpl{members: members}
 }
 
 func (m MemberAddedImpl) Name() string {
-	return EventMemberAdded
+	return EventMembersAdded
 }
 
-func (m MemberAddedImpl) Member() cluster.Member {
-	return m.member
+func (m MemberAddedImpl) Members() []cluster.Member {
+	return m.members
 }
 
 type MemberRemovedImpl struct {
-	member *Member
+	members []cluster.Member
 }
 
 func (m MemberRemovedImpl) Name() string {
-	return EventMemberRemoved
+	return EventMembersRemoved
 }
 
-func (m MemberRemovedImpl) Member() cluster.Member {
-	return m.member
+func (m MemberRemovedImpl) Members() []cluster.Member {
+	return m.members
 }
 
-func NewMemberRemoved(member *Member) *MemberRemovedImpl {
-	return &MemberRemovedImpl{member: member}
+func NewMemberRemoved(members []cluster.Member) *MemberRemovedImpl {
+	return &MemberRemovedImpl{members: members}
 }
 
 type PartitionsUpdatedImpl struct {
