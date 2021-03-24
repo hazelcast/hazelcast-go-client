@@ -142,8 +142,8 @@ func (m *ConnectionManager) Start() error {
 	}
 	connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
 	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionClosedSubscriptionID, m.handleConnectionClosed)
-	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMemberAdded)
-	m.eventDispatcher.Subscribe(EventMemberAdded, memberAddedSubscriptionID, m.handleMemberAdded)
+	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
+	m.eventDispatcher.Subscribe(EventMembersAdded, memberAddedSubscriptionID, m.handleMembersAdded)
 	m.started.Store(true)
 	m.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
 	return nil
@@ -157,8 +157,8 @@ func (m *ConnectionManager) Stop() chan struct{} {
 		go func() {
 			connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
 			m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionClosedSubscriptionID)
-			memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMemberAdded)
-			m.eventDispatcher.Unsubscribe(EventMemberAdded, memberAddedSubscriptionID)
+			memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
+			m.eventDispatcher.Unsubscribe(EventMembersAdded, memberAddedSubscriptionID)
 			m.connectionsMu.Lock()
 			for _, conn := range m.connections {
 				conn.close(nil)
@@ -195,24 +195,34 @@ func (m *ConnectionManager) GetActiveConnections() []*Connection {
 	return conns
 }
 
-func (m *ConnectionManager) handleMemberAdded(event event.Event) {
+func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	if m.started.Load() != true {
 		return
 	}
-	if memberAddedEvent, ok := event.(MemberAdded); ok {
-		member := memberAddedEvent.Member()
-		addr := member.Address()
-		m.logger.Info("connectionManager member added", addr.String())
+	if memberAddedEvent, ok := event.(MembersAdded); ok {
+		missingAddresses := []pubcluster.Address{}
 		m.connectionsMu.RLock()
-		// TODO: check whether m.connections is not nil
-		_, exists := m.connections[addr.String()]
+		for _, member := range memberAddedEvent.Members() {
+			addr := member.Address()
+			m.logger.Info("connectionManager member added", addr.String())
+			if _, exists := m.connections[addr.String()]; !exists {
+				missingAddresses = append(missingAddresses, addr)
+			}
+		}
 		m.connectionsMu.RUnlock()
-		if !exists {
+		for _, addr := range missingAddresses {
 			if err := m.connectAddr(addr); err != nil {
 				m.logger.Errorf("error connecting addr: %w", err)
 			}
 		}
 	}
+}
+
+func (m *ConnectionManager) handleMemberRemoved(event event.Event) {
+	if m.started.Load() != true {
+		return
+	}
+
 }
 
 func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
@@ -319,21 +329,22 @@ func (m *ConnectionManager) authenticate(connection *Connection, asOwner bool) e
 }
 
 func (m *ConnectionManager) processAuthenticationResult(conn *Connection, asOwner bool, result *proto.ClientMessage) error {
-	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
+	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, clusterUUID, _ := codec.DecodeClientAuthenticationResponse(result)
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.endpoint.Store(address)
 		conn.isOwnerConnection = asOwner
 		m.connections[address.String()] = conn
-		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 		if asOwner {
+			// TODO: detect cluster change
 			m.partitionService.checkAndSetPartitionCount(partitionCount)
 			m.clusterService.ownerConnectionAddr.Store(address)
 			m.clusterService.ownerUUID.Store(memberUuid.String())
-			m.clusterService.uuid.Store(memberUuid.String())
+			m.clusterService.uuid.Store(clusterUUID.String())
 			m.logger.Info("Setting ", conn, " as owner.")
 		}
+		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
 		return hzerror.NewHazelcastAuthenticationError("invalid credentials!", nil)
 	case serializationVersionMismatch:

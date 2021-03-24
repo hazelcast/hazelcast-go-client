@@ -11,10 +11,10 @@ const (
 
 type MemberAdded interface {
 	event.Event
-	Member() Member
+	Members() Member
 }
 
 type MemberRemoved interface {
 	event.Event
-	Member() Member
+	Members() Member
 }
