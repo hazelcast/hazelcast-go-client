@@ -2,7 +2,6 @@ package invocation
 
 type Handler interface {
 	Invoke(invocation Invocation) error
-	EnableSmart()
 }
 
 type DefaultHandler struct {

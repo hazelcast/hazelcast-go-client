@@ -17,6 +17,7 @@ func NewNetworkConfigImpl() *NetworkConfigImpl {
 	defaultAddr := fmt.Sprintf("%s:%d", internal.DefaultHost, internal.DefaultPort)
 	return &NetworkConfigImpl{
 		addresses:         []string{defaultAddr},
+		smartRouting:      true,
 		connectionTimeout: 5 * time.Second,
 	}
 }

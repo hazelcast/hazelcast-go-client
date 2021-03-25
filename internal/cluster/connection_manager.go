@@ -185,7 +185,7 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 }
 
 func (m *ConnectionManager) GetActiveConnections() []*Connection {
-	return m.connMap.Clone()
+	return m.connMap.Connections()
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
@@ -462,7 +462,7 @@ func (m *connectionMap) GetAddrForConnID(connID int64) pubcluster.Address {
 	return nil
 }
 
-func (m *connectionMap) Clone() []*Connection {
+func (m *connectionMap) Connections() []*Connection {
 	conns := make([]*Connection, 0, len(m.connections))
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
