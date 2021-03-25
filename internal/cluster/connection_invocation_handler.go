@@ -6,14 +6,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"sync/atomic"
-)
-
-const (
-	smartDisabled int32 = 0
-	smartEnabled  int32 = 1
 )
 
 type ConnectionInvocationHandlerCreationBundle struct {
@@ -51,15 +44,11 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 }
 
 func (h *ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) error {
-	if h.smart == smartEnabled {
+	if h.clusterService.SmartRoutingEnabled() {
 		return h.invokeSmart(invocation)
 	} else {
 		return h.invokeNonSmart(invocation)
 	}
-}
-
-func (h *ConnectionInvocationHandler) EnableSmart() {
-	atomic.StoreInt32(&h.smart, smartEnabled)
 }
 
 func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
@@ -97,8 +86,8 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 
 func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	if conn := h.connectionManager.GetConnectionForAddress(addr); conn == nil {
-		h.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
-		return ihzerror.ErrAddressNotFound
+		h.logger.Trace("Sending invocation to ", addr, " failed, address not found")
+		return fmt.Errorf("address not found: %s", addr.String())
 	} else if invImpl, ok := inv.(*invocation.Impl); ok {
 		boundInv := &ConnectionBoundInvocation{
 			invocationImpl:  invImpl,

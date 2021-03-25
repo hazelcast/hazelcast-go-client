@@ -15,9 +15,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 )
 
+const (
+	smartRoutingEnabled int32 = 1
+)
+
 type Service interface {
 	OwnerConnectionAddr() pubcluster.Address
 	GetMemberByUUID(uuid string) pubcluster.Member
+	SmartRoutingEnabled() bool
 }
 
 type ServiceImpl struct {
@@ -32,7 +37,8 @@ type ServiceImpl struct {
 	eventDispatcher     event.DispatchService
 	logger              logger.Logger
 
-	membersMap membersMap
+	membersMap   membersMap
+	smartRouting int32
 }
 
 type CreationBundle struct {
@@ -76,25 +82,6 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 	return service
 }
 
-//func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
-//	s.membersMu.RLock()
-//	defer s.membersMu.RUnlock()
-//	if member, ok := s.members[uuid]; ok {
-//		return member
-//	}
-//	return nil
-//}
-
-//func (s *ServiceImpl) Members() []pubcluster.Member {
-//	s.membersMu.RLock()
-//	defer s.membersMu.RUnlock()
-//	members := make([]pubcluster.Member, 0, len(s.members))
-//	for _, member := range s.members {
-//		members = append(members, member)
-//	}
-//	return members
-//}
-
 func (s *ServiceImpl) OwnerConnectionAddr() pubcluster.Address {
 	if addr, ok := s.ownerConnectionAddr.Load().(pubcluster.Address); ok {
 		return addr
@@ -106,15 +93,22 @@ func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
 	return s.membersMap.Find(uuid)
 }
 
-func (s *ServiceImpl) Start() <-chan struct{} {
+func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
 	s.eventDispatcher.Subscribe(lifecycle.EventStateChanged, event.DefaultSubscriptionID, s.handleLifecycleStateChanged)
 	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
+	if wantSmartRouting {
+		s.listenPartitionsLoaded()
+	}
 	return s.startCh
 }
 
 func (s *ServiceImpl) Stop() {
 	subscriptionID := int(reflect.ValueOf(s.handleLifecycleStateChanged).Pointer())
 	s.eventDispatcher.Unsubscribe(lifecycle.EventStateChanged, subscriptionID)
+}
+
+func (s *ServiceImpl) SmartRoutingEnabled() bool {
+	return s.smartRouting == smartRoutingEnabled
 }
 
 func (s *ServiceImpl) memberCandidateAddrs() []pubcluster.Address {
@@ -164,6 +158,20 @@ func (s *ServiceImpl) sendMemberListViewRequest() {
 	if _, err := inv.Get(); err != nil {
 		s.logger.Error(err)
 	}
+}
+
+func (s *ServiceImpl) listenPartitionsLoaded() {
+	subscriptionID := event.MakeSubscriptionID(s.enableSmartRouting)
+	handler := func(event event.Event) {
+		s.logger.Info("enabling smart routing")
+		s.enableSmartRouting()
+		s.eventDispatcher.Unsubscribe(EventPartitionsLoaded, subscriptionID)
+	}
+	s.eventDispatcher.Subscribe(EventPartitionsLoaded, subscriptionID, handler)
+}
+
+func (s *ServiceImpl) enableSmartRouting() {
+	atomic.StoreInt32(&s.smartRouting, smartRoutingEnabled)
 }
 
 type AddrSet struct {

@@ -209,14 +209,6 @@ func (p *Impl) invokeOnKey(request *proto.ClientMessage, keyData serialization.D
 	inv := p.invocationFactory.NewInvocationOnKeyOwner(request, keyData)
 	p.requestCh <- inv
 	return inv.Get()
-	//select {
-	//case p.requestCh <- inv:
-	//	return inv.GetWithTimeout(100 * time.Millisecond)
-	//case <-time.After(100 * time.Millisecond):
-	//	return nil, errors.New("timeout")
-
-	//}
-
 }
 
 func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {

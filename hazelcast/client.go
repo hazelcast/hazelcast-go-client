@@ -91,10 +91,7 @@ func (c *clientImpl) Start() error {
 		return nil
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
-	if c.networkConfig.SmartRouting() {
-		c.listenPartitionsLoaded()
-	}
-	clusterServiceStartCh := c.clusterService.Start()
+	clusterServiceStartCh := c.clusterService.Start(c.networkConfig.SmartRouting())
 	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
 		return err
@@ -210,18 +207,4 @@ func (c *clientImpl) createComponents(config *Config) {
 	c.partitionService = partitionService
 	c.proxyManager = proxyManager
 	c.invocationHandler = invocationHandler
-}
-
-func (c *clientImpl) listenPartitionsLoaded() {
-	subscriptionID := event.MakeSubscriptionID(c.enableSmartRouting)
-	handler := func(event event.Event) {
-		c.logger.Info("enabling smart routing")
-		c.enableSmartRouting()
-		c.eventDispatcher.Unsubscribe(icluster.EventPartitionsLoaded, subscriptionID)
-	}
-	c.eventDispatcher.Subscribe(icluster.EventPartitionsLoaded, subscriptionID, handler)
-}
-
-func (c *clientImpl) enableSmartRouting() {
-	c.invocationHandler.EnableSmart()
 }

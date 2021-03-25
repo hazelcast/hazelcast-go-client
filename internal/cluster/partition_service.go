@@ -43,8 +43,6 @@ type PartitionServiceImpl struct {
 	eventDispatcher      event.DispatchService
 	partitionTable       partitionTable
 	partitionCount       uint32
-	startCh              chan struct{}
-	startChAtom          int32
 	logger               logger.Logger
 }
 
@@ -54,15 +52,13 @@ func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionSe
 		serializationService: bundle.SerializationService,
 		eventDispatcher:      bundle.EventDispatcher,
 		partitionTable:       defaultPartitionTable(),
-		startCh:              make(chan struct{}, 1),
 		logger:               bundle.Logger,
 	}
 }
 
-func (s *PartitionServiceImpl) Start() <-chan struct{} {
+func (s *PartitionServiceImpl) Start() {
 	subscriptionID := event.MakeSubscriptionID(s.handlePartitionsUpdated)
 	s.eventDispatcher.Subscribe(EventPartitionsUpdated, subscriptionID, s.handlePartitionsUpdated)
-	return s.startCh
 }
 
 func (s *PartitionServiceImpl) Stop() {
@@ -105,10 +101,6 @@ func (s *PartitionServiceImpl) handlePartitionsUpdated(event event.Event) {
 		s.logger.Info("partitions updated")
 		s.partitionTable.Update(partitionsUpdatedEvent.Partitions(), partitionsUpdatedEvent.Version())
 		s.eventDispatcher.Publish(NewPartitionsLoaded())
-		if atomic.CompareAndSwapInt32(&s.startChAtom, 0, 1) {
-			close(s.startCh)
-			s.startCh = nil
-		}
 	}
 }
 
@@ -117,7 +109,6 @@ func (s *PartitionServiceImpl) checkAndSetPartitionCount(newPartitionCount int32
 }
 
 type partitionTable struct {
-	//connection           *connection.Impl
 	partitionStateVersion int32
 	partitions            map[int32]internal.UUID
 	mu                    *sync.RWMutex
@@ -158,14 +149,9 @@ func (p *partitionTable) PartitionCount() int {
 }
 
 func defaultPartitionTable() partitionTable {
-	//return partitionTable{nil, -1, map[int32]core.UUID{}}
 	return partitionTable{
 		partitionStateVersion: -1,
 		partitions:            map[int32]internal.UUID{},
 		mu:                    &sync.RWMutex{},
 	}
 }
-
-//func newPartitionTable(connection *connection.Impl, partitionSateVersion int32, partitions map[int32]core.UUID) partitionTable {
-//	return partitionTable{connection: connection, partitionSateVersion: partitionSateVersion, partitions: partitions}
-//}
