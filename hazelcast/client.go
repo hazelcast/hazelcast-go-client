@@ -40,7 +40,7 @@ type clientImpl struct {
 	// configuration
 	name          string
 	clusterName   string
-	networkConfig *cluster.NetworkConfig
+	networkConfig cluster.NetworkConfig
 
 	// components
 	proxyManager      proxy.Manager
@@ -48,6 +48,7 @@ type clientImpl struct {
 	clusterService    *icluster.ServiceImpl
 	partitionService  *icluster.PartitionServiceImpl
 	eventDispatcher   event.DispatchService
+	invocationHandler invocation.Handler
 	logger            logger.Logger
 
 	// state
@@ -67,7 +68,7 @@ func newClient(name string, config Config) *clientImpl {
 	impl := &clientImpl{
 		name:          name,
 		clusterName:   config.ClusterName,
-		networkConfig: &config.Network,
+		networkConfig: config.Network,
 		logger:        clientLogger,
 	}
 	impl.started.Store(false)
@@ -90,12 +91,15 @@ func (c *clientImpl) Start() error {
 		return nil
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
+	if c.networkConfig.SmartRouting() {
+		c.listenPartitionsLoaded()
+	}
 	clusterServiceStartCh := c.clusterService.Start()
+	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
 		return err
 	}
 	<-clusterServiceStartCh
-	c.partitionService.Start()
 	c.started.Store(true)
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarted))
 	return nil
@@ -184,7 +188,6 @@ func (c *clientImpl) createComponents(config *Config) {
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
-		SmartRouting:      smartRouting,
 		Logger:            c.logger,
 	})
 	invocationService.SetHandler(invocationHandler)
@@ -206,4 +209,19 @@ func (c *clientImpl) createComponents(config *Config) {
 	c.clusterService = clusterService
 	c.partitionService = partitionService
 	c.proxyManager = proxyManager
+	c.invocationHandler = invocationHandler
+}
+
+func (c *clientImpl) listenPartitionsLoaded() {
+	subscriptionID := event.MakeSubscriptionID(c.enableSmartRouting)
+	handler := func(event event.Event) {
+		c.logger.Info("enabling smart routing")
+		c.enableSmartRouting()
+		c.eventDispatcher.Unsubscribe(icluster.EventPartitionsLoaded, subscriptionID)
+	}
+	c.eventDispatcher.Subscribe(icluster.EventPartitionsLoaded, subscriptionID, handler)
+}
+
+func (c *clientImpl) enableSmartRouting() {
+	c.invocationHandler.EnableSmart()
 }

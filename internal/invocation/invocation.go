@@ -26,9 +26,9 @@ type Impl struct {
 	boundConnection *Impl
 	address         pubcluster.Address
 	partitionID     int32
-	sentConnection  atomic.Value
-	eventHandler    func(clientMessage *proto.ClientMessage)
-	deadline        time.Time
+	//sentConnection  atomic.Value
+	eventHandler func(clientMessage *proto.ClientMessage)
+	deadline     time.Time
 }
 
 func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address, timeout time.Duration) *Impl {
@@ -82,9 +82,11 @@ func (i *Impl) Address() pubcluster.Address {
 	return i.address
 }
 
+/*
 func (i *Impl) StoreSentConnection(conn interface{}) {
 	i.sentConnection.Store(conn)
 }
+*/
 
 // SetEventHandler sets the event handler for the invocation.
 // It should only be called at the site of creation.

@@ -7,14 +7,24 @@ import (
 )
 
 const (
+	// EventConnectionOpened is dispatched when a connection to a member is opened
 	EventConnectionOpened = "internal.cluster.connectionopened"
+	// EventConnectionClosed is dispatched when a connection to a member is closed
 	EventConnectionClosed = "internal.cluster.connectionclosed"
 
-	EventMembersUpdated    = "internal.cluster.membersupdated"
+	// EventMembersUpdated is dispatched when cluster service receives MembersUpdated event from the server
+	EventMembersUpdated = "internal.cluster.membersupdated"
+	// EventPartitionsUpdated when cluster service receives PartitionsUpdated event from the server
 	EventPartitionsUpdated = "internal.cluster.partitionsupdates"
 
-	EventMembersAdded   = "internal.cluster.membersadded"
+	// EventMembersAdded is dispatched when cluster service finds out new members are added to the cluster
+	EventMembersAdded = "internal.cluster.membersadded"
+	// EventMembersAdded is dispatched when cluster service finds out new members are removed from the cluster
 	EventMembersRemoved = "internal.cluster.membersremoved"
+
+	// EventPartitionsLoaded is dispatched when partition service updates its partition table
+	// This is required to enable smart routing
+	EventPartitionsLoaded = "internal.cluster.partitionsloaded"
 )
 
 type ConnectionOpened interface {
@@ -171,4 +181,15 @@ func (m MembersUpdatedImpl) Members() []cluster.MemberInfo {
 
 func (m MembersUpdatedImpl) Version() int32 {
 	return m.version
+}
+
+type PartitionsLoadedImpl struct {
+}
+
+func NewPartitionsLoaded() *PartitionsLoadedImpl {
+	return &PartitionsLoadedImpl{}
+}
+
+func (p PartitionsLoadedImpl) Name() string {
+	return EventPartitionsLoaded
 }

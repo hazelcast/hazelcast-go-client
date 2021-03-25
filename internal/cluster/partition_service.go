@@ -21,6 +21,8 @@ type PartitionService interface {
 type PartitionServiceCreationBundle struct {
 	SerializationService serialization.Service
 	EventDispatcher      event.DispatchService
+	startCh              chan struct{}
+	startChAtom          int32
 	Logger               logger.Logger
 }
 
@@ -39,10 +41,11 @@ func (b PartitionServiceCreationBundle) Check() {
 type PartitionServiceImpl struct {
 	serializationService serialization.Service
 	eventDispatcher      event.DispatchService
-	//partitionTable       atomic.Value
-	partitionTable partitionTable
-	partitionCount uint32
-	logger         logger.Logger
+	partitionTable       partitionTable
+	partitionCount       uint32
+	startCh              chan struct{}
+	startChAtom          int32
+	logger               logger.Logger
 }
 
 func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionServiceImpl {
@@ -51,13 +54,15 @@ func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionSe
 		serializationService: bundle.SerializationService,
 		eventDispatcher:      bundle.EventDispatcher,
 		partitionTable:       defaultPartitionTable(),
+		startCh:              make(chan struct{}, 1),
 		logger:               bundle.Logger,
 	}
 }
 
-func (s *PartitionServiceImpl) Start() {
+func (s *PartitionServiceImpl) Start() <-chan struct{} {
 	subscriptionID := event.MakeSubscriptionID(s.handlePartitionsUpdated)
 	s.eventDispatcher.Subscribe(EventPartitionsUpdated, subscriptionID, s.handlePartitionsUpdated)
+	return s.startCh
 }
 
 func (s *PartitionServiceImpl) Stop() {
@@ -99,6 +104,11 @@ func (s *PartitionServiceImpl) handlePartitionsUpdated(event event.Event) {
 	if partitionsUpdatedEvent, ok := event.(PartitionsUpdated); ok {
 		s.logger.Info("partitions updated")
 		s.partitionTable.Update(partitionsUpdatedEvent.Partitions(), partitionsUpdatedEvent.Version())
+		s.eventDispatcher.Publish(NewPartitionsLoaded())
+		if atomic.CompareAndSwapInt32(&s.startChAtom, 0, 1) {
+			close(s.startCh)
+			s.startCh = nil
+		}
 	}
 }
 

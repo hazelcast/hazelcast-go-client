@@ -82,6 +82,14 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 	}
 }
 
+func (l *DefaultLogger) Infof(format string, values ...interface{}) {
+	if l.canLogInfo() {
+		//callerName := l.findCallerFuncName()
+		s := fmt.Sprintf(format, values...)
+		l.Output(logCallDepth, s)
+	}
+}
+
 // Warn logs the given arguments at warn level if the level is greater than or equal to warn level.
 func (l *DefaultLogger) Warn(args ...interface{}) {
 	if l.canLogWarn() {
@@ -103,8 +111,8 @@ func (l *DefaultLogger) Error(args ...interface{}) {
 
 func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
 	if l.canLogError() {
-		callerName := l.findCallerFuncName()
-		format = fmt.Sprintf("%s: %s", callerName, format)
+		//callerName := l.findCallerFuncName()
+		//format = fmt.Sprintf("%s: %s", callerName, format)
 		err := fmt.Errorf(format, values...)
 		l.Output(logCallDepth, err.Error())
 	}

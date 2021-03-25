@@ -23,18 +23,33 @@ func TestPutGetMap(t *testing.T) {
 	} else if targetValue != value {
 		t.Fatalf("target %v != %v", targetValue, value)
 	}
-	if value, err := m.Put("key", targetValue); err != nil {
-		t.Fatal(err)
-	} else if targetValue != value {
-		t.Fatalf("target %v != %v", targetValue, value)
-	}
-	if err := m.Delete("key"); err != nil {
+	client.Shutdown()
+}
+
+func TestSetGetMap(t *testing.T) {
+	client, m := getClientMap(t, "my-map")
+	targetValue := "value"
+	if err := m.Set("key", targetValue); err != nil {
 		t.Fatal(err)
 	}
 	if value, err := m.Get("key"); err != nil {
 		t.Fatal(err)
-	} else if nil != value {
-		t.Fatalf("target nil != %v", value)
+	} else if targetValue != value {
+		t.Fatalf("target %v != %v", targetValue, value)
+	}
+	client.Shutdown()
+}
+
+func TestSmartSetGetMap(t *testing.T) {
+	client, m := getClientMapSmart(t, "my-map")
+	targetValue := "value"
+	if err := m.Set("key", targetValue); err != nil {
+		t.Fatal(err)
+	}
+	if value, err := m.Get("key"); err != nil {
+		t.Fatal(err)
+	} else if targetValue != value {
+		t.Fatalf("target %v != %v", targetValue, value)
 	}
 	client.Shutdown()
 }
@@ -52,6 +67,39 @@ func TestSetGet1000(t *testing.T) {
 		key := fmt.Sprintf("k%d", i)
 		targetValue := fmt.Sprintf("v%d", i)
 		assertEquals(t, targetValue, hz.MustValue(m.Get(key)))
+	}
+	client.Shutdown()
+}
+
+func TestSmartSetGet1000(t *testing.T) {
+	const setGetCount = 1000
+	client, m := getClientMapSmart(t, "my-map")
+	for i := 0; i < setGetCount; i++ {
+		key := fmt.Sprintf("k%d", i)
+		value := fmt.Sprintf("v%d", i)
+		hz.Must(m.Set(key, value))
+	}
+	time.Sleep(1 * time.Second)
+	for i := 0; i < setGetCount; i++ {
+		key := fmt.Sprintf("k%d", i)
+		targetValue := fmt.Sprintf("v%d", i)
+		assertEquals(t, targetValue, hz.MustValue(m.Get(key)))
+	}
+	client.Shutdown()
+}
+
+func TestDelete(t *testing.T) {
+	client, m := getClientMap(t, "my-map")
+	targetValue := "value"
+	hz.Must(m.Set("key", targetValue))
+	if value := hz.MustValue(m.Get("key")); targetValue != value {
+		t.Fatalf("target %v != %v", targetValue, value)
+	}
+	if err := m.Delete("key"); err != nil {
+		t.Fatal(err)
+	}
+	if value := hz.MustValue(m.Get("key")); nil != value {
+		t.Fatalf("target nil != %v", value)
 	}
 	client.Shutdown()
 }
@@ -121,12 +169,34 @@ func TestRemove(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	targetMap := map[interface{}]interface{}{
 		"k1": "v1",
 		"k3": "v3",
 	}
 	client, m := getClientMap(t, "my-map-getall")
+	hz.Must(m.Set("k1", "v1"))
+	hz.Must(m.Set("k2", "v2"))
+	hz.Must(m.Set("k3", "v3"))
+	time.Sleep(1 * time.Second)
+	assertEquals(t, "v1", hz.MustValue(m.Get("k1")))
+	assertEquals(t, "v2", hz.MustValue(m.Get("k2")))
+	assertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+	if kvs, err := m.GetAll("k1", "k3"); err != nil {
+		t.Fatal(err)
+	} else if !reflect.DeepEqual(targetMap, kvs) {
+		t.Fatalf("target: %#v != %#v", targetMap, kvs)
+	}
+	client.Shutdown()
+}
+
+func TestSmartGetAll(t *testing.T) {
+	//t.SkipNow()
+	targetMap := map[interface{}]interface{}{
+		"k1": "v1",
+		"k3": "v3",
+	}
+	client, m := getClientMapSmart(t, "my-map-getall")
 	hz.Must(m.Set("k1", "v1"))
 	hz.Must(m.Set("k2", "v2"))
 	hz.Must(m.Set("k3", "v3"))
@@ -271,11 +341,37 @@ func getClientMap(t *testing.T, name string) (hz.Client, hztypes.Map) {
 		t.Fatal(err)
 	}
 	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
+	fmt.Println("MAPNAME:", mapName)
 	if m, err := client.GetMap(mapName); err != nil {
 		t.Fatal(err)
 		return nil, nil
 	} else {
 		return client, m
+	}
+}
+
+func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (hz.Client, hztypes.Map) {
+	client, err := hz.StartNewClientWithConfig(clientConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
+	fmt.Println("MAPNAME:", mapName)
+	if m, err := client.GetMap(mapName); err != nil {
+		t.Fatal(err)
+		return nil, nil
+	} else {
+		return client, m
+	}
+}
+
+func getClientMapSmart(t *testing.T, name string) (hz.Client, hztypes.Map) {
+	cb := hz.NewClientConfigBuilder()
+	cb.Network().SetSmartRouting(true)
+	if config, err := cb.Config(); err != nil {
+		panic(err)
+	} else {
+		return getClientMapWithConfig(t, name, config)
 	}
 }
 
