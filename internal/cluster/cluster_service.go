@@ -16,9 +16,8 @@ import (
 )
 
 type Service interface {
-	//GetMemberByUUID(uuid string) pubcluster.Member
-	//Members() []pubcluster.Member
 	OwnerConnectionAddr() pubcluster.Address
+	GetMemberByUUID(uuid string) pubcluster.Member
 }
 
 type ServiceImpl struct {
@@ -28,7 +27,7 @@ type ServiceImpl struct {
 	uuid                atomic.Value
 	requestCh           chan<- invocation.Invocation
 	startCh             chan struct{}
-	startChMu           *sync.Mutex
+	startChAtom         int32
 	invocationFactory   invocation.Factory
 	eventDispatcher     event.DispatchService
 	logger              logger.Logger
@@ -68,7 +67,6 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 		addrProviders:     bundle.AddrProviders,
 		requestCh:         bundle.RequestCh,
 		startCh:           make(chan struct{}, 1),
-		startChMu:         &sync.Mutex{},
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		logger:            bundle.Logger,
@@ -104,6 +102,10 @@ func (s *ServiceImpl) OwnerConnectionAddr() pubcluster.Address {
 	return nil
 }
 
+func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
+	return s.membersMap.Find(uuid)
+}
+
 func (s *ServiceImpl) Start() <-chan struct{} {
 	s.eventDispatcher.Subscribe(lifecycle.EventStateChanged, event.DefaultSubscriptionID, s.handleLifecycleStateChanged)
 	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
@@ -134,13 +136,10 @@ func (s *ServiceImpl) handleLifecycleStateChanged(event event.Event) {
 func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 	if membersUpdateEvent, ok := event.(MembersUpdated); ok {
 		added, removed := s.membersMap.Update(membersUpdateEvent.Members(), membersUpdateEvent.Version())
-		// XXX:
-		s.startChMu.Lock()
-		if s.startCh != nil {
+		if atomic.CompareAndSwapInt32(&s.startChAtom, 0, 1) {
 			close(s.startCh)
 			s.startCh = nil
 		}
-		s.startChMu.Unlock()
 		if len(added) > 0 {
 			s.eventDispatcher.Publish(NewMembersAdded(added))
 		}
@@ -154,8 +153,10 @@ func (s *ServiceImpl) sendMemberListViewRequest() {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewInvocationOnRandomTarget(request, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
+			s.logger.Infof("members updated")
 			s.eventDispatcher.Publish(NewMembersUpdated(memberInfos, version))
 		}, func(version int32, partitions []proto.Pair) {
+			s.logger.Infof("partitions updated")
 			s.eventDispatcher.Publish(NewPartitionsUpdated(partitions, version))
 		})
 	})
@@ -229,4 +230,14 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 		}
 	}
 	return
+}
+
+func (m *membersMap) Find(uuid string) *Member {
+	m.membersMu.RLock()
+	defer m.membersMu.RUnlock()
+	if member, ok := m.members[uuid]; ok {
+		return member
+	} else {
+		return nil
+	}
 }

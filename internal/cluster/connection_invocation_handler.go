@@ -2,17 +2,23 @@ package cluster
 
 import (
 	"errors"
+	"fmt"
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
+	"sync/atomic"
+)
+
+const (
+	smartDisabled int32 = 0
+	smartEnabled  int32 = 1
 )
 
 type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
 	ClusterService    Service
-	SmartRouting      bool
 	Logger            logger.Logger
 }
 
@@ -31,7 +37,7 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 type ConnectionInvocationHandler struct {
 	connectionManager *ConnectionManager
 	clusterService    Service
-	smart             bool
+	smart             int32
 	logger            logger.Logger
 }
 
@@ -40,25 +46,31 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 	return &ConnectionInvocationHandler{
 		connectionManager: bundle.ConnectionManager,
 		clusterService:    bundle.ClusterService,
-		smart:             bundle.SmartRouting,
 		logger:            bundle.Logger,
 	}
 }
 
-func (h ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) error {
-	if h.smart {
+func (h *ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) error {
+	if h.smart == smartEnabled {
 		return h.invokeSmart(invocation)
 	} else {
 		return h.invokeNonSmart(invocation)
 	}
 }
 
-func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
+func (h *ConnectionInvocationHandler) EnableSmart() {
+	atomic.StoreInt32(&h.smart, smartEnabled)
+}
+
+func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
-		// XXX: ???
-		return h.sendToRandomAddress(inv)
+		if conn := h.connectionManager.GetConnectionForPartition(inv.PartitionID()); conn == nil {
+			return fmt.Errorf("connection for partition ID %d not found", inv.PartitionID())
+		} else {
+			return h.sendToConnection(inv, conn)
+		}
 	} else if inv.Address() != nil {
 		return h.sendToAddress(inv, inv.Address())
 	} else {
@@ -66,38 +78,42 @@ func (h ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) erro
 	}
 }
 
-func (h ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
+func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
-		return hzerror.NewHazelcastIOError("no address found to invoke", nil)
+		return h.sendToRandomAddress(inv)
 	} else {
 		return h.sendToAddress(inv, addr)
 	}
 }
 
-func (h ConnectionInvocationHandler) sendToConnection(inv *ConnectionBoundInvocation, conn *Connection) error {
+func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) error {
 	if sent := conn.send(inv); !sent {
 		return hzerror.NewHazelcastIOError("packet is not sent", nil)
 	}
 	return nil
 }
 
-func (n ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
-	if conn := n.connectionManager.GetConnectionForAddress(addr); conn == nil {
-		n.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
+func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
+	if conn := h.connectionManager.GetConnectionForAddress(addr); conn == nil {
+		h.logger.Trace("Sending invocation to ", inv.Address(), " failed, address not found")
 		return ihzerror.ErrAddressNotFound
 	} else if invImpl, ok := inv.(*invocation.Impl); ok {
 		boundInv := &ConnectionBoundInvocation{
 			invocationImpl:  invImpl,
 			boundConnection: conn,
 		}
-		return n.sendToConnection(boundInv, conn)
+		return h.sendToConnection(boundInv, conn)
 	} else {
 		return errors.New("only invocations of time *invocationImpl is supported")
 	}
 }
 
-func (n ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
-	panic("sendToRandomAddress: implement me!")
+func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
+	if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
+		return hzerror.NewHazelcastIOError("no address found to invoke", nil)
+	} else {
+		return h.sendToAddress(inv, addr)
+	}
 }

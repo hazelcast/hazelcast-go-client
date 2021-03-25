@@ -61,6 +61,8 @@ type Logger interface {
 	Trace(args ...interface{})
 	// Info logs the given args at info level.
 	Info(args ...interface{})
+	// Info logs the given args at info level.
+	Infof(format string, values ...interface{})
 	// Warn logs the given args at warn level.
 	Warn(args ...interface{})
 	// Error logs the given args at error level.

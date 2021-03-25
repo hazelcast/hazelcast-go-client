@@ -20,7 +20,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
-const ClientType = "GOO"
+const ClientType = "GO"
 
 func dataCalculateSize(d serialization.Data) int {
 	return len(d.Buffer()) + bufutil.Int32SizeInBytes

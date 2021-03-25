@@ -57,6 +57,11 @@ func (n *NetworkConfigBuilderImpl) SetAddresses(addresses ...string) icluster.Ne
 	return n
 }
 
+func (n *NetworkConfigBuilderImpl) SetSmartRouting(enable bool) icluster.NetworkConfigBuilder {
+	n.networkConfig.smartRouting = enable
+	return n
+}
+
 func (n *NetworkConfigBuilderImpl) SetConnectionTimeout(timeout time.Duration) icluster.NetworkConfigBuilder {
 	n.networkConfig.connectionTimeout = timeout
 	return n

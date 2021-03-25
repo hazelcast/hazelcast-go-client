@@ -61,7 +61,7 @@ func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 		invocationTimeout: 120 * time.Second,
 		retryPause:        1 * time.Second,
 		smartRouting:      bundle.SmartRouting,
-		handler:           bundle.Handler,
+		handler:           handler,
 		logger:            bundle.Logger,
 	}
 	service.shutDown.Store(false)
@@ -85,9 +85,6 @@ func (s *ServiceImpl) processIncoming() {
 }
 
 func (s *ServiceImpl) sendInvocation(invocation Invocation) Result {
-	//if s.shutDown.Load() == true {
-	//	invocation.CompleteWithErr(core.NewHazelcastClientNotActiveError("client is shut down", nil))
-	//}
 	s.registerInvocation(invocation)
 	if err := s.handler.Invoke(invocation); err != nil {
 		s.handleError(invocation.Request().CorrelationID(), err)
@@ -115,7 +112,8 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 		return
 	}
 	// TODO: unregister inv
-	if inv, ok := s.invocations[correlationID]; ok {
+	//if inv, ok := s.invocations[correlationID]; ok {
+	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		if msg.Type() == int32(bufutil.MessageTypeException) {
 			err := ihzerror.CreateHazelcastError(msg.DecodeError())
 			s.handleError(correlationID, err)
@@ -151,7 +149,11 @@ func (s *ServiceImpl) registerInvocation(invocation Invocation) {
 
 func (s *ServiceImpl) unregisterInvocation(correlationID int64) Invocation {
 	if invocation, ok := s.invocations[correlationID]; ok {
-		delete(s.invocations, correlationID)
+		if invocation.EventHandler() == nil {
+			// XXX: we don't remove invocations with event handlers.
+			// that may leak memory
+			delete(s.invocations, correlationID)
+		}
 		return invocation
 	}
 	return nil

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"sync"
 )
 
 type clientMessageBuilder struct {
@@ -42,20 +41,24 @@ func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
 }
 
 type clientMessageReader struct {
-	src           *bytes.Buffer
-	readOffset    int
-	clientMessage *proto.ClientMessage
-	rwMutex       sync.RWMutex
+	src                *bytes.Buffer
+	clientMessage      *proto.ClientMessage
+	readHeader         bool
+	currentFrameLength uint32
+	currentFlags       uint16
+	remainingCap       int
 }
 
 func newClientMessageReader() *clientMessageReader {
-	return &clientMessageReader{src: &bytes.Buffer{}, readOffset: -1}
+	return &clientMessageReader{
+		src:          bytes.NewBuffer(make([]byte, 0, bufferSize)),
+		remainingCap: bufferSize,
+	}
 }
 
-func (c *clientMessageReader) Append(buffer *bytes.Buffer) {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
-	c.src = buffer
+func (c *clientMessageReader) Append(buf []byte) {
+	c.src.Write(buf)
+	c.remainingCap -= len(buf)
 }
 
 func (c *clientMessageReader) Read() *proto.ClientMessage {
@@ -64,69 +67,58 @@ func (c *clientMessageReader) Read() *proto.ClientMessage {
 			if c.clientMessage.EndFrame.IsFinalFrame() {
 				return c.clientMessage
 			}
-			c.readOffset = -1
 		} else {
 			return nil
 		}
 	}
 }
 func (c *clientMessageReader) readFrame() bool {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
-	// init internal buffer
-	remaining := c.src.Len()
-	if remaining < proto.SizeOfFrameLengthAndFlags {
-		// we don't have even the frame length and flags ready
-		return false
-	}
-
-	if c.readOffset == -1 {
+	if !c.readHeader {
+		if c.remainingCap < proto.SizeOfFrameLengthAndFlags {
+			c.resetBuffer()
+		}
+		if c.src.Len() < proto.SizeOfFrameLengthAndFlags {
+			// we don't have even the frame length and flags ready
+			return false
+		}
 		frameLength := binary.LittleEndian.Uint32(c.src.Next(proto.IntSizeInBytes))
 		if frameLength < proto.SizeOfFrameLengthAndFlags {
-			//TODO add exception
+			panic("frame length is less than SizeOfFrameLengthAndFlags")
 		}
-
-		flags := binary.LittleEndian.Uint16(c.src.Bytes())
-		c.src.Next(proto.ShortSizeInBytes)
-		size := frameLength - proto.SizeOfFrameLengthAndFlags
-		frame := proto.NewFrameWith(make([]byte, size), flags)
+		c.currentFrameLength = frameLength
+		c.currentFlags = binary.LittleEndian.Uint16(c.src.Next(2))
+		c.readHeader = true
+	}
+	if c.readHeader {
+		size := int(c.currentFrameLength) - proto.SizeOfFrameLengthAndFlags
+		if c.remainingCap < size {
+			c.resetBuffer()
+		}
+		if c.src.Len() < size {
+			return false
+		}
+		frameContent := c.src.Next(size)
+		frame := proto.NewFrameWith(frameContent, c.currentFlags)
 		if c.clientMessage == nil {
 			c.clientMessage = proto.NewClientMessageForDecode(frame)
 		} else {
 			c.clientMessage.AddFrame(frame)
 		}
-		c.readOffset = 0
-		if size == 0 {
-			return true
-		}
+		c.readHeader = false
+		return true
 	}
-
-	length := len(c.clientMessage.EndFrame.Content) - c.readOffset
-	return c.accumulate(c.src, length)
-}
-
-func (c *clientMessageReader) accumulate(src *bytes.Buffer, length int) bool {
-	remaining := src.Len()
-	readLength := length
-	if remaining < length {
-		readLength = remaining
-	}
-
-	if readLength > 0 {
-		end := c.readOffset + readLength
-		for i := c.readOffset; i < end; i++ {
-			c.clientMessage.EndFrame.Content[i], _ = src.ReadByte()
-		}
-		c.readOffset += readLength
-		return readLength == length
-	}
-
 	return false
 }
 
 func (c *clientMessageReader) Reset() {
-	//c.rwMutex.Lock()
-	//defer c.rwMutex.Unlock()
 	c.clientMessage = nil
-	c.readOffset = -1
+}
+
+func (c *clientMessageReader) resetBuffer() {
+	// read the remaining data
+	all := c.src.Next(c.src.Len())
+	// reset the buffer
+	c.src.Reset()
+	// write the remaining data back
+	c.src.Write(all)
 }

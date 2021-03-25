@@ -15,11 +15,11 @@
 package cluster
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"net"
 	"sync/atomic"
 	"time"
@@ -126,6 +126,7 @@ func (c *Connection) socketWriteLoop() {
 				return
 			}
 			if err := c.write(request); err != nil {
+				c.logger.Errorf("write error: %w", err)
 				// XXX: create a new client message?
 				request.Err = err
 				c.responseCh <- request
@@ -139,42 +140,48 @@ func (c *Connection) socketWriteLoop() {
 }
 
 func (c *Connection) socketReadLoop() {
+	var err error
+	var n int
 	buf := make([]byte, bufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
 		c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
-		n, err := c.socket.Read(buf)
-		//if !c.isAlive() {
-		//	return
-		//}
+		n, err = c.socket.Read(buf)
+		if !c.isAlive() {
+			return
+		}
 		if err != nil {
 			if c.isTimeoutError(err) {
 				continue
 			}
-			if err.Error() == "EOF" {
-				continue
-			}
-			c.close(err)
-			return
+			c.logger.Errorf("read error: %w", err)
+			break
 		}
 		if n == 0 {
 			continue
 		}
-		clientMessageReader.Append(bytes.NewBuffer(buf[:n]))
-		clientMessage := clientMessageReader.Read()
-		if clientMessage != nil && clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
-			c.responseCh <- clientMessage
+		clientMessageReader.Append(buf[:n])
+		for {
+			clientMessage := clientMessageReader.Read()
+			if clientMessage == nil {
+				break
+			}
+			if clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
+				c.responseCh <- clientMessage
+			}
+			clientMessageReader.Reset()
 		}
-		clientMessageReader.Reset()
+
 	}
+	c.close(err)
 }
 
-func (c *Connection) send(inv *ConnectionBoundInvocation) bool {
+func (c *Connection) send(inv invocation.Invocation) bool {
 	select {
 	case <-c.closed:
 		return false
 	case c.pending <- inv.Request():
-		inv.StoreSentConnection(c)
+		//inv.StoreSentConnection(c)
 		return true
 	}
 }
@@ -212,7 +219,6 @@ func (c *Connection) close(closeErr error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	//c.logger.Warn("Connection :", c, " closed, err: ", closeErr)
 	close(c.closed)
 	c.socket.Close()
 	c.closedTime.Store(time.Now())

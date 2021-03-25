@@ -10,6 +10,7 @@ type NetworkConfig interface {
 
 type NetworkConfigBuilder interface {
 	SetAddresses(addr ...string) NetworkConfigBuilder
+	SetSmartRouting(enable bool) NetworkConfigBuilder
 	Config() (NetworkConfig, error)
 }
 
