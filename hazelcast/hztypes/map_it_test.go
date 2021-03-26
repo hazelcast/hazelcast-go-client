@@ -201,6 +201,8 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		handler := func(event hztypes.EntryNotifiedEvent) {
 			handlerCalled = true
 		}
+		// TODO: remove the following sleep once we dynamically add connection listeners
+		time.Sleep(2 * time.Second)
 		if err := m.ListenEntryNotificationIncludingValue(flags, handler); err != nil {
 			t.Fatal(err)
 		}

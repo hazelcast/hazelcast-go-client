@@ -14,9 +14,10 @@ type registration struct {
 }
 
 type connRegistration struct {
-	conn   *Connection
-	client int
-	server internal.UUID
+	conn    *Connection
+	client  int
+	server  internal.UUID
+	request *proto.ClientMessage
 }
 
 type ConnectionListenerBinderImpl struct {
@@ -42,7 +43,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 	request *proto.ClientMessage,
 	clientRegistrationID int,
 	handler proto.ClientMessageHandler) error {
-	connToRegistration := map[int64]registration{}
+	connToRegistration := map[int64]connRegistration{}
 	for _, conn := range b.connectionManager.GetActiveConnections() {
 		inv := NewConnectionBoundInvocation(
 			request,
@@ -56,7 +57,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 			return err
 		} else {
 			serverRegistrationID := codec.DecodeMapAddEntryListenerResponse(response)
-			connToRegistration[conn.connectionID] = registration{
+			connToRegistration[conn.connectionID] = connRegistration{
 				client: clientRegistrationID,
 				server: serverRegistrationID,
 			}

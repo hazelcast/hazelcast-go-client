@@ -21,7 +21,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	"reflect"
 	"time"
 )
 
@@ -401,7 +400,7 @@ func (m *MapImpl) ListenEntryNotificationIncludingValue(flags int32, handler hzt
 
 func (m *MapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler) error {
 	// derive subscriptionID from the handler
-	subscriptionID := int(reflect.ValueOf(handler).Pointer())
+	subscriptionID := event.MakeSubscriptionID(handler)
 	m.eventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
 	return m.listenerBinder.Remove(m.name, subscriptionID)
 }
@@ -409,7 +408,7 @@ func (m *MapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler
 func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, handler hztypes.EntryNotifiedHandler) error {
 	request := codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
 	// derive subscriptionID from the handler
-	subscriptionID := int(reflect.ValueOf(handler).Pointer())
+	subscriptionID := event.MakeSubscriptionID(handler)
 	err := m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		//if msg.Type() == bufutil.EventEntry {
 		binKey, binValue, binOldValue, binMergingValue, _, uuid, _ := codec.HandleMapAddEntryListener(msg)

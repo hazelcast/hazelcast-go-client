@@ -9,12 +9,12 @@ type NetworkConfig interface {
 }
 
 type NetworkConfigBuilder interface {
-	SetAddresses(addr ...string) NetworkConfigBuilder
+	SetAddrs(addr ...string) NetworkConfigBuilder
 	SetSmartRouting(enable bool) NetworkConfigBuilder
 	Config() (NetworkConfig, error)
 }
 
 type NetworkConfigProvider interface {
-	Addresses() []string
+	Addrs() []string
 	ConnectionTimeout() time.Duration
 }
