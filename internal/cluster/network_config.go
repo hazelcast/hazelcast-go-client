@@ -45,7 +45,7 @@ func NewNetworkConfigBuilderImpl() *NetworkConfigBuilderImpl {
 	}
 }
 
-func (n *NetworkConfigBuilderImpl) SetAddresses(addresses ...string) icluster.NetworkConfigBuilder {
+func (n *NetworkConfigBuilderImpl) SetAddrs(addresses ...string) icluster.NetworkConfigBuilder {
 	selfAddresses := make([]string, len(addresses))
 	for i, addr := range addresses {
 		if err := checkAddress(addr); err != nil {
