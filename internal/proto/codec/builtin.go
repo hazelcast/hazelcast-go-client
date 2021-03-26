@@ -3,6 +3,7 @@ package codec
 import (
 	"encoding/binary"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"strings"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
@@ -52,8 +53,8 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 	}
 }
 
-func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options internal.BitmapIndexOptions) {
-	if options == nil {
+func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options hztypes.BitmapIndexOptions) {
+	if options.IsDefault() {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
 		EncodeBitmapIndexOptions(message, options)
@@ -108,7 +109,7 @@ func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator)
 	return isNullFrame
 }
 
-func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) internal.BitmapIndexOptions {
+func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) hztypes.BitmapIndexOptions {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()

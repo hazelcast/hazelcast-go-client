@@ -16,6 +16,7 @@ package proxy
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
@@ -35,6 +36,25 @@ func NewMapImpl(proxy *Impl) *MapImpl {
 	return &MapImpl{
 		Impl:                 proxy,
 		referenceIDGenerator: NewReferenceIDGeneratorImpl(),
+	}
+}
+
+func (m *MapImpl) AddIndex(indexConfig hztypes.IndexConfig) error {
+	request := codec.EncodeMapAddIndexRequest(m.name, indexConfig)
+	_, err := m.invokeOnRandomTarget(request)
+	return err
+}
+
+func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
+	if interceptorData, err := m.Impl.convertToData(interceptor); err != nil {
+		return "", err
+	} else {
+		request := codec.EncodeMapAddInterceptorRequest(m.name, interceptorData)
+		if response, err := m.invokeOnRandomTarget(request); err != nil {
+			return "", err
+		} else {
+			return codec.DecodeMapAddInterceptorResponse(response), nil
+		}
 	}
 }
 
@@ -411,14 +431,15 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, handler hz
 	subscriptionID := event.MakeSubscriptionID(handler)
 	err := m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		//if msg.Type() == bufutil.EventEntry {
-		binKey, binValue, binOldValue, binMergingValue, _, uuid, _ := codec.HandleMapAddEntryListener(msg)
-		key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
-		value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
-		oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
-		mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
-		//numberOfAffectedEntries := m.mustConvertToInterface(binNumberofAffectedEntries, "invalid numberOfAffectedEntries at ListenEntryNotification")
-		m.eventDispatcher.Publish(NewEntryNotifiedEventImpl(m.name, "FIX-ME:"+uuid.String(), key, value, oldValue, mergingValue))
-		//}
+		codec.HandleMapAddEntryListener(msg, func(binKey serialization.Data, binValue serialization.Data, binOldValue serialization.Data, binMergingValue serialization.Data, binEventType int32, binUUID internal.UUID, binNumberOfAffectedEntries int32) {
+			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
+			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
+			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
+			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
+			//numberOfAffectedEntries := m.mustConvertToInterface(binNumberofAffectedEntries, "invalid numberOfAffectedEntries at ListenEntryNotification")
+			m.eventDispatcher.Publish(NewEntryNotifiedEventImpl(m.name, "FIX-ME:"+binUUID.String(), key, value, oldValue, mergingValue))
+
+		})
 	})
 	if err != nil {
 		return err

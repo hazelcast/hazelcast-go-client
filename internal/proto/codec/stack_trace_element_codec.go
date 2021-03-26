@@ -44,7 +44,7 @@ func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceEleme
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) hzerror.StackTraceElement {
+func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) proto.StackTraceElement {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
