@@ -3,7 +3,9 @@ package hztypes
 import "time"
 
 type Map interface {
-	// TODO: AddIndex
+	// AddIndex adds an index to this map for the specified entries so that queries can run faster.
+	AddIndex(indexConfig IndexConfig) error
+
 	// TODO: AddInterceptor
 
 	// Clear deletes all entries one by one and fires related events

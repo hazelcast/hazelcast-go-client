@@ -165,6 +165,7 @@ func TestGetKeySet(t *testing.T) {
 	})
 }
 
+// TODO: Test Map AddIndex
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetKeySet
