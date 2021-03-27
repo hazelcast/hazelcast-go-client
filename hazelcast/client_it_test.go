@@ -53,7 +53,7 @@ func TestLifecycleEvents(t *testing.T) {
 	}
 }
 
-func getClient(t *testing.T) hz.Client {
+func getClient(t *testing.T) *hz.Client {
 	client, err := hz.StartNewClient()
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func getClient(t *testing.T) hz.Client {
 	return client
 }
 
-func getClientWithConfig(t *testing.T, clientConfig hz.Config) hz.Client {
+func getClientWithConfig(t *testing.T, clientConfig hz.Config) *hz.Client {
 	client, err := hz.StartNewClientWithConfig(clientConfig)
 	if err != nil {
 		t.Fatal(err)
@@ -69,11 +69,11 @@ func getClientWithConfig(t *testing.T, clientConfig hz.Config) hz.Client {
 	return client
 }
 
-func getClientSmart(t *testing.T) hz.Client {
+func getClientSmart(t *testing.T) *hz.Client {
 	return getClient(t)
 }
 
-func getClientNonSmart(t *testing.T) hz.Client {
+func getClientNonSmart(t *testing.T) *hz.Client {
 	cb := hz.NewClientConfigBuilder()
 	cb.Network().SetSmartRouting(false)
 	if config, err := cb.Config(); err != nil {
@@ -83,8 +83,8 @@ func getClientNonSmart(t *testing.T) hz.Client {
 	}
 }
 
-func test(t *testing.T, f func(t *testing.T, client hz.Client)) {
-	var client hz.Client
+func test(t *testing.T, f func(t *testing.T, client *hz.Client)) {
+	var client *hz.Client
 	t.Logf("testing smart client")
 	client = getClientSmart(t)
 	f(t, client)

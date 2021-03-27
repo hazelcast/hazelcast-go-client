@@ -3,6 +3,7 @@ package hazelcast
 import (
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/sql"
 	"sync/atomic"
 	"time"
 
@@ -21,22 +22,7 @@ import (
 
 var nextId int32
 
-type Client interface {
-	// attributes
-	Name() string
-
-	// control
-	Start() error
-	Shutdown()
-
-	// events
-	ListenLifecycleStateChange(handler lifecycle.StateChangeHandler)
-
-	// access to data structures
-	GetMap(name string) (hztypes.Map, error)
-}
-
-type clientImpl struct {
+type Client struct {
 	// configuration
 	name          string
 	clusterName   string
@@ -55,7 +41,7 @@ type clientImpl struct {
 	started atomic.Value
 }
 
-func newClient(name string, config Config) *clientImpl {
+func newClient(name string, config Config) *Client {
 	id := atomic.AddInt32(&nextId, 1)
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
@@ -65,7 +51,7 @@ func newClient(name string, config Config) *clientImpl {
 		name = config.ClientName
 	}
 	clientLogger := logger.New()
-	impl := &clientImpl{
+	impl := &Client{
 		name:          name,
 		clusterName:   config.ClusterName,
 		networkConfig: config.Network,
@@ -76,16 +62,16 @@ func newClient(name string, config Config) *clientImpl {
 	return impl
 }
 
-func (c *clientImpl) Name() string {
+func (c *Client) Name() string {
 	return c.name
 }
 
-func (c *clientImpl) GetMap(name string) (hztypes.Map, error) {
+func (c *Client) GetMap(name string) (hztypes.Map, error) {
 	c.ensureStarted()
 	return c.proxyManager.GetMap(name)
 }
 
-func (c *clientImpl) Start() error {
+func (c *Client) Start() error {
 	// TODO: Recover from panics and return as error
 	if c.started.Load() == true {
 		return nil
@@ -104,7 +90,7 @@ func (c *clientImpl) Start() error {
 
 // Shutdown disconnects the client from the cluster.
 // This call is blocking.
-func (c clientImpl) Shutdown() {
+func (c Client) Shutdown() {
 	if c.started.Load() != true {
 		return
 	}
@@ -117,7 +103,7 @@ func (c clientImpl) Shutdown() {
 
 // ListenLifecycleStateChange adds a lifecycle state change handler.
 // The handler must not block.
-func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
+func (c *Client) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
 	// derive subscriptionID from the handler
 	subscriptionID := event.MakeSubscriptionID(handler)
 	c.eventDispatcher.SubscribeSync(ilifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
@@ -129,13 +115,17 @@ func (c *clientImpl) ListenLifecycleStateChange(handler lifecycle.StateChangeHan
 	})
 }
 
-func (c *clientImpl) ensureStarted() {
+func (c *Client) ExecuteSQL(sql string) (sql.Result, error) {
+	return nil, nil
+}
+
+func (c *Client) ensureStarted() {
 	if c.started.Load() == false {
 		panic("client not started")
 	}
 }
 
-func (c *clientImpl) createComponents(config *Config) {
+func (c *Client) createComponents(config *Config) {
 	credentials := security.NewUsernamePasswordCredentials("dev", "dev-pass")
 	serializationService, err := serialization.NewService(serialization.NewConfig())
 	if err != nil {

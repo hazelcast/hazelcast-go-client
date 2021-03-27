@@ -12,7 +12,7 @@ import (
 )
 
 func TestPutGetMap(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -26,7 +26,7 @@ func TestPutGetMap(t *testing.T) {
 }
 
 func TestSetGetMap(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -40,7 +40,7 @@ func TestSetGetMap(t *testing.T) {
 }
 
 func TestSetGet1000(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		const setGetCount = 1000
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
@@ -56,7 +56,7 @@ func TestSetGet1000(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
 		if value := hz.MustValue(m.Get("key")); targetValue != value {
@@ -72,7 +72,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestMapEvict(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -86,7 +86,7 @@ func TestMapEvict(t *testing.T) {
 }
 
 func TestMapClearSetGet(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
 		if ok := hz.MustBool(m.ContainsKey("key")); !ok {
@@ -108,7 +108,7 @@ func TestMapClearSetGet(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
 		if !hz.MustBool(m.ContainsKey("key")) {
@@ -127,7 +127,7 @@ func TestRemove(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	t.SkipNow()
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetMap := map[interface{}]interface{}{
 			"k1": "v1",
 			"k3": "v3",
@@ -148,7 +148,7 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestGetKeySet(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		hz.Must(m.Set("k1", "v1"))
 		hz.Must(m.Set("k2", "v2"))
@@ -196,7 +196,7 @@ func TestGetKeySet(t *testing.T) {
 // TODO: Test Map ReplaceIfSame
 
 func TestMapEntryNotifiedEvent(t *testing.T) {
-	testMap(t, func(t *testing.T, client hz.Client, m hztypes.Map) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		handlerCalled := false
 		flags := hztypes.NotifyEntryAdded | hztypes.NotifyEntryUpdated
 		handler := func(event hztypes.EntryNotifiedEvent) {
@@ -230,7 +230,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 	})
 }
 
-func getClientMap(t *testing.T, name string) (hz.Client, hztypes.Map) {
+func getClientMap(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 	client, err := hz.StartNewClient()
 	if err != nil {
 		t.Fatal(err)
@@ -245,7 +245,7 @@ func getClientMap(t *testing.T, name string) (hz.Client, hztypes.Map) {
 	}
 }
 
-func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (hz.Client, hztypes.Map) {
+func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (*hz.Client, hztypes.Map) {
 	client, err := hz.StartNewClientWithConfig(clientConfig)
 	if err != nil {
 		t.Fatal(err)
@@ -260,11 +260,11 @@ func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (
 	}
 }
 
-func getClientMapSmart(t *testing.T, name string) (hz.Client, hztypes.Map) {
+func getClientMapSmart(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 	return getClientMap(t, name)
 }
 
-func getClientMapNonSmart(t *testing.T, name string) (hz.Client, hztypes.Map) {
+func getClientMapNonSmart(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 	cb := hz.NewClientConfigBuilder()
 	cb.Network().SetSmartRouting(false)
 	if config, err := cb.Config(); err != nil {
@@ -288,9 +288,9 @@ func makeStringSet(items []interface{}) map[string]struct{} {
 	return result
 }
 
-func testMap(t *testing.T, f func(t *testing.T, client hz.Client, m hztypes.Map)) {
+func testMap(t *testing.T, f func(t *testing.T, client *hz.Client, m hztypes.Map)) {
 	var (
-		client hz.Client
+		client *hz.Client
 		m      hztypes.Map
 	)
 	t.Logf("testing smart client")
