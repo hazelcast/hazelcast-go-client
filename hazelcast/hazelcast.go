@@ -14,7 +14,7 @@
 
 package hazelcast
 
-func StartNewClient() (Client, error) {
+func StartNewClient() (*Client, error) {
 	client := NewClient()
 	if err := client.Start(); err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func StartNewClient() (Client, error) {
 	}
 }
 
-func StartNewClientWithConfig(config Config) (Client, error) {
+func StartNewClientWithConfig(config Config) (*Client, error) {
 	client := NewClientWithConfig(config)
 	if err := client.Start(); err != nil {
 		return nil, err
@@ -32,23 +32,23 @@ func StartNewClientWithConfig(config Config) (Client, error) {
 	}
 }
 
-// NewClient creates and returns a new Client.
+// NewClient creates and returns a new client.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClient() Client {
+func NewClient() *Client {
 	return NewClientWithConfig(DefaultConfig())
 }
 
-// NewClientWithConfig creates and returns a new Client with the given config.
+// NewClientWithConfig creates and returns a new client with the given config.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one of the
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClientWithConfig(config Config) Client {
+func NewClientWithConfig(config Config) *Client {
 	return newClient("", config)
 }
 

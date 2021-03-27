@@ -24,7 +24,7 @@ func MustBool(value bool, err error) bool {
 }
 
 // MustClient returns client if err is nil, otherwise it panics.
-func MustClient(client Client, err error) Client {
+func MustClient(client *Client, err error) *Client {
 	if err != nil {
 		panic(err)
 	}
