@@ -15,8 +15,9 @@
 package hazelcast
 
 func StartNewClient() (*Client, error) {
-	client := NewClient()
-	if err := client.Start(); err != nil {
+	if client, err := NewClient(); err != nil {
+		return nil, err
+	} else if err = client.Start(); err != nil {
 		return nil, err
 	} else {
 		return client, nil
@@ -24,8 +25,9 @@ func StartNewClient() (*Client, error) {
 }
 
 func StartNewClientWithConfig(config Config) (*Client, error) {
-	client := NewClientWithConfig(config)
-	if err := client.Start(); err != nil {
+	if client, err := NewClientWithConfig(config); err != nil {
+		return nil, err
+	} else if err = client.Start(); err != nil {
 		return nil, err
 	} else {
 		return client, nil
@@ -38,7 +40,7 @@ func StartNewClientWithConfig(config Config) (*Client, error) {
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClient() *Client {
+func NewClient() (*Client, error) {
 	return NewClientWithConfig(DefaultConfig())
 }
 
@@ -48,16 +50,16 @@ func NewClient() *Client {
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClientWithConfig(config Config) *Client {
+func NewClientWithConfig(config Config) (*Client, error) {
 	return newClient("", config)
 }
 
-func NewClientConfigBuilder() ConfigBuilder {
-	return newConfigBuilderImpl()
+func NewClientConfigBuilder() *ConfigBuilder {
+	return NewConfigBuilder()
 }
 
 func DefaultConfig() Config {
-	if config, err := newConfigBuilderImpl().Config(); err != nil {
+	if config, err := NewConfigBuilder().Config(); err != nil {
 		panic(err)
 	} else {
 		return config
