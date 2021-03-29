@@ -211,8 +211,8 @@ func (p *Impl) invokeOnKey(request *proto.ClientMessage, keyData serialization.D
 	return inv.Get()
 }
 
-func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage) (*proto.ClientMessage, error) {
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
+func (p *Impl) invokeOnRandomTarget(request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 	p.requestCh <- inv
 	return inv.Get()
 }

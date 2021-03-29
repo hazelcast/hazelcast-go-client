@@ -16,7 +16,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -40,7 +40,7 @@ type simpleentryviewCodec struct {}
 var SimpleEntryViewCodec simpleentryviewCodec
 */
 
-func EncodeSimpleEntryView(clientMessage *proto.ClientMessage, simpleEntryView *internal.SimpleEntryView) {
+func EncodeSimpleEntryView(clientMessage *proto.ClientMessage, simpleEntryView *hztypes.SimpleEntryView) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, SimpleEntryViewCodecMaxIdleInitialFrameSize))
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SimpleEntryViewCodecCostFieldOffset, int64(simpleEntryView.Cost()))
@@ -61,7 +61,7 @@ func EncodeSimpleEntryView(clientMessage *proto.ClientMessage, simpleEntryView *
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *internal.SimpleEntryView {
+func DecodeSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *hztypes.SimpleEntryView {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -79,5 +79,5 @@ func DecodeSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *internal.
 	key := DecodeData(frameIterator)
 	value := DecodeData(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return internal.NewSimpleEntryView(key, value, cost, creationTime, expirationTime, hits, lastAccessTime, lastStoredTime, lastUpdateTime, version, ttl, maxIdle)
+	return hztypes.NewSimpleEntryView(key, value, cost, creationTime, expirationTime, hits, lastAccessTime, lastStoredTime, lastUpdateTime, version, ttl, maxIdle)
 }

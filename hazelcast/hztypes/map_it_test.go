@@ -165,7 +165,34 @@ func TestGetKeySet(t *testing.T) {
 	})
 }
 
+func TestPutAll(t *testing.T) {
+	t.SkipNow()
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+		if err := m.PutAll("k1", "v1", "k2", "v2", "k3", "v3"); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		assertEquals(t, "v1", hz.MustValue(m.Get("k1")))
+		assertEquals(t, "v2", hz.MustValue(m.Get("k2")))
+		assertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+	})
+}
+
+func TestGetEntryView(t *testing.T) {
+	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+		hz.Must(m.Set("k1", "v1"))
+		ev, err := m.GetEntryView("k1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertEquals(t, "k1", ev.Key())
+		assertEquals(t, "v1", ev.Value())
+	})
+}
+
 // TODO: Test Map AddIndex
+// TODO: Test Map AddInterceptor
+// TODO: Test Map ExecuteOnEntries
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetKeySet
