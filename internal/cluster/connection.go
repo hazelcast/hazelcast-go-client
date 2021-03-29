@@ -62,8 +62,8 @@ func (c *Connection) ConnectionID() int64 {
 	return c.connectionID
 }
 
-func (c *Connection) start(networkCfg pubcluster.NetworkConfig, addr pubcluster.Address) error {
-	if socket, err := c.createSocket(networkCfg, addr); err != nil {
+func (c *Connection) start(clusterCfg pubcluster.ClusterConfig, addr pubcluster.Address) error {
+	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err
 	} else {
 		c.socket = socket
@@ -82,7 +82,7 @@ func (c *Connection) sendProtocolStarter() error {
 	return err
 }
 
-func (c *Connection) createSocket(networkCfg pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
+func (c *Connection) createSocket(networkCfg pubcluster.ClusterConfig, address pubcluster.Address) (net.Conn, error) {
 	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout())
 	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
 	if err != nil {

@@ -6,9 +6,9 @@ import (
 )
 
 type Config struct {
-	ClientName  string
-	ClusterName string
-	Network     cluster.NetworkConfig
+	ClientName    string
+	ClusterName   string
+	ClusterConfig cluster.ClusterConfig
 }
 
 type ConfigProvider interface {
@@ -18,13 +18,13 @@ type ConfigProvider interface {
 type ConfigBuilder interface {
 	SetClientName(name string) ConfigBuilder
 	SetClusterName(name string) ConfigBuilder
-	Network() cluster.NetworkConfigBuilder
+	Cluster() cluster.ClusterConfigBuilder
 	Config() (Config, error)
 }
 
 type configBuilderImpl struct {
 	config               Config
-	networkConfigBuilder *icluster.NetworkConfigBuilderImpl
+	networkConfigBuilder *icluster.ClusterConfigBuilderImpl
 }
 
 func newConfigBuilderImpl() *configBuilderImpl {
@@ -43,9 +43,9 @@ func (c *configBuilderImpl) SetClusterName(name string) ConfigBuilder {
 	return c
 }
 
-func (c *configBuilderImpl) Network() cluster.NetworkConfigBuilder {
+func (c *configBuilderImpl) Cluster() cluster.ClusterConfigBuilder {
 	if c.networkConfigBuilder == nil {
-		c.networkConfigBuilder = &icluster.NetworkConfigBuilderImpl{}
+		c.networkConfigBuilder = &icluster.ClusterConfigBuilderImpl{}
 	}
 	return c.networkConfigBuilder
 }
@@ -55,7 +55,7 @@ func (c configBuilderImpl) Config() (Config, error) {
 		if networkConfig, err := c.networkConfigBuilder.Config(); err != nil {
 			return Config{}, err
 		} else {
-			c.config.Network = networkConfig
+			c.config.ClusterConfig = networkConfig
 		}
 	}
 	return c.config, nil

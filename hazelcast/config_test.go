@@ -9,7 +9,7 @@ import (
 func TestConfig(t *testing.T) {
 	configBuilder := hazelcast.NewClientConfigBuilder()
 	configBuilder.SetClusterName("my-cluster")
-	configBuilder.Network().SetAddrs("192.168.1.2")
+	configBuilder.Cluster().SetAddrs("192.168.1.2")
 	config, err := configBuilder.Config()
 	if err != nil {
 		t.Error(err)
@@ -19,7 +19,7 @@ func TestConfig(t *testing.T) {
 		t.Errorf("target: my-cluster != %v", config.ClusterName)
 	}
 	targetAddrs := []string{"192.168.1.2"}
-	if !reflect.DeepEqual(targetAddrs, config.Network.Addrs()) {
-		t.Errorf("target: %v != %v", targetAddrs, config.Network.Addrs())
+	if !reflect.DeepEqual(targetAddrs, config.ClusterConfig.Addrs()) {
+		t.Errorf("target: %v != %v", targetAddrs, config.ClusterConfig.Addrs())
 	}
 }

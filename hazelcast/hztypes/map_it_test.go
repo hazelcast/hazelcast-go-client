@@ -266,7 +266,7 @@ func getClientMapSmart(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 
 func getClientMapNonSmart(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 	cb := hz.NewClientConfigBuilder()
-	cb.Network().SetSmartRouting(false)
+	cb.Cluster().SetSmartRouting(false)
 	if config, err := cb.Config(); err != nil {
 		panic(err)
 	} else {

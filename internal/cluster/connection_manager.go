@@ -42,7 +42,7 @@ type ConnectionManagerCreationBundle struct {
 	PartitionService     *PartitionServiceImpl
 	SerializationService spi.SerializationService
 	EventDispatcher      event.DispatchService
-	NetworkConfig        pubcluster.NetworkConfig
+	ClusterConfig        pubcluster.ClusterConfig
 	Credentials          security.Credentials
 	ClientName           string
 }
@@ -72,8 +72,8 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.EventDispatcher == nil {
 		panic("EventDispatcher is nil")
 	}
-	if b.NetworkConfig == nil {
-		panic("NetworkConfig is nil")
+	if b.ClusterConfig == nil {
+		panic("ClusterConfig is nil")
 	}
 	if b.Credentials == nil {
 		panic("Credentials is nil")
@@ -90,7 +90,7 @@ type ConnectionManager struct {
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
 	eventDispatcher      event.DispatchService
-	networkConfig        pubcluster.NetworkConfig
+	clusterConfig        pubcluster.ClusterConfig
 	credentials          security.Credentials
 	heartbeatTimeout     time.Duration
 	clientName           string
@@ -114,7 +114,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		partitionService:     bundle.PartitionService,
 		serializationService: bundle.SerializationService,
 		eventDispatcher:      bundle.EventDispatcher,
-		networkConfig:        bundle.NetworkConfig,
+		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
 		invocationTimeout:    120 * time.Second,
@@ -273,7 +273,7 @@ func (m *ConnectionManager) getConnection(addr pubcluster.Address, owner bool) *
 func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address, owner bool) (*Connection, error) {
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection()
-	if err := conn.start(m.networkConfig, addr); err != nil {
+	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn, owner); err != nil {
 		return nil, err
@@ -343,7 +343,7 @@ func (m *ConnectionManager) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	// TODO: use credentials from config
 	return codec.EncodeClientAuthenticationRequest(
-		"dev",
+		m.clusterConfig.Name(),
 		"",
 		"",
 		internal.NewUUID(),
