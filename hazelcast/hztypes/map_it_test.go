@@ -263,7 +263,7 @@ func getClientMap(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 		t.Fatal(err)
 	}
 	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("MAPNAME:", mapName)
+	fmt.Println("Map Name:", mapName)
 	if m, err := client.GetMap(mapName); err != nil {
 		t.Fatal(err)
 		return nil, nil
@@ -278,7 +278,7 @@ func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (
 		t.Fatal(err)
 	}
 	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("MAPNAME:", mapName)
+	fmt.Println("Map Name:", mapName)
 	if m, err := client.GetMap(mapName); err != nil {
 		t.Fatal(err)
 		return nil, nil

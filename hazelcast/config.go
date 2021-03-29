@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	ClientName    string
-	ClusterName   string
+	Properties    map[string]string
 	ClusterConfig cluster.ClusterConfig
 }
 
@@ -15,44 +15,40 @@ type ConfigProvider interface {
 	Config() (Config, error)
 }
 
-type ConfigBuilder interface {
-	SetClientName(name string) ConfigBuilder
-	SetClusterName(name string) ConfigBuilder
-	Cluster() cluster.ClusterConfigBuilder
-	Config() (Config, error)
-}
-
-type configBuilderImpl struct {
+type ConfigBuilder struct {
 	config               Config
-	networkConfigBuilder *icluster.ClusterConfigBuilderImpl
+	clusterConfigBuilder *icluster.ClusterConfigBuilderImpl
 }
 
-func newConfigBuilderImpl() *configBuilderImpl {
-	return &configBuilderImpl{
-		networkConfigBuilder: icluster.NewNetworkConfigBuilderImpl(),
+func NewConfigBuilder() *ConfigBuilder {
+	return &ConfigBuilder{
+		config: Config{
+			Properties: map[string]string{},
+		},
+		clusterConfigBuilder: icluster.NewClusterConfigBuilderImpl(),
 	}
 }
 
-func (c *configBuilderImpl) SetClientName(name string) ConfigBuilder {
+func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 	c.config.ClientName = name
 	return c
 }
 
-func (c *configBuilderImpl) SetClusterName(name string) ConfigBuilder {
-	c.config.ClusterName = name
+func (c *ConfigBuilder) SetProperty(key, value string) *ConfigBuilder {
+	c.config.Properties[key] = value
 	return c
 }
 
-func (c *configBuilderImpl) Cluster() cluster.ClusterConfigBuilder {
-	if c.networkConfigBuilder == nil {
-		c.networkConfigBuilder = &icluster.ClusterConfigBuilderImpl{}
+func (c *ConfigBuilder) Cluster() cluster.ClusterConfigBuilder {
+	if c.clusterConfigBuilder == nil {
+		c.clusterConfigBuilder = &icluster.ClusterConfigBuilderImpl{}
 	}
-	return c.networkConfigBuilder
+	return c.clusterConfigBuilder
 }
 
-func (c configBuilderImpl) Config() (Config, error) {
-	if c.networkConfigBuilder != nil {
-		if networkConfig, err := c.networkConfigBuilder.Config(); err != nil {
+func (c ConfigBuilder) Config() (Config, error) {
+	if c.clusterConfigBuilder != nil {
+		if networkConfig, err := c.clusterConfigBuilder.Config(); err != nil {
 			return Config{}, err
 		} else {
 			c.config.ClusterConfig = networkConfig

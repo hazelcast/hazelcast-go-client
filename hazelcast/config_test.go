@@ -8,15 +8,16 @@ import (
 
 func TestConfig(t *testing.T) {
 	configBuilder := hazelcast.NewClientConfigBuilder()
-	configBuilder.SetClusterName("my-cluster")
-	configBuilder.Cluster().SetAddrs("192.168.1.2")
+	configBuilder.Cluster().
+		SetAddrs("192.168.1.2").
+		SetName("my-cluster")
 	config, err := configBuilder.Config()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if "my-cluster" != config.ClusterName {
-		t.Errorf("target: my-cluster != %v", config.ClusterName)
+	if "my-cluster" != config.ClusterConfig.Name() {
+		t.Errorf("target: my-cluster != %v", config.ClusterConfig.Name())
 	}
 	targetAddrs := []string{"192.168.1.2"}
 	if !reflect.DeepEqual(targetAddrs, config.ClusterConfig.Addrs()) {

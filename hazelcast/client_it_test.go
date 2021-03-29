@@ -13,7 +13,7 @@ import (
 func TestLifecycleEvents(t *testing.T) {
 	receivedStates := []lifecycle.State{}
 	receivedStatesMu := &sync.Mutex{}
-	client := hz.NewClient()
+	client := hz.MustClient(hz.NewClient())
 	client.ListenLifecycleStateChange(func(event lifecycle.StateChanged) {
 		receivedStatesMu.Lock()
 		defer receivedStatesMu.Unlock()

@@ -45,7 +45,7 @@ type ClusterConfigBuilderImpl struct {
 	err           error
 }
 
-func NewNetworkConfigBuilderImpl() *ClusterConfigBuilderImpl {
+func NewClusterConfigBuilderImpl() *ClusterConfigBuilderImpl {
 	return &ClusterConfigBuilderImpl{
 		clusterConfig: NewClusterConfigImpl(),
 	}
