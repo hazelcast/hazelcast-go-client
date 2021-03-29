@@ -6,7 +6,8 @@ type Map interface {
 	// AddIndex adds an index to this map for the specified entries so that queries can run faster.
 	AddIndex(indexConfig IndexConfig) error
 
-	// TODO: AddInterceptor
+	// AddInterceptor adds an interceptor for this map.
+	AddInterceptor(interceptor interface{}) (string, error)
 
 	// Clear deletes all entries one by one and fires related events
 	Clear() error
@@ -30,7 +31,8 @@ type Map interface {
 	// EvictAll deletes all entries withour firing releated events
 	EvictAll() error
 
-	// TODO: ExecuteOnEntries
+	// ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
+	ExecuteOnEntries(entryProcessor interface{}) ([]KeyValuePair, error)
 
 	// Flush flushes all the local dirty entries.
 	Flush() error
@@ -54,7 +56,8 @@ type Map interface {
 	// GetValues returns a list clone of the values contained in this map
 	GetValues(keys ...interface{}) ([]interface{}, error)
 
-	// TODO: GetEntryView
+	// GetEntryView returns the SimpleEntryView for the specified key.
+	GetEntryView(key string) (*SimpleEntryView, error)
 
 	// IsEmpty returns true if this map contains no key-value mappings.
 	IsEmpty() (bool, error)
@@ -87,7 +90,10 @@ type Map interface {
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)
 
-	// TODO: PutAll
+	// PutALl copies all of the mappings from the specified map to this map.
+	// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
+	// while others are not.
+	PutAll(keyValues ...interface{}) error
 
 	// PutIfAbsent associates the specified key with the given value if it is not already associated.
 	PutIfAbsent(key interface{}, value interface{}) (interface{}, error)

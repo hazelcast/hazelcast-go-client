@@ -15,6 +15,7 @@
 package proxy
 
 import (
+	"errors"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
@@ -41,7 +42,7 @@ func NewMapImpl(proxy *Impl) *MapImpl {
 
 func (m *MapImpl) AddIndex(indexConfig hztypes.IndexConfig) error {
 	request := codec.EncodeMapAddIndexRequest(m.name, indexConfig)
-	_, err := m.invokeOnRandomTarget(request)
+	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
 }
 
@@ -50,7 +51,7 @@ func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
 		return "", err
 	} else {
 		request := codec.EncodeMapAddInterceptorRequest(m.name, interceptorData)
-		if response, err := m.invokeOnRandomTarget(request); err != nil {
+		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 			return "", err
 		} else {
 			return codec.DecodeMapAddInterceptorResponse(response), nil
@@ -60,7 +61,7 @@ func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
 
 func (m *MapImpl) Clear() error {
 	request := codec.EncodeMapClearRequest(m.name)
-	_, err := m.invokeOnRandomTarget(request)
+	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
 }
 
@@ -82,7 +83,7 @@ func (m *MapImpl) ContainsValue(value interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeMapContainsValueRequest(m.name, valueData)
-		if response, err := m.invokeOnRandomTarget(request); err != nil {
+		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeMapContainsValueResponse(response), nil
@@ -115,13 +116,34 @@ func (m *MapImpl) Evict(key interface{}) (bool, error) {
 
 func (m *MapImpl) EvictAll() error {
 	request := codec.EncodeMapEvictAllRequest(m.name)
-	_, err := m.invokeOnRandomTarget(request)
+	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
+}
+
+func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.KeyValuePair, error) {
+	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
+		return nil, err
+	} else {
+		ch := make(chan []proto.Pair, 1)
+		handler := func(msg *proto.ClientMessage) {
+			ch <- codec.DecodeMapExecuteOnAllKeysResponse(msg)
+		}
+		request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
+		if _, err := m.invokeOnRandomTarget(request, handler); err != nil {
+			return nil, err
+		}
+		pairs := <-ch
+		if kvPairs, err := m.convertPairsToKeyValuePairs(pairs); err != nil {
+			return nil, err
+		} else {
+			return kvPairs, nil
+		}
+	}
 }
 
 func (m *MapImpl) Flush() error {
 	request := codec.EncodeMapFlushRequest(m.name)
-	_, err := m.invokeOnRandomTarget(request)
+	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
 }
 
@@ -189,9 +211,45 @@ func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, erro
 	return results, nil
 }
 
+func (m *MapImpl) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
+	if keyData, err := m.validateAndSerialize(key); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapGetEntryViewRequest(m.name, keyData, threadID())
+		if response, err := m.invokeOnKey(request, keyData); err != nil {
+			return nil, err
+		} else {
+			ev, maxIdle := codec.DecodeMapGetEntryViewResponse(response)
+			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
+			deserializedKey, err := m.convertToObject(ev.Key().(serialization.Data))
+			if err != nil {
+				return nil, err
+			}
+			deserializedValue, err := m.convertToObject(ev.Value().(serialization.Data))
+			if err != nil {
+				return nil, err
+			}
+			newEntryView := hztypes.NewSimpleEntryView(
+				deserializedKey,
+				deserializedValue,
+				ev.Cost(),
+				ev.CreationTime(),
+				ev.ExpirationTime(),
+				ev.Hits(),
+				ev.LastAccessTime(),
+				ev.LastStoredTime(),
+				ev.LastUpdateTime(),
+				ev.Version(),
+				ev.Ttl(),
+				maxIdle)
+			return newEntryView, nil
+		}
+	}
+}
+
 func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 	request := codec.EncodeMapKeySetRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request); err != nil {
+	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
 	} else {
 		keyDatas := codec.DecodeMapKeySetResponse(response)
@@ -222,7 +280,7 @@ func (m *MapImpl) GetValues(keys ...interface{}) ([]interface{}, error) {
 
 func (m *MapImpl) IsEmpty() (bool, error) {
 	request := codec.EncodeMapIsEmptyRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request); err != nil {
+	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 		return false, err
 	} else {
 		return codec.DecodeMapIsEmptyResponse(response), nil
@@ -272,6 +330,30 @@ func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
 			return m.convertToObject(codec.DecodeMapPutResponse(response))
 		}
 	}
+}
+
+func (m *MapImpl) PutAll(keyValues ...interface{}) error {
+	if len(keyValues)%2 == 1 {
+		return errors.New("odd number of arguments was passed to Map.PutAll")
+	}
+	partitionToPairs, err := m.makePartitionIDMapFromArray(keyValues)
+	if err != nil {
+		return err
+	}
+	// create invocations
+	invs := make([]invocation.Invocation, 0, len(partitionToPairs))
+	for partitionID, entries := range partitionToPairs {
+		inv := m.invokeOnPartitionAsync(codec.EncodeMapPutAllRequest(m.name, entries, true), partitionID)
+		invs = append(invs, inv)
+	}
+	// wait for responses
+	for _, inv := range invs {
+		if _, err := inv.Get(); err != nil {
+			// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *MapImpl) PutIfAbsent(key interface{}, value interface{}) (interface{}, error) {
@@ -360,7 +442,7 @@ func (m *MapImpl) SetWithTTL(key interface{}, value interface{}, ttl time.Durati
 
 func (m *MapImpl) Size() (int, error) {
 	request := codec.EncodeMapSizeRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request); err != nil {
+	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 		return 0, err
 	} else {
 		return int(codec.DecodeMapSizeResponse(response)), nil
@@ -469,7 +551,7 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 		}
 	}
 	request := codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
-	_, err := m.invokeOnRandomTarget(request)
+	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
 }
 
@@ -549,4 +631,36 @@ func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error)
 			return codec.DecodeMapTryRemoveResponse(response), nil
 		}
 	}
+}
+
+func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]proto.Pair, error) {
+	ps := m.partitionService
+	pairsMap := map[int32][]proto.Pair{}
+	for i := 0; i < len(items)/2; i += 2 {
+		key := items[i]
+		value := items[i+1]
+		if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+			return nil, err
+		} else {
+			arr := pairsMap[ps.GetPartitionID(keyData)]
+			pairsMap[ps.GetPartitionID(keyData)] = append(arr, proto.NewPair(keyData, valueData))
+		}
+	}
+	return pairsMap, nil
+}
+
+func (m *MapImpl) convertPairsToKeyValuePairs(pairs []proto.Pair) ([]hztypes.KeyValuePair, error) {
+	kvPairs := make([]hztypes.KeyValuePair, len(pairs))
+	for i, pair := range pairs {
+		key, err := m.convertToObject(pair.Key().(serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		value, err := m.convertToObject(pair.Value().(serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		kvPairs[i] = hztypes.KeyValuePair{key, value}
+	}
+	return kvPairs, nil
 }

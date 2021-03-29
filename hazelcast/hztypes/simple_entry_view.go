@@ -1,7 +1,8 @@
-package internal
+package hztypes
 
 // SimpleEntryView represents a readonly view of a map entry.
 type SimpleEntryView struct {
+	// TODO: export fields
 	key            interface{}
 	value          interface{}
 	cost           int64
