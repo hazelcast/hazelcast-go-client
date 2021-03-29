@@ -25,8 +25,7 @@ var nextId int32
 type Client struct {
 	// configuration
 	name          string
-	clusterName   string
-	networkConfig cluster.NetworkConfig
+	clusterConfig cluster.ClusterConfig
 
 	// components
 	proxyManager      proxy.Manager
@@ -53,8 +52,7 @@ func newClient(name string, config Config) *Client {
 	clientLogger := logger.New()
 	impl := &Client{
 		name:          name,
-		clusterName:   config.ClusterName,
-		networkConfig: config.Network,
+		clusterConfig: config.ClusterConfig,
 		logger:        clientLogger,
 	}
 	impl.started.Store(false)
@@ -77,7 +75,7 @@ func (c *Client) Start() error {
 		return nil
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
-	clusterServiceStartCh := c.clusterService.Start(c.networkConfig.SmartRouting())
+	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting())
 	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
 		return err
@@ -131,10 +129,10 @@ func (c *Client) createComponents(config *Config) {
 	if err != nil {
 		panic(fmt.Errorf("error creating client: %w", err))
 	}
-	smartRouting := config.Network.SmartRouting()
+	smartRouting := config.ClusterConfig.SmartRouting()
 	addressTranslator := cluster.NewDefaultAddressTranslator()
 	addressProviders := []icluster.AddressProvider{
-		icluster.NewDefaultAddressProvider(config.Network),
+		icluster.NewDefaultAddressProvider(config.ClusterConfig),
 	}
 	eventDispatcher := event.NewDispatchServiceImpl()
 	requestCh := make(chan invocation.Invocation, 1024)
@@ -168,7 +166,7 @@ func (c *Client) createComponents(config *Config) {
 		PartitionService:     partitionService,
 		SerializationService: serializationService,
 		EventDispatcher:      eventDispatcher,
-		NetworkConfig:        config.Network,
+		ClusterConfig:        config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
 	})

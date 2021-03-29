@@ -75,7 +75,7 @@ func getClientSmart(t *testing.T) *hz.Client {
 
 func getClientNonSmart(t *testing.T) *hz.Client {
 	cb := hz.NewClientConfigBuilder()
-	cb.Network().SetSmartRouting(false)
+	cb.Cluster().SetSmartRouting(false)
 	if config, err := cb.Config(); err != nil {
 		panic(err)
 	} else {

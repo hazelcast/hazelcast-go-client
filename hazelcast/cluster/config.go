@@ -2,19 +2,22 @@ package cluster
 
 import "time"
 
-type NetworkConfig interface {
+type ClusterConfig interface {
+	Name() string
 	Addrs() []string
 	SmartRouting() bool
 	ConnectionTimeout() time.Duration
 }
 
-type NetworkConfigBuilder interface {
-	SetAddrs(addr ...string) NetworkConfigBuilder
-	SetSmartRouting(enable bool) NetworkConfigBuilder
-	Config() (NetworkConfig, error)
+type ClusterConfigBuilder interface {
+	SetName(name string) ClusterConfigBuilder
+	SetAddrs(addr ...string) ClusterConfigBuilder
+	SetSmartRouting(enable bool) ClusterConfigBuilder
+	Config() (ClusterConfig, error)
 }
 
-type NetworkConfigProvider interface {
+// TODO: remove
+type ClusterConfigProvider interface {
 	Addrs() []string
 	ConnectionTimeout() time.Duration
 }
