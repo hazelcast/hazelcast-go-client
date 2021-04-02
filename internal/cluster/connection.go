@@ -17,12 +17,13 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"net"
 	"sync/atomic"
 	"time"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 
 	publogger "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"

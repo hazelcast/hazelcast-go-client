@@ -17,6 +17,7 @@ package proto
 import (
 	"encoding/binary"
 	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
+	"sync"
 )
 
 const (
@@ -68,90 +69,115 @@ var (
 
 // ClientMessage
 type ClientMessage struct {
-	StartFrame *Frame
-	EndFrame   *Frame
-	Retryable  bool
-	Err        error
+	StartFrame          *Frame
+	EndFrame            *Frame
+	Retryable           bool
+	Err                 error
+	startFrameContentMu *sync.RWMutex
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
-	return &ClientMessage{StartFrame: startFrame, EndFrame: startFrame}
+	return NewClientMessageWithStartAndEndFrame(startFrame, startFrame)
 }
 
 func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *ClientMessage {
-	return &ClientMessage{StartFrame: startFrame, EndFrame: endFrame}
+	return &ClientMessage{
+		StartFrame:          startFrame,
+		EndFrame:            endFrame,
+		startFrameContentMu: &sync.RWMutex{},
+	}
 }
 
 func NewClientMessageForEncode() *ClientMessage {
-	return &ClientMessage{}
+	return &ClientMessage{startFrameContentMu: &sync.RWMutex{}}
 }
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
 	return NewClientMessage(frame)
 }
 
-func (clientMessage *ClientMessage) CopyWithNewCorrelationId(correlationID int64) *ClientMessage {
-	initialFrameCopy := clientMessage.StartFrame.DeepCopy()
-	frame := NewClientMessageWithStartAndEndFrame(initialFrameCopy, clientMessage.EndFrame)
+func (m *ClientMessage) CopyWithNewCorrelationId(correlationID int64) *ClientMessage {
+	initialFrameCopy := m.StartFrame.DeepCopy()
+	frame := NewClientMessageWithStartAndEndFrame(initialFrameCopy, m.EndFrame)
 	frame.SetCorrelationID(correlationID)
-	frame.SetRetryable(clientMessage.IsRetryable())
+	frame.SetRetryable(m.IsRetryable())
 	return frame
 }
 
-func (clientMessage *ClientMessage) IsRetryable() bool {
-	return clientMessage.Retryable
+func (m *ClientMessage) IsRetryable() bool {
+	return m.Retryable
 }
 
-func (clientMessage *ClientMessage) SetRetryable(retryable bool) {
-	clientMessage.Retryable = retryable
+func (m *ClientMessage) SetRetryable(retryable bool) {
+	m.Retryable = retryable
 }
 
-func (clientMessage *ClientMessage) FrameIterator() *ForwardFrameIterator {
-	return NewForwardFrameIterator(clientMessage.StartFrame)
+func (m *ClientMessage) FrameIterator() *ForwardFrameIterator {
+	return NewForwardFrameIterator(m.StartFrame)
 }
 
-func (clientMessage *ClientMessage) AddFrame(frame *Frame) {
+func (m *ClientMessage) AddFrame(frame *Frame) {
 	frame.next = nil
-	if clientMessage.StartFrame == nil {
-		clientMessage.StartFrame = frame
-		clientMessage.EndFrame = frame
+	if m.StartFrame == nil {
+		m.StartFrame = frame
+		m.EndFrame = frame
 	} else {
-		clientMessage.EndFrame.next = frame
-		clientMessage.EndFrame = frame
+		m.EndFrame.next = frame
+		m.EndFrame = frame
 	}
 }
 
-func (clientMessage *ClientMessage) Type() int32 {
-	return int32(binary.LittleEndian.Uint32(clientMessage.StartFrame.Content[TypeFieldOffset:]))
+func (m *ClientMessage) Type() int32 {
+	m.startFrameContentMu.RLock()
+	defer m.startFrameContentMu.RUnlock()
+	return int32(binary.LittleEndian.Uint32(m.StartFrame.Content[TypeFieldOffset:]))
 }
 
-func (clientMessage *ClientMessage) SetCorrelationID(correlationID int64) {
-	binary.LittleEndian.PutUint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
+func (m *ClientMessage) CorrelationID() int64 {
+	m.startFrameContentMu.RLock()
+	defer m.startFrameContentMu.RUnlock()
+	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[CorrelationIDFieldOffset:]))
 }
 
-func (clientMessage *ClientMessage) CorrelationID() int64 {
-	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[CorrelationIDFieldOffset:]))
+func (m *ClientMessage) FragmentationID() int64 {
+	m.startFrameContentMu.RLock()
+	defer m.startFrameContentMu.RUnlock()
+	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[FragmentationIDOffset:]))
 }
 
-func (clientMessage *ClientMessage) FragmentationID() int64 {
-	return int64(binary.LittleEndian.Uint64(clientMessage.StartFrame.Content[FragmentationIDOffset:]))
+func (m *ClientMessage) NumberOfBackupAcks() uint8 {
+	m.startFrameContentMu.RLock()
+	defer m.startFrameContentMu.RUnlock()
+	return m.StartFrame.Content[ResponseBackupAcksOffset]
 }
 
-func (clientMessage *ClientMessage) NumberOfBackupAcks() uint8 {
-	return clientMessage.StartFrame.Content[ResponseBackupAcksOffset]
+func (m *ClientMessage) PartitionID() int32 {
+	m.startFrameContentMu.RLock()
+	defer m.startFrameContentMu.RUnlock()
+	return int32(binary.LittleEndian.Uint32(m.StartFrame.Content[PartitionIDOffset:]))
 }
 
-func (clientMessage *ClientMessage) SetMessageType(messageType int32) {
-	binary.LittleEndian.PutUint32(clientMessage.StartFrame.Content[MessageTypeOffset:], uint32(messageType))
+func (m *ClientMessage) SetCorrelationID(correlationID int64) {
+	m.startFrameContentMu.Lock()
+	defer m.startFrameContentMu.Unlock()
+	binary.LittleEndian.PutUint64(m.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
 }
 
-func (clientMessage *ClientMessage) SetPartitionId(partitionId int32) {
-	binary.LittleEndian.PutUint32(clientMessage.StartFrame.Content[PartitionIDOffset:], uint32(partitionId))
+func (m *ClientMessage) SetMessageType(messageType int32) {
+	m.startFrameContentMu.Lock()
+	defer m.startFrameContentMu.Unlock()
+	binary.LittleEndian.PutUint32(m.StartFrame.Content[MessageTypeOffset:], uint32(messageType))
 }
 
-func (clientMessage *ClientMessage) TotalLength() int {
+func (m *ClientMessage) SetPartitionId(partitionId int32) {
+	m.startFrameContentMu.Lock()
+	defer m.startFrameContentMu.Unlock()
+	binary.LittleEndian.PutUint32(m.StartFrame.Content[PartitionIDOffset:], uint32(partitionId))
+}
+
+func (m *ClientMessage) TotalLength() int {
 	totalLength := 0
-	currentFrame := clientMessage.StartFrame
+	currentFrame := m.StartFrame
 	for currentFrame != nil {
 		totalLength += currentFrame.GetLength()
 		currentFrame = currentFrame.next
@@ -159,9 +185,11 @@ func (clientMessage *ClientMessage) TotalLength() int {
 	return totalLength
 }
 
-func (clientMessage *ClientMessage) Bytes(bytes []byte) int {
+func (m *ClientMessage) Bytes(bytes []byte) int {
+	m.startFrameContentMu.RLock()
+	defer m.startFrameContentMu.RUnlock()
 	pos := 0
-	currentFrame := clientMessage.StartFrame
+	currentFrame := m.StartFrame
 	for currentFrame != nil {
 		isLastFrame := currentFrame.next == nil
 		binary.LittleEndian.PutUint32(bytes[pos:], uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
@@ -178,8 +206,8 @@ func (clientMessage *ClientMessage) Bytes(bytes []byte) int {
 	return pos
 }
 
-func (clientMessage *ClientMessage) DropFragmentationFrame() {
-	clientMessage.StartFrame = clientMessage.StartFrame.next
+func (m *ClientMessage) DropFragmentationFrame() {
+	m.StartFrame = m.StartFrame.next
 }
 
 func (m *ClientMessage) DecodeError() *ihzerror.ServerErrorImpl {

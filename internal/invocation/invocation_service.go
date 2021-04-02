@@ -1,12 +1,13 @@
 package invocation
 
 import (
+	"sync/atomic"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
-	"sync/atomic"
-	"time"
 )
 
 type ServiceCreationBundle struct {

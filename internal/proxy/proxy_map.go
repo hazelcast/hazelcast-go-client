@@ -15,7 +15,8 @@
 package proxy
 
 import (
-	"errors"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
@@ -23,7 +24,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	"time"
 )
 
 const MapServiceName = "hz:impl:mapService"
@@ -171,44 +171,46 @@ func (m *MapImpl) Get(key interface{}) (interface{}, error) {
 	}
 }
 
-func (m *MapImpl) GetAll(keys ...interface{}) (map[interface{}]interface{}, error) {
+func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Pair, error) {
 	partitionToKeys := map[int32][]serialization.Data{}
 	ps := m.Impl.partitionService
 	for _, key := range keys {
 		if keyData, err := m.validateAndSerialize(key); err != nil {
 			return nil, err
 		} else {
-			arr := partitionToKeys[ps.GetPartitionID(keyData)]
-			partitionToKeys[ps.GetPartitionID(keyData)] = append(arr, keyData)
+			partitionKey := ps.GetPartitionID(keyData)
+			arr := partitionToKeys[partitionKey]
+			partitionToKeys[partitionKey] = append(arr, keyData)
 		}
 	}
+	result := make([]hztypes.Pair, 0, len(keys))
 	// create invocations
 	invs := make([]invocation.Invocation, 0, len(partitionToKeys))
 	for partitionID, keys := range partitionToKeys {
-		inv := m.invokeOnPartitionAsync(codec.EncodeMapGetAllRequest(m.name, keys), partitionID)
+		request := codec.EncodeMapGetAllRequest(m.name, keys)
+		inv := m.invokeOnPartitionAsync(request, partitionID)
 		invs = append(invs, inv)
 	}
 	// wait for responses and decode them
-	results := map[interface{}]interface{}{}
 	for _, inv := range invs {
 		if response, err := inv.Get(); err != nil {
 			// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
 			return nil, err
 		} else {
-			for _, pair := range codec.DecodeMapGetAllResponse(response) {
-				key, err := m.convertToObject(pair.Key().(serialization.Data))
-				if err != nil {
+			pairs := codec.DecodeMapGetAllResponse(response)
+			var key, value interface{}
+			var err error
+			for _, pair := range pairs {
+				if key, err = m.convertToObject(pair.Key().(serialization.Data)); err != nil {
+					return nil, err
+				} else if value, err = m.convertToObject(pair.Value().(serialization.Data)); err != nil {
 					return nil, err
 				}
-				value, err := m.convertToObject(pair.Value().(serialization.Data))
-				if err != nil {
-					return nil, err
-				}
-				results[key] = value
+				result = append(result, hztypes.NewPair(key, value))
 			}
 		}
 	}
-	return results, nil
+	return result, nil
 }
 
 func (m *MapImpl) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
@@ -332,13 +334,17 @@ func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
 	}
 }
 
-func (m *MapImpl) PutAll(keyValues ...interface{}) error {
-	if len(keyValues)%2 == 1 {
-		return errors.New("odd number of arguments was passed to Map.PutAll")
-	}
-	partitionToPairs, err := m.makePartitionIDMapFromArray(keyValues)
-	if err != nil {
-		return err
+func (m *MapImpl) PutAll(keyValuePairs []hztypes.Pair) error {
+	ps := m.partitionService
+	partitionToPairs := map[int32][]proto.Pair{}
+	for _, pair := range keyValuePairs {
+		if keyData, valueData, err := m.validateAndSerialize2(pair.Key, pair.Value); err != nil {
+			return err
+		} else {
+			partitionKey := ps.GetPartitionID(keyData)
+			arr := partitionToPairs[partitionKey]
+			partitionToPairs[partitionKey] = append(arr, proto.NewPair(keyData, valueData))
+		}
 	}
 	// create invocations
 	invs := make([]invocation.Invocation, 0, len(partitionToPairs))

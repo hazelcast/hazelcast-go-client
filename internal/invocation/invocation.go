@@ -1,11 +1,12 @@
 package invocation
 
 import (
+	"sync/atomic"
+	"time"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	pubhzerror "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"sync/atomic"
-	"time"
 )
 
 type Invocation interface {
@@ -58,7 +59,6 @@ func (i *Impl) EventHandler() proto.ClientMessageHandler {
 func (i *Impl) Get() (*proto.ClientMessage, error) {
 	response := <-i.response
 	return i.unwrapResponse(response)
-
 }
 
 func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error) {
