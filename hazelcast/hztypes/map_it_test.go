@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
+
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 )
@@ -126,23 +128,37 @@ func TestRemove(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	t.SkipNow()
 	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
-		targetMap := map[interface{}]interface{}{
-			"k1": "v1",
-			"k3": "v3",
+		const maxKeys = 100
+		makeKey := func(id int) string {
+			return fmt.Sprintf("k%d", id)
 		}
-		hz.Must(m.Set("k1", "v1"))
-		hz.Must(m.Set("k2", "v2"))
-		hz.Must(m.Set("k3", "v3"))
+		makeValue := func(id int) string {
+			return fmt.Sprintf("v%d", id)
+		}
+		allPairs := []hztypes.Pair{}
+		for i := 0; i < maxKeys; i++ {
+			allPairs = append(allPairs, hztypes.NewPair(makeKey(i), makeValue(i)))
+		}
+		keys := []interface{}{}
+		target := []hztypes.Pair{}
+		for i, pair := range allPairs {
+			if i%2 == 0 {
+				keys = append(keys, pair.Key)
+				target = append(target, pair)
+			}
+		}
+		for _, pair := range allPairs {
+			hz.Must(m.Set(pair.Key, pair.Value))
+		}
 		time.Sleep(1 * time.Second)
-		assertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		assertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		assertEquals(t, "v3", hz.MustValue(m.Get("k3")))
-		if kvs, err := m.GetAll("k1", "k3"); err != nil {
+		for _, pair := range allPairs {
+			assertEquals(t, pair.Value, hz.MustValue(m.Get(pair.Key)))
+		}
+		if kvs, err := m.GetAll(keys...); err != nil {
 			t.Fatal(err)
-		} else if !reflect.DeepEqual(targetMap, kvs) {
-			t.Fatalf("target: %#v != %#v", targetMap, kvs)
+		} else if !pairsEqualUnordered(target, kvs) {
+			t.Fatalf("target: %#v != %#v", target, kvs)
 		}
 	})
 }
@@ -166,9 +182,13 @@ func TestGetKeySet(t *testing.T) {
 }
 
 func TestPutAll(t *testing.T) {
-	t.SkipNow()
 	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
-		if err := m.PutAll("k1", "v1", "k2", "v2", "k3", "v3"); err != nil {
+		pairs := []hztypes.Pair{
+			hztypes.NewPair("k1", "v1"),
+			hztypes.NewPair("k2", "v2"),
+			hztypes.NewPair("k3", "v3"),
+		}
+		if err := m.PutAll(pairs); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -181,12 +201,12 @@ func TestPutAll(t *testing.T) {
 func TestGetEntryView(t *testing.T) {
 	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
 		hz.Must(m.Set("k1", "v1"))
-		ev, err := m.GetEntryView("k1")
-		if err != nil {
+		if ev, err := m.GetEntryView("k1"); err != nil {
 			t.Fatal(err)
+		} else {
+			assertEquals(t, "k1", ev.Key())
+			assertEquals(t, "v1", ev.Value())
 		}
-		assertEquals(t, "k1", ev.Key())
-		assertEquals(t, "v1", ev.Value())
 	})
 }
 
@@ -258,7 +278,13 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 }
 
 func getClientMap(t *testing.T, name string) (*hz.Client, hztypes.Map) {
-	client, err := hz.StartNewClient()
+	cb := hz.NewClientConfigBuilder()
+	cb.SetProperty(property.LoggingLevel, "trace")
+	config, err := cb.Config()
+	if err != nil {
+		panic(err)
+	}
+	client, err := hz.StartNewClientWithConfig(config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,6 +299,7 @@ func getClientMap(t *testing.T, name string) (*hz.Client, hztypes.Map) {
 }
 
 func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (*hz.Client, hztypes.Map) {
+	clientConfig.Properties[property.LoggingLevel] = "trace"
 	client, err := hz.StartNewClientWithConfig(clientConfig)
 	if err != nil {
 		t.Fatal(err)
@@ -320,13 +347,48 @@ func testMap(t *testing.T, f func(t *testing.T, client *hz.Client, m hztypes.Map
 		client *hz.Client
 		m      hztypes.Map
 	)
-	t.Logf("testing smart client")
-	client, m = getClientMapSmart(t, "my-map")
-	f(t, client, m)
-	client.Shutdown()
+	t.Run("Smart Client", func(t *testing.T) {
+		client, m = getClientMapSmart(t, "my-map")
+		defer func() {
+			m.EvictAll()
+			client.Shutdown()
+		}()
+		f(t, client, m)
 
-	t.Logf("testing non-smart client")
-	client, m = getClientMapNonSmart(t, "my-map")
-	f(t, client, m)
-	client.Shutdown()
+	})
+	t.Run("Non-Smart Client", func(t *testing.T) {
+		client, m = getClientMapNonSmart(t, "my-map")
+		defer func() {
+			m.EvictAll()
+			client.Shutdown()
+		}()
+		f(t, client, m)
+	})
+}
+
+func pairsEqualUnordered(p1, p2 []hztypes.Pair) bool {
+	if len(p1) != len(p2) {
+		return false
+	}
+	// inefficient
+	for _, item1 := range p1 {
+		if pairsIndex(item1, p2) < 0 {
+			return false
+		}
+	}
+	for _, item2 := range p2 {
+		if pairsIndex(item2, p1) < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func pairsIndex(p hztypes.Pair, ps []hztypes.Pair) int {
+	for i, item := range ps {
+		if reflect.DeepEqual(p, item) {
+			return i
+		}
+	}
+	return -1
 }

@@ -48,7 +48,7 @@ type Map interface {
 	Get(key interface{}) (interface{}, error)
 
 	// GetAll returns the entries for the given keys.
-	GetAll(keys ...interface{}) (map[interface{}]interface{}, error)
+	GetAll(keys ...interface{}) ([]Pair, error)
 
 	// GetKeySet returns keys contained in this map
 	GetKeySet() ([]interface{}, error)
@@ -93,7 +93,7 @@ type Map interface {
 	// PutALl copies all of the mappings from the specified map to this map.
 	// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 	// while others are not.
-	PutAll(keyValues ...interface{}) error
+	PutAll(keyValuePairs []Pair) error
 
 	// PutIfAbsent associates the specified key with the given value if it is not already associated.
 	PutIfAbsent(key interface{}, value interface{}) (interface{}, error)

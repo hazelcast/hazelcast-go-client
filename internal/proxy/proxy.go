@@ -16,6 +16,8 @@ package proxy
 
 import (
 	"fmt"
+	"time"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
@@ -224,6 +226,8 @@ func (p *Impl) invokeOnPartition(request *proto.ClientMessage, partitionID int32
 func (p *Impl) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
+	// TODO: REMOVE
+	time.Sleep(1 * time.Millisecond)
 	return inv
 }
 
