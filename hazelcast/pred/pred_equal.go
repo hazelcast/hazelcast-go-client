@@ -6,16 +6,16 @@ import (
 	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
-func Equal(fieldName string, value interface{}) *predEqual {
+func Equal(attributeName string, value interface{}) *predEqual {
 	return &predEqual{
-		field: fieldName,
-		value: value,
+		attribute: attributeName,
+		value:     value,
 	}
 }
 
 type predEqual struct {
-	field string
-	value interface{}
+	attribute string
+	value     interface{}
 }
 
 func (p predEqual) FactoryID() int32 {
@@ -23,22 +23,22 @@ func (p predEqual) FactoryID() int32 {
 }
 
 func (p predEqual) ClassID() int32 {
-	return equalID
+	return 3
 }
 
 func (p *predEqual) ReadData(input serialization.DataInput) error {
-	p.field = input.ReadString()
+	p.attribute = input.ReadString()
 	p.value = input.ReadObject()
 	return input.Error()
 }
 
 func (p predEqual) WriteData(output serialization.DataOutput) error {
-	output.WriteString(p.field)
+	output.WriteString(p.attribute)
 	return output.WriteObject(p.value)
 }
 
 func (p predEqual) String() string {
-	return fmt.Sprintf("%s=%v", p.field, p.value)
+	return fmt.Sprintf("%s=%v", p.attribute, p.value)
 }
 
 func (p predEqual) enforcePredicate() {

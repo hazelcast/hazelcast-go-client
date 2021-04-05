@@ -36,54 +36,12 @@ type Predicate interface {
 	enforcePredicate()
 }
 
-type writeDataFun func(output serialization.DataOutput) error
-
-type predicate struct {
-	id           int32
-	writeDataFun writeDataFun
+type PagingPredicate interface {
+	Predicate
+	Reset()
+	NextPage()
+	PreviousPage()
+	Page() int
+	SetPage(page int)
+	PageSize() int
 }
-
-/*
-func newPredicate(id int32, writeDataFun writeDataFun) *predicate {
-	return &predicate{
-		id:           id,
-		writeDataFun: writeDataFun,
-	}
-}
-
-type predicateFun func() *predicate
-
-func eq(fieldName string, value interface{}) predicateFun {
-	return func() *predicate {
-		return newPredicate(equalID, func(output serialization.DataOutput) error {
-			output.WriteString(fieldName)
-			return output.WriteObject(value)
-		})
-	}
-}
-
-func and(predicates ...predicateFun) predicateFun {
-	return func() *predicate {
-		return newPredicate(andID, func(output serialization.DataOutput) error {
-			output.WriteInt32(int32(len(predicates)))
-			for _, pred := range predicates {
-				if err := output.WriteObject(pred()); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-	}
-}
-*/
-
-//type predDecodeHandler func(input serialization.DataInput) (Predicate, error)
-//
-//var idToPred = map[int32]predDecodeHandler{
-//	andID: func(input serialization.DataInput) (Predicate, error) {
-//		p := predAnd{}
-//		if err := p.ReadData(input); err != nil {
-//			return
-//		}
-//	},
-//}
