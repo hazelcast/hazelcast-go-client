@@ -1,11 +1,12 @@
 package cluster
 
 import (
+	"time"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	"time"
 )
 
 type ConnectionInvocationFactory struct {

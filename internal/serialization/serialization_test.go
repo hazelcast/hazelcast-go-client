@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,7 +60,7 @@ func (*CustomArtistSerializer) ID() int32 {
 	return 10
 }
 
-func (s *CustomArtistSerializer) Read(input DataInput) (interface{}, error) {
+func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
 	typ := input.ReadInt32()
 	data := input.ReadData()
@@ -75,7 +77,7 @@ func (s *CustomArtistSerializer) Read(input DataInput) (interface{}, error) {
 	return v, nil
 }
 
-func (s *CustomArtistSerializer) Write(output DataOutput, obj interface{}) error {
+func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) error {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
@@ -100,7 +102,7 @@ func (s *GlobalSerializer) ID() int32 {
 	return 123
 }
 
-func (s *GlobalSerializer) Read(input DataInput) (interface{}, error) {
+func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
 	data := input.ReadData()
 	network.Write(data.Buffer())
@@ -110,7 +112,7 @@ func (s *GlobalSerializer) Read(input DataInput) (interface{}, error) {
 	return v, nil
 }
 
-func (s *GlobalSerializer) Write(output DataOutput, obj interface{}) error {
+func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) error {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	err := enc.Encode(obj)
@@ -290,7 +292,7 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	dataOutput := NewPositionalObjectDataOutput(1, s, s.serializationConfig.IsBigEndian())
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
-	dataOutput.WriteUTF("Furkan")
+	dataOutput.WriteString("Furkan")
 	data := &SerializationData{dataOutput.buffer}
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")

@@ -2,8 +2,9 @@ package cluster
 
 import (
 	"fmt"
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"reflect"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 )
@@ -30,7 +31,7 @@ func (m Member) Address() pubcluster.Address {
 	return m.address
 }
 
-func (m Member) UUID() internal.UUID {
+func (m Member) Uuid() internal.UUID {
 	return m.uuid
 }
 
@@ -43,7 +44,7 @@ func (m Member) Attributes() map[string]string {
 }
 
 func (m *Member) String() string {
-	memberInfo := fmt.Sprintf("Member %s - %s", m.address.String(), m.UUID())
+	memberInfo := fmt.Sprintf("Member %s - %s", m.address.String(), m.Uuid())
 	if m.LiteMember() {
 		memberInfo += " lite"
 	}

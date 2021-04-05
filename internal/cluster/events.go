@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 )
 
@@ -27,169 +27,100 @@ const (
 	EventPartitionsLoaded = "internal.cluster.partitionsloaded"
 )
 
-type ConnectionOpened interface {
-	event.Event
-	Conn() *Connection
+type ConnectionOpenedHandler func(event *ConnectionOpened)
+type ConnectionClosedHandler func(event *ConnectionClosed)
+
+type ConnectionOpened struct {
+	Conn *Connection
 }
 
-type ConnectionClosed interface {
-	event.Event
-	Conn() *Connection
-	Err() error
+func NewConnectionOpened(conn *Connection) *ConnectionOpened {
+	return &ConnectionOpened{Conn: conn}
 }
 
-type MembersUpdated interface {
-	event.Event
-	Members() []cluster.MemberInfo
-	Version() int32
-}
-
-type MembersAdded interface {
-	event.Event
-	Members() []cluster.Member
-}
-
-type MembersRemoved interface {
-	event.Event
-	Members() []cluster.Member
-}
-
-type PartitionsUpdated interface {
-	event.Event
-	Partitions() []proto.Pair
-	Version() int32
-}
-
-type ConnectionOpenedHandler func(event ConnectionOpened)
-type ConnectionClosedHandler func(event ConnectionClosed)
-
-type ConnectionOpenedImpl struct {
-	conn *Connection
-}
-
-func NewConnectionOpened(conn *Connection) *ConnectionOpenedImpl {
-	return &ConnectionOpenedImpl{conn: conn}
-}
-
-func (c ConnectionOpenedImpl) Name() string {
+func (c ConnectionOpened) EventName() string {
 	return EventConnectionOpened
 }
 
-func (c ConnectionOpenedImpl) Conn() *Connection {
-	return c.conn
+type ConnectionClosed struct {
+	Conn *Connection
+	Err  error
 }
 
-type ConnectionClosedImpl struct {
-	conn *Connection
-	err  error
-}
-
-func NewConnectionClosed(conn *Connection, err error) *ConnectionClosedImpl {
-	return &ConnectionClosedImpl{
-		conn: conn,
-		err:  err,
+func NewConnectionClosed(conn *Connection, err error) *ConnectionClosed {
+	return &ConnectionClosed{
+		Conn: conn,
+		Err:  err,
 	}
 }
 
-func (c ConnectionClosedImpl) Name() string {
+func (c ConnectionClosed) EventName() string {
 	return EventConnectionClosed
 }
 
-func (c ConnectionClosedImpl) Conn() *Connection {
-	return c.conn
+type MembersAdded struct {
+	Members []pubcluster.Member
 }
 
-func (c ConnectionClosedImpl) Err() error {
-	return c.err
+func NewMembersAdded(members []pubcluster.Member) *MembersAdded {
+	return &MembersAdded{Members: members}
 }
 
-type MemberAddedImpl struct {
-	members []cluster.Member
-}
-
-func NewMembersAdded(members []cluster.Member) *MemberAddedImpl {
-	return &MemberAddedImpl{members: members}
-}
-
-func (m MemberAddedImpl) Name() string {
+func (m MembersAdded) EventName() string {
 	return EventMembersAdded
 }
 
-func (m MemberAddedImpl) Members() []cluster.Member {
-	return m.members
+type MembersRemoved struct {
+	Members []pubcluster.Member
 }
 
-type MemberRemovedImpl struct {
-	members []cluster.Member
+func NewMemberRemoved(members []cluster.Member) *MembersRemoved {
+	return &MembersRemoved{Members: members}
 }
 
-func (m MemberRemovedImpl) Name() string {
+func (m MembersRemoved) EventName() string {
 	return EventMembersRemoved
 }
 
-func (m MemberRemovedImpl) Members() []cluster.Member {
-	return m.members
+type PartitionsUpdated struct {
+	Partitions []proto.Pair
+	Version    int32
 }
 
-func NewMemberRemoved(members []cluster.Member) *MemberRemovedImpl {
-	return &MemberRemovedImpl{members: members}
-}
-
-type PartitionsUpdatedImpl struct {
-	pairs   []proto.Pair
-	version int32
-}
-
-func NewPartitionsUpdated(pairs []proto.Pair, version int32) *PartitionsUpdatedImpl {
-	return &PartitionsUpdatedImpl{
-		pairs:   pairs,
-		version: version,
+func NewPartitionsUpdated(pairs []proto.Pair, version int32) *PartitionsUpdated {
+	return &PartitionsUpdated{
+		Partitions: pairs,
+		Version:    version,
 	}
 }
 
-func (p PartitionsUpdatedImpl) Name() string {
+func (p PartitionsUpdated) EventName() string {
 	return EventPartitionsUpdated
 }
 
-func (p PartitionsUpdatedImpl) Partitions() []proto.Pair {
-	return p.pairs
+type MembersUpdated struct {
+	Members []cluster.MemberInfo
+	Version int32
 }
 
-func (p PartitionsUpdatedImpl) Version() int32 {
-	return p.version
-}
-
-type MembersUpdatedImpl struct {
-	memberInfos []cluster.MemberInfo
-	version     int32
-}
-
-func NewMembersUpdated(memberInfos []cluster.MemberInfo, version int32) *MembersUpdatedImpl {
-	return &MembersUpdatedImpl{
-		memberInfos: memberInfos,
-		version:     version,
+func NewMembersUpdated(memberInfos []cluster.MemberInfo, version int32) *MembersUpdated {
+	return &MembersUpdated{
+		Members: memberInfos,
+		Version: version,
 	}
 }
 
-func (m MembersUpdatedImpl) Name() string {
+func (m MembersUpdated) EventName() string {
 	return EventMembersUpdated
 }
 
-func (m MembersUpdatedImpl) Members() []cluster.MemberInfo {
-	return m.memberInfos
+type PartitionsLoaded struct {
 }
 
-func (m MembersUpdatedImpl) Version() int32 {
-	return m.version
+func NewPartitionsLoaded() *PartitionsLoaded {
+	return &PartitionsLoaded{}
 }
 
-type PartitionsLoadedImpl struct {
-}
-
-func NewPartitionsLoaded() *PartitionsLoadedImpl {
-	return &PartitionsLoadedImpl{}
-}
-
-func (p PartitionsLoadedImpl) Name() string {
+func (p PartitionsLoaded) EventName() string {
 	return EventPartitionsLoaded
 }

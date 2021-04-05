@@ -10,7 +10,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 )
@@ -94,7 +93,7 @@ func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
 }
 
 func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
-	s.eventDispatcher.Subscribe(lifecycle.EventStateChanged, event.DefaultSubscriptionID, s.handleLifecycleStateChanged)
+	s.eventDispatcher.Subscribe(publifecycle.EventStateChanged, event.DefaultSubscriptionID, s.handleLifecycleStateChanged)
 	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
 	if wantSmartRouting {
 		s.listenPartitionsLoaded()
@@ -104,7 +103,7 @@ func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
 
 func (s *ServiceImpl) Stop() {
 	subscriptionID := int(reflect.ValueOf(s.handleLifecycleStateChanged).Pointer())
-	s.eventDispatcher.Unsubscribe(lifecycle.EventStateChanged, subscriptionID)
+	s.eventDispatcher.Unsubscribe(publifecycle.EventStateChanged, subscriptionID)
 }
 
 func (s *ServiceImpl) SmartRoutingEnabled() bool {
@@ -120,16 +119,16 @@ func (s *ServiceImpl) memberCandidateAddrs() []pubcluster.Address {
 }
 
 func (s *ServiceImpl) handleLifecycleStateChanged(event event.Event) {
-	if stateChangeEvent, ok := event.(publifecycle.StateChanged); ok {
-		if stateChangeEvent.State() == publifecycle.StateClientConnected {
+	if stateChangeEvent, ok := event.(*publifecycle.StateChanged); ok {
+		if stateChangeEvent.State == publifecycle.StateClientConnected {
 			go s.sendMemberListViewRequest()
 		}
 	}
 }
 
 func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
-	if membersUpdateEvent, ok := event.(MembersUpdated); ok {
-		added, removed := s.membersMap.Update(membersUpdateEvent.Members(), membersUpdateEvent.Version())
+	if membersUpdateEvent, ok := event.(*MembersUpdated); ok {
+		added, removed := s.membersMap.Update(membersUpdateEvent.Members, membersUpdateEvent.Version)
 		if atomic.CompareAndSwapInt32(&s.startChAtom, 0, 1) {
 			close(s.startCh)
 			s.startCh = nil
@@ -221,17 +220,17 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 		membersMap := map[string]pubcluster.Member{}
 		added = []pubcluster.Member{}
 		for _, member := range members {
-			uuid := member.UUID().String()
+			uuid := member.Uuid().String()
 			membersMap[uuid] = member
 			if _, ok := m.members[uuid]; !ok {
-				newMember := NewMember(member.Address(), member.UUID(), member.LiteMember(), member.Attributes(), member.Version(), nil)
+				newMember := NewMember(member.Address(), member.Uuid(), member.LiteMember(), member.Attributes(), member.Version(), nil)
 				m.members[uuid] = newMember
 				added = append(added, newMember)
 			}
 		}
 		removed = []pubcluster.Member{}
 		for _, member := range m.members {
-			uuid := member.UUID().String()
+			uuid := member.Uuid().String()
 			if _, ok := membersMap[uuid]; !ok {
 				removed = append(removed, member)
 			}

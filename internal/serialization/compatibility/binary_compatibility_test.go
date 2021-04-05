@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
@@ -80,7 +82,7 @@ func TestBinaryCompatibility(t *testing.T) {
 	i := serialization.NewObjectDataInput(dat, 0, nil, true)
 	var index int
 	for i.Available() != 0 {
-		objectKey := i.ReadUTF()
+		objectKey := i.ReadString()
 		length := i.ReadInt32()
 		if length != bufutil.NilArrayLength {
 			payload := dat[i.Position() : i.Position()+length]

@@ -16,9 +16,9 @@ package colutil
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
 )
 

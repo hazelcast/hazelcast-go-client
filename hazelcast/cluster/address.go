@@ -3,7 +3,6 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"net"
 	"strconv"
 	"strings"
@@ -59,10 +58,10 @@ func ParseAddress(addr string) (*AddressImpl, error) {
 	} else if index < 0 {
 		if addr == "" {
 			// default address
-			return NewAddressWithHostPort(internal.DefaultHost, internal.DefaultPort), nil
+			return NewAddressWithHostPort(DefaultHost, DefaultPort), nil
 		}
 		// this is probably a string with only the host
-		return NewAddressWithHostPort(addr, internal.DefaultPort), nil
+		return NewAddressWithHostPort(addr, DefaultPort), nil
 	}
 	if host, portStr, err := net.SplitHostPort(addr); err != nil {
 		return nil, fmt.Errorf("error parsing address: %w", err)

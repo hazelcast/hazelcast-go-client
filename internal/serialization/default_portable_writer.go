@@ -15,19 +15,20 @@
 package serialization
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
 type DefaultPortableWriter struct {
 	serializer      *PortableSerializer
-	output          PositionalDataOutput
-	classDefinition ClassDefinition
+	output          serialization.PositionalDataOutput
+	classDefinition serialization.ClassDefinition
 	begin           int32
 	offset          int32
 }
 
-func NewDefaultPortableWriter(serializer *PortableSerializer, output PositionalDataOutput,
-	classDefinition ClassDefinition) *DefaultPortableWriter {
+func NewDefaultPortableWriter(serializer *PortableSerializer, output serialization.PositionalDataOutput,
+	classDefinition serialization.ClassDefinition) *DefaultPortableWriter {
 	begin := output.Position()
 	output.WriteZeroBytes(4)
 	output.WriteInt32(int32(classDefinition.FieldCount()))
@@ -79,10 +80,10 @@ func (pw *DefaultPortableWriter) WriteFloat64(fieldName string, value float64) {
 
 func (pw *DefaultPortableWriter) WriteUTF(fieldName string, value string) {
 	pw.setPosition(fieldName, TypeUTF)
-	pw.output.WriteUTF(value)
+	pw.output.WriteString(value)
 }
 
-func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable Portable) error {
+func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serialization.Portable) error {
 	fieldDefinition := pw.setPosition(fieldName, TypePortable)
 	isNullPortable := portable == nil
 	pw.output.WriteBool(isNullPortable)
@@ -150,9 +151,9 @@ func (pw *DefaultPortableWriter) WriteUTFArray(fieldName string, array []string)
 	pw.output.WriteUTFArray(array)
 }
 
-func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableArray []Portable) error {
+func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableArray []serialization.Portable) error {
 	var innerOffset int32
-	var sample Portable
+	var sample serialization.Portable
 	fieldDefinition := pw.setPosition(fieldName, TypePortableArray)
 	var length int32
 	if portableArray != nil {
@@ -181,7 +182,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	return nil
 }
 
-func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) FieldDefinition {
+func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) serialization.FieldDefinition {
 	field := pw.classDefinition.Field(fieldName)
 	pos := pw.output.Position()
 	index := field.Index()

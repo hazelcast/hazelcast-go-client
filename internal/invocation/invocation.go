@@ -83,7 +83,7 @@ func (i *Impl) Address() pubcluster.Address {
 }
 
 /*
-func (i *Impl) StoreSentConnection(conn interface{}) {
+func (i *Proxy) StoreSentConnection(conn interface{}) {
 	i.sentConnection.Store(conn)
 }
 */

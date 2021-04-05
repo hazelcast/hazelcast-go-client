@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+
 	"errors"
 
 	"github.com/stretchr/testify/assert"
@@ -173,12 +175,12 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
 	ret := pr.ReadUTF("engineer")
 	if ret != expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestDefaultPortableReader_ReadPortable(t *testing.T) {
-	var expectedRet Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var expectedRet serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := NewClassDefinitionImpl(2, 1, 3)
@@ -201,7 +203,7 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
-	var expectedRet Portable
+	var expectedRet serialization.Portable
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := NewClassDefinitionImpl(2, 1, 3)
@@ -385,7 +387,7 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
-	var expectedRet = []Portable{&student{10, 22, "Furkan Şenharputlu"},
+	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
@@ -409,7 +411,7 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 }
 
 func TestDefaultPortableReader_NilObjects(t *testing.T) {
-	var expectedRet Portable
+	var expectedRet serialization.Portable
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := NewClassDefinitionImpl(2, 1, 3)

@@ -1,8 +1,9 @@
 package hazelcast_test
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 )
 
 func TestNewClientConfigBuilder(t *testing.T) {
@@ -14,8 +15,8 @@ func TestNewClientConfigBuilder(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if "my-cluster" != config.ClusterConfig.Name() {
-		t.Errorf("target: %v != %v", "my-cluster", config.ClusterConfig.Name())
+	if "my-cluster" != config.ClusterConfig.Name {
+		t.Errorf("target: %v != %v", "my-cluster", config.ClusterConfig.Name)
 	}
 }
 

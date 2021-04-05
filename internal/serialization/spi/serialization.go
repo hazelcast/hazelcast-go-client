@@ -15,16 +15,17 @@
 package spi
 
 import (
+	pubserialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 // NewSerializationService creates and returns a new serialization service with the given config.
-func NewSerializationService(serializationConfig *serialization.Config) (SerializationService, error) {
+func NewSerializationService(serializationConfig *pubserialization.Config) (SerializationService, error) {
 	return serialization.NewService(serializationConfig)
 }
 
 // NewData return serialization Data with the given payload.
-func NewData(payload []byte) serialization.Data {
+func NewData(payload []byte) pubserialization.Data {
 	return serialization.NewSerializationData(payload)
 }
 
@@ -34,9 +35,9 @@ type SerializationService interface {
 	// It can safely be called on an object that is already deserialized. In that case, that instance
 	// is returned.
 	// If this is called with nil, nil is returned.
-	ToObject(data serialization.Data) (interface{}, error)
+	ToObject(data pubserialization.Data) (interface{}, error)
 	// ToData serializes an object to a data.
 	// It can safely be called with a Data. In that case, that instance is returned.
 	// If it is called with nil, nil is returned.
-	ToData(object interface{}) (serialization.Data, error)
+	ToData(object interface{}) (pubserialization.Data, error)
 }

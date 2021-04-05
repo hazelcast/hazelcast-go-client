@@ -1,6 +1,19 @@
 package hztypes
 
-import "time"
+import (
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+)
+
+type MapEntryListenerConfig struct {
+	Predicate          pred.Predicate
+	IncludeValue       bool
+	Key                interface{}
+	NotifyEntryAdded   bool
+	NotifyEntryRemoved bool
+	NotifyEntryUpdated bool
+}
 
 type Map interface {
 	// AddIndex adds an index to this map for the specified entries so that queries can run faster.
@@ -32,7 +45,7 @@ type Map interface {
 	EvictAll() error
 
 	// ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
-	ExecuteOnEntries(entryProcessor interface{}) ([]KeyValuePair, error)
+	ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error)
 
 	// Flush flushes all the local dirty entries.
 	Flush() error
@@ -48,7 +61,7 @@ type Map interface {
 	Get(key interface{}) (interface{}, error)
 
 	// GetAll returns the entries for the given keys.
-	GetAll(keys ...interface{}) ([]Pair, error)
+	GetAll(keys ...interface{}) ([]Entry, error)
 
 	// GetKeySet returns keys contained in this map
 	GetKeySet() ([]interface{}, error)
@@ -59,11 +72,20 @@ type Map interface {
 	// GetEntryView returns the SimpleEntryView for the specified key.
 	GetEntryView(key string) (*SimpleEntryView, error)
 
+	// GetEntrySet returns a clone of the mappings contained in this map.
+	GetEntrySet() ([]Entry, error)
+
+	// GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
+	GetEntrySetWithPredicate(predicate pred.Predicate) ([]Entry, error)
+
 	// IsEmpty returns true if this map contains no key-value mappings.
 	IsEmpty() (bool, error)
 
 	// IsLocked checks the lock for the specified key.
 	IsLocked(key interface{}) (bool, error)
+
+	// ListenEntryNotification adds a continuous entry listener to this map.
+	ListenEntryNotification(config MapEntryListenerConfig, handler EntryNotifiedHandler) error
 
 	// LoadAll loads all keys from the store at server side or loads the given keys if provided.
 	LoadAll(keys ...interface{}) error
@@ -93,7 +115,7 @@ type Map interface {
 	// PutALl copies all of the mappings from the specified map to this map.
 	// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 	// while others are not.
-	PutAll(keyValuePairs []Pair) error
+	PutAll(keyValuePairs []Entry) error
 
 	// PutIfAbsent associates the specified key with the given value if it is not already associated.
 	PutIfAbsent(key interface{}, value interface{}) (interface{}, error)
@@ -186,10 +208,9 @@ type Map interface {
 	// TryRemove tries to remove the given key from this map and waits until operation is completed or timeout is reached.
 	TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error)
 
+	// UnlistenEntryNotification removes the specified entry listener.
+	UnlistenEntryNotification(handler EntryNotifiedHandler) error
+
 	// Unlock releases the lock for the specified key.
 	Unlock(key interface{}) error
-
-	ListenEntryNotification(flags int32, handler EntryNotifiedHandler) error
-	ListenEntryNotificationIncludingValue(flags int32, handler EntryNotifiedHandler) error
-	UnlistenEntryNotification(handler EntryNotifiedHandler) error
 }

@@ -15,7 +15,7 @@
 package predicate
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 type predicate struct {
@@ -53,12 +53,12 @@ func NewSQL(sql string) *SQL {
 
 func (sp *SQL) ReadData(input serialization.DataInput) error {
 	sp.predicate = newPredicate(sqlID)
-	sp.sql = input.ReadUTF()
+	sp.sql = input.ReadString()
 	return input.Error()
 }
 
 func (sp *SQL) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(sp.sql)
+	output.WriteString(sp.sql)
 	return nil
 }
 
@@ -106,14 +106,14 @@ func NewBetween(field string, from interface{}, to interface{}) *Between {
 
 func (bp *Between) ReadData(input serialization.DataInput) error {
 	bp.predicate = newPredicate(betweenID)
-	bp.field = input.ReadUTF()
+	bp.field = input.ReadString()
 	bp.to = input.ReadObject()
 	bp.from = input.ReadObject()
 	return input.Error()
 }
 
 func (bp *Between) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(bp.field)
+	output.WriteString(bp.field)
 	err := output.WriteObject(bp.to)
 	if err != nil {
 		return err
@@ -133,13 +133,13 @@ func NewEqual(field string, value interface{}) *Equal {
 
 func (ep *Equal) ReadData(input serialization.DataInput) error {
 	ep.predicate = newPredicate(equalID)
-	ep.field = input.ReadUTF()
+	ep.field = input.ReadString()
 	ep.value = input.ReadObject()
 	return input.Error()
 }
 
 func (ep *Equal) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(ep.field)
+	output.WriteString(ep.field)
 	return output.WriteObject(ep.value)
 }
 
@@ -157,7 +157,7 @@ func NewGreaterLess(field string, value interface{}, equal bool, less bool) *Gre
 
 func (glp *GreaterLess) ReadData(input serialization.DataInput) error {
 	glp.predicate = newPredicate(greaterlessID)
-	glp.field = input.ReadUTF()
+	glp.field = input.ReadString()
 	glp.value = input.ReadObject()
 	glp.equal = input.ReadBool()
 	glp.less = input.ReadBool()
@@ -165,7 +165,7 @@ func (glp *GreaterLess) ReadData(input serialization.DataInput) error {
 }
 
 func (glp *GreaterLess) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(glp.field)
+	output.WriteString(glp.field)
 	err := output.WriteObject(glp.value)
 	if err != nil {
 		return err
@@ -187,14 +187,14 @@ func NewLike(field string, expr string) *Like {
 
 func (lp *Like) ReadData(input serialization.DataInput) error {
 	lp.predicate = newPredicate(likeID)
-	lp.field = input.ReadUTF()
-	lp.expr = input.ReadUTF()
+	lp.field = input.ReadString()
+	lp.expr = input.ReadString()
 	return input.Error()
 }
 
 func (lp *Like) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(lp.field)
-	output.WriteUTF(lp.expr)
+	output.WriteString(lp.field)
+	output.WriteString(lp.expr)
 	return nil
 }
 
@@ -208,8 +208,8 @@ func NewILike(field string, expr string) *ILike {
 
 func (ilp *ILike) ReadData(input serialization.DataInput) error {
 	ilp.Like = &Like{predicate: newPredicate(ilikeID)}
-	ilp.field = input.ReadUTF()
-	ilp.expr = input.ReadUTF()
+	ilp.field = input.ReadString()
+	ilp.expr = input.ReadString()
 	return input.Error()
 }
 
@@ -225,7 +225,7 @@ func NewIn(field string, values []interface{}) *In {
 
 func (ip *In) ReadData(input serialization.DataInput) error {
 	ip.predicate = newPredicate(inID)
-	ip.field = input.ReadUTF()
+	ip.field = input.ReadString()
 	length := input.ReadInt32()
 	ip.values = make([]interface{}, length)
 	for i := int32(0); i < length; i++ {
@@ -235,7 +235,7 @@ func (ip *In) ReadData(input serialization.DataInput) error {
 }
 
 func (ip *In) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(ip.field)
+	output.WriteString(ip.field)
 	output.WriteInt32(int32(len(ip.values)))
 	for _, value := range ip.values {
 		err := output.WriteObject(value)
@@ -257,12 +257,12 @@ func NewInstanceOf(className string) *InstanceOf {
 
 func (iop *InstanceOf) ReadData(input serialization.DataInput) error {
 	iop.predicate = newPredicate(instanceOfID)
-	iop.className = input.ReadUTF()
+	iop.className = input.ReadString()
 	return input.Error()
 }
 
 func (iop *InstanceOf) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(iop.className)
+	output.WriteString(iop.className)
 	return nil
 }
 
@@ -276,7 +276,7 @@ func NewNotEqual(field string, value interface{}) *NotEqual {
 
 func (nep *NotEqual) ReadData(input serialization.DataInput) error {
 	nep.Equal = &Equal{predicate: newPredicate(notEqualID)}
-	nep.field = input.ReadUTF()
+	nep.field = input.ReadString()
 	nep.value = input.ReadObject()
 	return input.Error()
 }
@@ -344,14 +344,14 @@ func NewRegex(field string, regex string) *Regex {
 
 func (rp *Regex) ReadData(input serialization.DataInput) error {
 	rp.predicate = newPredicate(regexID)
-	rp.field = input.ReadUTF()
-	rp.regex = input.ReadUTF()
+	rp.field = input.ReadString()
+	rp.regex = input.ReadString()
 	return input.Error()
 }
 
 func (rp *Regex) WriteData(output serialization.DataOutput) error {
-	output.WriteUTF(rp.field)
-	output.WriteUTF(rp.regex)
+	output.WriteString(rp.field)
+	output.WriteString(rp.regex)
 	return nil
 }
 

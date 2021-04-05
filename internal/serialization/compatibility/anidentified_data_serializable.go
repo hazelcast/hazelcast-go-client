@@ -14,7 +14,9 @@
 
 package compatibility
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+import (
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+)
 
 type anIdentifiedDataSerializable struct {
 	bool bool
@@ -69,7 +71,7 @@ func (i *anIdentifiedDataSerializable) WriteData(output serialization.DataOutput
 	output.WriteFloat32(i.f)
 	output.WriteInt32(i.i)
 	output.WriteInt64(i.l)
-	output.WriteUTF(i.str)
+	output.WriteString(i.str)
 
 	output.WriteBoolArray(i.booleans)
 	output.WriteByteArray(i.bytes)
@@ -111,7 +113,7 @@ func (i *anIdentifiedDataSerializable) ReadData(input serialization.DataInput) e
 	i.f = input.ReadFloat32()
 	i.i = input.ReadInt32()
 	i.l = input.ReadInt64()
-	i.str = input.ReadUTF()
+	i.str = input.ReadString()
 
 	i.booleans = input.ReadBoolArray()
 	i.bytes = input.ReadByteArray()

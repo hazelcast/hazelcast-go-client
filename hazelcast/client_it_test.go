@@ -2,12 +2,13 @@ package hazelcast_test
 
 import (
 	"fmt"
-	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 )
 
 func TestLifecycleEvents(t *testing.T) {
@@ -17,7 +18,7 @@ func TestLifecycleEvents(t *testing.T) {
 	client.ListenLifecycleStateChange(func(event lifecycle.StateChanged) {
 		receivedStatesMu.Lock()
 		defer receivedStatesMu.Unlock()
-		switch event.State() {
+		switch event.State {
 		case lifecycle.StateStarting:
 			fmt.Println("Received starting state")
 		case lifecycle.StateStarted:
@@ -31,9 +32,9 @@ func TestLifecycleEvents(t *testing.T) {
 		case lifecycle.StateClientDisconnected:
 			fmt.Println("Received client disconnected state")
 		default:
-			fmt.Println("Received unknown state:", event.State())
+			fmt.Println("Received unknown state:", event.State)
 		}
-		receivedStates = append(receivedStates, event.State())
+		receivedStates = append(receivedStates, event.State)
 	})
 	if err := client.Start(); err != nil {
 		t.Fatal(err)

@@ -2,10 +2,11 @@ package hazelcast
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/sql"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/sql"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
@@ -27,10 +28,10 @@ var nextId int32
 type Client struct {
 	// configuration
 	name          string
-	clusterConfig cluster.ClusterConfig
+	clusterConfig *cluster.Config
 
 	// components
-	proxyManager      proxy.Manager
+	proxyManager      *proxy.Manager
 	connectionManager *icluster.ConnectionManager
 	clusterService    *icluster.ServiceImpl
 	partitionService  *icluster.PartitionServiceImpl
@@ -43,6 +44,7 @@ type Client struct {
 }
 
 func newClient(name string, config Config) (*Client, error) {
+	config = config.Clone()
 	id := atomic.AddInt32(&nextId, 1)
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
@@ -59,7 +61,7 @@ func newClient(name string, config Config) (*Client, error) {
 	clientLogger := logger.NewWithLevel(logLevel)
 	impl := &Client{
 		name:          name,
-		clusterConfig: config.ClusterConfig,
+		clusterConfig: &config.ClusterConfig,
 		logger:        clientLogger,
 	}
 	impl.started.Store(false)
@@ -82,7 +84,7 @@ func (c *Client) Start() error {
 		return nil
 	}
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
-	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting())
+	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting)
 	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
 		return err
@@ -111,9 +113,9 @@ func (c Client) Shutdown() {
 func (c *Client) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
 	// derive subscriptionID from the handler
 	subscriptionID := event.MakeSubscriptionID(handler)
-	c.eventDispatcher.SubscribeSync(ilifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
-		if stateChangeEvent, ok := event.(lifecycle.StateChanged); ok {
-			handler(stateChangeEvent)
+	c.eventDispatcher.SubscribeSync(lifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
+		if stateChangeEvent, ok := event.(*lifecycle.StateChanged); ok {
+			handler(*stateChangeEvent)
 		} else {
 			panic("cannot cast event to lifecycle.StateChanged event")
 		}
@@ -121,7 +123,7 @@ func (c *Client) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler
 }
 
 func (c *Client) ExecuteSQL(sql string) (sql.Result, error) {
-	return nil, nil
+	panic("implement me: ExecuteSQL")
 }
 
 func (c *Client) ensureStarted() {
@@ -132,14 +134,14 @@ func (c *Client) ensureStarted() {
 
 func (c *Client) createComponents(config *Config) {
 	credentials := security.NewUsernamePasswordCredentials("dev", "dev-pass")
-	serializationService, err := serialization.NewService(serialization.NewConfig())
+	serializationService, err := serialization.NewService(&config.SerializationConfig)
 	if err != nil {
 		panic(fmt.Errorf("error creating client: %w", err))
 	}
-	smartRouting := config.ClusterConfig.SmartRouting()
+	smartRouting := config.ClusterConfig.SmartRouting
 	addressTranslator := cluster.NewDefaultAddressTranslator()
 	addressProviders := []icluster.AddressProvider{
-		icluster.NewDefaultAddressProvider(config.ClusterConfig),
+		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
 	eventDispatcher := event.NewDispatchServiceImpl()
 	requestCh := make(chan invocation.Invocation, 1024)
@@ -173,7 +175,7 @@ func (c *Client) createComponents(config *Config) {
 		PartitionService:     partitionService,
 		SerializationService: serializationService,
 		EventDispatcher:      eventDispatcher,
-		ClusterConfig:        config.ClusterConfig,
+		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
 	})
@@ -194,7 +196,7 @@ func (c *Client) createComponents(config *Config) {
 		EventDispatcher:      eventDispatcher,
 		ListenerBinder:       listenerBinder,
 	}
-	proxyManager := proxy.NewManagerImpl(proxyManagerServiceBundle)
+	proxyManager := proxy.NewManager(proxyManagerServiceBundle)
 
 	c.eventDispatcher = eventDispatcher
 	c.connectionManager = connectionManager

@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 )
 
@@ -12,7 +13,7 @@ type Member interface {
 	Address() Address
 
 	// UUID returns the uuid of this member.
-	UUID() internal.UUID
+	Uuid() internal.UUID
 
 	// IsLiteMember returns true if this member is a lite member.
 	LiteMember() bool
@@ -49,7 +50,7 @@ type MemberInfo struct {
 	// address is proto.Address: Address of the member.
 	address Address
 
-	// uuid is core.UUID: UUID of the member.
+	// uuid is core.Uuid: UUID of the member.
 	uuid internal.UUID
 
 	// liteMember represents member is a lite member. Lite members do not own any partition.
@@ -77,7 +78,7 @@ func (mi MemberInfo) Address() Address {
 	return mi.address
 }
 
-func (mi MemberInfo) UUID() internal.UUID {
+func (mi MemberInfo) Uuid() internal.UUID {
 	return mi.uuid
 }
 
@@ -93,7 +94,7 @@ func (mi MemberInfo) Version() MemberVersion {
 	return mi.version
 }
 
-func (mi MemberInfo) AddrMap() map[internal.EndpointQualifier]Address {
+func (mi MemberInfo) AddressMap() map[internal.EndpointQualifier]Address {
 	return mi.addrMap
 }
 

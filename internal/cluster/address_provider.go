@@ -12,10 +12,10 @@ type DefaultAddressProvider struct {
 	addresses []pubcluster.Address
 }
 
-func NewDefaultAddressProvider(networkConfig pubcluster.ClusterConfig) *DefaultAddressProvider {
+func NewDefaultAddressProvider(networkConfig *pubcluster.Config) *DefaultAddressProvider {
 	var err error
-	addresses := make([]pubcluster.Address, len(networkConfig.Addrs()))
-	for i, addr := range networkConfig.Addrs() {
+	addresses := make([]pubcluster.Address, len(networkConfig.Addrs))
+	for i, addr := range networkConfig.Addrs {
 		if addresses[i], err = pubcluster.ParseAddress(addr); err != nil {
 			panic(err)
 		}

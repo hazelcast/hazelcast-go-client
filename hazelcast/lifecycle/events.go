@@ -1,10 +1,28 @@
 package lifecycle
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/event"
+type State int
 
-type StateChanged interface {
-	event.Event
-	State() State
-}
+const (
+	StateStarting State = iota
+	StateStarted
+	StateShuttingDown
+	StateShutDown
+	StateMerging
+	StateMerged
+	StateMergeFailed
+	StateClientConnected
+	StateClientDisconnected
+	StateClientChangedCluster
+)
 
 type StateChangeHandler func(event StateChanged)
+
+const EventStateChanged = "internal.lifecycle.statechanged"
+
+type StateChanged struct {
+	State State
+}
+
+func (e *StateChanged) EventName() string {
+	return EventStateChanged
+}

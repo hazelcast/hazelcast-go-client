@@ -1,25 +1,27 @@
 package cluster
 
 import (
+	"sync"
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/murmur"
-	"sync"
-	"sync/atomic"
 )
 
 type PartitionService interface {
 	PartitionCount() int32
-	GetPartitionID(keyData serialization.Data) int32
+	GetPartitionID(keyData pubserialization.Data) int32
 	GetPartitionIDWithKey(key interface{}) (int32, error)
 	GetPartitionOwner(partitionId int32) internal.UUID
 }
 
 type PartitionServiceCreationBundle struct {
-	SerializationService serialization.Service
+	SerializationService *iserialization.Service
 	EventDispatcher      event.DispatchService
 	startCh              chan struct{}
 	startChAtom          int32
@@ -39,7 +41,7 @@ func (b PartitionServiceCreationBundle) Check() {
 }
 
 type PartitionServiceImpl struct {
-	serializationService serialization.Service
+	serializationService *iserialization.Service
 	eventDispatcher      event.DispatchService
 	partitionTable       partitionTable
 	partitionCount       uint32
@@ -74,7 +76,7 @@ func (s *PartitionServiceImpl) PartitionCount() int32 {
 	return int32(atomic.LoadUint32(&s.partitionCount))
 }
 
-func (s *PartitionServiceImpl) GetPartitionID(keyData serialization.Data) int32 {
+func (s *PartitionServiceImpl) GetPartitionID(keyData pubserialization.Data) int32 {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
@@ -97,9 +99,9 @@ func (s *PartitionServiceImpl) GetPartitionIDWithKey(key interface{}) (int32, er
 }
 
 func (s *PartitionServiceImpl) handlePartitionsUpdated(event event.Event) {
-	if partitionsUpdatedEvent, ok := event.(PartitionsUpdated); ok {
+	if partitionsUpdatedEvent, ok := event.(*PartitionsUpdated); ok {
 		s.logger.Info("partitions updated")
-		s.partitionTable.Update(partitionsUpdatedEvent.Partitions(), partitionsUpdatedEvent.Version())
+		s.partitionTable.Update(partitionsUpdatedEvent.Partitions, partitionsUpdatedEvent.Version)
 		s.eventDispatcher.Publish(NewPartitionsLoaded())
 	}
 }

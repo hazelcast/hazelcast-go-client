@@ -2,19 +2,19 @@ package hztypes_test
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
 
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
 )
 
 func TestPutGetMap(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -28,7 +28,7 @@ func TestPutGetMap(t *testing.T) {
 }
 
 func TestSetGetMap(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -42,7 +42,7 @@ func TestSetGetMap(t *testing.T) {
 }
 
 func TestSetGet1000(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		const setGetCount = 1000
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
@@ -52,13 +52,13 @@ func TestSetGet1000(t *testing.T) {
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
 			targetValue := fmt.Sprintf("v%d", i)
-			assertEquals(t, targetValue, hz.MustValue(m.Get(key)))
+			it.AssertEquals(t, targetValue, hz.MustValue(m.Get(key)))
 		}
 	})
 }
 
 func TestDelete(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
 		if value := hz.MustValue(m.Get("key")); targetValue != value {
@@ -74,7 +74,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestMapEvict(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -88,7 +88,7 @@ func TestMapEvict(t *testing.T) {
 }
 
 func TestMapClearSetGet(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
 		if ok := hz.MustBool(m.ContainsKey("key")); !ok {
@@ -110,7 +110,7 @@ func TestMapClearSetGet(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
 		if !hz.MustBool(m.ContainsKey("key")) {
@@ -128,7 +128,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		const maxKeys = 100
 		makeKey := func(id int) string {
 			return fmt.Sprintf("k%d", id)
@@ -136,12 +136,12 @@ func TestGetAll(t *testing.T) {
 		makeValue := func(id int) string {
 			return fmt.Sprintf("v%d", id)
 		}
-		allPairs := []hztypes.Pair{}
+		var allPairs []hztypes.Entry
 		for i := 0; i < maxKeys; i++ {
-			allPairs = append(allPairs, hztypes.NewPair(makeKey(i), makeValue(i)))
+			allPairs = append(allPairs, hztypes.NewEntry(makeKey(i), makeValue(i)))
 		}
-		keys := []interface{}{}
-		target := []hztypes.Pair{}
+		var keys []interface{}
+		var target []hztypes.Entry
 		for i, pair := range allPairs {
 			if i%2 == 0 {
 				keys = append(keys, pair.Key)
@@ -153,26 +153,26 @@ func TestGetAll(t *testing.T) {
 		}
 		time.Sleep(1 * time.Second)
 		for _, pair := range allPairs {
-			assertEquals(t, pair.Value, hz.MustValue(m.Get(pair.Key)))
+			it.AssertEquals(t, pair.Value, hz.MustValue(m.Get(pair.Key)))
 		}
 		if kvs, err := m.GetAll(keys...); err != nil {
 			t.Fatal(err)
-		} else if !pairsEqualUnordered(target, kvs) {
+		} else if !entriesEqualUnordered(target, kvs) {
 			t.Fatalf("target: %#v != %#v", target, kvs)
 		}
 	})
 }
 
 func TestGetKeySet(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		hz.Must(m.Set("k1", "v1"))
 		hz.Must(m.Set("k2", "v2"))
 		hz.Must(m.Set("k3", "v3"))
 		time.Sleep(1 * time.Second)
-		assertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		assertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		assertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
 		if keys, err := m.GetKeySet(); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
@@ -182,30 +182,75 @@ func TestGetKeySet(t *testing.T) {
 }
 
 func TestPutAll(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
-		pairs := []hztypes.Pair{
-			hztypes.NewPair("k1", "v1"),
-			hztypes.NewPair("k2", "v2"),
-			hztypes.NewPair("k3", "v3"),
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		pairs := []hztypes.Entry{
+			hztypes.NewEntry("k1", "v1"),
+			hztypes.NewEntry("k2", "v2"),
+			hztypes.NewEntry("k3", "v3"),
 		}
 		if err := m.PutAll(pairs); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		assertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		assertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		assertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+	})
+}
+
+func TestGetEntrySet(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		target := []hztypes.Entry{
+			hztypes.NewEntry("k1", "v1"),
+			hztypes.NewEntry("k2", "v2"),
+			hztypes.NewEntry("k3", "v3"),
+		}
+		if err := m.PutAll(target); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		if entries, err := m.GetEntrySet(); err != nil {
+			t.Fatal(err)
+		} else if !entriesEqualUnordered(target, entries) {
+			t.Fatalf("target: %#v != %#v", target, entries)
+		}
+	})
+}
+
+func TestGetEntrySetWithPredicate(t *testing.T) {
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactoryID, it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+		entries := []hztypes.Entry{
+			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
+			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
+			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		}
+		if err := m.PutAll(entries); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		target := []hztypes.Entry{
+			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
+			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		}
+		if entries, err := m.GetEntrySetWithPredicate(pred.And(pred.Equal("A", "foo"), pred.Equal("B", 10))); err != nil {
+			t.Fatal(err)
+		} else if !entriesEqualUnordered(target, entries) {
+			t.Fatalf("target: %#v != %#v", target, entries)
+		}
 	})
 }
 
 func TestGetEntryView(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		hz.Must(m.Set("k1", "v1"))
 		if ev, err := m.GetEntryView("k1"); err != nil {
 			t.Fatal(err)
 		} else {
-			assertEquals(t, "k1", ev.Key())
-			assertEquals(t, "v1", ev.Value())
+			it.AssertEquals(t, "k1", ev.Key())
+			it.AssertEquals(t, "v1", ev.Value())
 		}
 	})
 }
@@ -215,7 +260,7 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map ExecuteOnEntries
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
-// TODO: Test Map GetKeySet
+// TODO: Test Map GetEntrySet
 // TODO: Test Map GetValues
 // TODO: Test Map IsEmpty
 // TODO: Test Map IsLocked
@@ -243,22 +288,25 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map ReplaceIfSame
 
 func TestMapEntryNotifiedEvent(t *testing.T) {
-	testMap(t, func(t *testing.T, client *hz.Client, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		handlerCalled := false
-		flags := hztypes.NotifyEntryAdded | hztypes.NotifyEntryUpdated
-		handler := func(event hztypes.EntryNotifiedEvent) {
+		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
 		// TODO: remove the following sleep once we dynamically add connection listeners
 		time.Sleep(2 * time.Second)
-		if err := m.ListenEntryNotificationIncludingValue(flags, handler); err != nil {
+		listenerConfig := hztypes.MapEntryListenerConfig{
+			NotifyEntryAdded:   true,
+			NotifyEntryUpdated: true,
+			IncludeValue:       true,
+		}
+		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
 		if _, err := m.Put("k1", "v1"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
@@ -266,7 +314,6 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		if err := m.UnlistenEntryNotification(handler); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
 		if _, err := m.Put("k1", "v1"); err != nil {
 			t.Fatal(err)
 		}
@@ -277,61 +324,63 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 	})
 }
 
-func getClientMap(t *testing.T, name string) (*hz.Client, hztypes.Map) {
-	cb := hz.NewClientConfigBuilder()
-	cb.SetProperty(property.LoggingLevel, "trace")
-	config, err := cb.Config()
-	if err != nil {
-		panic(err)
-	}
-	client, err := hz.StartNewClientWithConfig(config)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("Map Name:", mapName)
-	if m, err := client.GetMap(mapName); err != nil {
-		t.Fatal(err)
-		return nil, nil
-	} else {
-		return client, m
-	}
+func TestMapEntryNotifiedEventWithKey(t *testing.T) {
+	t.SkipNow()
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		handlerCalled := false
+		handler := func(event *hztypes.EntryNotified) {
+			handlerCalled = true
+		}
+		// TODO: remove the following sleep once we dynamically add connection listeners
+		time.Sleep(2 * time.Second)
+		listenerConfig := hztypes.MapEntryListenerConfig{
+			NotifyEntryAdded:   true,
+			NotifyEntryUpdated: true,
+			IncludeValue:       true,
+			Key:                "k1",
+		}
+		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := m.Put("k1", "v1"); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		if !handlerCalled {
+			t.Fatalf("handler was not called")
+		}
+	})
 }
 
-func getClientMapWithConfig(t *testing.T, name string, clientConfig hz.Config) (*hz.Client, hztypes.Map) {
-	clientConfig.Properties[property.LoggingLevel] = "trace"
-	client, err := hz.StartNewClientWithConfig(clientConfig)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("Map Name:", mapName)
-	if m, err := client.GetMap(mapName); err != nil {
-		t.Fatal(err)
-		return nil, nil
-	} else {
-		return client, m
-	}
-}
-
-func getClientMapSmart(t *testing.T, name string) (*hz.Client, hztypes.Map) {
-	return getClientMap(t, name)
-}
-
-func getClientMapNonSmart(t *testing.T, name string) (*hz.Client, hztypes.Map) {
-	cb := hz.NewClientConfigBuilder()
-	cb.Cluster().SetSmartRouting(false)
-	if config, err := cb.Config(); err != nil {
-		panic(err)
-	} else {
-		return getClientMapWithConfig(t, name, config)
-	}
-}
-
-func assertEquals(t *testing.T, target, value interface{}) {
-	if !reflect.DeepEqual(target, value) {
-		t.Fatalf("target: %#v != %#v", target, value)
-	}
+func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
+	t.SkipNow()
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		handlerCalled := false
+		handler := func(event *hztypes.EntryNotified) {
+			handlerCalled = true
+		}
+		// TODO: remove the following sleep once we dynamically add connection listeners
+		time.Sleep(2 * time.Second)
+		listenerConfig := hztypes.MapEntryListenerConfig{
+			NotifyEntryAdded:   true,
+			NotifyEntryUpdated: true,
+			IncludeValue:       true,
+			Predicate:          pred.Equal("A", "foo"),
+		}
+		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := m.Put("k1", it.SamplePortable{
+			A: "foo",
+			B: 10,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		if !handlerCalled {
+			t.Fatalf("handler was not called")
+		}
+	})
 }
 
 func makeStringSet(items []interface{}) map[string]struct{} {
@@ -342,49 +391,25 @@ func makeStringSet(items []interface{}) map[string]struct{} {
 	return result
 }
 
-func testMap(t *testing.T, f func(t *testing.T, client *hz.Client, m hztypes.Map)) {
-	var (
-		client *hz.Client
-		m      hztypes.Map
-	)
-	t.Run("Smart Client", func(t *testing.T) {
-		client, m = getClientMapSmart(t, "my-map")
-		defer func() {
-			m.EvictAll()
-			client.Shutdown()
-		}()
-		f(t, client, m)
-
-	})
-	t.Run("Non-Smart Client", func(t *testing.T) {
-		client, m = getClientMapNonSmart(t, "my-map")
-		defer func() {
-			m.EvictAll()
-			client.Shutdown()
-		}()
-		f(t, client, m)
-	})
-}
-
-func pairsEqualUnordered(p1, p2 []hztypes.Pair) bool {
+func entriesEqualUnordered(p1, p2 []hztypes.Entry) bool {
 	if len(p1) != len(p2) {
 		return false
 	}
 	// inefficient
 	for _, item1 := range p1 {
-		if pairsIndex(item1, p2) < 0 {
+		if entriesIndex(item1, p2) < 0 {
 			return false
 		}
 	}
 	for _, item2 := range p2 {
-		if pairsIndex(item2, p1) < 0 {
+		if entriesIndex(item2, p1) < 0 {
 			return false
 		}
 	}
 	return true
 }
 
-func pairsIndex(p hztypes.Pair, ps []hztypes.Pair) int {
+func entriesIndex(p hztypes.Entry, ps []hztypes.Entry) int {
 	for i, item := range ps {
 		if reflect.DeepEqual(p, item) {
 			return i

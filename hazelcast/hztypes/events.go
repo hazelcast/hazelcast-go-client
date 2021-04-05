@@ -1,32 +1,50 @@
 package hztypes
 
-import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
+const (
+	// NotifyEntryAdded is dispatched if an entry is added.
+	NotifyEntryAdded = int32(1 << 0)
+	// NotifyEntryRemoved is dispatched if an entry is removed.
+	NotifyEntryRemoved = int32(1 << 1)
+	// NotifyEntryUpdated is dispatched if an entry is updated.
+	NotifyEntryUpdated = int32(1 << 2)
+	// NotifyEntryEvicted is dispatched if an entry is evicted.
+	NotifyEntryEvicted = int32(1 << 3)
+	// NotifyEntryExpired is dispatched if an entry is expired.
+	NotifyEntryExpired = int32(1 << 4)
+	// NotifyEntryAllEvicted is dispatched if all entries are evicted.
+	NotifyEntryAllEvicted = int32(1 << 5)
+	// NotifyEntryAllCleared is dispatched if all entries are cleared.
+	NotifyEntryAllCleared = int32(1 << 6)
+	// NotifyEntryMerged is dispatched if an entry is merged after a network partition.
+	NotifyEntryMerged = int32(1 << 7)
+	// NotifyEntryInvalidation is dispatched if an entry is invalidated.
+	NotifyEntryInvalidation = int32(1 << 8)
+	// NotifyEntryLoaded is dispatched if an entry is loaded.
+	NotifyEntryLoaded = int32(1 << 9)
 )
 
 const (
-	NotifyEntryAdded        int32 = bufutil.EntryEventAdded
-	NotifyEntryRemoved      int32 = bufutil.EntryEventRemoved
-	NotifyEntryUpdated      int32 = bufutil.EntryEventUpdated
-	NotifyEntryEvicted      int32 = bufutil.EntryEventEvicted
-	NotifyEntryMerged       int32 = bufutil.EntryEventMerged
-	NotifyEntryExpired      int32 = bufutil.EntryEventExpired
-	NotifyEntryInvalidation int32 = bufutil.EntryEventInvalidation
-	NotifyEntryLoaded       int32 = bufutil.EntryEventLoaded
-	NotifyMapEvicted        int32 = bufutil.MapEventEvicted
-	NotifyMapCleared        int32 = bufutil.MapEventCleared
+	NotifyItemAdded   int32 = 1
+	NotifyItemRemoved int32 = 2
 )
 
-type EntryNotifiedEvent interface {
-	event.Event
-	EntryEventType() int32
-	OwnerName() string
-	MemberName() string
-	Key() interface{}
-	Value() interface{}
-	OldValue() interface{}
-	MergingValue() interface{}
+type EntryNotifiedHandler func(event *EntryNotified)
+
+const (
+	EventEntryNotified = "internal.proxy.entrynotified"
+)
+
+type EntryNotified struct {
+	EventType               int32
+	OwnerName               string
+	MemberName              string
+	Key                     interface{}
+	Value                   interface{}
+	OldValue                interface{}
+	MergingValue            interface{}
+	NumberOfAffectedEntries int
 }
 
-type EntryNotifiedHandler func(event EntryNotifiedEvent)
+func (e *EntryNotified) EventName() string {
+	return EventEntryNotified
+}
