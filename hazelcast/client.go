@@ -35,7 +35,7 @@ type Client struct {
 	connectionManager *icluster.ConnectionManager
 	clusterService    *icluster.ServiceImpl
 	partitionService  *icluster.PartitionServiceImpl
-	eventDispatcher   event.DispatchService
+	eventDispatcher   *event.DispatchService
 	invocationHandler invocation.Handler
 	logger            logger.Logger
 
@@ -143,7 +143,7 @@ func (c *Client) createComponents(config *Config) {
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
-	eventDispatcher := event.NewDispatchServiceImpl()
+	eventDispatcher := event.NewDispatchService()
 	requestCh := make(chan invocation.Invocation, 1024)
 	partitionService := icluster.NewPartitionServiceImpl(icluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,

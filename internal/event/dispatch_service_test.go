@@ -1,17 +1,18 @@
 package event_test
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 )
 
 type sampleEvent struct {
 }
 
-func (e sampleEvent) Name() string {
+func (e sampleEvent) EventName() string {
 	return "sample.event"
 }
 
@@ -24,7 +25,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	service := event.NewDispatchServiceImpl()
+	service := event.NewDispatchService()
 	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
@@ -37,7 +38,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 }
 
 func TestDispatchServiceUnsubscribe(t *testing.T) {
-	service := event.NewDispatchServiceImpl()
+	service := event.NewDispatchService()
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	dispatchCount := int32(0)

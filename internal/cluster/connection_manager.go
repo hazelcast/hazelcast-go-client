@@ -42,7 +42,7 @@ type ConnectionManagerCreationBundle struct {
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionServiceImpl
 	SerializationService spi.SerializationService
-	EventDispatcher      event.DispatchService
+	EventDispatcher      *event.DispatchService
 	InvocationFactory    invocation.Factory
 	ClusterConfig        *pubcluster.Config
 	Credentials          security.Credentials
@@ -94,7 +94,7 @@ type ConnectionManager struct {
 	clusterService       *ServiceImpl
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
-	eventDispatcher      event.DispatchService
+	eventDispatcher      *event.DispatchService
 	invocationFactory    invocation.Factory
 	clusterConfig        *pubcluster.Config
 	credentials          security.Credentials

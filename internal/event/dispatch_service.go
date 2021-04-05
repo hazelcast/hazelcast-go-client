@@ -29,15 +29,7 @@ type controlMessage struct {
 	handler        EventHandler
 }
 
-type DispatchService interface {
-	Subscribe(eventName string, subscriptionID int, handler EventHandler)
-	SubscribeSync(eventName string, subscriptionID int, handler EventHandler)
-	Unsubscribe(eventName string, subscriptionID int)
-	Publish(event Event)
-	Stop() // experimental
-}
-
-type DispatchServiceImpl struct {
+type DispatchService struct {
 	subscriptions     map[string]map[int]EventHandler
 	syncSubscriptions map[string]map[int]EventHandler
 	eventCh           chan Event
@@ -45,8 +37,8 @@ type DispatchServiceImpl struct {
 	running           atomic.Value
 }
 
-func NewDispatchServiceImpl() *DispatchServiceImpl {
-	service := &DispatchServiceImpl{
+func NewDispatchService() *DispatchService {
+	service := &DispatchService{
 		subscriptions:     map[string]map[int]EventHandler{},
 		syncSubscriptions: map[string]map[int]EventHandler{},
 		eventCh:           make(chan Event, 1),
@@ -59,7 +51,7 @@ func NewDispatchServiceImpl() *DispatchServiceImpl {
 
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchServiceImpl) Subscribe(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) Subscribe(eventName string, subscriptionID int, handler EventHandler) {
 	// subscribing to a not-runnning service is no-op
 	if s.running.Load() != true {
 		return
@@ -77,7 +69,7 @@ func (s *DispatchServiceImpl) Subscribe(eventName string, subscriptionID int, ha
 
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchServiceImpl) SubscribeSync(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, handler EventHandler) {
 	// subscribing to a not-runnning service is no-op
 	if s.running.Load() != true {
 		return
@@ -90,7 +82,7 @@ func (s *DispatchServiceImpl) SubscribeSync(eventName string, subscriptionID int
 	}
 }
 
-func (s *DispatchServiceImpl) Unsubscribe(eventName string, subscriptionID int) {
+func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int) {
 	// unsubscribing from a not-runnning service is no-op
 	if s.running.Load() != true {
 		return
@@ -103,7 +95,7 @@ func (s *DispatchServiceImpl) Unsubscribe(eventName string, subscriptionID int) 
 	}
 }
 
-func (s *DispatchServiceImpl) Publish(event Event) {
+func (s *DispatchService) Publish(event Event) {
 	// publishing to a not-runnning service is no-op
 	if s.running.Load() != true || event == nil {
 		return
@@ -111,7 +103,7 @@ func (s *DispatchServiceImpl) Publish(event Event) {
 	s.eventCh <- event
 }
 
-func (s *DispatchServiceImpl) start() {
+func (s *DispatchService) start() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -143,7 +135,7 @@ func (s *DispatchServiceImpl) start() {
 	s.running.Store(true)
 }
 
-func (s *DispatchServiceImpl) Stop() {
+func (s *DispatchService) Stop() {
 	// stopping a not-running service is no-op
 	if s.running.Load() != true {
 		return
@@ -155,7 +147,7 @@ func (s *DispatchServiceImpl) Stop() {
 	close(s.controlCh)
 }
 
-func (s *DispatchServiceImpl) dispatch(event Event) {
+func (s *DispatchService) dispatch(event Event) {
 	// first dispatch sync handlers
 	if handlers, ok := s.syncSubscriptions[event.EventName()]; ok {
 		for _, handler := range handlers {
@@ -170,7 +162,7 @@ func (s *DispatchServiceImpl) dispatch(event Event) {
 	}
 }
 
-func (s *DispatchServiceImpl) subscribe(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) subscribe(eventName string, subscriptionID int, handler EventHandler) {
 	subscriptionHandlers, ok := s.subscriptions[eventName]
 	if !ok {
 		subscriptionHandlers = map[int]EventHandler{}
@@ -179,7 +171,7 @@ func (s *DispatchServiceImpl) subscribe(eventName string, subscriptionID int, ha
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchServiceImpl) subscribeSync(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) subscribeSync(eventName string, subscriptionID int, handler EventHandler) {
 	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
 	if !ok {
 		subscriptionHandlers = map[int]EventHandler{}
@@ -188,7 +180,7 @@ func (s *DispatchServiceImpl) subscribeSync(eventName string, subscriptionID int
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchServiceImpl) unsubscribe(eventName string, unsubscribeSubscriptionID int) {
+func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionID int) {
 	if handlers, ok := s.syncSubscriptions[eventName]; ok {
 		for subscriptionID, _ := range handlers {
 			if subscriptionID == unsubscribeSubscriptionID {

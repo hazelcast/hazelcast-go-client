@@ -33,7 +33,7 @@ type ServiceImpl struct {
 	startCh             chan struct{}
 	startChAtom         int32
 	invocationFactory   invocation.Factory
-	eventDispatcher     event.DispatchService
+	eventDispatcher     *event.DispatchService
 	logger              logger.Logger
 
 	membersMap   membersMap
@@ -44,7 +44,7 @@ type CreationBundle struct {
 	AddrProviders     []AddressProvider
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory invocation.Factory
-	EventDispatcher   event.DispatchService
+	EventDispatcher   *event.DispatchService
 	Logger            logger.Logger
 }
 
