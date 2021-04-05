@@ -22,7 +22,7 @@ type PartitionService interface {
 
 type PartitionServiceCreationBundle struct {
 	SerializationService *iserialization.Service
-	EventDispatcher      event.DispatchService
+	EventDispatcher      *event.DispatchService
 	startCh              chan struct{}
 	startChAtom          int32
 	Logger               logger.Logger
@@ -42,7 +42,7 @@ func (b PartitionServiceCreationBundle) Check() {
 
 type PartitionServiceImpl struct {
 	serializationService *iserialization.Service
-	eventDispatcher      event.DispatchService
+	eventDispatcher      *event.DispatchService
 	partitionTable       partitionTable
 	partitionCount       uint32
 	logger               logger.Logger

@@ -52,7 +52,7 @@ type Connection struct {
 	closedTime                atomic.Value
 	readBuffer                []byte
 	connectionID              int64
-	eventDispatcher           event.DispatchService
+	eventDispatcher           *event.DispatchService
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64

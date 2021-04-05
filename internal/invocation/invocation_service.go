@@ -114,8 +114,6 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 		}
 		return
 	}
-	// TODO: unregister inv
-	//if inv, ok := s.invocations[correlationID]; ok {
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		if msg.Type() == int32(bufutil.MessageTypeException) {
 			err := ihzerror.CreateHazelcastError(codec.DecodeError(msg))

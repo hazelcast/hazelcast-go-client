@@ -42,7 +42,7 @@ type CreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	SerializationService spi.SerializationService
 	PartitionService     cluster.PartitionService
-	EventDispatcher      event.DispatchService
+	EventDispatcher      *event.DispatchService
 	ClusterService       cluster.Service
 	InvocationFactory    invocation.Factory
 	SmartRouting         bool
@@ -77,7 +77,7 @@ type Proxy struct {
 	requestCh            chan<- invocation.Invocation
 	serializationService spi.SerializationService
 	partitionService     cluster.PartitionService
-	eventDispatcher      event.DispatchService
+	eventDispatcher      *event.DispatchService
 	clusterService       cluster.Service
 	invocationFactory    invocation.Factory
 	listenerBinder       proto.ListenerBinder
