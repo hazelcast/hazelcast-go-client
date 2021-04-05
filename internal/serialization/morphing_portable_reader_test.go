@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 	"github.com/stretchr/testify/assert"
 )
@@ -760,7 +762,7 @@ func TestMorphingPortableReader_ReadUTF(t *testing.T) {
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	ret := mpr.ReadUTF("engineer")
 	if ret != expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -778,7 +780,7 @@ func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	ret := mpr.ReadUTF("")
 	if ret != expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -795,7 +797,7 @@ func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testi
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadUTF("engineer")
 	if _, ok := mpr.Error().(*core.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadUTF() should return error type *common.HazelcastSerializationError but it does not return")
+		t.Error("ReadString() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
 
@@ -823,8 +825,8 @@ func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
-	var value Portable = &student{10, 22, "Furkan Şenharputlu"}
-	var expectedRet Portable
+	var value serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var expectedRet serialization.Portable
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := NewClassDefinitionImpl(2, 1, 3)
@@ -1350,7 +1352,7 @@ func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *
 }
 
 func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
-	var expectedRet = []Portable{&student{10, 22, "Furkan Şenharputlu"},
+	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
@@ -1373,9 +1375,9 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T) {
-	var value = []Portable{&student{10, 22, "Furkan Şenharputlu"},
+	var value = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
-	var expectedRet []Portable
+	var expectedRet []serialization.Portable
 	config := NewConfig()
 	config.AddPortableFactory(2, &portableFactory1{})
 	classDef := NewClassDefinitionImpl(2, 1, 3)

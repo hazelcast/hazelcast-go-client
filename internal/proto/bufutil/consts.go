@@ -39,7 +39,7 @@ type MessageType uint16
 
 //MESSAGE TYPES
 const (
-	MessageTypeException MessageType = 109
+	MessageTypeException MessageType = 0
 )
 
 type ErrorCode int32
@@ -196,24 +196,6 @@ const (
 	HeaderSize               = DataOffsetFieldOffset + Int16SizeInBytes
 
 	NilArrayLength = -1
-)
-
-const (
-	EntryEventAdded        int32 = 1
-	EntryEventRemoved      int32 = 2
-	EntryEventUpdated      int32 = 4
-	EntryEventEvicted      int32 = 8
-	MapEventEvicted        int32 = 16
-	MapEventCleared        int32 = 32
-	EntryEventMerged       int32 = 64
-	EntryEventExpired      int32 = 128
-	EntryEventInvalidation int32 = 256
-	EntryEventLoaded       int32 = 512
-)
-
-const (
-	ItemAdded   int32 = 1
-	ItemRemoved int32 = 2
 )
 
 const (

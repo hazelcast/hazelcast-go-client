@@ -3,11 +3,12 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
-	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
+	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
@@ -42,7 +43,7 @@ type ConnectionManagerCreationBundle struct {
 	PartitionService     *PartitionServiceImpl
 	SerializationService spi.SerializationService
 	EventDispatcher      event.DispatchService
-	ClusterConfig        pubcluster.ClusterConfig
+	ClusterConfig        *pubcluster.Config
 	Credentials          security.Credentials
 	ClientName           string
 }
@@ -90,7 +91,7 @@ type ConnectionManager struct {
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
 	eventDispatcher      event.DispatchService
-	clusterConfig        pubcluster.ClusterConfig
+	clusterConfig        *pubcluster.Config
 	credentials          security.Credentials
 	heartbeatTimeout     time.Duration
 	clientName           string
@@ -192,8 +193,8 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	if m.started.Load() != true {
 		return
 	}
-	if memberAddedEvent, ok := event.(MembersAdded); ok {
-		missingAddrs := m.connMap.FindAddedAddrs(memberAddedEvent.Members())
+	if memberAddedEvent, ok := event.(*MembersAdded); ok {
+		missingAddrs := m.connMap.FindAddedAddrs(memberAddedEvent.Members)
 		for _, addr := range missingAddrs {
 			if err := m.connectAddr(addr); err != nil {
 				m.logger.Errorf("error connecting addr: %w", err)
@@ -209,7 +210,7 @@ func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
 		return
 	}
 	if memberRemovedEvent, ok := event.(MembersRemoved); ok {
-		removedConns := m.connMap.FindRemovedConns(memberRemovedEvent.Members())
+		removedConns := m.connMap.FindRemovedConns(memberRemovedEvent.Members)
 		for _, conn := range removedConns {
 			m.removeConnection(conn)
 		}
@@ -220,12 +221,12 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	if m.started.Load() != true {
 		return
 	}
-	if connectionClosedEvent, ok := event.(ConnectionClosed); ok {
+	if connectionClosedEvent, ok := event.(*ConnectionClosed); ok {
 		respawnConnection := false
-		if err := connectionClosedEvent.Err(); err != nil {
+		if err := connectionClosedEvent.Err; err != nil {
 			respawnConnection = true
 		}
-		conn := connectionClosedEvent.Conn()
+		conn := connectionClosedEvent.Conn
 		m.removeConnection(conn)
 		if respawnConnection {
 			if addr := m.connMap.GetAddrForConnID(conn.connectionID); addr != nil {
@@ -343,7 +344,7 @@ func (m *ConnectionManager) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	// TODO: use credentials from config
 	return codec.EncodeClientAuthenticationRequest(
-		m.clusterConfig.Name(),
+		m.clusterConfig.Name,
 		"",
 		"",
 		internal.NewUUID(),

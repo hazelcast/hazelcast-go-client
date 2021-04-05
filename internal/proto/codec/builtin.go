@@ -2,14 +2,17 @@ package codec
 
 import (
 	"encoding/binary"
+	"strings"
+
+	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"strings"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
 )
 
@@ -504,7 +507,7 @@ func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string
 	message.AddFrame(proto.EndFrame)
 }
 
-func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []proto.StackTraceElement) {
+func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []hzerror.StackTraceElement) {
 	message.AddFrame(proto.BeginFrame)
 	for i := 0; i < len(values); i++ {
 		EncodeStackTraceElement(message, values[i])
@@ -530,6 +533,14 @@ func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []seriali
 	} else {
 		EncodeListMultiFrame(message, values, encoder)
 	}
+}
+
+func DecodeListMultiFrame(frameIterator *proto.ForwardFrameIterator, decoder func(frameIterator *proto.ForwardFrameIterator)) {
+	frameIterator.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
+		decoder(frameIterator)
+	}
+	frameIterator.Next()
 }
 
 func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []serialization.Data {
@@ -701,4 +712,19 @@ func EncodeString(message *proto.ClientMessage, value interface{}) {
 
 func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 	return string(frameIterator.Next().Content)
+}
+
+func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerErrorImpl {
+	frameIterator := msg.FrameIterator()
+	frameIterator.Next()
+	errorHolders := []proto.ErrorHolder{}
+	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
+		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
+	})
+	if len(errorHolders) == 0 {
+		return nil
+	}
+	holder := errorHolders[0]
+	err := ihzerror.NewServerErrorImpl(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
+	return &err
 }

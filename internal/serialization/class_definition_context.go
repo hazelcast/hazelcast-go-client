@@ -16,25 +16,27 @@ package serialization
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"reflect"
 	"strconv"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 type ClassDefinitionContext struct {
 	factoryID int32
-	classDefs map[string]ClassDefinition
+	classDefs map[string]serialization.ClassDefinition
 }
 
 func NewClassDefinitionContext(factoryID int32) *ClassDefinitionContext {
-	return &ClassDefinitionContext{factoryID, make(map[string]ClassDefinition)}
+	return &ClassDefinitionContext{factoryID, make(map[string]serialization.ClassDefinition)}
 }
 
-func (c *ClassDefinitionContext) LookUp(classID int32, version int32) ClassDefinition {
+func (c *ClassDefinitionContext) LookUp(classID int32, version int32) serialization.ClassDefinition {
 	return c.classDefs[encodeVersionedClassID(classID, version)]
 }
 
-func (c *ClassDefinitionContext) Register(classDefinition ClassDefinition) (ClassDefinition, error) {
+func (c *ClassDefinitionContext) Register(classDefinition serialization.ClassDefinition) (serialization.ClassDefinition, error) {
 	if classDefinition == nil {
 		return nil, nil
 	}

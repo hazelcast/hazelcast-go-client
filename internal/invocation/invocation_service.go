@@ -4,6 +4,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
 	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
@@ -116,7 +118,7 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	//if inv, ok := s.invocations[correlationID]; ok {
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		if msg.Type() == int32(bufutil.MessageTypeException) {
-			err := ihzerror.CreateHazelcastError(msg.DecodeError())
+			err := ihzerror.CreateHazelcastError(codec.DecodeError(msg))
 			s.handleError(correlationID, err)
 		} else {
 			inv.Complete(msg)

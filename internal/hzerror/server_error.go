@@ -13,6 +13,19 @@ type ServerErrorImpl struct {
 	causeClassName string
 }
 
+// NewServerErrorImpl
+// experimental
+func NewServerErrorImpl(errorCode int32, className string, message string, stackTrace []pubhzerror.StackTraceElement, causeErrorCode int32, causeClassName string) ServerErrorImpl {
+	return ServerErrorImpl{
+		errorCode:      errorCode,
+		className:      className,
+		message:        message,
+		stackTrace:     stackTrace,
+		causeErrorCode: causeErrorCode,
+		causeClassName: causeClassName,
+	}
+}
+
 func (e *ServerErrorImpl) Error() string {
 	return e.message
 }

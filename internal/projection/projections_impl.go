@@ -15,7 +15,7 @@
 package projection
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/precond"
 )
 
@@ -42,11 +42,11 @@ func (*SingleAttribute) ClassID() (classID int32) {
 }
 
 func (sa *SingleAttribute) WriteData(output serialization.DataOutput) (err error) {
-	output.WriteUTF(sa.attributePath)
+	output.WriteString(sa.attributePath)
 	return
 }
 
 func (sa *SingleAttribute) ReadData(input serialization.DataInput) error {
-	sa.attributePath = input.ReadUTF()
+	sa.attributePath = input.ReadString()
 	return input.Error()
 }

@@ -16,8 +16,10 @@ package serialization
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"unicode/utf8"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/bufferutil"
@@ -25,12 +27,12 @@ import (
 
 type ObjectDataOutput struct {
 	buffer    []byte
-	service   *ServiceImpl
+	service   *Service
 	bigEndian bool
 	position  int32
 }
 
-func NewObjectDataOutput(length int, service *ServiceImpl, bigEndian bool) *ObjectDataOutput {
+func NewObjectDataOutput(length int, service *Service, bigEndian bool) *ObjectDataOutput {
 	return &ObjectDataOutput{make([]byte, length), service, bigEndian, 0}
 }
 
@@ -120,7 +122,7 @@ func (o *ObjectDataOutput) WriteFloat64(v float64) {
 	o.position += bufutil.Float64SizeInBytes
 }
 
-func (o *ObjectDataOutput) WriteUTF(v string) {
+func (o *ObjectDataOutput) WriteString(v string) {
 	length := int32(utf8.RuneCountInString(v))
 	o.WriteInt32(length)
 
@@ -250,7 +252,7 @@ func (o *ObjectDataOutput) WriteUTFArray(v []string) {
 	}
 	o.WriteInt32(length)
 	for j := int32(0); j < length; j++ {
-		o.WriteUTF(v[j])
+		o.WriteString(v[j])
 	}
 }
 
@@ -260,7 +262,7 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteData(data Data) {
+func (o *ObjectDataOutput) WriteData(data serialization.Data) {
 	var length int32
 	if data == nil {
 		length = bufutil.NilArrayLength
@@ -280,13 +282,13 @@ func (o *ObjectDataOutput) WriteData(data Data) {
 type ObjectDataInput struct {
 	buffer    []byte
 	offset    int32
-	service   *ServiceImpl
+	service   *Service
 	bigEndian bool
 	position  int32
 	err       error
 }
 
-func NewObjectDataInput(buffer []byte, offset int32, service *ServiceImpl, bigEndian bool) *ObjectDataInput {
+func NewObjectDataInput(buffer []byte, offset int32, service *Service, bigEndian bool) *ObjectDataInput {
 	return &ObjectDataInput{buffer, offset, service, bigEndian, offset, nil}
 }
 
@@ -618,7 +620,7 @@ func (i *ObjectDataInput) readFloat64WithPosition(pos int32) (float64, error) {
 	return ret, err
 }
 
-func (i *ObjectDataInput) ReadUTF() string {
+func (i *ObjectDataInput) ReadString() string {
 	if i.err != nil {
 		return ""
 	}
@@ -1056,7 +1058,7 @@ func (i *ObjectDataInput) readUTFArray() ([]string, error) {
 	}
 	var arr = make([]string, length)
 	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadUTF()
+		arr[j] = i.ReadString()
 	}
 	return arr, i.err
 }
@@ -1079,22 +1081,22 @@ func (i *ObjectDataInput) readUTFArrayWithPosition(pos int32) ([]string, error) 
 	}
 	var arr = make([]string, length)
 	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadUTF()
+		arr[j] = i.ReadString()
 	}
 	i.position = backupPos
 	return arr, i.err
 }
 
-func (i *ObjectDataInput) ReadData() Data {
+func (i *ObjectDataInput) ReadData() serialization.Data {
 	if i.err != nil {
 		return nil
 	}
-	var ret Data
+	var ret serialization.Data
 	ret, i.err = i.readData()
 	return ret
 }
 
-func (i *ObjectDataInput) readData() (Data, error) {
+func (i *ObjectDataInput) readData() (serialization.Data, error) {
 	array, err := i.readByteArray()
 	if err != nil {
 		return nil, err
@@ -1109,7 +1111,7 @@ type PositionalObjectDataOutput struct {
 	*ObjectDataOutput
 }
 
-func NewPositionalObjectDataOutput(length int, service *ServiceImpl, bigEndian bool) *PositionalObjectDataOutput {
+func NewPositionalObjectDataOutput(length int, service *Service, bigEndian bool) *PositionalObjectDataOutput {
 	return &PositionalObjectDataOutput{NewObjectDataOutput(length, service, bigEndian)}
 }
 

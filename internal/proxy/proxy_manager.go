@@ -2,31 +2,27 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"sync"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 )
 
-type Manager interface {
-	GetMap(name string) (hztypes.Map, error)
-	Remove(serviceName string, objectName string) error
-}
-
-type ManagerImpl struct {
+type Manager struct {
 	mu            *sync.RWMutex
-	proxies       map[string]*Impl
+	proxies       map[string]*Proxy
 	serviceBundle CreationBundle
 }
 
-func NewManagerImpl(bundle CreationBundle) *ManagerImpl {
+func NewManager(bundle CreationBundle) *Manager {
 	bundle.Check()
-	return &ManagerImpl{
+	return &Manager{
 		mu:            &sync.RWMutex{},
-		proxies:       map[string]*Impl{},
+		proxies:       map[string]*Proxy{},
 		serviceBundle: bundle,
 	}
 }
 
-func (m *ManagerImpl) GetMap(objectName string) (hztypes.Map, error) {
+func (m *Manager) GetMap(objectName string) (hztypes.Map, error) {
 	if proxy, err := m.proxyFor(MapServiceName, objectName); err != nil {
 		return nil, err
 	} else {
@@ -34,7 +30,7 @@ func (m *ManagerImpl) GetMap(objectName string) (hztypes.Map, error) {
 	}
 }
 
-func (m *ManagerImpl) Remove(serviceName string, objectName string) error {
+func (m *Manager) Remove(serviceName string, objectName string) error {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()
 	proxy, ok := m.proxies[name]
@@ -47,7 +43,7 @@ func (m *ManagerImpl) Remove(serviceName string, objectName string) error {
 	return proxy.Destroy()
 }
 
-func (m *ManagerImpl) proxyFor(serviceName string, objectName string) (*Impl, error) {
+func (m *Manager) proxyFor(serviceName string, objectName string) (*Proxy, error) {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	obj, ok := m.proxies[name]
@@ -65,8 +61,8 @@ func (m *ManagerImpl) proxyFor(serviceName string, objectName string) (*Impl, er
 	}
 }
 
-func (m ManagerImpl) createProxy(serviceName string, objectName string) (*Impl, error) {
-	return NewImpl(m.serviceBundle, serviceName, objectName), nil
+func (m Manager) createProxy(serviceName string, objectName string) (*Proxy, error) {
+	return NewProxy(m.serviceBundle, serviceName, objectName), nil
 }
 
 func makeProxyName(serviceName string, objectName string) string {

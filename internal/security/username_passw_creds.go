@@ -14,7 +14,9 @@
 
 package security
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+import (
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+)
 
 // UsernamePasswordCredentials is a simple implementation of Credentials
 // using username and password as security attributes.

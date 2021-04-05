@@ -9,7 +9,7 @@ import (
 const DefaultSubscriptionID = -1
 
 type Event interface {
-	Name() string
+	EventName() string
 }
 
 type EventHandler func(event Event)
@@ -157,13 +157,13 @@ func (s *DispatchServiceImpl) Stop() {
 
 func (s *DispatchServiceImpl) dispatch(event Event) {
 	// first dispatch sync handlers
-	if handlers, ok := s.syncSubscriptions[event.Name()]; ok {
+	if handlers, ok := s.syncSubscriptions[event.EventName()]; ok {
 		for _, handler := range handlers {
 			handler(event)
 		}
 	}
 	// then dispatch async handlers
-	if handlers, ok := s.subscriptions[event.Name()]; ok {
+	if handlers, ok := s.subscriptions[event.EventName()]; ok {
 		for _, handler := range handlers {
 			go handler(event)
 		}
@@ -189,6 +189,14 @@ func (s *DispatchServiceImpl) subscribeSync(eventName string, subscriptionID int
 }
 
 func (s *DispatchServiceImpl) unsubscribe(eventName string, unsubscribeSubscriptionID int) {
+	if handlers, ok := s.syncSubscriptions[eventName]; ok {
+		for subscriptionID, _ := range handlers {
+			if subscriptionID == unsubscribeSubscriptionID {
+				delete(handlers, subscriptionID)
+				return
+			}
+		}
+	}
 	if handlers, ok := s.subscriptions[eventName]; ok {
 		for subscriptionID, _ := range handlers {
 			if subscriptionID == unsubscribeSubscriptionID {

@@ -1,12 +1,12 @@
 package hztypes
 
-type Pair struct {
+type Entry struct {
 	Key   interface{}
 	Value interface{}
 }
 
-func NewPair(key interface{}, value interface{}) Pair {
-	return Pair{
+func NewEntry(key interface{}, value interface{}) Entry {
+	return Entry{
 		Key:   key,
 		Value: value,
 	}

@@ -19,11 +19,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/core"
 )
 
 func TestNilSerializer_Write(t *testing.T) {
-	service := &ServiceImpl{}
+	service := &Service{}
 	serializer := &NilSerializer{}
 	o := NewObjectDataOutput(0, service, false)
 	serializer.Write(o, nil)
@@ -37,7 +39,7 @@ func TestNilSerializer_Write(t *testing.T) {
 
 type factory struct{}
 
-func (factory) Create(classID int32) IdentifiedDataSerializable {
+func (factory) Create(classID int32) serialization.IdentifiedDataSerializable {
 	if classID == 1 {
 		return &employee{}
 	}
@@ -49,15 +51,15 @@ type employee struct {
 	name string
 }
 
-func (e *employee) ReadData(input DataInput) error {
+func (e *employee) ReadData(input serialization.DataInput) error {
 	e.age = input.ReadInt32()
-	e.name = input.ReadUTF()
+	e.name = input.ReadString()
 	return nil
 }
 
-func (e *employee) WriteData(output DataOutput) error {
+func (e *employee) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(e.age)
-	output.WriteUTF(e.name)
+	output.WriteString(e.name)
 	return nil
 }
 
@@ -74,15 +76,15 @@ type customer struct {
 	name string
 }
 
-func (c *customer) ReadData(input DataInput) error {
+func (c *customer) ReadData(input serialization.DataInput) error {
 	c.age = input.ReadInt32()
-	c.name = input.ReadUTF()
+	c.name = input.ReadString()
 	return nil
 }
 
-func (c *customer) WriteData(output DataOutput) error {
+func (c *customer) WriteData(output serialization.DataOutput) error {
 	output.WriteInt32(c.age)
-	output.WriteUTF(c.name)
+	output.WriteString(c.name)
 	return nil
 }
 
@@ -148,11 +150,11 @@ func (*x) ClassID() int32 {
 	return 1
 }
 
-func (*x) WriteData(output DataOutput) error {
+func (*x) WriteData(output serialization.DataOutput) error {
 	return nil
 }
 
-func (*x) ReadData(input DataInput) error {
+func (*x) ReadData(input serialization.DataInput) error {
 	return nil
 }
 

@@ -18,6 +18,8 @@ import (
 	"encoding/binary"
 	"math"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/murmur"
 )
 
@@ -37,7 +39,7 @@ func (d *SerializationData) ToByteArray() []byte {
 
 // NewSerializationData returns serialization Data with the given payload.
 // Ownership of Payload is transferred, so it mustn't be used after passed to NewSerializationData
-func NewSerializationData(payload []byte) Data {
+func NewSerializationData(payload []byte) serialization.Data {
 	return &SerializationData{payload}
 }
 

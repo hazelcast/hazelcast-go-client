@@ -16,6 +16,7 @@ package serialization
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 type ClassDefinitionWriter struct {
@@ -65,7 +66,7 @@ func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
 	cdw.classDefinitionBuilder.AddUTFField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable Portable) error {
+func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable serialization.Portable) error {
 	if portable == nil {
 		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
@@ -123,7 +124,7 @@ func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string
 	cdw.classDefinitionBuilder.AddUTFArrayField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []Portable) error {
+func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) error {
 	if portables == nil {
 		return hzerror.NewHazelcastSerializationError("non nil value expected", nil)
 	}
@@ -140,7 +141,7 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 	return nil
 }
 
-func (cdw *ClassDefinitionWriter) registerAndGet() (ClassDefinition, error) {
+func (cdw *ClassDefinitionWriter) registerAndGet() (serialization.ClassDefinition, error) {
 	cd := cdw.classDefinitionBuilder.Build()
 	return cdw.portableContext.RegisterClassDefinition(cd)
 }

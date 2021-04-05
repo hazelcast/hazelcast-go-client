@@ -1,31 +1,47 @@
 package hazelcast
 
 import (
+	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	icluster "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 type Config struct {
-	ClientName    string
-	Properties    map[string]string
-	ClusterConfig cluster.ClusterConfig
+	ClientName          string
+	Properties          map[string]string
+	ClusterConfig       cluster.Config
+	SerializationConfig serialization.Config
 }
 
-type ConfigProvider interface {
-	Config() (Config, error)
+func (c Config) Clone() Config {
+	properties := map[string]string{}
+	for k, v := range c.Properties {
+		properties[k] = v
+	}
+	return Config{
+		ClientName:          c.ClientName,
+		Properties:          properties,
+		ClusterConfig:       c.ClusterConfig.Clone(),
+		SerializationConfig: c.SerializationConfig.Clone(),
+	}
 }
 
 type ConfigBuilder struct {
-	config               Config
-	clusterConfigBuilder *icluster.ClusterConfigBuilderImpl
+	config                     *Config
+	clusterConfigBuilder       *ClusterConfigBuilder
+	serializationConfigBuilder *SerializationConfigBuilder
 }
 
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
-		config: Config{
+		config: &Config{
 			Properties: map[string]string{},
 		},
-		clusterConfigBuilder: icluster.NewClusterConfigBuilderImpl(),
+		clusterConfigBuilder:       newClusterConfigBuilder(),
+		serializationConfigBuilder: newSerializationConfigBuilder(),
 	}
 }
 
@@ -39,20 +55,152 @@ func (c *ConfigBuilder) SetProperty(key, value string) *ConfigBuilder {
 	return c
 }
 
-func (c *ConfigBuilder) Cluster() cluster.ClusterConfigBuilder {
+func (c *ConfigBuilder) Cluster() *ClusterConfigBuilder {
 	if c.clusterConfigBuilder == nil {
-		c.clusterConfigBuilder = &icluster.ClusterConfigBuilderImpl{}
+		c.clusterConfigBuilder = &ClusterConfigBuilder{}
 	}
 	return c.clusterConfigBuilder
 }
 
+func (c *ConfigBuilder) Serialization() *SerializationConfigBuilder {
+	if c.serializationConfigBuilder == nil {
+		c.serializationConfigBuilder = newSerializationConfigBuilder()
+	}
+	return c.serializationConfigBuilder
+}
+
 func (c ConfigBuilder) Config() (Config, error) {
 	if c.clusterConfigBuilder != nil {
-		if networkConfig, err := c.clusterConfigBuilder.Config(); err != nil {
+		if networkConfig, err := c.clusterConfigBuilder.buildConfig(); err != nil {
 			return Config{}, err
 		} else {
-			c.config.ClusterConfig = networkConfig
+			c.config.ClusterConfig = *networkConfig
 		}
 	}
-	return c.config, nil
+	if c.serializationConfigBuilder != nil {
+		if serializationConfig, err := c.serializationConfigBuilder.buildConfig(); err != nil {
+			return Config{}, err
+		} else {
+			c.config.SerializationConfig = *serializationConfig
+		}
+	}
+	return *c.config, nil
+}
+
+func newClusterConfig() *cluster.Config {
+	defaultAddr := fmt.Sprintf("%s:%d", cluster.DefaultHost, cluster.DefaultPort)
+	return &cluster.Config{
+		Name:              "dev",
+		Addrs:             []string{defaultAddr},
+		SmartRouting:      true,
+		ConnectionTimeout: 5 * time.Second,
+	}
+}
+
+type ClusterConfigBuilder struct {
+	config *cluster.Config
+	err    error
+}
+
+func newClusterConfigBuilder() *ClusterConfigBuilder {
+	return &ClusterConfigBuilder{
+		config: newClusterConfig(),
+	}
+}
+
+func (b *ClusterConfigBuilder) SetName(name string) *ClusterConfigBuilder {
+	b.config.Name = name
+	return b
+}
+
+func (b *ClusterConfigBuilder) SetAddrs(addrs ...string) *ClusterConfigBuilder {
+	selfAddresses := make([]string, len(addrs))
+	for i, addr := range addrs {
+		if err := checkAddress(addr); err != nil {
+			b.err = err
+			return b
+		}
+		selfAddresses[i] = addr
+	}
+	b.config.Addrs = selfAddresses
+	return b
+}
+
+func (b *ClusterConfigBuilder) SetSmartRouting(enable bool) *ClusterConfigBuilder {
+	b.config.SmartRouting = enable
+	return b
+}
+
+func (b *ClusterConfigBuilder) SetConnectionTimeout(timeout time.Duration) *ClusterConfigBuilder {
+	b.config.ConnectionTimeout = timeout
+	return b
+}
+
+func (b *ClusterConfigBuilder) buildConfig() (*cluster.Config, error) {
+	if b.err != nil {
+		return b.config, b.err
+	}
+	return b.config, nil
+}
+
+func checkAddress(addr string) error {
+	return nil
+}
+
+type SerializationConfigBuilder struct {
+	config *serialization.Config
+	err    error
+}
+
+func newSerializationConfigBuilder() *SerializationConfigBuilder {
+	return &SerializationConfigBuilder{
+		config: &serialization.Config{
+			IdentifiedDataSerializableFactories: map[int32]serialization.IdentifiedDataSerializableFactory{},
+			PortableFactories:                   map[int32]serialization.PortableFactory{},
+			CustomSerializers:                   map[reflect.Type]serialization.Serializer{},
+		},
+	}
+}
+
+func (b *SerializationConfigBuilder) SetLittleEndian(enabled bool) *SerializationConfigBuilder {
+	b.config.LittleEndian = enabled
+	return b
+}
+
+func (b *SerializationConfigBuilder) SetGlobalSerializer(serializer serialization.Serializer) *SerializationConfigBuilder {
+	if serializer.ID() <= 0 {
+		panic("serializerID must be positive")
+	}
+	b.config.GlobalSerializer = serializer
+	return b
+}
+
+func (b *SerializationConfigBuilder) AddIdentifiedDataSerializableFactory(factoryID int32, factory serialization.IdentifiedDataSerializableFactory) *SerializationConfigBuilder {
+	b.config.IdentifiedDataSerializableFactories[factoryID] = factory
+	return b
+}
+
+func (b *SerializationConfigBuilder) AddPortableFactory(factoryID int32, factory serialization.PortableFactory) *SerializationConfigBuilder {
+	b.config.PortableFactories[factoryID] = factory
+	return b
+}
+
+func (b *SerializationConfigBuilder) AddCustomSerializer(t reflect.Type, serializer serialization.Serializer) *SerializationConfigBuilder {
+	if serializer.ID() <= 0 {
+		panic("serializerID must be positive")
+	}
+	b.config.CustomSerializers[t] = serializer
+	return b
+}
+
+func (b *SerializationConfigBuilder) AddClassDefinition(definition serialization.ClassDefinition) *SerializationConfigBuilder {
+	b.config.ClassDefinitions = append(b.config.ClassDefinitions, definition)
+	return b
+}
+
+func (b *SerializationConfigBuilder) buildConfig() (*serialization.Config, error) {
+	if b.err != nil {
+		return b.config, b.err
+	}
+	return b.config, nil
 }

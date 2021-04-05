@@ -18,8 +18,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"reflect"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 type NilSerializer struct{}
@@ -28,21 +30,21 @@ func (*NilSerializer) ID() int32 {
 	return ConstantTypeNil
 }
 
-func (*NilSerializer) Read(input DataInput) (interface{}, error) {
+func (*NilSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	return nil, nil
 }
 
-func (*NilSerializer) Write(output DataOutput, i interface{}) error {
+func (*NilSerializer) Write(output serialization.DataOutput, i interface{}) error {
 	// Empty method
 	return nil
 }
 
 type IdentifiedDataSerializableSerializer struct {
-	factories map[int32]IdentifiedDataSerializableFactory
+	factories map[int32]serialization.IdentifiedDataSerializableFactory
 }
 
 func NewIdentifiedDataSerializableSerializer(
-	factories map[int32]IdentifiedDataSerializableFactory) *IdentifiedDataSerializableSerializer {
+	factories map[int32]serialization.IdentifiedDataSerializableFactory) *IdentifiedDataSerializableSerializer {
 	return &IdentifiedDataSerializableSerializer{factories: factories}
 }
 
@@ -50,7 +52,7 @@ func (*IdentifiedDataSerializableSerializer) ID() int32 {
 	return ConstantTypeDataSerializable
 }
 
-func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interface{}, error) {
+func (idss *IdentifiedDataSerializableSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	isIdentified := input.ReadBool()
 	if input.Error() != nil {
 		return nil, input.Error()
@@ -78,8 +80,8 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input DataInput) (interfa
 	return object, err
 }
 
-func (*IdentifiedDataSerializableSerializer) Write(output DataOutput, i interface{}) error {
-	r := i.(IdentifiedDataSerializable)
+func (*IdentifiedDataSerializableSerializer) Write(output serialization.DataOutput, i interface{}) error {
+	r := i.(serialization.IdentifiedDataSerializable)
 	output.WriteBool(true)
 	output.WriteInt32(r.FactoryID())
 	output.WriteInt32(r.ClassID())
@@ -92,12 +94,12 @@ func (*ByteSerializer) ID() int32 {
 	return ConstantTypeByte
 }
 
-func (*ByteSerializer) Read(input DataInput) (interface{}, error) {
+func (*ByteSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadByte()
 	return res, input.Error()
 }
 
-func (*ByteSerializer) Write(output DataOutput, i interface{}) error {
+func (*ByteSerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteByte(i.(byte))
 	return nil
 }
@@ -108,12 +110,12 @@ func (*BoolSerializer) ID() int32 {
 	return ConstantTypeBool
 }
 
-func (*BoolSerializer) Read(input DataInput) (interface{}, error) {
+func (*BoolSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadBool()
 	return res, input.Error()
 }
 
-func (*BoolSerializer) Write(output DataOutput, i interface{}) error {
+func (*BoolSerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteBool(i.(bool))
 	return nil
 }
@@ -124,12 +126,12 @@ func (*UInteger16Serializer) ID() int32 {
 	return ConstantTypeUInteger16
 }
 
-func (*UInteger16Serializer) Read(input DataInput) (interface{}, error) {
+func (*UInteger16Serializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadUInt16()
 	return res, input.Error()
 }
 
-func (*UInteger16Serializer) Write(output DataOutput, i interface{}) error {
+func (*UInteger16Serializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteUInt16(i.(uint16))
 	return nil
 }
@@ -140,12 +142,12 @@ func (*Integer16Serializer) ID() int32 {
 	return ConstantTypeInteger16
 }
 
-func (*Integer16Serializer) Read(input DataInput) (interface{}, error) {
+func (*Integer16Serializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadInt16()
 	return res, input.Error()
 }
 
-func (*Integer16Serializer) Write(output DataOutput, i interface{}) error {
+func (*Integer16Serializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteInt16(i.(int16))
 	return nil
 }
@@ -156,12 +158,12 @@ func (*Integer32Serializer) ID() int32 {
 	return ConstantTypeInteger32
 }
 
-func (*Integer32Serializer) Read(input DataInput) (interface{}, error) {
+func (*Integer32Serializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadInt32()
 	return res, input.Error()
 }
 
-func (*Integer32Serializer) Write(output DataOutput, i interface{}) error {
+func (*Integer32Serializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteInt32(i.(int32))
 	return nil
 }
@@ -172,12 +174,12 @@ func (*Integer64Serializer) ID() int32 {
 	return ConstantTypeInteger64
 }
 
-func (*Integer64Serializer) Read(input DataInput) (interface{}, error) {
+func (*Integer64Serializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadInt64()
 	return res, input.Error()
 }
 
-func (*Integer64Serializer) Write(output DataOutput, i interface{}) error {
+func (*Integer64Serializer) Write(output serialization.DataOutput, i interface{}) error {
 	val, ok := i.(int64)
 	if !ok {
 		val = int64(i.(int))
@@ -192,12 +194,12 @@ func (*Float32Serializer) ID() int32 {
 	return ConstantTypeFloat32
 }
 
-func (*Float32Serializer) Read(input DataInput) (interface{}, error) {
+func (*Float32Serializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadFloat32()
 	return res, input.Error()
 }
 
-func (*Float32Serializer) Write(output DataOutput, i interface{}) error {
+func (*Float32Serializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteFloat32(i.(float32))
 	return nil
 }
@@ -208,12 +210,12 @@ func (*Float64Serializer) ID() int32 {
 	return ConstantTypeFloat64
 }
 
-func (*Float64Serializer) Read(input DataInput) (interface{}, error) {
+func (*Float64Serializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadFloat64()
 	return res, input.Error()
 }
 
-func (*Float64Serializer) Write(output DataOutput, i interface{}) error {
+func (*Float64Serializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteFloat64(i.(float64))
 	return nil
 }
@@ -224,13 +226,13 @@ func (*StringSerializer) ID() int32 {
 	return ConstantTypeString
 }
 
-func (*StringSerializer) Read(input DataInput) (interface{}, error) {
-	res := input.ReadUTF()
+func (*StringSerializer) Read(input serialization.DataInput) (interface{}, error) {
+	res := input.ReadString()
 	return res, input.Error()
 }
 
-func (*StringSerializer) Write(output DataOutput, i interface{}) error {
-	output.WriteUTF(i.(string))
+func (*StringSerializer) Write(output serialization.DataOutput, i interface{}) error {
+	output.WriteString(i.(string))
 	return nil
 }
 
@@ -240,12 +242,12 @@ func (*ByteArraySerializer) ID() int32 {
 	return ConstantTypeByteArray
 }
 
-func (*ByteArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*ByteArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadByteArray()
 	return res, input.Error()
 }
 
-func (*ByteArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*ByteArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteByteArray(i.([]byte))
 	return nil
 }
@@ -256,12 +258,12 @@ func (*BoolArraySerializer) ID() int32 {
 	return ConstantTypeBoolArray
 }
 
-func (*BoolArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*BoolArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadBoolArray()
 	return res, input.Error()
 }
 
-func (*BoolArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*BoolArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteBoolArray(i.([]bool))
 	return nil
 }
@@ -272,13 +274,13 @@ func (*UInteger16ArraySerializer) ID() int32 {
 	return ConstantTypeUInteger16Array
 }
 
-func (*UInteger16ArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*UInteger16ArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadUInt16Array()
 	return res, input.Error()
 
 }
 
-func (*UInteger16ArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*UInteger16ArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteUInt16Array(i.([]uint16))
 	return nil
 }
@@ -289,12 +291,12 @@ func (*Integer16ArraySerializer) ID() int32 {
 	return ConstantTypeInteger16Array
 }
 
-func (*Integer16ArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*Integer16ArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadInt16Array()
 	return res, input.Error()
 }
 
-func (*Integer16ArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*Integer16ArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteInt16Array(i.([]int16))
 	return nil
 }
@@ -305,12 +307,12 @@ func (*Integer32ArraySerializer) ID() int32 {
 	return ConstantTypeInteger32Array
 }
 
-func (*Integer32ArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*Integer32ArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadInt32Array()
 	return res, input.Error()
 }
 
-func (*Integer32ArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*Integer32ArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteInt32Array(i.([]int32))
 	return nil
 }
@@ -321,12 +323,12 @@ func (*Integer64ArraySerializer) ID() int32 {
 	return ConstantTypeInteger64Array
 }
 
-func (*Integer64ArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*Integer64ArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadInt64Array()
 	return res, input.Error()
 }
 
-func (*Integer64ArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*Integer64ArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	val, ok := i.([]int64)
 	if !ok {
 		tmp := i.([]int)
@@ -346,12 +348,12 @@ func (*Float32ArraySerializer) ID() int32 {
 	return ConstantTypeFloat32Array
 }
 
-func (*Float32ArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*Float32ArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadFloat32Array()
 	return res, input.Error()
 }
 
-func (*Float32ArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*Float32ArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteFloat32Array(i.([]float32))
 	return nil
 }
@@ -362,12 +364,12 @@ func (*Float64ArraySerializer) ID() int32 {
 	return ConstantTypeFloat64Array
 }
 
-func (*Float64ArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*Float64ArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadFloat64Array()
 	return res, input.Error()
 }
 
-func (*Float64ArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*Float64ArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteFloat64Array(i.([]float64))
 	return nil
 }
@@ -378,12 +380,12 @@ func (*StringArraySerializer) ID() int32 {
 	return ConstantTypeStringArray
 }
 
-func (*StringArraySerializer) Read(input DataInput) (interface{}, error) {
+func (*StringArraySerializer) Read(input serialization.DataInput) (interface{}, error) {
 	res := input.ReadUTFArray()
 	return res, input.Error()
 }
 
-func (*StringArraySerializer) Write(output DataOutput, i interface{}) error {
+func (*StringArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
 	output.WriteUTFArray(i.([]string))
 	return nil
 }
@@ -394,7 +396,7 @@ func (*GobSerializer) ID() int32 {
 	return GoGobSerializationType
 }
 
-func (*GobSerializer) Read(input DataInput) (interface{}, error) {
+func (*GobSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
 	data := input.ReadData()
 	if input.Error() != nil {
@@ -407,7 +409,7 @@ func (*GobSerializer) Read(input DataInput) (interface{}, error) {
 	return result, err
 }
 
-func (*GobSerializer) Write(output DataOutput, i interface{}) error {
+func (*GobSerializer) Write(output serialization.DataOutput, i interface{}) error {
 	var network bytes.Buffer
 	t := reflect.TypeOf(i)
 	v := reflect.New(t).Elem().Interface()

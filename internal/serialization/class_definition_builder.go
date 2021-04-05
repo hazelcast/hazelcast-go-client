@@ -2,7 +2,9 @@ package serialization
 
 import (
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 // ClassDefinitionBuilder is used to build and register class definitions manually.
@@ -10,7 +12,7 @@ type ClassDefinitionBuilder struct {
 	factoryID        int32
 	classID          int32
 	version          int32
-	fieldDefinitions map[string]FieldDefinition
+	fieldDefinitions map[string]serialization.FieldDefinition
 	index            int32
 	done             bool
 }
@@ -18,9 +20,9 @@ type ClassDefinitionBuilder struct {
 // NewClassDefinitionBuilder returns a ClassDefinitionBuilder.
 // You can use a default portableVersion (0) for non-versioned classes.
 // Make sure to specify the portableVersion compatible with
-// portableVersion in the serialization.ServiceImpl.
+// portableVersion in the serialization.Service.
 func NewClassDefinitionBuilder(factoryID int32, classID int32, version int32) *ClassDefinitionBuilder {
-	return &ClassDefinitionBuilder{factoryID, classID, version, make(map[string]FieldDefinition), 0, false}
+	return &ClassDefinitionBuilder{factoryID, classID, version, make(map[string]serialization.FieldDefinition), 0, false}
 }
 
 // AddByteField adds byte field to class definition.
@@ -132,7 +134,7 @@ func (cdb *ClassDefinitionBuilder) AddUTFField(fieldName string) error {
 }
 
 // AddPortableField adds Portable field to class definition.
-func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def ClassDefinition) error {
+func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def serialization.ClassDefinition) error {
 	err := cdb.check()
 	if err != nil {
 		return err
@@ -256,7 +258,7 @@ func (cdb *ClassDefinitionBuilder) AddUTFArrayField(fieldName string) error {
 }
 
 // AddPortableArrayField adds []Portable field to class definition.
-func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def ClassDefinition) error {
+func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def serialization.ClassDefinition) error {
 	err := cdb.check()
 	if err != nil {
 		return err
@@ -272,7 +274,7 @@ func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def C
 }
 
 // AddField adds a field to class definition.
-func (cdb *ClassDefinitionBuilder) AddField(fieldDefinition FieldDefinition) error {
+func (cdb *ClassDefinitionBuilder) AddField(fieldDefinition serialization.FieldDefinition) error {
 	err := cdb.check()
 	if err != nil {
 		return err
@@ -286,7 +288,7 @@ func (cdb *ClassDefinitionBuilder) AddField(fieldDefinition FieldDefinition) err
 }
 
 // Build returns the built class definition.
-func (cdb *ClassDefinitionBuilder) Build() ClassDefinition {
+func (cdb *ClassDefinitionBuilder) Build() serialization.ClassDefinition {
 	cdb.done = true
 	cd := NewClassDefinitionImpl(cdb.factoryID, cdb.classID, cdb.version)
 	for _, fd := range cdb.fieldDefinitions {

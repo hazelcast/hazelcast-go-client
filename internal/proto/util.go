@@ -16,8 +16,8 @@ package proto
 
 import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const ClientType = "GO"

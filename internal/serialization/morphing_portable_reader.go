@@ -16,15 +16,17 @@ package serialization
 
 import (
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 type MorphingPortableReader struct {
 	*DefaultPortableReader
 }
 
-func NewMorphingPortableReader(portableSerializer *PortableSerializer, input DataInput,
-	classDefinition ClassDefinition) *MorphingPortableReader {
+func NewMorphingPortableReader(portableSerializer *PortableSerializer, input serialization.DataInput,
+	classDefinition serialization.ClassDefinition) *MorphingPortableReader {
 	return &MorphingPortableReader{NewDefaultPortableReader(portableSerializer, input, classDefinition)}
 }
 
@@ -276,16 +278,16 @@ func (mpr *MorphingPortableReader) readUTF(fieldName string) (string, error) {
 	return mpr.DefaultPortableReader.ReadUTF(fieldName), mpr.err
 }
 
-func (mpr *MorphingPortableReader) ReadPortable(fieldName string) Portable {
+func (mpr *MorphingPortableReader) ReadPortable(fieldName string) serialization.Portable {
 	if mpr.err != nil {
 		return nil
 	}
-	var res Portable
+	var res serialization.Portable
 	res, mpr.err = mpr.readPortable(fieldName)
 	return res
 }
 
-func (mpr *MorphingPortableReader) readPortable(fieldName string) (Portable, error) {
+func (mpr *MorphingPortableReader) readPortable(fieldName string) (serialization.Portable, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
 		return nil, nil
@@ -486,16 +488,16 @@ func (mpr *MorphingPortableReader) readUTFArray(fieldName string) ([]string, err
 	return mpr.DefaultPortableReader.ReadUTFArray(fieldName), mpr.err
 }
 
-func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []Portable {
+func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []serialization.Portable {
 	if mpr.err != nil {
 		return nil
 	}
-	var res []Portable
+	var res []serialization.Portable
 	res, mpr.err = mpr.readPortableArray(fieldName)
 	return res
 }
 
-func (mpr *MorphingPortableReader) readPortableArray(fieldName string) ([]Portable, error) {
+func (mpr *MorphingPortableReader) readPortableArray(fieldName string) ([]serialization.Portable, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
 		return nil, nil
@@ -507,13 +509,13 @@ func (mpr *MorphingPortableReader) readPortableArray(fieldName string) ([]Portab
 	return mpr.DefaultPortableReader.ReadPortableArray(fieldName), mpr.err
 }
 
-func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd FieldDefinition,
+func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd serialization.FieldDefinition,
 	expectedType int32) error {
 	return hzerror.NewHazelcastSerializationError(fmt.Sprintf("incompatible to read %v from %v while reading field : %v",
 		TypeByID(expectedType), TypeByID(fd.Type()), fd.Name()), nil)
 }
 
-func (mpr *MorphingPortableReader) validateTypeCompatibility(fd FieldDefinition, expectedType int32) error {
+func (mpr *MorphingPortableReader) validateTypeCompatibility(fd serialization.FieldDefinition, expectedType int32) error {
 	if fd.Type() != expectedType {
 		return mpr.createIncompatibleClassChangeError(fd, expectedType)
 	}

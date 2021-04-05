@@ -16,21 +16,23 @@ package serialization
 
 import (
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
 )
 
 type DefaultPortableReader struct {
 	serializer      *PortableSerializer
-	input           DataInput
-	classDefinition ClassDefinition
+	input           serialization.DataInput
+	classDefinition serialization.ClassDefinition
 	offset          int32
 	finalPos        int32
 	err             error
 }
 
-func NewDefaultPortableReader(serializer *PortableSerializer, input DataInput,
-	classdefinition ClassDefinition) *DefaultPortableReader {
+func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
+	classdefinition serialization.ClassDefinition) *DefaultPortableReader {
 	finalPos := input.ReadInt32()
 	input.ReadInt32()
 	offset := input.Position()
@@ -253,16 +255,16 @@ func (pr *DefaultPortableReader) readUTF(fieldName string) (string, error) {
 	return pr.input.(*ObjectDataInput).ReadUTFWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadPortable(fieldName string) Portable {
+func (pr *DefaultPortableReader) ReadPortable(fieldName string) serialization.Portable {
 	if pr.err != nil {
 		return nil
 	}
-	var res Portable
+	var res serialization.Portable
 	res, pr.err = pr.readPortable(fieldName)
 	return res
 }
 
-func (pr *DefaultPortableReader) readPortable(fieldName string) (Portable, error) {
+func (pr *DefaultPortableReader) readPortable(fieldName string) (serialization.Portable, error) {
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 	pos, err := pr.positionByField(fieldName, TypePortable)
@@ -434,16 +436,16 @@ func (pr *DefaultPortableReader) readUTFArray(fieldName string) ([]string, error
 	return pr.input.(*ObjectDataInput).ReadUTFArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) []Portable {
+func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) []serialization.Portable {
 	if pr.err != nil {
 		return nil
 	}
-	var res []Portable
+	var res []serialization.Portable
 	res, pr.err = pr.readPortableArray(fieldName)
 	return res
 }
 
-func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]Portable, error) {
+func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]serialization.Portable, error) {
 	backupPos := pr.input.Position()
 	defer pr.input.SetPosition(backupPos)
 
@@ -458,7 +460,7 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]Portable
 	if pr.input.Error() != nil || length == bufutil.NilArrayLength {
 		return nil, pr.input.Error()
 	}
-	var portables = make([]Portable, length)
+	var portables = make([]serialization.Portable, length)
 	if length > 0 {
 		offset := pr.input.Position()
 		for i := int32(0); i < length; i++ {

@@ -14,7 +14,9 @@
 
 package compatibility
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
+import (
+	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+)
 
 type aDataSerializableFactory struct{}
 

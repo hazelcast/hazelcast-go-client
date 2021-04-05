@@ -143,7 +143,7 @@ type DataOutput interface {
 	WriteFloat64(v float64)
 
 	// WriteUTF writes a string in UTF-8 format.
-	WriteUTF(v string)
+	WriteString(v string)
 
 	// WriteObject writes an object.
 	WriteObject(i interface{}) error
@@ -219,8 +219,8 @@ type PositionalDataOutput interface {
 // If any of the methods results in an error, all following methods will return the zero value
 // for that type immediately.
 // Example usage:
-//  field1 = input.ReadUTF()
-//  field2 = input.ReadUTF()
+//  field1 = input.ReadString()
+//  field2 = input.ReadString()
 //  return input.Error()
 type DataInput interface {
 	// Error returns the first error encountered by DataInput.
@@ -266,7 +266,7 @@ type DataInput interface {
 
 	// ReadUTF returns string read.
 	// It returns empty string if an error is set previously.
-	ReadUTF() string
+	ReadString() string
 
 	// ReadObject returns object read.
 	// It returns nil if an error is set previously.

@@ -18,24 +18,25 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
 )
 
 const MapServiceName = "hz:impl:mapService"
 
 type MapImpl struct {
-	*Impl
+	*Proxy
 	referenceIDGenerator ReferenceIDGenerator
 }
 
-func NewMapImpl(proxy *Impl) *MapImpl {
+func NewMapImpl(proxy *Proxy) *MapImpl {
 	return &MapImpl{
-		Impl:                 proxy,
+		Proxy:                proxy,
 		referenceIDGenerator: NewReferenceIDGeneratorImpl(),
 	}
 }
@@ -47,7 +48,7 @@ func (m *MapImpl) AddIndex(indexConfig hztypes.IndexConfig) error {
 }
 
 func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
-	if interceptorData, err := m.Impl.convertToData(interceptor); err != nil {
+	if interceptorData, err := m.Proxy.convertToData(interceptor); err != nil {
 		return "", err
 	} else {
 		request := codec.EncodeMapAddInterceptorRequest(m.name, interceptorData)
@@ -120,7 +121,7 @@ func (m *MapImpl) EvictAll() error {
 	return err
 }
 
-func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.KeyValuePair, error) {
+func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.Entry, error) {
 	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
 		return nil, err
 	} else {
@@ -133,7 +134,7 @@ func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.KeyVal
 			return nil, err
 		}
 		pairs := <-ch
-		if kvPairs, err := m.convertPairsToKeyValuePairs(pairs); err != nil {
+		if kvPairs, err := m.convertPairsToEntries(pairs); err != nil {
 			return nil, err
 		} else {
 			return kvPairs, nil
@@ -171,9 +172,9 @@ func (m *MapImpl) Get(key interface{}) (interface{}, error) {
 	}
 }
 
-func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Pair, error) {
-	partitionToKeys := map[int32][]serialization.Data{}
-	ps := m.Impl.partitionService
+func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
+	partitionToKeys := map[int32][]pubserialization.Data{}
+	ps := m.Proxy.partitionService
 	for _, key := range keys {
 		if keyData, err := m.validateAndSerialize(key); err != nil {
 			return nil, err
@@ -183,7 +184,7 @@ func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Pair, error) {
 			partitionToKeys[partitionKey] = append(arr, keyData)
 		}
 	}
-	result := make([]hztypes.Pair, 0, len(keys))
+	result := make([]hztypes.Entry, 0, len(keys))
 	// create invocations
 	invs := make([]invocation.Invocation, 0, len(partitionToKeys))
 	for partitionID, keys := range partitionToKeys {
@@ -201,16 +202,38 @@ func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Pair, error) {
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				if key, err = m.convertToObject(pair.Key().(serialization.Data)); err != nil {
+				if key, err = m.convertToObject(pair.Key().(pubserialization.Data)); err != nil {
 					return nil, err
-				} else if value, err = m.convertToObject(pair.Value().(serialization.Data)); err != nil {
+				} else if value, err = m.convertToObject(pair.Value().(pubserialization.Data)); err != nil {
 					return nil, err
 				}
-				result = append(result, hztypes.NewPair(key, value))
+				result = append(result, hztypes.NewEntry(key, value))
 			}
 		}
 	}
 	return result, nil
+}
+
+func (m *MapImpl) GetEntrySet() ([]hztypes.Entry, error) {
+	request := codec.EncodeMapEntrySetRequest(m.name)
+	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+		return nil, err
+	} else {
+		return m.convertPairsToEntries(codec.DecodeMapEntrySetResponse(response))
+	}
+}
+
+func (m *MapImpl) GetEntrySetWithPredicate(predicate pred.Predicate) ([]hztypes.Entry, error) {
+	if predData, err := m.validateAndSerialize(predicate); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapEntriesWithPredicateRequest(m.name, predData)
+		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+			return nil, err
+		} else {
+			return m.convertPairsToEntries(codec.DecodeMapEntriesWithPredicateResponse(response))
+		}
+	}
 }
 
 func (m *MapImpl) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
@@ -223,11 +246,11 @@ func (m *MapImpl) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
 		} else {
 			ev, maxIdle := codec.DecodeMapGetEntryViewResponse(response)
 			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
-			deserializedKey, err := m.convertToObject(ev.Key().(serialization.Data))
+			deserializedKey, err := m.convertToObject(ev.Key().(pubserialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			deserializedValue, err := m.convertToObject(ev.Value().(serialization.Data))
+			deserializedValue, err := m.convertToObject(ev.Value().(pubserialization.Data))
 			if err != nil {
 				return nil, err
 			}
@@ -334,7 +357,7 @@ func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
 	}
 }
 
-func (m *MapImpl) PutAll(keyValuePairs []hztypes.Pair) error {
+func (m *MapImpl) PutAll(keyValuePairs []hztypes.Entry) error {
 	ps := m.partitionService
 	partitionToPairs := map[int32][]proto.Pair{}
 	for _, pair := range keyValuePairs {
@@ -498,47 +521,64 @@ func (m *MapImpl) Unlock(key interface{}) error {
 	}
 }
 
-func (m *MapImpl) ListenEntryNotification(flags int32, handler hztypes.EntryNotifiedHandler) error {
-	return m.listenEntryNotified(flags, false, handler)
-}
-
-func (m *MapImpl) ListenEntryNotificationIncludingValue(flags int32, handler hztypes.EntryNotifiedHandler) error {
-	return m.listenEntryNotified(flags, true, handler)
+func (m *MapImpl) ListenEntryNotification(config hztypes.MapEntryListenerConfig, handler hztypes.EntryNotifiedHandler) error {
+	flags := makeListenerFlags(&config)
+	return m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, handler)
 }
 
 func (m *MapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler) error {
-	// derive subscriptionID from the handler
 	subscriptionID := event.MakeSubscriptionID(handler)
-	m.eventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
+	m.eventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
 	return m.listenerBinder.Remove(m.name, subscriptionID)
 }
 
-func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, handler hztypes.EntryNotifiedHandler) error {
-	request := codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
-	// derive subscriptionID from the handler
+func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate pred.Predicate, handler hztypes.EntryNotifiedHandler) error {
+	var request *proto.ClientMessage
+	var err error
+	var keyData pubserialization.Data
+	var predicateData pubserialization.Data
+	if key != nil {
+		if keyData, err = m.validateAndSerialize(key); err != nil {
+			return err
+		}
+	}
+	if predicate != nil {
+		if predicateData, err = m.validateAndSerialize(predicate); err != nil {
+			return err
+		}
+	}
+	if keyData != nil {
+		if predicateData != nil {
+			request = codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.smartRouting)
+		} else {
+			request = codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.smartRouting)
+		}
+	} else if predicateData != nil {
+		request = codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.smartRouting)
+	} else {
+		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
+	}
 	subscriptionID := event.MakeSubscriptionID(handler)
-	err := m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
+	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		//if msg.Type() == bufutil.EventEntry {
-		codec.HandleMapAddEntryListener(msg, func(binKey serialization.Data, binValue serialization.Data, binOldValue serialization.Data, binMergingValue serialization.Data, binEventType int32, binUUID internal.UUID, binNumberOfAffectedEntries int32) {
+		codec.HandleMapAddEntryListener(msg, func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
 			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
 			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
 			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
-			//numberOfAffectedEntries := m.mustConvertToInterface(binNumberofAffectedEntries, "invalid numberOfAffectedEntries at ListenEntryNotification")
-			m.eventDispatcher.Publish(NewEntryNotifiedEventImpl(m.name, "FIX-ME:"+binUUID.String(), key, value, oldValue, mergingValue))
-
+			m.eventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
 		})
 	})
 	if err != nil {
 		return err
 	}
-	m.eventDispatcher.Subscribe(EventEntryNotified, subscriptionID, func(event event.Event) {
-		if entryAddedEvent, ok := event.(hztypes.EntryNotifiedEvent); ok {
-			if entryAddedEvent.OwnerName() == m.name {
-				handler(entryAddedEvent)
+	m.eventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
+		if entryNotifiedEvent, ok := event.(*hztypes.EntryNotified); ok {
+			if entryNotifiedEvent.OwnerName == m.name {
+				handler(entryNotifiedEvent)
 			}
 		} else {
-			panic("cannot cast event to hztypes.EntryNotifiedEvent event")
+			panic("cannot cast event to hztypes.EntryNotified event")
 		}
 	})
 	return nil
@@ -548,7 +588,7 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	keyDatas := make([]serialization.Data, 0, len(keys))
+	keyDatas := make([]pubserialization.Data, 0, len(keys))
 	for _, key := range keys {
 		if keyData, err := m.convertToData(key); err != nil {
 			return err
@@ -655,18 +695,32 @@ func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]
 	return pairsMap, nil
 }
 
-func (m *MapImpl) convertPairsToKeyValuePairs(pairs []proto.Pair) ([]hztypes.KeyValuePair, error) {
-	kvPairs := make([]hztypes.KeyValuePair, len(pairs))
+func (m *MapImpl) convertPairsToEntries(pairs []proto.Pair) ([]hztypes.Entry, error) {
+	kvPairs := make([]hztypes.Entry, len(pairs))
 	for i, pair := range pairs {
-		key, err := m.convertToObject(pair.Key().(serialization.Data))
+		key, err := m.convertToObject(pair.Key().(pubserialization.Data))
 		if err != nil {
 			return nil, err
 		}
-		value, err := m.convertToObject(pair.Value().(serialization.Data))
+		value, err := m.convertToObject(pair.Value().(pubserialization.Data))
 		if err != nil {
 			return nil, err
 		}
-		kvPairs[i] = hztypes.KeyValuePair{key, value}
+		kvPairs[i] = hztypes.Entry{key, value}
 	}
 	return kvPairs, nil
+}
+
+func makeListenerFlags(config *hztypes.MapEntryListenerConfig) int32 {
+	var flags int32
+	if config.NotifyEntryAdded {
+		flags |= hztypes.NotifyEntryAdded
+	}
+	if config.NotifyEntryUpdated {
+		flags |= hztypes.NotifyEntryUpdated
+	}
+	if config.NotifyEntryRemoved {
+		flags |= hztypes.NotifyEntryRemoved
+	}
+	return flags
 }

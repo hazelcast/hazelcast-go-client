@@ -72,7 +72,7 @@ func TestObjectDataOutput_WriteInt32(t *testing.T) {
 }
 
 func TestObjectDataInput_AssertAvailable(t *testing.T) {
-	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &ServiceImpl{}, true)
+	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
 	ret := o.AssertAvailable(2)
 	if ret == nil {
 		t.Errorf("AssertAvailable() should return error %v but it returns nil!", ret)
@@ -81,7 +81,7 @@ func TestObjectDataInput_AssertAvailable(t *testing.T) {
 }
 
 func TestObjectDataInput_AssertAvailable2(t *testing.T) {
-	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &ServiceImpl{}, true)
+	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
 	ret := o.AssertAvailable(2)
 	if _, ok := ret.(*core.HazelcastEOFError); !ok {
 		t.Errorf("AssertAvailable() should return error type *common.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
@@ -104,10 +104,10 @@ func TestObjectDataInput_ReadByte(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadBool(t *testing.T) {
-	o := NewObjectDataOutput(9, &ServiceImpl{}, false)
+	o := NewObjectDataOutput(9, &Service{}, false)
 	o.WriteFloat64(1.234)
 	o.WriteBool(true)
-	i := NewObjectDataInput(o.buffer, 8, &ServiceImpl{}, false)
+	i := NewObjectDataInput(o.buffer, 8, &Service{}, false)
 	var expectedRet = true
 	var ret bool
 	ret = i.ReadBool()
@@ -117,10 +117,10 @@ func TestObjectDataInput_ReadBool(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadBoolWithPosition(t *testing.T) {
-	o := NewObjectDataOutput(9, &ServiceImpl{}, false)
+	o := NewObjectDataOutput(9, &Service{}, false)
 	o.WriteFloat64(1.234)
 	o.WriteBool(true)
-	i := NewObjectDataInput(o.buffer, 7, &ServiceImpl{}, false)
+	i := NewObjectDataInput(o.buffer, 7, &Service{}, false)
 	var expectedRet = true
 	var ret bool
 	ret = i.ReadBoolWithPosition(8)
@@ -208,31 +208,31 @@ func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
 
 func TestObjectDataInput_ReadUTF(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
-	o.WriteUTF("Furkan Şenharputlu")
-	o.WriteUTF("Jack")
-	o.WriteUTF("Dani")
+	o.WriteString("Furkan Şenharputlu")
+	o.WriteString("Jack")
+	o.WriteString("Dani")
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	expectedRet := "Dani"
-	i.ReadUTF()
-	i.ReadUTF()
-	ret := i.ReadUTF()
+	i.ReadString()
+	i.ReadString()
+	ret := i.ReadString()
 	if ret != expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestObjectDataInput_ReadUTF2(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
-	o.WriteUTF("Furkan Şenharputlu")
-	o.WriteUTF("Jack")
-	o.WriteUTF("⚐中💦2😭‍🙆😔")
+	o.WriteString("Furkan Şenharputlu")
+	o.WriteString("Jack")
+	o.WriteString("⚐中💦2😭‍🙆😔")
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	expectedRet := "⚐中💦2😭‍🙆😔"
-	i.ReadUTF()
-	i.ReadUTF()
-	ret := i.ReadUTF()
+	i.ReadString()
+	i.ReadString()
+	ret := i.ReadString()
 	if ret != expectedRet {
-		t.Errorf("ReadUTF() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -392,13 +392,13 @@ func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 func TestObjectDataInput_ReadData(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	expectedRet := &SerializationData{[]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}}
-	o.WriteUTF("Dummy")
-	o.WriteUTF("Dummy2")
+	o.WriteString("Dummy")
+	o.WriteString("Dummy2")
 	o.WriteData(expectedRet)
 
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	i.ReadUTF()
-	i.ReadUTF()
+	i.ReadString()
+	i.ReadString()
 	ret := i.ReadData()
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Error("There is a problem in WriteData() or ReadData()!")
@@ -502,7 +502,7 @@ func TestObjectDataInput_ReadingAfterError(t *testing.T) {
 	assert.Error(t, i.Error())
 	i.ReadByteArray()
 	assert.Error(t, i.Error())
-	i.ReadUTF()
+	i.ReadString()
 	assert.Error(t, i.Error())
 	i.ReadInt32()
 	assert.Error(t, i.Error())
