@@ -14,6 +14,9 @@ type Config struct {
 	Addrs             []string
 	SmartRouting      bool
 	ConnectionTimeout time.Duration
+	HeartbeatInterval time.Duration
+	HeartbeatTimeout  time.Duration
+	InvocationTimeout time.Duration
 }
 
 func (c Config) Clone() Config {
@@ -24,5 +27,8 @@ func (c Config) Clone() Config {
 		Addrs:             addrs,
 		SmartRouting:      c.SmartRouting,
 		ConnectionTimeout: c.ConnectionTimeout,
+		HeartbeatInterval: c.HeartbeatInterval,
+		HeartbeatTimeout:  c.HeartbeatTimeout,
+		InvocationTimeout: c.InvocationTimeout,
 	}
 }

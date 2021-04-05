@@ -76,7 +76,9 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 	)
 	t.Run("Smart Client", func(t *testing.T) {
 		cb := hz.NewConfigBuilder()
-		cbCallback(cb)
+		if cbCallback != nil {
+			cbCallback(cb)
+		}
 		config, err := cb.Config()
 		if err != nil {
 			panic(err)
@@ -93,7 +95,9 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 	})
 	t.Run("Non-Smart Client", func(t *testing.T) {
 		cb := hz.NewConfigBuilder()
-		cbCallback(cb)
+		if cbCallback != nil {
+			cbCallback(cb)
+		}
 		cb.Cluster().SetSmartRouting(false)
 		config, err := cb.Config()
 		if err != nil {
@@ -108,6 +112,44 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 			client.Shutdown()
 		}()
 		f(t, m)
+	})
+}
+
+func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, c *hz.Client)) {
+	t.Run("Smart Client", func(t *testing.T) {
+		cb := hz.NewConfigBuilder()
+		if cbCallback != nil {
+			cbCallback(cb)
+		}
+		cb.SetProperty(property.LoggingLevel, "trace")
+		config, err := cb.Config()
+		if err != nil {
+			panic(err)
+		}
+		client, err := hz.StartNewClientWithConfig(config)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Shutdown()
+		f(t, client)
+	})
+	t.Run("Non-Smart Client", func(t *testing.T) {
+		cb := hz.NewConfigBuilder()
+		if cbCallback != nil {
+			cbCallback(cb)
+		}
+		cb.SetProperty(property.LoggingLevel, "trace")
+		cb.Cluster().SetSmartRouting(false)
+		config, err := cb.Config()
+		if err != nil {
+			panic(err)
+		}
+		client, err := hz.StartNewClientWithConfig(config)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Shutdown()
+		f(t, client)
 	})
 }
 

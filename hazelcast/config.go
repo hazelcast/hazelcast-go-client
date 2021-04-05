@@ -94,6 +94,9 @@ func newClusterConfig() *cluster.Config {
 		Addrs:             []string{defaultAddr},
 		SmartRouting:      true,
 		ConnectionTimeout: 5 * time.Second,
+		HeartbeatInterval: 5 * time.Second,
+		HeartbeatTimeout:  60 * time.Second,
+		InvocationTimeout: 120 * time.Second,
 	}
 }
 
@@ -133,6 +136,21 @@ func (b *ClusterConfigBuilder) SetSmartRouting(enable bool) *ClusterConfigBuilde
 
 func (b *ClusterConfigBuilder) SetConnectionTimeout(timeout time.Duration) *ClusterConfigBuilder {
 	b.config.ConnectionTimeout = timeout
+	return b
+}
+
+func (b *ClusterConfigBuilder) SetHeartbeatInterval(interval time.Duration) *ClusterConfigBuilder {
+	b.config.HeartbeatInterval = interval
+	return b
+}
+
+func (b *ClusterConfigBuilder) SetHeartbeatTimeout(timeout time.Duration) *ClusterConfigBuilder {
+	b.config.HeartbeatTimeout = timeout
+	return b
+}
+
+func (b *ClusterConfigBuilder) SetInvocationTimeout(timeout time.Duration) *ClusterConfigBuilder {
+	b.config.InvocationTimeout = timeout
 	return b
 }
 
