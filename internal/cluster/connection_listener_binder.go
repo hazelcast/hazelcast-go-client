@@ -1,17 +1,13 @@
 package cluster
 
 import (
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
-	"sync"
 )
-
-type registration struct {
-	client int
-	server internal.UUID
-}
 
 type connRegistration struct {
 	conn    *Connection
@@ -50,7 +46,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 			-1,
 			nil,
 			conn,
-			b.connectionManager.invocationTimeout)
+			b.connectionManager.clusterConfig.InvocationTimeout)
 		inv.SetEventHandler(handler)
 		b.requestCh <- inv
 		if response, err := inv.Get(); err != nil {
@@ -103,7 +99,7 @@ func (b *ConnectionListenerBinderImpl) Remove(
 			-1,
 			nil,
 			reg.conn,
-			b.connectionManager.invocationTimeout)
+			b.connectionManager.clusterConfig.InvocationTimeout)
 		b.requestCh <- inv
 		if _, err := inv.Get(); err != nil {
 			return err

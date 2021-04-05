@@ -175,6 +175,7 @@ func (c *Client) createComponents(config *Config) {
 		PartitionService:     partitionService,
 		SerializationService: serializationService,
 		EventDispatcher:      eventDispatcher,
+		InvocationFactory:    invocationFactory,
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,

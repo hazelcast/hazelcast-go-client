@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
+
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 )
@@ -52,6 +56,18 @@ func TestLifecycleEvents(t *testing.T) {
 	if !reflect.DeepEqual(targetStates, receivedStates) {
 		t.Fatalf("target %v != %v", targetStates, receivedStates)
 	}
+}
+
+func TestHeartbeat(t *testing.T) {
+	it.MapTesterWithConfigBuilder(t, func(cb *hz.ConfigBuilder) {
+	}, func(t *testing.T, m hztypes.Map) {
+		time.Sleep(150 * time.Second)
+		target := "v1"
+		hz.Must(m.Set("k1", target))
+		if v := hz.MustValue(m.Get("k1")); target != v {
+			t.Fatalf("target: %v != %v", target, v)
+		}
+	})
 }
 
 func getClient(t *testing.T) *hz.Client {

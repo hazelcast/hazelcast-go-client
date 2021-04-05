@@ -43,6 +43,7 @@ type ConnectionManagerCreationBundle struct {
 	PartitionService     *PartitionServiceImpl
 	SerializationService spi.SerializationService
 	EventDispatcher      event.DispatchService
+	InvocationFactory    invocation.Factory
 	ClusterConfig        *pubcluster.Config
 	Credentials          security.Credentials
 	ClientName           string
@@ -73,6 +74,9 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.EventDispatcher == nil {
 		panic("EventDispatcher is nil")
 	}
+	if b.InvocationFactory == nil {
+		panic("InvocationFactory is nil")
+	}
 	if b.ClusterConfig == nil {
 		panic("ClusterConfig is nil")
 	}
@@ -91,11 +95,10 @@ type ConnectionManager struct {
 	partitionService     *PartitionServiceImpl
 	serializationService spi.SerializationService
 	eventDispatcher      event.DispatchService
+	invocationFactory    invocation.Factory
 	clusterConfig        *pubcluster.Config
 	credentials          security.Credentials
-	heartbeatTimeout     time.Duration
 	clientName           string
-	invocationTimeout    time.Duration
 
 	connMap           *connectionMap
 	nextConnectionID  int64
@@ -104,6 +107,7 @@ type ConnectionManager struct {
 	alive             atomic.Value
 	logger            logger.Logger
 	started           atomic.Value
+	doneCh            chan struct{}
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
@@ -115,15 +119,15 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		partitionService:     bundle.PartitionService,
 		serializationService: bundle.SerializationService,
 		eventDispatcher:      bundle.EventDispatcher,
+		invocationFactory:    bundle.InvocationFactory,
 		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
-		invocationTimeout:    120 * time.Second,
-		heartbeatTimeout:     60 * time.Second,
 		connMap:              newConnectionMap(),
 		addressTranslator:    bundle.AddressTranslator,
 		smartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
+		doneCh:               make(chan struct{}, 1),
 	}
 	manager.alive.Store(false)
 	manager.started.Store(false)
@@ -147,10 +151,7 @@ func (m *ConnectionManager) Start() error {
 }
 
 func (m *ConnectionManager) Stop() chan struct{} {
-	doneCh := make(chan struct{}, 1)
-	if m.started.Load() == false {
-		doneCh <- struct{}{}
-	} else {
+	if m.started.Load() == true {
 		go func() {
 			connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
 			m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionClosedSubscriptionID)
@@ -158,10 +159,10 @@ func (m *ConnectionManager) Stop() chan struct{} {
 			m.eventDispatcher.Unsubscribe(EventMembersAdded, memberAddedSubscriptionID)
 			m.connMap.CloseAll()
 			m.started.Store(false)
-			doneCh <- struct{}{}
+			close(m.doneCh)
 		}()
 	}
-	return doneCh
+	return m.doneCh
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
@@ -298,9 +299,9 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 func (m *ConnectionManager) authenticate(connection *Connection, asOwner bool) error {
 	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := m.encodeAuthenticationRequest(asOwner)
-	inv := NewConnectionBoundInvocation(request, -1, nil, connection, m.invocationTimeout)
+	inv := NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout)
 	m.requestCh <- inv
-	if result, err := inv.GetWithTimeout(m.heartbeatTimeout); err != nil {
+	if result, err := inv.GetWithTimeout(m.clusterConfig.HeartbeatTimeout); err != nil {
 		return err
 	} else {
 		return m.processAuthenticationResult(connection, asOwner, result)
@@ -394,6 +395,26 @@ func (cm *ConnectionManager) getAuthenticationDecoder() AuthenticationDecoder {
 		authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
 	}
 	return authenticationDecoder
+}
+
+func (cm *ConnectionManager) heartbeat() {
+	ticker := time.NewTicker(cm.clusterConfig.HeartbeatInterval)
+	for {
+		select {
+		case <-cm.doneCh:
+			return
+		case <-ticker.C:
+			for _, conn := range cm.GetActiveConnections() {
+				cm.sendHeartbeat(conn)
+			}
+		}
+	}
+}
+
+func (cm *ConnectionManager) sendHeartbeat(conn *Connection) {
+	request := codec.EncodeClientPingRequest()
+	inv := NewConnectionBoundInvocation(request, -1, nil, conn, cm.clusterConfig.HeartbeatTimeout)
+	cm.requestCh <- inv
 }
 
 func checkOwnerConn(owner bool, conn *Connection) bool {
