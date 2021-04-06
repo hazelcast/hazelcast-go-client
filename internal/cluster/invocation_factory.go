@@ -11,10 +11,10 @@ import (
 
 type ConnectionInvocationFactory struct {
 	invocationTimeout time.Duration
-	partitionService  PartitionService
+	partitionService  *PartitionService
 }
 
-func NewConnectionInvocationFactory(partitionService PartitionService, invocationTimeout time.Duration) *ConnectionInvocationFactory {
+func NewConnectionInvocationFactory(partitionService *PartitionService, invocationTimeout time.Duration) *ConnectionInvocationFactory {
 	if partitionService == nil {
 		panic("partitionService is nil")
 	}

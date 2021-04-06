@@ -34,7 +34,7 @@ type Client struct {
 	proxyManager      *proxy.Manager
 	connectionManager *icluster.ConnectionManager
 	clusterService    *icluster.ServiceImpl
-	partitionService  *icluster.PartitionServiceImpl
+	partitionService  *icluster.PartitionService
 	eventDispatcher   *event.DispatchService
 	invocationHandler invocation.Handler
 	logger            logger.Logger
@@ -75,7 +75,14 @@ func (c *Client) Name() string {
 
 func (c *Client) GetMap(name string) (hztypes.Map, error) {
 	c.ensureStarted()
-	return c.proxyManager.GetMap(name)
+	m, err := c.proxyManager.GetMap(name)
+	return m.(hztypes.Map), err
+}
+
+func (c *Client) GetReplicatedMap(name string) (hztypes.ReplicatedMap, error) {
+	c.ensureStarted()
+	m, err := c.proxyManager.GetReplicatedMap(name)
+	return m.(hztypes.ReplicatedMap), err
 }
 
 func (c *Client) Start() error {
@@ -145,7 +152,7 @@ func (c *Client) createComponents(config *Config) {
 	}
 	eventDispatcher := event.NewDispatchService()
 	requestCh := make(chan invocation.Invocation, 1024)
-	partitionService := icluster.NewPartitionServiceImpl(icluster.PartitionServiceCreationBundle{
+	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
 		EventDispatcher:      eventDispatcher,
 		Logger:               c.logger,

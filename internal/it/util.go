@@ -49,20 +49,6 @@ func GetClientMapWithConfig(name string, clientConfig hz.Config) (*hz.Client, hz
 	}
 }
 
-func GetClientMapSmart(name string) (*hz.Client, hztypes.Map) {
-	return GetClientMap(name)
-}
-
-func GetClientMapNonSmart(name string) (*hz.Client, hztypes.Map) {
-	cb := hz.NewClientConfigBuilder()
-	cb.Cluster().SetSmartRouting(false)
-	if config, err := cb.Config(); err != nil {
-		panic(err)
-	} else {
-		return GetClientMapWithConfig(name, config)
-	}
-}
-
 func MapTester(t *testing.T, f func(t *testing.T, m hztypes.Map)) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 	}

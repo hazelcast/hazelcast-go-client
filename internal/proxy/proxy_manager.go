@@ -2,9 +2,13 @@ package proxy
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
+)
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+const (
+	MapServiceName       = "hz:impl:mapService"
+	ReplicatedMapService = "hz:impl:replicatedMapService"
 )
 
 type Manager struct {
@@ -22,11 +26,25 @@ func NewManager(bundle CreationBundle) *Manager {
 	}
 }
 
-func (m *Manager) GetMap(objectName string) (hztypes.Map, error) {
+func (m *Manager) GetMap(objectName string) (interface{}, error) {
+	// returns an interface to not depend on hztypes.Map
+	// TODO: change return type to Map
 	if proxy, err := m.proxyFor(MapServiceName, objectName); err != nil {
 		return nil, err
 	} else {
 		return NewMapImpl(proxy), nil
+	}
+}
+
+func (m *Manager) GetReplicatedMap(objectName string) (interface{}, error) {
+	// returns an interface to not depend on hztypes.ReplicatedMap
+	// TODO: change return type to ReplicatedMap
+	if proxy, err := m.proxyFor(ReplicatedMapService, objectName); err != nil {
+		return nil, err
+	} else {
+		partitionCount := m.serviceBundle.PartitionService.PartitionCount()
+		partitionID := rand.Int31n(partitionCount)
+		return NewReplicatedMapImpl(proxy, partitionID), nil
 	}
 }
 

@@ -13,13 +13,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/murmur"
 )
 
-type PartitionService interface {
-	PartitionCount() int32
-	GetPartitionID(keyData pubserialization.Data) int32
-	GetPartitionIDWithKey(key interface{}) (int32, error)
-	GetPartitionOwner(partitionId int32) internal.UUID
-}
-
 type PartitionServiceCreationBundle struct {
 	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
@@ -40,7 +33,7 @@ func (b PartitionServiceCreationBundle) Check() {
 	}
 }
 
-type PartitionServiceImpl struct {
+type PartitionService struct {
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
 	partitionTable       partitionTable
@@ -48,9 +41,9 @@ type PartitionServiceImpl struct {
 	logger               logger.Logger
 }
 
-func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionServiceImpl {
+func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionService {
 	bundle.Check()
-	return &PartitionServiceImpl{
+	return &PartitionService{
 		serializationService: bundle.SerializationService,
 		eventDispatcher:      bundle.EventDispatcher,
 		partitionTable:       defaultPartitionTable(),
@@ -58,25 +51,26 @@ func NewPartitionServiceImpl(bundle PartitionServiceCreationBundle) *PartitionSe
 	}
 }
 
-func (s *PartitionServiceImpl) Start() {
+func (s *PartitionService) Start() {
 	subscriptionID := event.MakeSubscriptionID(s.handlePartitionsUpdated)
 	s.eventDispatcher.Subscribe(EventPartitionsUpdated, subscriptionID, s.handlePartitionsUpdated)
 }
 
-func (s *PartitionServiceImpl) Stop() {
+func (s *PartitionService) Stop() {
 	subscriptionID := event.MakeSubscriptionID(s.handlePartitionsUpdated)
 	s.eventDispatcher.Unsubscribe(EventPartitionsUpdated, subscriptionID)
 }
 
-func (s *PartitionServiceImpl) GetPartitionOwner(partitionId int32) internal.UUID {
+func (s *PartitionService) GetPartitionOwner(partitionId int32) internal.UUID {
 	return s.partitionTable.GetOwnerUUID(partitionId)
 }
 
-func (s *PartitionServiceImpl) PartitionCount() int32 {
+func (s *PartitionService) PartitionCount() int32 {
+	// TODO: change return type from int32 to int
 	return int32(atomic.LoadUint32(&s.partitionCount))
 }
 
-func (s *PartitionServiceImpl) GetPartitionID(keyData pubserialization.Data) int32 {
+func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) int32 {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
@@ -90,7 +84,7 @@ func (s *PartitionServiceImpl) GetPartitionID(keyData pubserialization.Data) int
 	}
 }
 
-func (s *PartitionServiceImpl) GetPartitionIDWithKey(key interface{}) (int32, error) {
+func (s *PartitionService) GetPartitionIDWithKey(key interface{}) (int32, error) {
 	if data, err := s.serializationService.ToData(key); err != nil {
 		return 0, err
 	} else {
@@ -98,7 +92,7 @@ func (s *PartitionServiceImpl) GetPartitionIDWithKey(key interface{}) (int32, er
 	}
 }
 
-func (s *PartitionServiceImpl) handlePartitionsUpdated(event event.Event) {
+func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
 	if partitionsUpdatedEvent, ok := event.(*PartitionsUpdated); ok {
 		s.logger.Info("partitions updated")
 		s.partitionTable.Update(partitionsUpdatedEvent.Partitions, partitionsUpdatedEvent.Version)
@@ -106,7 +100,7 @@ func (s *PartitionServiceImpl) handlePartitionsUpdated(event event.Event) {
 	}
 }
 
-func (s *PartitionServiceImpl) checkAndSetPartitionCount(newPartitionCount int32) {
+func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) {
 	atomic.CompareAndSwapUint32(&s.partitionCount, 0, uint32(newPartitionCount))
 }
 
