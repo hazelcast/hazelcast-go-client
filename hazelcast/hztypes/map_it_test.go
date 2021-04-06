@@ -278,13 +278,11 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetEntrySet
-// TODO: Test Map IsEmpty
 // TODO: Test Map IsLocked
 // TODO: Test Map LoadAll
 // TODO: Test Map LoadAllReplacingExisting
 // TODO: Test Map Lock
 // TODO: Test Map SetWithTTL
-// TODO: Test Map Size
 // TODO: Test Map TryLock
 // TODO: Test Map TryLockWithLease
 // TODO: Test Map TryLockWithTimeout
@@ -302,6 +300,36 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map RemoveIfSame
 // TODO: Test Map Replace
 // TODO: Test Map ReplaceIfSame
+
+func TestMapIsEmptySize(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		if value, err := m.IsEmpty(); err != nil {
+			t.Fatal(err)
+		} else if !value {
+			t.Fatalf("target: true != false")
+		}
+		targetSize := 0
+		if value, err := m.Size(); err != nil {
+			t.Fatal(err)
+		} else if targetSize != value {
+			t.Fatalf("target: %d != %d", targetSize, value)
+		}
+		hz.MustValue(m.Put("k1", "v1"))
+		hz.MustValue(m.Put("k2", "v2"))
+		hz.MustValue(m.Put("k3", "v3"))
+		if value, err := m.IsEmpty(); err != nil {
+			t.Fatal(err)
+		} else if value {
+			t.Fatalf("target: false != true")
+		}
+		targetSize = 3
+		if value, err := m.Size(); err != nil {
+			t.Fatal(err)
+		} else if targetSize != value {
+			t.Fatalf("target: %d != %d", targetSize, value)
+		}
+	})
+}
 
 func TestMapEntryNotifiedEvent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
