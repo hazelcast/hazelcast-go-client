@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
@@ -41,7 +43,7 @@ const (
 type CreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	SerializationService spi.SerializationService
-	PartitionService     cluster.PartitionService
+	PartitionService     *cluster.PartitionService
 	EventDispatcher      *event.DispatchService
 	ClusterService       cluster.Service
 	InvocationFactory    invocation.Factory
@@ -76,7 +78,7 @@ func (b CreationBundle) Check() {
 type Proxy struct {
 	requestCh            chan<- invocation.Invocation
 	serializationService spi.SerializationService
-	partitionService     cluster.PartitionService
+	partitionService     *cluster.PartitionService
 	eventDispatcher      *event.DispatchService
 	clusterService       cluster.Service
 	invocationFactory    invocation.Factory
@@ -293,6 +295,37 @@ func (p *Proxy) decodeToInt64AndError(responseMessage *proto.ClientMessage, inpu
 	return decodeFunc(responseMessage)(), nil
 }
 
+func (p *Proxy) partitionToPairs(keyValuePairs []hztypes.Entry) (map[int32][]proto.Pair, error) {
+	ps := p.partitionService
+	partitionToPairs := map[int32][]proto.Pair{}
+	for _, pair := range keyValuePairs {
+		if keyData, valueData, err := p.validateAndSerialize2(pair.Key, pair.Value); err != nil {
+			return nil, err
+		} else {
+			partitionKey := ps.GetPartitionID(keyData)
+			arr := partitionToPairs[partitionKey]
+			partitionToPairs[partitionKey] = append(arr, proto.NewPair(keyData, valueData))
+		}
+	}
+	return partitionToPairs, nil
+}
+
+func (p *Proxy) convertPairsToEntries(pairs []proto.Pair) ([]hztypes.Entry, error) {
+	kvPairs := make([]hztypes.Entry, len(pairs))
+	for i, pair := range pairs {
+		key, err := p.convertToObject(pair.Key().(serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		value, err := p.convertToObject(pair.Value().(serialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		kvPairs[i] = hztypes.Entry{key, value}
+	}
+	return kvPairs, nil
+}
+
 type partitionSpecificProxy struct {
 	*Proxy
 	partitionID int32
@@ -300,7 +333,7 @@ type partitionSpecificProxy struct {
 
 func newPartitionSpecificProxy(
 	serializationService spi.SerializationService,
-	partitionService cluster.PartitionService,
+	partitionService *cluster.PartitionService,
 	//invocationService invocation.Service,
 	requestCh chan<- invocation.Invocation,
 	clusterService cluster.Service,

@@ -67,7 +67,7 @@ type Map interface {
 	GetKeySet() ([]interface{}, error)
 
 	// GetValues returns a list clone of the values contained in this map
-	GetValues(keys ...interface{}) ([]interface{}, error)
+	GetValues() ([]interface{}, error)
 
 	// GetEntryView returns the SimpleEntryView for the specified key.
 	GetEntryView(key string) (*SimpleEntryView, error)

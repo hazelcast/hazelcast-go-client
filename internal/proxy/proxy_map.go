@@ -27,8 +27,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
 )
 
-const MapServiceName = "hz:impl:mapService"
-
 type MapImpl struct {
 	*Proxy
 	referenceIDGenerator ReferenceIDGenerator
@@ -290,14 +288,19 @@ func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 	}
 }
 
-func (m *MapImpl) GetValues(keys ...interface{}) ([]interface{}, error) {
-	// TODO: use the corresponding API
-	if kvs, err := m.GetAll(keys...); err != nil {
+func (m *MapImpl) GetValues() ([]interface{}, error) {
+	request := codec.EncodeMapValuesRequest(m.name)
+	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
 	} else {
-		values := make([]interface{}, len(kvs))
-		for _, value := range kvs {
-			values = append(values, value)
+		valueDatas := codec.DecodeMapValuesResponse(response)
+		values := make([]interface{}, len(valueDatas))
+		for i, valueData := range valueDatas {
+			if value, err := m.convertToObject(valueData); err != nil {
+				return nil, err
+			} else {
+				values[i] = value
+			}
 		}
 		return values, nil
 	}
@@ -358,31 +361,24 @@ func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
 }
 
 func (m *MapImpl) PutAll(keyValuePairs []hztypes.Entry) error {
-	ps := m.partitionService
-	partitionToPairs := map[int32][]proto.Pair{}
-	for _, pair := range keyValuePairs {
-		if keyData, valueData, err := m.validateAndSerialize2(pair.Key, pair.Value); err != nil {
-			return err
-		} else {
-			partitionKey := ps.GetPartitionID(keyData)
-			arr := partitionToPairs[partitionKey]
-			partitionToPairs[partitionKey] = append(arr, proto.NewPair(keyData, valueData))
+	if partitionToPairs, err := m.partitionToPairs(keyValuePairs); err != nil {
+		return err
+	} else {
+		// create invocations
+		invs := make([]invocation.Invocation, 0, len(partitionToPairs))
+		for partitionID, entries := range partitionToPairs {
+			inv := m.invokeOnPartitionAsync(codec.EncodeMapPutAllRequest(m.name, entries, true), partitionID)
+			invs = append(invs, inv)
 		}
-	}
-	// create invocations
-	invs := make([]invocation.Invocation, 0, len(partitionToPairs))
-	for partitionID, entries := range partitionToPairs {
-		inv := m.invokeOnPartitionAsync(codec.EncodeMapPutAllRequest(m.name, entries, true), partitionID)
-		invs = append(invs, inv)
-	}
-	// wait for responses
-	for _, inv := range invs {
-		if _, err := inv.Get(); err != nil {
-			// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
-			return err
+		// wait for responses
+		for _, inv := range invs {
+			if _, err := inv.Get(); err != nil {
+				// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
+				return err
+			}
 		}
+		return nil
 	}
-	return nil
 }
 
 func (m *MapImpl) PutIfAbsent(key interface{}, value interface{}) (interface{}, error) {
@@ -693,22 +689,6 @@ func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]
 		}
 	}
 	return pairsMap, nil
-}
-
-func (m *MapImpl) convertPairsToEntries(pairs []proto.Pair) ([]hztypes.Entry, error) {
-	kvPairs := make([]hztypes.Entry, len(pairs))
-	for i, pair := range pairs {
-		key, err := m.convertToObject(pair.Key().(pubserialization.Data))
-		if err != nil {
-			return nil, err
-		}
-		value, err := m.convertToObject(pair.Value().(pubserialization.Data))
-		if err != nil {
-			return nil, err
-		}
-		kvPairs[i] = hztypes.Entry{key, value}
-	}
-	return kvPairs, nil
 }
 
 func makeListenerFlags(config *hztypes.MapEntryListenerConfig) int32 {

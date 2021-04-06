@@ -40,7 +40,7 @@ type ConnectionManagerCreationBundle struct {
 	Logger               logger.Logger
 	AddressTranslator    pubcluster.AddressTranslator
 	ClusterService       *ServiceImpl
-	PartitionService     *PartitionServiceImpl
+	PartitionService     *PartitionService
 	SerializationService spi.SerializationService
 	EventDispatcher      *event.DispatchService
 	InvocationFactory    invocation.Factory
@@ -92,7 +92,7 @@ type ConnectionManager struct {
 	requestCh            chan<- invocation.Invocation
 	responseCh           chan<- *proto.ClientMessage
 	clusterService       *ServiceImpl
-	partitionService     *PartitionServiceImpl
+	partitionService     *PartitionService
 	serializationService spi.SerializationService
 	eventDispatcher      *event.DispatchService
 	invocationFactory    invocation.Factory

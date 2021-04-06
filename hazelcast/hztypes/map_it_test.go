@@ -109,7 +109,7 @@ func TestMapClearSetGet(t *testing.T) {
 	})
 }
 
-func TestRemove(t *testing.T) {
+func TestMapRemove(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		hz.Must(m.Set("key", targetValue))
@@ -163,7 +163,7 @@ func TestGetAll(t *testing.T) {
 	})
 }
 
-func TestGetKeySet(t *testing.T) {
+func TestMapGetKeySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		hz.Must(m.Set("k1", "v1"))
@@ -177,6 +177,23 @@ func TestGetKeySet(t *testing.T) {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
 			t.Fatalf("target: %#v != %#v", targetKeySet, keys)
+		}
+	})
+}
+func TestMapGetValues(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValues := []interface{}{"v1", "v2", "v3"}
+		hz.Must(m.Set("k1", "v1"))
+		hz.Must(m.Set("k2", "v2"))
+		hz.Must(m.Set("k3", "v3"))
+		time.Sleep(1 * time.Second)
+		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		if values, err := m.GetValues(); err != nil {
+			t.Fatal(err)
+		} else if !reflect.DeepEqual(makeInterfaceSet(targetValues), makeInterfaceSet(values)) {
+			t.Fatalf("target: %#v != %#v", targetValues, values)
 		}
 	})
 }
@@ -198,7 +215,7 @@ func TestPutAll(t *testing.T) {
 	})
 }
 
-func TestGetEntrySet(t *testing.T) {
+func TestMapGetEntrySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		target := []hztypes.Entry{
 			hztypes.NewEntry("k1", "v1"),
@@ -261,7 +278,6 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetEntrySet
-// TODO: Test Map GetValues
 // TODO: Test Map IsEmpty
 // TODO: Test Map IsLocked
 // TODO: Test Map LoadAll
@@ -387,6 +403,14 @@ func makeStringSet(items []interface{}) map[string]struct{} {
 	result := map[string]struct{}{}
 	for _, item := range items {
 		result[item.(string)] = struct{}{}
+	}
+	return result
+}
+
+func makeInterfaceSet(items []interface{}) map[interface{}]struct{} {
+	result := map[interface{}]struct{}{}
+	for _, item := range items {
+		result[item] = struct{}{}
 	}
 	return result
 }
