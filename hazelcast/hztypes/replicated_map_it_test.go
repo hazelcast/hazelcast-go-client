@@ -106,7 +106,68 @@ func TestReplicatedMapGetKeySet(t *testing.T) {
 	})
 }
 
-// TODO: IsEmpty
+func TestReplicatedMapIsEmptySize(t *testing.T) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
+		if value, err := m.IsEmpty(); err != nil {
+			t.Fatal(err)
+		} else if !value {
+			t.Fatalf("target: true != false")
+		}
+		targetSize := 0
+		if value, err := m.Size(); err != nil {
+			t.Fatal(err)
+		} else if targetSize != value {
+			t.Fatalf("target: %d != %d", targetSize, value)
+		}
+		hz.MustValue(m.Put("k1", "v1"))
+		hz.MustValue(m.Put("k2", "v2"))
+		hz.MustValue(m.Put("k3", "v3"))
+		if value, err := m.IsEmpty(); err != nil {
+			t.Fatal(err)
+		} else if value {
+			t.Fatalf("target: false != true")
+		}
+		targetSize = 3
+		if value, err := m.Size(); err != nil {
+			t.Fatal(err)
+		} else if targetSize != value {
+			t.Fatalf("target: %d != %d", targetSize, value)
+		}
+	})
+}
+
+func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
+		handlerCalled := false
+		handler := func(event *hztypes.EntryNotified) {
+			handlerCalled = true
+		}
+		// TODO: remove the following sleep once we dynamically add connection listeners
+		time.Sleep(2 * time.Second)
+		listenerConfig := hztypes.MapEntryListenerConfig{}
+		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := m.Put("k1", "v1"); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		if !handlerCalled {
+			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		if err := m.UnlistenEntryNotification(handler); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := m.Put("k1", "v1"); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
+		}
+	})
+}
 
 func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m hztypes.ReplicatedMap)) {
 	var (
