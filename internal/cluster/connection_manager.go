@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -241,7 +240,9 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 }
 
 func (m *ConnectionManager) removeConnection(conn *Connection) {
-	m.connMap.RemoveConnection(conn)
+	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
+		m.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientDisconnected))
+	}
 }
 
 func (m *ConnectionManager) connectCluster() error {
@@ -249,7 +250,7 @@ func (m *ConnectionManager) connectCluster() error {
 		if err := m.connectAddr(addr); err == nil {
 			return nil
 		} else {
-			m.logger.Info(fmt.Sprintf("cannot connect to %s", addr.String()), err)
+			m.logger.Infof("cannot connect to %s: %w", addr.String(), err)
 		}
 	}
 	return errors.New("cannot connect to any address in the cluster")
@@ -322,7 +323,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, asOwne
 			m.clusterService.ownerConnectionAddr.Store(address)
 			m.clusterService.ownerUUID.Store(memberUuid.String())
 			m.clusterService.uuid.Store(clusterUUID.String())
-			m.logger.Info("Setting ", conn, " as owner.")
+			m.logger.Infof("Setting %s as owner.", conn.String())
 		}
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
@@ -444,26 +445,28 @@ func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address)
 	m.connToAddr[conn.connectionID] = addr
 }
 
-func (m *connectionMap) RemoveConnection(removedConn *Connection) {
+// RemoveConnectionDisconected removes a connection and returns true if there are no more connections left.
+func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
+	var remaining int
 	m.connectionsMu.Lock()
-	defer m.connectionsMu.Unlock()
 	for addr, conn := range m.connections {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.connections, addr)
 			delete(m.connToAddr, conn.connectionID)
+			remaining = len(m.connections)
 			break
 		}
 	}
+	m.connectionsMu.Unlock()
+	return remaining
 }
 
 func (m *connectionMap) CloseAll() {
-	m.connectionsMu.Lock()
-	defer m.connectionsMu.Unlock()
+	m.connectionsMu.RLock()
+	defer m.connectionsMu.RUnlock()
 	for _, conn := range m.connections {
 		conn.close(nil)
 	}
-	m.connections = map[string]*Connection{}
-	m.connToAddr = map[int64]pubcluster.Address{}
 }
 
 func (m *connectionMap) GetConnForAddr(addr string) *Connection {

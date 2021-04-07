@@ -15,8 +15,9 @@
 package logger
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 )
 
 const (
@@ -59,6 +60,8 @@ type Logger interface {
 	Debug(args ...interface{})
 	// Trace logs the given args at trace level.
 	Trace(args ...interface{})
+	// Tracef logs at trace level.
+	Tracef(format string, values ...interface{})
 	// Info logs the given args at info level.
 	Info(args ...interface{})
 	// Info logs the given args at info level.

@@ -3,6 +3,7 @@ package cluster
 import (
 	"errors"
 	"fmt"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
@@ -11,7 +12,7 @@ import (
 
 type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
-	ClusterService    Service
+	ClusterService    *ServiceImpl
 	Logger            logger.Logger
 }
 
@@ -29,7 +30,7 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 
 type ConnectionInvocationHandler struct {
 	connectionManager *ConnectionManager
-	clusterService    Service
+	clusterService    *ServiceImpl
 	smart             int32
 	logger            logger.Logger
 }
@@ -86,7 +87,7 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 
 func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	if conn := h.connectionManager.GetConnectionForAddress(addr); conn == nil {
-		h.logger.Trace("Sending invocation to ", addr, " failed, address not found")
+		h.logger.Tracef("Sending invocation to %s failed, address not found", addr.String())
 		return fmt.Errorf("address not found: %s", addr.String())
 	} else if invImpl, ok := inv.(*invocation.Impl); ok {
 		boundInv := &ConnectionBoundInvocation{
