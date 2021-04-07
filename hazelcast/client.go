@@ -167,6 +167,7 @@ func (c *Client) createComponents(config *Config) {
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   eventDispatcher,
 		Logger:            c.logger,
+		Config:            &config.ClusterConfig,
 	})
 	responseCh := make(chan *proto.ClientMessage, 1024)
 	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{

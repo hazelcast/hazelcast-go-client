@@ -224,6 +224,7 @@ func (c *Connection) close(closeErr error) {
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
+	c.logger.Tracef("connection closed")
 }
 
 func (c *Connection) String() string {

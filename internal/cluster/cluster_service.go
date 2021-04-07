@@ -18,12 +18,6 @@ const (
 	smartRoutingEnabled int32 = 1
 )
 
-type Service interface {
-	OwnerConnectionAddr() pubcluster.Address
-	GetMemberByUUID(uuid string) pubcluster.Member
-	SmartRoutingEnabled() bool
-}
-
 type ServiceImpl struct {
 	ownerConnectionAddr atomic.Value
 	addrProviders       []AddressProvider
@@ -35,6 +29,7 @@ type ServiceImpl struct {
 	invocationFactory   invocation.Factory
 	eventDispatcher     *event.DispatchService
 	logger              logger.Logger
+	config              *pubcluster.Config
 
 	membersMap   membersMap
 	smartRouting int32
@@ -46,6 +41,7 @@ type CreationBundle struct {
 	InvocationFactory invocation.Factory
 	EventDispatcher   *event.DispatchService
 	Logger            logger.Logger
+	Config            *pubcluster.Config
 }
 
 func (b CreationBundle) Check() {
@@ -64,6 +60,9 @@ func (b CreationBundle) Check() {
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
+	if b.Config == nil {
+		panic("Config is nil")
+	}
 }
 
 func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
@@ -76,6 +75,7 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 		eventDispatcher:   bundle.EventDispatcher,
 		logger:            bundle.Logger,
 		membersMap:        newMembersMap(),
+		config:            bundle.Config,
 	}
 	service.ownerConnectionAddr.Store(&pubcluster.AddressImpl{})
 	return service
@@ -162,7 +162,7 @@ func (s *ServiceImpl) sendMemberListViewRequest() {
 func (s *ServiceImpl) listenPartitionsLoaded() {
 	subscriptionID := event.MakeSubscriptionID(s.enableSmartRouting)
 	handler := func(event event.Event) {
-		s.logger.Info("enabling smart routing")
+		s.logger.Infof("enabling smart routing")
 		s.enableSmartRouting()
 		s.eventDispatcher.Unsubscribe(EventPartitionsLoaded, subscriptionID)
 	}

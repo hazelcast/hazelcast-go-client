@@ -45,7 +45,7 @@ type CreationBundle struct {
 	SerializationService spi.SerializationService
 	PartitionService     *cluster.PartitionService
 	EventDispatcher      *event.DispatchService
-	ClusterService       cluster.Service
+	ClusterService       *cluster.ServiceImpl
 	InvocationFactory    invocation.Factory
 	SmartRouting         bool
 	ListenerBinder       proto.ListenerBinder
@@ -80,7 +80,7 @@ type Proxy struct {
 	serializationService spi.SerializationService
 	partitionService     *cluster.PartitionService
 	eventDispatcher      *event.DispatchService
-	clusterService       cluster.Service
+	clusterService       *cluster.ServiceImpl
 	invocationFactory    invocation.Factory
 	listenerBinder       proto.ListenerBinder
 	smartRouting         bool
@@ -336,7 +336,7 @@ func newPartitionSpecificProxy(
 	partitionService *cluster.PartitionService,
 	//invocationService invocation.Service,
 	requestCh chan<- invocation.Invocation,
-	clusterService cluster.Service,
+	clusterService *cluster.ServiceImpl,
 	smartRouting bool,
 	serviceName string,
 	name string,

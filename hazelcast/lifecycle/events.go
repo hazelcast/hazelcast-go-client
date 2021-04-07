@@ -3,16 +3,18 @@ package lifecycle
 type State int
 
 const (
+	// StateStarting signals that the client is starting.
 	StateStarting State = iota
+	// StateStarted signals that the client started.
 	StateStarted
+	// StateShuttingDown signals that the client is shutting down.
 	StateShuttingDown
+	// StateShutDown signals that the client shut down.
 	StateShutDown
-	StateMerging
-	StateMerged
-	StateMergeFailed
+	// StateClientConnected signals that the client connected to the cluster.
 	StateClientConnected
+	// StateClientDisconnected signals that the client disconnected from the cluster.
 	StateClientDisconnected
-	StateClientChangedCluster
 )
 
 type StateChangeHandler func(event StateChanged)

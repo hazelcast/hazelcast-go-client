@@ -108,7 +108,7 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	correlationID := msg.CorrelationID()
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
 		if inv, found := s.invocations[correlationID]; !found {
-			s.logger.Trace("invocation with unknown correlation id: ", correlationID)
+			s.logger.Tracef("invocation with unknown correlation id: %d", correlationID)
 		} else if inv.EventHandler() != nil {
 			go inv.EventHandler()(msg)
 		}
@@ -122,7 +122,7 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 			inv.Complete(msg)
 		}
 	} else {
-		s.logger.Trace("no invocation found with the correlation id: ", correlationID)
+		s.logger.Tracef("no invocation found with the correlation id: %d", correlationID)
 	}
 }
 
@@ -132,7 +132,7 @@ func (s *ServiceImpl) handleError(correlationID int64, invocationErr error) {
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
 		//panic("handleError: implement me!")
 	} else {
-		s.logger.Trace("no invocation found with correlation id: ", correlationID)
+		s.logger.Tracef("cannot handle error: no invocation found with correlation id: %d", correlationID)
 	}
 }
 

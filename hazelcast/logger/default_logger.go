@@ -76,6 +76,13 @@ func (l *DefaultLogger) Trace(args ...interface{}) {
 	}
 }
 
+func (l *DefaultLogger) Tracef(format string, values ...interface{}) {
+	if l.canLogTrace() {
+		s := fmt.Sprintf("TRACE: %s", fmt.Sprintf(format, values...))
+		l.Output(logCallDepth, s)
+	}
+}
+
 // Info logs the given arguments at info level if the level is greater than or equal to info level.
 func (l *DefaultLogger) Info(args ...interface{}) {
 	if l.canLogInfo() {
@@ -87,8 +94,7 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 
 func (l *DefaultLogger) Infof(format string, values ...interface{}) {
 	if l.canLogInfo() {
-		//callerName := l.findCallerFuncName()
-		s := fmt.Sprintf(format, values...)
+		s := fmt.Sprintf("INFO : %s", fmt.Sprintf(format, values...))
 		l.Output(logCallDepth, s)
 	}
 }

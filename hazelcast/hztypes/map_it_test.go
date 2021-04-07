@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
-
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
 )
 
 func TestPutGetMap(t *testing.T) {
