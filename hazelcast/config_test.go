@@ -10,7 +10,7 @@ import (
 func TestConfig(t *testing.T) {
 	configBuilder := hazelcast.NewClientConfigBuilder()
 	configBuilder.Cluster().
-		SetAddrs("192.168.1.2").
+		SetMembers("192.168.1.2").
 		SetName("my-cluster")
 	config, err := configBuilder.Config()
 	if err != nil {

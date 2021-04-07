@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/sql"
-
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
@@ -44,7 +42,7 @@ type Client struct {
 }
 
 func newClient(name string, config Config) (*Client, error) {
-	config = config.Clone()
+	config = config.clone()
 	id := atomic.AddInt32(&nextId, 1)
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
@@ -69,22 +67,28 @@ func newClient(name string, config Config) (*Client, error) {
 	return impl, nil
 }
 
+// Name returns client's name
+// Use ConfigBuilder.SetName to set the client name.
+// If not set manually, an automatic name is used.
 func (c *Client) Name() string {
 	return c.name
 }
 
+// GetMap returns a distributed map instance.
 func (c *Client) GetMap(name string) (hztypes.Map, error) {
 	c.ensureStarted()
 	m, err := c.proxyManager.GetMap(name)
 	return m.(hztypes.Map), err
 }
 
+// GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (hztypes.ReplicatedMap, error) {
 	c.ensureStarted()
 	m, err := c.proxyManager.GetReplicatedMap(name)
 	return m.(hztypes.ReplicatedMap), err
 }
 
+// Start connects the client to the cluster.
 func (c *Client) Start() error {
 	// TODO: Recover from panics and return as error
 	if c.started.Load() == true {
@@ -103,7 +107,6 @@ func (c *Client) Start() error {
 }
 
 // Shutdown disconnects the client from the cluster.
-// This call is blocking.
 func (c Client) Shutdown() {
 	if c.started.Load() != true {
 		return
@@ -129,9 +132,9 @@ func (c *Client) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler
 	})
 }
 
-func (c *Client) ExecuteSQL(sql string) (sql.Result, error) {
-	panic("implement me: ExecuteSQL")
-}
+//func (c *Client) ExecuteSQL(sql string) (sql.Result, error) {
+//	panic("implement me: ExecuteSQL")
+//}
 
 func (c *Client) ensureStarted() {
 	if c.started.Load() == false {

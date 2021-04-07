@@ -173,7 +173,7 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret := pr.ReadUTF("engineer")
+	ret := pr.ReadString("engineer")
 	if ret != expectedRet {
 		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
@@ -379,10 +379,10 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
-	ret := pr.ReadUTFArray("words")
+	ret := pr.ReadStringArray("words")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
-		t.Errorf("ReadUTFArray() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadStringArray() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -458,7 +458,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
 	ret := pr.ReadPortable("engineer")
-	ret1 := pr.ReadUTF("name")
+	ret1 := pr.ReadString("name")
 	ret2 := pr.ReadByteArray("a1")
 	ret3 := pr.ReadBoolArray("a2")
 	ret4 := pr.ReadUInt16Array("a3")
@@ -467,7 +467,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	ret7 := pr.ReadInt64Array("a6")
 	ret8 := pr.ReadFloat32Array("a7")
 	ret9 := pr.ReadFloat64Array("a8")
-	ret10 := pr.ReadUTFArray("a9")
+	ret10 := pr.ReadStringArray("a9")
 
 	if ret != nil || ret1 != "" || ret2 != nil || ret3 != nil || ret4 != nil || ret5 != nil ||
 		ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
@@ -520,7 +520,7 @@ func TestDefaultPortableReader_SameErrorIsReturned(t *testing.T) {
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 
-	pr.ReadUTF("dummy")
+	pr.ReadString("dummy")
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 
@@ -540,7 +540,7 @@ func TestDefaultPortableReader_SameErrorIsReturned(t *testing.T) {
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 
-	pr.ReadUTFArray("dummy")
+	pr.ReadStringArray("dummy")
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 

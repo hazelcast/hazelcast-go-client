@@ -1,6 +1,7 @@
 package it
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -153,6 +154,14 @@ type SamplePortable struct {
 	B int32
 }
 
+func SamplePortableFromJSONValue(value hztypes.JSONValue) SamplePortable {
+	sample := SamplePortable{}
+	if err := json.Unmarshal(value, &sample); err != nil {
+		panic(err)
+	}
+	return sample
+}
+
 func (s SamplePortable) FactoryID() int32 {
 	return SamplePortableFactoryID
 }
@@ -168,9 +177,17 @@ func (s SamplePortable) WritePortable(writer serialization.PortableWriter) error
 }
 
 func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) error {
-	s.A = reader.ReadUTF("A")
+	s.A = reader.ReadString("A")
 	s.B = reader.ReadInt32("B")
 	return nil
+}
+
+func (s SamplePortable) JSONValue() hztypes.JSONValue {
+	byteArr, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	return byteArr
 }
 
 type SamplePortableFactory struct {
@@ -181,4 +198,8 @@ func (f SamplePortableFactory) Create(classID int32) serialization.Portable {
 		return &SamplePortable{}
 	}
 	return nil
+}
+
+func (f SamplePortableFactory) FactoryID() int32 {
+	return SamplePortableFactoryID
 }

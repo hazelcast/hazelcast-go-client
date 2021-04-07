@@ -238,7 +238,7 @@ func (pr *DefaultPortableReader) readFloat64(fieldName string) (float64, error) 
 	return pr.input.(*ObjectDataInput).ReadFloat64WithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadUTF(fieldName string) string {
+func (pr *DefaultPortableReader) ReadString(fieldName string) string {
 	if pr.err != nil {
 		return ""
 	}
@@ -419,7 +419,7 @@ func (pr *DefaultPortableReader) readFloat64Array(fieldName string) ([]float64, 
 	return pr.input.(*ObjectDataInput).ReadFloat64ArrayWithPosition(pos), pr.input.Error()
 }
 
-func (pr *DefaultPortableReader) ReadUTFArray(fieldName string) []string {
+func (pr *DefaultPortableReader) ReadStringArray(fieldName string) []string {
 	if pr.err != nil {
 		return nil
 	}

@@ -35,3 +35,7 @@ func (*Factory) Create(id int32) serialization.IdentifiedDataSerializable {
 		return nil
 	}
 }
+
+func (*Factory) FactoryID() int32 {
+	return FactoryID
+}

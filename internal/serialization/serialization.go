@@ -50,7 +50,7 @@ func (s *Service) ToData(object interface{}) (pubserialization.Data, error) {
 	if _, ok := object.(*SerializationData); ok {
 		return object.(*SerializationData), nil
 	}
-	dataOutput := NewPositionalObjectDataOutput(1, s, !s.serializationConfig.LittleEndian)
+	dataOutput := NewPositionalObjectDataOutput(1, s, s.serializationConfig.BigEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (s *Service) ToObject(data pubserialization.Data) (interface{}, error) {
 	if !ok {
 		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 	}
-	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.serializationConfig.LittleEndian)
+	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.serializationConfig.BigEndian)
 	return serializer.Read(dataInput)
 }
 
@@ -186,8 +186,8 @@ func (s *Service) registerDefaultSerializers() error {
 	s.registerSerializer(&StringArraySerializer{})
 	s.nameToID["[]string"] = ConstantTypeStringArray
 
-	//s.registerSerializer(&HazelcastJSONSerializer{})
-	//s.nameToID[reflect.TypeOf(&core.HazelcastJSONValue{}).String()] = JSONSerializationType
+	s.registerSerializer(&JSONValueSerializer{})
+	s.nameToID["hztypes.JSONValue"] = JSONSerializationType
 
 	s.registerSerializer(&GobSerializer{})
 	s.nameToID["!gob"] = GoGobSerializationType

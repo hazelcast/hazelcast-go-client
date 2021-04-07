@@ -113,7 +113,7 @@ func (p *aPortable) ReadPortable(reader serialization.PortableReader) error {
 	p.f = reader.ReadFloat32("f")
 	p.i = reader.ReadInt32("i")
 	p.l = reader.ReadInt64("l")
-	p.str = reader.ReadUTF("str")
+	p.str = reader.ReadString("str")
 	p.p = reader.ReadPortable("p")
 
 	p.booleans = reader.ReadBoolArray("booleans")
@@ -124,7 +124,7 @@ func (p *aPortable) ReadPortable(reader serialization.PortableReader) error {
 	p.floats = reader.ReadFloat32Array("fs")
 	p.ints = reader.ReadInt32Array("is")
 	p.longs = reader.ReadInt64Array("ls")
-	p.strings = reader.ReadUTFArray("strs")
+	p.strings = reader.ReadStringArray("strs")
 	p.portables = reader.ReadPortableArray("ps")
 
 	p.booleansNull = reader.ReadBoolArray("booleansNull")
@@ -135,7 +135,7 @@ func (p *aPortable) ReadPortable(reader serialization.PortableReader) error {
 	p.floatsNull = reader.ReadFloat32Array("fsNull")
 	p.intsNull = reader.ReadInt32Array("isNull")
 	p.longsNull = reader.ReadInt64Array("lsNull")
-	p.stringsNull = reader.ReadUTFArray("strsNull")
+	p.stringsNull = reader.ReadStringArray("strsNull")
 
 	return nil
 }

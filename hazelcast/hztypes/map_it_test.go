@@ -234,9 +234,9 @@ func TestMapGetEntrySet(t *testing.T) {
 	})
 }
 
-func TestGetEntrySetWithPredicate(t *testing.T) {
+func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactoryID, it.SamplePortableFactory{})
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
 		entries := []hztypes.Entry{
@@ -251,6 +251,32 @@ func TestGetEntrySetWithPredicate(t *testing.T) {
 		target := []hztypes.Entry{
 			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
 			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		}
+		if entries, err := m.GetEntrySetWithPredicate(pred.And(pred.Equal("A", "foo"), pred.Equal("B", 10))); err != nil {
+			t.Fatal(err)
+		} else if !entriesEqualUnordered(target, entries) {
+			t.Fatalf("target: %#v != %#v", target, entries)
+		}
+	})
+}
+
+func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+		entries := []hztypes.Entry{
+			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+			hztypes.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.JSONValue()),
+			hztypes.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+		}
+		if err := m.PutAll(entries); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		target := []hztypes.Entry{
+			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+			hztypes.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 		}
 		if entries, err := m.GetEntrySetWithPredicate(pred.And(pred.Equal("A", "foo"), pred.Equal("B", 10))); err != nil {
 			t.Fatal(err)

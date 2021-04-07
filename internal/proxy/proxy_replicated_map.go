@@ -124,7 +124,7 @@ func (m ReplicatedMapImpl) IsEmpty() (bool, error) {
 	}
 }
 
-func (m ReplicatedMapImpl) ListenEntryNotification(config hztypes.MapEntryListenerConfig, handler hztypes.EntryNotifiedHandler) error {
+func (m ReplicatedMapImpl) ListenEntryNotification(config hztypes.ReplicatedMapEntryListenerConfig, handler hztypes.EntryNotifiedHandler) error {
 	return m.listenEntryNotified(config.Key, config.Predicate, handler)
 }
 

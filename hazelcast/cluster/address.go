@@ -1,11 +1,7 @@
 package cluster
 
 import (
-	"errors"
 	"fmt"
-	"net"
-	"strconv"
-	"strings"
 )
 
 // AddressTranslator is used to resolve private ip address of cloud services.
@@ -29,6 +25,7 @@ func (dat *defaultAddressTranslator) Translate(address Address) Address {
 }
 
 type Address interface {
+	// TODO: remove this interface
 	fmt.Stringer
 	Host() string
 	Port() int
@@ -37,6 +34,7 @@ type Address interface {
 }
 
 type AddressImpl struct {
+	// TODO: rename to Address
 	host string
 	port int
 	// TODO: add address hash
@@ -49,29 +47,6 @@ func NewAddress(Host string, Port int32) *AddressImpl {
 // TODO: merge this one with NewAddress
 func NewAddressWithHostPort(Host string, Port int) *AddressImpl {
 	return &AddressImpl{Host, Port}
-}
-
-func ParseAddress(addr string) (*AddressImpl, error) {
-	// first check whether addr contains the port
-	if index := strings.Index(addr, ":"); index == 0 {
-		return nil, errors.New("error parsing address: address with no host")
-	} else if index < 0 {
-		if addr == "" {
-			// default address
-			return NewAddressWithHostPort(DefaultHost, DefaultPort), nil
-		}
-		// this is probably a string with only the host
-		return NewAddressWithHostPort(addr, DefaultPort), nil
-	}
-	if host, portStr, err := net.SplitHostPort(addr); err != nil {
-		return nil, fmt.Errorf("error parsing address: %w", err)
-	} else {
-		if port, err := strconv.Atoi(portStr); err != nil {
-			return nil, fmt.Errorf("error parsing address: %w", err)
-		} else {
-			return NewAddressWithHostPort(host, port), nil
-		}
-	}
 }
 
 func (a AddressImpl) Host() string {

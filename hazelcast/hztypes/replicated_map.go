@@ -1,5 +1,12 @@
 package hztypes
 
+import "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+
+type ReplicatedMapEntryListenerConfig struct {
+	Predicate pred.Predicate
+	Key       interface{}
+}
+
 type ReplicatedMap interface {
 	// Clear deletes all entries one by one and fires related events
 	Clear() error
@@ -29,7 +36,7 @@ type ReplicatedMap interface {
 	IsEmpty() (bool, error)
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotification(config MapEntryListenerConfig, handler EntryNotifiedHandler) error
+	ListenEntryNotification(config ReplicatedMapEntryListenerConfig, handler EntryNotifiedHandler) error
 
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)
