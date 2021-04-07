@@ -121,13 +121,36 @@ func (c Client) Shutdown() {
 // ListenLifecycleStateChange adds a lifecycle state change handler.
 // The handler must not block.
 func (c *Client) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
-	// derive subscriptionID from the handler
 	subscriptionID := event.MakeSubscriptionID(handler)
 	c.eventDispatcher.SubscribeSync(lifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*lifecycle.StateChanged); ok {
 			handler(*stateChangeEvent)
 		} else {
 			panic("cannot cast event to lifecycle.StateChanged event")
+		}
+	})
+}
+
+func (c *Client) ListenMemberStateChange(handler cluster.MemberStateChangedHandler) {
+	subscriptionID := event.MakeSubscriptionID(handler)
+	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
+		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
+			for _, member := range membersAddedEvent.Members {
+				handler(cluster.MemberStateChanged{
+					State:  cluster.MemberStateAdded,
+					Member: member,
+				})
+			}
+		}
+	})
+	c.eventDispatcher.Subscribe(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
+		if membersRemovedEvent, ok := event.(*icluster.MembersRemoved); ok {
+			for _, member := range membersRemovedEvent.Members {
+				handler(cluster.MemberStateChanged{
+					State:  cluster.MemberStateRemoved,
+					Member: member,
+				})
+			}
 		}
 	})
 }
