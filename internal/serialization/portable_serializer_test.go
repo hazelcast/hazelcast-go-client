@@ -70,7 +70,7 @@ func (s *student) WritePortable(writer serialization.PortableWriter) error {
 func (s *student) ReadPortable(reader serialization.PortableReader) error {
 	s.id = reader.ReadInt16("id")
 	s.age = reader.ReadInt32("age")
-	s.name = reader.ReadUTF("name")
+	s.name = reader.ReadString("name")
 	return reader.Error()
 }
 
@@ -102,7 +102,7 @@ func (s *student2) WritePortable(writer serialization.PortableWriter) error {
 func (s *student2) ReadPortable(reader serialization.PortableReader) error {
 	s.id = reader.ReadInt32("id")
 	s.age = reader.ReadInt32("age")
-	s.name = reader.ReadUTF("name")
+	s.name = reader.ReadString("name")
 	return nil
 }
 
@@ -248,7 +248,7 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) error {
 	f.i64 = reader.ReadInt64("i64")
 	f.f32 = reader.ReadFloat32("f32")
 	f.f64 = reader.ReadFloat64("f64")
-	f.utf = reader.ReadUTF("utf")
+	f.utf = reader.ReadString("utf")
 	f.portable = reader.ReadPortable("portable")
 	f.bytArr = reader.ReadByteArray("bytArr")
 	f.boolArr = reader.ReadBoolArray("boolArr")
@@ -258,7 +258,7 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) error {
 	f.i64Arr = reader.ReadInt64Array("i64Arr")
 	f.f32Arr = reader.ReadFloat32Array("f32Arr")
 	f.f64Arr = reader.ReadFloat64Array("f64Arr")
-	f.utfArr = reader.ReadUTFArray("utfArr")
+	f.utfArr = reader.ReadStringArray("utfArr")
 	f.portableArr = reader.ReadPortableArray("portableArr")
 	return nil
 }
@@ -399,7 +399,7 @@ func (c *child) WritePortable(writer serialization.PortableWriter) (err error) {
 }
 
 func (c *child) ReadPortable(reader serialization.PortableReader) (err error) {
-	c.name = reader.ReadUTF("name")
+	c.name = reader.ReadString("name")
 	return
 }
 

@@ -13,7 +13,7 @@ import (
 
 func TestPortableSerialize(t *testing.T) {
 	cb := hz.NewConfigBuilder()
-	cb.Serialization().AddPortableFactory(1, &portableFactory{})
+	cb.Serialization().AddPortableFactory(&portableFactory{})
 	config, err := cb.Config()
 	if err != nil {
 		panic(err)
@@ -33,30 +33,30 @@ func TestPortableSerialize(t *testing.T) {
 }
 
 type employee struct {
-	name   string
-	age    int
-	active bool
+	Name   string
+	Age    int
+	Active bool
 }
 
 func newEmployee(name string, age int, active bool) *employee {
 	return &employee{
-		name:   name,
-		age:    age,
-		active: active,
+		Name:   name,
+		Age:    age,
+		Active: active,
 	}
 }
 
 func (e *employee) ReadPortable(reader serialization.PortableReader) error {
-	e.name = reader.ReadUTF("name")
-	e.age = int(reader.ReadInt32("age"))
-	e.active = reader.ReadBool("active")
+	e.Name = reader.ReadString("Name")
+	e.Age = int(reader.ReadInt32("Age"))
+	e.Active = reader.ReadBool("Active")
 	return reader.Error()
 }
 
 func (e *employee) WritePortable(writer serialization.PortableWriter) error {
-	writer.WriteUTF("name", e.name)
-	writer.WriteInt32("age", int32(e.age))
-	writer.WriteBool("active", e.active)
+	writer.WriteUTF("Name", e.Name)
+	writer.WriteInt32("Age", int32(e.Age))
+	writer.WriteBool("Active", e.Active)
 	return nil
 }
 
@@ -73,4 +73,8 @@ type portableFactory struct {
 
 func (p portableFactory) Create(classID int32) serialization.Portable {
 	return &employee{}
+}
+
+func (p portableFactory) FactoryID() int32 {
+	return 1
 }

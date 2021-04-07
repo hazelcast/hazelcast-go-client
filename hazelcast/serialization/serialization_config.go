@@ -4,8 +4,8 @@ import "reflect"
 
 // Config contains the serialization configuration of a Hazelcast instance.
 type Config struct {
-	// LittleEndian is the Little Endinan byte order bool. If false, it is Big Endian.
-	LittleEndian bool
+	// BigEndian is the Little Endinan byte order bool. If false, it is Big Endian.
+	BigEndian bool
 	// IdentifiedDataSerializableFactories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
 	IdentifiedDataSerializableFactories map[int32]IdentifiedDataSerializableFactory
 	// PortableFactories is a map of factory IDs and corresponding Portable factories.
@@ -37,7 +37,7 @@ func (c Config) Clone() Config {
 	defs := make([]ClassDefinition, len(c.ClassDefinitions))
 	copy(defs, c.ClassDefinitions)
 	return Config{
-		LittleEndian:                        c.LittleEndian,
+		BigEndian:                           c.BigEndian,
 		IdentifiedDataSerializableFactories: idFactories,
 		PortableFactories:                   pFactories,
 		PortableVersion:                     c.PortableVersion,

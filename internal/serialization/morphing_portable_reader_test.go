@@ -760,7 +760,7 @@ func TestMorphingPortableReader_ReadUTF(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	ret := mpr.ReadUTF("engineer")
+	ret := mpr.ReadString("engineer")
 	if ret != expectedRet {
 		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
@@ -778,7 +778,7 @@ func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	ret := mpr.ReadUTF("")
+	ret := mpr.ReadString("")
 	if ret != expectedRet {
 		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
@@ -795,7 +795,7 @@ func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testi
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadUTF("engineer")
+	mpr.ReadString("engineer")
 	if _, ok := mpr.Error().(*core.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadString() should return error type *common.HazelcastSerializationError but it does not return")
 	}
@@ -1308,10 +1308,10 @@ func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	ret := mpr.ReadUTFArray("words")
+	ret := mpr.ReadStringArray("words")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
-		t.Errorf("ReadUTFArray() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadStringArray() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -1327,10 +1327,10 @@ func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	ret := mpr.ReadUTFArray("")
+	ret := mpr.ReadStringArray("")
 
 	if !reflect.DeepEqual(expectedRet, ret) {
-		t.Errorf("ReadUTFArray() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadStringArray() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -1345,9 +1345,9 @@ func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadUTFArray("types")
+	mpr.ReadStringArray("types")
 	if _, ok := mpr.Error().(*core.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadUTFArray() should return error type *common.HazelcastSerializationError but it does not return")
+		t.Error("ReadStringArray() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
 
@@ -1477,7 +1477,7 @@ func TestMorphingPortableReader_SameErrorIsReturned(t *testing.T) {
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 
-	pr.ReadUTF("dummy")
+	pr.ReadString("dummy")
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 
@@ -1497,7 +1497,7 @@ func TestMorphingPortableReader_SameErrorIsReturned(t *testing.T) {
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 
-	pr.ReadUTFArray("dummy")
+	pr.ReadStringArray("dummy")
 	assert.Error(t, pr.Error())
 	assert.Equal(t, pr.Error(), expectedError)
 

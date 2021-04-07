@@ -9,6 +9,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
+// Config contains configuration for a client.
+// Although it is possible to set the values of the configuration directly,
+// prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
 type Config struct {
 	ClientName          string
 	Properties          map[string]string
@@ -16,7 +19,7 @@ type Config struct {
 	SerializationConfig serialization.Config
 }
 
-func (c Config) Clone() Config {
+func (c Config) clone() Config {
 	properties := map[string]string{}
 	for k, v := range c.Properties {
 		properties[k] = v
@@ -29,12 +32,14 @@ func (c Config) Clone() Config {
 	}
 }
 
+// ConfigBuilder is used to build configuration for a Hazelcast client.
 type ConfigBuilder struct {
 	config                     *Config
 	clusterConfigBuilder       *ClusterConfigBuilder
 	serializationConfigBuilder *SerializationConfigBuilder
 }
 
+// NewConfigBuilder creates a new ConfigBuilder.
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
 		config: &Config{
@@ -45,16 +50,20 @@ func NewConfigBuilder() *ConfigBuilder {
 	}
 }
 
+// SetClientName sets the client name
 func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 	c.config.ClientName = name
 	return c
 }
 
+// SetProperty sets s property.
+// Check property package to get the list of valid properties.
 func (c *ConfigBuilder) SetProperty(key, value string) *ConfigBuilder {
 	c.config.Properties[key] = value
 	return c
 }
 
+// Cluster returns the cluster configuration builder.
 func (c *ConfigBuilder) Cluster() *ClusterConfigBuilder {
 	if c.clusterConfigBuilder == nil {
 		c.clusterConfigBuilder = &ClusterConfigBuilder{}
@@ -62,6 +71,7 @@ func (c *ConfigBuilder) Cluster() *ClusterConfigBuilder {
 	return c.clusterConfigBuilder
 }
 
+// Serialization returns the serialization configuration builder.
 func (c *ConfigBuilder) Serialization() *SerializationConfigBuilder {
 	if c.serializationConfigBuilder == nil {
 		c.serializationConfigBuilder = newSerializationConfigBuilder()
@@ -69,6 +79,7 @@ func (c *ConfigBuilder) Serialization() *SerializationConfigBuilder {
 	return c.serializationConfigBuilder
 }
 
+// Config completes building the configuration and returns it.
 func (c ConfigBuilder) Config() (Config, error) {
 	if c.clusterConfigBuilder != nil {
 		if networkConfig, err := c.clusterConfigBuilder.buildConfig(); err != nil {
@@ -111,12 +122,18 @@ func newClusterConfigBuilder() *ClusterConfigBuilder {
 	}
 }
 
+// SetName sets the cluster name,
+// The name is sent as part of the the client authentication message and may be verified on the member.
+// The default cluster name is dev.
 func (b *ClusterConfigBuilder) SetName(name string) *ClusterConfigBuilder {
 	b.config.Name = name
 	return b
 }
 
-func (b *ClusterConfigBuilder) SetAddrs(addrs ...string) *ClusterConfigBuilder {
+// SetMembers sets the candidate address list that client will use to establish initial connection.
+// Other members of the cluster will be discovered when the client starts.
+// By default 127.0.0.1:5701 is set as the member address.
+func (b *ClusterConfigBuilder) SetMembers(addrs ...string) *ClusterConfigBuilder {
 	selfAddresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		if err := checkAddress(addr); err != nil {
@@ -129,26 +146,47 @@ func (b *ClusterConfigBuilder) SetAddrs(addrs ...string) *ClusterConfigBuilder {
 	return b
 }
 
+// SetSmartRouting enables or disables smart mode for the client.
+// Smart clients send key based operations to owner of the keys.
+// Unisocket clients send all operations to a single node.
+// Smart routing is enabled by default.
 func (b *ClusterConfigBuilder) SetSmartRouting(enable bool) *ClusterConfigBuilder {
 	b.config.SmartRouting = enable
 	return b
 }
 
+// SetConnectionTimeout is socket timeout value in seconds for client to connect member nodes.
+// The default connection timeout is 5 seconds.
 func (b *ClusterConfigBuilder) SetConnectionTimeout(timeout time.Duration) *ClusterConfigBuilder {
 	b.config.ConnectionTimeout = timeout
 	return b
 }
 
+// SetHeartbeatInterval sets time interval between the heartbeats sent by the client to the member nodes in seconds.
+// The client sends heartbeats to the cluster in order to avoid stale connections.
+// The default heartbeat interval is 5 seconds.
 func (b *ClusterConfigBuilder) SetHeartbeatInterval(interval time.Duration) *ClusterConfigBuilder {
 	b.config.HeartbeatInterval = interval
 	return b
 }
 
+// SetHeartbeatTimeout sets the hearbeat timeout.
+// If no request is sent to the cluster including heartbeats before timeout, the connection is closed.
 func (b *ClusterConfigBuilder) SetHeartbeatTimeout(timeout time.Duration) *ClusterConfigBuilder {
 	b.config.HeartbeatTimeout = timeout
 	return b
 }
 
+// SetInvocationTimeout sets the invocation timeout
+// When an invocation gets an exception because
+// * Member throws an exception.
+// * Connection between the client and member is closed.
+// * Client’s heartbeat requests are timed out.
+// Time passed since invocation started is compared with this property.
+// If the time is already passed, then the exception is delegated to the user.
+// If not, the invocation is retried.
+// Note that, if invocation gets no exception and it is a long running one, then it will not get any exception, no matter how small this timeout is set.
+// The default invocation timeout is 120 seconds.
 func (b *ClusterConfigBuilder) SetInvocationTimeout(timeout time.Duration) *ClusterConfigBuilder {
 	b.config.InvocationTimeout = timeout
 	return b
@@ -173,6 +211,7 @@ type SerializationConfigBuilder struct {
 func newSerializationConfigBuilder() *SerializationConfigBuilder {
 	return &SerializationConfigBuilder{
 		config: &serialization.Config{
+			BigEndian:                           true,
 			IdentifiedDataSerializableFactories: map[int32]serialization.IdentifiedDataSerializableFactory{},
 			PortableFactories:                   map[int32]serialization.PortableFactory{},
 			CustomSerializers:                   map[reflect.Type]serialization.Serializer{},
@@ -180,11 +219,15 @@ func newSerializationConfigBuilder() *SerializationConfigBuilder {
 	}
 }
 
-func (b *SerializationConfigBuilder) SetLittleEndian(enabled bool) *SerializationConfigBuilder {
-	b.config.LittleEndian = enabled
+// SetBigEndian sets byte order to big endian.
+// If set to false, little endian byte order is used.
+// Default byte order is big endian.
+func (b *SerializationConfigBuilder) SetBigEndian(enabled bool) *SerializationConfigBuilder {
+	b.config.BigEndian = enabled
 	return b
 }
 
+// SetGlobalSerializer sets the global serializer
 func (b *SerializationConfigBuilder) SetGlobalSerializer(serializer serialization.Serializer) *SerializationConfigBuilder {
 	if serializer.ID() <= 0 {
 		panic("serializerID must be positive")
@@ -193,16 +236,19 @@ func (b *SerializationConfigBuilder) SetGlobalSerializer(serializer serializatio
 	return b
 }
 
-func (b *SerializationConfigBuilder) AddIdentifiedDataSerializableFactory(factoryID int32, factory serialization.IdentifiedDataSerializableFactory) *SerializationConfigBuilder {
-	b.config.IdentifiedDataSerializableFactories[factoryID] = factory
+// AddIdentifiedDataSerializableFactory adds an identified data serializable factory.
+func (b *SerializationConfigBuilder) AddIdentifiedDataSerializableFactory(factory serialization.IdentifiedDataSerializableFactory) *SerializationConfigBuilder {
+	b.config.IdentifiedDataSerializableFactories[factory.FactoryID()] = factory
 	return b
 }
 
-func (b *SerializationConfigBuilder) AddPortableFactory(factoryID int32, factory serialization.PortableFactory) *SerializationConfigBuilder {
-	b.config.PortableFactories[factoryID] = factory
+// AddPortableFactory adds a portable factory.
+func (b *SerializationConfigBuilder) AddPortableFactory(factory serialization.PortableFactory) *SerializationConfigBuilder {
+	b.config.PortableFactories[factory.FactoryID()] = factory
 	return b
 }
 
+// AddCustomSerializer adds a customer serializer for the given type.
 func (b *SerializationConfigBuilder) AddCustomSerializer(t reflect.Type, serializer serialization.Serializer) *SerializationConfigBuilder {
 	if serializer.ID() <= 0 {
 		panic("serializerID must be positive")

@@ -20,6 +20,8 @@ package serialization
 type IdentifiedDataSerializableFactory interface {
 	// Creates an IdentifiedDataSerializable instance using given type ID.
 	Create(id int32) (instance IdentifiedDataSerializable)
+	// FactoryID returns the factory ID.
+	FactoryID() int32
 }
 
 // IdentifiedDataSerializable is a serialization method as an alternative to standard Gob serialization.
@@ -41,11 +43,8 @@ type IdentifiedDataSerializable interface {
 // Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
 // created by a registered PortableFactory.
 // Portable serialization has the following advantages:
-//
 // * Supporting multiversion of the same object type.
-//
 // * Fetching individual fields without having to rely on reflection.
-//
 // * Querying and indexing support without deserialization and/or reflection.
 type Portable interface {
 	// FactoryID returns PortableFactory ID for this portable struct.
@@ -75,6 +74,8 @@ type PortableFactory interface {
 	// Create creates a Portable instance using given class ID and
 	// returns portable instance or nil if class ID is not known by this factory.
 	Create(classID int32) (instance Portable)
+	// FactoryID returns the factory ID.
+	FactoryID() int32
 }
 
 // Serializer is base interface of serializers.
@@ -264,7 +265,7 @@ type DataInput interface {
 	// It returns zero if an error is set previously.
 	ReadFloat64() float64
 
-	// ReadUTF returns string read.
+	// ReadString returns string read.
 	// It returns empty string if an error is set previously.
 	ReadString() string
 
@@ -391,83 +392,83 @@ type PortableReader interface {
 	// Error returns the first error encountered by Portable Reader.
 	Error() error
 
-	// ReadByte takes fieldName name of the field and returns the byte value read.
+	// ReadByte takes fieldName Name of the field and returns the byte value read.
 	// It returns zero if an error is set previously.
 	ReadByte(fieldName string) byte
 
-	// ReadBool takes fieldName name of the field and returns the bool value read.
+	// ReadBool takes fieldName Name of the field and returns the bool value read.
 	// It returns false if an error is set previously.
 	ReadBool(fieldName string) bool
 
-	// ReadUInt16 takes fieldName name of the field and returns the uint16 value read.
+	// ReadUInt16 takes fieldName Name of the field and returns the uint16 value read.
 	// It returns zero if an error is set previously.
 	ReadUInt16(fieldName string) uint16
 
-	// ReadInt16 takes fieldName name of the field and returns the int16 value read.
+	// ReadInt16 takes fieldName Name of the field and returns the int16 value read.
 	// It returns zero if an error is set previously.
 	ReadInt16(fieldName string) int16
 
-	// ReadInt32 takes fieldName name of the field and returns the int32 value read.
+	// ReadInt32 takes fieldName Name of the field and returns the int32 value read.
 	// It returns zero if an error is set previously.
 	ReadInt32(fieldName string) int32
 
-	// ReadInt64 takes fieldName name of the field and returns the int64 value read.
+	// ReadInt64 takes fieldName Name of the field and returns the int64 value read.
 	// It returns zero if an error is set previously.
 	ReadInt64(fieldName string) int64
 
-	// ReadFloat32 takes fieldName name of the field and returns the float32 value read.
+	// ReadFloat32 takes fieldName Name of the field and returns the float32 value read.
 	// It returns zero if an error is set previously.
 	ReadFloat32(fieldName string) float32
 
-	// ReadFloat64 takes fieldName name of the field and returns the float64 value read.
+	// ReadFloat64 takes fieldName Name of the field and returns the float64 value read.
 	// It returns zero if an error is set previously.
 	ReadFloat64(fieldName string) float64
 
-	// ReadUTF takes fieldName name of the field and returns the string value read.
+	// ReadUTF takes fieldName Name of the field and returns the string value read.
 	// It returns empty string if an error is set previously.
-	ReadUTF(fieldName string) string
+	ReadString(fieldName string) string
 
-	// ReadPortable takes fieldName name of the field and returns the Portable value read.
+	// ReadPortable takes fieldName Name of the field and returns the Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortable(fieldName string) Portable
 
-	// ReadByteArray takes fieldName name of the field and returns the []byte value read.
+	// ReadByteArray takes fieldName Name of the field and returns the []byte value read.
 	// It returns nil if an error is set previously.
 	ReadByteArray(fieldName string) []byte
 
-	// ReadBoolArray takes fieldName name of the field and returns the []bool value read.
+	// ReadBoolArray takes fieldName Name of the field and returns the []bool value read.
 	// It returns nil if an error is set previously.
 	ReadBoolArray(fieldName string) []bool
 
-	// ReadUInt16Array takes fieldName name of the field and returns the []uint16 value read.
+	// ReadUInt16Array takes fieldName Name of the field and returns the []uint16 value read.
 	// It returns nil if an error is set previously.
 	ReadUInt16Array(fieldName string) []uint16
 
-	// ReadInt16Array takes fieldName name of the field and returns the []int16 value read.
+	// ReadInt16Array takes fieldName Name of the field and returns the []int16 value read.
 	// It returns nil if an error is set previously.
 	ReadInt16Array(fieldName string) []int16
 
-	// ReadInt32Array takes fieldName name of the field and returns the []int32 value read.
+	// ReadInt32Array takes fieldName Name of the field and returns the []int32 value read.
 	// It returns nil if an error is set previously.
 	ReadInt32Array(fieldName string) []int32
 
-	// ReadInt64Array takes fieldName name of the field and returns the []int64 value read.
+	// ReadInt64Array takes fieldName Name of the field and returns the []int64 value read.
 	// It returns nil if an error is set previously.
 	ReadInt64Array(fieldName string) []int64
 
-	// ReadFloat32Array takes fieldName name of the field and returns the []float32 value read.
+	// ReadFloat32Array takes fieldName Name of the field and returns the []float32 value read.
 	// It returns nil if an error is set previously.
 	ReadFloat32Array(fieldName string) []float32
 
-	// ReadFloat64Array takes fieldName name of the field and returns the []float64 value read.
+	// ReadFloat64Array takes fieldName Name of the field and returns the []float64 value read.
 	// It returns nil if an error is set previously.
 	ReadFloat64Array(fieldName string) []float64
 
-	// ReadUTFArray takes fieldName name of the field and returns the []string value read.
+	// ReadUTFArray takes fieldName Name of the field and returns the []string value read.
 	// It returns nil if an error is set previously.
-	ReadUTFArray(fieldName string) []string
+	ReadStringArray(fieldName string) []string
 
-	// ReadPortableArray takes fieldName name of the field and returns the []Portable value read.
+	// ReadPortableArray takes fieldName Name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
 }
@@ -483,19 +484,19 @@ type ClassDefinition interface {
 	// Version returns version of struct.
 	Version() int32
 
-	// Field returns field definition of field by given name.
+	// Field returns field definition of field by given Name.
 	Field(name string) FieldDefinition
 
 	// FieldCount returns the number of fields in struct.
 	FieldCount() int
 }
 
-// FieldDefinition defines name, type, index of a field.
+// FieldDefinition defines Name, type, index of a field.
 type FieldDefinition interface {
 	// Type returns field type.
 	Type() int32
 
-	// Name returns field name.
+	// Name returns field Name.
 	Name() string
 
 	// Index returns field index.

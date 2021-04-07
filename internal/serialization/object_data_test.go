@@ -385,7 +385,7 @@ func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 	retArray := i.ReadUTFArray()
 
 	if !reflect.DeepEqual(array, retArray) {
-		t.Error("There is a problem in WriteUTFArray() or ReadUTFArray()!")
+		t.Error("There is a problem in WriteUTFArray() or ReadStringArray()!")
 	}
 }
 

@@ -257,7 +257,7 @@ func (mpr *MorphingPortableReader) readFloat64(fieldName string) (float64, error
 	}
 }
 
-func (mpr *MorphingPortableReader) ReadUTF(fieldName string) string {
+func (mpr *MorphingPortableReader) ReadString(fieldName string) string {
 	if mpr.err != nil {
 		return ""
 	}
@@ -275,7 +275,7 @@ func (mpr *MorphingPortableReader) readUTF(fieldName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return mpr.DefaultPortableReader.ReadUTF(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadString(fieldName), mpr.err
 }
 
 func (mpr *MorphingPortableReader) ReadPortable(fieldName string) serialization.Portable {
@@ -467,7 +467,7 @@ func (mpr *MorphingPortableReader) readFloat64Array(fieldName string) ([]float64
 	return mpr.DefaultPortableReader.ReadFloat64Array(fieldName), mpr.err
 }
 
-func (mpr *MorphingPortableReader) ReadUTFArray(fieldName string) []string {
+func (mpr *MorphingPortableReader) ReadStringArray(fieldName string) []string {
 	if mpr.err != nil {
 		return nil
 	}
@@ -485,7 +485,7 @@ func (mpr *MorphingPortableReader) readUTFArray(fieldName string) ([]string, err
 	if err != nil {
 		return nil, err
 	}
-	return mpr.DefaultPortableReader.ReadUTFArray(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadStringArray(fieldName), mpr.err
 }
 
 func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []serialization.Portable {
