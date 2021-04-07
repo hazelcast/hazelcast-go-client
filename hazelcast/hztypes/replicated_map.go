@@ -36,7 +36,10 @@ type ReplicatedMap interface {
 	IsEmpty() (bool, error)
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotification(config ReplicatedMapEntryListenerConfig, handler EntryNotifiedHandler) error
+	ListenEntryNotification(handler EntryNotifiedHandler) error
+
+	// ListenEntryNotification adds a continuous entry listener to this map.
+	ListenEntryNotificationWithConfig(config ReplicatedMapEntryListenerConfig, handler EntryNotifiedHandler) error
 
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)
