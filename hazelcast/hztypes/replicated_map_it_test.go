@@ -144,14 +144,13 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		}
 		// TODO: remove the following sleep once we dynamically add connection listeners
 		time.Sleep(2 * time.Second)
-		listenerConfig := hztypes.ReplicatedMapEntryListenerConfig{}
-		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotification(handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
@@ -181,7 +180,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		listenerConfig := hztypes.ReplicatedMapEntryListenerConfig{
 			Key: "k1",
 		}
-		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotificationWithConfig(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
