@@ -155,10 +155,6 @@ func (c *Client) ListenMemberStateChange(handler cluster.MemberStateChangedHandl
 	})
 }
 
-//func (c *Client) ExecuteSQL(sql string) (sql.Result, error) {
-//	panic("implement me: ExecuteSQL")
-//}
-
 func (c *Client) ensureStarted() {
 	if c.started.Load() == false {
 		panic("client not started")
