@@ -59,6 +59,8 @@ func TestLifecycleEvents(t *testing.T) {
 }
 
 func TestHeartbeat(t *testing.T) {
+	// Slow test.
+	t.SkipNow()
 	it.MapTesterWithConfigBuilder(t, func(cb *hz.ConfigBuilder) {
 	}, func(t *testing.T, m hztypes.Map) {
 		time.Sleep(150 * time.Second)
