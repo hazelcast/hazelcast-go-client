@@ -66,12 +66,6 @@ func ExampleClient_ListenLifecycleStateChange() {
 			log.Println("Received shutting down state.")
 		case lifecycle.StateShutDown:
 			log.Println("Received shut down state.")
-		case lifecycle.StateMerging:
-			log.Println("Received merging state.")
-		case lifecycle.StateMerged:
-			log.Println("Received merged state.")
-		case lifecycle.StateMergeFailed:
-			log.Println("Received merge failed state.")
 		case lifecycle.StateClientConnected:
 			log.Println("Received client connected state.")
 		case lifecycle.StateClientDisconnected:

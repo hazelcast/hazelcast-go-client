@@ -62,6 +62,7 @@ func (o *ObjectDataOutput) ToBuffer() []byte {
 
 func (o *ObjectDataOutput) WriteZeroBytes(count int) {
 	for i := 0; i < count; i++ {
+		// ignoring the error here
 		o.WriteByte(0)
 	}
 }
@@ -74,10 +75,11 @@ func (o *ObjectDataOutput) EnsureAvailable(size int) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteByte(v byte) {
+func (o *ObjectDataOutput) WriteByte(v byte) error {
 	o.EnsureAvailable(bufutil.ByteSizeInBytes)
 	bufferutil.WriteUInt8(o.buffer, o.position, v)
 	o.position += bufutil.ByteSizeInBytes
+	return nil
 }
 
 func (o *ObjectDataOutput) WriteBool(v bool) {
@@ -125,7 +127,6 @@ func (o *ObjectDataOutput) WriteFloat64(v float64) {
 func (o *ObjectDataOutput) WriteString(v string) {
 	length := int32(utf8.RuneCountInString(v))
 	o.WriteInt32(length)
-
 	if length > 0 {
 		o.EnsureAvailable(len(v))
 		for _, s := range v {
@@ -136,45 +137,40 @@ func (o *ObjectDataOutput) WriteString(v string) {
 
 func (o *ObjectDataOutput) WriteObject(object interface{}) error {
 	return o.service.WriteObject(o, object)
-
 }
 
 func (o *ObjectDataOutput) WriteByteArray(v []byte) {
-	var length int32
 	if v != nil {
-		length = int32(len(v))
+		o.WriteInt32(int32(len(v)))
+		for _, b := range v {
+			// error is ignored
+			o.WriteByte(b)
+		}
 	} else {
-		length = bufutil.NilArrayLength
+		o.WriteInt32(bufutil.NilArrayLength)
 	}
-	o.WriteInt32(length)
-	for j := int32(0); j < length; j++ {
-		o.WriteByte(v[j])
-	}
+
 }
 
 func (o *ObjectDataOutput) WriteBoolArray(v []bool) {
-	var length int32
 	if v != nil {
-		length = int32(len(v))
+		o.WriteInt32(int32(len(v)))
+		for _, b := range v {
+			o.WriteBool(b)
+		}
 	} else {
-		length = bufutil.NilArrayLength
-	}
-	o.WriteInt32(length)
-	for j := int32(0); j < length; j++ {
-		o.WriteBool(v[j])
+		o.WriteInt32(bufutil.NilArrayLength)
 	}
 }
 
 func (o *ObjectDataOutput) WriteUInt16Array(v []uint16) {
-	var length int32
 	if v != nil {
-		length = int32(len(v))
+		o.WriteInt32(int32(len(v)))
+		for j := 0; j < len(v); j++ {
+			o.WriteUInt16(v[j])
+		}
 	} else {
-		length = bufutil.NilArrayLength
-	}
-	o.WriteInt32(length)
-	for j := int32(0); j < length; j++ {
-		o.WriteUInt16(v[j])
+		o.WriteInt32(bufutil.NilArrayLength)
 	}
 }
 

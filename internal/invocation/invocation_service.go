@@ -33,12 +33,7 @@ func (b ServiceCreationBundle) Check() {
 	}
 }
 
-type Service interface {
-	// SetHandler should be called only before client is started
-	SetHandler(handler Handler)
-}
-
-type ServiceImpl struct {
+type Service struct {
 	nextCorrelationID int64
 	requestCh         <-chan Invocation
 	responseCh        <-chan *proto.ClientMessage
@@ -51,13 +46,13 @@ type ServiceImpl struct {
 	logger            logger.Logger
 }
 
-func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
+func NewServiceImpl(bundle ServiceCreationBundle) *Service {
 	bundle.Check()
 	handler := bundle.Handler
 	if handler == nil {
 		handler = &DefaultHandler{}
 	}
-	service := &ServiceImpl{
+	service := &Service{
 		requestCh:         bundle.RequestCh,
 		responseCh:        bundle.ResponseCh,
 		invocations:       map[int64]Invocation{},
@@ -72,11 +67,11 @@ func NewServiceImpl(bundle ServiceCreationBundle) *ServiceImpl {
 	return service
 }
 
-func (s *ServiceImpl) SetHandler(handler Handler) {
+func (s *Service) SetHandler(handler Handler) {
 	s.handler = handler
 }
 
-func (s *ServiceImpl) processIncoming() {
+func (s *Service) processIncoming() {
 	for {
 		select {
 		case inv := <-s.requestCh:
@@ -87,7 +82,7 @@ func (s *ServiceImpl) processIncoming() {
 	}
 }
 
-func (s *ServiceImpl) sendInvocation(invocation Invocation) Result {
+func (s *Service) sendInvocation(invocation Invocation) Result {
 	s.registerInvocation(invocation)
 	if err := s.handler.Invoke(invocation); err != nil {
 		s.handleError(invocation.Request().CorrelationID(), err)
@@ -95,7 +90,7 @@ func (s *ServiceImpl) sendInvocation(invocation Invocation) Result {
 	return invocation
 }
 
-func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
+func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 	if msg.Err != nil {
 		s.logger.Error(msg.Err)
 		if msg.StartFrame != nil {
@@ -126,7 +121,7 @@ func (s *ServiceImpl) handleClientMessage(msg *proto.ClientMessage) {
 	}
 }
 
-func (s *ServiceImpl) handleError(correlationID int64, invocationErr error) {
+func (s *Service) handleError(correlationID int64, invocationErr error) {
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		s.logger.Error(invocationErr)
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
@@ -136,7 +131,7 @@ func (s *ServiceImpl) handleError(correlationID int64, invocationErr error) {
 	}
 }
 
-func (s *ServiceImpl) registerInvocation(invocation Invocation) {
+func (s *Service) registerInvocation(invocation Invocation) {
 	message := invocation.Request()
 	if message == nil {
 		panic("message loaded from invocation request is nil")
@@ -148,7 +143,7 @@ func (s *ServiceImpl) registerInvocation(invocation Invocation) {
 	s.invocations[correlationID] = invocation
 }
 
-func (s *ServiceImpl) unregisterInvocation(correlationID int64) Invocation {
+func (s *Service) unregisterInvocation(correlationID int64) Invocation {
 	if invocation, ok := s.invocations[correlationID]; ok {
 		if invocation.EventHandler() == nil {
 			// XXX: we don't remove invocations with event handlers.

@@ -249,7 +249,6 @@ func getClientReplicatedMapWithConfig(name string, clientConfig hz.Config) (*hz.
 	fmt.Println("Map Name:", mapName)
 	if m, err := client.GetReplicatedMap(mapName); err != nil {
 		panic(err)
-		return nil, nil
 	} else {
 		return client, m
 	}
