@@ -34,7 +34,7 @@ func (b ServiceCreationBundle) Check() {
 }
 
 type Service struct {
-	nextCorrelationID int64
+	//nextCorrelationID int64
 	requestCh         <-chan Invocation
 	responseCh        <-chan *proto.ClientMessage
 	invocations       map[int64]Invocation
@@ -103,7 +103,9 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 	correlationID := msg.CorrelationID()
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
 		if inv, found := s.invocations[correlationID]; !found {
-			s.logger.Tracef("invocation with unknown correlation id: %d", correlationID)
+			s.logger.Tracef(func() (string, []interface{}) {
+				return "invocation with unknown correlation id: %d", []interface{}{correlationID}
+			})
 		} else if inv.EventHandler() != nil {
 			go inv.EventHandler()(msg)
 		}
@@ -117,7 +119,9 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			inv.Complete(msg)
 		}
 	} else {
-		s.logger.Tracef("no invocation found with the correlation id: %d", correlationID)
+		s.logger.Tracef(func() (string, []interface{}) {
+			return "no invocation found with the correlation id: %d", []interface{}{correlationID}
+		})
 	}
 }
 
@@ -125,9 +129,10 @@ func (s *Service) handleError(correlationID int64, invocationErr error) {
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		s.logger.Error(invocationErr)
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
-		//panic("handleError: implement me!")
 	} else {
-		s.logger.Tracef("cannot handle error: no invocation found with correlation id: %d", correlationID)
+		s.logger.Tracef(func() (string, []interface{}) {
+			return "cannot handle error: no invocation found with correlation id: %d", []interface{}{correlationID}
+		})
 	}
 }
 
@@ -136,11 +141,8 @@ func (s *Service) registerInvocation(invocation Invocation) {
 	if message == nil {
 		panic("message loaded from invocation request is nil")
 	}
-	correlationID := s.nextCorrelationID
-	s.nextCorrelationID++
-	message.SetCorrelationID(correlationID)
 	message.SetPartitionId(invocation.PartitionID())
-	s.invocations[correlationID] = invocation
+	s.invocations[message.CorrelationID()] = invocation
 }
 
 func (s *Service) unregisterInvocation(correlationID int64) Invocation {

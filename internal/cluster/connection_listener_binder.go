@@ -17,18 +17,20 @@ type connRegistration struct {
 }
 
 type ConnectionListenerBinderImpl struct {
-	connectionManager *ConnectionManager
-	requestCh         chan<- invocation.Invocation
-	// connectionID -> clientRegistrationID -> serverRegistrationID
+	connectionManager    *ConnectionManager
+	invocationFactory    *ConnectionInvocationFactory
+	requestCh            chan<- invocation.Invocation
 	connToRegistration   map[int64]map[int]internal.UUID
 	connToRegistrationMu *sync.Mutex
 }
 
 func NewConnectionListenerBinderImpl(
 	connManager *ConnectionManager,
+	invocationFactory *ConnectionInvocationFactory,
 	requestCh chan<- invocation.Invocation) *ConnectionListenerBinderImpl {
 	return &ConnectionListenerBinderImpl{
 		connectionManager:    connManager,
+		invocationFactory:    invocationFactory,
 		requestCh:            requestCh,
 		connToRegistration:   map[int64]map[int]internal.UUID{},
 		connToRegistrationMu: &sync.Mutex{},
@@ -41,7 +43,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 	handler proto.ClientMessageHandler) error {
 	connToRegistration := map[int64]connRegistration{}
 	for _, conn := range b.connectionManager.GetActiveConnections() {
-		inv := NewConnectionBoundInvocation(
+		inv := b.invocationFactory.NewConnectionBoundInvocation(
 			request,
 			-1,
 			nil,
@@ -52,6 +54,8 @@ func (b *ConnectionListenerBinderImpl) Add(
 		if response, err := inv.Get(); err != nil {
 			return err
 		} else {
+			// TODO: Instead of using DecodeMapAddEntryListenerResponse use the appropriate Decoder
+			// Currently all such decoders decode the same value.
 			serverRegistrationID := codec.DecodeMapAddEntryListenerResponse(response)
 			connToRegistration[conn.connectionID] = connRegistration{
 				client: clientRegistrationID,
@@ -94,7 +98,7 @@ func (b *ConnectionListenerBinderImpl) Remove(
 	b.connToRegistrationMu.Unlock()
 	for _, reg := range connToRegistration {
 		request := codec.EncodeMapRemoveEntryListenerRequest(mapName, reg.server)
-		inv := NewConnectionBoundInvocation(
+		inv := b.invocationFactory.NewConnectionBoundInvocation(
 			request,
 			-1,
 			nil,

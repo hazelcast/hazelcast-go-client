@@ -66,18 +66,9 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 	}
 }
 
-// Trace logs the given arguments at trace level if the level is greater than or equal to trace level.
-func (l *DefaultLogger) Trace(args ...interface{}) {
-	if l.canLogTrace() {
-		callerName := l.findCallerFuncName()
-		// TODO: fix me!
-		s := callerName + "\n" + tracePrefix + ": " + fmt.Sprint(args...)
-		l.Output(logCallDepth, s)
-	}
-}
-
-func (l *DefaultLogger) Tracef(format string, values ...interface{}) {
-	if l.canLogTrace() {
+func (l *DefaultLogger) Tracef(f func() (string, []interface{})) {
+	if l.canLogTrace() && f != nil {
+		format, values := f()
 		s := fmt.Sprintf("TRACE: %s", fmt.Sprintf(format, values...))
 		l.Output(logCallDepth, s)
 	}

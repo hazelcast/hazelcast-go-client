@@ -29,7 +29,7 @@ func createWithLevelAndLog(level int) string {
 	buf := new(bytes.Buffer)
 	l.SetOutput(buf)
 	l.Debug(logMessage)
-	l.Trace(logMessage)
+	l.Tracef(func() (string, []interface{}) { return logMessage, nil })
 	l.Warn(logMessage)
 	l.Info(logMessage)
 	l.Error(logMessage)

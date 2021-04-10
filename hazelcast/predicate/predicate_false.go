@@ -1,4 +1,4 @@
-package pred
+package predicate
 
 import "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 

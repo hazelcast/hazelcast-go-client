@@ -1,11 +1,6 @@
 package hztypes
 
-import "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
-
-type ReplicatedMapEntryListenerConfig struct {
-	Predicate pred.Predicate
-	Key       interface{}
-}
+import "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/predicate"
 
 type ReplicatedMap interface {
 	// Clear deletes all entries one by one and fires related events
@@ -39,7 +34,13 @@ type ReplicatedMap interface {
 	ListenEntryNotification(handler EntryNotifiedHandler) error
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotificationWithConfig(config ReplicatedMapEntryListenerConfig, handler EntryNotifiedHandler) error
+	ListenEntryNotificationToKey(key interface{}, handler EntryNotifiedHandler) error
+
+	// ListenEntryNotification adds a continuous entry listener to this map.
+	ListenEntryNotificationWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) error
+
+	// ListenEntryNotification adds a continuous entry listener to this map.
+	ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) error
 
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)

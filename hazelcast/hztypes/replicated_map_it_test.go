@@ -10,6 +10,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/predicate"
 
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
@@ -169,7 +170,6 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
-	t.SkipNow()
 	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
 		handlerCalled := false
 		handler := func(event *hztypes.EntryNotified) {
@@ -177,10 +177,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		}
 		// TODO: remove the following sleep once we dynamically add connection listeners
 		time.Sleep(2 * time.Second)
-		listenerConfig := hztypes.ReplicatedMapEntryListenerConfig{
-			Key: "k1",
-		}
-		if err := m.ListenEntryNotificationWithConfig(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotificationToKey("k1", handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -189,6 +186,70 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		hz.MustValue(m.Put("k2", "v1"))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
+		}
+	})
+}
+
+func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
+	t.SkipNow()
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	}
+	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.ReplicatedMap) {
+		handlerCalled := false
+		handler := func(event *hztypes.EntryNotified) {
+			handlerCalled = true
+		}
+		if err := m.ListenEntryNotificationWithPredicate(predicate.Equal("A", "foo"), handler); err != nil {
+			t.Fatal(err)
+		}
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		time.Sleep(1 * time.Second)
+		if !handlerCalled {
+			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
+		}
+	})
+}
+
+func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	}
+	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.ReplicatedMap) {
+		handlerCalled := false
+		handler := func(event *hztypes.EntryNotified) {
+			handlerCalled = true
+		}
+		if err := m.ListenEntryNotificationToKeyWithPredicate("k1", predicate.Equal("A", "foo"), handler); err != nil {
+			t.Fatal(err)
+		}
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		time.Sleep(1 * time.Second)
+		if !handlerCalled {
+			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		hz.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
+		}
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
 		}
 	})
 }
@@ -214,6 +275,8 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 			}
 			client.Shutdown()
 		}()
+		// TODO: remove the following sleep once we dynamically add connection listeners
+		time.Sleep(2 * time.Second)
 		f(t, m)
 
 	})

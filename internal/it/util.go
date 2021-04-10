@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 
@@ -77,6 +78,8 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 			}
 			client.Shutdown()
 		}()
+		// TODO: remove the following sleep once we dynamically add connection listeners
+		time.Sleep(2 * time.Second)
 		f(t, m)
 
 	})

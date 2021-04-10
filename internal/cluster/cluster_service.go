@@ -26,7 +26,7 @@ type ServiceImpl struct {
 	requestCh           chan<- invocation.Invocation
 	startCh             chan struct{}
 	startChAtom         int32
-	invocationFactory   invocation.Factory
+	invocationFactory   *ConnectionInvocationFactory
 	eventDispatcher     *event.DispatchService
 	logger              logger.Logger
 	config              *pubcluster.Config
@@ -38,7 +38,7 @@ type ServiceImpl struct {
 type CreationBundle struct {
 	AddrProviders     []AddressProvider
 	RequestCh         chan<- invocation.Invocation
-	InvocationFactory invocation.Factory
+	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	Logger            logger.Logger
 	Config            *pubcluster.Config

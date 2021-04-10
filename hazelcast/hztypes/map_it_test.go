@@ -8,7 +8,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/predicate"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
 )
 
@@ -128,7 +128,7 @@ func TestMapRemove(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
-		const maxKeys = 100
+		const maxKeys = 3
 		makeKey := func(id int) string {
 			return fmt.Sprintf("k%d", id)
 		}
@@ -251,7 +251,7 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
 			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
 		}
-		if entries, err := m.GetEntrySetWithPredicate(pred.And(pred.Equal("A", "foo"), pred.Equal("B", 10))); err != nil {
+		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
 			t.Fatalf("target: %#v != %#v", target, entries)
@@ -260,10 +260,7 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 }
 
 func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
-	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		entries := []hztypes.Entry{
 			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 			hztypes.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.JSONValue()),
@@ -277,7 +274,7 @@ func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
 			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 			hztypes.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 		}
-		if entries, err := m.GetEntrySetWithPredicate(pred.And(pred.Equal("A", "foo"), pred.Equal("B", 10))); err != nil {
+		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
 			t.Fatalf("target: %#v != %#v", target, entries)
@@ -362,8 +359,6 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		// TODO: remove the following sleep once we dynamically add connection listeners
-		time.Sleep(2 * time.Second)
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
 			NotifyEntryUpdated: true,
@@ -372,9 +367,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := m.Put("k1", "v1"); err != nil {
-			t.Fatal(err)
-		}
+		hz.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
@@ -383,9 +376,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		if err := m.UnlistenEntryNotification(handler); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := m.Put("k1", "v1"); err != nil {
-			t.Fatal(err)
-		}
+		hz.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
@@ -393,15 +384,12 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 	})
 }
 
-func TestMapEntryNotifiedEventWithKey(t *testing.T) {
-	t.SkipNow()
+func TestMapEntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		handlerCalled := false
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		// TODO: remove the following sleep once we dynamically add connection listeners
-		time.Sleep(2 * time.Second)
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
 			NotifyEntryUpdated: true,
@@ -411,43 +399,86 @@ func TestMapEntryNotifiedEventWithKey(t *testing.T) {
 		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := m.Put("k1", "v1"); err != nil {
-			t.Fatal(err)
-		}
+		hz.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		hz.MustValue(m.Put("k2", "v1"))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
 		}
 	})
 }
 
 func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
-	t.SkipNow()
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
 		handlerCalled := false
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		// TODO: remove the following sleep once we dynamically add connection listeners
-		time.Sleep(2 * time.Second)
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
 			NotifyEntryUpdated: true,
 			IncludeValue:       true,
-			Predicate:          pred.Equal("A", "foo"),
+			Predicate:          predicate.Equal("A", "foo"),
 		}
 		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := m.Put("k1", it.SamplePortable{
-			A: "foo",
-			B: 10,
-		}); err != nil {
-			t.Fatal(err)
-		}
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
+		}
+	})
+}
+
+func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+		handlerCalled := false
+		handler := func(event *hztypes.EntryNotified) {
+			handlerCalled = true
+		}
+		listenerConfig := hztypes.MapEntryListenerConfig{
+			NotifyEntryAdded:   true,
+			NotifyEntryUpdated: true,
+			IncludeValue:       true,
+			Key:                "k1",
+			Predicate:          predicate.Equal("A", "foo"),
+		}
+		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+			t.Fatal(err)
+		}
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		time.Sleep(1 * time.Second)
+		if !handlerCalled {
+			t.Fatalf("handler was not called")
+		}
+		handlerCalled = false
+		hz.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
+		}
+		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		time.Sleep(1 * time.Second)
+		if handlerCalled {
+			t.Fatalf("handler was called")
 		}
 	})
 }

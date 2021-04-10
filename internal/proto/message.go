@@ -16,7 +16,6 @@ package proto
 
 import (
 	"encoding/binary"
-	"sync"
 )
 
 const (
@@ -68,11 +67,10 @@ var (
 
 // ClientMessage
 type ClientMessage struct {
-	StartFrame          *Frame
-	EndFrame            *Frame
-	Retryable           bool
-	Err                 error
-	startFrameContentMu *sync.RWMutex
+	StartFrame *Frame
+	EndFrame   *Frame
+	Retryable  bool
+	Err        error
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
@@ -81,26 +79,17 @@ func NewClientMessage(startFrame *Frame) *ClientMessage {
 
 func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *ClientMessage {
 	return &ClientMessage{
-		StartFrame:          startFrame,
-		EndFrame:            endFrame,
-		startFrameContentMu: &sync.RWMutex{},
+		StartFrame: startFrame,
+		EndFrame:   endFrame,
 	}
 }
 
 func NewClientMessageForEncode() *ClientMessage {
-	return &ClientMessage{startFrameContentMu: &sync.RWMutex{}}
+	return &ClientMessage{}
 }
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
 	return NewClientMessage(frame)
-}
-
-func (m *ClientMessage) CopyWithNewCorrelationId(correlationID int64) *ClientMessage {
-	initialFrameCopy := m.StartFrame.DeepCopy()
-	frame := NewClientMessageWithStartAndEndFrame(initialFrameCopy, m.EndFrame)
-	frame.SetCorrelationID(correlationID)
-	frame.SetRetryable(m.IsRetryable())
-	return frame
 }
 
 func (m *ClientMessage) IsRetryable() bool {
@@ -127,50 +116,38 @@ func (m *ClientMessage) AddFrame(frame *Frame) {
 }
 
 func (m *ClientMessage) Type() int32 {
-	m.startFrameContentMu.RLock()
-	defer m.startFrameContentMu.RUnlock()
 	return int32(binary.LittleEndian.Uint32(m.StartFrame.Content[TypeFieldOffset:]))
 }
 
 func (m *ClientMessage) CorrelationID() int64 {
-	m.startFrameContentMu.RLock()
-	defer m.startFrameContentMu.RUnlock()
+	//m.startFrameContentMu.RLock()
+	//defer m.startFrameContentMu.RUnlock()
 	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[CorrelationIDFieldOffset:]))
 }
 
 func (m *ClientMessage) FragmentationID() int64 {
-	m.startFrameContentMu.RLock()
-	defer m.startFrameContentMu.RUnlock()
 	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[FragmentationIDOffset:]))
 }
 
 func (m *ClientMessage) NumberOfBackupAcks() uint8 {
-	m.startFrameContentMu.RLock()
-	defer m.startFrameContentMu.RUnlock()
 	return m.StartFrame.Content[ResponseBackupAcksOffset]
 }
 
 func (m *ClientMessage) PartitionID() int32 {
-	m.startFrameContentMu.RLock()
-	defer m.startFrameContentMu.RUnlock()
 	return int32(binary.LittleEndian.Uint32(m.StartFrame.Content[PartitionIDOffset:]))
 }
 
 func (m *ClientMessage) SetCorrelationID(correlationID int64) {
-	m.startFrameContentMu.Lock()
-	defer m.startFrameContentMu.Unlock()
+	//m.startFrameContentMu.Lock()
+	//defer m.startFrameContentMu.Unlock()
 	binary.LittleEndian.PutUint64(m.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
 }
 
 func (m *ClientMessage) SetMessageType(messageType int32) {
-	m.startFrameContentMu.Lock()
-	defer m.startFrameContentMu.Unlock()
 	binary.LittleEndian.PutUint32(m.StartFrame.Content[MessageTypeOffset:], uint32(messageType))
 }
 
 func (m *ClientMessage) SetPartitionId(partitionId int32) {
-	m.startFrameContentMu.Lock()
-	defer m.startFrameContentMu.Unlock()
 	binary.LittleEndian.PutUint32(m.StartFrame.Content[PartitionIDOffset:], uint32(partitionId))
 }
 
@@ -185,8 +162,6 @@ func (m *ClientMessage) TotalLength() int {
 }
 
 func (m *ClientMessage) Bytes(bytes []byte) int {
-	m.startFrameContentMu.RLock()
-	defer m.startFrameContentMu.RUnlock()
 	pos := 0
 	currentFrame := m.StartFrame
 	for currentFrame != nil {
