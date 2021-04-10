@@ -42,7 +42,7 @@ type ConnectionManagerCreationBundle struct {
 	PartitionService     *PartitionService
 	SerializationService spi.SerializationService
 	EventDispatcher      *event.DispatchService
-	InvocationFactory    invocation.Factory
+	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
 	Credentials          security.Credentials
 	ClientName           string
@@ -94,7 +94,7 @@ type ConnectionManager struct {
 	partitionService     *PartitionService
 	serializationService spi.SerializationService
 	eventDispatcher      *event.DispatchService
-	invocationFactory    invocation.Factory
+	invocationFactory    *ConnectionInvocationFactory
 	clusterConfig        *pubcluster.Config
 	credentials          security.Credentials
 	clientName           string
@@ -300,7 +300,7 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 func (m *ConnectionManager) authenticate(connection *Connection, asOwner bool) error {
 	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := m.encodeAuthenticationRequest(asOwner)
-	inv := NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout)
 	m.requestCh <- inv
 	if result, err := inv.GetWithTimeout(m.clusterConfig.HeartbeatTimeout); err != nil {
 		return err
@@ -377,19 +377,9 @@ func (m *ConnectionManager) createCustomAuthenticationRequest(asOwner bool) *pro
 	)
 }
 
-type AuthenticationDecoder func(clientMessage *proto.ClientMessage) (
-	status uint8,
-	address pubcluster.Address,
-	uuid internal.UUID,
-	ownerUuid internal.UUID,
-	serializationVersion uint8,
-	serverHazelcastVersion string,
-	partitionCount int32,
-	clientUnregisteredMembers []pubcluster.Member)
-
-func (cm *ConnectionManager) getAuthenticationDecoder() AuthenticationDecoder {
+func (m *ConnectionManager) getAuthenticationDecoder() AuthenticationDecoder {
 	var authenticationDecoder AuthenticationDecoder
-	if _, ok := cm.credentials.(*security.UsernamePasswordCredentials); ok {
+	if _, ok := m.credentials.(*security.UsernamePasswordCredentials); ok {
 		authenticationDecoder = proto.DecodeClientAuthenticationResponse
 	} else {
 		// TODO: rename proto.ClientAuthenticationCustomDecodeResponse
@@ -398,24 +388,24 @@ func (cm *ConnectionManager) getAuthenticationDecoder() AuthenticationDecoder {
 	return authenticationDecoder
 }
 
-func (cm *ConnectionManager) heartbeat() {
-	ticker := time.NewTicker(cm.clusterConfig.HeartbeatInterval)
+func (m *ConnectionManager) heartbeat() {
+	ticker := time.NewTicker(m.clusterConfig.HeartbeatInterval)
 	for {
 		select {
-		case <-cm.doneCh:
+		case <-m.doneCh:
 			return
 		case <-ticker.C:
-			for _, conn := range cm.GetActiveConnections() {
-				cm.sendHeartbeat(conn)
+			for _, conn := range m.GetActiveConnections() {
+				m.sendHeartbeat(conn)
 			}
 		}
 	}
 }
 
-func (cm *ConnectionManager) sendHeartbeat(conn *Connection) {
+func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
-	inv := NewConnectionBoundInvocation(request, -1, nil, conn, cm.clusterConfig.HeartbeatTimeout)
-	cm.requestCh <- inv
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, m.clusterConfig.HeartbeatTimeout)
+	m.requestCh <- inv
 }
 
 func checkOwnerConn(owner bool, conn *Connection) bool {
@@ -522,3 +512,13 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connect
 	}
 	return removedConns
 }
+
+type AuthenticationDecoder func(clientMessage *proto.ClientMessage) (
+	status uint8,
+	address pubcluster.Address,
+	uuid internal.UUID,
+	ownerUuid internal.UUID,
+	serializationVersion uint8,
+	serverHazelcastVersion string,
+	partitionCount int32,
+	clientUnregisteredMembers []pubcluster.Member)

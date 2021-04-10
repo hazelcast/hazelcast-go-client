@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/predicate"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
@@ -221,7 +221,7 @@ func (m *MapImpl) GetEntrySet() ([]hztypes.Entry, error) {
 	}
 }
 
-func (m *MapImpl) GetEntrySetWithPredicate(predicate pred.Predicate) ([]hztypes.Entry, error) {
+func (m *MapImpl) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]hztypes.Entry, error) {
 	if predData, err := m.validateAndSerialize(predicate); err != nil {
 		return nil, err
 	} else {
@@ -528,7 +528,7 @@ func (m *MapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler
 	return m.listenerBinder.Remove(m.name, subscriptionID)
 }
 
-func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate pred.Predicate, handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler hztypes.EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data
@@ -556,14 +556,24 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interf
 	}
 	subscriptionID := event.MakeSubscriptionID(handler)
 	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
-		//if msg.Type() == bufutil.EventEntry {
-		codec.HandleMapAddEntryListener(msg, func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
+		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
 			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
 			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
 			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
 			m.eventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
-		})
+		}
+		if keyData != nil {
+			if predicateData != nil {
+				codec.HandleMapAddEntryListenerToKeyWithPredicate(msg, handler)
+			} else {
+				codec.HandleMapAddEntryListenerToKey(msg, handler)
+			}
+		} else if predicateData != nil {
+			codec.HandleMapAddEntryListenerWithPredicate(msg, handler)
+		} else {
+			codec.HandleMapAddEntryListener(msg, handler)
+		}
 	})
 	if err != nil {
 		return err

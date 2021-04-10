@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
@@ -46,9 +48,10 @@ type CreationBundle struct {
 	PartitionService     *cluster.PartitionService
 	EventDispatcher      *event.DispatchService
 	ClusterService       *cluster.ServiceImpl
-	InvocationFactory    invocation.Factory
+	InvocationFactory    *cluster.ConnectionInvocationFactory
 	SmartRouting         bool
-	ListenerBinder       proto.ListenerBinder
+	ListenerBinder       *cluster.ConnectionListenerBinderImpl
+	Logger               logger.Logger
 }
 
 func (b CreationBundle) Check() {
@@ -73,6 +76,9 @@ func (b CreationBundle) Check() {
 	if b.ListenerBinder == nil {
 		panic("ListenerBinder is nil")
 	}
+	if b.Logger == nil {
+		panic("Logger is nil")
+	}
 }
 
 type Proxy struct {
@@ -81,11 +87,12 @@ type Proxy struct {
 	partitionService     *cluster.PartitionService
 	eventDispatcher      *event.DispatchService
 	clusterService       *cluster.ServiceImpl
-	invocationFactory    invocation.Factory
-	listenerBinder       proto.ListenerBinder
+	invocationFactory    *cluster.ConnectionInvocationFactory
+	listenerBinder       *cluster.ConnectionListenerBinderImpl
 	smartRouting         bool
 	serviceName          string
 	name                 string
+	logger               logger.Logger
 }
 
 func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Proxy {
@@ -101,6 +108,7 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 		invocationFactory:    bundle.InvocationFactory,
 		listenerBinder:       bundle.ListenerBinder,
 		smartRouting:         bundle.SmartRouting,
+		logger:               bundle.Logger,
 	}
 }
 
@@ -202,7 +210,8 @@ func (p *Proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 }
 
 func (p *Proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
-	inv := p.invocationFactory.NewInvocationOnKeyOwner(request, keyData)
+	partitionID := p.partitionService.GetPartitionID(keyData)
+	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
 	return inv.Get()
 }
@@ -220,8 +229,10 @@ func (p *Proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int3
 func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
+	p.logger.Tracef(func() (string, []interface{}) { return "CORRID(0): %d", []interface{}{inv.Request().CorrelationID()} })
 	// TODO: REMOVE
 	time.Sleep(1 * time.Millisecond)
+	p.logger.Tracef(func() (string, []interface{}) { return "CORRID(1): %d", []interface{}{inv.Request().CorrelationID()} })
 	return inv
 }
 

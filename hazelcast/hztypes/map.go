@@ -3,11 +3,11 @@ package hztypes
 import (
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/pred"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/predicate"
 )
 
 type MapEntryListenerConfig struct {
-	Predicate          pred.Predicate
+	Predicate          predicate.Predicate
 	IncludeValue       bool
 	Key                interface{}
 	NotifyEntryAdded   bool
@@ -76,7 +76,7 @@ type Map interface {
 	GetEntrySet() ([]Entry, error)
 
 	// GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
-	GetEntrySetWithPredicate(predicate pred.Predicate) ([]Entry, error)
+	GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error)
 
 	// IsEmpty returns true if this map contains no key-value mappings.
 	IsEmpty() (bool, error)
@@ -84,7 +84,7 @@ type Map interface {
 	// IsLocked checks the lock for the specified key.
 	IsLocked(key interface{}) (bool, error)
 
-	// ListenEntryNotification adds a continuous entry listener to this map.
+	// ListenEntryNotificationWithConfig adds a continuous entry listener to this map.
 	ListenEntryNotification(config MapEntryListenerConfig, handler EntryNotifiedHandler) error
 
 	// LoadAll loads all keys from the store at server side or loads the given keys if provided.
