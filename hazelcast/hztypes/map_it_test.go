@@ -313,6 +313,9 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
 // TODO: Test Map TryRemoveWithTimeout
+// TODO: Test Map PutWithTTL
+// TODO: Test Map PutWithMaxIdle
+// TODO: Test Map PutWithTTLAndMaxIdle
 // TODO: Test Map PutIfAbsent
 // TODO: Test Map PutIfAbsentWithTTL
 // TODO: Test Map PutTransient

@@ -348,16 +348,19 @@ func (m *MapImpl) Lock(key interface{}) error {
 }
 
 func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, threadID(), ttlDefault)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapPutResponse(response))
-		}
-	}
+	return m.putTTL(key, value, ttlDefault)
+}
+
+func (m *MapImpl) PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
+	return m.putTTL(key, value, ttl.Milliseconds())
+}
+
+func (m *MapImpl) PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
+	return m.putMaxIdle(key, value, ttlDefault, maxIdle.Milliseconds())
+}
+
+func (m *MapImpl) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+	return m.putMaxIdle(key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
 func (m *MapImpl) PutAll(keyValuePairs []hztypes.Entry) error {
@@ -603,6 +606,31 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	request := codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
 	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
+}
+
+func (m *MapImpl) putTTL(key interface{}, value interface{}, ttl int64) (interface{}, error) {
+	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, threadID(), ttl)
+		if response, err := m.invokeOnKey(request, keyData); err != nil {
+			return nil, err
+		} else {
+			return m.convertToObject(codec.DecodeMapPutResponse(response))
+		}
+	}
+}
+func (m *MapImpl) putMaxIdle(key interface{}, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
+	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, threadID(), ttl, maxIdle)
+		if response, err := m.invokeOnKey(request, keyData); err != nil {
+			return nil, err
+		} else {
+			return m.convertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
+		}
+	}
 }
 
 func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (interface{}, error) {
