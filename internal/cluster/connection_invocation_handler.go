@@ -87,8 +87,8 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 
 func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	if conn := h.connectionManager.GetConnectionForAddress(addr); conn == nil {
-		h.logger.Tracef(func() (string, []interface{}) {
-			return "Sending invocation to %s failed, address not found", []interface{}{addr.String()}
+		h.logger.Trace(func() string {
+			return fmt.Sprintf("Sending invocation to %s failed, address not found", addr.String())
 		})
 		return fmt.Errorf("address not found: %s", addr.String())
 	} else if invImpl, ok := inv.(*invocation.Impl); ok {

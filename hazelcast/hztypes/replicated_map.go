@@ -31,16 +31,16 @@ type ReplicatedMap interface {
 	IsEmpty() (bool, error)
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotification(handler EntryNotifiedHandler) error
+	ListenEntryNotification(subscriptionID int, handler EntryNotifiedHandler) error
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotificationToKey(key interface{}, handler EntryNotifiedHandler) error
+	ListenEntryNotificationToKey(key interface{}, subscriptionID int, handler EntryNotifiedHandler) error
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotificationWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) error
+	ListenEntryNotificationWithPredicate(predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) error
+	ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error
 
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)
@@ -57,5 +57,5 @@ type ReplicatedMap interface {
 	Size() (int, error)
 
 	// UnlistenEntryNotification removes the specified entry listener.
-	UnlistenEntryNotification(handler EntryNotifiedHandler) error
+	UnlistenEntryNotification(subscriptionID int) error
 }

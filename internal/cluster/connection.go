@@ -168,8 +168,8 @@ func (c *Connection) socketReadLoop() {
 				break
 			}
 			if clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
-				c.logger.Tracef(func() (string, []interface{}) {
-					return "%d: read invocation with correlation ID: %d", []interface{}{c.connectionID, clientMessage.CorrelationID()}
+				c.logger.Trace(func() string {
+					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
 				c.responseCh <- clientMessage
 			}
@@ -191,8 +191,8 @@ func (c *Connection) send(inv invocation.Invocation) bool {
 }
 
 func (c *Connection) write(clientMessage *proto.ClientMessage) error {
-	c.logger.Tracef(func() (string, []interface{}) {
-		return "%d: writing invocation with correlation ID: %d", []interface{}{c.connectionID, clientMessage.CorrelationID()}
+	c.logger.Trace(func() string {
+		return fmt.Sprintf("%d: writing invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 	})
 	buf := make([]byte, clientMessage.TotalLength())
 	clientMessage.Bytes(buf)
@@ -230,7 +230,7 @@ func (c *Connection) close(closeErr error) {
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
-	c.logger.Tracef(func() (string, []interface{}) { return "connection closed", nil })
+	c.logger.Trace(func() string { return "connection closed" })
 }
 
 func (c *Connection) String() string {

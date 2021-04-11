@@ -29,13 +29,14 @@ type Client struct {
 	clusterConfig *cluster.Config
 
 	// components
-	proxyManager      *proxy.Manager
-	connectionManager *icluster.ConnectionManager
-	clusterService    *icluster.ServiceImpl
-	partitionService  *icluster.PartitionService
-	eventDispatcher   *event.DispatchService
-	invocationHandler invocation.Handler
-	logger            logger.Logger
+	proxyManager        *proxy.Manager
+	connectionManager   *icluster.ConnectionManager
+	clusterService      *icluster.ServiceImpl
+	partitionService    *icluster.PartitionService
+	eventDispatcher     *event.DispatchService
+	userEventDispatcher *event.DispatchService
+	invocationHandler   invocation.Handler
+	logger              logger.Logger
 
 	// state
 	started atomic.Value
@@ -57,14 +58,17 @@ func newClient(name string, config Config) (*Client, error) {
 		return nil, err
 	}
 	clientLogger := logger.NewWithLevel(logLevel)
-	impl := &Client{
-		name:          name,
-		clusterConfig: &config.ClusterConfig,
-		logger:        clientLogger,
+	client := &Client{
+		name:                name,
+		clusterConfig:       &config.ClusterConfig,
+		eventDispatcher:     event.NewDispatchService(),
+		userEventDispatcher: event.NewDispatchService(),
+		logger:              clientLogger,
 	}
-	impl.started.Store(false)
-	impl.createComponents(&config)
-	return impl, nil
+	client.started.Store(false)
+	client.subscribeUserEvents()
+	client.createComponents(&config)
+	return client, nil
 }
 
 // Name returns client's name
@@ -118,22 +122,26 @@ func (c Client) Shutdown() {
 	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShutDown))
 }
 
-// ListenLifecycleStateChange adds a lifecycle state change handler.
+// ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
-func (c *Client) ListenLifecycleStateChange(handler lifecycle.StateChangeHandler) {
-	subscriptionID := event.MakeSubscriptionID(handler)
-	c.eventDispatcher.SubscribeSync(lifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
+func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycle.StateChangeHandler) {
+	c.userEventDispatcher.SubscribeSync(lifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*lifecycle.StateChanged); ok {
 			handler(*stateChangeEvent)
 		} else {
-			panic("cannot cast event to lifecycle.StateChanged event")
+			c.logger.Errorf("cannot cast event to lifecycle.StateChanged event")
 		}
 	})
 }
 
-func (c *Client) ListenMemberStateChange(handler cluster.MemberStateChangedHandler) {
-	subscriptionID := event.MakeSubscriptionID(handler)
-	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
+// UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
+func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) {
+	c.userEventDispatcher.Unsubscribe(lifecycle.EventStateChanged, subscriptionID)
+}
+
+// ListenLifecycleStateChange adds a member state change handler with a unique subscription ID.
+func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.MemberStateChangedHandler) {
+	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
 		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
 			for _, member := range membersAddedEvent.Members {
 				handler(cluster.MemberStateChanged{
@@ -141,9 +149,11 @@ func (c *Client) ListenMemberStateChange(handler cluster.MemberStateChangedHandl
 					Member: member,
 				})
 			}
+		} else {
+			c.logger.Errorf("cannot cast event to cluster.MembersAdded event")
 		}
 	})
-	c.eventDispatcher.Subscribe(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
+	c.userEventDispatcher.Subscribe(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
 		if membersRemovedEvent, ok := event.(*icluster.MembersRemoved); ok {
 			for _, member := range membersRemovedEvent.Members {
 				handler(cluster.MemberStateChanged{
@@ -151,14 +161,34 @@ func (c *Client) ListenMemberStateChange(handler cluster.MemberStateChangedHandl
 					Member: member,
 				})
 			}
+		} else {
+			c.logger.Errorf("cannot cast event to cluster.MembersRemoved event")
 		}
 	})
+}
+
+// UnlistenMemberStateChange removes the member state change handler with the given subscription ID.
+func (c *Client) UnlistenMemberStateChange(subscriptionID int) {
+	c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionID)
+	c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, subscriptionID)
 }
 
 func (c *Client) ensureStarted() {
 	if c.started.Load() == false {
 		panic("client not started")
 	}
+}
+
+func (c *Client) subscribeUserEvents() {
+	c.eventDispatcher.SubscribeSync(lifecycle.EventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
+		c.userEventDispatcher.Publish(event)
+	})
+	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
+		c.userEventDispatcher.Publish(event)
+	})
+	c.eventDispatcher.Subscribe(icluster.EventMembersRemoved, event.DefaultSubscriptionID, func(event event.Event) {
+		c.userEventDispatcher.Publish(event)
+	})
 }
 
 func (c *Client) createComponents(config *Config) {
@@ -172,11 +202,10 @@ func (c *Client) createComponents(config *Config) {
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
-	eventDispatcher := event.NewDispatchService()
 	requestCh := make(chan invocation.Invocation, 1)
 	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
 		SerializationService: serializationService,
-		EventDispatcher:      eventDispatcher,
+		EventDispatcher:      c.eventDispatcher,
 		Logger:               c.logger,
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(120 * time.Second)
@@ -184,7 +213,7 @@ func (c *Client) createComponents(config *Config) {
 		AddrProviders:     addressProviders,
 		RequestCh:         requestCh,
 		InvocationFactory: invocationFactory,
-		EventDispatcher:   eventDispatcher,
+		EventDispatcher:   c.eventDispatcher,
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
 	})
@@ -204,7 +233,7 @@ func (c *Client) createComponents(config *Config) {
 		ClusterService:       clusterService,
 		PartitionService:     partitionService,
 		SerializationService: serializationService,
-		EventDispatcher:      eventDispatcher,
+		EventDispatcher:      c.eventDispatcher,
 		InvocationFactory:    invocationFactory,
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
@@ -224,16 +253,13 @@ func (c *Client) createComponents(config *Config) {
 		ClusterService:       clusterService,
 		SmartRouting:         smartRouting,
 		InvocationFactory:    invocationFactory,
-		EventDispatcher:      eventDispatcher,
+		UserEventDispatcher:  c.userEventDispatcher,
 		ListenerBinder:       listenerBinder,
 		Logger:               c.logger,
 	}
-	proxyManager := proxy.NewManager(proxyManagerServiceBundle)
-
-	c.eventDispatcher = eventDispatcher
 	c.connectionManager = connectionManager
 	c.clusterService = clusterService
 	c.partitionService = partitionService
-	c.proxyManager = proxyManager
+	c.proxyManager = proxy.NewManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
 }

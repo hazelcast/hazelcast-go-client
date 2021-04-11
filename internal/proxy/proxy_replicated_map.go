@@ -124,20 +124,20 @@ func (m ReplicatedMapImpl) IsEmpty() (bool, error) {
 	}
 }
 
-func (m ReplicatedMapImpl) ListenEntryNotification(handler hztypes.EntryNotifiedHandler) error {
-	return m.listenEntryNotified(nil, nil, handler)
+func (m ReplicatedMapImpl) ListenEntryNotification(subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
+	return m.listenEntryNotified(nil, nil, subscriptionID, handler)
 }
 
-func (m ReplicatedMapImpl) ListenEntryNotificationToKey(key interface{}, handler hztypes.EntryNotifiedHandler) error {
-	return m.listenEntryNotified(key, nil, handler)
+func (m ReplicatedMapImpl) ListenEntryNotificationToKey(key interface{}, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
+	return m.listenEntryNotified(key, nil, subscriptionID, handler)
 }
 
-func (m ReplicatedMapImpl) ListenEntryNotificationWithPredicate(predicate predicate.Predicate, handler hztypes.EntryNotifiedHandler) error {
-	return m.listenEntryNotified(nil, predicate, handler)
+func (m ReplicatedMapImpl) ListenEntryNotificationWithPredicate(predicate predicate.Predicate, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
+	return m.listenEntryNotified(nil, predicate, subscriptionID, handler)
 }
 
-func (m ReplicatedMapImpl) ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler hztypes.EntryNotifiedHandler) error {
-	return m.listenEntryNotified(key, predicate, handler)
+func (m ReplicatedMapImpl) ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
+	return m.listenEntryNotified(key, predicate, subscriptionID, handler)
 }
 
 func (m ReplicatedMapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
@@ -196,13 +196,12 @@ func (m ReplicatedMapImpl) Size() (int, error) {
 	}
 }
 
-func (m ReplicatedMapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler) error {
-	subscriptionID := event.MakeSubscriptionID(handler)
-	m.eventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
+func (m ReplicatedMapImpl) UnlistenEntryNotification(subscriptionID int) error {
+	m.userEventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
 	return m.listenerBinder.Remove(m.name, subscriptionID)
 }
 
-func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predicate.Predicate, handler hztypes.EntryNotifiedHandler) error {
+func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predicate.Predicate, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data
@@ -228,14 +227,13 @@ func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predi
 	} else {
 		request = codec.EncodeReplicatedMapAddEntryListenerRequest(m.name, m.smartRouting)
 	}
-	subscriptionID := event.MakeSubscriptionID(handler)
 	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
 			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
 			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
 			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
-			m.eventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
+			m.userEventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
 		}
 		if keyData != nil {
 			if predicateData != nil {
@@ -252,7 +250,7 @@ func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predi
 	if err != nil {
 		return err
 	}
-	m.eventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
+	m.userEventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
 		if entryNotifiedEvent, ok := event.(*hztypes.EntryNotified); ok {
 			if entryNotifiedEvent.OwnerName == m.name {
 				handler(entryNotifiedEvent)

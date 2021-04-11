@@ -364,7 +364,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 			NotifyEntryUpdated: true,
 			IncludeValue:       true,
 		}
-		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", "v1"))
@@ -373,7 +373,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		if err := m.UnlistenEntryNotification(handler); err != nil {
+		if err := m.UnlistenEntryNotification(1); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", "v1"))
@@ -396,7 +396,7 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 			IncludeValue:       true,
 			Key:                "k1",
 		}
-		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", "v1"))
@@ -428,7 +428,7 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 			IncludeValue:       true,
 			Predicate:          predicate.Equal("A", "foo"),
 		}
-		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
@@ -461,7 +461,7 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 			Key:                "k1",
 			Predicate:          predicate.Equal("A", "foo"),
 		}
-		if err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))

@@ -145,7 +145,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		}
 		// TODO: remove the following sleep once we dynamically add connection listeners
 		time.Sleep(2 * time.Second)
-		if err := m.ListenEntryNotification(handler); err != nil {
+		if err := m.ListenEntryNotification(1, handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -156,7 +156,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		if err := m.UnlistenEntryNotification(handler); err != nil {
+		if err := m.UnlistenEntryNotification(1); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -177,7 +177,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		}
 		// TODO: remove the following sleep once we dynamically add connection listeners
 		time.Sleep(2 * time.Second)
-		if err := m.ListenEntryNotificationToKey("k1", handler); err != nil {
+		if err := m.ListenEntryNotificationToKey("k1", 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -206,7 +206,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		if err := m.ListenEntryNotificationWithPredicate(predicate.Equal("A", "foo"), handler); err != nil {
+		if err := m.ListenEntryNotificationWithPredicate(predicate.Equal("A", "foo"), 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
@@ -224,6 +224,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
+	t.SkipNow()
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
@@ -232,7 +233,7 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		if err := m.ListenEntryNotificationToKeyWithPredicate("k1", predicate.Equal("A", "foo"), handler); err != nil {
+		if err := m.ListenEntryNotificationToKeyWithPredicate("k1", predicate.Equal("A", "foo"), 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
