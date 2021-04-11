@@ -112,6 +112,19 @@ type Map interface {
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)
 
+	// Put sets the value for the given key and returns the old value.
+	// Entry will expire and get evicted after the ttl.
+	PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error)
+
+	// PutWithMaxIdle sets the value for the given key and returns the old value.
+	// maxIdle is the maximum time in seconds for this entry to stay idle in the map.
+	PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error)
+
+	// PutWithMaxIdle sets the value for the given key and returns the old value.
+	// Entry will expire and get evicted after the ttl.
+	// maxIdle is the maximum time in seconds for this entry to stay idle in the map.
+	PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error)
+
 	// PutALl copies all of the mappings from the specified map to this map.
 	// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 	// while others are not.
