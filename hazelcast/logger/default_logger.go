@@ -66,10 +66,9 @@ func (l *DefaultLogger) Debug(args ...interface{}) {
 	}
 }
 
-func (l *DefaultLogger) Tracef(f func() (string, []interface{})) {
+func (l *DefaultLogger) Trace(f func() string) {
 	if l.canLogTrace() && f != nil {
-		format, values := f()
-		s := fmt.Sprintf("TRACE: %s", fmt.Sprintf(format, values...))
+		s := fmt.Sprintf("TRACE: %s", f())
 		l.Output(logCallDepth, s)
 	}
 }

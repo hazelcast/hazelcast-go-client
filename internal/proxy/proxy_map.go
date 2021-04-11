@@ -517,18 +517,17 @@ func (m *MapImpl) Unlock(key interface{}) error {
 	}
 }
 
-func (m *MapImpl) ListenEntryNotification(config hztypes.MapEntryListenerConfig, handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) ListenEntryNotification(config hztypes.MapEntryListenerConfig, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
 	flags := makeListenerFlags(&config)
-	return m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, handler)
+	return m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler)
 }
 
-func (m *MapImpl) UnlistenEntryNotification(handler hztypes.EntryNotifiedHandler) error {
-	subscriptionID := event.MakeSubscriptionID(handler)
-	m.eventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
+func (m *MapImpl) UnlistenEntryNotification(subscriptionID int) error {
+	m.userEventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
 	return m.listenerBinder.Remove(m.name, subscriptionID)
 }
 
-func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data
@@ -554,14 +553,13 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interf
 	} else {
 		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
 	}
-	subscriptionID := event.MakeSubscriptionID(handler)
 	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
 			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
 			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
 			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
-			m.eventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
+			m.userEventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
 		}
 		if keyData != nil {
 			if predicateData != nil {
@@ -578,7 +576,7 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interf
 	if err != nil {
 		return err
 	}
-	m.eventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
+	m.userEventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
 		if entryNotifiedEvent, ok := event.(*hztypes.EntryNotified); ok {
 			if entryNotifiedEvent.OwnerName == m.name {
 				handler(entryNotifiedEvent)

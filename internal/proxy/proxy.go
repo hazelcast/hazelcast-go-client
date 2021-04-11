@@ -46,11 +46,11 @@ type CreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	SerializationService spi.SerializationService
 	PartitionService     *cluster.PartitionService
-	EventDispatcher      *event.DispatchService
+	UserEventDispatcher  *event.DispatchService
 	ClusterService       *cluster.ServiceImpl
 	InvocationFactory    *cluster.ConnectionInvocationFactory
-	SmartRouting         bool
 	ListenerBinder       *cluster.ConnectionListenerBinderImpl
+	SmartRouting         bool
 	Logger               logger.Logger
 }
 
@@ -64,8 +64,8 @@ func (b CreationBundle) Check() {
 	if b.PartitionService == nil {
 		panic("PartitionService is nil")
 	}
-	if b.EventDispatcher == nil {
-		panic("EventDispatcher is nil")
+	if b.UserEventDispatcher == nil {
+		panic("UserEventDispatcher is nil")
 	}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
@@ -85,7 +85,7 @@ type Proxy struct {
 	requestCh            chan<- invocation.Invocation
 	serializationService spi.SerializationService
 	partitionService     *cluster.PartitionService
-	eventDispatcher      *event.DispatchService
+	userEventDispatcher  *event.DispatchService
 	clusterService       *cluster.ServiceImpl
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinderImpl
@@ -102,7 +102,7 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 		name:                 objectName,
 		requestCh:            bundle.RequestCh,
 		serializationService: bundle.SerializationService,
-		eventDispatcher:      bundle.EventDispatcher,
+		userEventDispatcher:  bundle.UserEventDispatcher,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
 		invocationFactory:    bundle.InvocationFactory,
@@ -229,10 +229,8 @@ func (p *Proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int3
 func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
-	p.logger.Tracef(func() (string, []interface{}) { return "CORRID(0): %d", []interface{}{inv.Request().CorrelationID()} })
 	// TODO: REMOVE
 	time.Sleep(1 * time.Millisecond)
-	p.logger.Tracef(func() (string, []interface{}) { return "CORRID(1): %d", []interface{}{inv.Request().CorrelationID()} })
 	return inv
 }
 

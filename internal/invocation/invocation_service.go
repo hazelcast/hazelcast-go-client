@@ -1,6 +1,7 @@
 package invocation
 
 import (
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -103,8 +104,8 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 	correlationID := msg.CorrelationID()
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
 		if inv, found := s.invocations[correlationID]; !found {
-			s.logger.Tracef(func() (string, []interface{}) {
-				return "invocation with unknown correlation id: %d", []interface{}{correlationID}
+			s.logger.Trace(func() string {
+				return fmt.Sprintf("invocation with unknown correlation id: %d", correlationID)
 			})
 		} else if inv.EventHandler() != nil {
 			go inv.EventHandler()(msg)
@@ -119,8 +120,8 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			inv.Complete(msg)
 		}
 	} else {
-		s.logger.Tracef(func() (string, []interface{}) {
-			return "no invocation found with the correlation id: %d", []interface{}{correlationID}
+		s.logger.Trace(func() string {
+			return fmt.Sprintf("no invocation found with the correlation id: %d", correlationID)
 		})
 	}
 }
@@ -130,8 +131,8 @@ func (s *Service) handleError(correlationID int64, invocationErr error) {
 		s.logger.Error(invocationErr)
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
 	} else {
-		s.logger.Tracef(func() (string, []interface{}) {
-			return "cannot handle error: no invocation found with correlation id: %d", []interface{}{correlationID}
+		s.logger.Trace(func() string {
+			return fmt.Sprintf("cannot handle error: no invocation found with correlation id: %d", correlationID)
 		})
 	}
 }

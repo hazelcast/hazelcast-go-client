@@ -56,7 +56,7 @@ func ExampleClient_ListenLifecycleStateChange() {
 		log.Fatal(err)
 	}
 	// Attach an event listener.
-	client.ListenLifecycleStateChange(func(event lifecycle.StateChanged) {
+	client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
 		switch event.State {
 		case lifecycle.StateStarting:
 			log.Println("Received starting state.")

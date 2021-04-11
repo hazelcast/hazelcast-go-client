@@ -58,8 +58,8 @@ var nameToLevel = map[string]int{
 type Logger interface {
 	// Debug logs the given args at debug level.
 	Debug(args ...interface{})
-	// Tracef logs the given args at trace level.
-	Tracef(f func() (format string, values []interface{}))
+	// Trace logs the given args at trace level.
+	Trace(f func() string)
 	// Info logs the given args at info level.
 	Info(args ...interface{})
 	// Info logs the given args at info level.

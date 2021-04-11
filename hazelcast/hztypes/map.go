@@ -84,8 +84,8 @@ type Map interface {
 	// IsLocked checks the lock for the specified key.
 	IsLocked(key interface{}) (bool, error)
 
-	// ListenEntryNotificationWithConfig adds a continuous entry listener to this map.
-	ListenEntryNotification(config MapEntryListenerConfig, handler EntryNotifiedHandler) error
+	// ListenEntryNotification adds a continuous entry listener to this map.
+	ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error
 
 	// LoadAll loads all keys from the store at server side or loads the given keys if provided.
 	LoadAll(keys ...interface{}) error
@@ -209,7 +209,7 @@ type Map interface {
 	TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error)
 
 	// UnlistenEntryNotification removes the specified entry listener.
-	UnlistenEntryNotification(handler EntryNotifiedHandler) error
+	UnlistenEntryNotification(subscriptionID int) error
 
 	// Unlock releases the lock for the specified key.
 	Unlock(key interface{}) error
