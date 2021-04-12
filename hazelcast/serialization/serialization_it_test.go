@@ -14,17 +14,13 @@ import (
 func TestPortableSerialize(t *testing.T) {
 	cb := hz.NewConfigBuilder()
 	cb.Serialization().AddPortableFactory(&portableFactory{})
-	config, err := cb.Config()
-	if err != nil {
-		panic(err)
-	}
-	client, m := it.GetClientMapWithConfig("ser-map", config)
+	client, m := it.GetClientMapWithConfigBuilder("ser-map", cb)
 	defer func() {
 		m.EvictAll()
 		client.Shutdown()
 	}()
 	target := newEmployee("Ford Prefect", 33, true)
-	hz.Must(m.Set("ford", target))
+	it.Must(m.Set("ford", target))
 	if value, err := m.Get("ford"); err != nil {
 		t.Fatal(err)
 	} else if !reflect.DeepEqual(target, value) {
