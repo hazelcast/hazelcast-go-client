@@ -46,12 +46,12 @@ func TestSetGet1000(t *testing.T) {
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
 			value := fmt.Sprintf("v%d", i)
-			hz.Must(m.Set(key, value))
+			it.Must(m.Set(key, value))
 		}
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
 			targetValue := fmt.Sprintf("v%d", i)
-			it.AssertEquals(t, targetValue, hz.MustValue(m.Get(key)))
+			it.AssertEquals(t, targetValue, it.MustValue(m.Get(key)))
 		}
 	})
 }
@@ -59,14 +59,14 @@ func TestSetGet1000(t *testing.T) {
 func TestDelete(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
-		hz.Must(m.Set("key", targetValue))
-		if value := hz.MustValue(m.Get("key")); targetValue != value {
+		it.Must(m.Set("key", targetValue))
+		if value := it.MustValue(m.Get("key")); targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
 		if err := m.Delete("key"); err != nil {
 			t.Fatal(err)
 		}
-		if value := hz.MustValue(m.Get("key")); nil != value {
+		if value := it.MustValue(m.Get("key")); nil != value {
 			t.Fatalf("target nil != %v", value)
 		}
 	})
@@ -89,20 +89,20 @@ func TestMapEvict(t *testing.T) {
 func TestMapClearSetGet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
-		hz.Must(m.Set("key", targetValue))
-		if ok := hz.MustBool(m.ContainsKey("key")); !ok {
+		it.Must(m.Set("key", targetValue))
+		if ok := it.MustBool(m.ContainsKey("key")); !ok {
 			t.Fatalf("key not found")
 		}
-		if ok := hz.MustBool(m.ContainsValue("value")); !ok {
+		if ok := it.MustBool(m.ContainsValue("value")); !ok {
 			t.Fatalf("value not found")
 		}
-		if value := hz.MustValue(m.Get("key")); targetValue != value {
+		if value := it.MustValue(m.Get("key")); targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
 		if err := m.Clear(); err != nil {
 			t.Fatal(err)
 		}
-		if value := hz.MustValue(m.Get("key")); nil != value {
+		if value := it.MustValue(m.Get("key")); nil != value {
 			t.Fatalf("target nil!= %v", value)
 		}
 	})
@@ -111,8 +111,8 @@ func TestMapClearSetGet(t *testing.T) {
 func TestMapRemove(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
-		hz.Must(m.Set("key", targetValue))
-		if !hz.MustBool(m.ContainsKey("key")) {
+		it.Must(m.Set("key", targetValue))
+		if !it.MustBool(m.ContainsKey("key")) {
 			t.Fatalf("key not found")
 		}
 		if value, err := m.Remove("key"); err != nil {
@@ -120,7 +120,7 @@ func TestMapRemove(t *testing.T) {
 		} else if targetValue != value {
 			t.Fatalf("target nil != %v", value)
 		}
-		if hz.MustBool(m.ContainsKey("key")) {
+		if it.MustBool(m.ContainsKey("key")) {
 			t.Fatalf("key found")
 		}
 	})
@@ -148,11 +148,11 @@ func TestGetAll(t *testing.T) {
 			}
 		}
 		for _, pair := range allPairs {
-			hz.Must(m.Set(pair.Key, pair.Value))
+			it.Must(m.Set(pair.Key, pair.Value))
 		}
 		time.Sleep(1 * time.Second)
 		for _, pair := range allPairs {
-			it.AssertEquals(t, pair.Value, hz.MustValue(m.Get(pair.Key)))
+			it.AssertEquals(t, pair.Value, it.MustValue(m.Get(pair.Key)))
 		}
 		if kvs, err := m.GetAll(keys...); err != nil {
 			t.Fatal(err)
@@ -165,13 +165,13 @@ func TestGetAll(t *testing.T) {
 func TestMapGetKeySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
-		hz.Must(m.Set("k1", "v1"))
-		hz.Must(m.Set("k2", "v2"))
-		hz.Must(m.Set("k3", "v3"))
+		it.Must(m.Set("k1", "v1"))
+		it.Must(m.Set("k2", "v2"))
+		it.Must(m.Set("k3", "v3"))
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
 		if keys, err := m.GetKeySet(); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
@@ -182,13 +182,13 @@ func TestMapGetKeySet(t *testing.T) {
 func TestMapGetValues(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValues := []interface{}{"v1", "v2", "v3"}
-		hz.Must(m.Set("k1", "v1"))
-		hz.Must(m.Set("k2", "v2"))
-		hz.Must(m.Set("k3", "v3"))
+		it.Must(m.Set("k1", "v1"))
+		it.Must(m.Set("k2", "v2"))
+		it.Must(m.Set("k3", "v3"))
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
 		if values, err := m.GetValues(); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeInterfaceSet(targetValues), makeInterfaceSet(values)) {
@@ -208,9 +208,9 @@ func TestPutAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
 	})
 }
 
@@ -284,7 +284,7 @@ func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
 
 func TestGetEntryView(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
-		hz.Must(m.Set("k1", "v1"))
+		it.Must(m.Set("k1", "v1"))
 		if ev, err := m.GetEntryView("k1"); err != nil {
 			t.Fatal(err)
 		} else {
@@ -339,9 +339,9 @@ func TestMapIsEmptySize(t *testing.T) {
 		} else if targetSize != value {
 			t.Fatalf("target: %d != %d", targetSize, value)
 		}
-		hz.MustValue(m.Put("k1", "v1"))
-		hz.MustValue(m.Put("k2", "v2"))
-		hz.MustValue(m.Put("k3", "v3"))
+		it.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k2", "v2"))
+		it.MustValue(m.Put("k3", "v3"))
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
 		} else if value {
@@ -370,7 +370,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
@@ -379,7 +379,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		if err := m.UnlistenEntryNotification(1); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
@@ -402,13 +402,13 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		hz.MustValue(m.Put("k2", "v1"))
+		it.MustValue(m.Put("k2", "v1"))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
@@ -434,13 +434,13 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
@@ -467,18 +467,18 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		if err := m.ListenEntryNotification(listenerConfig, 1, handler); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		hz.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
 		}
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")

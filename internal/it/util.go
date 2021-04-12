@@ -8,11 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
-
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 func GetClientMap(name string) (*hz.Client, hztypes.Map) {
@@ -205,4 +204,35 @@ func (f SamplePortableFactory) Create(classID int32) serialization.Portable {
 
 func (f SamplePortableFactory) FactoryID() int32 {
 	return SamplePortableFactoryID
+}
+
+// Must panics if err is not nil
+func Must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+// MustValue returns value if err is nil, otherwise it panics.
+func MustValue(value interface{}, err error) interface{} {
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
+// MustBool returns value if err is nil, otherwise it panics.
+func MustBool(value bool, err error) bool {
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
+// MustClient returns client if err is nil, otherwise it panics.
+func MustClient(client *hz.Client, err error) *hz.Client {
+	if err != nil {
+		panic(err)
+	}
+	return client
 }

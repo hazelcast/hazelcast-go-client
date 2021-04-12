@@ -33,20 +33,20 @@ func TestPutGetReplicatedMap(t *testing.T) {
 func TestReplicatedMapClearSetGet(t *testing.T) {
 	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
 		targetValue := "value"
-		hz.MustValue(m.Put("key", targetValue))
-		if ok := hz.MustBool(m.ContainsKey("key")); !ok {
+		it.MustValue(m.Put("key", targetValue))
+		if ok := it.MustBool(m.ContainsKey("key")); !ok {
 			t.Fatalf("key not found")
 		}
-		if ok := hz.MustBool(m.ContainsValue("value")); !ok {
+		if ok := it.MustBool(m.ContainsValue("value")); !ok {
 			t.Fatalf("value not found")
 		}
-		if value := hz.MustValue(m.Get("key")); targetValue != value {
+		if value := it.MustValue(m.Get("key")); targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
 		if err := m.Clear(); err != nil {
 			t.Fatal(err)
 		}
-		if value := hz.MustValue(m.Get("key")); nil != value {
+		if value := it.MustValue(m.Get("key")); nil != value {
 			t.Fatalf("target nil!= %v", value)
 		}
 	})
@@ -55,8 +55,8 @@ func TestReplicatedMapClearSetGet(t *testing.T) {
 func TestReplicatedMapRemove(t *testing.T) {
 	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
 		targetValue := "value"
-		hz.MustValue(m.Put("key", targetValue))
-		if !hz.MustBool(m.ContainsKey("key")) {
+		it.MustValue(m.Put("key", targetValue))
+		if !it.MustBool(m.ContainsKey("key")) {
 			t.Fatalf("key not found")
 		}
 		if value, err := m.Remove("key"); err != nil {
@@ -64,7 +64,7 @@ func TestReplicatedMapRemove(t *testing.T) {
 		} else if targetValue != value {
 			t.Fatalf("target nil != %v", value)
 		}
-		if hz.MustBool(m.ContainsKey("key")) {
+		if it.MustBool(m.ContainsKey("key")) {
 			t.Fatalf("key found")
 		}
 	})
@@ -92,13 +92,13 @@ func TestReplicatedMapGetEntrySet(t *testing.T) {
 func TestReplicatedMapGetKeySet(t *testing.T) {
 	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
-		hz.MustValue(m.Put("k1", "v1"))
-		hz.MustValue(m.Put("k2", "v2"))
-		hz.MustValue(m.Put("k3", "v3"))
+		it.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k2", "v2"))
+		it.MustValue(m.Put("k3", "v3"))
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", hz.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", hz.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", hz.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
 		if keys, err := m.GetKeySet(); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
@@ -120,9 +120,9 @@ func TestReplicatedMapIsEmptySize(t *testing.T) {
 		} else if targetSize != value {
 			t.Fatalf("target: %d != %d", targetSize, value)
 		}
-		hz.MustValue(m.Put("k1", "v1"))
-		hz.MustValue(m.Put("k2", "v2"))
-		hz.MustValue(m.Put("k3", "v3"))
+		it.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k2", "v2"))
+		it.MustValue(m.Put("k3", "v3"))
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
 		} else if value {
@@ -188,7 +188,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		hz.MustValue(m.Put("k2", "v1"))
+		it.MustValue(m.Put("k2", "v1"))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
@@ -209,13 +209,13 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		if err := m.ListenEntryNotificationWithPredicate(predicate.Equal("A", "foo"), 1, handler); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
@@ -236,18 +236,18 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		if err := m.ListenEntryNotificationToKeyWithPredicate("k1", predicate.Equal("A", "foo"), 1, handler); err != nil {
 			t.Fatal(err)
 		}
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if !handlerCalled {
 			t.Fatalf("handler was not called")
 		}
 		handlerCalled = false
-		hz.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
 		}
-		hz.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
 		if handlerCalled {
 			t.Fatalf("handler was called")
