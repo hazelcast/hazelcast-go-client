@@ -30,7 +30,7 @@ func Example() {
 
 func ExampleNewClientWithConfig() {
 	// Create a configuration builder.
-	configBuilder := hazelcast.NewClientConfigBuilder()
+	configBuilder := hazelcast.NewConfigBuilder()
 	configBuilder.Cluster().
 		SetName("my-cluster").
 		SetMembers("192.168.1.42:5000", "192.168.1.42:5001")

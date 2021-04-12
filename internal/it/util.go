@@ -16,7 +16,7 @@ import (
 )
 
 func GetClientMap(name string) (*hz.Client, hztypes.Map) {
-	cb := hz.NewClientConfigBuilder()
+	cb := hz.NewConfigBuilder()
 	cb.Logger().SetLevel(logger.TraceLevel)
 	client, err := hz.StartNewClientWithConfig(cb)
 	if err != nil {

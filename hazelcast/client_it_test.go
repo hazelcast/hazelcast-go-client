@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
@@ -58,6 +62,24 @@ func TestLifecycleEvents(t *testing.T) {
 	}
 }
 
+func TestMemberEvents(t *testing.T) {
+	cb := hz.NewConfigBuilder()
+	cb.Logger().SetLevel(logger.TraceLevel)
+	client := it.MustClient(hz.NewClient())
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	handlerCalled := false
+	client.ListenMemberStateChange(1, func(event cluster.MemberStateChanged) {
+		if !handlerCalled {
+			handlerCalled = true
+			wg.Done()
+		}
+
+	})
+	it.Must(client.Start())
+	wg.Wait()
+}
+
 func TestHeartbeat(t *testing.T) {
 	// Slow test.
 	t.SkipNow()
@@ -93,7 +115,7 @@ func getClientSmart(t *testing.T) *hz.Client {
 }
 
 func getClientNonSmart(t *testing.T) *hz.Client {
-	cb := hz.NewClientConfigBuilder()
+	cb := hz.NewConfigBuilder()
 	cb.Cluster().SetSmartRouting(false)
 	return getClientWithConfigBuilder(t, cb)
 }

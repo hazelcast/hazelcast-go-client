@@ -12,7 +12,7 @@ import (
 )
 
 func TestDefaultConfig(t *testing.T) {
-	configBuilder := hazelcast.NewClientConfigBuilder()
+	configBuilder := hazelcast.NewConfigBuilder()
 	if config, err := configBuilder.Config(); err != nil {
 		t.Fatal(err)
 	} else {
@@ -23,7 +23,7 @@ func TestDefaultConfig(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	configBuilder := hazelcast.NewClientConfigBuilder()
+	configBuilder := hazelcast.NewConfigBuilder()
 	configBuilder.Cluster().
 		SetMembers("192.168.1.2").
 		SetName("my-cluster")
