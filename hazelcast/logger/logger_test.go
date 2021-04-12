@@ -29,7 +29,7 @@ func TestIsValidLogLevel(t *testing.T) {
 		"warn",
 	}
 	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(logLevel)
+		isValid := isValidLogLevel(Level(logLevel))
 		assert.True(t, isValid)
 	}
 }
@@ -43,14 +43,14 @@ func TestIsValidLogLevelCaseInsensitive(t *testing.T) {
 		"WARN",
 	}
 	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(logLevel)
+		isValid := isValidLogLevel(Level(logLevel))
 		assert.True(t, isValid)
 	}
 }
 
 func TestIsValidLogLevelInvalidLevel(t *testing.T) {
 	logLevel := "deb"
-	isValid := isValidLogLevel(logLevel)
+	isValid := isValidLogLevel(Level(logLevel))
 	assert.False(t, isValid)
 }
 
@@ -66,7 +66,7 @@ func TestGetLogLevel(t *testing.T) {
 		{"info", infoLevel},
 	}
 	for _, logLevel := range logLevels {
-		level, err := GetLogLevel(logLevel.level)
+		level, err := GetLogLevel(Level(logLevel.level))
 		assert.NoError(t, err)
 		assert.Equal(t, level, logLevel.levelInt)
 	}
@@ -74,6 +74,6 @@ func TestGetLogLevel(t *testing.T) {
 
 func TestGetLogLevelError(t *testing.T) {
 	logLevel := "p"
-	_, err := GetLogLevel(logLevel)
+	_, err := GetLogLevel(Level(logLevel))
 	assert.Error(t, err)
 }

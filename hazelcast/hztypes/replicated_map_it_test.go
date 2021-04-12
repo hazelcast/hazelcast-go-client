@@ -266,11 +266,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
-		config, err := cb.Config()
-		if err != nil {
-			panic(err)
-		}
-		client, m = getClientReplicatedMapWithConfig("my-map", config)
+		client, m = getClientReplicatedMapWithConfig("my-map", cb)
 		defer func() {
 			if err := m.Clear(); err != nil {
 				panic(err)
@@ -293,7 +289,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 			panic(err)
 		}
 		config.ClusterConfig.SmartRouting = false
-		client, m = getClientReplicatedMapWithConfig("my-map", config)
+		client, m = getClientReplicatedMapWithConfig("my-map", cb)
 		defer func() {
 			if err := m.Clear(); err != nil {
 				panic(err)
@@ -304,9 +300,9 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 	})
 }
 
-func getClientReplicatedMapWithConfig(name string, clientConfig hz.Config) (*hz.Client, hztypes.ReplicatedMap) {
-	clientConfig.LoggerConfig.Level = logger.TraceLevel
-	client, err := hz.StartNewClientWithConfig(clientConfig)
+func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, hztypes.ReplicatedMap) {
+	cb.Logger().SetLevel(logger.TraceLevel)
+	client, err := hz.StartNewClientWithConfig(cb)
 	if err != nil {
 		panic(err)
 	}

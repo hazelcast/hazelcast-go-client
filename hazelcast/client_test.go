@@ -3,6 +3,8 @@ package hazelcast_test
 import (
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 )
 
@@ -23,12 +25,7 @@ func TestNewClientConfigBuilder(t *testing.T) {
 func TestNewClientWithConfig(t *testing.T) {
 	builder := hazelcast.NewClientConfigBuilder()
 	builder.SetClientName("my-client")
-	config, err := builder.Config()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	hz := hazelcast.MustClient(hazelcast.NewClientWithConfig(config))
+	hz := it.MustClient(hazelcast.NewClientWithConfig(builder))
 	targetClientName := "my-client"
 	if targetClientName != hz.Name() {
 		t.Errorf("target: %v != %v", targetClientName, hz.Name())

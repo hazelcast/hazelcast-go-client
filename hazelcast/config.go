@@ -11,6 +11,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
+type ConfigProvider interface {
+	Config() (*Config, error)
+}
+
 // Config contains configuration for a client.
 // Although it is possible to set the values of the configuration directly,
 // prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
@@ -44,7 +48,7 @@ func NewConfigBuilder() *ConfigBuilder {
 		config:                     &Config{},
 		clusterConfigBuilder:       newClusterConfigBuilder(),
 		serializationConfigBuilder: newSerializationConfigBuilder(),
-		loggerConfigBuilder:        newLoggerConfig(),
+		loggerConfigBuilder:        newLoggerConfigBuilder(),
 	}
 }
 
@@ -78,22 +82,29 @@ func (c *ConfigBuilder) Logger() *LoggerConfigBuilder {
 }
 
 // Config completes building the configuration and returns it.
-func (c ConfigBuilder) Config() (Config, error) {
+func (c ConfigBuilder) Config() (*Config, error) {
 	if c.clusterConfigBuilder != nil {
 		if networkConfig, err := c.clusterConfigBuilder.buildConfig(); err != nil {
-			return Config{}, err
+			return nil, err
 		} else {
 			c.config.ClusterConfig = *networkConfig
 		}
 	}
 	if c.serializationConfigBuilder != nil {
 		if serializationConfig, err := c.serializationConfigBuilder.buildConfig(); err != nil {
-			return Config{}, err
+			return nil, err
 		} else {
 			c.config.SerializationConfig = *serializationConfig
 		}
 	}
-	return *c.config, nil
+	if c.loggerConfigBuilder != nil {
+		if loggerConfig, err := c.loggerConfigBuilder.buildConfig(); err != nil {
+			return nil, err
+		} else {
+			c.config.LoggerConfig = *loggerConfig
+		}
+	}
+	return c.config, nil
 }
 
 func newClusterConfig() *cluster.Config {
@@ -272,7 +283,7 @@ type LoggerConfigBuilder struct {
 	err    error
 }
 
-func newLoggerConfig() *LoggerConfigBuilder {
+func newLoggerConfigBuilder() *LoggerConfigBuilder {
 	return &LoggerConfigBuilder{config: &logger.Config{
 		Level: logger.InfoLevel,
 	}}

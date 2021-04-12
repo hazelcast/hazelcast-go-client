@@ -24,8 +24,8 @@ func StartNewClient() (*Client, error) {
 	}
 }
 
-func StartNewClientWithConfig(config Config) (*Client, error) {
-	if client, err := NewClientWithConfig(config); err != nil {
+func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
+	if client, err := NewClientWithConfig(configProvider); err != nil {
 		return nil, err
 	} else if err = client.Start(); err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func StartNewClientWithConfig(config Config) (*Client, error) {
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
 func NewClient() (*Client, error) {
-	return NewClientWithConfig(DefaultConfig())
+	return NewClientWithConfig(NewConfigBuilder())
 }
 
 // NewClientWithConfig creates and returns a new client with the given config.
@@ -50,18 +50,14 @@ func NewClient() (*Client, error) {
 // cluster members and delegates all cluster wide operations to it.
 // When the connected cluster member dies, client will
 // automatically switch to another live member.
-func NewClientWithConfig(config Config) (*Client, error) {
-	return newClient("", config)
+func NewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
+	if config, err := configProvider.Config(); err != nil {
+		return nil, err
+	} else {
+		return newClient("", *config)
+	}
 }
 
 func NewClientConfigBuilder() *ConfigBuilder {
 	return NewConfigBuilder()
-}
-
-func DefaultConfig() Config {
-	if config, err := NewConfigBuilder().Config(); err != nil {
-		panic(err)
-	} else {
-		return config
-	}
 }

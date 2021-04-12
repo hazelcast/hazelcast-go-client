@@ -18,7 +18,7 @@ import (
 func TestLifecycleEvents(t *testing.T) {
 	receivedStates := []lifecycle.State{}
 	receivedStatesMu := &sync.Mutex{}
-	client := hz.MustClient(hz.NewClient())
+	client := it.MustClient(hz.NewClient())
 	client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
 		receivedStatesMu.Lock()
 		defer receivedStatesMu.Unlock()
@@ -65,8 +65,8 @@ func TestHeartbeat(t *testing.T) {
 	}, func(t *testing.T, m hztypes.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"
-		hz.Must(m.Set("k1", target))
-		if v := hz.MustValue(m.Get("k1")); target != v {
+		it.Must(m.Set("k1", target))
+		if v := it.MustValue(m.Get("k1")); target != v {
 			t.Fatalf("target: %v != %v", target, v)
 		}
 	})
@@ -80,7 +80,7 @@ func getClient(t *testing.T) *hz.Client {
 	return client
 }
 
-func getClientWithConfig(t *testing.T, clientConfig hz.Config) *hz.Client {
+func getClientWithConfigBuilder(t *testing.T, clientConfig *hz.ConfigBuilder) *hz.Client {
 	client, err := hz.StartNewClientWithConfig(clientConfig)
 	if err != nil {
 		t.Fatal(err)
@@ -95,11 +95,7 @@ func getClientSmart(t *testing.T) *hz.Client {
 func getClientNonSmart(t *testing.T) *hz.Client {
 	cb := hz.NewClientConfigBuilder()
 	cb.Cluster().SetSmartRouting(false)
-	if config, err := cb.Config(); err != nil {
-		panic(err)
-	} else {
-		return getClientWithConfig(t, config)
-	}
+	return getClientWithConfigBuilder(t, cb)
 }
 
 func test(t *testing.T, f func(t *testing.T, client *hz.Client)) {

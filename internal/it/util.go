@@ -18,11 +18,7 @@ import (
 func GetClientMap(name string) (*hz.Client, hztypes.Map) {
 	cb := hz.NewClientConfigBuilder()
 	cb.Logger().SetLevel(logger.TraceLevel)
-	config, err := cb.Config()
-	if err != nil {
-		panic(err)
-	}
-	client, err := hz.StartNewClientWithConfig(config)
+	client, err := hz.StartNewClientWithConfig(cb)
 	if err != nil {
 		panic(err)
 	}
@@ -35,9 +31,9 @@ func GetClientMap(name string) (*hz.Client, hztypes.Map) {
 	}
 }
 
-func GetClientMapWithConfig(name string, clientConfig hz.Config) (*hz.Client, hztypes.Map) {
-	clientConfig.LoggerConfig.Level = logger.TraceLevel
-	client, err := hz.StartNewClientWithConfig(clientConfig)
+func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, hztypes.Map) {
+	configBuilder.Logger().SetLevel(logger.TraceLevel)
+	client, err := hz.StartNewClientWithConfig(configBuilder)
 	if err != nil {
 		panic(err)
 	}
@@ -67,11 +63,7 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
-		config, err := cb.Config()
-		if err != nil {
-			panic(err)
-		}
-		client, m = GetClientMapWithConfig("my-map", config)
+		client, m = GetClientMapWithConfigBuilder("my-map", cb)
 		defer func() {
 			if err := m.EvictAll(); err != nil {
 				panic(err)
@@ -89,12 +81,7 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 			cbCallback(cb)
 		}
 		cb.Cluster().SetSmartRouting(false)
-		config, err := cb.Config()
-		if err != nil {
-			panic(err)
-		}
-		config.ClusterConfig.SmartRouting = false
-		client, m = GetClientMapWithConfig("my-map", config)
+		client, m = GetClientMapWithConfigBuilder("my-map", cb)
 		defer func() {
 			if err := m.EvictAll(); err != nil {
 				panic(err)
@@ -112,11 +99,7 @@ func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBu
 			cbCallback(cb)
 		}
 		cb.Logger().SetLevel(logger.TraceLevel)
-		config, err := cb.Config()
-		if err != nil {
-			panic(err)
-		}
-		client, err := hz.StartNewClientWithConfig(config)
+		client, err := hz.StartNewClientWithConfig(cb)
 		if err != nil {
 			panic(err)
 		}
@@ -130,11 +113,7 @@ func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBu
 		}
 		cb.Logger().SetLevel(logger.TraceLevel)
 		cb.Cluster().SetSmartRouting(false)
-		config, err := cb.Config()
-		if err != nil {
-			panic(err)
-		}
-		client, err := hz.StartNewClientWithConfig(config)
+		client, err := hz.StartNewClientWithConfig(cb)
 		if err != nil {
 			panic(err)
 		}
@@ -236,4 +215,12 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 		panic(err)
 	}
 	return client
+}
+
+type trivialConfigProvider struct {
+	config *hz.Config
+}
+
+func (p trivialConfigProvider) Config() (*hz.Config, error) {
+	return p.config, nil
 }
