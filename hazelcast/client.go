@@ -81,10 +81,6 @@ func NewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 	}
 }
 
-func NewClientConfigBuilder() *ConfigBuilder {
-	return NewConfigBuilder()
-}
-
 type Client struct {
 	// configuration
 	name          string

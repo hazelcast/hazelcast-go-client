@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewClientConfigBuilder(t *testing.T) {
-	builder := hazelcast.NewClientConfigBuilder()
+	builder := hazelcast.NewConfigBuilder()
 	builder.Cluster().
 		SetMembers("192.168.1.1").
 		SetName("my-cluster")
@@ -23,7 +23,7 @@ func TestNewClientConfigBuilder(t *testing.T) {
 }
 
 func TestNewClientWithConfig(t *testing.T) {
-	builder := hazelcast.NewClientConfigBuilder()
+	builder := hazelcast.NewConfigBuilder()
 	builder.SetClientName("my-client")
 	hz := it.MustClient(hazelcast.NewClientWithConfig(builder))
 	targetClientName := "my-client"
