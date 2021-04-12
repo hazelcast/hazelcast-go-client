@@ -9,12 +9,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
 	icluster "github.com/hazelcast/hazelcast-go-client/v4/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
 	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
-	iproperty "github.com/hazelcast/hazelcast-go-client/v4/internal/property"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
@@ -52,8 +50,7 @@ func newClient(name string, config Config) (*Client, error) {
 	if config.ClientName != "" {
 		name = config.ClientName
 	}
-	iproperty.UpdateWithMissingProps(config.Properties)
-	logLevel, err := logger.GetLogLevel(config.Properties[property.LoggingLevel])
+	logLevel, err := logger.GetLogLevel(config.LoggerConfig.Level)
 	if err != nil {
 		return nil, err
 	}

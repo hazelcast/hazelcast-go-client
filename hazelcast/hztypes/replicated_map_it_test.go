@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/internal/it"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/predicate"
 
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
 )
 
 func TestPutGetReplicatedMap(t *testing.T) {
@@ -304,7 +305,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 }
 
 func getClientReplicatedMapWithConfig(name string, clientConfig hz.Config) (*hz.Client, hztypes.ReplicatedMap) {
-	clientConfig.Properties[property.LoggingLevel] = "trace"
+	clientConfig.LoggerConfig.Level = logger.TraceLevel
 	client, err := hz.StartNewClientWithConfig(clientConfig)
 	if err != nil {
 		panic(err)
