@@ -145,7 +145,7 @@ func (m *ConnectionManager) Start() error {
 	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
 	m.eventDispatcher.Subscribe(EventMembersAdded, memberAddedSubscriptionID, m.handleMembersAdded)
 	m.started.Store(true)
-	m.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientConnected))
+	m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientConnected))
 	return nil
 }
 
@@ -241,7 +241,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
-		m.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateClientDisconnected))
+		m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientDisconnected))
 	}
 }
 

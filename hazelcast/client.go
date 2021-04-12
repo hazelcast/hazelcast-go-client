@@ -1,9 +1,25 @@
+// Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License")
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package hazelcast
 
 import (
 	"fmt"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
@@ -20,6 +36,54 @@ import (
 )
 
 var nextId int32
+
+func StartNewClient() (*Client, error) {
+	if client, err := NewClient(); err != nil {
+		return nil, err
+	} else if err = client.Start(); err != nil {
+		return nil, err
+	} else {
+		return client, nil
+	}
+}
+
+func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
+	if client, err := NewClientWithConfig(configProvider); err != nil {
+		return nil, err
+	} else if err = client.Start(); err != nil {
+		return nil, err
+	} else {
+		return client, nil
+	}
+}
+
+// NewClient creates and returns a new client.
+// Hazelcast client enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one of the
+// cluster members and delegates all cluster wide operations to it.
+// When the connected cluster member dies, client will
+// automatically switch to another live member.
+func NewClient() (*Client, error) {
+	return NewClientWithConfig(NewConfigBuilder())
+}
+
+// NewClientWithConfig creates and returns a new client with the given config.
+// Hazelcast client enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one of the
+// cluster members and delegates all cluster wide operations to it.
+// When the connected cluster member dies, client will
+// automatically switch to another live member.
+func NewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
+	if config, err := configProvider.Config(); err != nil {
+		return nil, err
+	} else {
+		return newClient("", *config)
+	}
+}
+
+func NewClientConfigBuilder() *ConfigBuilder {
+	return NewConfigBuilder()
+}
 
 type Client struct {
 	// configuration
@@ -95,7 +159,7 @@ func (c *Client) Start() error {
 	if c.started.Load() == true {
 		return nil
 	}
-	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarting))
+	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateStarting))
 	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting)
 	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
@@ -103,7 +167,7 @@ func (c *Client) Start() error {
 	}
 	<-clusterServiceStartCh
 	c.started.Store(true)
-	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateStarted))
+	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateStarted))
 	return nil
 }
 
@@ -112,17 +176,17 @@ func (c Client) Shutdown() {
 	if c.started.Load() != true {
 		return
 	}
-	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShuttingDown))
+	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateShuttingDown))
 	c.clusterService.Stop()
 	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
-	c.eventDispatcher.Publish(ilifecycle.NewStateChangedImpl(lifecycle.StateShutDown))
+	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateShutDown))
 }
 
 // ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
 func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycle.StateChangeHandler) {
-	c.userEventDispatcher.SubscribeSync(lifecycle.EventStateChanged, subscriptionID, func(event event.Event) {
+	c.userEventDispatcher.SubscribeSync(internal.LifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*lifecycle.StateChanged); ok {
 			handler(*stateChangeEvent)
 		} else {
@@ -133,7 +197,7 @@ func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycl
 
 // UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
 func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) {
-	c.userEventDispatcher.Unsubscribe(lifecycle.EventStateChanged, subscriptionID)
+	c.userEventDispatcher.Unsubscribe(internal.LifecycleEventStateChanged, subscriptionID)
 }
 
 // ListenLifecycleStateChange adds a member state change handler with a unique subscription ID.
@@ -177,7 +241,7 @@ func (c *Client) ensureStarted() {
 }
 
 func (c *Client) subscribeUserEvents() {
-	c.eventDispatcher.SubscribeSync(lifecycle.EventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(internal.LifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
 	})
 	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
