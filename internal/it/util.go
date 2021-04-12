@@ -8,15 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+
 	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/property"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
 
 func GetClientMap(name string) (*hz.Client, hztypes.Map) {
 	cb := hz.NewClientConfigBuilder()
-	cb.SetProperty(property.LoggingLevel, "trace")
+	cb.Logger().SetLevel(logger.TraceLevel)
 	config, err := cb.Config()
 	if err != nil {
 		panic(err)
@@ -35,7 +36,7 @@ func GetClientMap(name string) (*hz.Client, hztypes.Map) {
 }
 
 func GetClientMapWithConfig(name string, clientConfig hz.Config) (*hz.Client, hztypes.Map) {
-	clientConfig.Properties[property.LoggingLevel] = "trace"
+	clientConfig.LoggerConfig.Level = logger.TraceLevel
 	client, err := hz.StartNewClientWithConfig(clientConfig)
 	if err != nil {
 		panic(err)
@@ -110,7 +111,7 @@ func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBu
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
-		cb.SetProperty(property.LoggingLevel, "trace")
+		cb.Logger().SetLevel(logger.TraceLevel)
 		config, err := cb.Config()
 		if err != nil {
 			panic(err)
@@ -127,7 +128,7 @@ func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBu
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
-		cb.SetProperty(property.LoggingLevel, "trace")
+		cb.Logger().SetLevel(logger.TraceLevel)
 		cb.Cluster().SetSmartRouting(false)
 		config, err := cb.Config()
 		if err != nil {

@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
 )
@@ -14,21 +16,17 @@ import (
 // prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
 type Config struct {
 	ClientName          string
-	Properties          map[string]string
 	ClusterConfig       cluster.Config
 	SerializationConfig serialization.Config
+	LoggerConfig        logger.Config
 }
 
 func (c Config) clone() Config {
-	properties := map[string]string{}
-	for k, v := range c.Properties {
-		properties[k] = v
-	}
 	return Config{
 		ClientName:          c.ClientName,
-		Properties:          properties,
 		ClusterConfig:       c.ClusterConfig.Clone(),
 		SerializationConfig: c.SerializationConfig.Clone(),
+		LoggerConfig:        c.LoggerConfig.Clone(),
 	}
 }
 
@@ -37,29 +35,22 @@ type ConfigBuilder struct {
 	config                     *Config
 	clusterConfigBuilder       *ClusterConfigBuilder
 	serializationConfigBuilder *SerializationConfigBuilder
+	loggerConfigBuilder        *LoggerConfigBuilder
 }
 
 // NewConfigBuilder creates a new ConfigBuilder.
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
-		config: &Config{
-			Properties: map[string]string{},
-		},
+		config:                     &Config{},
 		clusterConfigBuilder:       newClusterConfigBuilder(),
 		serializationConfigBuilder: newSerializationConfigBuilder(),
+		loggerConfigBuilder:        newLoggerConfig(),
 	}
 }
 
 // SetClientName sets the client name
 func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 	c.config.ClientName = name
-	return c
-}
-
-// SetProperty sets s property.
-// Check property package to get the list of valid properties.
-func (c *ConfigBuilder) SetProperty(key, value string) *ConfigBuilder {
-	c.config.Properties[key] = value
 	return c
 }
 
@@ -77,6 +68,13 @@ func (c *ConfigBuilder) Serialization() *SerializationConfigBuilder {
 		c.serializationConfigBuilder = newSerializationConfigBuilder()
 	}
 	return c.serializationConfigBuilder
+}
+
+func (c *ConfigBuilder) Logger() *LoggerConfigBuilder {
+	if c.loggerConfigBuilder == nil {
+		c.loggerConfigBuilder = &LoggerConfigBuilder{}
+	}
+	return c.loggerConfigBuilder
 }
 
 // Config completes building the configuration and returns it.
@@ -266,5 +264,25 @@ func (b *SerializationConfigBuilder) buildConfig() (*serialization.Config, error
 	if b.err != nil {
 		return b.config, b.err
 	}
+	return b.config, nil
+}
+
+type LoggerConfigBuilder struct {
+	config *logger.Config
+	err    error
+}
+
+func newLoggerConfig() *LoggerConfigBuilder {
+	return &LoggerConfigBuilder{config: &logger.Config{
+		Level: logger.InfoLevel,
+	}}
+}
+
+func (b *LoggerConfigBuilder) SetLevel(level logger.Level) *LoggerConfigBuilder {
+	b.config.Level = level
+	return b
+}
+
+func (b *LoggerConfigBuilder) buildConfig() (*logger.Config, error) {
 	return b.config, nil
 }

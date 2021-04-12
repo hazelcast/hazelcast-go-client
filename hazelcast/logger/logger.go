@@ -15,27 +15,31 @@
 package logger
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
 )
 
+type Level string
+
 const (
 	// OffLevel disables logging.
-	OffLevel = "off"
+	OffLevel Level = "off"
 	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = "error"
+	ErrorLevel Level = "error"
 	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel = "warn"
+	WarnLevel Level = "warn"
 	// InfoLevel level. General operational entries about what's going on inside the
 	// application.
-	InfoLevel = "info"
+	InfoLevel Level = "info"
 	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
-	DebugLevel = "debug"
+	DebugLevel Level = "debug"
 	// TraceLevel level. Designates finer-grained informational events than the Debug.
-	TraceLevel = "trace"
-
+	TraceLevel Level = "trace"
+)
+const (
 	offLevel = iota * 100
 	errorLevel
 	warnLevel
@@ -45,7 +49,7 @@ const (
 )
 
 // nameToLevel is used to get corresponding level for log level strings.
-var nameToLevel = map[string]int{
+var nameToLevel = map[Level]int{
 	ErrorLevel: errorLevel,
 	WarnLevel:  warnLevel,
 	InfoLevel:  infoLevel,
@@ -74,16 +78,16 @@ type Logger interface {
 
 // isValidLogLevel returns true if the given log level is valid.
 // The check is done case insensitive.
-func isValidLogLevel(logLevel string) bool {
-	logLevel = strings.ToLower(logLevel)
-	_, found := nameToLevel[logLevel]
+func isValidLogLevel(logLevel Level) bool {
+	logLevelStr := strings.ToLower(string(logLevel))
+	_, found := nameToLevel[Level(logLevelStr)]
 	return found
 }
 
 // GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
-func GetLogLevel(logLevel string) (int, error) {
+func GetLogLevel(logLevel Level) (int, error) {
 	if !isValidLogLevel(logLevel) {
-		return 0, hzerror.NewHazelcastIllegalArgumentError("no log level found for "+logLevel, nil)
+		return 0, hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel), nil)
 	}
 	return nameToLevel[logLevel], nil
 }
