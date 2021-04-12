@@ -5,15 +5,15 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	publifecycle "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	publifecycle "github.com/hazelcast/hazelcast-go-client/lifecycle"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (

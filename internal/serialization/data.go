@@ -18,9 +18,9 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/murmur"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
 )
 
 const (

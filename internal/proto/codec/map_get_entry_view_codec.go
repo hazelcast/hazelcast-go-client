@@ -14,9 +14,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (

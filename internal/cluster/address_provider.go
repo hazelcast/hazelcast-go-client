@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
 type AddressProvider interface {

@@ -6,19 +6,19 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
-	ilifecycle "github.com/hazelcast/hazelcast-go-client/v4/internal/lifecycle"
+	ilifecycle "github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
+	"github.com/hazelcast/hazelcast-go-client/lifecycle"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/security"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/security"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (

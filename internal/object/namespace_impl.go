@@ -1,6 +1,6 @@
 package object
 
-import "github.com/hazelcast/hazelcast-go-client/v4/internal/spi"
+import "github.com/hazelcast/hazelcast-go-client/internal/spi"
 
 type NamespaceImpl struct {
 	ServiceName string

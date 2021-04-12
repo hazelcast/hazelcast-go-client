@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 
-	hz "github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func GetClientMap(name string) (*hz.Client, hztypes.Map) {

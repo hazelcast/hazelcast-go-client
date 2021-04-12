@@ -21,14 +21,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 
-	publogger "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/timeutil"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/versionutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
+	publogger "github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (

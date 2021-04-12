@@ -3,7 +3,8 @@ package cluster
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type clientMessageBuilder struct {

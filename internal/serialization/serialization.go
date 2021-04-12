@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	pubserialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // Service serializes user objects to Data and back to Object.

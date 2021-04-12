@@ -5,12 +5,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 type ServiceCreationBundle struct {

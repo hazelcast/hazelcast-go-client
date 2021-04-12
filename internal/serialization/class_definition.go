@@ -14,7 +14,7 @@
 
 package serialization
 
-import "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type ClassDefinitionImpl struct {
 	factoryID int32
