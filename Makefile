@@ -1,17 +1,18 @@
 .PHONY: build test test-all test-all-race doc
 
 PORT ?= 5050
+TEST_FLAGS ?=
 
 build:
-	go build ./hazelcast/...
+	go build ./...
 
 test: test-all
 
 test-all:
-	go test -count=1  ./hazelcast/...
+	go test $(TEST_FLAGS) -count=1 ./...
 
 test-all-race:
-	go test -count=1 -race  ./hazelcast/...
+	go test $(TEST_FLAGS) -count=1 -race ./...
 
 doc:
 	godoc -http=localhost:$(PORT)

@@ -1,6 +1,6 @@
 package proto
 
-import "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+import "github.com/hazelcast/hazelcast-go-client/hzerror"
 
 type ErrorHolder struct {
 	errorCode          int32

@@ -3,9 +3,10 @@ package cluster_test
 import (
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 )
 
 type addrCase struct {
@@ -31,7 +32,7 @@ func TestAddressImplParse(t *testing.T) {
 }
 
 func assertAddress(addrCase addrCase) error {
-	addr, err := internal.ParseAddress(addrCase.input)
+	addr, err := cluster.ParseAddress(addrCase.input)
 	if addrCase.err != nil {
 		if !reflect.DeepEqual(addrCase.err, err) {
 			return fmt.Errorf("target err: %v != %v", addrCase.err, err)

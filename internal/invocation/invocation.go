@@ -4,9 +4,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	pubhzerror "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	pubhzerror "github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type Invocation interface {

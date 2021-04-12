@@ -15,7 +15,7 @@
 package compatibility
 
 import (
-	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type aPortableFactory struct {
@@ -28,4 +28,8 @@ func (pf *aPortableFactory) Create(classID int32) serialization.Portable {
 		return &AnInnerPortable{}
 	}
 	return nil
+}
+
+func (pf *aPortableFactory) FactoryID() int32 {
+	return portableFactoryID
 }

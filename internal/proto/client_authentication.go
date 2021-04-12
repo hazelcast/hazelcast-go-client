@@ -15,9 +15,9 @@
 package proto
 
 import (
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 type ClientAuthenticationDecodeResponseDelegate func(clientMessage *ClientMessage) (

@@ -19,7 +19,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -85,7 +87,7 @@ func TestObjectDataInput_AssertAvailable2(t *testing.T) {
 	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
 	ret := o.AssertAvailable(2)
 	if _, ok := ret.(*hzerror.HazelcastSerializationError); !ok {
-		t.Errorf("AssertAvailable() should return error type *common.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
+		t.Errorf("AssertAvailable() should return error type *hzerror.HazelcastEOFError but it returns %v", reflect.TypeOf(ret))
 	}
 }
 
@@ -238,7 +240,7 @@ func TestObjectDataInput_ReadUTF2(t *testing.T) {
 }
 
 func TestObjectDataInput_ReadObject(t *testing.T) {
-	conf := NewConfig()
+	conf := &serialization.Config{}
 	service, _ := NewService(conf)
 	o := NewObjectDataOutput(500, service, false)
 	var a = 6.739

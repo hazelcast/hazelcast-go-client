@@ -1,8 +1,9 @@
 package invocation
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 type Result interface {

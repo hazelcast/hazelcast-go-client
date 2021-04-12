@@ -15,7 +15,7 @@
 package security
 
 import (
-	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (

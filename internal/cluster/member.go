@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"reflect"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 type uuid struct {

@@ -2,8 +2,9 @@ package hzerror
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 func CreateHazelcastError(err *ServerErrorImpl) hzerror.HazelcastError {

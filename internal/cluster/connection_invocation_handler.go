@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/invocation"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 type ConnectionInvocationHandlerCreationBundle struct {

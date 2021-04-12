@@ -15,10 +15,10 @@
 package proto
 
 import (
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	serialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto/bufutil"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func clientAuthenticationCustomCalculateSize(credentials serialization.Data, uuid string, ownerUuid string, isOwnerConnection bool, clientType string, serializationVersion uint8, clientHazelcastVersion string) int {

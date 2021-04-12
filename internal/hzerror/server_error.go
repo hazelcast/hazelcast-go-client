@@ -1,7 +1,7 @@
 package hzerror
 
 import (
-	pubhzerror "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
+	pubhzerror "github.com/hazelcast/hazelcast-go-client/hzerror"
 )
 
 type ServerErrorImpl struct {

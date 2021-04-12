@@ -4,13 +4,13 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
-	pubserialization "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/util/murmur"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
+	"github.com/hazelcast/hazelcast-go-client/logger"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type PartitionServiceCreationBundle struct {

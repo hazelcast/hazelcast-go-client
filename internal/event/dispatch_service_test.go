@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
 )
 
 type sampleEvent struct {

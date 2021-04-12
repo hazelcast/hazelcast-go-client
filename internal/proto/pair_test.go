@@ -3,8 +3,6 @@ package proto
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,19 +23,6 @@ func TestNewPair_With_String(t *testing.T) {
 	//given
 	key := "10"
 	value := "100"
-
-	//when
-	pair := NewPair(key, value)
-
-	//then
-	assert.Equal(t, pair.key, key)
-	assert.Equal(t, pair.value, value)
-}
-
-func TestNewPair_With_Data(t *testing.T) {
-	//given
-	key := serialization.NewHeapData([]byte("key"))
-	value := serialization.NewHeapData([]byte("value"))
 
 	//when
 	pair := NewPair(key, value)

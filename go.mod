@@ -1,4 +1,4 @@
-module github.com/hazelcast/hazelcast-go-client/v4
+module github.com/hazelcast/hazelcast-go-client
 
 go 1.15
 

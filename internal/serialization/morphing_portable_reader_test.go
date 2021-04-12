@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -802,8 +802,8 @@ func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testi
 
 func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 	var expectedRet = &student{10, 22, "Furkan Şenharputlu"}
-	config := NewConfig()
-	config.AddPortableFactory(2, &portableFactory1{})
+	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
@@ -826,8 +826,8 @@ func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 	var value serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
 	var expectedRet serialization.Portable
-	config := NewConfig()
-	config.AddPortableFactory(2, &portableFactory1{})
+	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
@@ -1353,14 +1353,14 @@ func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *
 func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
-	config := NewConfig()
-	config.AddPortableFactory(2, &portableFactory1{})
+	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineers", TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer := NewPortableSerializer(service, config.PortableFactories(), 0)
+	serializer := NewPortableSerializer(service, config.PortableFactories, 0)
 	pw := NewDefaultPortableWriter(serializer, o, classDef)
 	pw.WritePortableArray("engineers", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
@@ -1377,14 +1377,14 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 	var value = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	var expectedRet []serialization.Portable
-	config := NewConfig()
-	config.AddPortableFactory(2, &portableFactory1{})
+	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineers", TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer := NewPortableSerializer(service, config.PortableFactories(), 0)
+	serializer := NewPortableSerializer(service, config.PortableFactories, 0)
 	pw := NewDefaultPortableWriter(serializer, o, classDef)
 	pw.WritePortableArray("engineers", value)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
@@ -1416,13 +1416,13 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 
 func TestNewMorphingPortableReader(t *testing.T) {
 	s := &student{10, 22, "Furkan Şenharputlu"}
-	config := NewConfig()
-	config.AddPortableFactory(2, &portableFactory2{})
+	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	config.PortableFactories[2] = &portableFactory1{}
 	service, _ := NewService(config)
 
 	data, _ := service.ToData(s)
 
-	service.serializationConfig.SetPortableVersion(1)
+	service.serializationConfig.PortableVersion = 1
 	expectedRet := &student2{10, 22, "Furkan Şenharputlu"}
 	ret, _ := service.ToObject(data)
 

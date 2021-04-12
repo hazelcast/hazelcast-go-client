@@ -3,9 +3,10 @@ package cb_test
 import (
 	"context"
 	"errors"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/cb"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 )
 
 func TestFailingCircuitBreaker(t *testing.T) {

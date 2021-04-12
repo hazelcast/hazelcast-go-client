@@ -4,16 +4,16 @@ import (
 	"encoding/binary"
 	"strings"
 
-	ihzerror "github.com/hazelcast/hazelcast-go-client/v4/internal/hzerror"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/serialization"
+	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/v4/internal/serialization/spi"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
 )
 
 // Encoder for ClientMessage and value
