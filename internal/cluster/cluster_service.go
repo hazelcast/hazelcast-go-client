@@ -5,6 +5,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/hazelcast/hazelcast-go-client/v4/internal"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/cluster"
 	publifecycle "github.com/hazelcast/hazelcast-go-client/v4/hazelcast/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast/logger"
@@ -93,7 +95,7 @@ func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
 }
 
 func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
-	s.eventDispatcher.Subscribe(publifecycle.EventStateChanged, event.DefaultSubscriptionID, s.handleLifecycleStateChanged)
+	s.eventDispatcher.Subscribe(internal.LifecycleEventStateChanged, event.DefaultSubscriptionID, s.handleLifecycleStateChanged)
 	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
 	if wantSmartRouting {
 		s.listenPartitionsLoaded()
@@ -103,7 +105,7 @@ func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
 
 func (s *ServiceImpl) Stop() {
 	subscriptionID := int(reflect.ValueOf(s.handleLifecycleStateChanged).Pointer())
-	s.eventDispatcher.Unsubscribe(publifecycle.EventStateChanged, subscriptionID)
+	s.eventDispatcher.Unsubscribe(internal.LifecycleEventStateChanged, subscriptionID)
 }
 
 func (s *ServiceImpl) SmartRoutingEnabled() bool {
