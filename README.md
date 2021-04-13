@@ -102,21 +102,22 @@ cb.Network().SetSmartRouting(false)
 // optionally set cluster addresses manually
 cb.Network().SetAddrs("member1.example.com", "member2.example.com")
 
-// finalize the configuration
-config, err := cb.Config()
-// handle the configuration error
-
-// pass the resulting configuration
-client, err := hazelcast.StartNewClientWithConfig(config)
+// create and start the client with the configuration provider
+client, err := hazelcast.StartNewClientWithConfig(cb)
 // handle client start error
 ```
 
 ## Documentation
 
-* [Configuration](./docs/configuration.md)
-* Data Structures:
-    * [Map](../docs/map)
-* [Lifecycle](./docs/lifecycle.md)
+Use godoc:
+```  
+$ godoc -http=localhost:5500
+```
+
+godoc is not installed by default with the base Go distribution. Install it using:
+```
+$ go get -u golang.org/x/tools/...`
+```
 
 ## Support
 
