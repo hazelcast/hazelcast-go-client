@@ -344,7 +344,6 @@ func (m *ConnectionManager) encodeAuthenticationRequest(asOwner bool) *proto.Cli
 
 func (m *ConnectionManager) createAuthenticationRequest(asOwner bool,
 	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
-	// TODO: use credentials from config
 	return codec.EncodeClientAuthenticationRequest(
 		m.clusterConfig.Name,
 		"",
@@ -478,9 +477,9 @@ func (m *connectionMap) GetAddrForConnID(connID int64) pubcluster.Address {
 }
 
 func (m *connectionMap) Connections() []*Connection {
-	conns := make([]*Connection, 0, len(m.connections))
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
+	conns := make([]*Connection, 0, len(m.connections))
 	for _, conn := range m.connections {
 		conns = append(conns, conn)
 	}

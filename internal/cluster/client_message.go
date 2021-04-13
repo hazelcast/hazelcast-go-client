@@ -7,40 +7,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-type clientMessageBuilder struct {
-	incompleteMessages map[int64]*proto.ClientMessage
-	handleResponse     func(msg *proto.ClientMessage)
-}
-
-func (mb *clientMessageBuilder) onMessage(msg *proto.ClientMessage) {
-	if msg.StartFrame.HasUnFragmentedMessageFlags() {
-		mb.handleResponse(msg)
-	} else {
-		println("here")
-	}
-
-	//TODO
-	/**
-		if msg.HasFlags(bufutil.BeginEndFlag) > 0 {
-		mb.handleResponse(msg)
-	} else if msg.HasFlags(bufutil.BeginFlag) > 0 {
-		mb.incompleteMessages[msg.CorrelationID()] = msg
-	} else {
-		message, found := mb.incompleteMessages[msg.CorrelationID()]
-		if !found {
-			return
-		}
-		message.Accumulate(msg)
-		if msg.HasFlags(bufutil.EndFlag) > 0 {
-			message.AddFlags(bufutil.BeginEndFlag)
-			mb.handleResponse(message)
-			delete(mb.incompleteMessages, msg.CorrelationID())
-		}
-	}
-	*/
-
-}
-
 type clientMessageReader struct {
 	src                *bytes.Buffer
 	clientMessage      *proto.ClientMessage
@@ -66,7 +32,9 @@ func (c *clientMessageReader) Read() *proto.ClientMessage {
 	for {
 		if c.readFrame() {
 			if c.clientMessage.EndFrame.IsFinalFrame() {
-				return c.clientMessage
+				clientMessage := c.clientMessage
+				c.clientMessage = nil
+				return clientMessage
 			}
 		} else {
 			return nil

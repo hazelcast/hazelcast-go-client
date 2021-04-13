@@ -3,6 +3,7 @@ package hztypes_test
 import (
 	"fmt"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -361,9 +362,9 @@ func TestMapIsEmptySize(t *testing.T) {
 
 func TestMapEntryNotifiedEvent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
@@ -375,16 +376,16 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 		}
 		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		if err := m.UnlistenEntryNotification(1); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
@@ -392,9 +393,9 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 
 func TestMapEntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
@@ -407,13 +408,13 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 		}
 		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k2", "v1"))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
@@ -424,9 +425,9 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
@@ -439,13 +440,13 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
@@ -456,9 +457,9 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hztypes.MapEntryListenerConfig{
 			NotifyEntryAdded:   true,
@@ -472,18 +473,18 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
