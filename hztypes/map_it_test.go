@@ -129,7 +129,7 @@ func TestMapRemove(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
-		const maxKeys = 3
+		const maxKeys = 100
 		makeKey := func(id int) string {
 			return fmt.Sprintf("k%d", id)
 		}
