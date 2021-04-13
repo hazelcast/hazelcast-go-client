@@ -18,11 +18,10 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization/bufferutil"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type ObjectDataOutput struct {

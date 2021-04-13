@@ -475,7 +475,6 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 }
 
 func TestDefaultPortableReader_SameErrorIsReturned(t *testing.T) {
-
 	pr := &DefaultPortableReader{}
 	expectedError := errors.New("error")
 	pr.err = expectedError

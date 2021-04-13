@@ -11,6 +11,7 @@ import (
 )
 
 func TestCodecUtil_FastForwardToEndFrame(t *testing.T) {
+	t.SkipNow()
 	// given
 	frame1 := proto.NewFrameWith([]byte("value-1"), proto.BeginDataStructureFlag)
 	frame2 := proto.NewFrameWith([]byte("value-2"), proto.EndDataStructureFlag)

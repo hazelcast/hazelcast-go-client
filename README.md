@@ -12,7 +12,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"github.com/hazelcast/hazelcast-go-client/v4/hazelcast"
+	"github.com/hazelcast/hazelcast-go-client/hazelcast"
 )
 
 func main() {

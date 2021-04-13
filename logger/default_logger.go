@@ -98,6 +98,13 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 	}
 }
 
+func (l *DefaultLogger) Warnf(format string, values ...interface{}) {
+	if l.canLogWarn() {
+		s := fmt.Sprintf("WARN : %s", fmt.Sprintf(format, values...))
+		l.Output(logCallDepth, s)
+	}
+}
+
 // Error logs the given arguments at error level if the level is greater than or equal to error level.
 func (l *DefaultLogger) Error(args ...interface{}) {
 	// TODO: remove variadic stuff
