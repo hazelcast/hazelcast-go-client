@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
@@ -44,11 +44,15 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 	}
 }
 
-func (h *ConnectionInvocationHandler) Invoke(invocation invocation.Invocation) error {
+func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
 	if h.clusterService.SmartRoutingEnabled() {
-		return h.invokeSmart(invocation)
+		if err := h.invokeSmart(inv); err != nil {
+			h.logger.Warnf("invoking non smart since: %s", err.Error())
+			return h.invokeNonSmart(inv)
+		}
+		return nil
 	} else {
-		return h.invokeNonSmart(invocation)
+		return h.invokeNonSmart(inv)
 	}
 }
 

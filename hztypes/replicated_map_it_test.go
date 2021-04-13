@@ -144,8 +144,6 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		// TODO: remove the following sleep once we dynamically add connection listeners
-		time.Sleep(2 * time.Second)
 		if err := m.ListenEntryNotification(1, handler); err != nil {
 			t.Fatal(err)
 		}
@@ -176,8 +174,6 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		handler := func(event *hztypes.EntryNotified) {
 			handlerCalled = true
 		}
-		// TODO: remove the following sleep once we dynamically add connection listeners
-		time.Sleep(2 * time.Second)
 		if err := m.ListenEntryNotificationToKey("k1", 1, handler); err != nil {
 			t.Fatal(err)
 		}
@@ -273,10 +269,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 			}
 			client.Shutdown()
 		}()
-		// TODO: remove the following sleep once we dynamically add connection listeners
-		time.Sleep(2 * time.Second)
 		f(t, m)
-
 	})
 	t.Run("Non-Smart Client", func(t *testing.T) {
 		cb := hz.NewConfigBuilder()

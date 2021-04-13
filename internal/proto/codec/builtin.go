@@ -6,8 +6,8 @@ import (
 
 	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	pubhzerror "github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -66,7 +66,7 @@ func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, err
 	case response := <-i.response:
 		return i.unwrapResponse(response)
 	case <-time.After(duration):
-		return nil, pubhzerror.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
+		return nil, hzerror.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
 	}
 }
 

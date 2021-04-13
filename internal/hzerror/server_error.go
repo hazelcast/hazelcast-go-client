@@ -1,21 +1,17 @@
 package hzerror
 
-import (
-	pubhzerror "github.com/hazelcast/hazelcast-go-client/hzerror"
-)
-
 type ServerErrorImpl struct {
 	errorCode      int32
 	className      string
 	message        string
-	stackTrace     []pubhzerror.StackTraceElement
+	stackTrace     []StackTraceElement
 	causeErrorCode int32
 	causeClassName string
 }
 
 // NewServerErrorImpl
 // experimental
-func NewServerErrorImpl(errorCode int32, className string, message string, stackTrace []pubhzerror.StackTraceElement, causeErrorCode int32, causeClassName string) ServerErrorImpl {
+func NewServerErrorImpl(errorCode int32, className string, message string, stackTrace []StackTraceElement, causeErrorCode int32, causeClassName string) ServerErrorImpl {
 	return ServerErrorImpl{
 		errorCode:      errorCode,
 		className:      className,
@@ -42,8 +38,8 @@ func (e *ServerErrorImpl) Message() string {
 	return e.message
 }
 
-func (e *ServerErrorImpl) StackTrace() []pubhzerror.StackTraceElement {
-	stackTrace := make([]pubhzerror.StackTraceElement, len(e.stackTrace))
+func (e *ServerErrorImpl) StackTrace() []StackTraceElement {
+	stackTrace := make([]StackTraceElement, len(e.stackTrace))
 	for i, v := range e.stackTrace {
 		stackTrace[i] = v
 	}

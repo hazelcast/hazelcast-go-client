@@ -137,6 +137,11 @@ type Map interface {
 	// Entry will expire and get evicted after the ttl.
 	PutIfAbsentWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error)
 
+	// PutIfAbsent associates the specified key with the given value if it is not already associated.
+	// Entry will expire and get evicted after the ttl.
+	// Given max idle time (maximum time for this entry to stay idle in the map) is used.
+	PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error)
+
 	// PutTransient sets the value for the given key.
 	// MapStore defined at the server side will not be called.
 	// The TTL defined on the server-side configuration will be used.
@@ -166,6 +171,9 @@ type Map interface {
 	// Remove deletes the value for the given key and returns it.
 	Remove(key interface{}) (interface{}, error)
 
+	// RemoveAll deletes all entries matching the given predicate.
+	RemoveAll(predicate predicate.Predicate) error
+
 	// RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
 	// Returns true if the entry was removed.
 	RemoveIfSame(key interface{}, value interface{}) (bool, error)
@@ -177,11 +185,20 @@ type Map interface {
 	// Returns true if the value was replaced.
 	ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error)
 
-	// Set sets the value for the given key and returns the old value.
+	// Set sets the value for the given key.
 	Set(key interface{}, value interface{}) error
 
-	// SetWithTTL
+	// SetWithTTL sets the value for the given key.
+	// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+	// Set ttl to 0 for infinite timeout.
 	SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error
+
+	// SetWithTTLAndMaxIdle sets the value for the given key.
+	// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+	// Set ttl to 0 for infinite timeout.
+	// Given max idle time (maximum time for this entry to stay idle in the map) is used.
+	// Set maxIdle to 0 for infinite idle time.
+	SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error
 
 	// Size returns the number of entries in this map.
 	Size() (int, error)

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 )
 
 type Level string
@@ -70,6 +70,8 @@ type Logger interface {
 	Infof(format string, values ...interface{})
 	// Warn logs the given args at warn level.
 	Warn(args ...interface{})
+	// Warnf logs the given args at warn level.
+	Warnf(format string, values ...interface{})
 	// Error logs the given args at error level.
 	Error(args ...interface{})
 	// Error logs the given args at error level with the given format

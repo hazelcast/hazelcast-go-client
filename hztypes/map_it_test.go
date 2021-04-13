@@ -305,6 +305,7 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map LoadAllReplacingExisting
 // TODO: Test Map Lock
 // TODO: Test Map SetWithTTL
+// TODO: Test Map SetWithTTLAndMaxIdle
 // TODO: Test Map TryLock
 // TODO: Test Map TryLockWithLease
 // TODO: Test Map TryLockWithTimeout
@@ -318,10 +319,12 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map PutWithTTLAndMaxIdle
 // TODO: Test Map PutIfAbsent
 // TODO: Test Map PutIfAbsentWithTTL
+// TODO: Test Map PutIfAbsentWithTTLAndMaxIdle
 // TODO: Test Map PutTransient
 // TODO: Test Map PutTransientWithTTL
 // TODO: Test Map PutTransientWithMaxIdle
 // TODO: Test Map PutTransientWithTTLMaxIdle
+// TODO: Test Map RemoveAll
 // TODO: Test Map RemoveIfSame
 // TODO: Test Map Replace
 // TODO: Test Map ReplaceIfSame

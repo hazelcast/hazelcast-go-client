@@ -109,7 +109,7 @@ func (s *ServiceImpl) Stop() {
 }
 
 func (s *ServiceImpl) SmartRoutingEnabled() bool {
-	return s.smartRouting == smartRoutingEnabled
+	return atomic.LoadInt32(&s.smartRouting) == smartRoutingEnabled
 }
 
 func (s *ServiceImpl) memberCandidateAddrs() []pubcluster.Address {

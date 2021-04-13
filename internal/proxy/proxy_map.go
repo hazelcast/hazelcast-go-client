@@ -392,6 +392,19 @@ func (m *MapImpl) PutIfAbsentWithTTL(key interface{}, value interface{}, ttl tim
 	return m.putIfAbsent(key, value, ttl.Milliseconds())
 }
 
+func (m *MapImpl) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, threadID(), ttl.Milliseconds(), maxIdle.Milliseconds())
+		if response, err := m.invokeOnKey(request, keyData); err != nil {
+			return nil, err
+		} else {
+			return codec.DecodeMapPutIfAbsentWithMaxIdleResponse(response), nil
+		}
+	}
+}
+
 func (m *MapImpl) PutTransient(key interface{}, value interface{}) error {
 	return m.putTransient(key, value, ttlDefault, maxIdleDefault)
 }
@@ -418,6 +431,16 @@ func (m *MapImpl) Remove(key interface{}) (interface{}, error) {
 		} else {
 			return m.convertToObject(codec.DecodeMapRemoveResponse(response))
 		}
+	}
+}
+
+func (m *MapImpl) RemoveAll(predicate predicate.Predicate) error {
+	if predicateData, err := m.validateAndSerialize(predicate); err != nil {
+		return err
+	} else {
+		request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
+		_, err := m.invokeOnRandomTarget(request, nil)
+		return err
 	}
 }
 
@@ -466,6 +489,16 @@ func (m *MapImpl) Set(key interface{}, value interface{}) error {
 
 func (m *MapImpl) SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
 	return m.set(key, value, ttl.Milliseconds())
+}
+
+func (m *MapImpl) SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+		return err
+	} else {
+		request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, threadID(), ttl.Milliseconds(), maxIdle.Milliseconds())
+		_, err := m.invokeOnKey(request, keyData)
+		return err
+	}
 }
 
 func (m *MapImpl) Size() (int, error) {
