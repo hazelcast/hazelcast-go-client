@@ -37,7 +37,7 @@ type PartitionService struct {
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
 	partitionTable       partitionTable
-	partitionCount       uint32
+	partitionCount       int32
 	logger               logger.Logger
 }
 
@@ -66,8 +66,7 @@ func (s *PartitionService) GetPartitionOwner(partitionId int32) internal.UUID {
 }
 
 func (s *PartitionService) PartitionCount() int32 {
-	// TODO: change return type from int32 to int
-	return int32(atomic.LoadUint32(&s.partitionCount))
+	return atomic.LoadInt32(&s.partitionCount)
 }
 
 func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) int32 {
@@ -101,7 +100,7 @@ func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
 }
 
 func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) {
-	atomic.CompareAndSwapUint32(&s.partitionCount, 0, uint32(newPartitionCount))
+	atomic.CompareAndSwapInt32(&s.partitionCount, 0, newPartitionCount)
 }
 
 type partitionTable struct {
