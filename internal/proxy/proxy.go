@@ -16,7 +16,6 @@ package proxy
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/logger"
 
@@ -229,8 +228,6 @@ func (p *Proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int3
 func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
-	// TODO: REMOVE
-	time.Sleep(1 * time.Millisecond)
 	return inv
 }
 
