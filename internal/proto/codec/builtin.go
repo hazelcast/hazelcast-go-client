@@ -331,7 +331,7 @@ func DecodeEntryListIntegerInteger(frameIterator *proto.ForwardFrameIterator) []
 func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []proto.Pair) {
 	entryCount := len(entries)
 	uuids := make([]internal.UUID, entryCount)
-	message.AddFrame(proto.BeginFrame)
+	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < entryCount; i++ {
 		entry := entries[i]
 		key := entry.Key().(internal.UUID)
@@ -339,7 +339,7 @@ func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []prot
 		uuids[i] = key
 		EncodeListInteger(message, value)
 	}
-	message.AddFrame(proto.EndFrame)
+	message.AddFrame(proto.NewEndFrame())
 	EncodeListUUID(message, uuids)
 }
 
@@ -484,39 +484,39 @@ func DecodeListLong(frameIterator *proto.ForwardFrameIterator) []int64 {
 }
 
 func EncodeListMultiFrame(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
-	message.AddFrame(proto.BeginFrame)
+	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		encoder(message, values[i])
 	}
-	message.AddFrame(proto.EndFrame)
+	message.AddFrame(proto.NewEndFrame())
 }
 
 func EncodeListMultiFrameForData(message *proto.ClientMessage, values []serialization.Data) {
-	message.AddFrame(proto.BeginFrame)
+	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeData(message, values[i])
 	}
-	message.AddFrame(proto.EndFrame)
+	message.AddFrame(proto.NewEndFrame())
 }
 
 func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string) {
-	message.AddFrame(proto.BeginFrame)
+	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeString(message, values[i])
 	}
-	message.AddFrame(proto.EndFrame)
+	message.AddFrame(proto.NewEndFrame())
 }
 
 func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []hzerror.StackTraceElement) {
-	message.AddFrame(proto.BeginFrame)
+	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeStackTraceElement(message, values[i])
 	}
-	message.AddFrame(proto.EndFrame)
+	message.AddFrame(proto.NewEndFrame())
 }
 
 func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {
-	message.AddFrame(proto.BeginFrame)
+	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		if values[i] == nil {
 			message.AddFrame(proto.NullFrame)
@@ -524,7 +524,7 @@ func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values [
 			encoder(message, values[i])
 		}
 	}
-	message.AddFrame(proto.EndFrame)
+	message.AddFrame(proto.NewEndFrame())
 }
 
 func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []serialization.Data, encoder Encoder) {

@@ -3,6 +3,7 @@ package cb_test
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -93,13 +94,13 @@ func TestSucceedingCircuitBreaker(t *testing.T) {
 
 func TestCancelFuture(t *testing.T) {
 	c := cb.NewCircuitBreaker(cb.MaxFailureCount(3), cb.MaxRetries(2))
-	funcCancelled := false
+	funcCancelled := int32(0)
 	myCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	c.TryWithContext(myCtx, func(ctx context.Context) (interface{}, error) {
 		for {
 			select {
 			case <-ctx.Done():
-				funcCancelled = true
+				atomic.StoreInt32(&funcCancelled, 1)
 				return nil, ctx.Err()
 			default:
 				time.Sleep(100 * time.Millisecond)
@@ -109,7 +110,7 @@ func TestCancelFuture(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	cancel()
 	time.Sleep(200 * time.Millisecond)
-	if !funcCancelled {
+	if atomic.LoadInt32(&funcCancelled) != 1 {
 		t.Fatalf("try handler was not cancelled")
 	}
 }

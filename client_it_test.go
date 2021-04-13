@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ import (
 
 func TestLifecycleEvents(t *testing.T) {
 	receivedStates := []lifecycle.State{}
-	receivedStatesMu := &sync.Mutex{}
+	receivedStatesMu := &sync.RWMutex{}
 	client := it.MustClient(hz.NewClient())
 	client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
 		receivedStatesMu.Lock()
@@ -57,6 +58,8 @@ func TestLifecycleEvents(t *testing.T) {
 		lifecycle.StateShuttingDown,
 		lifecycle.StateShutDown,
 	}
+	receivedStatesMu.RLock()
+	defer receivedStatesMu.RUnlock()
 	if !reflect.DeepEqual(targetStates, receivedStates) {
 		t.Fatalf("target %v != %v", targetStates, receivedStates)
 	}
@@ -68,10 +71,9 @@ func TestMemberEvents(t *testing.T) {
 	client := it.MustClient(hz.NewClient())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	handlerCalled := false
+	handlerCalled := int32(0)
 	client.ListenMemberStateChange(1, func(event cluster.MemberStateChanged) {
-		if !handlerCalled {
-			handlerCalled = true
+		if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
 			wg.Done()
 		}
 

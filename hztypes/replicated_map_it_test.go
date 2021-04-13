@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -140,9 +141,9 @@ func TestReplicatedMapIsEmptySize(t *testing.T) {
 
 func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		if err := m.ListenEntryNotification(1, handler); err != nil {
 			t.Fatal(err)
@@ -150,11 +151,11 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		if _, err := m.Put("k1", "v1"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(2 * time.Second)
-		if !handlerCalled {
+		time.Sleep(1 * time.Second)
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		if err := m.UnlistenEntryNotification(1); err != nil {
 			t.Fatal(err)
 		}
@@ -162,7 +163,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
@@ -170,9 +171,9 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 
 func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m hztypes.ReplicatedMap) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		if err := m.ListenEntryNotificationToKey("k1", 1, handler); err != nil {
 			t.Fatal(err)
@@ -181,13 +182,13 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k2", "v1"))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
@@ -199,22 +200,22 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.ReplicatedMap) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		if err := m.ListenEntryNotificationWithPredicate(predicate.Equal("A", "foo"), 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})
@@ -226,27 +227,27 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.ReplicatedMap) {
-		handlerCalled := false
+		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
-			handlerCalled = true
+			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		if err := m.ListenEntryNotificationToKeyWithPredicate("k1", predicate.Equal("A", "foo"), 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if !handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
-		handlerCalled = false
+		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
-		if handlerCalled {
+		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 	})

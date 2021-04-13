@@ -59,11 +59,23 @@ const (
 )
 
 var (
-	EmptyArray = make([]byte, 0)
-	NullFrame  = NewFrameWith(EmptyArray, IsNullFlag)
-	BeginFrame = NewFrameWith(EmptyArray, BeginDataStructureFlag)
-	EndFrame   = NewFrameWith(EmptyArray, EndDataStructureFlag)
+	//EmptyArray = make([]byte, 0)
+	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
+	BeginFrame = NewFrameWith([]byte{}, BeginDataStructureFlag)
+	EndFrame   = NewFrameWith([]byte{}, EndDataStructureFlag)
 )
+
+func NewNullFrame() *Frame {
+	return NewFrameWith([]byte{}, IsNullFlag)
+}
+
+func NewBeginFrame() *Frame {
+	return NewFrameWith([]byte{}, BeginDataStructureFlag)
+}
+
+func NewEndFrame() *Frame {
+	return NewFrameWith([]byte{}, EndDataStructureFlag)
+}
 
 // ClientMessage
 type ClientMessage struct {
@@ -120,8 +132,6 @@ func (m *ClientMessage) Type() int32 {
 }
 
 func (m *ClientMessage) CorrelationID() int64 {
-	//m.startFrameContentMu.RLock()
-	//defer m.startFrameContentMu.RUnlock()
 	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[CorrelationIDFieldOffset:]))
 }
 
@@ -138,8 +148,6 @@ func (m *ClientMessage) PartitionID() int32 {
 }
 
 func (m *ClientMessage) SetCorrelationID(correlationID int64) {
-	//m.startFrameContentMu.Lock()
-	//defer m.startFrameContentMu.Unlock()
 	binary.LittleEndian.PutUint64(m.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
 }
 
