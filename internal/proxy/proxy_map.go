@@ -288,21 +288,38 @@ func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 	}
 }
 
+func (m *MapImpl) GetKeySetWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
+	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapKeySetWithPredicateRequest(m.name, predicateData)
+		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+			return nil, err
+		} else {
+			return m.convertToObjects(codec.DecodeMapKeySetWithPredicateResponse(response))
+		}
+	}
+}
+
 func (m *MapImpl) GetValues() ([]interface{}, error) {
 	request := codec.EncodeMapValuesRequest(m.name)
 	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
 	} else {
-		valueDatas := codec.DecodeMapValuesResponse(response)
-		values := make([]interface{}, len(valueDatas))
-		for i, valueData := range valueDatas {
-			if value, err := m.convertToObject(valueData); err != nil {
-				return nil, err
-			} else {
-				values[i] = value
-			}
+		return m.convertToObjects(codec.DecodeMapValuesResponse(response))
+	}
+}
+
+func (m *MapImpl) GetValuesWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
+	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapValuesWithPredicateRequest(m.name, predicateData)
+		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+			return nil, err
+		} else {
+			return m.convertToObjects(codec.DecodeMapValuesWithPredicateResponse(response))
 		}
-		return values, nil
 	}
 }
 
@@ -485,6 +502,16 @@ func (m *MapImpl) ReplaceIfSame(key interface{}, oldValue interface{}, newValue 
 
 func (m *MapImpl) Set(key interface{}, value interface{}) error {
 	return m.set(key, value, ttlDefault)
+}
+
+func (m *MapImpl) SetTTL(key interface{}, ttl time.Duration) error {
+	if keyData, err := m.validateAndSerialize(key); err != nil {
+		return err
+	} else {
+		request := codec.EncodeMapSetTtlRequest(m.name, keyData, ttl.Milliseconds())
+		_, err := m.invokeOnKey(request, keyData)
+		return err
+	}
 }
 
 func (m *MapImpl) SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
@@ -742,6 +769,18 @@ func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error)
 			return codec.DecodeMapTryRemoveResponse(response), nil
 		}
 	}
+}
+
+func (m *MapImpl) convertToObjects(valueDatas []pubserialization.Data) ([]interface{}, error) {
+	values := make([]interface{}, len(valueDatas))
+	for i, valueData := range valueDatas {
+		if value, err := m.convertToObject(valueData); err != nil {
+			return nil, err
+		} else {
+			values[i] = value
+		}
+	}
+	return values, nil
 }
 
 func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]proto.Pair, error) {

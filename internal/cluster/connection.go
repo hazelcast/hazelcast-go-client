@@ -43,7 +43,7 @@ type Connection struct {
 	pending                   chan *proto.ClientMessage
 	received                  chan *proto.ClientMessage
 	socket                    net.Conn
-	closed                    chan struct{}
+	doneCh                    chan struct{}
 	endpoint                  atomic.Value
 	status                    int32
 	isOwnerConnection         bool
@@ -134,7 +134,7 @@ func (c *Connection) socketWriteLoop() {
 			} else {
 				c.lastWrite.Store(time.Now())
 			}
-		case <-c.closed:
+		case <-c.doneCh:
 			return
 		}
 	}
@@ -149,7 +149,7 @@ func (c *Connection) socketReadLoop() {
 		c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
 		n, err = c.socket.Read(buf)
 		if !c.isAlive() {
-			return
+			break
 		}
 		if err != nil {
 			if c.isTimeoutError(err) {
@@ -175,14 +175,13 @@ func (c *Connection) socketReadLoop() {
 			}
 			clientMessageReader.Reset()
 		}
-
 	}
 	c.close(err)
 }
 
 func (c *Connection) send(inv invocation.Invocation) bool {
 	select {
-	case <-c.closed:
+	case <-c.doneCh:
 		return false
 	case c.pending <- inv.Request():
 		//inv.StoreSentConnection(c)
@@ -226,7 +225,7 @@ func (c *Connection) close(closeErr error) {
 	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
 		return
 	}
-	close(c.closed)
+	close(c.doneCh)
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))

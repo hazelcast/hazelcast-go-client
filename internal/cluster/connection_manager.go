@@ -189,6 +189,10 @@ func (m *ConnectionManager) GetActiveConnections() []*Connection {
 	return m.connMap.Connections()
 }
 
+func (m *ConnectionManager) GetRandomConn() *Connection {
+	return m.connMap.GetRandomConn()
+}
+
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	if m.started.Load() != true {
 		return
@@ -288,7 +292,7 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 	return &Connection{
 		responseCh:      m.responseCh,
 		pending:         make(chan *proto.ClientMessage, 1),
-		closed:          make(chan struct{}),
+		doneCh:          make(chan struct{}),
 		readBuffer:      make([]byte, 0),
 		connectionID:    m.NextConnectionID(),
 		eventDispatcher: m.eventDispatcher,
@@ -325,6 +329,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, asOwne
 			m.clusterService.uuid.Store(clusterUUID.String())
 			m.logger.Infof("Setting %s as owner.", conn.String())
 		}
+		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
 		return hzerror.NewHazelcastAuthenticationError("invalid credentials!", nil)
@@ -472,6 +477,26 @@ func (m *connectionMap) GetAddrForConnID(connID int64) pubcluster.Address {
 	defer m.connectionsMu.RUnlock()
 	if addr, ok := m.connToAddr[connID]; ok {
 		return addr
+	}
+	return nil
+}
+
+func (m *connectionMap) GetRandomAddr() pubcluster.Address {
+	m.connectionsMu.RLock()
+	defer m.connectionsMu.RUnlock()
+	for _, addr := range m.connToAddr {
+		// get the first address
+		return addr
+	}
+	return nil
+}
+
+func (m *connectionMap) GetRandomConn() *Connection {
+	m.connectionsMu.RLock()
+	defer m.connectionsMu.RUnlock()
+	for _, conn := range m.connections {
+		// get the first connection
+		return conn
 	}
 	return nil
 }

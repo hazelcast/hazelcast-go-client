@@ -17,16 +17,7 @@ type TryHandler func(ctx context.Context) (interface{}, error)
 type EventHandler func(state int32)
 type RetryPolicyFunc func(currentTry int) time.Duration
 
-type CircuitBreaker interface {
-	Try(tryHandler TryHandler) Future
-	TryWithContext(ctx context.Context, tryHandler TryHandler) Future
-}
-
-func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) CircuitBreaker {
-	return NewCircuitBreakerImpl(fs...)
-}
-
-type CircuitBreakerImpl struct {
+type CircuitBreaker struct {
 	// config
 	MaxRetries         int
 	MaxFailureCount    int32
@@ -39,7 +30,7 @@ type CircuitBreakerImpl struct {
 	StateMu             *sync.RWMutex
 }
 
-func NewCircuitBreakerImpl(fs ...CircuitBreakerOptionFunc) *CircuitBreakerImpl {
+func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 	opts, err := NewCircuitBreakerOptions(fs...)
 	if err != nil {
 		panic(fmt.Errorf("evaluating circuitbreaker options: %w", err))
@@ -50,7 +41,7 @@ func NewCircuitBreakerImpl(fs ...CircuitBreakerOptionFunc) *CircuitBreakerImpl {
 			return time.Duration(trial) * time.Millisecond
 		}
 	}
-	return &CircuitBreakerImpl{
+	return &CircuitBreaker{
 		MaxRetries:         opts.MaxRetries,
 		MaxFailureCount:    opts.MaxFailureCount,
 		ResetTimeout:       opts.ResetTimeout,
@@ -61,11 +52,11 @@ func NewCircuitBreakerImpl(fs ...CircuitBreakerOptionFunc) *CircuitBreakerImpl {
 	}
 }
 
-func (cb *CircuitBreakerImpl) Try(tryHandler TryHandler) Future {
+func (cb *CircuitBreaker) Try(tryHandler TryHandler) Future {
 	return cb.TryWithContext(context.Background(), tryHandler)
 }
 
-func (cb *CircuitBreakerImpl) TryWithContext(ctx context.Context, tryHandler TryHandler) Future {
+func (cb *CircuitBreaker) TryWithContext(ctx context.Context, tryHandler TryHandler) Future {
 	cb.StateMu.RLock()
 	state := cb.State
 	cb.StateMu.RUnlock()
@@ -77,7 +68,7 @@ func (cb *CircuitBreakerImpl) TryWithContext(ctx context.Context, tryHandler Try
 	return future
 }
 
-func (cb *CircuitBreakerImpl) try(ctx context.Context, resultCh chan interface{}, tryHandler TryHandler) {
+func (cb *CircuitBreaker) try(ctx context.Context, resultCh chan interface{}, tryHandler TryHandler) {
 	var result interface{}
 	var err error
 loop:
@@ -105,14 +96,14 @@ loop:
 	close(resultCh)
 }
 
-func (cb *CircuitBreakerImpl) notifyFailed() {
+func (cb *CircuitBreaker) notifyFailed() {
 	failureCount := atomic.AddInt32(&cb.CurrentFailureCount, 1)
 	if failureCount > cb.MaxFailureCount {
 		cb.openCircuit()
 	}
 }
 
-func (cb *CircuitBreakerImpl) openCircuit() {
+func (cb *CircuitBreaker) openCircuit() {
 	cb.StateMu.Lock()
 	if state := cb.State; state == StateOpen {
 		cb.StateMu.Unlock()
@@ -132,7 +123,7 @@ func (cb *CircuitBreakerImpl) openCircuit() {
 	}(cb.ResetTimeout)
 }
 
-func (cb *CircuitBreakerImpl) closeCircuit() {
+func (cb *CircuitBreaker) closeCircuit() {
 	cb.StateMu.Lock()
 	defer cb.StateMu.Unlock()
 	if state := cb.State; state == StateClosed {

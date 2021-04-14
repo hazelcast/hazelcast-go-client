@@ -4,15 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+const ENV_DISABLE_SMART = "DISABLE_SMART"
+const ENV_DISABLE_NONSMART = "DISABLE_NONSMART"
 
 func GetClientMap(name string) (*hz.Client, hztypes.Map) {
 	cb := hz.NewConfigBuilder()
@@ -57,36 +60,41 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 		client *hz.Client
 		m      hztypes.Map
 	)
-	t.Run("Smart Client", func(t *testing.T) {
-		cb := hz.NewConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		client, m = GetClientMapWithConfigBuilder("my-map", cb)
-		defer func() {
-			if err := m.EvictAll(); err != nil {
-				panic(err)
+	hasSmart := os.Getenv(ENV_DISABLE_SMART) != "1"
+	hasNonSmart := os.Getenv(ENV_DISABLE_NONSMART) != "1"
+	if hasSmart {
+		t.Run("Smart Client", func(t *testing.T) {
+			cb := hz.NewConfigBuilder()
+			if cbCallback != nil {
+				cbCallback(cb)
 			}
-			client.Shutdown()
-		}()
-		f(t, m)
-
-	})
-	t.Run("Non-Smart Client", func(t *testing.T) {
-		cb := hz.NewConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		cb.Cluster().SetSmartRouting(false)
-		client, m = GetClientMapWithConfigBuilder("my-map", cb)
-		defer func() {
-			if err := m.EvictAll(); err != nil {
-				panic(err)
+			client, m = GetClientMapWithConfigBuilder("my-map", cb)
+			defer func() {
+				if err := m.EvictAll(); err != nil {
+					panic(err)
+				}
+				client.Shutdown()
+			}()
+			f(t, m)
+		})
+	}
+	if hasNonSmart {
+		t.Run("Non-Smart Client", func(t *testing.T) {
+			cb := hz.NewConfigBuilder()
+			if cbCallback != nil {
+				cbCallback(cb)
 			}
-			client.Shutdown()
-		}()
-		f(t, m)
-	})
+			cb.Cluster().SetSmartRouting(false)
+			client, m = GetClientMapWithConfigBuilder("my-map", cb)
+			defer func() {
+				if err := m.EvictAll(); err != nil {
+					panic(err)
+				}
+				client.Shutdown()
+			}()
+			f(t, m)
+		})
+	}
 }
 
 func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, c *hz.Client)) {

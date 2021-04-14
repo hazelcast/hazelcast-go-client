@@ -1,10 +1,12 @@
 package cluster
 
 import (
-	"errors"
+	"context"
 	"fmt"
+	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -33,27 +35,38 @@ type ConnectionInvocationHandler struct {
 	clusterService    *ServiceImpl
 	smart             int32
 	logger            logger.Logger
+	cb                *cb.CircuitBreaker
 }
 
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
+	circuitBreaker := cb.NewCircuitBreaker(
+		cb.MaxRetries(3),
+		cb.MaxFailureCount(3),
+		cb.RetryPolicy(func(attempt int) time.Duration {
+			return time.Duration(attempt) * time.Second
+		}))
 	return &ConnectionInvocationHandler{
 		connectionManager: bundle.ConnectionManager,
 		clusterService:    bundle.ClusterService,
 		logger:            bundle.Logger,
+		cb:                circuitBreaker,
 	}
 }
 
 func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
-	if h.clusterService.SmartRoutingEnabled() {
-		if err := h.invokeSmart(inv); err != nil {
-			h.logger.Warnf("invoking non smart since: %s", err.Error())
-			return h.invokeNonSmart(inv)
+	_, err := h.cb.Try(func(ctx context.Context) (interface{}, error) {
+		if h.clusterService.SmartRoutingEnabled() {
+			if err := h.invokeSmart(inv); err != nil {
+				h.logger.Warnf("invoking non smart since: %s", err.Error())
+				return nil, h.invokeNonSmart(inv)
+			}
+			return nil, nil
+		} else {
+			return nil, h.invokeNonSmart(inv)
 		}
-		return nil
-	} else {
-		return h.invokeNonSmart(inv)
-	}
+	}).Result()
+	return err
 }
 
 func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
@@ -90,20 +103,20 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 }
 
 func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
-	if conn := h.connectionManager.GetConnectionForAddress(addr); conn == nil {
-		h.logger.Trace(func() string {
-			return fmt.Sprintf("Sending invocation to %s failed, address not found", addr.String())
-		})
-		return fmt.Errorf("address not found: %s", addr.String())
-	} else if invImpl, ok := inv.(*invocation.Impl); ok {
-		boundInv := &ConnectionBoundInvocation{
-			invocationImpl:  invImpl,
-			boundConnection: conn,
+	conn := h.connectionManager.GetConnectionForAddress(addr)
+	if conn == nil {
+		if conn = h.connectionManager.GetRandomConn(); conn != nil {
+			h.logger.Trace(func() string {
+				return fmt.Sprintf("address %s not found for invocation, sending to random connection", addr)
+			})
+		} else {
+			h.logger.Trace(func() string {
+				return fmt.Sprintf("sending invocation to %s failed, address not found", addr.String())
+			})
+			return fmt.Errorf("address not found: %s", addr.String())
 		}
-		return h.sendToConnection(boundInv, conn)
-	} else {
-		return errors.New("only invocations of time *invocationImpl is supported")
 	}
+	return h.sendToConnection(inv, conn)
 }
 
 func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
