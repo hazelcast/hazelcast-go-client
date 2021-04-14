@@ -354,14 +354,11 @@ func (m *MapImpl) LoadAllReplacingExisting(keys ...interface{}) error {
 }
 
 func (m *MapImpl) Lock(key interface{}) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return err
-	} else {
-		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapLockRequest(m.name, keyData, threadID(), ttlDefault, refID)
-		_, err = m.invokeOnKey(request, keyData)
-		return err
-	}
+	return m.lock(key, ttlDefault)
+}
+
+func (m *MapImpl) LockWithLease(key interface{}, leaseTime time.Duration) error {
+	return m.lock(key, leaseTime.Milliseconds())
 }
 
 func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
@@ -458,6 +455,15 @@ func (m *MapImpl) RemoveAll(predicate predicate.Predicate) error {
 		request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
 		_, err := m.invokeOnRandomTarget(request, nil)
 		return err
+	}
+}
+
+func (m *MapImpl) RemoveInterceptor(registrationID string) (bool, error) {
+	request := codec.EncodeMapRemoveInterceptorRequest(m.name, registrationID)
+	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+		return false, nil
+	} else {
+		return codec.DecodeMapRemoveInterceptorResponse(response), nil
 	}
 }
 
@@ -666,6 +672,17 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	request := codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
 	_, err := m.invokeOnRandomTarget(request, nil)
 	return err
+}
+
+func (m *MapImpl) lock(key interface{}, ttl int64) error {
+	if keyData, err := m.validateAndSerialize(key); err != nil {
+		return err
+	} else {
+		refID := m.referenceIDGenerator.NextID()
+		request := codec.EncodeMapLockRequest(m.name, keyData, threadID(), ttl, refID)
+		_, err = m.invokeOnKey(request, keyData)
+		return err
+	}
 }
 
 func (m *MapImpl) putTTL(key interface{}, value interface{}, ttl int64) (interface{}, error) {
