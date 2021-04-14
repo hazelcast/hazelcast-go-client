@@ -73,7 +73,7 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
-		if conn := h.connectionManager.GetConnectionForPartition(inv.PartitionID()); conn == nil {
+		if conn := h.connectionManager.GetConnForPartition(inv.PartitionID()); conn == nil {
 			return fmt.Errorf("connection for partition ID %d not found", inv.PartitionID())
 		} else {
 			return h.sendToConnection(inv, conn)
@@ -81,18 +81,15 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 	} else if inv.Address() != nil {
 		return h.sendToAddress(inv, inv.Address())
 	} else {
-		return h.sendToRandomAddress(inv)
+		return h.sendToOwnerAddress(inv)
 	}
 }
 
 func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
-	} else if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
-		return h.sendToRandomAddress(inv)
-	} else {
-		return h.sendToAddress(inv, addr)
 	}
+	return h.sendToOwnerAddress(inv)
 }
 
 func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) error {
@@ -105,7 +102,7 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	conn := h.connectionManager.GetConnectionForAddress(addr)
 	if conn == nil {
-		if conn = h.connectionManager.GetRandomConn(); conn != nil {
+		if conn = h.connectionManager.RandomConnection(); conn != nil {
 			h.logger.Trace(func() string {
 				return fmt.Sprintf("address %s not found for invocation, sending to random connection", addr)
 			})
@@ -119,9 +116,9 @@ func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, a
 	return h.sendToConnection(inv, conn)
 }
 
-func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
-	if addr := h.clusterService.OwnerConnectionAddr(); addr == nil {
-		return hzerror.NewHazelcastIOError("no address found to invoke", nil)
+func (h *ConnectionInvocationHandler) sendToOwnerAddress(inv invocation.Invocation) error {
+	if addr := h.connectionManager.OwnerConnectionAddr(); addr == nil {
+		return hzerror.NewHazelcastIOError("cannot send to owner address: not found", nil)
 	} else {
 		return h.sendToAddress(inv, addr)
 	}

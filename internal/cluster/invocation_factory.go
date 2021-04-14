@@ -38,9 +38,11 @@ func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.Clien
 }
 
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, partitionID int32, address pubcluster.Address,
-	connection *Connection, timeout time.Duration) *ConnectionBoundInvocation {
+	connection *Connection, timeout time.Duration, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	message.SetCorrelationID(f.makeCorrelationID())
-	return newConnectionBoundInvocation(message, partitionID, address, connection, timeout)
+	inv := newConnectionBoundInvocation(message, partitionID, address, connection, timeout)
+	inv.SetEventHandler(handler)
+	return inv
 }
 
 func (f *ConnectionInvocationFactory) makeCorrelationID() int64 {

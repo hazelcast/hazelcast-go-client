@@ -42,13 +42,14 @@ func (b *ConnectionListenerBinderImpl) Add(
 	clientRegistrationID int,
 	handler proto.ClientMessageHandler) error {
 	connToRegistration := map[int64]connRegistration{}
-	for _, conn := range b.connectionManager.GetActiveConnections() {
+	for _, conn := range b.connectionManager.ActiveConnections() {
 		inv := b.invocationFactory.NewConnectionBoundInvocation(
 			request,
 			-1,
 			nil,
 			conn,
-			b.connectionManager.clusterConfig.InvocationTimeout)
+			b.connectionManager.clusterConfig.InvocationTimeout,
+			nil)
 		inv.SetEventHandler(handler)
 		b.requestCh <- inv
 		if response, err := inv.Get(); err != nil {
@@ -81,7 +82,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 func (b *ConnectionListenerBinderImpl) Remove(
 	mapName string,
 	clientRegistrationID int) error {
-	activeConnections := b.connectionManager.GetActiveConnections()
+	activeConnections := b.connectionManager.ActiveConnections()
 	connToRegistration := []connRegistration{}
 	b.connToRegistrationMu.Lock()
 	for _, conn := range activeConnections {
@@ -103,7 +104,8 @@ func (b *ConnectionListenerBinderImpl) Remove(
 			-1,
 			nil,
 			reg.conn,
-			b.connectionManager.clusterConfig.InvocationTimeout)
+			b.connectionManager.clusterConfig.InvocationTimeout,
+			nil)
 		b.requestCh <- inv
 		if _, err := inv.Get(); err != nil {
 			return err
