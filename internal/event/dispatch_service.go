@@ -74,6 +74,9 @@ func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, ha
 	if s.running.Load() != true {
 		return
 	}
+	if subscriptionID == DefaultSubscriptionID {
+		subscriptionID = MakeSubscriptionID(handler)
+	}
 	s.controlCh <- controlMessage{
 		controlType:    subscribeSync,
 		eventName:      eventName,

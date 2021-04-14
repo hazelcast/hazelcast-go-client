@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -100,12 +101,13 @@ type ConnectionManager struct {
 	clientName           string
 
 	connMap           *connectionMap
-	nextConnectionID  int64
+	nextConnID        int64
 	addressTranslator pubcluster.AddressTranslator
 	smartRouting      bool
 	alive             atomic.Value
-	logger            logger.Logger
 	started           atomic.Value
+	ownerConn         atomic.Value
+	logger            logger.Logger
 	doneCh            chan struct{}
 }
 
@@ -144,6 +146,7 @@ func (m *ConnectionManager) Start() error {
 	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionClosedSubscriptionID, m.handleConnectionClosed)
 	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
 	m.eventDispatcher.Subscribe(EventMembersAdded, memberAddedSubscriptionID, m.handleMembersAdded)
+	go m.logStatus()
 	m.started.Store(true)
 	m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientConnected))
 	return nil
@@ -165,14 +168,14 @@ func (m *ConnectionManager) Stop() chan struct{} {
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
-	return atomic.AddInt64(&m.nextConnectionID, 1)
+	return atomic.AddInt64(&m.nextConnID, 1)
 }
 
 func (m *ConnectionManager) GetConnectionForAddress(addr pubcluster.Address) *Connection {
 	return m.connMap.GetConnForAddr(addr.String())
 }
 
-func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connection {
+func (m *ConnectionManager) GetConnForPartition(partitionID int32) *Connection {
 	if partitionID < 0 {
 		panic("partition ID is negative")
 	}
@@ -185,12 +188,19 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 	}
 }
 
-func (m *ConnectionManager) GetActiveConnections() []*Connection {
+func (m *ConnectionManager) ActiveConnections() []*Connection {
 	return m.connMap.Connections()
 }
 
-func (m *ConnectionManager) GetRandomConn() *Connection {
-	return m.connMap.GetRandomConn()
+func (m *ConnectionManager) RandomConnection() *Connection {
+	return m.connMap.RandomConn()
+}
+
+func (m *ConnectionManager) OwnerConnectionAddr() pubcluster.Address {
+	if conn, ok := m.ownerConn.Load().(*Connection); ok {
+		return m.connMap.GetAddrForConnID(conn.connectionID)
+	}
+	return nil
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
@@ -246,7 +256,16 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientDisconnected))
+	} else if m.ownerConn.Load().(*Connection).connectionID == conn.connectionID {
+		m.assignNewOwner()
 	}
+}
+
+func (m *ConnectionManager) assignNewOwner() {
+	m.logger.Infof("assigning new owner connection")
+	newOwner := m.RandomConnection()
+	m.ownerConn.Store(newOwner)
+	m.eventDispatcher.Publish(NewOwnerConnectionChanged(newOwner))
 }
 
 func (m *ConnectionManager) connectCluster() error {
@@ -261,28 +280,28 @@ func (m *ConnectionManager) connectCluster() error {
 }
 
 func (m *ConnectionManager) connectAddr(addr pubcluster.Address) error {
-	_, err := m.ensureConnection(addr, true)
+	_, err := m.ensureConnection(addr)
 	return err
 }
 
-func (m *ConnectionManager) ensureConnection(addr pubcluster.Address, owner bool) (*Connection, error) {
-	if conn := m.getConnection(addr, owner); conn != nil {
+func (m *ConnectionManager) ensureConnection(addr pubcluster.Address) (*Connection, error) {
+	if conn := m.getConnection(addr); conn != nil {
 		return conn, nil
 	}
 	addr = m.addressTranslator.Translate(addr)
-	return m.maybeCreateConnection(addr, owner)
+	return m.maybeCreateConnection(addr)
 }
 
-func (m *ConnectionManager) getConnection(addr pubcluster.Address, owner bool) *Connection {
+func (m *ConnectionManager) getConnection(addr pubcluster.Address) *Connection {
 	return m.GetConnectionForAddress(addr)
 }
 
-func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address, owner bool) (*Connection, error) {
+func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Connection, error) {
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection()
 	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
-	} else if err = m.authenticate(conn, owner); err != nil {
+	} else if err = m.authenticate(conn); err != nil {
 		return nil, err
 	}
 	return conn, nil
@@ -301,33 +320,33 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 	}
 }
 
-func (m *ConnectionManager) authenticate(connection *Connection, asOwner bool) error {
+func (m *ConnectionManager) authenticate(connection *Connection) error {
 	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
-	request := m.encodeAuthenticationRequest(asOwner)
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout)
+	request := m.encodeAuthenticationRequest()
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout, nil)
 	m.requestCh <- inv
 	if result, err := inv.GetWithTimeout(m.clusterConfig.HeartbeatTimeout); err != nil {
 		return err
 	} else {
-		return m.processAuthenticationResult(connection, asOwner, result)
+		return m.processAuthenticationResult(connection, result)
 	}
 }
 
-func (m *ConnectionManager) processAuthenticationResult(conn *Connection, asOwner bool, result *proto.ClientMessage) error {
-	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, clusterUUID, _ := codec.DecodeClientAuthenticationResponse(result)
+func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
+	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.endpoint.Store(address)
-		conn.isOwnerConnection = asOwner
 		m.connMap.AddConnection(conn, address)
-		if asOwner {
+		if _, ok := m.ownerConn.Load().(*Connection); !ok {
 			// TODO: detect cluster change
 			m.partitionService.checkAndSetPartitionCount(partitionCount)
-			m.clusterService.ownerConnectionAddr.Store(address)
+			m.ownerConn.Store(conn)
+			// TODO: remove v ?
 			m.clusterService.ownerUUID.Store(memberUuid.String())
-			m.clusterService.uuid.Store(clusterUUID.String())
 			m.logger.Infof("Setting %s as owner.", conn.String())
+			m.eventDispatcher.Publish(NewOwnerConnectionChanged(conn))
 		}
 		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
@@ -339,16 +358,15 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, asOwne
 	return nil
 }
 
-func (m *ConnectionManager) encodeAuthenticationRequest(asOwner bool) *proto.ClientMessage {
+func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {
 	if creds, ok := m.credentials.(*security.UsernamePasswordCredentials); ok {
-		return m.createAuthenticationRequest(asOwner, creds)
+		return m.createAuthenticationRequest(creds)
 	}
-	return m.createCustomAuthenticationRequest(asOwner)
+	panic("only username password credentials are supported")
 
 }
 
-func (m *ConnectionManager) createAuthenticationRequest(asOwner bool,
-	creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
+func (m *ConnectionManager) createAuthenticationRequest(creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	return codec.EncodeClientAuthenticationRequest(
 		m.clusterConfig.Name,
 		"",
@@ -362,36 +380,6 @@ func (m *ConnectionManager) createAuthenticationRequest(asOwner bool,
 	)
 }
 
-func (m *ConnectionManager) createCustomAuthenticationRequest(asOwner bool) *proto.ClientMessage {
-	uuid := m.clusterService.uuid.Load().(string)
-	ownerUUID := m.clusterService.ownerUUID.Load().(string)
-	credsData, err := m.serializationService.ToData(m.credentials)
-	if err != nil {
-		m.logger.Error("Credentials cannot be serialized!")
-		return nil
-	}
-	return proto.ClientAuthenticationCustomEncodeRequest(
-		credsData,
-		uuid,
-		ownerUUID,
-		asOwner,
-		proto.ClientType,
-		serializationVersion,
-		ClientVersion,
-	)
-}
-
-func (m *ConnectionManager) getAuthenticationDecoder() AuthenticationDecoder {
-	var authenticationDecoder AuthenticationDecoder
-	if _, ok := m.credentials.(*security.UsernamePasswordCredentials); ok {
-		authenticationDecoder = proto.DecodeClientAuthenticationResponse
-	} else {
-		// TODO: rename proto.ClientAuthenticationCustomDecodeResponse
-		authenticationDecoder = proto.ClientAuthenticationCustomDecodeResponse
-	}
-	return authenticationDecoder
-}
-
 func (m *ConnectionManager) heartbeat() {
 	ticker := time.NewTicker(m.clusterConfig.HeartbeatInterval)
 	for {
@@ -399,7 +387,7 @@ func (m *ConnectionManager) heartbeat() {
 		case <-m.doneCh:
 			return
 		case <-ticker.C:
-			for _, conn := range m.GetActiveConnections() {
+			for _, conn := range m.ActiveConnections() {
 				m.sendHeartbeat(conn)
 			}
 		}
@@ -408,12 +396,35 @@ func (m *ConnectionManager) heartbeat() {
 
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, m.clusterConfig.HeartbeatTimeout)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, m.clusterConfig.HeartbeatTimeout, nil)
 	m.requestCh <- inv
 }
 
-func checkOwnerConn(owner bool, conn *Connection) bool {
-	return owner && conn.isOwnerConnection
+func (m *ConnectionManager) logStatus() {
+	ticker := time.NewTicker(10 * time.Second)
+	for {
+		select {
+		case <-m.doneCh:
+			break
+		case <-ticker.C:
+			m.connMap.Info(func(connections map[string]*Connection, connToAddr map[int64]pubcluster.Address) {
+				m.logger.Trace(func() string {
+					conns := map[string]int{}
+					for addr, conn := range connections {
+						conns[addr] = int(conn.connectionID)
+					}
+					return fmt.Sprintf("connections: %#v", conns)
+				})
+				m.logger.Trace(func() string {
+					ctas := map[int]string{}
+					for connID, addr := range connToAddr {
+						ctas[int(connID)] = addr.String()
+					}
+					return fmt.Sprintf("connection to address: %#v", ctas)
+				})
+			})
+		}
+	}
 }
 
 type connectionMap struct {
@@ -439,10 +450,11 @@ func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address)
 	m.connToAddr[conn.connectionID] = addr
 }
 
-// RemoveConnectionDisconected removes a connection and returns true if there are no more connections left.
+// RemoveConnection removes a connection and returns true if there are no more connections left.
 func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	var remaining int
 	m.connectionsMu.Lock()
+	defer m.connectionsMu.Unlock()
 	for addr, conn := range m.connections {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.connections, addr)
@@ -451,7 +463,6 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 			break
 		}
 	}
-	m.connectionsMu.Unlock()
 	return remaining
 }
 
@@ -491,7 +502,7 @@ func (m *connectionMap) GetRandomAddr() pubcluster.Address {
 	return nil
 }
 
-func (m *connectionMap) GetRandomConn() *Connection {
+func (m *connectionMap) RandomConn() *Connection {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	for _, conn := range m.connections {
@@ -535,6 +546,12 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connect
 		}
 	}
 	return removedConns
+}
+
+func (m *connectionMap) Info(infoFun func(connections map[string]*Connection, connToAddr map[int64]pubcluster.Address)) {
+	m.connectionsMu.RLock()
+	defer m.connectionsMu.RUnlock()
+	infoFun(m.connections, m.connToAddr)
 }
 
 type AuthenticationDecoder func(clientMessage *proto.ClientMessage) (

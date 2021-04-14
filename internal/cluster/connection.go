@@ -46,7 +46,6 @@ type Connection struct {
 	doneCh                    chan struct{}
 	endpoint                  atomic.Value
 	status                    int32
-	isOwnerConnection         bool
 	lastRead                  atomic.Value
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
