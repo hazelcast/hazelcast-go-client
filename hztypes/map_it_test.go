@@ -301,10 +301,13 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetEntrySet
+// TODO: Test Map GetKeySetWithPredicate
+// TODO: Test Map GetValuesWithPredicate
 // TODO: Test Map IsLocked
 // TODO: Test Map LoadAll
 // TODO: Test Map LoadAllReplacingExisting
 // TODO: Test Map Lock
+// TODO: Test Map SetTTL
 // TODO: Test Map SetWithTTL
 // TODO: Test Map SetWithTTLAndMaxIdle
 // TODO: Test Map TryLock

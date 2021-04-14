@@ -56,8 +56,8 @@ type Map interface {
 
 	// Get returns the value for the specified key, or nil if this map does not contain this key.
 	// Warning:
-	//   This method returns a clone of original value, modifying the returned value does not change the
-	//   actual value in the map. One should put modified value back to make changes visible to all nodes.
+	// This method returns a clone of original value, modifying the returned value does not change the
+	// actual value in the map. One should put modified value back to make changes visible to all nodes.
 	Get(key interface{}) (interface{}, error)
 
 	// GetAll returns the entries for the given keys.
@@ -66,8 +66,14 @@ type Map interface {
 	// GetKeySet returns keys contained in this map
 	GetKeySet() ([]interface{}, error)
 
+	// GetKeySetWithPredicate returns keys contained in this map
+	GetKeySetWithPredicate(predicate predicate.Predicate) ([]interface{}, error)
+
 	// GetValues returns a list clone of the values contained in this map
 	GetValues() ([]interface{}, error)
+
+	// GetValuesWithPredicate returns a list clone of the values contained in this map
+	GetValuesWithPredicate(predicate predicate.Predicate) ([]interface{}, error)
 
 	// GetEntryView returns the SimpleEntryView for the specified key.
 	GetEntryView(key string) (*SimpleEntryView, error)
@@ -187,6 +193,11 @@ type Map interface {
 
 	// Set sets the value for the given key.
 	Set(key interface{}, value interface{}) error
+
+	// SetTTL updates the TTL value of the entry specified by the given key with a new TTL value.
+	// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+	// Set ttl to 0 for infinite timeout.
+	SetTTL(key interface{}, ttl time.Duration) error
 
 	// SetWithTTL sets the value for the given key.
 	// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
