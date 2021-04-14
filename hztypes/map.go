@@ -115,10 +115,26 @@ type Map interface {
 	// acquire it.
 	Lock(key interface{}) error
 
+	// LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
+	// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
+	// dormant until the lock has been acquired.
+	//
+	// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
+	// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
+	// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
+	// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
+	//
+	// Scope of the lock is this map only. Acquired lock is only for the key in this map.
+	//
+	// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
+	// acquire it.
+	// Lease time is the the time to wait before releasing the lock.
+	LockWithLease(key interface{}, leaseTime time.Duration) error
+
 	// Put sets the value for the given key and returns the old value.
 	Put(key interface{}, value interface{}) (interface{}, error)
 
-	// Put sets the value for the given key and returns the old value.
+	// PutWithTTL sets the value for the given key and returns the old value.
 	// Entry will expire and get evicted after the ttl.
 	PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error)
 
@@ -126,12 +142,12 @@ type Map interface {
 	// maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 	PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error)
 
-	// PutWithMaxIdle sets the value for the given key and returns the old value.
+	// PutWithTTLAndMaxIdle sets the value for the given key and returns the old value.
 	// Entry will expire and get evicted after the ttl.
 	// maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 	PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error)
 
-	// PutALl copies all of the mappings from the specified map to this map.
+	// PutAll copies all of the mappings from the specified map to this map.
 	// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 	// while others are not.
 	PutAll(keyValuePairs []Entry) error
@@ -139,11 +155,11 @@ type Map interface {
 	// PutIfAbsent associates the specified key with the given value if it is not already associated.
 	PutIfAbsent(key interface{}, value interface{}) (interface{}, error)
 
-	// PutIfAbsent associates the specified key with the given value if it is not already associated.
+	// PutIfAbsentWithTTL associates the specified key with the given value if it is not already associated.
 	// Entry will expire and get evicted after the ttl.
 	PutIfAbsentWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error)
 
-	// PutIfAbsent associates the specified key with the given value if it is not already associated.
+	// PutIfAbsentWithTTLAndMaxIdle associates the specified key with the given value if it is not already associated.
 	// Entry will expire and get evicted after the ttl.
 	// Given max idle time (maximum time for this entry to stay idle in the map) is used.
 	PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error)
@@ -154,19 +170,19 @@ type Map interface {
 	// Max idle time defined on the server-side configuration will be used.
 	PutTransient(key interface{}, value interface{}) error
 
-	// PutTransient sets the value for the given key.
+	// PutTransientWithTTL sets the value for the given key.
 	// MapStore defined at the server side will not be called.
 	// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 	// Set ttl to 0 for infinite timeout.
 	PutTransientWithTTL(key interface{}, value interface{}, ttl time.Duration) error
 
-	// PutTransient sets the value for the given key.
+	// PutTransientWithMaxIdle sets the value for the given key.
 	// MapStore defined at the server side will not be called.
 	// Given max idle time (maximum time for this entry to stay idle in the map) is used.
 	// Set maxIdle to 0 for infinite idle time.
 	PutTransientWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) error
 
-	// PutTransient sets the value for the given key.
+	// PutTransientWithTTLMaxIdle sets the value for the given key.
 	// MapStore defined at the server side will not be called.
 	// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 	// Set ttl to 0 for infinite timeout.
@@ -179,6 +195,9 @@ type Map interface {
 
 	// RemoveAll deletes all entries matching the given predicate.
 	RemoveAll(predicate predicate.Predicate) error
+
+	// RemoveInterceptor removes the interceptor.
+	RemoveInterceptor(registrationID string) (bool, error)
 
 	// RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
 	// Returns true if the entry was removed.
