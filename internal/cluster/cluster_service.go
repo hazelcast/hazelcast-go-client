@@ -264,6 +264,14 @@ func (m *membersMap) Find(uuid string) *Member {
 	}
 }
 
+func (m *membersMap) RemoveMembersWithAddr(addr string) {
+	for k, member := range m.members {
+		if addr == member.address.String() {
+			delete(m.members, k)
+		}
+	}
+}
+
 func (m *membersMap) Info(infoFun func(members map[string]*Member)) {
 	m.membersMu.RLock()
 	defer m.membersMu.RUnlock()

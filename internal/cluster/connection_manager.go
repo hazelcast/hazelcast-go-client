@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
+
 	ilifecycle "github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/lifecycle"
 
@@ -181,7 +183,7 @@ func (m *ConnectionManager) GetConnForPartition(partitionID int32) *Connection {
 	}
 	if ownerUUID := m.partitionService.GetPartitionOwner(partitionID); ownerUUID == nil {
 		return nil
-	} else if member := m.clusterService.GetMemberByUUID(ownerUUID.String()); member == nil {
+	} else if member := m.clusterService.GetMemberByUUID(ownerUUID.String()); nilutil.IsNil(member) {
 		return nil
 	} else {
 		return m.GetConnectionForAddress(member.Address())
@@ -254,6 +256,10 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 }
 
 func (m *ConnectionManager) removeConnection(conn *Connection) {
+	// TODO: move this somewhere else
+	if addr := m.connMap.GetAddrForConnID(conn.connectionID); !nilutil.IsNil(addr) {
+		m.clusterService.membersMap.RemoveMembersWithAddr(addr.String())
+	}
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientDisconnected))
 	} else if m.ownerConn.Load().(*Connection).connectionID == conn.connectionID {
