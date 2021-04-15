@@ -11,11 +11,11 @@ import (
 )
 
 type AddressProvider interface {
-	Addresses() []pubcluster.Address
+	Addresses() []*pubcluster.AddressImpl
 }
 
 type DefaultAddressProvider struct {
-	addresses []pubcluster.Address
+	addresses []*pubcluster.AddressImpl
 }
 
 func ParseAddress(addr string) (*pubcluster.AddressImpl, error) {
@@ -43,7 +43,7 @@ func ParseAddress(addr string) (*pubcluster.AddressImpl, error) {
 
 func NewDefaultAddressProvider(networkConfig *pubcluster.Config) *DefaultAddressProvider {
 	var err error
-	addresses := make([]pubcluster.Address, len(networkConfig.Addrs))
+	addresses := make([]*pubcluster.AddressImpl, len(networkConfig.Addrs))
 	for i, addr := range networkConfig.Addrs {
 		if addresses[i], err = ParseAddress(addr); err != nil {
 			panic(err)
@@ -52,6 +52,6 @@ func NewDefaultAddressProvider(networkConfig *pubcluster.Config) *DefaultAddress
 	return &DefaultAddressProvider{addresses: addresses}
 }
 
-func (p DefaultAddressProvider) Addresses() []pubcluster.Address {
+func (p DefaultAddressProvider) Addresses() []*pubcluster.AddressImpl {
 	return p.addresses
 }

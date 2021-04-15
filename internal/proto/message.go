@@ -85,10 +85,6 @@ type ClientMessage struct {
 	Err        error
 }
 
-func NewClientMessage(startFrame *Frame) *ClientMessage {
-	return NewClientMessageWithStartAndEndFrame(startFrame, startFrame)
-}
-
 func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *ClientMessage {
 	return &ClientMessage{
 		StartFrame: startFrame,
@@ -96,12 +92,25 @@ func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *C
 	}
 }
 
+func NewClientMessage(startFrame *Frame) *ClientMessage {
+	return NewClientMessageWithStartAndEndFrame(startFrame, startFrame)
+}
+
 func NewClientMessageForEncode() *ClientMessage {
-	return &ClientMessage{}
+	return NewClientMessage(nil)
 }
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
 	return NewClientMessage(frame)
+}
+
+func (m *ClientMessage) Copy() *ClientMessage {
+	return &ClientMessage{
+		StartFrame: m.StartFrame.DeepCopy(),
+		EndFrame:   m.EndFrame.DeepCopy(),
+		Retryable:  m.Retryable,
+		Err:        m.Err,
+	}
 }
 
 func (m *ClientMessage) IsRetryable() bool {

@@ -15,7 +15,7 @@ type ConnectionBoundInvocation struct {
 	boundConnection *Connection
 }
 
-func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address,
+func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl,
 	connection *Connection, timeout time.Duration) *ConnectionBoundInvocation {
 	return &ConnectionBoundInvocation{
 		invocationImpl:  invocation.NewImpl(clientMessage, partitionID, address, timeout),

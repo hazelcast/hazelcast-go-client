@@ -32,12 +32,12 @@ func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto
 	return inv
 }
 
-func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, address pubcluster.Address) invocation.Invocation {
+func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, address *pubcluster.AddressImpl) invocation.Invocation {
 	message.SetCorrelationID(f.makeCorrelationID())
 	return invocation.NewImpl(message, -1, address, f.invocationTimeout)
 }
 
-func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, partitionID int32, address pubcluster.Address,
+func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl,
 	connection *Connection, timeout time.Duration, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	message.SetCorrelationID(f.makeCorrelationID())
 	inv := newConnectionBoundInvocation(message, partitionID, address, connection, timeout)
