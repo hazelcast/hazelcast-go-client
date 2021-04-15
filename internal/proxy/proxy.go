@@ -231,9 +231,7 @@ func (p *Proxy) invokeOnRandomTarget(request *proto.ClientMessage, handler proto
 
 func (p *Proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	future := p.cb.Try(func(ctx context.Context) (interface{}, error) {
-		// TODO: remove
-		requestCopy := request.Copy()
-		return p.invokeOnPartitionAsync(requestCopy, partitionID).GetWithTimeout(2 * time.Second)
+		return p.invokeOnPartitionAsync(request, partitionID).GetWithTimeout(2 * time.Second)
 	})
 	if res, err := future.Result(); err != nil {
 		return nil, err
