@@ -177,7 +177,8 @@ func (m *ServiceImpl) logStatus() {
 	for {
 		select {
 		case <-m.doneCh:
-			break
+			ticker.Stop()
+			return
 		case <-ticker.C:
 			m.membersMap.Info(func(members map[string]*Member) {
 				m.logger.Trace(func() string {
