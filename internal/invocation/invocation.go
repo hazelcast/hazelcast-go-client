@@ -17,7 +17,7 @@ type Invocation interface {
 	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
-	Address() pubcluster.Address
+	Address() *pubcluster.AddressImpl
 }
 
 type Impl struct {
@@ -25,14 +25,14 @@ type Impl struct {
 	response        chan *proto.ClientMessage
 	completed       int32
 	boundConnection *Impl
-	address         pubcluster.Address
+	address         *pubcluster.AddressImpl
 	partitionID     int32
 	//sentConnection  atomic.Value
 	eventHandler func(clientMessage *proto.ClientMessage)
 	deadline     time.Time
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address, timeout time.Duration) *Impl {
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl, timeout time.Duration) *Impl {
 	return &Impl{
 		partitionID: partitionID,
 		address:     address,
@@ -78,7 +78,7 @@ func (i *Impl) Request() *proto.ClientMessage {
 	return i.request
 }
 
-func (i *Impl) Address() pubcluster.Address {
+func (i *Impl) Address() *pubcluster.AddressImpl {
 	return i.address
 }
 

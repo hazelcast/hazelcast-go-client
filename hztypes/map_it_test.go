@@ -13,6 +13,23 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 )
 
+func TestChaosPutGetMap(t *testing.T) {
+	t.SkipNow()
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		for i := 0; i < 100000; i++ {
+			key := fmt.Sprintf("k%d", i)
+			value := fmt.Sprintf("v%d", i)
+			it.Must(m.Set(key, value))
+			if retrievedValue := it.MustValue(m.Get(key)); value != retrievedValue {
+				t.Fatalf("target: %s != %s", value, retrievedValue)
+			} else {
+				fmt.Printf("\nOK: %s\n", key)
+			}
+			//time.Sleep(30 * time.Millisecond)
+		}
+	})
+}
+
 func TestPutGetMap(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
@@ -307,6 +324,7 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map LoadAll
 // TODO: Test Map LoadAllReplacingExisting
 // TODO: Test Map Lock
+// TODO: Test Map LockWithLease
 // TODO: Test Map SetTTL
 // TODO: Test Map SetWithTTL
 // TODO: Test Map SetWithTTLAndMaxIdle

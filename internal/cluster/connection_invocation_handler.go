@@ -40,6 +40,7 @@ type ConnectionInvocationHandler struct {
 
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
+	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(3),
 		cb.MaxFailureCount(3),
@@ -73,7 +74,7 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
-		if conn := h.connectionManager.GetConnForPartition(inv.PartitionID()); conn == nil {
+		if conn := h.connectionManager.GetConnectionForPartition(inv.PartitionID()); conn == nil {
 			return fmt.Errorf("connection for partition ID %d not found", inv.PartitionID())
 		} else {
 			return h.sendToConnection(inv, conn)
@@ -99,7 +100,7 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 	return nil
 }
 
-func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
+func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr *pubcluster.AddressImpl) error {
 	conn := h.connectionManager.GetConnectionForAddress(addr)
 	if conn == nil {
 		if conn = h.connectionManager.RandomConnection(); conn != nil {
@@ -118,6 +119,7 @@ func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, a
 
 func (h *ConnectionInvocationHandler) sendToOwnerAddress(inv invocation.Invocation) error {
 	if addr := h.connectionManager.OwnerConnectionAddr(); addr == nil {
+		// TODO: change error type
 		return hzerror.NewHazelcastIOError("cannot send to owner address: not found", nil)
 	} else {
 		return h.sendToAddress(inv, addr)

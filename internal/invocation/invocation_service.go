@@ -105,7 +105,7 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
 		if inv, found := s.invocations[correlationID]; !found {
 			s.logger.Trace(func() string {
-				return fmt.Sprintf("invocation with unknown correlation id: %d", correlationID)
+				return fmt.Sprintf("invocation with unknown correlation ID: %d", correlationID)
 			})
 		} else if inv.EventHandler() != nil {
 			go inv.EventHandler()(msg)
@@ -115,13 +115,13 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
 		if msg.Type() == int32(bufutil.MessageTypeException) {
 			err := ihzerror.CreateHazelcastError(codec.DecodeError(msg))
-			s.handleError(correlationID, err)
+			inv.Complete(&proto.ClientMessage{Err: err})
 		} else {
 			inv.Complete(msg)
 		}
 	} else {
 		s.logger.Trace(func() string {
-			return fmt.Sprintf("no invocation found with the correlation id: %d", correlationID)
+			return fmt.Sprintf("no invocation found with the correlation ID: %d", correlationID)
 		})
 	}
 }
@@ -132,7 +132,7 @@ func (s *Service) handleError(correlationID int64, invocationErr error) {
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
 	} else {
 		s.logger.Trace(func() string {
-			return fmt.Sprintf("cannot handle error: no invocation found with correlation id: %d", correlationID)
+			return fmt.Sprintf("cannot handle error: no invocation found with correlation id: %d (%s)", correlationID, invocationErr.Error())
 		})
 	}
 }

@@ -15,13 +15,13 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hztypes"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
@@ -31,6 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -92,10 +93,18 @@ type Proxy struct {
 	serviceName          string
 	name                 string
 	logger               logger.Logger
+	cb                   *cb.CircuitBreaker
 }
 
 func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Proxy {
 	bundle.Check()
+	// TODO: make circuit breaker configurable
+	circuitBreaker := cb.NewCircuitBreaker(
+		cb.MaxRetries(10),
+		cb.MaxFailureCount(3),
+		cb.RetryPolicy(func(attempt int) time.Duration {
+			return time.Duration((attempt+1)*100) * time.Millisecond
+		}))
 	return &Proxy{
 		serviceName:          serviceName,
 		name:                 objectName,
@@ -108,6 +117,7 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 		listenerBinder:       bundle.ListenerBinder,
 		smartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
+		cb:                   circuitBreaker,
 	}
 }
 
@@ -210,9 +220,7 @@ func (p *Proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 
 func (p *Proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
 	partitionID := p.partitionService.GetPartitionID(keyData)
-	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
-	p.requestCh <- inv
-	return inv.Get()
+	return p.invokeOnPartition(request, partitionID)
 }
 
 func (p *Proxy) invokeOnRandomTarget(request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
@@ -222,7 +230,17 @@ func (p *Proxy) invokeOnRandomTarget(request *proto.ClientMessage, handler proto
 }
 
 func (p *Proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	return p.invokeOnPartitionAsync(request, partitionID).Get()
+	future := p.cb.Try(func(ctx context.Context) (interface{}, error) {
+		// TODO: remove
+		requestCopy := request.Copy()
+		return p.invokeOnPartitionAsync(requestCopy, partitionID).GetWithTimeout(2 * time.Second)
+	})
+	if res, err := future.Result(); err != nil {
+		return nil, err
+	} else {
+		return res.(*proto.ClientMessage), nil
+	}
+
 }
 
 func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
@@ -231,7 +249,7 @@ func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID
 	return inv
 }
 
-func (p *Proxy) invokeOnAddress(request *proto.ClientMessage, address pubcluster.Address) (*proto.ClientMessage, error) {
+func (p *Proxy) invokeOnAddress(request *proto.ClientMessage, address *pubcluster.AddressImpl) (*proto.ClientMessage, error) {
 	inv := p.invocationFactory.NewInvocationOnTarget(request, address)
 	p.requestCh <- inv
 	return inv.Get()

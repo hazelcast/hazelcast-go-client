@@ -60,20 +60,16 @@ var nameToLevel = map[Level]int{
 
 // Logger is the interface that is used by client for logging.
 type Logger interface {
-	// Debug logs the given args at debug level.
-	Debug(args ...interface{})
-	// Trace logs the given args at trace level.
+	// Debug logs the given arg at debug level.
+	Debug(f func() string)
+	// Trace logs the given arg at trace level.
 	Trace(f func() string)
 	// Info logs the given args at info level.
-	Info(args ...interface{})
-	// Info logs the given args at info level.
 	Infof(format string, values ...interface{})
-	// Warn logs the given args at warn level.
-	Warn(args ...interface{})
 	// Warnf logs the given args at warn level.
 	Warnf(format string, values ...interface{})
 	// Error logs the given args at error level.
-	Error(args ...interface{})
+	Error(err error)
 	// Error logs the given args at error level with the given format
 	Errorf(format string, values ...interface{})
 }
