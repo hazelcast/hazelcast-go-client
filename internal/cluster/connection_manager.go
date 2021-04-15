@@ -211,7 +211,7 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 }
 
 func (m *ConnectionManager) OwnerConnectionAddr() *pubcluster.AddressImpl {
-	if conn, ok := m.ownerConn.Load().(*Connection); ok {
+	if conn, ok := m.ownerConn.Load().(*Connection); ok && conn != nil {
 		return m.connMap.GetAddrForConnectionID(conn.connectionID)
 	}
 	return nil
@@ -270,8 +270,13 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientDisconnected))
-	} else if m.ownerConn.Load().(*Connection).connectionID == conn.connectionID {
-		m.assignNewOwner()
+		var conn *Connection
+		m.ownerConn.Store(conn)
+	} else {
+		ownerConn := m.ownerConn.Load().(*Connection)
+		if ownerConn == nil || ownerConn.connectionID == conn.connectionID {
+			m.assignNewOwner()
+		}
 	}
 }
 
@@ -353,7 +358,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.endpoint.Store(address)
 		m.connMap.AddConnection(conn, address)
-		if _, ok := m.ownerConn.Load().(*Connection); !ok {
+		if ownerConn, ok := m.ownerConn.Load().(*Connection); !ok || ownerConn == nil {
 			// TODO: detect cluster change
 			m.partitionService.checkAndSetPartitionCount(partitionCount)
 			m.ownerConn.Store(conn)
@@ -448,6 +453,12 @@ func (m *ConnectionManager) doctor() {
 		case <-m.doneCh:
 			break
 		case <-ticker.C:
+			if m.connMap.Len() == 0 {
+				// if there are no connections, try to connect to seeds
+				if err := m.connectCluster(); err != nil {
+					m.logger.Errorf("while trying to fix cluster connection: %w", err)
+				}
+			}
 			// TODO: very inefficent, fix this
 			// find and connect the first connection which exists in the cluster but not in th connection manager
 			for _, addrStr := range m.clusterService.MemberAddrs() {
@@ -591,4 +602,10 @@ func (m *connectionMap) Info(infoFun func(connections map[string]*Connection, co
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
 	infoFun(m.connections, m.connToAddr)
+}
+
+func (m *connectionMap) Len() int {
+	m.connectionsMu.RLock()
+	defer m.connectionsMu.RUnlock()
+	return len(m.connToAddr)
 }
