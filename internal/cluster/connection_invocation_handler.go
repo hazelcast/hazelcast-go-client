@@ -71,7 +71,7 @@ func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
 }
 
 func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
-	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
+	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok && boundInvocation.Connection() != nil {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
 		if conn := h.connectionManager.GetConnectionForPartition(inv.PartitionID()); conn == nil {
@@ -87,7 +87,7 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 }
 
 func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
-	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok {
+	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok && boundInvocation.Connection() != nil {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	}
 	return h.sendToOwnerAddress(inv)

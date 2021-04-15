@@ -93,9 +93,9 @@ func (s *PartitionService) GetPartitionIDWithKey(key interface{}) (int32, error)
 
 func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
 	if partitionsUpdatedEvent, ok := event.(*PartitionsUpdated); ok {
-		s.logger.Infof("partitions updated")
 		s.partitionTable.Update(partitionsUpdatedEvent.Partitions, partitionsUpdatedEvent.Version)
 		s.eventDispatcher.Publish(NewPartitionsLoaded())
+		s.logger.Debug(func() string { return "partitions loaded" })
 	}
 }
 
