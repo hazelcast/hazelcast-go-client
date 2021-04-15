@@ -270,6 +270,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientDisconnected))
+		// set nil *Connection as owner conn
 		var conn *Connection
 		m.ownerConn.Store(conn)
 	} else {
@@ -281,10 +282,13 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) assignNewOwner() {
-	m.logger.Infof("assigning new owner connection")
-	newOwner := m.RandomConnection()
-	m.ownerConn.Store(newOwner)
-	m.eventDispatcher.Publish(NewOwnerConnectionChanged(newOwner))
+	if newOwner := m.RandomConnection(); newOwner != nil {
+		m.logger.Infof("assigning new owner connection %s", newOwner.connectionID)
+		m.ownerConn.Store(newOwner)
+		m.eventDispatcher.Publish(NewOwnerConnectionChanged(newOwner))
+	} else {
+		m.logger.Warnf("could not assign new owner connection, no connections found")
+	}
 }
 
 func (m *ConnectionManager) connectCluster() error {
@@ -453,12 +457,6 @@ func (m *ConnectionManager) doctor() {
 		case <-m.doneCh:
 			break
 		case <-ticker.C:
-			if m.connMap.Len() == 0 {
-				// if there are no connections, try to connect to seeds
-				if err := m.connectCluster(); err != nil {
-					m.logger.Errorf("while trying to fix cluster connection: %w", err)
-				}
-			}
 			// TODO: very inefficent, fix this
 			// find and connect the first connection which exists in the cluster but not in th connection manager
 			for _, addrStr := range m.clusterService.MemberAddrs() {
@@ -467,11 +465,22 @@ func (m *ConnectionManager) doctor() {
 					if addr, err := ParseAddress(addrStr); err != nil {
 						m.logger.Warnf("cannot parse address: %s", addrStr)
 					} else if err := m.connectAddr(addr); err != nil {
-						// pass
-					} else {
-						break
+						m.logger.Trace(func() string {
+							return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
+						})
 					}
 				}
+			}
+			if m.connMap.Len() == 0 {
+				// if there are no connections, try to connect to seeds
+				if err := m.connectCluster(); err != nil {
+					m.logger.Errorf("while trying to fix cluster connection: %w", err)
+				}
+			}
+			// if the owner connection is not found, try to assign a new one.
+			ownerConn := m.ownerConn.Load().(*Connection)
+			if ownerConn == nil {
+				m.assignNewOwner()
 			}
 		}
 	}

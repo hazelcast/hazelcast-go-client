@@ -145,11 +145,11 @@ func (s *ServiceImpl) sendMemberListViewRequest(conn *Connection) {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, s.config.InvocationTimeout, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
-			s.logger.Infof("members updated")
+			s.logger.Debug(func() string { return "members updated" })
 			s.eventDispatcher.Publish(NewMembersUpdated(memberInfos, version))
 		}, func(version int32, partitions []proto.Pair) {
-			s.logger.Infof("partitions updated")
 			s.eventDispatcher.Publish(NewPartitionsUpdated(partitions, version))
+			s.logger.Debug(func() string { return "partitions updated" })
 		})
 	})
 	s.requestCh <- inv
@@ -161,7 +161,6 @@ func (s *ServiceImpl) sendMemberListViewRequest(conn *Connection) {
 func (s *ServiceImpl) listenPartitionsLoaded() {
 	subscriptionID := event.MakeSubscriptionID(s.enableSmartRouting)
 	handler := func(event event.Event) {
-		s.logger.Infof("enabling smart routing")
 		s.enableSmartRouting()
 		s.eventDispatcher.Unsubscribe(EventPartitionsLoaded, subscriptionID)
 	}
@@ -169,6 +168,7 @@ func (s *ServiceImpl) listenPartitionsLoaded() {
 }
 
 func (s *ServiceImpl) enableSmartRouting() {
+	s.logger.Infof("enabling smart routing")
 	atomic.StoreInt32(&s.smartRouting, smartRoutingEnabled)
 }
 

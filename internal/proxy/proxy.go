@@ -101,9 +101,9 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(10),
-		cb.MaxFailureCount(3),
+		cb.MaxFailureCount(10),
 		cb.RetryPolicy(func(attempt int) time.Duration {
-			return time.Duration((attempt+1)*100) * time.Millisecond
+			return time.Duration((attempt+1)*200) * time.Millisecond
 		}))
 	return &Proxy{
 		serviceName:          serviceName,
