@@ -302,7 +302,7 @@ func (c *Client) createComponents(config *Config) {
 		Logger:            c.logger,
 	})
 	invocationService.SetHandler(invocationHandler)
-	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh)
+	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)
 	proxyManagerServiceBundle := proxy.CreationBundle{
 		RequestCh:            requestCh,
 		SerializationService: serializationService,
