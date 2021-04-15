@@ -408,6 +408,7 @@ func (m *ConnectionManager) heartbeat() {
 	for {
 		select {
 		case <-m.doneCh:
+			ticker.Stop()
 			return
 		case <-ticker.C:
 			for _, conn := range m.ActiveConnections() {
@@ -428,17 +429,18 @@ func (m *ConnectionManager) logStatus() {
 	for {
 		select {
 		case <-m.doneCh:
-			break
+			ticker.Stop()
+			return
 		case <-ticker.C:
 			m.connMap.Info(func(connections map[string]*Connection, connToAddr map[int64]*pubcluster.AddressImpl) {
-				m.logger.Trace(func() string {
+				m.logger.Debug(func() string {
 					conns := map[string]int{}
 					for addr, conn := range connections {
 						conns[addr] = int(conn.connectionID)
 					}
 					return fmt.Sprintf("connections: %#v", conns)
 				})
-				m.logger.Trace(func() string {
+				m.logger.Debug(func() string {
 					ctas := map[int]string{}
 					for connID, addr := range connToAddr {
 						ctas[int(connID)] = addr.String()
@@ -455,7 +457,8 @@ func (m *ConnectionManager) doctor() {
 	for {
 		select {
 		case <-m.doneCh:
-			break
+			ticker.Stop()
+			return
 		case <-ticker.C:
 			// TODO: very inefficent, fix this
 			// find and connect the first connection which exists in the cluster but not in th connection manager
@@ -465,7 +468,7 @@ func (m *ConnectionManager) doctor() {
 					if addr, err := ParseAddress(addrStr); err != nil {
 						m.logger.Warnf("cannot parse address: %s", addrStr)
 					} else if err := m.connectAddr(addr); err != nil {
-						m.logger.Trace(func() string {
+						m.logger.Debug(func() string {
 							return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
 						})
 					}
@@ -478,8 +481,7 @@ func (m *ConnectionManager) doctor() {
 				}
 			}
 			// if the owner connection is not found, try to assign a new one.
-			ownerConn := m.ownerConn.Load().(*Connection)
-			if ownerConn == nil {
+			if m.ownerConn.Load().(*Connection) == nil {
 				m.assignNewOwner()
 			}
 		}

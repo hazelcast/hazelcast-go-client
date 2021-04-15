@@ -13,23 +13,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 )
 
-func TestChaosPutGetMap(t *testing.T) {
-	t.SkipNow()
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
-		for i := 0; i < 100000; i++ {
-			key := fmt.Sprintf("k%d", i)
-			value := fmt.Sprintf("v%d", i)
-			it.Must(m.Set(key, value))
-			if retrievedValue := it.MustValue(m.Get(key)); value != retrievedValue {
-				t.Fatalf("target: %s != %s", value, retrievedValue)
-			} else {
-				fmt.Printf("\nOK: %s\n", key)
-			}
-			//time.Sleep(30 * time.Millisecond)
-		}
-	})
-}
-
 func TestPutGetMap(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
@@ -43,6 +26,17 @@ func TestPutGetMap(t *testing.T) {
 		}
 	})
 }
+
+// TODO: Test Map PutWithTTL
+// TODO: Test Map PutWithMaxIdle
+// TODO: Test Map PutWithTTLAndMaxIdle
+// TODO: Test Map PutIfAbsent
+// TODO: Test Map PutIfAbsentWithTTL
+// TODO: Test Map PutIfAbsentWithTTLAndMaxIdle
+// TODO: Test Map PutTransient
+// TODO: Test Map PutTransientWithTTL
+// TODO: Test Map PutTransientWithMaxIdle
+// TODO: Test Map PutTransientWithTTLMaxIdle
 
 func TestSetGetMap(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
@@ -317,8 +311,6 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map ExecuteOnEntries
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
-// TODO: Test Map GetEntrySet
-// TODO: Test Map GetKeySetWithPredicate
 // TODO: Test Map GetValuesWithPredicate
 // TODO: Test Map IsLocked
 // TODO: Test Map LoadAll
@@ -336,20 +328,6 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
 // TODO: Test Map TryRemoveWithTimeout
-// TODO: Test Map PutWithTTL
-// TODO: Test Map PutWithMaxIdle
-// TODO: Test Map PutWithTTLAndMaxIdle
-// TODO: Test Map PutIfAbsent
-// TODO: Test Map PutIfAbsentWithTTL
-// TODO: Test Map PutIfAbsentWithTTLAndMaxIdle
-// TODO: Test Map PutTransient
-// TODO: Test Map PutTransientWithTTL
-// TODO: Test Map PutTransientWithMaxIdle
-// TODO: Test Map PutTransientWithTTLMaxIdle
-// TODO: Test Map RemoveAll
-// TODO: Test Map RemoveIfSame
-// TODO: Test Map Replace
-// TODO: Test Map ReplaceIfSame
 
 func TestMapIsEmptySize(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
@@ -381,8 +359,83 @@ func TestMapIsEmptySize(t *testing.T) {
 	})
 }
 
+func TestRemoveAll(t *testing.T) {
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+		entries := []hztypes.Entry{
+			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
+			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
+			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		}
+		it.Must(m.PutAll(entries))
+		time.Sleep(1 * time.Second)
+		if err := m.RemoveAll(predicate.Equal("B", 10)); err != nil {
+			t.Fatal(err)
+		}
+		target := []hztypes.Entry{
+			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
+		}
+		if kvs, err := m.GetAll("k1", "k2", "k3"); err != nil {
+			t.Fatal(err)
+		} else if !entriesEqualUnordered(target, kvs) {
+			t.Fatalf("target: %#v != %#v", target, kvs)
+		}
+
+	})
+}
+
+func TestRemoveIfSame(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		it.Must(m.Set("k1", "v1"))
+		it.Must(m.Set("k2", "v2"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
+		if removed, err := m.RemoveIfSame("k1", "v1"); err != nil {
+			t.Fatal(err)
+		} else if !removed {
+			t.Fatalf("not removed")
+		}
+		it.AssertEquals(t, false, it.MustValue(m.ContainsKey("k1")))
+		if removed, err := m.RemoveIfSame("k2", "v1"); err != nil {
+			t.Fatal(err)
+		} else if removed {
+			t.Fatalf("removed")
+		}
+		it.AssertEquals(t, true, it.MustValue(m.ContainsKey("k2")))
+	})
+}
+
+func TestReplace(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		it.Must(m.Set("k1", "v1"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		if oldValue, err := m.Replace("k1", "v2"); err != nil {
+			t.Fatal(err)
+		} else {
+			it.AssertEquals(t, "v1", oldValue)
+		}
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k1")))
+	})
+}
+
+func TestReplaceIfSame(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		it.Must(m.Set("k1", "v1"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		if replaced, err := m.ReplaceIfSame("k1", "v1", "v2"); err != nil {
+			t.Fatal(err)
+		} else {
+			it.AssertEquals(t, true, replaced)
+		}
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k1")))
+	})
+}
+
 func TestMapEntryNotifiedEvent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -414,6 +467,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 
 func TestMapEntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -446,6 +500,7 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -478,6 +533,7 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)

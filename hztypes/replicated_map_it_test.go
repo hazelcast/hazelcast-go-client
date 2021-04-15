@@ -295,7 +295,9 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 }
 
 func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, hztypes.ReplicatedMap) {
-	cb.Logger().SetLevel(logger.TraceLevel)
+	if it.TraceLoggingEnabled() {
+		cb.Logger().SetLevel(logger.TraceLevel)
+	}
 	client, err := hz.StartNewClientWithConfig(cb)
 	if err != nil {
 		panic(err)

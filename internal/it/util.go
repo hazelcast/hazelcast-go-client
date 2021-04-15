@@ -14,27 +14,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const ENV_DISABLE_SMART = "DISABLE_SMART"
-const ENV_DISABLE_NONSMART = "DISABLE_NONSMART"
-
-func GetClientMap(name string) (*hz.Client, hztypes.Map) {
-	cb := hz.NewConfigBuilder()
-	cb.Logger().SetLevel(logger.TraceLevel)
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("Map Name:", mapName)
-	if m, err := client.GetMap(mapName); err != nil {
-		panic(err)
-	} else {
-		return client, m
-	}
-}
+const EnvDisableSmart = "DISABLE_SMART"
+const EnvDisableNonsmart = "DISABLE_NONSMART"
+const EnvTraceLogging = "ENABLE_TRACE"
 
 func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, hztypes.Map) {
-	configBuilder.Logger().SetLevel(logger.TraceLevel)
+	if TraceLoggingEnabled() {
+		configBuilder.Logger().SetLevel(logger.TraceLevel)
+	}
 	client, err := hz.StartNewClientWithConfig(configBuilder)
 	if err != nil {
 		panic(err)
@@ -43,7 +30,6 @@ func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder)
 	fmt.Println("Map Name:", mapName)
 	if m, err := client.GetMap(mapName); err != nil {
 		panic(err)
-		return nil, nil
 	} else {
 		return client, m
 	}
@@ -60,9 +46,7 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 		client *hz.Client
 		m      hztypes.Map
 	)
-	hasSmart := os.Getenv(ENV_DISABLE_SMART) != "1"
-	hasNonSmart := os.Getenv(ENV_DISABLE_NONSMART) != "1"
-	if hasSmart {
+	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {
 			cb := hz.NewConfigBuilder()
 			if cbCallback != nil {
@@ -78,7 +62,7 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 			f(t, m)
 		})
 	}
-	if hasNonSmart {
+	if NonSmartEnabled() {
 		t.Run("Non-Smart Client", func(t *testing.T) {
 			cb := hz.NewConfigBuilder()
 			if cbCallback != nil {
@@ -95,36 +79,6 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 			f(t, m)
 		})
 	}
-}
-
-func ClientTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, c *hz.Client)) {
-	t.Run("Smart Client", func(t *testing.T) {
-		cb := hz.NewConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		cb.Logger().SetLevel(logger.TraceLevel)
-		client, err := hz.StartNewClientWithConfig(cb)
-		if err != nil {
-			panic(err)
-		}
-		defer client.Shutdown()
-		f(t, client)
-	})
-	t.Run("Non-Smart Client", func(t *testing.T) {
-		cb := hz.NewConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		cb.Logger().SetLevel(logger.TraceLevel)
-		cb.Cluster().SetSmartRouting(false)
-		client, err := hz.StartNewClientWithConfig(cb)
-		if err != nil {
-			panic(err)
-		}
-		defer client.Shutdown()
-		f(t, client)
-	})
 }
 
 func AssertEquals(t *testing.T, target, value interface{}) {
@@ -228,4 +182,16 @@ type trivialConfigProvider struct {
 
 func (p trivialConfigProvider) Config() (*hz.Config, error) {
 	return p.config, nil
+}
+
+func TraceLoggingEnabled() bool {
+	return os.Getenv(EnvTraceLogging) == "1"
+}
+
+func SmartEnabled() bool {
+	return os.Getenv(EnvDisableSmart) != "1"
+}
+
+func NonSmartEnabled() bool {
+	return os.Getenv(EnvDisableNonsmart) != "1"
 }
