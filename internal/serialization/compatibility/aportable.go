@@ -70,7 +70,7 @@ func (p *aPortable) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteFloat32("f", p.f)
 	writer.WriteInt32("i", p.i)
 	writer.WriteInt64("l", p.l)
-	writer.WriteUTF("str", p.str)
+	writer.WriteString("str", p.str)
 	if p != nil {
 		err = writer.WritePortable("p", p)
 	} else {
@@ -87,7 +87,7 @@ func (p *aPortable) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteFloat32Array("fs", p.floats)
 	writer.WriteInt32Array("is", p.ints)
 	writer.WriteInt64Array("ls", p.longs)
-	writer.WriteUTFArray("strs", p.strings)
+	writer.WriteStringArray("strs", p.strings)
 	err = writer.WritePortableArray("ps", p.portables)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (p *aPortable) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteFloat32Array("fsNull", p.floatsNull)
 	writer.WriteInt32Array("isNull", p.intsNull)
 	writer.WriteInt64Array("lsNull", p.longsNull)
-	writer.WriteUTFArray("strsNull", p.stringsNull)
+	writer.WriteStringArray("strsNull", p.stringsNull)
 	return nil
 }
 

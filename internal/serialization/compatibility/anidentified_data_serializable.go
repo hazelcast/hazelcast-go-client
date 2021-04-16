@@ -81,7 +81,7 @@ func (i *anIdentifiedDataSerializable) WriteData(output serialization.DataOutput
 	output.WriteFloat32Array(i.floats)
 	output.WriteInt32Array(i.ints)
 	output.WriteInt64Array(i.longs)
-	output.WriteUTFArray(i.strings)
+	output.WriteStringArray(i.strings)
 
 	output.WriteBoolArray(i.booleansNull)
 	output.WriteByteArray(i.bytesNull)
@@ -91,7 +91,7 @@ func (i *anIdentifiedDataSerializable) WriteData(output serialization.DataOutput
 	output.WriteFloat32Array(i.floatsNull)
 	output.WriteInt32Array(i.intsNull)
 	output.WriteInt64Array(i.longsNull)
-	output.WriteUTFArray(i.stringsNull)
+	output.WriteStringArray(i.stringsNull)
 
 	err = output.WriteObject(i.portableObject)
 	if err != nil {

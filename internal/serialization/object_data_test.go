@@ -383,12 +383,12 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 func TestObjectDataInput_ReadUTFArray(t *testing.T) {
 	var array = []string{"aAüÜiİıIöÖşŞçÇ", "akdha", "üğpoıuişlk", "üğpreÜaişfçxaaöc"}
 	o := NewObjectDataOutput(0, nil, false)
-	o.WriteUTFArray(array)
+	o.WriteStringArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 	retArray := i.ReadUTFArray()
 
 	if !reflect.DeepEqual(array, retArray) {
-		t.Error("There is a problem in WriteUTFArray() or ReadStringArray()!")
+		t.Error("There is a problem in WriteStringArray() or ReadStringArray()!")
 	}
 }
 

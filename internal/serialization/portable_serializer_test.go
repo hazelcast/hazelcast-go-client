@@ -66,7 +66,7 @@ func (*student) ClassID() int32 {
 func (s *student) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteInt16("id", s.id)
 	writer.WriteInt32("age", s.age)
-	writer.WriteUTF("name", s.name)
+	writer.WriteString("name", s.name)
 	return nil
 }
 
@@ -98,7 +98,7 @@ func (*student2) Version() int32 {
 func (s *student2) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteInt32("id", s.id)
 	writer.WriteInt32("age", s.age)
-	writer.WriteUTF("name", s.name)
+	writer.WriteString("name", s.name)
 	return nil
 }
 
@@ -223,7 +223,7 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteInt64("i64", f.i64)
 	writer.WriteFloat32("f32", f.f32)
 	writer.WriteFloat64("f64", f.f64)
-	writer.WriteUTF("utf", f.utf)
+	writer.WriteString("utf", f.utf)
 	if f.portable != nil {
 		writer.WritePortable("portable", f.portable)
 	} else {
@@ -237,7 +237,7 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteInt64Array("i64Arr", f.i64Arr)
 	writer.WriteFloat32Array("f32Arr", f.f32Arr)
 	writer.WriteFloat64Array("f64Arr", f.f64Arr)
-	writer.WriteUTFArray("utfArr", f.utfArr)
+	writer.WriteStringArray("utfArr", f.utfArr)
 	writer.WritePortableArray("portableArr", f.portableArr)
 	return nil
 }
@@ -401,7 +401,7 @@ func (*child) ClassID() (classID int32) {
 }
 
 func (c *child) WritePortable(writer serialization.PortableWriter) (err error) {
-	writer.WriteUTF("name", c.name)
+	writer.WriteString("name", c.name)
 	return
 }
 

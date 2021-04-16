@@ -50,7 +50,7 @@ func (e *employee) ReadPortable(reader serialization.PortableReader) error {
 }
 
 func (e *employee) WritePortable(writer serialization.PortableWriter) error {
-	writer.WriteUTF("Name", e.Name)
+	writer.WriteString("Name", e.Name)
 	writer.WriteInt32("Age", int32(e.Age))
 	writer.WriteBool("Active", e.Active)
 	return nil

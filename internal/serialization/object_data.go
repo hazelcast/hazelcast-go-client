@@ -238,7 +238,7 @@ func (o *ObjectDataOutput) WriteFloat64Array(v []float64) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteUTFArray(v []string) {
+func (o *ObjectDataOutput) WriteStringArray(v []string) {
 	var length int32
 	if v != nil {
 		length = int32(len(v))
