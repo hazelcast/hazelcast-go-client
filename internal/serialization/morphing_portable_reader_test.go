@@ -756,7 +756,7 @@ func TestMorphingPortableReader_ReadUTF(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteUTF("engineer", expectedRet)
+	pw.WriteString("engineer", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
@@ -774,7 +774,7 @@ func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteUTF("engineer", value)
+	pw.WriteString("engineer", value)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
@@ -1304,7 +1304,7 @@ func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteUTFArray("words", expectedRet)
+	pw.WriteStringArray("words", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
@@ -1323,7 +1323,7 @@ func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteUTFArray("words", value)
+	pw.WriteStringArray("words", value)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)

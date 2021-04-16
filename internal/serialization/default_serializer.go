@@ -387,7 +387,7 @@ func (*StringArraySerializer) Read(input serialization.DataInput) (interface{}, 
 }
 
 func (*StringArraySerializer) Write(output serialization.DataOutput, i interface{}) error {
-	output.WriteUTFArray(i.([]string))
+	output.WriteStringArray(i.([]string))
 	return nil
 }
 

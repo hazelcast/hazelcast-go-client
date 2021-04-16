@@ -143,7 +143,7 @@ type DataOutput interface {
 	// WriteFloat64 writes a float64.
 	WriteFloat64(v float64)
 
-	// WriteUTF writes a string in UTF-8 format.
+	// WriteString writes a string in UTF-8 format.
 	WriteString(v string)
 
 	// WriteObject writes an object.
@@ -176,8 +176,8 @@ type DataOutput interface {
 	// WriteFloat64Array writes a []float64.
 	WriteFloat64Array(v []float64)
 
-	// WriteUTFArray writes a []string in UTF-8 format.
-	WriteUTFArray(v []string)
+	// WriteStringArray writes a []string in UTF-8 format.
+	WriteStringArray(v []string)
 
 	// WriteBytes writes a string's characters.
 	WriteBytes(bytes string)
@@ -341,8 +341,8 @@ type PortableWriter interface {
 	// WriteFloat64 writes a float64 with fieldName.
 	WriteFloat64(fieldName string, value float64)
 
-	// WriteUTF writes a string in UTF-8 format with fieldName.
-	WriteUTF(fieldName string, value string)
+	// WriteString writes a string in UTF-8 format with fieldName.
+	WriteString(fieldName string, value string)
 
 	// WritePortable writes a Portable with fieldName.
 	WritePortable(fieldName string, value Portable) error
@@ -374,8 +374,8 @@ type PortableWriter interface {
 	// WriteFloat64Array writes a []float64 with fieldName.
 	WriteFloat64Array(fieldName string, value []float64)
 
-	// WriteUTFArray writes a []string in UTF-8 format with fieldName.
-	WriteUTFArray(fieldName string, value []string)
+	// WriteStringArray writes a []string in UTF-8 format with fieldName.
+	WriteStringArray(fieldName string, value []string)
 
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable) error

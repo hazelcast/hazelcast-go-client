@@ -112,7 +112,7 @@ func (s SamplePortable) ClassID() int32 {
 }
 
 func (s SamplePortable) WritePortable(writer serialization.PortableWriter) error {
-	writer.WriteUTF("A", s.A)
+	writer.WriteString("A", s.A)
 	writer.WriteInt32("B", s.B)
 	return nil
 }

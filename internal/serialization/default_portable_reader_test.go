@@ -168,7 +168,7 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteUTF("engineer", expectedRet)
+	pw.WriteString("engineer", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
@@ -374,7 +374,7 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteUTFArray("words", expectedRet)
+	pw.WriteStringArray("words", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
@@ -443,7 +443,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	// XXX: unhandled error
 	pw.WriteNilPortable("engineer", 2, 1)
-	pw.WriteUTF("name", "")
+	pw.WriteString("name", "")
 	pw.WriteByteArray("a1", nil)
 	pw.WriteBoolArray("a2", nil)
 	pw.WriteUInt16Array("a3", nil)
@@ -452,7 +452,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	pw.WriteInt64Array("a6", nil)
 	pw.WriteFloat32Array("a7", nil)
 	pw.WriteFloat64Array("a8", nil)
-	pw.WriteUTFArray("a9", nil)
+	pw.WriteStringArray("a9", nil)
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
 
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)

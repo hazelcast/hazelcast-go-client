@@ -38,8 +38,8 @@ func (bc *BaseCredentials) ClassID() int32 {
 }
 
 func (bc *BaseCredentials) WritePortable(writer serialization.PortableWriter) (err error) {
-	writer.WriteUTF("principal", bc.principal)
-	writer.WriteUTF("endpoint", bc.endpoint)
+	writer.WriteString("principal", bc.principal)
+	writer.WriteString("endpoint", bc.endpoint)
 	return nil
 }
 

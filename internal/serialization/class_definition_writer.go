@@ -62,7 +62,7 @@ func (cdw *ClassDefinitionWriter) WriteFloat64(fieldName string, value float64) 
 	cdw.classDefinitionBuilder.AddFloat64Field(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WriteUTF(fieldName string, value string) {
+func (cdw *ClassDefinitionWriter) WriteString(fieldName string, value string) {
 	cdw.classDefinitionBuilder.AddUTFField(fieldName)
 }
 
@@ -120,7 +120,7 @@ func (cdw *ClassDefinitionWriter) WriteFloat64Array(fieldName string, value []fl
 	cdw.classDefinitionBuilder.AddFloat64ArrayField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WriteUTFArray(fieldName string, value []string) {
+func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []string) {
 	cdw.classDefinitionBuilder.AddUTFArrayField(fieldName)
 }
 
