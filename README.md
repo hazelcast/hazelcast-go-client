@@ -1,3 +1,13 @@
+---
+## Note to Hazelcast Go Client for Hazelcast 3 Users
+
+Support for Hazelcast 3.x ended on April 9th 2021, so Go client for Hazelcast 3 will not be updated.
+You can still use Go client for Hazelcast 3 by migrating your project to use Go modules and adding the following in your `go.mod` file:
+```
+require github.com/hazelcast/hazelcast-go-client v0.6.0
+```
+---
+
 # Hazelcast Go Client
 
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
@@ -12,7 +22,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"github.com/hazelcast/hazelcast-go-client/hazelcast"
+
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func main() {
@@ -32,7 +43,7 @@ func main() {
     	log.Fatal(err)
     }
     // get a value from the map
-    age, err := people.Get(person)
+    age, err := people.Get(personName)
     if err != nil {
         log.Fatal(err)
     }
@@ -52,9 +63,9 @@ Requirements:
 
 * Hazelcast Go client is compatible only with Hazelcast IMDG 4.x and above.
 
-In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client/v4`:
+In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```
-go get github.com/hazelcast/hazelcast-go-client/v4
+go get github.com/hazelcast/hazelcast-go-client
 ```
 
 ## Quick Start
@@ -94,12 +105,12 @@ Complete creating the configuration in a single go routine, do not pass configur
 
 ```go
 // create the config builder
-cb := hz.NewClientConfigBuilder()
+cb := hz.NewConfigBuilder()
 
 // optionally turn off smart routing
-cb.Network().SetSmartRouting(false).
+cb.Cluster().SetSmartRouting(false).
     // optionally set cluster addresses manually
-    SetAddrs("member1.example.com", "member2.example.com")
+    SetMembers("member1.example.com", "member2.example.com")
 
 // create and start the client with the configuration provider
 client, err := hazelcast.StartNewClientWithConfig(cb)
