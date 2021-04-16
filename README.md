@@ -11,6 +11,17 @@ require github.com/hazelcast/hazelcast-go-client v0.6.0
 
 ---
 
+## Note
+
+The master branch is the development branch for the upcoming version 1 of the client. Version 1 is currently in alpha stage:
+
+* CODE IN THIS BRANCH IS IN NO WAY SUPPORTED FOR ANY PRODUCTION USE. 
+* API IN THIS BRANCH CAN CHANGE IN BREAKING WAYS AT ANY TIME.
+
+Your feedback and contribution are appreciated! Join us at [Hazelcast Community Slack](https://hazelcastcommunity.slack.com/channels/go-client)
+
+---
+
 # Hazelcast Go Client
 
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
