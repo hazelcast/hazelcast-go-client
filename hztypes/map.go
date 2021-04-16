@@ -188,7 +188,7 @@ type Map interface {
 	// Set ttl to 0 for infinite timeout.
 	// Given max idle time (maximum time for this entry to stay idle in the map) is used.
 	// Set maxIdle to 0 for infinite idle time.
-	PutTransientWithTTLMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error
+	PutTransientWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error
 
 	// Remove deletes the value for the given key and returns it.
 	Remove(key interface{}) (interface{}, error)

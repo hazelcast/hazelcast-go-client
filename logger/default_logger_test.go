@@ -28,11 +28,11 @@ func createWithLevelAndLog(level int) string {
 	l.Level = level
 	buf := new(bytes.Buffer)
 	l.SetOutput(buf)
-	l.Debug(logMessage)
+	l.Debug(func() string { return logMessage })
 	l.Trace(func() string { return logMessage })
 	l.Warn(logMessage)
 	l.Info(logMessage)
-	l.Error(logMessage)
+	l.Errorf(logMessage)
 	return buf.String()
 }
 

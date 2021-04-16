@@ -15,12 +15,14 @@
 package proxy
 
 import (
+	"context"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 
 	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
@@ -183,20 +185,23 @@ func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 		}
 	}
 	result := make([]hztypes.Entry, 0, len(keys))
-	// create invocations
-	invs := make([]invocation.Invocation, 0, len(partitionToKeys))
-	for partitionID, keys := range partitionToKeys {
-		request := codec.EncodeMapGetAllRequest(m.name, keys)
-		inv := m.invokeOnPartitionAsync(request, partitionID)
-		invs = append(invs, inv)
+	// create futures
+	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
+		return m.cb.Try(func(ctx context.Context) (interface{}, error) {
+			request := codec.EncodeMapGetAllRequest(m.name, keys)
+			inv := m.invokeOnPartitionAsync(request, partitionID)
+			return inv.GetWithTimeout(1 * time.Second)
+		})
 	}
-	// wait for responses and decode them
-	for _, inv := range invs {
-		if response, err := inv.Get(); err != nil {
-			// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
+	futures := make([]cb.Future, 0, len(partitionToKeys))
+	for partitionID, keys := range partitionToKeys {
+		futures = append(futures, f(partitionID, keys))
+	}
+	for _, future := range futures {
+		if futureResult, err := future.Result(); err != nil {
 			return nil, err
 		} else {
-			pairs := codec.DecodeMapGetAllResponse(response)
+			pairs := codec.DecodeMapGetAllResponse(futureResult.(*proto.ClientMessage))
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
@@ -381,16 +386,20 @@ func (m *MapImpl) PutAll(keyValuePairs []hztypes.Entry) error {
 	if partitionToPairs, err := m.partitionToPairs(keyValuePairs); err != nil {
 		return err
 	} else {
-		// create invocations
-		invs := make([]invocation.Invocation, 0, len(partitionToPairs))
-		for partitionID, entries := range partitionToPairs {
-			inv := m.invokeOnPartitionAsync(codec.EncodeMapPutAllRequest(m.name, entries, true), partitionID)
-			invs = append(invs, inv)
+		// create futures
+		f := func(partitionID int32, entries []proto.Pair) cb.Future {
+			return m.cb.Try(func(ctx context.Context) (interface{}, error) {
+				request := codec.EncodeMapPutAllRequest(m.name, entries, true)
+				inv := m.invokeOnPartitionAsync(request, partitionID)
+				return inv.GetWithTimeout(1 * time.Second)
+			})
 		}
-		// wait for responses
-		for _, inv := range invs {
-			if _, err := inv.Get(); err != nil {
-				// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
+		futures := make([]cb.Future, 0, len(partitionToPairs))
+		for partitionID, entries := range partitionToPairs {
+			futures = append(futures, f(partitionID, entries))
+		}
+		for _, future := range futures {
+			if _, err := future.Result(); err != nil {
 				return err
 			}
 		}
@@ -431,7 +440,7 @@ func (m *MapImpl) PutTransientWithMaxIdle(key interface{}, value interface{}, ma
 	return m.putTransient(key, value, ttlDefault, maxIdle.Milliseconds())
 }
 
-func (m *MapImpl) PutTransientWithTTLMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+func (m *MapImpl) PutTransientWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
 	return m.putTransient(key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 

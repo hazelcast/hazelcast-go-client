@@ -218,27 +218,31 @@ func (p *Proxy) validateAndSerializeMapAndGetPartitions(entries map[interface{}]
 	return partitions, nil
 }
 
+func (p *Proxy) tryInvoke(f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
+	if res, err := p.cb.Try(f).Result(); err != nil {
+		return nil, err
+	} else {
+		return res.(*proto.ClientMessage), nil
+	}
+}
+
 func (p *Proxy) invokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
 	partitionID := p.partitionService.GetPartitionID(keyData)
 	return p.invokeOnPartition(request, partitionID)
 }
 
 func (p *Proxy) invokeOnRandomTarget(request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
-	p.requestCh <- inv
-	return inv.Get()
+	return p.tryInvoke(func(ctx context.Context) (interface{}, error) {
+		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
+		p.requestCh <- inv
+		return inv.GetWithTimeout(1 * time.Second)
+	})
 }
 
 func (p *Proxy) invokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	future := p.cb.Try(func(ctx context.Context) (interface{}, error) {
-		return p.invokeOnPartitionAsync(request, partitionID).GetWithTimeout(2 * time.Second)
+	return p.tryInvoke(func(ctx context.Context) (interface{}, error) {
+		return p.invokeOnPartitionAsync(request, partitionID).GetWithTimeout(1 * time.Second)
 	})
-	if res, err := future.Result(); err != nil {
-		return nil, err
-	} else {
-		return res.(*proto.ClientMessage), nil
-	}
-
 }
 
 func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
@@ -248,9 +252,11 @@ func (p *Proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID
 }
 
 func (p *Proxy) invokeOnAddress(request *proto.ClientMessage, address *pubcluster.AddressImpl) (*proto.ClientMessage, error) {
-	inv := p.invocationFactory.NewInvocationOnTarget(request, address)
-	p.requestCh <- inv
-	return inv.Get()
+	return p.tryInvoke(func(ctx context.Context) (interface{}, error) {
+		inv := p.invocationFactory.NewInvocationOnTarget(request, address)
+		p.requestCh <- inv
+		return inv.GetWithTimeout(1 * time.Second)
+	})
 }
 
 func (p *Proxy) convertToObject(data serialization.Data) (interface{}, error) {

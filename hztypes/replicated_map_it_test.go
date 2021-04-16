@@ -200,6 +200,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.ReplicatedMap) {
+		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -208,6 +209,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.AssertEquals(t, &it.SamplePortable{A: "foo", B: 10}, it.MustValue(m.Get("k1")))
 		time.Sleep(1 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
@@ -263,7 +265,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
-		client, m = getClientReplicatedMapWithConfig("my-map", cb)
+		client, m = getClientReplicatedMapWithConfig("test-map", cb)
 		defer func() {
 			if err := m.Clear(); err != nil {
 				panic(err)
@@ -283,7 +285,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 			panic(err)
 		}
 		config.ClusterConfig.SmartRouting = false
-		client, m = getClientReplicatedMapWithConfig("my-map", cb)
+		client, m = getClientReplicatedMapWithConfig("test-map", cb)
 		defer func() {
 			if err := m.Clear(); err != nil {
 				panic(err)
