@@ -673,7 +673,7 @@ func EncodeMapForStringAndString(message *proto.ClientMessage, values map[string
 	message.AddFrame(proto.EndFrame.Copy())
 }
 
-func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[internal.EndpointQualifier]pubcluster.Address) {
+func EncodeMapForEndpointQualifierAndAddress(message *proto.ClientMessage, values map[pubcluster.EndpointQualifier]pubcluster.Address) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {
 		EncodeEndpointQualifier(message, key)
@@ -695,7 +695,7 @@ func DecodeMapForStringAndString(iterator *proto.ForwardFrameIterator) map[strin
 }
 
 func DecodeMapForEndpointQualifierAndAddress(iterator *proto.ForwardFrameIterator) interface{} {
-	result := map[internal.EndpointQualifier]pubcluster.Address{}
+	result := map[pubcluster.EndpointQualifier]pubcluster.Address{}
 	iterator.Next()
 	for !iterator.PeekNext().IsEndFrame() {
 		key := DecodeEndpointQualifier(iterator)
@@ -727,4 +727,8 @@ func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerErrorImpl {
 	holder := errorHolders[0]
 	err := ihzerror.NewServerErrorImpl(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
 	return &err
+}
+
+func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {
+	return pubcluster.EndpointQualifier{qualifierType, identifier}
 }

@@ -63,7 +63,7 @@ type MemberInfo struct {
 	version MemberVersion
 
 	// addrMap
-	addrMap map[internal.EndpointQualifier]Address
+	addrMap map[EndpointQualifier]Address
 }
 
 func NewMemberInfo(address Address, uuid internal.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
@@ -71,7 +71,7 @@ func NewMemberInfo(address Address, uuid internal.UUID, attributes map[string]st
 	// TODO: Convert addrMap to map[EndpointQualifier]*Address
 	// copy address
 	return MemberInfo{address: address.Clone(), uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
-		addrMap: addressMap.(map[internal.EndpointQualifier]Address)}
+		addrMap: addressMap.(map[EndpointQualifier]Address)}
 }
 
 func (mi MemberInfo) Address() Address {
@@ -94,7 +94,7 @@ func (mi MemberInfo) Version() MemberVersion {
 	return mi.version
 }
 
-func (mi MemberInfo) AddressMap() map[internal.EndpointQualifier]Address {
+func (mi MemberInfo) AddressMap() map[EndpointQualifier]Address {
 	return mi.addrMap
 }
 
