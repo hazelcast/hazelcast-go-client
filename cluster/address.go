@@ -4,26 +4,6 @@ import (
 	"fmt"
 )
 
-// AddressTranslator is used to resolve private ip address of cloud services.
-type AddressTranslator interface {
-
-	// Translate translates the given address to another address specific
-	// to network or service
-	Translate(address Address) Address
-}
-
-// defaultAddressTranslator is a no-op. It always returns the given address.
-type defaultAddressTranslator struct {
-}
-
-func NewDefaultAddressTranslator() *defaultAddressTranslator {
-	return &defaultAddressTranslator{}
-}
-
-func (dat *defaultAddressTranslator) Translate(address Address) Address {
-	return address
-}
-
 type Address interface {
 	// TODO: remove this interface
 	fmt.Stringer

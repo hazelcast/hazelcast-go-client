@@ -302,7 +302,6 @@ func (c *Client) createComponents(config *Config) {
 		panic(fmt.Errorf("error creating client: %w", err))
 	}
 	smartRouting := config.ClusterConfig.SmartRouting
-	addressTranslator := cluster.NewDefaultAddressTranslator()
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
@@ -333,7 +332,6 @@ func (c *Client) createComponents(config *Config) {
 		ResponseCh:           responseCh,
 		SmartRouting:         smartRouting,
 		Logger:               c.logger,
-		AddressTranslator:    addressTranslator,
 		ClusterService:       clusterService,
 		PartitionService:     partitionService,
 		SerializationService: serializationService,

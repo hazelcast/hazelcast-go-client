@@ -40,7 +40,6 @@ type ConnectionManagerCreationBundle struct {
 	ResponseCh           chan<- *proto.ClientMessage
 	SmartRouting         bool
 	Logger               logger.Logger
-	AddressTranslator    pubcluster.AddressTranslator
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionService
 	SerializationService spi.SerializationService
@@ -60,9 +59,6 @@ func (b ConnectionManagerCreationBundle) Check() {
 	}
 	if b.Logger == nil {
 		panic("Logger is nil")
-	}
-	if b.AddressTranslator == nil {
-		panic("AddressTranslator is nil")
 	}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
@@ -104,7 +100,7 @@ type ConnectionManager struct {
 
 	connMap           *connectionMap
 	nextConnID        int64
-	addressTranslator pubcluster.AddressTranslator
+	addressTranslator AddressTranslator
 	smartRouting      bool
 	alive             atomic.Value
 	started           atomic.Value
@@ -135,7 +131,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
 		connMap:              newConnectionMap(),
-		addressTranslator:    bundle.AddressTranslator,
+		addressTranslator:    NewDefaultAddressTranslator(),
 		smartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
@@ -311,7 +307,7 @@ func (m *ConnectionManager) ensureConnection(addr *pubcluster.AddressImpl) (*Con
 	if conn := m.getConnection(addr); conn != nil {
 		return conn, nil
 	}
-	addr = m.addressTranslator.Translate(addr).(*pubcluster.AddressImpl)
+	addr = m.addressTranslator.Translate(addr)
 	return m.maybeCreateConnection(addr)
 }
 
