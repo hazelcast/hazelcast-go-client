@@ -1,4 +1,6 @@
+
 ---
+
 ## Note to Hazelcast Go Client for Hazelcast 3 Users
 
 Support for Hazelcast 3.x ended on April 9th 2021, so Go client for Hazelcast 3 will not be updated.
@@ -6,6 +8,7 @@ You can still use Go client for Hazelcast 3 by migrating your project to use Go 
 ```
 require github.com/hazelcast/hazelcast-go-client v0.6.0
 ```
+
 ---
 
 # Hazelcast Go Client
