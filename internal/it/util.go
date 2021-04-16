@@ -52,7 +52,7 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 			if cbCallback != nil {
 				cbCallback(cb)
 			}
-			client, m = GetClientMapWithConfigBuilder("my-map", cb)
+			client, m = GetClientMapWithConfigBuilder("test-map", cb)
 			defer func() {
 				if err := m.EvictAll(); err != nil {
 					panic(err)
@@ -69,7 +69,7 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 				cbCallback(cb)
 			}
 			cb.Cluster().SetSmartRouting(false)
-			client, m = GetClientMapWithConfigBuilder("my-map", cb)
+			client, m = GetClientMapWithConfigBuilder("test-map", cb)
 			defer func() {
 				if err := m.EvictAll(); err != nil {
 					panic(err)

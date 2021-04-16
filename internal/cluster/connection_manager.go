@@ -283,7 +283,7 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 
 func (m *ConnectionManager) assignNewOwner() {
 	if newOwner := m.RandomConnection(); newOwner != nil {
-		m.logger.Infof("assigning new owner connection %s", newOwner.connectionID)
+		m.logger.Infof("assigning new owner connection %d", newOwner.connectionID)
 		m.ownerConn.Store(newOwner)
 		m.eventDispatcher.Publish(NewOwnerConnectionChanged(newOwner))
 	} else {

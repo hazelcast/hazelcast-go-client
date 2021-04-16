@@ -13,7 +13,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 )
 
-func TestPutGetMap(t *testing.T) {
+func TestMapPutGet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
@@ -27,16 +27,128 @@ func TestPutGetMap(t *testing.T) {
 	})
 }
 
-// TODO: Test Map PutWithTTL
-// TODO: Test Map PutWithMaxIdle
-// TODO: Test Map PutWithTTLAndMaxIdle
-// TODO: Test Map PutIfAbsent
-// TODO: Test Map PutIfAbsentWithTTL
-// TODO: Test Map PutIfAbsentWithTTLAndMaxIdle
-// TODO: Test Map PutTransient
-// TODO: Test Map PutTransientWithTTL
-// TODO: Test Map PutTransientWithMaxIdle
-// TODO: Test Map PutTransientWithTTLMaxIdle
+func TestMapPutWithTTL(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if _, err := m.PutWithTTL("key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutWithMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if _, err := m.PutWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutWithTTLAndMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		// TODO: better test
+		if _, err := m.PutWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutIfAbsent(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if _, err := m.PutIfAbsent("key", targetValue); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		if _, err := m.PutIfAbsent("key", "another-value"); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutIfAbsentWithTTL(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if _, err := m.PutIfAbsentWithTTL("key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		// TODO: better test
+		if _, err := m.PutIfAbsentWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutTransient(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if err := m.PutTransient("key", targetValue); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutTransientWithTTL(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if err := m.PutTransientWithTTL("key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutTransientWithMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		if err := m.PutTransientWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
+
+func TestMapPutTransientWithTTLAndMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+		targetValue := "value"
+		// TODO: better test
+		if err := m.PutTransientWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(2 * time.Second)
+		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+	})
+}
 
 func TestSetGetMap(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
