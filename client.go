@@ -228,16 +228,16 @@ func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) error {
 	return nil
 }
 
-// ListenMemberStateChange adds a member state change handler with a unique subscription ID.
-func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.MemberStateChangedHandler) error {
+// ListenMembershipStateChange adds a member state change handler with a unique subscription ID.
+func (c *Client) ListenMembershipStateChange(subscriptionID int, handler cluster.MembershipStateChangedHandler) error {
 	if !c.canStart() || !c.ready() {
 		return ErrClientNotReady
 	}
 	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
 		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
 			for _, member := range membersAddedEvent.Members {
-				handler(cluster.MemberStateChanged{
-					State:  cluster.MemberStateAdded,
+				handler(cluster.MembershipStateChanged{
+					State:  cluster.MembershipStateAdded,
 					Member: member,
 				})
 			}
@@ -248,8 +248,8 @@ func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.Mem
 	c.userEventDispatcher.Subscribe(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
 		if membersRemovedEvent, ok := event.(*icluster.MembersRemoved); ok {
 			for _, member := range membersRemovedEvent.Members {
-				handler(cluster.MemberStateChanged{
-					State:  cluster.MemberStateRemoved,
+				handler(cluster.MembershipStateChanged{
+					State:  cluster.MembershipStateRemoved,
 					Member: member,
 				})
 			}
@@ -260,8 +260,8 @@ func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.Mem
 	return nil
 }
 
-// UnlistenMemberStateChange removes the member state change handler with the given subscription ID.
-func (c *Client) UnlistenMemberStateChange(subscriptionID int) error {
+// UnlistenMembershipStateChange removes the member state change handler with the given subscription ID.
+func (c *Client) UnlistenMembershipStateChange(subscriptionID int) error {
 	if !c.canStart() || !c.ready() {
 		return ErrClientNotReady
 	}

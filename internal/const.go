@@ -1,4 +1,4 @@
 package internal
 
 const LifecycleEventStateChanged = "internal.lifecycle.statechanged"
-const EventMemberStateChanged = "internal.cluster.memberstatechanged"
+const EventMembershipStateChanged = "internal.cluster.membershipstatechanged"

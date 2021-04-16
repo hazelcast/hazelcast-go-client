@@ -2,20 +2,20 @@ package cluster
 
 import "github.com/hazelcast/hazelcast-go-client/internal"
 
-type MemberState int
+type MembershipState int
 
 const (
-	MemberStateAdded MemberState = iota
-	MemberStateRemoved
+	MembershipStateAdded MembershipState = iota
+	MembershipStateRemoved
 )
 
-type MemberStateChangedHandler func(event MemberStateChanged)
+type MembershipStateChangedHandler func(event MembershipStateChanged)
 
-type MemberStateChanged struct {
-	State  MemberState
+type MembershipStateChanged struct {
+	State  MembershipState
 	Member Member
 }
 
-func (e *MemberStateChanged) EventName() string {
-	return internal.EventMemberStateChanged
+func (e *MembershipStateChanged) EventName() string {
+	return internal.EventMembershipStateChanged
 }

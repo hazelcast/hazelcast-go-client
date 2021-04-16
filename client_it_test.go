@@ -72,7 +72,7 @@ func TestMemberEvents(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	handlerCalled := int32(0)
-	client.ListenMemberStateChange(1, func(event cluster.MemberStateChanged) {
+	client.ListenMembershipStateChange(1, func(event cluster.MembershipStateChanged) {
 		if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
 			wg.Done()
 		}
