@@ -15,6 +15,7 @@
 package hazelcast
 
 import (
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -37,6 +38,22 @@ import (
 
 var nextId int32
 
+type clientState int
+
+const (
+	created clientState = iota
+	ready
+	stopping
+	stopped
+)
+
+var ErrClientCannotStart = errors.New("client cannot start")
+var ErrClientNotReady = errors.New("client not ready")
+
+// StartNewClient creates and starts a new client.
+// Hazelcast client enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one or more of the
+// cluster members and delegates all cluster wide operations to them.
 func StartNewClient() (*Client, error) {
 	if client, err := NewClient(); err != nil {
 		return nil, err
@@ -47,6 +64,10 @@ func StartNewClient() (*Client, error) {
 	}
 }
 
+// StartNewClientWithConfig creates and starts a new client with the given configuration.
+// Hazelcast client enables you to do all Hazelcast operations without
+// being a member of the cluster. It connects to one or more of the
+// cluster members and delegates all cluster wide operations to them.
 func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 	if client, err := NewClientWithConfig(configProvider); err != nil {
 		return nil, err
@@ -59,20 +80,16 @@ func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 
 // NewClient creates and returns a new client.
 // Hazelcast client enables you to do all Hazelcast operations without
-// being a member of the cluster. It connects to one of the
-// cluster members and delegates all cluster wide operations to it.
-// When the connected cluster member dies, client will
-// automatically switch to another live member.
+// being a member of the cluster. It connects to one or more of the
+// cluster members and delegates all cluster wide operations to them.
 func NewClient() (*Client, error) {
 	return NewClientWithConfig(NewConfigBuilder())
 }
 
 // NewClientWithConfig creates and returns a new client with the given config.
 // Hazelcast client enables you to do all Hazelcast operations without
-// being a member of the cluster. It connects to one of the
-// cluster members and delegates all cluster wide operations to it.
-// When the connected cluster member dies, client will
-// automatically switch to another live member.
+// being a member of the cluster. It connects to one or more of the
+// cluster members and delegates all cluster wide operations to them.
 func NewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 	if config, err := configProvider.Config(); err != nil {
 		return nil, err
@@ -97,7 +114,7 @@ type Client struct {
 	logger              logger.Logger
 
 	// state
-	started atomic.Value
+	state atomic.Value
 }
 
 func newClient(name string, config Config) (*Client, error) {
@@ -122,7 +139,7 @@ func newClient(name string, config Config) (*Client, error) {
 		userEventDispatcher: event.NewDispatchService(),
 		logger:              clientLogger,
 	}
-	client.started.Store(false)
+	client.state.Store(created)
 	client.subscribeUserEvents()
 	client.createComponents(&config)
 	return client, nil
@@ -137,24 +154,28 @@ func (c *Client) Name() string {
 
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(name string) (hztypes.Map, error) {
-	c.ensureStarted()
+	if !c.ready() {
+		return nil, ErrClientNotReady
+	}
 	m, err := c.proxyManager.GetMap(name)
 	return m.(hztypes.Map), err
 }
 
 // GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (hztypes.ReplicatedMap, error) {
-	c.ensureStarted()
+	if !c.ready() {
+		return nil, ErrClientNotReady
+	}
 	m, err := c.proxyManager.GetReplicatedMap(name)
 	return m.(hztypes.ReplicatedMap), err
 }
 
 // Start connects the client to the cluster.
 func (c *Client) Start() error {
-	// TODO: Recover from panics and return as error
-	if c.started.Load() == true {
-		return nil
+	if !c.canStart() {
+		return ErrClientCannotStart
 	}
+	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateStarting))
 	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting)
 	c.partitionService.Start()
@@ -162,26 +183,32 @@ func (c *Client) Start() error {
 		return err
 	}
 	<-clusterServiceStartCh
-	c.started.Store(true)
+	c.state.Store(ready)
 	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateStarted))
 	return nil
 }
 
 // Shutdown disconnects the client from the cluster.
-func (c Client) Shutdown() {
-	if c.started.Load() != true {
-		return
+func (c *Client) Shutdown() error {
+	if !c.ready() {
+		return ErrClientNotReady
 	}
+	c.state.Store(stopping)
 	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateShuttingDown))
 	c.clusterService.Stop()
 	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
+	c.state.Store(stopped)
 	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateShutDown))
+	return nil
 }
 
 // ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
-func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycle.StateChangeHandler) {
+func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycle.StateChangeHandler) error {
+	if !c.canStart() || !c.ready() {
+		return ErrClientNotReady
+	}
 	c.userEventDispatcher.SubscribeSync(internal.LifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*lifecycle.StateChanged); ok {
 			handler(*stateChangeEvent)
@@ -189,15 +216,23 @@ func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycl
 			c.logger.Errorf("cannot cast event to lifecycle.StateChanged event")
 		}
 	})
+	return nil
 }
 
 // UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
-func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) {
+func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) error {
+	if !c.canStart() || !c.ready() {
+		return ErrClientNotReady
+	}
 	c.userEventDispatcher.Unsubscribe(internal.LifecycleEventStateChanged, subscriptionID)
+	return nil
 }
 
-// ListenLifecycleStateChange adds a member state change handler with a unique subscription ID.
-func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.MemberStateChangedHandler) {
+// ListenMemberStateChange adds a member state change handler with a unique subscription ID.
+func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.MemberStateChangedHandler) error {
+	if !c.canStart() || !c.ready() {
+		return ErrClientNotReady
+	}
 	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
 		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
 			for _, member := range membersAddedEvent.Members {
@@ -222,18 +257,25 @@ func (c *Client) ListenMemberStateChange(subscriptionID int, handler cluster.Mem
 			c.logger.Errorf("cannot cast event to cluster.MembersRemoved event")
 		}
 	})
+	return nil
 }
 
 // UnlistenMemberStateChange removes the member state change handler with the given subscription ID.
-func (c *Client) UnlistenMemberStateChange(subscriptionID int) {
+func (c *Client) UnlistenMemberStateChange(subscriptionID int) error {
+	if !c.canStart() || !c.ready() {
+		return ErrClientNotReady
+	}
 	c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionID)
 	c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, subscriptionID)
+	return nil
 }
 
-func (c *Client) ensureStarted() {
-	if c.started.Load() == false {
-		panic("client not started")
-	}
+func (c *Client) canStart() bool {
+	return c.state.Load() == created
+}
+
+func (c *Client) ready() bool {
+	return c.state.Load() == ready
 }
 
 func (c *Client) subscribeUserEvents() {

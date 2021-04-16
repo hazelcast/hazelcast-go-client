@@ -96,6 +96,22 @@ func TestHeartbeat(t *testing.T) {
 	})
 }
 
+func TestClient_Shutdown(t *testing.T) {
+	client := getClient(t)
+	client.Shutdown()
+	client.Shutdown()
+}
+
+func TestClient_Start(t *testing.T) {
+	client := getClient(t)
+	client.Start()
+	client.Start()
+	client.Shutdown()
+	client.Shutdown()
+	client.Start()
+	client.Start()
+}
+
 func getClient(t *testing.T) *hz.Client {
 	client, err := hz.StartNewClient()
 	if err != nil {
