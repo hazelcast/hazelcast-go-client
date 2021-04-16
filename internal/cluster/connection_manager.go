@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -114,10 +115,16 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
-		cb.MaxRetries(10),
+		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(func(attempt int) time.Duration {
-			return time.Duration(attempt+1) * time.Second
+			if attempt < 10 {
+				return time.Duration((attempt+1)*100) * time.Millisecond
+			}
+			if attempt < 1000 {
+				return time.Duration(attempt*attempt) * time.Millisecond
+			}
+			return 20 * time.Minute
 		}))
 	manager := &ConnectionManager{
 		requestCh:            bundle.RequestCh,
