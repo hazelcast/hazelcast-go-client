@@ -141,7 +141,7 @@ func (b *ClusterConfigBuilder) SetName(name string) *ClusterConfigBuilder {
 
 // SetMembers sets the candidate address list that client will use to establish initial connection.
 // Other members of the cluster will be discovered when the client starts.
-// By default 127.0.0.1:5701 is set as the member address.
+// By default localhost:5701 is set as the member address.
 func (b *ClusterConfigBuilder) SetMembers(addrs ...string) *ClusterConfigBuilder {
 	selfAddresses := make([]string, len(addrs))
 	for i, addr := range addrs {
@@ -164,14 +164,14 @@ func (b *ClusterConfigBuilder) SetSmartRouting(enable bool) *ClusterConfigBuilde
 	return b
 }
 
-// SetConnectionTimeout is socket timeout value in seconds for client to connect member nodes.
+// SetConnectionTimeout is socket timeout value for client to connect member nodes.
 // The default connection timeout is 5 seconds.
 func (b *ClusterConfigBuilder) SetConnectionTimeout(timeout time.Duration) *ClusterConfigBuilder {
 	b.config.ConnectionTimeout = timeout
 	return b
 }
 
-// SetHeartbeatInterval sets time interval between the heartbeats sent by the client to the member nodes in seconds.
+// SetHeartbeatInterval sets time interval between the heartbeats sent by the client to the member nodes.
 // The client sends heartbeats to the cluster in order to avoid stale connections.
 // The default heartbeat interval is 5 seconds.
 func (b *ClusterConfigBuilder) SetHeartbeatInterval(interval time.Duration) *ClusterConfigBuilder {

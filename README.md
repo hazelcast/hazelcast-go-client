@@ -1,4 +1,4 @@
-# Hazelcast Go Client V4
+# Hazelcast Go Client
 
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
 
@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	// create the client
+	// create the client and connect to the cluster
 	client, err := hazelcast.StartNewClient() 
     if err != nil {
     	log.Fatal(err)
@@ -97,10 +97,9 @@ Complete creating the configuration in a single go routine, do not pass configur
 cb := hz.NewClientConfigBuilder()
 
 // optionally turn off smart routing
-cb.Network().SetSmartRouting(false)
-
-// optionally set cluster addresses manually
-cb.Network().SetAddrs("member1.example.com", "member2.example.com")
+cb.Network().SetSmartRouting(false).
+    // optionally set cluster addresses manually
+    SetAddrs("member1.example.com", "member2.example.com")
 
 // create and start the client with the configuration provider
 client, err := hazelcast.StartNewClientWithConfig(cb)
