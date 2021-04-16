@@ -206,7 +206,7 @@ func (c *Client) Shutdown() error {
 // ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
 func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycle.StateChangeHandler) error {
-	if !c.canStart() || !c.ready() {
+	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
 	c.userEventDispatcher.SubscribeSync(internal.LifecycleEventStateChanged, subscriptionID, func(event event.Event) {
@@ -221,7 +221,7 @@ func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycl
 
 // UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
 func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) error {
-	if !c.canStart() || !c.ready() {
+	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
 	c.userEventDispatcher.Unsubscribe(internal.LifecycleEventStateChanged, subscriptionID)
@@ -230,7 +230,7 @@ func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) error {
 
 // ListenMembershipStateChange adds a member state change handler with a unique subscription ID.
 func (c *Client) ListenMembershipStateChange(subscriptionID int, handler cluster.MembershipStateChangedHandler) error {
-	if !c.canStart() || !c.ready() {
+	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
 	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
@@ -262,7 +262,7 @@ func (c *Client) ListenMembershipStateChange(subscriptionID int, handler cluster
 
 // UnlistenMembershipStateChange removes the member state change handler with the given subscription ID.
 func (c *Client) UnlistenMembershipStateChange(subscriptionID int) error {
-	if !c.canStart() || !c.ready() {
+	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
 	c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionID)
@@ -276,6 +276,11 @@ func (c *Client) canStart() bool {
 
 func (c *Client) ready() bool {
 	return c.state.Load() == ready
+}
+
+func (c *Client) canStartOrReady() bool {
+	state := c.state.Load()
+	return state == created || state == ready
 }
 
 func (c *Client) subscribeUserEvents() {

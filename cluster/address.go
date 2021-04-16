@@ -67,3 +67,8 @@ func (a AddressImpl) Clone() Address {
 		port: a.port,
 	}
 }
+
+type EndpointQualifier struct {
+	Type       int32
+	Identifier string
+}

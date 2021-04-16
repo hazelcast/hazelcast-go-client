@@ -24,7 +24,7 @@ func TestLifecycleEvents(t *testing.T) {
 	receivedStates := []lifecycle.State{}
 	receivedStatesMu := &sync.RWMutex{}
 	client := it.MustClient(hz.NewClient())
-	client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
+	if err := client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
 		receivedStatesMu.Lock()
 		defer receivedStatesMu.Unlock()
 		switch event.State {
@@ -44,12 +44,16 @@ func TestLifecycleEvents(t *testing.T) {
 			fmt.Println("Received unknown state:", event.State)
 		}
 		receivedStates = append(receivedStates, event.State)
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if err := client.Start(); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(1 * time.Millisecond)
-	client.Shutdown()
+	if err := client.Shutdown(); err != nil {
+		t.Fatal(err)
+	}
 	time.Sleep(1 * time.Millisecond)
 	targetStates := []lifecycle.State{
 		lifecycle.StateStarting,
