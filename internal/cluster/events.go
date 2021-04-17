@@ -30,12 +30,20 @@ const (
 	// EventPartitionsLoaded is dispatched when partition service updates its partition table
 	// This is required to enable smart routing
 	EventPartitionsLoaded = "internal.cluster.partitionsloaded"
+
+	// EventConnected is dispatched after the very first connection to the cluster or the first connection after client disconnected.
+	EventConnected = "internal.cluster.connected"
+
+	// EventDisconnected is dispatched when all connections to the cluster are closed.
+	EventDisconnected = "internal.cluster.disconnected"
 )
 
 type ConnectionOpenedHandler func(event *ConnectionOpened)
 type ConnectionClosedHandler func(event *ConnectionClosed)
 type OwnerConnectionChangedHandler func(event *OwnerConnectionChanged)
 type OwnerConnectionClosedHandler func(event *OwnerConnectionClosed)
+type ConnectedHandler func(event *Connected)
+type DisconnectedHandler func(event *Disconnected)
 
 type ConnectionOpened struct {
 	Conn *Connection
@@ -158,4 +166,26 @@ func NewPartitionsLoaded() *PartitionsLoaded {
 
 func (p PartitionsLoaded) EventName() string {
 	return EventPartitionsLoaded
+}
+
+type Connected struct {
+}
+
+func NewConnected() *Connected {
+	return &Connected{}
+}
+
+func (e *Connected) EventName() string {
+	return EventConnected
+}
+
+type Disconnected struct {
+}
+
+func NewDisconnected() *Disconnected {
+	return &Disconnected{}
+}
+
+func (c *Disconnected) EventName() string {
+	return EventDisconnected
 }

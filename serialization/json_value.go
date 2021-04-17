@@ -1,3 +1,3 @@
-package types
+package serialization
 
 type JSONValue []byte

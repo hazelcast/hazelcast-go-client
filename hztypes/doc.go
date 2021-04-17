@@ -1,6 +1,6 @@
 /*
 
-Package hztypes contains various distributed data structures and helper types.
+Package hztypes contains various helper types.
 
 
 */

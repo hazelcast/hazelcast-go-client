@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 )
 
@@ -27,11 +26,11 @@ func newManager(bundle proxy.CreationBundle) *proxyManager {
 	}
 }
 
-func (m *proxyManager) GetMap(name string) (*hztypes.Map, error) {
+func (m *proxyManager) GetMap(name string) (*Map, error) {
 	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
 		return nil, err
 	} else {
-		return hztypes.NewMapImpl(p), nil
+		return NewMapImpl(p), nil
 	}
 }
 

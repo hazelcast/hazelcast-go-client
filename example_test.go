@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/lifecycle"
 )
 
 func Example() {
@@ -50,19 +49,19 @@ func ExampleClient_ListenLifecycleStateChange() {
 		log.Fatal(err)
 	}
 	// Attach an event listener.
-	client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
+	client.ListenLifecycleStateChange(1, func(event hazelcast.LifecycleStateChanged) {
 		switch event.State {
-		case lifecycle.StateStarting:
+		case hazelcast.LifecycleStateStarting:
 			log.Println("Received starting state.")
-		case lifecycle.StateStarted:
+		case hazelcast.LifecycleStateStarted:
 			log.Println("Received started state.")
-		case lifecycle.StateShuttingDown:
+		case hazelcast.LifecycleStateShuttingDown:
 			log.Println("Received shutting down state.")
-		case lifecycle.StateShutDown:
+		case hazelcast.LifecycleStateShutDown:
 			log.Println("Received shut down state.")
-		case lifecycle.StateClientConnected:
+		case hazelcast.LifecycleStateClientConnected:
 			log.Println("Received client connected state.")
-		case lifecycle.StateClientDisconnected:
+		case hazelcast.LifecycleStateClientDisconnected:
 			log.Println("Received client disconnected state.")
 		default:
 			log.Println("Received unknown state:", event.State)

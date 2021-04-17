@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"math"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -16,12 +17,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilifecycle "github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
-	"github.com/hazelcast/hazelcast-go-client/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
@@ -165,7 +164,7 @@ func (m *ConnectionManager) Start() error {
 	go m.logStatus()
 	go m.doctor()
 	m.started.Store(true)
-	m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientConnected))
+	m.eventDispatcher.Publish(NewConnected())
 	return nil
 }
 
@@ -272,7 +271,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
-		m.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateClientDisconnected))
+		m.eventDispatcher.Publish(NewDisconnected())
 		// set nil *Connection as owner conn
 		var conn *Connection
 		m.ownerConn.Store(conn)
@@ -371,7 +370,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 			m.ownerConn.Store(conn)
 			// TODO: remove v ?
 			m.clusterService.ownerUUID.Store(memberUuid.String())
-			m.logger.Infof("Setting %s as owner.", conn.String())
+			m.logger.Debug(func() string { return fmt.Sprintf("setting %d as owner.", conn.connectionID) })
 			m.eventDispatcher.Publish(NewOwnerConnectionChanged(conn))
 		}
 		m.logger.Infof("opened connection to: %s", address)

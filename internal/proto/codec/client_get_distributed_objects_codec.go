@@ -14,7 +14,6 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -41,7 +40,7 @@ func EncodeClientGetDistributedObjectsRequest() *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeClientGetDistributedObjectsResponse(clientMessage *proto.ClientMessage) []internal.DistributedObjectInfo {
+func DecodeClientGetDistributedObjectsResponse(clientMessage *proto.ClientMessage) []DistributedObjectInfo {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

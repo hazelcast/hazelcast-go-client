@@ -561,8 +561,8 @@ func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterat
 	return result
 }
 
-func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []internal.DistributedObjectInfo {
-	result := make([]internal.DistributedObjectInfo, 0)
+func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []DistributedObjectInfo {
+	result := make([]DistributedObjectInfo, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeDistributedObjectInfo(frameIterator))
@@ -729,4 +729,47 @@ func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerErrorImpl {
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {
 	return pubcluster.EndpointQualifier{qualifierType, identifier}
+}
+
+// DistributedObject is the base interface for all distributed objects.
+type DistributedObject interface {
+	// Destroy destroys this object cluster-wide.
+	// Destroy clears and releases all resources for this object.
+	Destroy() (bool, error)
+
+	// Name returns the unique name for this DistributedObject.
+	Name() string
+
+	// PartitionKey returns the key of partition this DistributedObject is assigned to. The returned value only has meaning
+	// for a non partitioned data structure like an IAtomicLong. For a partitioned data structure like an Map
+	// the returned value will not be nil, but otherwise undefined.
+	PartitionKey() string
+
+	// ServiceName returns the service name for this object.
+	ServiceName() string
+}
+
+type DistributedObjectInfo struct {
+	name        string
+	serviceName string
+}
+
+func (i *DistributedObjectInfo) Name() string {
+	return i.name
+}
+
+func (i *DistributedObjectInfo) ServiceName() string {
+	return i.serviceName
+}
+
+func (i *DistributedObjectInfo) GetName() string {
+	return i.name
+}
+
+func (i *DistributedObjectInfo) GetServiceName() string {
+	return i.serviceName
+}
+
+func NewDistributedObjectInfo(name string, serviceName string) DistributedObjectInfo {
+	return DistributedObjectInfo{name: name, serviceName: serviceName}
 }

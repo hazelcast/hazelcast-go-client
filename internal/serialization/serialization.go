@@ -187,7 +187,7 @@ func (s *Service) registerDefaultSerializers() error {
 	s.nameToID["[]string"] = ConstantTypeStringArray
 
 	s.registerSerializer(&JSONValueSerializer{})
-	s.nameToID["types.JSONValue"] = JSONSerializationType
+	s.nameToID["serialization.JSONValue"] = JSONSerializationType
 
 	s.registerSerializer(&GobSerializer{})
 	s.nameToID["!gob"] = GoGobSerializationType

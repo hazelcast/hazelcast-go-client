@@ -8,37 +8,31 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
-	"github.com/hazelcast/hazelcast-go-client/cluster"
-
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/lifecycle"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func TestLifecycleEvents(t *testing.T) {
-	receivedStates := []lifecycle.State{}
+	receivedStates := []hz.LifecycleState{}
 	receivedStatesMu := &sync.RWMutex{}
 	client := it.MustClient(hz.NewClient())
-	if err := client.ListenLifecycleStateChange(1, func(event lifecycle.StateChanged) {
+	if err := client.ListenLifecycleStateChange(1, func(event hz.LifecycleStateChanged) {
 		receivedStatesMu.Lock()
 		defer receivedStatesMu.Unlock()
 		switch event.State {
-		case lifecycle.StateStarting:
+		case hz.LifecycleStateStarting:
 			fmt.Println("Received starting state")
-		case lifecycle.StateStarted:
+		case hz.LifecycleStateStarted:
 			fmt.Println("Received started state")
-		case lifecycle.StateShuttingDown:
+		case hz.LifecycleStateShuttingDown:
 			fmt.Println("Received shutting down state")
-		case lifecycle.StateShutDown:
+		case hz.LifecycleStateShutDown:
 			fmt.Println("Received shut down state")
-		case lifecycle.StateClientConnected:
+		case hz.LifecycleStateClientConnected:
 			fmt.Println("Received client connected state")
-		case lifecycle.StateClientDisconnected:
+		case hz.LifecycleStateClientDisconnected:
 			fmt.Println("Received client disconnected state")
 		default:
 			fmt.Println("Received unknown state:", event.State)
@@ -55,12 +49,12 @@ func TestLifecycleEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(1 * time.Millisecond)
-	targetStates := []lifecycle.State{
-		lifecycle.StateStarting,
-		lifecycle.StateClientConnected,
-		lifecycle.StateStarted,
-		lifecycle.StateShuttingDown,
-		lifecycle.StateShutDown,
+	targetStates := []hz.LifecycleState{
+		hz.LifecycleStateStarting,
+		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateStarted,
+		hz.LifecycleStateShuttingDown,
+		hz.LifecycleStateShutDown,
 	}
 	receivedStatesMu.RLock()
 	defer receivedStatesMu.RUnlock()
@@ -90,7 +84,7 @@ func TestHeartbeat(t *testing.T) {
 	// Slow test.
 	t.SkipNow()
 	it.MapTesterWithConfigBuilder(t, func(cb *hz.ConfigBuilder) {
-	}, func(t *testing.T, m *hztypes.Map) {
+	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"
 		it.Must(m.Set("k1", target))
