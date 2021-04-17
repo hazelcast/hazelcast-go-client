@@ -25,7 +25,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -155,16 +154,13 @@ func (c *Client) GetMap(name string) (*Map, error) {
 	return c.proxyManager.GetMap(name)
 }
 
-/*
 // GetReplicatedMap returns a replicated map instance.
-func (c *Client) GetReplicatedMap(name string) (hztypes.ReplicatedMap, error) {
+func (c *Client) GetReplicatedMap(name string) (*ReplicatedMapImpl, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	m, err := c.proxyManager.GetReplicatedMap(name)
-	return m.(hztypes.ReplicatedMap), err
+	return c.proxyManager.GetReplicatedMap(name)
 }
-*/
 
 // Start connects the client to the cluster.
 func (c *Client) Start() error {
@@ -350,7 +346,7 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationService.SetHandler(invocationHandler)
 	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)
-	proxyManagerServiceBundle := proxy.CreationBundle{
+	proxyManagerServiceBundle := CreationBundle{
 		RequestCh:            requestCh,
 		SerializationService: serializationService,
 		PartitionService:     partitionService,

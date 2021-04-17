@@ -1,8 +1,9 @@
-package hztypes
+package types
 
-import "github.com/hazelcast/hazelcast-go-client/internal/types"
-
-type Entry = types.Entry
+type Entry struct {
+	Key   interface{}
+	Value interface{}
+}
 
 func NewEntry(key interface{}, value interface{}) Entry {
 	return Entry{

@@ -9,9 +9,9 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestMapPutGet(t *testing.T) {
@@ -326,10 +326,10 @@ func TestMapGetValues(t *testing.T) {
 
 func TestPutAll(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		pairs := []hztypes.Entry{
-			hztypes.NewEntry("k1", "v1"),
-			hztypes.NewEntry("k2", "v2"),
-			hztypes.NewEntry("k3", "v3"),
+		pairs := []types.Entry{
+			types.NewEntry("k1", "v1"),
+			types.NewEntry("k2", "v2"),
+			types.NewEntry("k3", "v3"),
 		}
 		if err := m.PutAll(pairs); err != nil {
 			t.Fatal(err)
@@ -343,10 +343,10 @@ func TestPutAll(t *testing.T) {
 
 func TestMapGetEntrySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		target := []hztypes.Entry{
-			hztypes.NewEntry("k1", "v1"),
-			hztypes.NewEntry("k2", "v2"),
-			hztypes.NewEntry("k3", "v3"),
+		target := []types.Entry{
+			types.NewEntry("k1", "v1"),
+			types.NewEntry("k2", "v2"),
+			types.NewEntry("k3", "v3"),
 		}
 		if err := m.PutAll(target); err != nil {
 			t.Fatal(err)
@@ -365,18 +365,18 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		entries := []hztypes.Entry{
-			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
-			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
-			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		entries := []types.Entry{
+			types.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
+			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
+			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
 		}
 		if err := m.PutAll(entries); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		target := []hztypes.Entry{
-			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
-			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		target := []types.Entry{
+			types.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
+			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
 		}
 		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
@@ -388,18 +388,18 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 
 func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		entries := []hztypes.Entry{
-			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
-			hztypes.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.JSONValue()),
-			hztypes.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+		entries := []types.Entry{
+			types.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+			types.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.JSONValue()),
+			types.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 		}
 		if err := m.PutAll(entries); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		target := []hztypes.Entry{
-			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
-			hztypes.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+		target := []types.Entry{
+			types.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
+			types.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 		}
 		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
@@ -479,18 +479,18 @@ func TestRemoveAll(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		entries := []hztypes.Entry{
-			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
-			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
-			hztypes.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+		entries := []types.Entry{
+			types.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
+			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
+			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
 		}
 		it.Must(m.PutAll(entries))
 		time.Sleep(1 * time.Second)
 		if err := m.RemoveAll(predicate.Equal("B", 10)); err != nil {
 			t.Fatal(err)
 		}
-		target := []hztypes.Entry{
-			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
+		target := []types.Entry{
+			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
 		}
 		if kvs, err := m.GetAll("k1", "k2", "k3"); err != nil {
 			t.Fatal(err)
@@ -698,7 +698,7 @@ func makeInterfaceSet(items []interface{}) map[interface{}]struct{} {
 	return result
 }
 
-func entriesEqualUnordered(p1, p2 []hztypes.Entry) bool {
+func entriesEqualUnordered(p1, p2 []types.Entry) bool {
 	if len(p1) != len(p2) {
 		return false
 	}
@@ -716,7 +716,7 @@ func entriesEqualUnordered(p1, p2 []hztypes.Entry) bool {
 	return true
 }
 
-func entriesIndex(p hztypes.Entry, ps []hztypes.Entry) int {
+func entriesIndex(p types.Entry, ps []types.Entry) int {
 	for i, item := range ps {
 		if reflect.DeepEqual(p, item) {
 			return i
