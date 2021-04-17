@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proxy
+package hazelcast
 
 import (
 	"context"
@@ -27,11 +27,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/types"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -80,7 +80,7 @@ func (b CreationBundle) Check() {
 	}
 }
 
-type Proxy struct {
+type proxy struct {
 	requestCh            chan<- invocation.Invocation
 	serializationService iserialization.SerializationService
 	PartitionService     *cluster.PartitionService
@@ -95,7 +95,7 @@ type Proxy struct {
 	CircuitBreaker       *cb.CircuitBreaker
 }
 
-func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Proxy {
+func NewProxy(bundle CreationBundle, serviceName string, objectName string) *proxy {
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
@@ -104,7 +104,7 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
-	return &Proxy{
+	return &proxy{
 		serviceName:          serviceName,
 		Name:                 objectName,
 		requestCh:            bundle.RequestCh,
@@ -120,7 +120,7 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 	}
 }
 
-func (p *Proxy) Destroy() error {
+func (p *proxy) Destroy() error {
 	request := proto.ClientDestroyProxyEncodeRequest(p.Name, p.serviceName)
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv
@@ -130,19 +130,19 @@ func (p *Proxy) Destroy() error {
 	return nil
 }
 
-func (p Proxy) Smart() bool {
+func (p proxy) Smart() bool {
 	return p.SmartRouting
 }
 
-func (p *Proxy) PartitionKey() string {
+func (p *proxy) PartitionKey() string {
 	return p.Name
 }
 
-func (p *Proxy) ServiceName() string {
+func (p *proxy) ServiceName() string {
 	return p.serviceName
 }
 
-func (p *Proxy) ValidateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
+func (p *proxy) ValidateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
 		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
@@ -150,7 +150,7 @@ func (p *Proxy) ValidateAndSerialize(arg1 interface{}) (arg1Data serialization.D
 	return
 }
 
-func (p *Proxy) ValidateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data serialization.Data,
+func (p *proxy) ValidateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
 		return nil, nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
@@ -163,7 +163,7 @@ func (p *Proxy) ValidateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 	return
 }
 
-func (p *Proxy) ValidateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data serialization.Data,
+func (p *proxy) ValidateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data serialization.Data,
 	arg2Data serialization.Data, arg3Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
 		return nil, nil, nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
@@ -180,7 +180,7 @@ func (p *Proxy) ValidateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 	return
 }
 
-func (p *Proxy) ValidateAndSerializePredicate(arg1 interface{}) (arg1Data serialization.Data, err error) {
+func (p *proxy) ValidateAndSerializePredicate(arg1 interface{}) (arg1Data serialization.Data, err error) {
 	if nilutil.IsNil(arg1) {
 		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
 	}
@@ -188,7 +188,7 @@ func (p *Proxy) ValidateAndSerializePredicate(arg1 interface{}) (arg1Data serial
 	return
 }
 
-func (p *Proxy) ValidateAndSerializeSlice(elements []interface{}) (elementsData []serialization.Data, err error) {
+func (p *proxy) ValidateAndSerializeSlice(elements []interface{}) (elementsData []serialization.Data, err error) {
 	if elements == nil {
 		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
 	}
@@ -196,7 +196,7 @@ func (p *Proxy) ValidateAndSerializeSlice(elements []interface{}) (elementsData 
 	return
 }
 
-func (p *Proxy) ValidateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*proto.Pair, error) {
+func (p *proxy) ValidateAndSerializeMapAndGetPartitions(entries map[interface{}]interface{}) (map[int32][]*proto.Pair, error) {
 	if entries == nil {
 		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilMapIsNotAllowed, nil)
 	}
@@ -213,7 +213,7 @@ func (p *Proxy) ValidateAndSerializeMapAndGetPartitions(entries map[interface{}]
 	return partitions, nil
 }
 
-func (p *Proxy) TryInvoke(f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
+func (p *proxy) TryInvoke(f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
 	if res, err := p.CircuitBreaker.Try(f).Result(); err != nil {
 		return nil, err
 	} else {
@@ -221,12 +221,12 @@ func (p *Proxy) TryInvoke(f func(ctx context.Context) (interface{}, error)) (*pr
 	}
 }
 
-func (p *Proxy) InvokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
+func (p *proxy) InvokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
 	partitionID := p.PartitionService.GetPartitionID(keyData)
 	return p.InvokeOnPartition(request, partitionID)
 }
 
-func (p *Proxy) InvokeOnRandomTarget(request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+func (p *proxy) InvokeOnRandomTarget(request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
 	return p.TryInvoke(func(ctx context.Context) (interface{}, error) {
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
@@ -234,23 +234,23 @@ func (p *Proxy) InvokeOnRandomTarget(request *proto.ClientMessage, handler proto
 	})
 }
 
-func (p *Proxy) InvokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+func (p *proxy) InvokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.TryInvoke(func(ctx context.Context) (interface{}, error) {
 		return p.InvokeOnPartitionAsync(request, partitionID).GetWithTimeout(1 * time.Second)
 	})
 }
 
-func (p *Proxy) InvokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
+func (p *proxy) InvokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
 	return inv
 }
 
-func (p *Proxy) ConvertToObject(data serialization.Data) (interface{}, error) {
+func (p *proxy) ConvertToObject(data serialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
 }
 
-func (p *Proxy) MustConvertToInterface(data serialization.Data, panicMsg string) interface{} {
+func (p *proxy) MustConvertToInterface(data serialization.Data, panicMsg string) interface{} {
 	if value, err := p.serializationService.ToObject(data); err != nil {
 		panic(panicMsg)
 	} else {
@@ -258,11 +258,11 @@ func (p *Proxy) MustConvertToInterface(data serialization.Data, panicMsg string)
 	}
 }
 
-func (p *Proxy) ConvertToData(object interface{}) (serialization.Data, error) {
+func (p *proxy) ConvertToData(object interface{}) (serialization.Data, error) {
 	return p.serializationService.ToData(object)
 }
 
-func (p *Proxy) DecodeToObjectAndError(responseMessage *proto.ClientMessage, inputError error,
+func (p *proxy) DecodeToObjectAndError(responseMessage *proto.ClientMessage, inputError error,
 	decodeFunc func(*proto.ClientMessage) func() serialization.Data) (response interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
@@ -270,7 +270,7 @@ func (p *Proxy) DecodeToObjectAndError(responseMessage *proto.ClientMessage, inp
 	return p.ConvertToObject(decodeFunc(responseMessage)())
 }
 
-func (p *Proxy) DecodeToBoolAndError(responseMessage *proto.ClientMessage, inputError error,
+func (p *proxy) DecodeToBoolAndError(responseMessage *proto.ClientMessage, inputError error,
 	decodeFunc func(*proto.ClientMessage) func() bool) (response bool, err error) {
 	if inputError != nil {
 		return false, inputError
@@ -278,7 +278,7 @@ func (p *Proxy) DecodeToBoolAndError(responseMessage *proto.ClientMessage, input
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *Proxy) DecodeToInterfaceSliceAndError(responseMessage *proto.ClientMessage, inputError error,
+func (p *proxy) DecodeToInterfaceSliceAndError(responseMessage *proto.ClientMessage, inputError error,
 	decodeFunc func(*proto.ClientMessage) func() []serialization.Data) (response []interface{}, err error) {
 	if inputError != nil {
 		return nil, inputError
@@ -286,7 +286,7 @@ func (p *Proxy) DecodeToInterfaceSliceAndError(responseMessage *proto.ClientMess
 	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.serializationService)
 }
 
-func (p *Proxy) DecodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
+func (p *proxy) DecodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
 	decodeFunc func(*proto.ClientMessage) func() []*proto.Pair) (response []proto.Pair, err error) {
 	if inputError != nil {
 		return nil, inputError
@@ -294,7 +294,7 @@ func (p *Proxy) DecodeToPairSliceAndError(responseMessage *proto.ClientMessage, 
 	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.serializationService)
 }
 
-func (p *Proxy) DecodeToInt32AndError(responseMessage *proto.ClientMessage, inputError error,
+func (p *proxy) DecodeToInt32AndError(responseMessage *proto.ClientMessage, inputError error,
 	decodeFunc func(*proto.ClientMessage) func() int32) (response int32, err error) {
 	if inputError != nil {
 		return 0, inputError
@@ -302,7 +302,7 @@ func (p *Proxy) DecodeToInt32AndError(responseMessage *proto.ClientMessage, inpu
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *Proxy) DecodeToInt64AndError(responseMessage *proto.ClientMessage, inputError error,
+func (p *proxy) DecodeToInt64AndError(responseMessage *proto.ClientMessage, inputError error,
 	decodeFunc func(*proto.ClientMessage) func() int64) (response int64, err error) {
 	if inputError != nil {
 		return 0, inputError
@@ -310,7 +310,7 @@ func (p *Proxy) DecodeToInt64AndError(responseMessage *proto.ClientMessage, inpu
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *Proxy) PartitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto.Pair, error) {
+func (p *proxy) PartitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto.Pair, error) {
 	ps := p.PartitionService
 	partitionToPairs := map[int32][]proto.Pair{}
 	for _, pair := range keyValuePairs {
@@ -325,7 +325,7 @@ func (p *Proxy) PartitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto
 	return partitionToPairs, nil
 }
 
-func (p *Proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error) {
+func (p *proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error) {
 	kvPairs := make([]types.Entry, len(pairs))
 	for i, pair := range pairs {
 		key, err := p.ConvertToObject(pair.Key().(serialization.Data))
@@ -342,7 +342,7 @@ func (p *Proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 }
 
 type partitionSpecificProxy struct {
-	*Proxy
+	*proxy
 	partitionID int32
 }
 
@@ -357,7 +357,7 @@ func newPartitionSpecificProxy(
 	name string,
 ) *partitionSpecificProxy {
 	parSpecProxy := &partitionSpecificProxy{
-		Proxy: &Proxy{
+		proxy: &proxy{
 			requestCh:            requestCh,
 			serializationService: serializationService,
 			PartitionService:     partitionService,

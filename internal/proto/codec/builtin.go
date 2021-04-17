@@ -10,8 +10,8 @@ import (
 	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/types"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Encoder for ClientMessage and value

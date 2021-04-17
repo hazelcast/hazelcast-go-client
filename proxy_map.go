@@ -18,16 +18,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -44,20 +43,20 @@ type MapEntryListenerConfig struct {
 }
 
 type Map struct {
-	*proxy.Proxy
-	referenceIDGenerator proxy.ReferenceIDGenerator
+	*proxy
+	referenceIDGenerator iproxy.ReferenceIDGenerator
 }
 
-func NewMapImpl(p *proxy.Proxy) *Map {
+func NewMapImpl(p *proxy) *Map {
 	return &Map{
-		Proxy:                p,
-		referenceIDGenerator: proxy.NewReferenceIDGeneratorImpl(),
+		proxy:                p,
+		referenceIDGenerator: iproxy.NewReferenceIDGeneratorImpl(),
 	}
 }
 
 // AddInterceptor adds an interceptor for this map.
 func (m *Map) AddInterceptor(interceptor interface{}) (string, error) {
-	if interceptorData, err := m.Proxy.ConvertToData(interceptor); err != nil {
+	if interceptorData, err := m.proxy.ConvertToData(interceptor); err != nil {
 		return "", err
 	} else {
 		request := codec.EncodeMapAddInterceptorRequest(m.Name, interceptorData)
@@ -141,7 +140,7 @@ func (m *Map) EvictAll() error {
 }
 
 // ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
-func (m *Map) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.Entry, error) {
+func (m *Map) ExecuteOnEntries(entryProcessor interface{}) ([]types.Entry, error) {
 	if processorData, err := m.ValidateAndSerialize(entryProcessor); err != nil {
 		return nil, err
 	} else {
@@ -200,9 +199,9 @@ func (m *Map) Get(key interface{}) (interface{}, error) {
 }
 
 // GetAll returns the entries for the given keys.
-func (m *Map) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
+func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	partitionToKeys := map[int32][]pubserialization.Data{}
-	ps := m.Proxy.PartitionService
+	ps := m.proxy.PartitionService
 	for _, key := range keys {
 		if keyData, err := m.ValidateAndSerialize(key); err != nil {
 			return nil, err
@@ -212,7 +211,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 			partitionToKeys[partitionKey] = append(arr, keyData)
 		}
 	}
-	result := make([]hztypes.Entry, 0, len(keys))
+	result := make([]types.Entry, 0, len(keys))
 	// create futures
 	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
 		return m.CircuitBreaker.Try(func(ctx context.Context) (interface{}, error) {
@@ -238,7 +237,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 				} else if value, err = m.ConvertToObject(pair.Value().(pubserialization.Data)); err != nil {
 					return nil, err
 				}
-				result = append(result, hztypes.NewEntry(key, value))
+				result = append(result, types.NewEntry(key, value))
 			}
 		}
 	}
@@ -246,7 +245,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 }
 
 // GetEntrySet returns a clone of the mappings contained in this map.
-func (m *Map) GetEntrySet() ([]hztypes.Entry, error) {
+func (m *Map) GetEntrySet() ([]types.Entry, error) {
 	request := codec.EncodeMapEntrySetRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
@@ -256,7 +255,7 @@ func (m *Map) GetEntrySet() ([]hztypes.Entry, error) {
 }
 
 // GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
-func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]hztypes.Entry, error) {
+func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]types.Entry, error) {
 	if predData, err := m.ValidateAndSerialize(predicate); err != nil {
 		return nil, err
 	} else {
@@ -270,7 +269,7 @@ func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]hztypes
 }
 
 // GetEntryView returns the SimpleEntryView for the specified key.
-func (m *Map) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
+func (m *Map) GetEntryView(key string) (*types.SimpleEntryView, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -288,7 +287,7 @@ func (m *Map) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
 			if err != nil {
 				return nil, err
 			}
-			newEntryView := hztypes.NewSimpleEntryView(
+			newEntryView := types.NewSimpleEntryView(
 				deserializedKey,
 				deserializedValue,
 				ev.Cost(),
@@ -412,7 +411,7 @@ func (m *Map) LoadAllReplacingExisting(keys ...interface{}) error {
 // Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
 // acquire it.
 func (m *Map) Lock(key interface{}) error {
-	return m.lock(key, proxy.TtlDefault)
+	return m.lock(key, TtlDefault)
 }
 
 // LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
@@ -435,7 +434,7 @@ func (m *Map) LockWithLease(key interface{}, leaseTime time.Duration) error {
 
 // Put sets the value for the given key and returns the old value.
 func (m *Map) Put(key interface{}, value interface{}) (interface{}, error) {
-	return m.putTTL(key, value, proxy.TtlDefault)
+	return m.putTTL(key, value, TtlDefault)
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
@@ -447,7 +446,7 @@ func (m *Map) PutWithTTL(key interface{}, value interface{}, ttl time.Duration) 
 // PutWithMaxIdle sets the value for the given key and returns the old value.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *Map) PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
-	return m.putMaxIdle(key, value, proxy.TtlDefault, maxIdle.Milliseconds())
+	return m.putMaxIdle(key, value, TtlDefault, maxIdle.Milliseconds())
 }
 
 // PutWithTTLAndMaxIdle sets the value for the given key and returns the old value.
@@ -460,7 +459,7 @@ func (m *Map) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.
 // PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
-func (m *Map) PutAll(keyValuePairs []hztypes.Entry) error {
+func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 	if partitionToPairs, err := m.PartitionToPairs(keyValuePairs); err != nil {
 		return err
 	} else {
@@ -487,7 +486,7 @@ func (m *Map) PutAll(keyValuePairs []hztypes.Entry) error {
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.
 func (m *Map) PutIfAbsent(key interface{}, value interface{}) (interface{}, error) {
-	return m.putIfAbsent(key, value, proxy.TtlDefault)
+	return m.putIfAbsent(key, value, TtlDefault)
 }
 
 // PutIfAbsentWithTTL associates the specified key with the given value if it is not already associated.
@@ -517,7 +516,7 @@ func (m *Map) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, t
 // The TTL defined on the server-side configuration will be used.
 // Max idle time defined on the server-side configuration will be used.
 func (m *Map) PutTransient(key interface{}, value interface{}) error {
-	return m.putTransient(key, value, proxy.TtlDefault, proxy.MaxIdleDefault)
+	return m.putTransient(key, value, TtlDefault, MaxIdleDefault)
 }
 
 // PutTransientWithTTL sets the value for the given key.
@@ -525,7 +524,7 @@ func (m *Map) PutTransient(key interface{}, value interface{}) error {
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
 func (m *Map) PutTransientWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
-	return m.putTransient(key, value, ttl.Milliseconds(), proxy.MaxIdleDefault)
+	return m.putTransient(key, value, ttl.Milliseconds(), MaxIdleDefault)
 }
 
 // PutTransientWithMaxIdle sets the value for the given key.
@@ -533,10 +532,10 @@ func (m *Map) PutTransientWithTTL(key interface{}, value interface{}, ttl time.D
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
 func (m *Map) PutTransientWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) error {
-	return m.putTransient(key, value, proxy.TtlDefault, maxIdle.Milliseconds())
+	return m.putTransient(key, value, TtlDefault, maxIdle.Milliseconds())
 }
 
-// PutTransientWithTTLMaxIdle sets the value for the given key.
+// PutTransientWithTTLAndMaxIdle sets the value for the given key.
 // MapStore defined at the server side will not be called.
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
@@ -627,7 +626,7 @@ func (m *Map) ReplaceIfSame(key interface{}, oldValue interface{}, newValue inte
 
 // Set sets the value for the given key.
 func (m *Map) Set(key interface{}, value interface{}) error {
-	return m.set(key, value, proxy.TtlDefault)
+	return m.set(key, value, TtlDefault)
 }
 
 // SetTTL updates the TTL value of the entry specified by the given key with a new TTL value.
@@ -687,7 +686,7 @@ func (m *Map) TryLockWithLease(key interface{}, lease time.Duration) (bool, erro
 	return m.tryLock(key, lease.Milliseconds(), 0)
 }
 
-// TryLockWithLease tries to acquire the lock for the specified key.
+// TryLockWithTimeout tries to acquire the lock for the specified key.
 // The current thread becomes disabled for thread scheduling purposes and lies
 // dormant until one of the followings happens:
 // - The lock is acquired by the current thread, or
@@ -696,7 +695,7 @@ func (m *Map) TryLockWithTimeout(key interface{}, timeout time.Duration) (bool, 
 	return m.tryLock(key, 0, timeout.Milliseconds())
 }
 
-// TryLockWithLease tries to acquire the lock for the specified key.
+// TryLockWithLeaseTimeout tries to acquire the lock for the specified key.
 // The current thread becomes disabled for thread scheduling purposes and lies
 // dormant until one of the followings happens:
 // - The lock is acquired by the current thread, or
@@ -721,7 +720,7 @@ func (m *Map) TryRemove(key interface{}) (interface{}, error) {
 	return m.tryRemove(key, 0)
 }
 
-// TryRemove tries to remove the given key from this map and waits until operation is completed or timeout is reached.
+// TryRemoveWithTimeout tries to remove the given key from this map and waits until operation is completed or timeout is reached.
 func (m *Map) TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error) {
 	return m.tryRemove(key, timeout.Milliseconds())
 }

@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/types"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (

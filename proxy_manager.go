@@ -2,26 +2,21 @@ package hazelcast
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-)
-
-const (
-	ReplicatedMapService = "hz:impl:replicatedMapService"
 )
 
 type proxyManager struct {
 	mu            *sync.RWMutex
-	proxies       map[string]*proxy.Proxy
-	serviceBundle proxy.CreationBundle
+	proxies       map[string]*proxy
+	serviceBundle CreationBundle
 }
 
-func newManager(bundle proxy.CreationBundle) *proxyManager {
+func newManager(bundle CreationBundle) *proxyManager {
 	bundle.Check()
 	return &proxyManager{
 		mu:            &sync.RWMutex{},
-		proxies:       map[string]*proxy.Proxy{},
+		proxies:       map[string]*proxy{},
 		serviceBundle: bundle,
 	}
 }
@@ -34,34 +29,32 @@ func (m *proxyManager) GetMap(name string) (*Map, error) {
 	}
 }
 
-/*
-func (m *proxyManager) GetReplicatedMap(objectName string) (interface{}, error) {
+func (m *proxyManager) GetReplicatedMap(objectName string) (*ReplicatedMapImpl, error) {
 	// returns an interface to not depend on hztypes.ReplicatedMap
 	// TODO: change return type to ReplicatedMap
-	if proxy, err := m.proxyFor(ReplicatedMapService, objectName); err != nil {
+	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
 		return nil, err
 	} else {
 		partitionCount := m.serviceBundle.PartitionService.PartitionCount()
 		partitionID := rand.Int31n(partitionCount)
-		return NewReplicatedMapImpl(proxy, partitionID), nil
+		return NewReplicatedMapImpl(p, partitionID), nil
 	}
 }
-*/
 
 func (m *proxyManager) Remove(serviceName string, objectName string) error {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()
-	proxy, ok := m.proxies[name]
+	p, ok := m.proxies[name]
 	if !ok {
 		m.mu.Unlock()
 		return nil
 	}
 	delete(m.proxies, name)
 	m.mu.Unlock()
-	return proxy.Destroy()
+	return p.Destroy()
 }
 
-func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy.Proxy, error) {
+func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, error) {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	obj, ok := m.proxies[name]
@@ -69,18 +62,18 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy.P
 	if ok {
 		return obj, nil
 	}
-	if proxy, err := m.createProxy(serviceName, objectName); err != nil {
+	if p, err := m.createProxy(serviceName, objectName); err != nil {
 		return nil, err
 	} else {
 		m.mu.Lock()
-		m.proxies[name] = proxy
+		m.proxies[name] = p
 		m.mu.Unlock()
-		return proxy, nil
+		return p, nil
 	}
 }
 
-func (m proxyManager) createProxy(serviceName string, objectName string) (*proxy.Proxy, error) {
-	return proxy.NewProxy(m.serviceBundle, serviceName, objectName), nil
+func (m proxyManager) createProxy(serviceName string, objectName string) (*proxy, error) {
+	return NewProxy(m.serviceBundle, serviceName, objectName), nil
 }
 
 func makeProxyName(serviceName string, objectName string) string {
