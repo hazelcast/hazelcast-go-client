@@ -104,7 +104,7 @@ type Client struct {
 	clusterConfig *cluster.Config
 
 	// components
-	proxyManager        *proxy.Manager
+	proxyManager        *proxyManager
 	connectionManager   *icluster.ConnectionManager
 	clusterService      *icluster.ServiceImpl
 	partitionService    *icluster.PartitionService
@@ -157,11 +157,7 @@ func (c *Client) GetMap(name string) (*hztypes.Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	if p, err := c.proxyManager.ProxyFor("hz:impl:mapService", name); err != nil {
-		return nil, err
-	} else {
-		return hztypes.NewMapImpl(p), nil
-	}
+	return c.proxyManager.GetMap(name)
 }
 
 /*
@@ -367,6 +363,6 @@ func (c *Client) createComponents(config *Config) {
 	c.connectionManager = connectionManager
 	c.clusterService = clusterService
 	c.partitionService = partitionService
-	c.proxyManager = proxy.NewManager(proxyManagerServiceBundle)
+	c.proxyManager = newManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
 }
