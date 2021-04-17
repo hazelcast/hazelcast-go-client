@@ -17,8 +17,6 @@ package proxy
 import (
 	"context"
 	"fmt"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/types"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -28,6 +26,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/types"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
