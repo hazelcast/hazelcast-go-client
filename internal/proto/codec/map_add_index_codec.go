@@ -14,8 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/types"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 
 // Adds an index to this map with specified configuration.
 
-func EncodeMapAddIndexRequest(name string, indexConfig hztypes.IndexConfig) *proto.ClientMessage {
+func EncodeMapAddIndexRequest(name string, indexConfig types.IndexConfig) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -2,14 +2,10 @@ package proxy
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
-
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 )
 
 const (
-	MapServiceName       = "hz:impl:mapService"
 	ReplicatedMapService = "hz:impl:replicatedMapService"
 )
 
@@ -28,16 +24,7 @@ func NewManager(bundle CreationBundle) *Manager {
 	}
 }
 
-func (m *Manager) GetMap(objectName string) (interface{}, error) {
-	// returns an interface to not depend on hztypes.Map
-	// TODO: change return type to Map
-	if proxy, err := m.proxyFor(MapServiceName, objectName); err != nil {
-		return nil, err
-	} else {
-		return hztypes.NewMapImpl(proxy), nil
-	}
-}
-
+/*
 func (m *Manager) GetReplicatedMap(objectName string) (interface{}, error) {
 	// returns an interface to not depend on hztypes.ReplicatedMap
 	// TODO: change return type to ReplicatedMap
@@ -49,6 +36,7 @@ func (m *Manager) GetReplicatedMap(objectName string) (interface{}, error) {
 		return NewReplicatedMapImpl(proxy, partitionID), nil
 	}
 }
+*/
 
 func (m *Manager) Remove(serviceName string, objectName string) error {
 	name := makeProxyName(serviceName, objectName)
@@ -63,7 +51,7 @@ func (m *Manager) Remove(serviceName string, objectName string) error {
 	return proxy.Destroy()
 }
 
-func (m *Manager) proxyFor(serviceName string, objectName string) (*Proxy, error) {
+func (m *Manager) ProxyFor(serviceName string, objectName string) (*Proxy, error) {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	obj, ok := m.proxies[name]

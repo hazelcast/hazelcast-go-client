@@ -1,16 +1,6 @@
 package proxy
 
-import (
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/predicate"
-	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
-)
-
+/*
 type ReplicatedMapImpl struct {
 	*Proxy
 	referenceIDGenerator ReferenceIDGenerator
@@ -144,7 +134,7 @@ func (m ReplicatedMapImpl) Put(key interface{}, value interface{}) (interface{},
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeReplicatedMapPutRequest(m.Name, keyData, valueData, ttlUnlimited)
+		request := codec.EncodeReplicatedMapPutRequest(m.Name, keyData, valueData, TtlUnlimited)
 		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -197,8 +187,8 @@ func (m ReplicatedMapImpl) Size() (int, error) {
 }
 
 func (m ReplicatedMapImpl) UnlistenEntryNotification(subscriptionID int) error {
-	m.userEventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
-	return m.listenerBinder.Remove(m.Name, subscriptionID)
+	m.UserEventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
+	return m.ListenerBinder.Remove(m.Name, subscriptionID)
 }
 
 func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predicate.Predicate, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
@@ -218,22 +208,22 @@ func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predi
 	}
 	if keyData != nil {
 		if predicateData != nil {
-			request = codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.Name, keyData, predicateData, m.smartRouting)
+			request = codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.Name, keyData, predicateData, m.SmartRouting)
 		} else {
-			request = codec.EncodeReplicatedMapAddEntryListenerToKeyRequest(m.Name, keyData, m.smartRouting)
+			request = codec.EncodeReplicatedMapAddEntryListenerToKeyRequest(m.Name, keyData, m.SmartRouting)
 		}
 	} else if predicateData != nil {
-		request = codec.EncodeReplicatedMapAddEntryListenerWithPredicateRequest(m.Name, predicateData, m.smartRouting)
+		request = codec.EncodeReplicatedMapAddEntryListenerWithPredicateRequest(m.Name, predicateData, m.SmartRouting)
 	} else {
-		request = codec.EncodeReplicatedMapAddEntryListenerRequest(m.Name, m.smartRouting)
+		request = codec.EncodeReplicatedMapAddEntryListenerRequest(m.Name, m.SmartRouting)
 	}
-	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
+	err = m.ListenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.MustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
 			value := m.MustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
 			oldValue := m.MustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
 			mergingValue := m.MustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
-			m.userEventDispatcher.Publish(newEntryNotifiedEventImpl(m.Name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
+			m.UserEventDispatcher.Publish(newEntryNotifiedEventImpl(m.Name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
 		}
 		if keyData != nil {
 			if predicateData != nil {
@@ -250,7 +240,7 @@ func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predi
 	if err != nil {
 		return err
 	}
-	m.userEventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
+	m.UserEventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
 		if entryNotifiedEvent, ok := event.(*hztypes.EntryNotified); ok {
 			if entryNotifiedEvent.OwnerName == m.Name {
 				handler(entryNotifiedEvent)
@@ -261,3 +251,4 @@ func (m *ReplicatedMapImpl) listenEntryNotified(key interface{}, predicate predi
 	})
 	return nil
 }
+*/

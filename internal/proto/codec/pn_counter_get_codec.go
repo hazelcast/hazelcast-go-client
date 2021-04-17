@@ -38,7 +38,7 @@ const (
 // guarantees.
 // The target replica is determined by the {@code targetReplica} parameter.
 // If smart routing is disabled, the actual member processing the client
-// message may act as a proxy.
+// message may act as a types.
 
 func EncodePNCounterGetRequest(name string, replicaTimestamps []proto.Pair, targetReplicaUUID internal.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

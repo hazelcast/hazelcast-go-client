@@ -17,10 +17,10 @@ package proxy
 import (
 	"context"
 	"fmt"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/types"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -28,7 +28,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -36,15 +35,15 @@ import (
 )
 
 const (
-	ttlDefault     = -1
-	ttlUnlimited   = 0
-	maxIdleDefault = -1
+	TtlDefault     = -1
+	TtlUnlimited   = 0
+	MaxIdleDefault = -1
 	//threadID       = 1
 )
 
 type CreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
-	SerializationService spi.SerializationService
+	SerializationService iserialization.SerializationService
 	PartitionService     *cluster.PartitionService
 	UserEventDispatcher  *event.DispatchService
 	ClusterService       *cluster.ServiceImpl
@@ -83,17 +82,17 @@ func (b CreationBundle) Check() {
 
 type Proxy struct {
 	requestCh            chan<- invocation.Invocation
-	serializationService spi.SerializationService
-	partitionService     *cluster.PartitionService
-	userEventDispatcher  *event.DispatchService
+	serializationService iserialization.SerializationService
+	PartitionService     *cluster.PartitionService
+	UserEventDispatcher  *event.DispatchService
 	clusterService       *cluster.ServiceImpl
 	invocationFactory    *cluster.ConnectionInvocationFactory
-	listenerBinder       *cluster.ConnectionListenerBinderImpl
-	smartRouting         bool
+	ListenerBinder       *cluster.ConnectionListenerBinderImpl
+	SmartRouting         bool
 	serviceName          string
 	Name                 string
 	logger               logger.Logger
-	cb                   *cb.CircuitBreaker
+	CircuitBreaker       *cb.CircuitBreaker
 }
 
 func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Proxy {
@@ -110,14 +109,14 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *Pro
 		Name:                 objectName,
 		requestCh:            bundle.RequestCh,
 		serializationService: bundle.SerializationService,
-		userEventDispatcher:  bundle.UserEventDispatcher,
-		partitionService:     bundle.PartitionService,
+		UserEventDispatcher:  bundle.UserEventDispatcher,
+		PartitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
 		invocationFactory:    bundle.InvocationFactory,
-		listenerBinder:       bundle.ListenerBinder,
-		smartRouting:         bundle.SmartRouting,
+		ListenerBinder:       bundle.ListenerBinder,
+		SmartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
-		cb:                   circuitBreaker,
+		CircuitBreaker:       circuitBreaker,
 	}
 }
 
@@ -132,7 +131,7 @@ func (p *Proxy) Destroy() error {
 }
 
 func (p Proxy) Smart() bool {
-	return p.smartRouting
+	return p.SmartRouting
 }
 
 func (p *Proxy) PartitionKey() string {
@@ -208,14 +207,14 @@ func (p *Proxy) ValidateAndSerializeMapAndGetPartitions(entries map[interface{}]
 			return nil, err
 		}
 		pair := proto.NewPair(keyData, valueData)
-		partitionID := p.partitionService.GetPartitionID(keyData)
+		partitionID := p.PartitionService.GetPartitionID(keyData)
 		partitions[partitionID] = append(partitions[partitionID], &pair)
 	}
 	return partitions, nil
 }
 
 func (p *Proxy) TryInvoke(f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
-	if res, err := p.cb.Try(f).Result(); err != nil {
+	if res, err := p.CircuitBreaker.Try(f).Result(); err != nil {
 		return nil, err
 	} else {
 		return res.(*proto.ClientMessage), nil
@@ -223,7 +222,7 @@ func (p *Proxy) TryInvoke(f func(ctx context.Context) (interface{}, error)) (*pr
 }
 
 func (p *Proxy) InvokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
-	partitionID := p.partitionService.GetPartitionID(keyData)
+	partitionID := p.PartitionService.GetPartitionID(keyData)
 	return p.InvokeOnPartition(request, partitionID)
 }
 
@@ -245,14 +244,6 @@ func (p *Proxy) InvokeOnPartitionAsync(request *proto.ClientMessage, partitionID
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
 	p.requestCh <- inv
 	return inv
-}
-
-func (p *Proxy) InvokeOnAddress(request *proto.ClientMessage, address *pubcluster.AddressImpl) (*proto.ClientMessage, error) {
-	return p.TryInvoke(func(ctx context.Context) (interface{}, error) {
-		inv := p.invocationFactory.NewInvocationOnTarget(request, address)
-		p.requestCh <- inv
-		return inv.GetWithTimeout(1 * time.Second)
-	})
 }
 
 func (p *Proxy) ConvertToObject(data serialization.Data) (interface{}, error) {
@@ -319,8 +310,8 @@ func (p *Proxy) DecodeToInt64AndError(responseMessage *proto.ClientMessage, inpu
 	return decodeFunc(responseMessage)(), nil
 }
 
-func (p *Proxy) PartitionToPairs(keyValuePairs []hztypes.Entry) (map[int32][]proto.Pair, error) {
-	ps := p.partitionService
+func (p *Proxy) PartitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto.Pair, error) {
+	ps := p.PartitionService
 	partitionToPairs := map[int32][]proto.Pair{}
 	for _, pair := range keyValuePairs {
 		if keyData, valueData, err := p.ValidateAndSerialize2(pair.Key, pair.Value); err != nil {
@@ -334,8 +325,8 @@ func (p *Proxy) PartitionToPairs(keyValuePairs []hztypes.Entry) (map[int32][]pro
 	return partitionToPairs, nil
 }
 
-func (p *Proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]hztypes.Entry, error) {
-	kvPairs := make([]hztypes.Entry, len(pairs))
+func (p *Proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error) {
+	kvPairs := make([]types.Entry, len(pairs))
 	for i, pair := range pairs {
 		key, err := p.ConvertToObject(pair.Key().(serialization.Data))
 		if err != nil {
@@ -345,7 +336,7 @@ func (p *Proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]hztypes.Entry, erro
 		if err != nil {
 			return nil, err
 		}
-		kvPairs[i] = hztypes.Entry{key, value}
+		kvPairs[i] = types.Entry{key, value}
 	}
 	return kvPairs, nil
 }
@@ -356,7 +347,7 @@ type partitionSpecificProxy struct {
 }
 
 func newPartitionSpecificProxy(
-	serializationService spi.SerializationService,
+	serializationService iserialization.SerializationService,
 	partitionService *cluster.PartitionService,
 	//invocationService invocation.Service,
 	requestCh chan<- invocation.Invocation,
@@ -369,9 +360,9 @@ func newPartitionSpecificProxy(
 		Proxy: &Proxy{
 			requestCh:            requestCh,
 			serializationService: serializationService,
-			partitionService:     partitionService,
+			PartitionService:     partitionService,
 			clusterService:       clusterService,
-			smartRouting:         smartRouting,
+			SmartRouting:         smartRouting,
 			serviceName:          serviceName,
 			Name:                 name,
 		},

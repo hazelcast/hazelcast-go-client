@@ -14,7 +14,7 @@ import (
 )
 
 func TestMapPutGet(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -28,7 +28,7 @@ func TestMapPutGet(t *testing.T) {
 }
 
 func TestMapPutWithTTL(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if _, err := m.PutWithTTL("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
@@ -40,7 +40,7 @@ func TestMapPutWithTTL(t *testing.T) {
 }
 
 func TestMapPutWithMaxIdle(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if _, err := m.PutWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
@@ -52,7 +52,7 @@ func TestMapPutWithMaxIdle(t *testing.T) {
 }
 
 func TestMapPutWithTTLAndMaxIdle(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		// TODO: better test
 		if _, err := m.PutWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
@@ -65,7 +65,7 @@ func TestMapPutWithTTLAndMaxIdle(t *testing.T) {
 }
 
 func TestMapPutIfAbsent(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if _, err := m.PutIfAbsent("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -79,7 +79,7 @@ func TestMapPutIfAbsent(t *testing.T) {
 }
 
 func TestMapPutIfAbsentWithTTL(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if _, err := m.PutIfAbsentWithTTL("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
@@ -91,7 +91,7 @@ func TestMapPutIfAbsentWithTTL(t *testing.T) {
 }
 
 func TestMapPutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		// TODO: better test
 		if _, err := m.PutIfAbsentWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
@@ -104,7 +104,7 @@ func TestMapPutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 }
 
 func TestMapPutTransient(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if err := m.PutTransient("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -114,7 +114,7 @@ func TestMapPutTransient(t *testing.T) {
 }
 
 func TestMapPutTransientWithTTL(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if err := m.PutTransientWithTTL("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
@@ -126,7 +126,7 @@ func TestMapPutTransientWithTTL(t *testing.T) {
 }
 
 func TestMapPutTransientWithMaxIdle(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if err := m.PutTransientWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
@@ -138,7 +138,7 @@ func TestMapPutTransientWithMaxIdle(t *testing.T) {
 }
 
 func TestMapPutTransientWithTTLAndMaxIdle(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		// TODO: better test
 		if err := m.PutTransientWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
@@ -151,7 +151,7 @@ func TestMapPutTransientWithTTLAndMaxIdle(t *testing.T) {
 }
 
 func TestSetGetMap(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -165,7 +165,7 @@ func TestSetGetMap(t *testing.T) {
 }
 
 func TestSetGet1000(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		const setGetCount = 1000
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
@@ -181,7 +181,7 @@ func TestSetGet1000(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		it.Must(m.Set("key", targetValue))
 		if value := it.MustValue(m.Get("key")); targetValue != value {
@@ -197,7 +197,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestMapEvict(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -211,7 +211,7 @@ func TestMapEvict(t *testing.T) {
 }
 
 func TestMapClearSetGet(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		it.Must(m.Set("key", targetValue))
 		if ok := it.MustBool(m.ContainsKey("key")); !ok {
@@ -233,7 +233,7 @@ func TestMapClearSetGet(t *testing.T) {
 }
 
 func TestMapRemove(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValue := "value"
 		it.Must(m.Set("key", targetValue))
 		if !it.MustBool(m.ContainsKey("key")) {
@@ -250,8 +250,9 @@ func TestMapRemove(t *testing.T) {
 	})
 }
 
+/*
 func TestGetAll(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		const maxKeys = 100
 		makeKey := func(id int) string {
 			return fmt.Sprintf("k%d", id)
@@ -285,9 +286,10 @@ func TestGetAll(t *testing.T) {
 		}
 	})
 }
+*/
 
 func TestMapGetKeySet(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		it.Must(m.Set("k1", "v1"))
 		it.Must(m.Set("k2", "v2"))
@@ -304,7 +306,7 @@ func TestMapGetKeySet(t *testing.T) {
 	})
 }
 func TestMapGetValues(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		targetValues := []interface{}{"v1", "v2", "v3"}
 		it.Must(m.Set("k1", "v1"))
 		it.Must(m.Set("k2", "v2"))
@@ -322,7 +324,7 @@ func TestMapGetValues(t *testing.T) {
 }
 
 func TestPutAll(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		pairs := []hztypes.Entry{
 			hztypes.NewEntry("k1", "v1"),
 			hztypes.NewEntry("k2", "v2"),
@@ -339,7 +341,7 @@ func TestPutAll(t *testing.T) {
 }
 
 func TestMapGetEntrySet(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		target := []hztypes.Entry{
 			hztypes.NewEntry("k1", "v1"),
 			hztypes.NewEntry("k2", "v2"),
@@ -361,7 +363,7 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hztypes.MapImpl) {
 		entries := []hztypes.Entry{
 			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
 			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
@@ -384,7 +386,7 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 }
 
 func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		entries := []hztypes.Entry{
 			hztypes.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.JSONValue()),
 			hztypes.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.JSONValue()),
@@ -407,7 +409,7 @@ func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
 }
 
 func TestGetEntryView(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		it.Must(m.Set("k1", "v1"))
 		if ev, err := m.GetEntryView("k1"); err != nil {
 			t.Fatal(err)
@@ -442,7 +444,7 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map TryRemoveWithTimeout
 
 func TestMapIsEmptySize(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
 		} else if !value {
@@ -475,7 +477,7 @@ func TestRemoveAll(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hztypes.MapImpl) {
 		entries := []hztypes.Entry{
 			hztypes.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
 			hztypes.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
@@ -499,7 +501,7 @@ func TestRemoveAll(t *testing.T) {
 }
 
 func TestRemoveIfSame(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		it.Must(m.Set("k1", "v1"))
 		it.Must(m.Set("k2", "v2"))
 		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
@@ -520,7 +522,7 @@ func TestRemoveIfSame(t *testing.T) {
 }
 
 func TestReplace(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		it.Must(m.Set("k1", "v1"))
 		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
 		if oldValue, err := m.Replace("k1", "v2"); err != nil {
@@ -533,7 +535,7 @@ func TestReplace(t *testing.T) {
 }
 
 func TestReplaceIfSame(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		it.Must(m.Set("k1", "v1"))
 		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
 		if replaced, err := m.ReplaceIfSame("k1", "v1", "v2"); err != nil {
@@ -546,7 +548,7 @@ func TestReplaceIfSame(t *testing.T) {
 }
 
 func TestMapEntryNotifiedEvent(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
@@ -578,7 +580,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 }
 
 func TestMapEntryNotifiedEventToKey(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m hztypes.Map) {
+	it.MapTester(t, func(t *testing.T, m *hztypes.MapImpl) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
@@ -611,7 +613,7 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hztypes.MapImpl) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {
@@ -644,7 +646,7 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m hztypes.Map) {
+	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hztypes.MapImpl) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hztypes.EntryNotified) {

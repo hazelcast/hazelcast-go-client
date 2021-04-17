@@ -35,11 +35,8 @@ const (
 	ServiceNamePNCounter                   = "hz:impl:PNCounterService"
 )
 
-type MessageType uint16
-
-//MESSAGE TYPES
 const (
-	MessageTypeException MessageType = 0
+	MessageTypeException = int32(0)
 )
 
 type ErrorCode int32

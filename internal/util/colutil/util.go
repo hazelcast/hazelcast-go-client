@@ -18,11 +18,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func ObjectToDataCollection(objects []interface{}, service spi.SerializationService) ([]serialization.Data, error) {
+func ObjectToDataCollection(objects []interface{}, service iserialization.SerializationService) ([]serialization.Data, error) {
 	if objects == nil {
 		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
@@ -40,7 +40,7 @@ func ObjectToDataCollection(objects []interface{}, service spi.SerializationServ
 	return elementsData, nil
 }
 
-func DataToObjectCollection(dataSlice []serialization.Data, service spi.SerializationService) ([]interface{}, error) {
+func DataToObjectCollection(dataSlice []serialization.Data, service iserialization.SerializationService) ([]interface{}, error) {
 	if dataSlice == nil {
 		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilSliceIsNotAllowed, nil)
 	}
@@ -55,7 +55,7 @@ func DataToObjectCollection(dataSlice []serialization.Data, service spi.Serializ
 	return elements, nil
 }
 
-func DataToObjectPairCollection(dataSlice []*proto.Pair, service spi.SerializationService) (pairSlice []proto.Pair, err error) {
+func DataToObjectPairCollection(dataSlice []*proto.Pair, service iserialization.SerializationService) (pairSlice []proto.Pair, err error) {
 	pairSlice = make([]proto.Pair, len(dataSlice))
 	for index, pairData := range dataSlice {
 		key, err := service.ToObject(pairData.Key().(serialization.Data))
