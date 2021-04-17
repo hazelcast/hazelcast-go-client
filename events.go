@@ -1,4 +1,4 @@
-package hztypes
+package hazelcast
 
 const (
 	// NotifyEntryAdded is dispatched if an entry is added.
@@ -31,7 +31,8 @@ const (
 type EntryNotifiedHandler func(event *EntryNotified)
 
 const (
-	EventEntryNotified = "internal.proxy.entrynotified"
+	EventEntryNotified              = "entrynotified"
+	EventLifecycleEventStateChanged = "lifecyclestatechanged"
 )
 
 type EntryNotified struct {
@@ -67,4 +68,35 @@ func newEntryNotifiedEventImpl(
 		MergingValue:            mergingValue,
 		NumberOfAffectedEntries: numberOfAffectedEntries,
 	}
+}
+
+type LifecycleState int
+
+const (
+	// LifecycleStateStarting signals that the client is starting.
+	LifecycleStateStarting LifecycleState = iota
+	// LifecycleStateStarted signals that the client started.
+	LifecycleStateStarted
+	// LifecycleStateShuttingDown signals that the client is shutting down.
+	LifecycleStateShuttingDown
+	// LifecycleStateShutDown signals that the client shut down.
+	LifecycleStateShutDown
+	// LifecycleStateClientConnected signals that the client connected to the cluster.
+	LifecycleStateClientConnected
+	// LifecycleStateClientDisconnected signals that the client disconnected from the cluster.
+	LifecycleStateClientDisconnected
+)
+
+type LifecycleStateChangeHandler func(event LifecycleStateChanged)
+
+type LifecycleStateChanged struct {
+	State LifecycleState
+}
+
+func (e *LifecycleStateChanged) EventName() string {
+	return EventLifecycleEventStateChanged
+}
+
+func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
+	return &LifecycleStateChanged{State: state}
 }

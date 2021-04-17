@@ -20,19 +20,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
-
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilifecycle "github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
@@ -153,7 +148,7 @@ func (c *Client) Name() string {
 }
 
 // GetMap returns a distributed map instance.
-func (c *Client) GetMap(name string) (*hztypes.Map, error) {
+func (c *Client) GetMap(name string) (*Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
@@ -177,7 +172,7 @@ func (c *Client) Start() error {
 		return ErrClientCannotStart
 	}
 	// TODO: Recover from panics and return as error
-	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateStarting))
+	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting)
 	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
@@ -185,7 +180,7 @@ func (c *Client) Start() error {
 	}
 	<-clusterServiceStartCh
 	c.state.Store(ready)
-	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateStarted))
+	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil
 }
 
@@ -195,26 +190,26 @@ func (c *Client) Shutdown() error {
 		return ErrClientNotReady
 	}
 	c.state.Store(stopping)
-	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateShuttingDown))
+	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.clusterService.Stop()
 	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
 	c.state.Store(stopped)
-	c.eventDispatcher.Publish(ilifecycle.NewStateChanged(lifecycle.StateShutDown))
+	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
 	return nil
 }
 
 // ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
-func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler lifecycle.StateChangeHandler) error {
+func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler LifecycleStateChangeHandler) error {
 	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
-	c.userEventDispatcher.SubscribeSync(internal.LifecycleEventStateChanged, subscriptionID, func(event event.Event) {
-		if stateChangeEvent, ok := event.(*lifecycle.StateChanged); ok {
+	c.userEventDispatcher.SubscribeSync(EventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
+		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
 			handler(*stateChangeEvent)
 		} else {
-			c.logger.Errorf("cannot cast event to lifecycle.StateChanged event")
+			c.logger.Errorf("cannot cast event to lifecycle.LifecycleStateChanged event")
 		}
 	})
 	return nil
@@ -225,7 +220,7 @@ func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) error {
 	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
-	c.userEventDispatcher.Unsubscribe(internal.LifecycleEventStateChanged, subscriptionID)
+	c.userEventDispatcher.Unsubscribe(EventLifecycleEventStateChanged, subscriptionID)
 	return nil
 }
 
@@ -285,8 +280,14 @@ func (c *Client) canStartOrReady() bool {
 }
 
 func (c *Client) subscribeUserEvents() {
-	c.eventDispatcher.SubscribeSync(internal.LifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(EventLifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
+	})
+	c.eventDispatcher.Subscribe(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientConnected))
+	})
+	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientDisconnected))
 	})
 	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)

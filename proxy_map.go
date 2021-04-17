@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package hztypes
+package hazelcast
 
 import (
 	"context"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/hztypes"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -139,7 +141,7 @@ func (m *Map) EvictAll() error {
 }
 
 // ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
-func (m *Map) ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error) {
+func (m *Map) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.Entry, error) {
 	if processorData, err := m.ValidateAndSerialize(entryProcessor); err != nil {
 		return nil, err
 	} else {
@@ -198,7 +200,7 @@ func (m *Map) Get(key interface{}) (interface{}, error) {
 }
 
 // GetAll returns the entries for the given keys.
-func (m *Map) GetAll(keys ...interface{}) ([]Entry, error) {
+func (m *Map) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 	partitionToKeys := map[int32][]pubserialization.Data{}
 	ps := m.Proxy.PartitionService
 	for _, key := range keys {
@@ -210,7 +212,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]Entry, error) {
 			partitionToKeys[partitionKey] = append(arr, keyData)
 		}
 	}
-	result := make([]Entry, 0, len(keys))
+	result := make([]hztypes.Entry, 0, len(keys))
 	// create futures
 	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
 		return m.CircuitBreaker.Try(func(ctx context.Context) (interface{}, error) {
@@ -236,7 +238,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]Entry, error) {
 				} else if value, err = m.ConvertToObject(pair.Value().(pubserialization.Data)); err != nil {
 					return nil, err
 				}
-				result = append(result, NewEntry(key, value))
+				result = append(result, hztypes.NewEntry(key, value))
 			}
 		}
 	}
@@ -244,7 +246,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]Entry, error) {
 }
 
 // GetEntrySet returns a clone of the mappings contained in this map.
-func (m *Map) GetEntrySet() ([]Entry, error) {
+func (m *Map) GetEntrySet() ([]hztypes.Entry, error) {
 	request := codec.EncodeMapEntrySetRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
@@ -254,7 +256,7 @@ func (m *Map) GetEntrySet() ([]Entry, error) {
 }
 
 // GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
-func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error) {
+func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]hztypes.Entry, error) {
 	if predData, err := m.ValidateAndSerialize(predicate); err != nil {
 		return nil, err
 	} else {
@@ -268,7 +270,7 @@ func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, 
 }
 
 // GetEntryView returns the SimpleEntryView for the specified key.
-func (m *Map) GetEntryView(key string) (*SimpleEntryView, error) {
+func (m *Map) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -286,7 +288,7 @@ func (m *Map) GetEntryView(key string) (*SimpleEntryView, error) {
 			if err != nil {
 				return nil, err
 			}
-			newEntryView := NewSimpleEntryView(
+			newEntryView := hztypes.NewSimpleEntryView(
 				deserializedKey,
 				deserializedValue,
 				ev.Cost(),
@@ -458,7 +460,7 @@ func (m *Map) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.
 // PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
-func (m *Map) PutAll(keyValuePairs []Entry) error {
+func (m *Map) PutAll(keyValuePairs []hztypes.Entry) error {
 	if partitionToPairs, err := m.PartitionToPairs(keyValuePairs); err != nil {
 		return err
 	} else {

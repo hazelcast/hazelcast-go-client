@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -18,7 +17,7 @@ const EnvDisableSmart = "DISABLE_SMART"
 const EnvDisableNonsmart = "DISABLE_NONSMART"
 const EnvTraceLogging = "ENABLE_TRACE"
 
-func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hztypes.Map) {
+func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
 	if TraceLoggingEnabled() {
 		configBuilder.Logger().SetLevel(logger.TraceLevel)
 	}
@@ -35,16 +34,16 @@ func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder)
 	}
 }
 
-func MapTester(t *testing.T, f func(t *testing.T, m *hztypes.Map)) {
+func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 	}
 	MapTesterWithConfigBuilder(t, cbCallback, f)
 }
 
-func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hztypes.Map)) {
+func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
 	var (
 		client *hz.Client
-		m      *hztypes.Map
+		m      *hz.Map
 	)
 	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {
@@ -95,7 +94,7 @@ type SamplePortable struct {
 	B int32
 }
 
-func SamplePortableFromJSONValue(value hztypes.JSONValue) SamplePortable {
+func SamplePortableFromJSONValue(value serialization.JSONValue) SamplePortable {
 	sample := SamplePortable{}
 	if err := json.Unmarshal(value, &sample); err != nil {
 		panic(err)
@@ -123,7 +122,7 @@ func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) error
 	return nil
 }
 
-func (s SamplePortable) JSONValue() hztypes.JSONValue {
+func (s SamplePortable) JSONValue() serialization.JSONValue {
 	byteArr, err := json.Marshal(s)
 	if err != nil {
 		panic(err)

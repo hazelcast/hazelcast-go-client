@@ -16,7 +16,6 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -26,7 +25,7 @@ type distributedobjectinfoCodec struct {}
 var DistributedObjectInfoCodec distributedobjectinfoCodec
 */
 
-func EncodeDistributedObjectInfo(clientMessage *proto.ClientMessage, distributedObjectInfo internal.DistributedObjectInfo) {
+func EncodeDistributedObjectInfo(clientMessage *proto.ClientMessage, distributedObjectInfo DistributedObjectInfo) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 
 	EncodeString(clientMessage, distributedObjectInfo.ServiceName())
@@ -35,12 +34,12 @@ func EncodeDistributedObjectInfo(clientMessage *proto.ClientMessage, distributed
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) internal.DistributedObjectInfo {
+func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) DistributedObjectInfo {
 	// begin frame
 	frameIterator.Next()
 
 	serviceName := DecodeString(frameIterator)
 	name := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return internal.NewDistributedObjectInfo(serviceName, name)
+	return NewDistributedObjectInfo(serviceName, name)
 }
