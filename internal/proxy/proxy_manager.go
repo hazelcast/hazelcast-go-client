@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+
+	"github.com/hazelcast/hazelcast-go-client/hztypes"
 )
 
 const (
@@ -32,7 +34,7 @@ func (m *Manager) GetMap(objectName string) (interface{}, error) {
 	if proxy, err := m.proxyFor(MapServiceName, objectName); err != nil {
 		return nil, err
 	} else {
-		return NewMapImpl(proxy), nil
+		return hztypes.NewMapImpl(proxy), nil
 	}
 }
 

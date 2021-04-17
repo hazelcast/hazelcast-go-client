@@ -16,9 +16,6 @@ type MapEntryListenerConfig struct {
 }
 
 type Map interface {
-	// AddIndex adds an index to this map for the specified entries so that queries can run faster.
-	AddIndex(indexConfig IndexConfig) error
-
 	// AddInterceptor adds an interceptor for this map.
 	AddInterceptor(interceptor interface{}) (string, error)
 
@@ -45,7 +42,7 @@ type Map interface {
 	EvictAll() error
 
 	// ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
-	ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error)
+	//ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error)
 
 	// Flush flushes all the local dirty entries.
 	Flush() error
@@ -61,7 +58,7 @@ type Map interface {
 	Get(key interface{}) (interface{}, error)
 
 	// GetAll returns the entries for the given keys.
-	GetAll(keys ...interface{}) ([]Entry, error)
+	//GetAll(keys ...interface{}) ([]Entry, error)
 
 	// GetKeySet returns keys contained in this map
 	GetKeySet() ([]interface{}, error)
@@ -75,14 +72,17 @@ type Map interface {
 	// GetValuesWithPredicate returns a list clone of the values contained in this map
 	GetValuesWithPredicate(predicate predicate.Predicate) ([]interface{}, error)
 
-	// GetEntryView returns the SimpleEntryView for the specified key.
-	GetEntryView(key string) (*SimpleEntryView, error)
+	/*
+		// GetEntryView returns the SimpleEntryView for the specified key.
+		GetEntryView(key string) (*SimpleEntryView, error)
 
-	// GetEntrySet returns a clone of the mappings contained in this map.
-	GetEntrySet() ([]Entry, error)
+		// GetEntrySet returns a clone of the mappings contained in this map.
+		GetEntrySet() ([]Entry, error)
 
-	// GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
-	GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error)
+		// GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
+		GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error)
+
+	*/
 
 	// IsEmpty returns true if this map contains no key-value mappings.
 	IsEmpty() (bool, error)
@@ -91,7 +91,7 @@ type Map interface {
 	IsLocked(key interface{}) (bool, error)
 
 	// ListenEntryNotification adds a continuous entry listener to this map.
-	ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error
+	//ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error
 
 	// LoadAll loads all keys from the store at server side or loads the given keys if provided.
 	LoadAll(keys ...interface{}) error
@@ -150,7 +150,7 @@ type Map interface {
 	// PutAll copies all of the mappings from the specified map to this map.
 	// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 	// while others are not.
-	PutAll(keyValuePairs []Entry) error
+	//PutAll(keyValuePairs []Entry) error
 
 	// PutIfAbsent associates the specified key with the given value if it is not already associated.
 	PutIfAbsent(key interface{}, value interface{}) (interface{}, error)
@@ -269,7 +269,7 @@ type Map interface {
 	TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error)
 
 	// UnlistenEntryNotification removes the specified entry listener.
-	UnlistenEntryNotification(subscriptionID int) error
+	//UnlistenEntryNotification(subscriptionID int) error
 
 	// Unlock releases the lock for the specified key.
 	Unlock(key interface{}) error
