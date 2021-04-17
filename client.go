@@ -153,14 +153,18 @@ func (c *Client) Name() string {
 }
 
 // GetMap returns a distributed map instance.
-func (c *Client) GetMap(name string) (hztypes.Map, error) {
+func (c *Client) GetMap(name string) (*hztypes.MapImpl, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	m, err := c.proxyManager.GetMap(name)
-	return m.(hztypes.Map), err
+	if p, err := c.proxyManager.ProxyFor("hz:impl:mapService", name); err != nil {
+		return nil, err
+	} else {
+		return hztypes.NewMapImpl(p), nil
+	}
 }
 
+/*
 // GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (hztypes.ReplicatedMap, error) {
 	if !c.ready() {
@@ -169,6 +173,7 @@ func (c *Client) GetReplicatedMap(name string) (hztypes.ReplicatedMap, error) {
 	m, err := c.proxyManager.GetReplicatedMap(name)
 	return m.(hztypes.ReplicatedMap), err
 }
+*/
 
 // Start connects the client to the cluster.
 func (c *Client) Start() error {

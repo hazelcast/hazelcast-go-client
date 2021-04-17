@@ -18,9 +18,9 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/types"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -433,10 +433,10 @@ func (js JSONValueSerializer) ID() int32 {
 
 func (js JSONValueSerializer) Read(input serialization.DataInput) (object interface{}, err error) {
 	text := input.ReadString()
-	return hztypes.JSONValue(text), nil
+	return types.JSONValue(text), nil
 }
 
 func (js JSONValueSerializer) Write(output serialization.DataOutput, object interface{}) (err error) {
-	output.WriteString(string(object.(hztypes.JSONValue)))
+	output.WriteString(string(object.(types.JSONValue)))
 	return nil
 }

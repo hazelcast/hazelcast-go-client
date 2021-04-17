@@ -5,11 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
@@ -92,16 +88,11 @@ func (s *Service) sendInvocation(invocation Invocation) Result {
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
+	correlationID := msg.CorrelationID()
 	if msg.Err != nil {
-		s.logger.Error(msg.Err)
-		if msg.StartFrame != nil {
-			s.handleError(msg.CorrelationID(), msg.Err)
-		} else {
-			panic("implement me: handleClientMessage")
-		}
+		s.handleError(correlationID, msg.Err)
 		return
 	}
-	correlationID := msg.CorrelationID()
 	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
 		if inv, found := s.invocations[correlationID]; !found {
 			s.logger.Trace(func() string {
@@ -113,12 +104,7 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 		return
 	}
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
-		if msg.Type() == int32(bufutil.MessageTypeException) {
-			err := ihzerror.CreateHazelcastError(codec.DecodeError(msg))
-			inv.Complete(&proto.ClientMessage{Err: err})
-		} else {
-			inv.Complete(msg)
-		}
+		inv.Complete(msg)
 	} else {
 		s.logger.Trace(func() string {
 			return fmt.Sprintf("no invocation found with the correlation ID: %d", correlationID)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -19,7 +20,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -43,7 +43,7 @@ type ConnectionManagerCreationBundle struct {
 	Logger               logger.Logger
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionService
-	SerializationService spi.SerializationService
+	SerializationService iserialization.SerializationService
 	EventDispatcher      *event.DispatchService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
@@ -92,7 +92,7 @@ type ConnectionManager struct {
 	responseCh           chan<- *proto.ClientMessage
 	clusterService       *ServiceImpl
 	partitionService     *PartitionService
-	serializationService spi.SerializationService
+	serializationService iserialization.SerializationService
 	eventDispatcher      *event.DispatchService
 	invocationFactory    *ConnectionInvocationFactory
 	clusterConfig        *pubcluster.Config

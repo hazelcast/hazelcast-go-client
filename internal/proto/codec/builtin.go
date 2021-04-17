@@ -4,16 +4,14 @@ import (
 	"encoding/binary"
 	"strings"
 
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization/spi"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/types"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // Encoder for ClientMessage and value
@@ -56,7 +54,7 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 	}
 }
 
-func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options hztypes.BitmapIndexOptions) {
+func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options types.BitmapIndexOptions) {
 	if options.IsDefault() {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
@@ -112,7 +110,7 @@ func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator)
 	return isNullFrame
 }
 
-func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) hztypes.BitmapIndexOptions {
+func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()
@@ -120,7 +118,7 @@ func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.Forwar
 	return DecodeBitmapIndexOptions(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *hztypes.SimpleEntryView {
+func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *types.SimpleEntryView {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
 		frameIterator.Next()
@@ -149,7 +147,7 @@ func EncodeNullableData(message *proto.ClientMessage, data serialization.Data) {
 }
 
 func DecodeData(frameIterator *proto.ForwardFrameIterator) serialization.Data {
-	return spi.NewData(frameIterator.Next().Content)
+	return iserialization.NewData(frameIterator.Next().Content)
 }
 
 func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) serialization.Data {

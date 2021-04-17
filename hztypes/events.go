@@ -48,3 +48,23 @@ type EntryNotified struct {
 func (e *EntryNotified) EventName() string {
 	return EventEntryNotified
 }
+
+func newEntryNotifiedEventImpl(
+	ownerName string,
+	memberName string,
+	key interface{},
+	value interface{},
+	oldValue interface{},
+	mergingValue interface{},
+	numberOfAffectedEntries int,
+) *EntryNotified {
+	return &EntryNotified{
+		OwnerName:               ownerName,
+		MemberName:              memberName,
+		Key:                     key,
+		Value:                   value,
+		OldValue:                oldValue,
+		MergingValue:            mergingValue,
+		NumberOfAffectedEntries: numberOfAffectedEntries,
+	}
+}

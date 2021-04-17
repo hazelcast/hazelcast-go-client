@@ -26,7 +26,7 @@ const (
 	ClientDestroyProxyCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this proxy.
+// Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this types.
 
 func EncodeClientDestroyProxyRequest(name string, serviceName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

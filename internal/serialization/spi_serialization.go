@@ -12,21 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package spi
+package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // NewSerializationService creates and returns a new serialization service with the given config.
 func NewSerializationService(serializationConfig *pubserialization.Config) (SerializationService, error) {
-	return serialization.NewService(serializationConfig)
+	return NewService(serializationConfig)
 }
 
 // NewData return serialization Data with the given payload.
 func NewData(payload []byte) pubserialization.Data {
-	return serialization.NewSerializationData(payload)
+	return NewSerializationData(payload)
 }
 
 // SerializationService is used to serialize user objects to Data and deserialize data to objects.

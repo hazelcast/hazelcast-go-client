@@ -15,14 +15,31 @@
 package hztypes
 
 import (
+	"context"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+const (
+	threadID = 1
+)
+
+type MapEntryListenerConfig struct {
+	Predicate          predicate.Predicate
+	IncludeValue       bool
+	Key                interface{}
+	NotifyEntryAdded   bool
+	NotifyEntryRemoved bool
+	NotifyEntryUpdated bool
+}
 
 type MapImpl struct {
 	*proxy.Proxy
@@ -36,6 +53,7 @@ func NewMapImpl(p *proxy.Proxy) *MapImpl {
 	}
 }
 
+// AddInterceptor adds an interceptor for this map.
 func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
 	if interceptorData, err := m.Proxy.ConvertToData(interceptor); err != nil {
 		return "", err
@@ -49,17 +67,19 @@ func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
 	}
 }
 
+// Clear deletes all entries one by one and fires related events
 func (m *MapImpl) Clear() error {
 	request := codec.EncodeMapClearRequest(m.Name)
 	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
 }
 
+// ContainsKey returns true if the map contains an entry with the given key
 func (m *MapImpl) ContainsKey(key interface{}) (bool, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapContainsKeyRequest(m.Name, keyData, 1)
+		request := codec.EncodeMapContainsKeyRequest(m.Name, keyData, threadID)
 		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
@@ -68,6 +88,7 @@ func (m *MapImpl) ContainsKey(key interface{}) (bool, error) {
 	}
 }
 
+// ContainsValue returns true if the map contains an entry with the given value
 func (m *MapImpl) ContainsValue(value interface{}) (bool, error) {
 	if valueData, err := m.ValidateAndSerialize(value); err != nil {
 		return false, err
@@ -81,22 +102,28 @@ func (m *MapImpl) ContainsValue(value interface{}) (bool, error) {
 	}
 }
 
+// Delete removes the mapping for a key from this map if it is present
+// Unlike remove(object), this operation does not return the removed value, which avoids the serialization cost of
+// the returned value. If the removed value will not be used, a delete operation is preferred over a remove
+// operation for better performance.
 func (m *MapImpl) Delete(key interface{}) error {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapDeleteRequest(m.Name, keyData, 1)
+		request := codec.EncodeMapDeleteRequest(m.Name, keyData, threadID)
 		_, err := m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
+// Evict evicts the mapping for a key from this map.
+// Returns true if the key is evicted.
 func (m *MapImpl) Evict(key interface{}) (bool, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapEvictRequest(m.name, keyData, proxy.threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapEvictRequest(m.Name, keyData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeMapEvictResponse(response), nil
@@ -104,71 +131,78 @@ func (m *MapImpl) Evict(key interface{}) (bool, error) {
 	}
 }
 
+// EvictAll deletes all entries withour firing releated events
 func (m *MapImpl) EvictAll() error {
-	request := codec.EncodeMapEvictAllRequest(m.name)
-	_, err := m.invokeOnRandomTarget(request, nil)
+	request := codec.EncodeMapEvictAllRequest(m.Name)
+	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
 }
 
-/*
-func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]hztypes.Entry, error) {
-	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
+// ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
+func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error) {
+	if processorData, err := m.ValidateAndSerialize(entryProcessor); err != nil {
 		return nil, err
 	} else {
 		ch := make(chan []proto.Pair, 1)
 		handler := func(msg *proto.ClientMessage) {
 			ch <- codec.DecodeMapExecuteOnAllKeysResponse(msg)
 		}
-		request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
-		if _, err := m.invokeOnRandomTarget(request, handler); err != nil {
+		request := codec.EncodeMapExecuteOnAllKeysRequest(m.Name, processorData)
+		if _, err := m.InvokeOnRandomTarget(request, handler); err != nil {
 			return nil, err
 		}
 		pairs := <-ch
-		if kvPairs, err := m.convertPairsToEntries(pairs); err != nil {
+		if kvPairs, err := m.ConvertPairsToEntries(pairs); err != nil {
 			return nil, err
 		} else {
 			return kvPairs, nil
 		}
 	}
 }
-*/
 
+// Flush flushes all the local dirty entries.
 func (m *MapImpl) Flush() error {
-	request := codec.EncodeMapFlushRequest(m.name)
-	_, err := m.invokeOnRandomTarget(request, nil)
+	request := codec.EncodeMapFlushRequest(m.Name)
+	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
 }
 
+// ForceUnlock releases the lock for the specified key regardless of the lock owner.
+// It always successfully unlocks the key, never blocks, and returns immediately.
 func (m *MapImpl) ForceUnlock(key interface{}) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapForceUnlockRequest(m.name, keyData, refID)
-		_, err = m.invokeOnKey(request, keyData)
+		request := codec.EncodeMapForceUnlockRequest(m.Name, keyData, refID)
+		_, err = m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
+// Get returns the value for the specified key, or nil if this map does not contain this key.
+// Warning:
+// This method returns a clone of original value, modifying the returned value does not change the
+// actual value in the map. One should put modified value back to make changes visible to all nodes.
 func (m *MapImpl) Get(key interface{}) (interface{}, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapGetRequest(m.name, keyData, proxy.threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapGetRequest(m.Name, keyData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObject(codec.DecodeMapGetResponse(response))
+			return m.ConvertToObject(codec.DecodeMapGetResponse(response))
 		}
 	}
 }
 
-/*
-func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
+// GetAll returns the entries for the given keys.
+func (m *MapImpl) GetAll(keys ...interface{}) ([]Entry, error) {
 	partitionToKeys := map[int32][]pubserialization.Data{}
-	ps := m.Proxy.partitionService
+	ps := m.Proxy.PartitionService
 	for _, key := range keys {
-		if keyData, err := m.validateAndSerialize(key); err != nil {
+		if keyData, err := m.ValidateAndSerialize(key); err != nil {
 			return nil, err
 		} else {
 			partitionKey := ps.GetPartitionID(keyData)
@@ -176,12 +210,12 @@ func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 			partitionToKeys[partitionKey] = append(arr, keyData)
 		}
 	}
-	result := make([]hztypes.Entry, 0, len(keys))
+	result := make([]Entry, 0, len(keys))
 	// create futures
 	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
-		return m.cb.Try(func(ctx context.Context) (interface{}, error) {
-			request := codec.EncodeMapGetAllRequest(m.name, keys)
-			inv := m.invokeOnPartitionAsync(request, partitionID)
+		return m.CircuitBreaker.Try(func(ctx context.Context) (interface{}, error) {
+			request := codec.EncodeMapGetAllRequest(m.Name, keys)
+			inv := m.InvokeOnPartitionAsync(request, partitionID)
 			return inv.GetWithTimeout(1 * time.Second)
 		})
 	}
@@ -197,59 +231,62 @@ func (m *MapImpl) GetAll(keys ...interface{}) ([]hztypes.Entry, error) {
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				if key, err = m.convertToObject(pair.Key().(pubserialization.Data)); err != nil {
+				if key, err = m.ConvertToObject(pair.Key().(pubserialization.Data)); err != nil {
 					return nil, err
-				} else if value, err = m.convertToObject(pair.Value().(pubserialization.Data)); err != nil {
+				} else if value, err = m.ConvertToObject(pair.Value().(pubserialization.Data)); err != nil {
 					return nil, err
 				}
-				result = append(result, hztypes.NewEntry(key, value))
+				result = append(result, NewEntry(key, value))
 			}
 		}
 	}
 	return result, nil
 }
 
-func (m *MapImpl) GetEntrySet() ([]hztypes.Entry, error) {
-	request := codec.EncodeMapEntrySetRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+// GetEntrySet returns a clone of the mappings contained in this map.
+func (m *MapImpl) GetEntrySet() ([]Entry, error) {
+	request := codec.EncodeMapEntrySetRequest(m.Name)
+	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
 	} else {
-		return m.convertPairsToEntries(codec.DecodeMapEntrySetResponse(response))
+		return m.ConvertPairsToEntries(codec.DecodeMapEntrySetResponse(response))
 	}
 }
 
-func (m *MapImpl) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]hztypes.Entry, error) {
-	if predData, err := m.validateAndSerialize(predicate); err != nil {
+// GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
+func (m *MapImpl) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error) {
+	if predData, err := m.ValidateAndSerialize(predicate); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapEntriesWithPredicateRequest(m.name, predData)
-		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+		request := codec.EncodeMapEntriesWithPredicateRequest(m.Name, predData)
+		if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 			return nil, err
 		} else {
-			return m.convertPairsToEntries(codec.DecodeMapEntriesWithPredicateResponse(response))
+			return m.ConvertPairsToEntries(codec.DecodeMapEntriesWithPredicateResponse(response))
 		}
 	}
 }
 
-func (m *MapImpl) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+// GetEntryView returns the SimpleEntryView for the specified key.
+func (m *MapImpl) GetEntryView(key string) (*SimpleEntryView, error) {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapGetEntryViewRequest(m.name, keyData, threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapGetEntryViewRequest(m.Name, keyData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
 			ev, maxIdle := codec.DecodeMapGetEntryViewResponse(response)
 			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
-			deserializedKey, err := m.convertToObject(ev.Key().(pubserialization.Data))
+			deserializedKey, err := m.ConvertToObject(ev.Key().(pubserialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			deserializedValue, err := m.convertToObject(ev.Value().(pubserialization.Data))
+			deserializedValue, err := m.ConvertToObject(ev.Value().(pubserialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			newEntryView := hztypes.NewSimpleEntryView(
+			newEntryView := NewSimpleEntryView(
 				deserializedKey,
 				deserializedValue,
 				ev.Cost(),
@@ -267,17 +304,16 @@ func (m *MapImpl) GetEntryView(key string) (*hztypes.SimpleEntryView, error) {
 	}
 }
 
-*/
-
+// GetKeySet returns keys contained in this map
 func (m *MapImpl) GetKeySet() ([]interface{}, error) {
-	request := codec.EncodeMapKeySetRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+	request := codec.EncodeMapKeySetRequest(m.Name)
+	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
 	} else {
 		keyDatas := codec.DecodeMapKeySetResponse(response)
 		keys := make([]interface{}, len(keyDatas))
 		for i, keyData := range keyDatas {
-			if key, err := m.convertToObject(keyData); err != nil {
+			if key, err := m.ConvertToObject(keyData); err != nil {
 				return nil, err
 			} else {
 				keys[i] = key
@@ -287,12 +323,13 @@ func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 	}
 }
 
+// GetKeySetWithPredicate returns keys contained in this map
 func (m *MapImpl) GetKeySetWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
-	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
+	if predicateData, err := m.ValidateAndSerializePredicate(predicate); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapKeySetWithPredicateRequest(m.name, predicateData)
-		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+		request := codec.EncodeMapKeySetWithPredicateRequest(m.Name, predicateData)
+		if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 			return nil, err
 		} else {
 			return m.convertToObjects(codec.DecodeMapKeySetWithPredicateResponse(response))
@@ -300,21 +337,23 @@ func (m *MapImpl) GetKeySetWithPredicate(predicate predicate.Predicate) ([]inter
 	}
 }
 
+// GetValues returns a list clone of the values contained in this map
 func (m *MapImpl) GetValues() ([]interface{}, error) {
-	request := codec.EncodeMapValuesRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+	request := codec.EncodeMapValuesRequest(m.Name)
+	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
 	} else {
 		return m.convertToObjects(codec.DecodeMapValuesResponse(response))
 	}
 }
 
+// GetValuesWithPredicate returns a list clone of the values contained in this map
 func (m *MapImpl) GetValuesWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
-	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
+	if predicateData, err := m.ValidateAndSerializePredicate(predicate); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapValuesWithPredicateRequest(m.name, predicateData)
-		if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+		request := codec.EncodeMapValuesWithPredicateRequest(m.Name, predicateData)
+		if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 			return nil, err
 		} else {
 			return m.convertToObjects(codec.DecodeMapValuesWithPredicateResponse(response))
@@ -322,21 +361,23 @@ func (m *MapImpl) GetValuesWithPredicate(predicate predicate.Predicate) ([]inter
 	}
 }
 
+// IsEmpty returns true if this map contains no key-value mappings.
 func (m *MapImpl) IsEmpty() (bool, error) {
-	request := codec.EncodeMapIsEmptyRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+	request := codec.EncodeMapIsEmptyRequest(m.Name)
+	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return false, err
 	} else {
 		return codec.DecodeMapIsEmptyResponse(response), nil
 	}
 }
 
+// IsLocked checks the lock for the specified key.
 func (m *MapImpl) IsLocked(key interface{}) (bool, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapIsLockedRequest(m.name, keyData)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapIsLockedRequest(m.Name, keyData)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeMapIsLockedResponse(response), nil
@@ -344,48 +385,88 @@ func (m *MapImpl) IsLocked(key interface{}) (bool, error) {
 	}
 }
 
+// LoadAll loads all keys from the store at server side or loads the given keys if provided.
 func (m *MapImpl) LoadAll(keys ...interface{}) error {
 	return m.loadAll(false, keys...)
 }
 
+// LoadAllReplacingExisting loads all keys from the store at server side or loads the given keys if provided.
+// Replaces existing keys.
 func (m *MapImpl) LoadAllReplacingExisting(keys ...interface{}) error {
 	return m.loadAll(true, keys...)
 }
 
+// Lock acquires the lock for the specified key infinitely or for the specified lease time if provided.
+// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
+// dormant until the lock has been acquired.
+//
+// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
+// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
+// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
+// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
+//
+// Scope of the lock is this map only. Acquired lock is only for the key in this map.
+//
+// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
+// acquire it.
 func (m *MapImpl) Lock(key interface{}) error {
-	return m.lock(key, proxy.ttlDefault)
+	return m.lock(key, proxy.TtlDefault)
 }
 
+// LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
+// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
+// dormant until the lock has been acquired.
+//
+// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
+// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
+// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
+// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
+//
+// Scope of the lock is this map only. Acquired lock is only for the key in this map.
+//
+// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
+// acquire it.
+// Lease time is the the time to wait before releasing the lock.
 func (m *MapImpl) LockWithLease(key interface{}, leaseTime time.Duration) error {
 	return m.lock(key, leaseTime.Milliseconds())
 }
 
+// Put sets the value for the given key and returns the old value.
 func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
-	return m.putTTL(key, value, proxy.ttlDefault)
+	return m.putTTL(key, value, proxy.TtlDefault)
 }
 
+// PutWithTTL sets the value for the given key and returns the old value.
+// Entry will expire and get evicted after the ttl.
 func (m *MapImpl) PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
 	return m.putTTL(key, value, ttl.Milliseconds())
 }
 
+// PutWithMaxIdle sets the value for the given key and returns the old value.
+// maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *MapImpl) PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
-	return m.putMaxIdle(key, value, proxy.ttlDefault, maxIdle.Milliseconds())
+	return m.putMaxIdle(key, value, proxy.TtlDefault, maxIdle.Milliseconds())
 }
 
+// PutWithTTLAndMaxIdle sets the value for the given key and returns the old value.
+// Entry will expire and get evicted after the ttl.
+// maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *MapImpl) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
 	return m.putMaxIdle(key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
-/*
-func (m *MapImpl) PutAll(keyValuePairs []hztypes.Entry) error {
-	if partitionToPairs, err := m.partitionToPairs(keyValuePairs); err != nil {
+// PutAll copies all of the mappings from the specified map to this map.
+// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
+// while others are not.
+func (m *MapImpl) PutAll(keyValuePairs []Entry) error {
+	if partitionToPairs, err := m.PartitionToPairs(keyValuePairs); err != nil {
 		return err
 	} else {
 		// create futures
 		f := func(partitionID int32, entries []proto.Pair) cb.Future {
-			return m.cb.Try(func(ctx context.Context) (interface{}, error) {
-				request := codec.EncodeMapPutAllRequest(m.name, entries, true)
-				inv := m.invokeOnPartitionAsync(request, partitionID)
+			return m.CircuitBreaker.Try(func(ctx context.Context) (interface{}, error) {
+				request := codec.EncodeMapPutAllRequest(m.Name, entries, true)
+				inv := m.InvokeOnPartitionAsync(request, partitionID)
 				return inv.GetWithTimeout(1 * time.Second)
 			})
 		}
@@ -402,22 +483,26 @@ func (m *MapImpl) PutAll(keyValuePairs []hztypes.Entry) error {
 	}
 }
 
-*/
-
+// PutIfAbsent associates the specified key with the given value if it is not already associated.
 func (m *MapImpl) PutIfAbsent(key interface{}, value interface{}) (interface{}, error) {
-	return m.putIfAbsent(key, value, proxy.ttlDefault)
+	return m.putIfAbsent(key, value, proxy.TtlDefault)
 }
 
+// PutIfAbsentWithTTL associates the specified key with the given value if it is not already associated.
+// Entry will expire and get evicted after the ttl.
 func (m *MapImpl) PutIfAbsentWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
 	return m.putIfAbsent(key, value, ttl.Milliseconds())
 }
 
+// PutIfAbsentWithTTLAndMaxIdle associates the specified key with the given value if it is not already associated.
+// Entry will expire and get evicted after the ttl.
+// Given max idle time (maximum time for this entry to stay idle in the map) is used.
 func (m *MapImpl) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, proxy.threadID(), ttl.Milliseconds(), maxIdle.Milliseconds())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.Name, keyData, valueData, threadID, ttl.Milliseconds(), maxIdle.Milliseconds())
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
 			return codec.DecodeMapPutIfAbsentWithMaxIdleResponse(response), nil
@@ -425,60 +510,83 @@ func (m *MapImpl) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{
 	}
 }
 
+// PutTransient sets the value for the given key.
+// MapStore defined at the server side will not be called.
+// The TTL defined on the server-side configuration will be used.
+// Max idle time defined on the server-side configuration will be used.
 func (m *MapImpl) PutTransient(key interface{}, value interface{}) error {
-	return m.putTransient(key, value, proxy.ttlDefault, proxy.maxIdleDefault)
+	return m.putTransient(key, value, proxy.TtlDefault, proxy.MaxIdleDefault)
 }
 
+// PutTransientWithTTL sets the value for the given key.
+// MapStore defined at the server side will not be called.
+// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+// Set ttl to 0 for infinite timeout.
 func (m *MapImpl) PutTransientWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
-	return m.putTransient(key, value, ttl.Milliseconds(), proxy.maxIdleDefault)
+	return m.putTransient(key, value, ttl.Milliseconds(), proxy.MaxIdleDefault)
 }
 
+// PutTransientWithMaxIdle sets the value for the given key.
+// MapStore defined at the server side will not be called.
+// Given max idle time (maximum time for this entry to stay idle in the map) is used.
+// Set maxIdle to 0 for infinite idle time.
 func (m *MapImpl) PutTransientWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) error {
-	return m.putTransient(key, value, proxy.ttlDefault, maxIdle.Milliseconds())
+	return m.putTransient(key, value, proxy.TtlDefault, maxIdle.Milliseconds())
 }
 
+// PutTransientWithTTLMaxIdle sets the value for the given key.
+// MapStore defined at the server side will not be called.
+// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+// Set ttl to 0 for infinite timeout.
+// Given max idle time (maximum time for this entry to stay idle in the map) is used.
+// Set maxIdle to 0 for infinite idle time.
 func (m *MapImpl) PutTransientWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
 	return m.putTransient(key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
+// Remove deletes the value for the given key and returns it.
 func (m *MapImpl) Remove(key interface{}) (interface{}, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapRemoveRequest(m.name, keyData, proxy.threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapRemoveRequest(m.Name, keyData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObject(codec.DecodeMapRemoveResponse(response))
+			return m.ConvertToObject(codec.DecodeMapRemoveResponse(response))
 		}
 	}
 }
 
+// RemoveAll deletes all entries matching the given predicate.
 func (m *MapImpl) RemoveAll(predicate predicate.Predicate) error {
-	if predicateData, err := m.validateAndSerialize(predicate); err != nil {
+	if predicateData, err := m.ValidateAndSerialize(predicate); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
-		_, err := m.invokeOnRandomTarget(request, nil)
+		request := codec.EncodeMapRemoveAllRequest(m.Name, predicateData)
+		_, err := m.InvokeOnRandomTarget(request, nil)
 		return err
 	}
 }
 
+// RemoveInterceptor removes the interceptor.
 func (m *MapImpl) RemoveInterceptor(registrationID string) (bool, error) {
-	request := codec.EncodeMapRemoveInterceptorRequest(m.name, registrationID)
-	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+	request := codec.EncodeMapRemoveInterceptorRequest(m.Name, registrationID)
+	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return false, nil
 	} else {
 		return codec.DecodeMapRemoveInterceptorResponse(response), nil
 	}
 }
 
+// RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
+// Returns true if the entry was removed.
 func (m *MapImpl) RemoveIfSame(key interface{}, value interface{}) (bool, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, proxy.threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapRemoveIfSameRequest(m.Name, keyData, valueData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeMapRemoveIfSameResponse(response), nil
@@ -486,25 +594,28 @@ func (m *MapImpl) RemoveIfSame(key interface{}, value interface{}) (bool, error)
 	}
 }
 
+// Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
 func (m *MapImpl) Replace(key interface{}, value interface{}) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, proxy.threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapReplaceRequest(m.Name, keyData, valueData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObject(codec.DecodeMapReplaceResponse(response))
+			return m.ConvertToObject(codec.DecodeMapReplaceResponse(response))
 		}
 	}
 }
 
+// ReplaceIfSame replaces the entry for a key only if it is currently mapped to a given value.
+// Returns true if the value was replaced.
 func (m *MapImpl) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
-	if keyData, oldValueData, newValueData, err := m.validateAndSerialize3(key, oldValue, newValue); err != nil {
+	if keyData, oldValueData, newValueData, err := m.ValidateAndSerialize3(key, oldValue, newValue); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, proxy.threadID())
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapReplaceIfSameRequest(m.Name, keyData, oldValueData, newValueData, threadID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeMapReplaceIfSameResponse(response), nil
@@ -512,130 +623,164 @@ func (m *MapImpl) ReplaceIfSame(key interface{}, oldValue interface{}, newValue 
 	}
 }
 
+// Set sets the value for the given key.
 func (m *MapImpl) Set(key interface{}, value interface{}) error {
-	return m.set(key, value, proxy.ttlDefault)
+	return m.set(key, value, proxy.TtlDefault)
 }
 
+// SetTTL updates the TTL value of the entry specified by the given key with a new TTL value.
+// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+// Set ttl to 0 for infinite timeout.
 func (m *MapImpl) SetTTL(key interface{}, ttl time.Duration) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapSetTtlRequest(m.name, keyData, ttl.Milliseconds())
-		_, err := m.invokeOnKey(request, keyData)
+		request := codec.EncodeMapSetTtlRequest(m.Name, keyData, ttl.Milliseconds())
+		_, err := m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
+// SetWithTTL sets the value for the given key.
+// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+// Set ttl to 0 for infinite timeout.
 func (m *MapImpl) SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
 	return m.set(key, value, ttl.Milliseconds())
 }
 
+// SetWithTTLAndMaxIdle sets the value for the given key.
+// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+// Set ttl to 0 for infinite timeout.
+// Given max idle time (maximum time for this entry to stay idle in the map) is used.
+// Set maxIdle to 0 for infinite idle time.
 func (m *MapImpl) SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, proxy.threadID(), ttl.Milliseconds(), maxIdle.Milliseconds())
-		_, err := m.invokeOnKey(request, keyData)
+		request := codec.EncodeMapSetWithMaxIdleRequest(m.Name, keyData, valueData, threadID, ttl.Milliseconds(), maxIdle.Milliseconds())
+		_, err := m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
+// Size returns the number of entries in this map.
 func (m *MapImpl) Size() (int, error) {
-	request := codec.EncodeMapSizeRequest(m.name)
-	if response, err := m.invokeOnRandomTarget(request, nil); err != nil {
+	request := codec.EncodeMapSizeRequest(m.Name)
+	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return 0, err
 	} else {
 		return int(codec.DecodeMapSizeResponse(response)), nil
 	}
 }
 
+// TryLock tries to acquire the lock for the specified key.
+// When the lock is not available, the current thread doesn't wait and returns false immediately.
 func (m *MapImpl) TryLock(key interface{}) (bool, error) {
 	return m.tryLock(key, 0, 0)
 }
 
+// TryLockWithLease tries to acquire the lock for the specified key.
+// Lock will be released after lease time passes.
 func (m *MapImpl) TryLockWithLease(key interface{}, lease time.Duration) (bool, error) {
 	return m.tryLock(key, lease.Milliseconds(), 0)
 }
 
+// TryLockWithLease tries to acquire the lock for the specified key.
+// The current thread becomes disabled for thread scheduling purposes and lies
+// dormant until one of the followings happens:
+// - The lock is acquired by the current thread, or
+// - The specified waiting time elapses.
 func (m *MapImpl) TryLockWithTimeout(key interface{}, timeout time.Duration) (bool, error) {
 	return m.tryLock(key, 0, timeout.Milliseconds())
 }
 
+// TryLockWithLease tries to acquire the lock for the specified key.
+// The current thread becomes disabled for thread scheduling purposes and lies
+// dormant until one of the followings happens:
+// - The lock is acquired by the current thread, or
+// - The specified waiting time elapses.
+// Lock will be released after lease time passes.
 func (m *MapImpl) TryLockWithLeaseTimeout(key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
 	return m.tryLock(key, lease.Milliseconds(), timeout.Milliseconds())
 }
 
+// TryPut tries to put the given key and value into this map and returns immediately.
 func (m *MapImpl) TryPut(key interface{}, value interface{}) (interface{}, error) {
 	return m.tryPut(key, value, 0)
 }
 
+// TryPut tries to put the given key and value into this map and waits until operation is completed or timeout is reached.
 func (m *MapImpl) TryPutWithTimeout(key interface{}, value interface{}, timeout time.Duration) (interface{}, error) {
 	return m.tryPut(key, value, timeout.Milliseconds())
 }
 
+// TryRemove tries to remove the given key from this map and returns immediately.
 func (m *MapImpl) TryRemove(key interface{}) (interface{}, error) {
 	return m.tryRemove(key, 0)
 }
 
+// TryRemove tries to remove the given key from this map and waits until operation is completed or timeout is reached.
 func (m *MapImpl) TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error) {
 	return m.tryRemove(key, timeout.Milliseconds())
 }
 
+// Unlock releases the lock for the specified key.
 func (m *MapImpl) Unlock(key interface{}) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapUnlockRequest(m.name, keyData, proxy.threadID(), refID)
-		_, err = m.invokeOnKey(request, keyData)
+		request := codec.EncodeMapUnlockRequest(m.Name, keyData, threadID, refID)
+		_, err = m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
-/*
-func (m *MapImpl) ListenEntryNotification(config hztypes.MapEntryListenerConfig, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
+// ListenEntryNotification adds a continuous entry listener to this map.
+func (m *MapImpl) ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error {
 	flags := makeListenerFlags(&config)
 	return m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler)
 }
 
+// UnlistenEntryNotification removes the specified entry listener.
 func (m *MapImpl) UnlistenEntryNotification(subscriptionID int) error {
-	m.userEventDispatcher.Unsubscribe(hztypes.EventEntryNotified, subscriptionID)
-	return m.listenerBinder.Remove(m.name, subscriptionID)
+	m.UserEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
+	return m.ListenerBinder.Remove(m.Name, subscriptionID)
 }
 
-func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler hztypes.EntryNotifiedHandler) error {
+func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data
 	var predicateData pubserialization.Data
 	if key != nil {
-		if keyData, err = m.validateAndSerialize(key); err != nil {
+		if keyData, err = m.ValidateAndSerialize(key); err != nil {
 			return err
 		}
 	}
 	if predicate != nil {
-		if predicateData, err = m.validateAndSerialize(predicate); err != nil {
+		if predicateData, err = m.ValidateAndSerialize(predicate); err != nil {
 			return err
 		}
 	}
 	if keyData != nil {
 		if predicateData != nil {
-			request = codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.smartRouting)
+			request = codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.Name, keyData, predicateData, includeValue, flags, m.SmartRouting)
 		} else {
-			request = codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.smartRouting)
+			request = codec.EncodeMapAddEntryListenerToKeyRequest(m.Name, keyData, includeValue, flags, m.SmartRouting)
 		}
 	} else if predicateData != nil {
-		request = codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.smartRouting)
+		request = codec.EncodeMapAddEntryListenerWithPredicateRequest(m.Name, predicateData, includeValue, flags, m.SmartRouting)
 	} else {
-		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
+		request = codec.EncodeMapAddEntryListenerRequest(m.Name, includeValue, flags, m.SmartRouting)
 	}
-	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
+	err = m.ListenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
-			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
-			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
-			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
-			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
-			m.userEventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
+			key := m.MustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
+			value := m.MustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
+			oldValue := m.MustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
+			mergingValue := m.MustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
+			m.UserEventDispatcher.Publish(newEntryNotifiedEventImpl(m.Name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
 		}
 		if keyData != nil {
 			if predicateData != nil {
@@ -652,9 +797,9 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interf
 	if err != nil {
 		return err
 	}
-	m.userEventDispatcher.Subscribe(hztypes.EventEntryNotified, subscriptionID, func(event event.Event) {
-		if entryNotifiedEvent, ok := event.(*hztypes.EntryNotified); ok {
-			if entryNotifiedEvent.OwnerName == m.name {
+	m.UserEventDispatcher.Subscribe(EventEntryNotified, subscriptionID, func(event event.Event) {
+		if entryNotifiedEvent, ok := event.(*EntryNotified); ok {
+			if entryNotifiedEvent.OwnerName == m.Name {
 				handler(entryNotifiedEvent)
 			}
 		} else {
@@ -663,7 +808,6 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interf
 	})
 	return nil
 }
-*/
 
 func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	if len(keys) == 0 {
@@ -671,59 +815,59 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	}
 	keyDatas := make([]pubserialization.Data, 0, len(keys))
 	for _, key := range keys {
-		if keyData, err := m.convertToData(key); err != nil {
+		if keyData, err := m.ConvertToData(key); err != nil {
 			return err
 		} else {
 			keyDatas = append(keyDatas, keyData)
 		}
 	}
-	request := codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
-	_, err := m.invokeOnRandomTarget(request, nil)
+	request := codec.EncodeMapLoadGivenKeysRequest(m.Name, keyDatas, replaceExisting)
+	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
 }
 
 func (m *MapImpl) lock(key interface{}, ttl int64) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapLockRequest(m.name, keyData, proxy.threadID(), ttl, refID)
-		_, err = m.invokeOnKey(request, keyData)
+		request := codec.EncodeMapLockRequest(m.Name, keyData, threadID, ttl, refID)
+		_, err = m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
 func (m *MapImpl) putTTL(key interface{}, value interface{}, ttl int64) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, proxy.threadID(), ttl)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapPutRequest(m.Name, keyData, valueData, threadID, ttl)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObject(codec.DecodeMapPutResponse(response))
+			return m.ConvertToObject(codec.DecodeMapPutResponse(response))
 		}
 	}
 }
 func (m *MapImpl) putMaxIdle(key interface{}, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, proxy.threadID(), ttl, maxIdle)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapPutWithMaxIdleRequest(m.Name, keyData, valueData, threadID, ttl, maxIdle)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
+			return m.ConvertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
 		}
 	}
 }
 
 func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, proxy.threadID(), ttl)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapPutIfAbsentRequest(m.Name, keyData, valueData, threadID, ttl)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
 			return codec.DecodeMapPutIfAbsentResponse(response), nil
@@ -732,37 +876,37 @@ func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (in
 }
 
 func (m *MapImpl) putTransient(key interface{}, value interface{}, ttl int64, maxIdle int64) error {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
 		var request *proto.ClientMessage
 		if maxIdle >= 0 {
-			request = codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, proxy.threadID(), ttl, maxIdle)
+			request = codec.EncodeMapPutTransientWithMaxIdleRequest(m.Name, keyData, valueData, threadID, ttl, maxIdle)
 		} else {
-			request = codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, proxy.threadID(), ttl)
+			request = codec.EncodeMapPutTransientRequest(m.Name, keyData, valueData, threadID, ttl)
 		}
-		_, err = m.invokeOnKey(request, keyData)
+		_, err = m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
 func (m *MapImpl) set(key interface{}, value interface{}, ttl int64) error {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapSetRequest(m.name, keyData, valueData, proxy.threadID(), ttl)
-		_, err := m.invokeOnKey(request, keyData)
+		request := codec.EncodeMapSetRequest(m.Name, keyData, valueData, threadID, ttl)
+		_, err := m.InvokeOnKey(request, keyData)
 		return err
 	}
 }
 
 func (m *MapImpl) tryLock(key interface{}, lease int64, timeout int64) (bool, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
 		refID := m.referenceIDGenerator.NextID()
-		request := codec.EncodeMapTryLockRequest(m.name, keyData, proxy.threadID(), lease, timeout, refID)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapTryLockRequest(m.Name, keyData, threadID, lease, timeout, refID)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeMapTryLockResponse(response), nil
@@ -771,11 +915,11 @@ func (m *MapImpl) tryLock(key interface{}, lease int64, timeout int64) (bool, er
 }
 
 func (m *MapImpl) tryPut(key interface{}, value interface{}, timeout int64) (interface{}, error) {
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, proxy.threadID(), timeout)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapTryPutRequest(m.Name, keyData, valueData, threadID, timeout)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
 			return codec.DecodeMapTryPutResponse(response), nil
@@ -784,11 +928,11 @@ func (m *MapImpl) tryPut(key interface{}, value interface{}, timeout int64) (int
 }
 
 func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapTryRemoveRequest(m.name, keyData, proxy.threadID(), timeout)
-		if response, err := m.invokeOnKey(request, keyData); err != nil {
+		request := codec.EncodeMapTryRemoveRequest(m.Name, keyData, threadID, timeout)
+		if response, err := m.InvokeOnKey(request, keyData); err != nil {
 			return nil, err
 		} else {
 			return codec.DecodeMapTryRemoveResponse(response), nil
@@ -799,7 +943,7 @@ func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error)
 func (m *MapImpl) convertToObjects(valueDatas []pubserialization.Data) ([]interface{}, error) {
 	values := make([]interface{}, len(valueDatas))
 	for i, valueData := range valueDatas {
-		if value, err := m.convertToObject(valueData); err != nil {
+		if value, err := m.ConvertToObject(valueData); err != nil {
 			return nil, err
 		} else {
 			values[i] = value
@@ -809,12 +953,12 @@ func (m *MapImpl) convertToObjects(valueDatas []pubserialization.Data) ([]interf
 }
 
 func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]proto.Pair, error) {
-	ps := m.partitionService
+	ps := m.PartitionService
 	pairsMap := map[int32][]proto.Pair{}
 	for i := 0; i < len(items)/2; i += 2 {
 		key := items[i]
 		value := items[i+1]
-		if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
+		if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 			return nil, err
 		} else {
 			arr := pairsMap[ps.GetPartitionID(keyData)]
@@ -824,18 +968,16 @@ func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]
 	return pairsMap, nil
 }
 
-/*
-func makeListenerFlags(config *hztypes.MapEntryListenerConfig) int32 {
+func makeListenerFlags(config *MapEntryListenerConfig) int32 {
 	var flags int32
 	if config.NotifyEntryAdded {
-		flags |= hztypes.NotifyEntryAdded
+		flags |= NotifyEntryAdded
 	}
 	if config.NotifyEntryUpdated {
-		flags |= hztypes.NotifyEntryUpdated
+		flags |= NotifyEntryUpdated
 	}
 	if config.NotifyEntryRemoved {
-		flags |= hztypes.NotifyEntryRemoved
+		flags |= NotifyEntryRemoved
 	}
 	return flags
 }
-*/

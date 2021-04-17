@@ -16,8 +16,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/hztypes"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/types"
 )
 
 const (
@@ -31,7 +31,7 @@ type indexconfigCodec struct {}
 var IndexConfigCodec indexconfigCodec
 */
 
-func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig hztypes.IndexConfig) {
+func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig types.IndexConfig) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, IndexConfigCodecTypeInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type()))
@@ -44,7 +44,7 @@ func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig hztypes.I
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) hztypes.IndexConfig {
+func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) types.IndexConfig {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -54,5 +54,5 @@ func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) hztypes.IndexC
 	attributes := DecodeListMultiFrameForString(frameIterator)
 	bitmapIndexOptions := CodecUtil.DecodeNullableForBitmapIndexOptions(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return hztypes.NewIndexConfig(name, _type, attributes, bitmapIndexOptions)
+	return types.NewIndexConfig(name, _type, attributes, bitmapIndexOptions)
 }

@@ -17,6 +17,9 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"net"
 	"sync/atomic"
 	"time"
@@ -170,6 +173,9 @@ func (c *Connection) socketReadLoop() {
 				c.logger.Trace(func() string {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
+				if clientMessage.Type() == bufutil.MessageTypeException {
+					clientMessage.Err = ihzerror.CreateHazelcastError(codec.DecodeError(clientMessage))
+				}
 				c.responseCh <- clientMessage
 			}
 			clientMessageReader.Reset()
