@@ -41,20 +41,20 @@ type MapEntryListenerConfig struct {
 	NotifyEntryUpdated bool
 }
 
-type MapImpl struct {
+type Map struct {
 	*proxy.Proxy
 	referenceIDGenerator proxy.ReferenceIDGenerator
 }
 
-func NewMapImpl(p *proxy.Proxy) *MapImpl {
-	return &MapImpl{
+func NewMapImpl(p *proxy.Proxy) *Map {
+	return &Map{
 		Proxy:                p,
 		referenceIDGenerator: proxy.NewReferenceIDGeneratorImpl(),
 	}
 }
 
 // AddInterceptor adds an interceptor for this map.
-func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
+func (m *Map) AddInterceptor(interceptor interface{}) (string, error) {
 	if interceptorData, err := m.Proxy.ConvertToData(interceptor); err != nil {
 		return "", err
 	} else {
@@ -68,14 +68,14 @@ func (m *MapImpl) AddInterceptor(interceptor interface{}) (string, error) {
 }
 
 // Clear deletes all entries one by one and fires related events
-func (m *MapImpl) Clear() error {
+func (m *Map) Clear() error {
 	request := codec.EncodeMapClearRequest(m.Name)
 	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
 }
 
 // ContainsKey returns true if the map contains an entry with the given key
-func (m *MapImpl) ContainsKey(key interface{}) (bool, error) {
+func (m *Map) ContainsKey(key interface{}) (bool, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -89,7 +89,7 @@ func (m *MapImpl) ContainsKey(key interface{}) (bool, error) {
 }
 
 // ContainsValue returns true if the map contains an entry with the given value
-func (m *MapImpl) ContainsValue(value interface{}) (bool, error) {
+func (m *Map) ContainsValue(value interface{}) (bool, error) {
 	if valueData, err := m.ValidateAndSerialize(value); err != nil {
 		return false, err
 	} else {
@@ -106,7 +106,7 @@ func (m *MapImpl) ContainsValue(value interface{}) (bool, error) {
 // Unlike remove(object), this operation does not return the removed value, which avoids the serialization cost of
 // the returned value. If the removed value will not be used, a delete operation is preferred over a remove
 // operation for better performance.
-func (m *MapImpl) Delete(key interface{}) error {
+func (m *Map) Delete(key interface{}) error {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -118,7 +118,7 @@ func (m *MapImpl) Delete(key interface{}) error {
 
 // Evict evicts the mapping for a key from this map.
 // Returns true if the key is evicted.
-func (m *MapImpl) Evict(key interface{}) (bool, error) {
+func (m *Map) Evict(key interface{}) (bool, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -132,14 +132,14 @@ func (m *MapImpl) Evict(key interface{}) (bool, error) {
 }
 
 // EvictAll deletes all entries withour firing releated events
-func (m *MapImpl) EvictAll() error {
+func (m *Map) EvictAll() error {
 	request := codec.EncodeMapEvictAllRequest(m.Name)
 	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
 }
 
 // ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
-func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error) {
+func (m *Map) ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error) {
 	if processorData, err := m.ValidateAndSerialize(entryProcessor); err != nil {
 		return nil, err
 	} else {
@@ -161,7 +161,7 @@ func (m *MapImpl) ExecuteOnEntries(entryProcessor interface{}) ([]Entry, error) 
 }
 
 // Flush flushes all the local dirty entries.
-func (m *MapImpl) Flush() error {
+func (m *Map) Flush() error {
 	request := codec.EncodeMapFlushRequest(m.Name)
 	_, err := m.InvokeOnRandomTarget(request, nil)
 	return err
@@ -169,7 +169,7 @@ func (m *MapImpl) Flush() error {
 
 // ForceUnlock releases the lock for the specified key regardless of the lock owner.
 // It always successfully unlocks the key, never blocks, and returns immediately.
-func (m *MapImpl) ForceUnlock(key interface{}) error {
+func (m *Map) ForceUnlock(key interface{}) error {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -184,7 +184,7 @@ func (m *MapImpl) ForceUnlock(key interface{}) error {
 // Warning:
 // This method returns a clone of original value, modifying the returned value does not change the
 // actual value in the map. One should put modified value back to make changes visible to all nodes.
-func (m *MapImpl) Get(key interface{}) (interface{}, error) {
+func (m *Map) Get(key interface{}) (interface{}, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -198,7 +198,7 @@ func (m *MapImpl) Get(key interface{}) (interface{}, error) {
 }
 
 // GetAll returns the entries for the given keys.
-func (m *MapImpl) GetAll(keys ...interface{}) ([]Entry, error) {
+func (m *Map) GetAll(keys ...interface{}) ([]Entry, error) {
 	partitionToKeys := map[int32][]pubserialization.Data{}
 	ps := m.Proxy.PartitionService
 	for _, key := range keys {
@@ -244,7 +244,7 @@ func (m *MapImpl) GetAll(keys ...interface{}) ([]Entry, error) {
 }
 
 // GetEntrySet returns a clone of the mappings contained in this map.
-func (m *MapImpl) GetEntrySet() ([]Entry, error) {
+func (m *Map) GetEntrySet() ([]Entry, error) {
 	request := codec.EncodeMapEntrySetRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
@@ -254,7 +254,7 @@ func (m *MapImpl) GetEntrySet() ([]Entry, error) {
 }
 
 // GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
-func (m *MapImpl) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error) {
+func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Entry, error) {
 	if predData, err := m.ValidateAndSerialize(predicate); err != nil {
 		return nil, err
 	} else {
@@ -268,7 +268,7 @@ func (m *MapImpl) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]Ent
 }
 
 // GetEntryView returns the SimpleEntryView for the specified key.
-func (m *MapImpl) GetEntryView(key string) (*SimpleEntryView, error) {
+func (m *Map) GetEntryView(key string) (*SimpleEntryView, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -305,7 +305,7 @@ func (m *MapImpl) GetEntryView(key string) (*SimpleEntryView, error) {
 }
 
 // GetKeySet returns keys contained in this map
-func (m *MapImpl) GetKeySet() ([]interface{}, error) {
+func (m *Map) GetKeySet() ([]interface{}, error) {
 	request := codec.EncodeMapKeySetRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
@@ -324,7 +324,7 @@ func (m *MapImpl) GetKeySet() ([]interface{}, error) {
 }
 
 // GetKeySetWithPredicate returns keys contained in this map
-func (m *MapImpl) GetKeySetWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
+func (m *Map) GetKeySetWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
 	if predicateData, err := m.ValidateAndSerializePredicate(predicate); err != nil {
 		return nil, err
 	} else {
@@ -338,7 +338,7 @@ func (m *MapImpl) GetKeySetWithPredicate(predicate predicate.Predicate) ([]inter
 }
 
 // GetValues returns a list clone of the values contained in this map
-func (m *MapImpl) GetValues() ([]interface{}, error) {
+func (m *Map) GetValues() ([]interface{}, error) {
 	request := codec.EncodeMapValuesRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ func (m *MapImpl) GetValues() ([]interface{}, error) {
 }
 
 // GetValuesWithPredicate returns a list clone of the values contained in this map
-func (m *MapImpl) GetValuesWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
+func (m *Map) GetValuesWithPredicate(predicate predicate.Predicate) ([]interface{}, error) {
 	if predicateData, err := m.ValidateAndSerializePredicate(predicate); err != nil {
 		return nil, err
 	} else {
@@ -362,7 +362,7 @@ func (m *MapImpl) GetValuesWithPredicate(predicate predicate.Predicate) ([]inter
 }
 
 // IsEmpty returns true if this map contains no key-value mappings.
-func (m *MapImpl) IsEmpty() (bool, error) {
+func (m *Map) IsEmpty() (bool, error) {
 	request := codec.EncodeMapIsEmptyRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return false, err
@@ -372,7 +372,7 @@ func (m *MapImpl) IsEmpty() (bool, error) {
 }
 
 // IsLocked checks the lock for the specified key.
-func (m *MapImpl) IsLocked(key interface{}) (bool, error) {
+func (m *Map) IsLocked(key interface{}) (bool, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -386,13 +386,13 @@ func (m *MapImpl) IsLocked(key interface{}) (bool, error) {
 }
 
 // LoadAll loads all keys from the store at server side or loads the given keys if provided.
-func (m *MapImpl) LoadAll(keys ...interface{}) error {
+func (m *Map) LoadAll(keys ...interface{}) error {
 	return m.loadAll(false, keys...)
 }
 
 // LoadAllReplacingExisting loads all keys from the store at server side or loads the given keys if provided.
 // Replaces existing keys.
-func (m *MapImpl) LoadAllReplacingExisting(keys ...interface{}) error {
+func (m *Map) LoadAllReplacingExisting(keys ...interface{}) error {
 	return m.loadAll(true, keys...)
 }
 
@@ -409,7 +409,7 @@ func (m *MapImpl) LoadAllReplacingExisting(keys ...interface{}) error {
 //
 // Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
 // acquire it.
-func (m *MapImpl) Lock(key interface{}) error {
+func (m *Map) Lock(key interface{}) error {
 	return m.lock(key, proxy.TtlDefault)
 }
 
@@ -427,38 +427,38 @@ func (m *MapImpl) Lock(key interface{}) error {
 // Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
 // acquire it.
 // Lease time is the the time to wait before releasing the lock.
-func (m *MapImpl) LockWithLease(key interface{}, leaseTime time.Duration) error {
+func (m *Map) LockWithLease(key interface{}, leaseTime time.Duration) error {
 	return m.lock(key, leaseTime.Milliseconds())
 }
 
 // Put sets the value for the given key and returns the old value.
-func (m *MapImpl) Put(key interface{}, value interface{}) (interface{}, error) {
+func (m *Map) Put(key interface{}, value interface{}) (interface{}, error) {
 	return m.putTTL(key, value, proxy.TtlDefault)
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
 // Entry will expire and get evicted after the ttl.
-func (m *MapImpl) PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
+func (m *Map) PutWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
 	return m.putTTL(key, value, ttl.Milliseconds())
 }
 
 // PutWithMaxIdle sets the value for the given key and returns the old value.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
-func (m *MapImpl) PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
+func (m *Map) PutWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
 	return m.putMaxIdle(key, value, proxy.TtlDefault, maxIdle.Milliseconds())
 }
 
 // PutWithTTLAndMaxIdle sets the value for the given key and returns the old value.
 // Entry will expire and get evicted after the ttl.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
-func (m *MapImpl) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+func (m *Map) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
 	return m.putMaxIdle(key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
 // PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
-func (m *MapImpl) PutAll(keyValuePairs []Entry) error {
+func (m *Map) PutAll(keyValuePairs []Entry) error {
 	if partitionToPairs, err := m.PartitionToPairs(keyValuePairs); err != nil {
 		return err
 	} else {
@@ -484,20 +484,20 @@ func (m *MapImpl) PutAll(keyValuePairs []Entry) error {
 }
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.
-func (m *MapImpl) PutIfAbsent(key interface{}, value interface{}) (interface{}, error) {
+func (m *Map) PutIfAbsent(key interface{}, value interface{}) (interface{}, error) {
 	return m.putIfAbsent(key, value, proxy.TtlDefault)
 }
 
 // PutIfAbsentWithTTL associates the specified key with the given value if it is not already associated.
 // Entry will expire and get evicted after the ttl.
-func (m *MapImpl) PutIfAbsentWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
+func (m *Map) PutIfAbsentWithTTL(key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
 	return m.putIfAbsent(key, value, ttl.Milliseconds())
 }
 
 // PutIfAbsentWithTTLAndMaxIdle associates the specified key with the given value if it is not already associated.
 // Entry will expire and get evicted after the ttl.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
-func (m *MapImpl) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+func (m *Map) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
@@ -514,7 +514,7 @@ func (m *MapImpl) PutIfAbsentWithTTLAndMaxIdle(key interface{}, value interface{
 // MapStore defined at the server side will not be called.
 // The TTL defined on the server-side configuration will be used.
 // Max idle time defined on the server-side configuration will be used.
-func (m *MapImpl) PutTransient(key interface{}, value interface{}) error {
+func (m *Map) PutTransient(key interface{}, value interface{}) error {
 	return m.putTransient(key, value, proxy.TtlDefault, proxy.MaxIdleDefault)
 }
 
@@ -522,7 +522,7 @@ func (m *MapImpl) PutTransient(key interface{}, value interface{}) error {
 // MapStore defined at the server side will not be called.
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
-func (m *MapImpl) PutTransientWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
+func (m *Map) PutTransientWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
 	return m.putTransient(key, value, ttl.Milliseconds(), proxy.MaxIdleDefault)
 }
 
@@ -530,7 +530,7 @@ func (m *MapImpl) PutTransientWithTTL(key interface{}, value interface{}, ttl ti
 // MapStore defined at the server side will not be called.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
-func (m *MapImpl) PutTransientWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) error {
+func (m *Map) PutTransientWithMaxIdle(key interface{}, value interface{}, maxIdle time.Duration) error {
 	return m.putTransient(key, value, proxy.TtlDefault, maxIdle.Milliseconds())
 }
 
@@ -540,12 +540,12 @@ func (m *MapImpl) PutTransientWithMaxIdle(key interface{}, value interface{}, ma
 // Set ttl to 0 for infinite timeout.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
-func (m *MapImpl) PutTransientWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+func (m *Map) PutTransientWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
 	return m.putTransient(key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
 // Remove deletes the value for the given key and returns it.
-func (m *MapImpl) Remove(key interface{}) (interface{}, error) {
+func (m *Map) Remove(key interface{}) (interface{}, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -559,7 +559,7 @@ func (m *MapImpl) Remove(key interface{}) (interface{}, error) {
 }
 
 // RemoveAll deletes all entries matching the given predicate.
-func (m *MapImpl) RemoveAll(predicate predicate.Predicate) error {
+func (m *Map) RemoveAll(predicate predicate.Predicate) error {
 	if predicateData, err := m.ValidateAndSerialize(predicate); err != nil {
 		return err
 	} else {
@@ -570,7 +570,7 @@ func (m *MapImpl) RemoveAll(predicate predicate.Predicate) error {
 }
 
 // RemoveInterceptor removes the interceptor.
-func (m *MapImpl) RemoveInterceptor(registrationID string) (bool, error) {
+func (m *Map) RemoveInterceptor(registrationID string) (bool, error) {
 	request := codec.EncodeMapRemoveInterceptorRequest(m.Name, registrationID)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return false, nil
@@ -581,7 +581,7 @@ func (m *MapImpl) RemoveInterceptor(registrationID string) (bool, error) {
 
 // RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
 // Returns true if the entry was removed.
-func (m *MapImpl) RemoveIfSame(key interface{}, value interface{}) (bool, error) {
+func (m *Map) RemoveIfSame(key interface{}, value interface{}) (bool, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return false, err
 	} else {
@@ -595,7 +595,7 @@ func (m *MapImpl) RemoveIfSame(key interface{}, value interface{}) (bool, error)
 }
 
 // Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
-func (m *MapImpl) Replace(key interface{}, value interface{}) (interface{}, error) {
+func (m *Map) Replace(key interface{}, value interface{}) (interface{}, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
@@ -610,7 +610,7 @@ func (m *MapImpl) Replace(key interface{}, value interface{}) (interface{}, erro
 
 // ReplaceIfSame replaces the entry for a key only if it is currently mapped to a given value.
 // Returns true if the value was replaced.
-func (m *MapImpl) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+func (m *Map) ReplaceIfSame(key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
 	if keyData, oldValueData, newValueData, err := m.ValidateAndSerialize3(key, oldValue, newValue); err != nil {
 		return false, err
 	} else {
@@ -624,14 +624,14 @@ func (m *MapImpl) ReplaceIfSame(key interface{}, oldValue interface{}, newValue 
 }
 
 // Set sets the value for the given key.
-func (m *MapImpl) Set(key interface{}, value interface{}) error {
+func (m *Map) Set(key interface{}, value interface{}) error {
 	return m.set(key, value, proxy.TtlDefault)
 }
 
 // SetTTL updates the TTL value of the entry specified by the given key with a new TTL value.
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
-func (m *MapImpl) SetTTL(key interface{}, ttl time.Duration) error {
+func (m *Map) SetTTL(key interface{}, ttl time.Duration) error {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -644,7 +644,7 @@ func (m *MapImpl) SetTTL(key interface{}, ttl time.Duration) error {
 // SetWithTTL sets the value for the given key.
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
-func (m *MapImpl) SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
+func (m *Map) SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
 	return m.set(key, value, ttl.Milliseconds())
 }
 
@@ -653,7 +653,7 @@ func (m *MapImpl) SetWithTTL(key interface{}, value interface{}, ttl time.Durati
 // Set ttl to 0 for infinite timeout.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
-func (m *MapImpl) SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+func (m *Map) SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
@@ -664,7 +664,7 @@ func (m *MapImpl) SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl t
 }
 
 // Size returns the number of entries in this map.
-func (m *MapImpl) Size() (int, error) {
+func (m *Map) Size() (int, error) {
 	request := codec.EncodeMapSizeRequest(m.Name)
 	if response, err := m.InvokeOnRandomTarget(request, nil); err != nil {
 		return 0, err
@@ -675,13 +675,13 @@ func (m *MapImpl) Size() (int, error) {
 
 // TryLock tries to acquire the lock for the specified key.
 // When the lock is not available, the current thread doesn't wait and returns false immediately.
-func (m *MapImpl) TryLock(key interface{}) (bool, error) {
+func (m *Map) TryLock(key interface{}) (bool, error) {
 	return m.tryLock(key, 0, 0)
 }
 
 // TryLockWithLease tries to acquire the lock for the specified key.
 // Lock will be released after lease time passes.
-func (m *MapImpl) TryLockWithLease(key interface{}, lease time.Duration) (bool, error) {
+func (m *Map) TryLockWithLease(key interface{}, lease time.Duration) (bool, error) {
 	return m.tryLock(key, lease.Milliseconds(), 0)
 }
 
@@ -690,7 +690,7 @@ func (m *MapImpl) TryLockWithLease(key interface{}, lease time.Duration) (bool, 
 // dormant until one of the followings happens:
 // - The lock is acquired by the current thread, or
 // - The specified waiting time elapses.
-func (m *MapImpl) TryLockWithTimeout(key interface{}, timeout time.Duration) (bool, error) {
+func (m *Map) TryLockWithTimeout(key interface{}, timeout time.Duration) (bool, error) {
 	return m.tryLock(key, 0, timeout.Milliseconds())
 }
 
@@ -700,32 +700,32 @@ func (m *MapImpl) TryLockWithTimeout(key interface{}, timeout time.Duration) (bo
 // - The lock is acquired by the current thread, or
 // - The specified waiting time elapses.
 // Lock will be released after lease time passes.
-func (m *MapImpl) TryLockWithLeaseTimeout(key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
+func (m *Map) TryLockWithLeaseTimeout(key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
 	return m.tryLock(key, lease.Milliseconds(), timeout.Milliseconds())
 }
 
 // TryPut tries to put the given key and value into this map and returns immediately.
-func (m *MapImpl) TryPut(key interface{}, value interface{}) (interface{}, error) {
+func (m *Map) TryPut(key interface{}, value interface{}) (interface{}, error) {
 	return m.tryPut(key, value, 0)
 }
 
 // TryPut tries to put the given key and value into this map and waits until operation is completed or timeout is reached.
-func (m *MapImpl) TryPutWithTimeout(key interface{}, value interface{}, timeout time.Duration) (interface{}, error) {
+func (m *Map) TryPutWithTimeout(key interface{}, value interface{}, timeout time.Duration) (interface{}, error) {
 	return m.tryPut(key, value, timeout.Milliseconds())
 }
 
 // TryRemove tries to remove the given key from this map and returns immediately.
-func (m *MapImpl) TryRemove(key interface{}) (interface{}, error) {
+func (m *Map) TryRemove(key interface{}) (interface{}, error) {
 	return m.tryRemove(key, 0)
 }
 
 // TryRemove tries to remove the given key from this map and waits until operation is completed or timeout is reached.
-func (m *MapImpl) TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error) {
+func (m *Map) TryRemoveWithTimeout(key interface{}, timeout time.Duration) (interface{}, error) {
 	return m.tryRemove(key, timeout.Milliseconds())
 }
 
 // Unlock releases the lock for the specified key.
-func (m *MapImpl) Unlock(key interface{}) error {
+func (m *Map) Unlock(key interface{}) error {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -737,18 +737,18 @@ func (m *MapImpl) Unlock(key interface{}) error {
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
-func (m *MapImpl) ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error {
+func (m *Map) ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error {
 	flags := makeListenerFlags(&config)
 	return m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler)
 }
 
 // UnlistenEntryNotification removes the specified entry listener.
-func (m *MapImpl) UnlistenEntryNotification(subscriptionID int) error {
+func (m *Map) UnlistenEntryNotification(subscriptionID int) error {
 	m.UserEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
 	return m.ListenerBinder.Remove(m.Name, subscriptionID)
 }
 
-func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
+func (m *Map) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data
@@ -809,7 +809,7 @@ func (m *MapImpl) listenEntryNotified(flags int32, includeValue bool, key interf
 	return nil
 }
 
-func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
+func (m *Map) loadAll(replaceExisting bool, keys ...interface{}) error {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -826,7 +826,7 @@ func (m *MapImpl) loadAll(replaceExisting bool, keys ...interface{}) error {
 	return err
 }
 
-func (m *MapImpl) lock(key interface{}, ttl int64) error {
+func (m *Map) lock(key interface{}, ttl int64) error {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -837,7 +837,7 @@ func (m *MapImpl) lock(key interface{}, ttl int64) error {
 	}
 }
 
-func (m *MapImpl) putTTL(key interface{}, value interface{}, ttl int64) (interface{}, error) {
+func (m *Map) putTTL(key interface{}, value interface{}, ttl int64) (interface{}, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
@@ -849,7 +849,7 @@ func (m *MapImpl) putTTL(key interface{}, value interface{}, ttl int64) (interfa
 		}
 	}
 }
-func (m *MapImpl) putMaxIdle(key interface{}, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
+func (m *Map) putMaxIdle(key interface{}, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
@@ -862,7 +862,7 @@ func (m *MapImpl) putMaxIdle(key interface{}, value interface{}, ttl int64, maxI
 	}
 }
 
-func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (interface{}, error) {
+func (m *Map) putIfAbsent(key interface{}, value interface{}, ttl int64) (interface{}, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
@@ -875,7 +875,7 @@ func (m *MapImpl) putIfAbsent(key interface{}, value interface{}, ttl int64) (in
 	}
 }
 
-func (m *MapImpl) putTransient(key interface{}, value interface{}, ttl int64, maxIdle int64) error {
+func (m *Map) putTransient(key interface{}, value interface{}, ttl int64, maxIdle int64) error {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
@@ -890,7 +890,7 @@ func (m *MapImpl) putTransient(key interface{}, value interface{}, ttl int64, ma
 	}
 }
 
-func (m *MapImpl) set(key interface{}, value interface{}, ttl int64) error {
+func (m *Map) set(key interface{}, value interface{}, ttl int64) error {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
@@ -900,7 +900,7 @@ func (m *MapImpl) set(key interface{}, value interface{}, ttl int64) error {
 	}
 }
 
-func (m *MapImpl) tryLock(key interface{}, lease int64, timeout int64) (bool, error) {
+func (m *Map) tryLock(key interface{}, lease int64, timeout int64) (bool, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -914,7 +914,7 @@ func (m *MapImpl) tryLock(key interface{}, lease int64, timeout int64) (bool, er
 	}
 }
 
-func (m *MapImpl) tryPut(key interface{}, value interface{}, timeout int64) (interface{}, error) {
+func (m *Map) tryPut(key interface{}, value interface{}, timeout int64) (interface{}, error) {
 	if keyData, valueData, err := m.ValidateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
@@ -927,7 +927,7 @@ func (m *MapImpl) tryPut(key interface{}, value interface{}, timeout int64) (int
 	}
 }
 
-func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error) {
+func (m *Map) tryRemove(key interface{}, timeout int64) (interface{}, error) {
 	if keyData, err := m.ValidateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -940,7 +940,7 @@ func (m *MapImpl) tryRemove(key interface{}, timeout int64) (interface{}, error)
 	}
 }
 
-func (m *MapImpl) convertToObjects(valueDatas []pubserialization.Data) ([]interface{}, error) {
+func (m *Map) convertToObjects(valueDatas []pubserialization.Data) ([]interface{}, error) {
 	values := make([]interface{}, len(valueDatas))
 	for i, valueData := range valueDatas {
 		if value, err := m.ConvertToObject(valueData); err != nil {
@@ -952,7 +952,7 @@ func (m *MapImpl) convertToObjects(valueDatas []pubserialization.Data) ([]interf
 	return values, nil
 }
 
-func (m *MapImpl) makePartitionIDMapFromArray(items []interface{}) (map[int32][]proto.Pair, error) {
+func (m *Map) makePartitionIDMapFromArray(items []interface{}) (map[int32][]proto.Pair, error) {
 	ps := m.PartitionService
 	pairsMap := map[int32][]proto.Pair{}
 	for i := 0; i < len(items)/2; i += 2 {

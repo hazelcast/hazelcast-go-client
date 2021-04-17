@@ -18,7 +18,7 @@ const EnvDisableSmart = "DISABLE_SMART"
 const EnvDisableNonsmart = "DISABLE_NONSMART"
 const EnvTraceLogging = "ENABLE_TRACE"
 
-func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hztypes.MapImpl) {
+func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hztypes.Map) {
 	if TraceLoggingEnabled() {
 		configBuilder.Logger().SetLevel(logger.TraceLevel)
 	}
@@ -35,16 +35,16 @@ func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder)
 	}
 }
 
-func MapTester(t *testing.T, f func(t *testing.T, m *hztypes.MapImpl)) {
+func MapTester(t *testing.T, f func(t *testing.T, m *hztypes.Map)) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 	}
 	MapTesterWithConfigBuilder(t, cbCallback, f)
 }
 
-func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hztypes.MapImpl)) {
+func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hztypes.Map)) {
 	var (
 		client *hz.Client
-		m      *hztypes.MapImpl
+		m      *hztypes.Map
 	)
 	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {

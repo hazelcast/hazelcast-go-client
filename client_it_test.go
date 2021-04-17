@@ -90,7 +90,7 @@ func TestHeartbeat(t *testing.T) {
 	// Slow test.
 	t.SkipNow()
 	it.MapTesterWithConfigBuilder(t, func(cb *hz.ConfigBuilder) {
-	}, func(t *testing.T, m hztypes.Map) {
+	}, func(t *testing.T, m *hztypes.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"
 		it.Must(m.Set("k1", target))
@@ -102,18 +102,28 @@ func TestHeartbeat(t *testing.T) {
 
 func TestClient_Shutdown(t *testing.T) {
 	client := getClient(t)
-	client.Shutdown()
-	client.Shutdown()
+	if err := client.Shutdown(); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Shutdown(); err == nil {
+		t.Fatalf("shutting down second time should return an error")
+	}
 }
 
 func TestClient_Start(t *testing.T) {
 	client := getClient(t)
-	client.Start()
-	client.Start()
-	client.Shutdown()
-	client.Shutdown()
-	client.Start()
-	client.Start()
+	if err := client.Start(); err == nil {
+		t.Fatalf("starting second time should return an error")
+	}
+	if err := client.Shutdown(); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Shutdown(); err == nil {
+		t.Fatalf("shutting down second time should return an error")
+	}
+	if err := client.Start(); err == nil {
+		t.Fatalf("starting after shutdown should return an error")
+	}
 }
 
 func getClient(t *testing.T) *hz.Client {

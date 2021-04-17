@@ -153,7 +153,7 @@ func (c *Client) Name() string {
 }
 
 // GetMap returns a distributed map instance.
-func (c *Client) GetMap(name string) (*hztypes.MapImpl, error) {
+func (c *Client) GetMap(name string) (*hztypes.Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
