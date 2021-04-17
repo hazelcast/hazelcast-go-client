@@ -3,7 +3,6 @@ package cb
 import (
 	"context"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -27,7 +26,6 @@ type CircuitBreaker struct {
 	// state
 	CurrentFailureCount int32
 	State               int32
-	StateMu             *sync.RWMutex
 }
 
 func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
@@ -48,7 +46,6 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 		RetryPolicyFunc:    retryPolicyFunc,
 		StateChangeHandler: opts.StateChangeHandler,
 		State:              StateClosed,
-		StateMu:            &sync.RWMutex{},
 	}
 }
 
@@ -57,10 +54,7 @@ func (cb *CircuitBreaker) Try(tryHandler TryHandler) Future {
 }
 
 func (cb *CircuitBreaker) TryWithContext(ctx context.Context, tryHandler TryHandler) Future {
-	cb.StateMu.RLock()
-	state := cb.State
-	cb.StateMu.RUnlock()
-	if state == StateOpen {
+	if state := atomic.LoadInt32(&cb.State); state == StateOpen {
 		return NewFailedFuture(ErrCircuitOpen)
 	}
 	future := NewFutureImpl()
@@ -104,17 +98,11 @@ func (cb *CircuitBreaker) notifyFailed() {
 }
 
 func (cb *CircuitBreaker) openCircuit() {
-	cb.StateMu.Lock()
-	if state := cb.State; state == StateOpen {
-		cb.StateMu.Unlock()
-		// state is already open, don't change it
+	if !atomic.CompareAndSwapInt32(&cb.State, StateClosed, StateOpen) {
 		return
 	}
-	state := StateOpen
-	cb.State = state
-	cb.StateMu.Unlock()
 	if cb.StateChangeHandler != nil {
-		cb.StateChangeHandler(state)
+		cb.StateChangeHandler(StateOpen)
 	}
 	go func(resetTimeout time.Duration) {
 		// close the circuit after reset timeout
@@ -124,16 +112,11 @@ func (cb *CircuitBreaker) openCircuit() {
 }
 
 func (cb *CircuitBreaker) closeCircuit() {
-	cb.StateMu.Lock()
-	defer cb.StateMu.Unlock()
-	if state := cb.State; state == StateClosed {
-		// state is closed, don't change it
+	if !atomic.CompareAndSwapInt32(&cb.State, StateOpen, StateClosed) {
 		return
 	}
-	cb.State = StateClosed
-	// TODO:
 	atomic.StoreInt32(&cb.CurrentFailureCount, 0)
 	if cb.StateChangeHandler != nil {
-		cb.StateChangeHandler(cb.State)
+		cb.StateChangeHandler(StateClosed)
 	}
 }
