@@ -1,28 +1,38 @@
 package hazelcast
 
 import (
+	"context"
 	"fmt"
 	"sync"
+
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+)
+
+const (
+	lockIDKey = "__hz_lockid"
 )
 
 type proxyManager struct {
-	mu            *sync.RWMutex
-	proxies       map[string]*proxy
-	serviceBundle CreationBundle
+	mu             *sync.RWMutex
+	proxies        map[string]*proxy
+	serviceBundle  CreationBundle
+	refIDGenerator iproxy.ReferenceIDGenerator
 }
 
 func newManager(bundle CreationBundle) *proxyManager {
 	bundle.Check()
 	return &proxyManager{
-		mu:            &sync.RWMutex{},
-		proxies:       map[string]*proxy{},
-		serviceBundle: bundle,
+		mu:             &sync.RWMutex{},
+		proxies:        map[string]*proxy{},
+		serviceBundle:  bundle,
+		refIDGenerator: iproxy.NewReferenceIDGeneratorImpl(),
 	}
 }
 
-func (m *proxyManager) GetMap(name string) *Map {
+func (m *proxyManager) GetMapWithContext(ctx context.Context, name string) *Map {
 	p := m.proxyFor("hz:impl:mapService", name)
-	return NewMapImpl(p)
+	ctx = context.WithValue(ctx, lockIDKey, m.refIDGenerator.NextID())
+	return NewMapImpl(ctx, p)
 }
 
 func (m *proxyManager) GetReplicatedMap(objectName string) *ReplicatedMap {
@@ -40,7 +50,7 @@ func (m *proxyManager) Remove(serviceName string, objectName string) error {
 	}
 	delete(m.proxies, name)
 	m.mu.Unlock()
-	return p.Destroy()
+	return p.destroy()
 }
 
 func (m *proxyManager) proxyFor(serviceName string, objectName string) *proxy {
@@ -58,7 +68,7 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) *proxy {
 	return p
 }
 
-func (m proxyManager) createProxy(serviceName string, objectName string) *proxy {
+func (m *proxyManager) createProxy(serviceName string, objectName string) *proxy {
 	return NewProxy(m.serviceBundle, serviceName, objectName)
 }
 
