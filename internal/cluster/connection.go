@@ -17,12 +17,13 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"net"
 	"sync/atomic"
 	"time"
+
+	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -98,15 +99,20 @@ func (c *Connection) createSocket(networkCfg *pubcluster.Config, address pubclus
 }
 
 func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
-	if tcpAddr, err := net.ResolveTCPAddr("tcp", addr.String()); err != nil {
-		return nil, err
-	} else if conn, err := net.DialTCP("tcp", nil, tcpAddr); err != nil {
+	if conn, err := net.DialTimeout("tcp", addr.String(), conTimeout); err != nil {
 		return nil, err
 	} else {
-		conn.SetNoDelay(true)
-		conn.SetReadBuffer(bufferSize)
-		conn.SetWriteBuffer(bufferSize)
-		return conn, nil
+		tcpConn := conn.(*net.TCPConn)
+		if err = tcpConn.SetNoDelay(true); err != nil {
+			panic(fmt.Errorf("error setting tcp no delay: %w", err))
+		}
+		if err = tcpConn.SetReadBuffer(bufferSize); err != nil {
+			panic(fmt.Errorf("error setting read buffer: %w", err))
+		}
+		if err = tcpConn.SetWriteBuffer(bufferSize); err != nil {
+			panic(fmt.Errorf("error setting write buffer: %w", err))
+		}
+		return tcpConn, nil
 	}
 }
 

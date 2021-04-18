@@ -1,6 +1,7 @@
 package it
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -17,6 +18,14 @@ const EnvDisableSmart = "DISABLE_SMART"
 const EnvDisableNonsmart = "DISABLE_NONSMART"
 const EnvTraceLogging = "ENABLE_TRACE"
 
+func GetMapWithContext(client *hz.Client, name string, ctx context.Context) *hz.Map {
+	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
+	if ctx == nil {
+		return MustValue(client.GetMap(mapName)).(*hz.Map)
+	}
+	return MustValue(client.GetMapWithContext(mapName, ctx)).(*hz.Map)
+}
+
 func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
 	if TraceLoggingEnabled() {
 		configBuilder.Logger().SetLevel(logger.TraceLevel)
@@ -31,6 +40,36 @@ func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder)
 		panic(err)
 	} else {
 		return client, m
+	}
+}
+
+func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
+	if SmartEnabled() {
+		t.Run("Smart Client", func(t *testing.T) {
+			cb := hz.NewConfigBuilder()
+			if cbCallback != nil {
+				cbCallback(cb)
+			}
+			client := MustClient(hz.StartNewClientWithConfig(cb))
+			defer func() {
+				client.Shutdown()
+			}()
+			f(t, client)
+		})
+	}
+	if NonSmartEnabled() {
+		t.Run("Non-Smart Client", func(t *testing.T) {
+			cb := hz.NewConfigBuilder()
+			if cbCallback != nil {
+				cbCallback(cb)
+			}
+			cb.Cluster().SetSmartRouting(false)
+			client := MustClient(hz.StartNewClientWithConfig(cb))
+			defer func() {
+				client.Shutdown()
+			}()
+			f(t, client)
+		})
 	}
 }
 

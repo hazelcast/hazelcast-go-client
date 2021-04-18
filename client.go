@@ -15,6 +15,7 @@
 package hazelcast
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync/atomic"
@@ -41,8 +42,11 @@ const (
 	stopped
 )
 
-var ErrClientCannotStart = errors.New("client cannot start")
-var ErrClientNotReady = errors.New("client not ready")
+var (
+	ErrClientCannotStart = errors.New("client cannot start")
+	ErrClientNotReady    = errors.New("client not ready")
+	ErrContextIsNil      = errors.New("context is nil")
+)
 
 // StartNewClient creates and starts a new client.
 // Hazelcast client enables you to do all Hazelcast operations without
@@ -151,15 +155,37 @@ func (c *Client) GetMap(name string) (*Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	return c.proxyManager.GetMap(name)
+	return c.proxyManager.GetMap(name), nil
 }
 
-// GetReplicatedMap returns a replicated map instance.
-func (c *Client) GetReplicatedMap(name string) (*ReplicatedMapImpl, error) {
+// GetMapWithContext returns a distributed map instance.
+func (c *Client) GetMapWithContext(name string, ctx context.Context) (*Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	return c.proxyManager.GetReplicatedMap(name)
+	if ctx == nil {
+		return nil, ErrContextIsNil
+	}
+	return c.proxyManager.GetMap(name).withContext(ctx), nil
+}
+
+// GetReplicatedMap returns a replicated map instance.
+func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
+	if !c.ready() {
+		return nil, ErrClientNotReady
+	}
+	return c.proxyManager.GetReplicatedMap(name), nil
+}
+
+// GetReplicatedMapWithContext returns a replicated map instance.
+func (c *Client) GetReplicatedMapWithContext(name string, ctx context.Context) (*ReplicatedMap, error) {
+	if !c.ready() {
+		return nil, ErrClientNotReady
+	}
+	if ctx == nil {
+		return nil, ErrContextIsNil
+	}
+	return c.proxyManager.GetReplicatedMap(name).withContext(ctx), nil
 }
 
 // Start connects the client to the cluster.

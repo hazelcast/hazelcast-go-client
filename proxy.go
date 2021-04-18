@@ -38,7 +38,6 @@ const (
 	TtlDefault     = -1
 	TtlUnlimited   = 0
 	MaxIdleDefault = -1
-	//threadID       = 1
 )
 
 type CreationBundle struct {
@@ -92,7 +91,7 @@ type proxy struct {
 	serviceName          string
 	Name                 string
 	logger               logger.Logger
-	CircuitBreaker       *cb.CircuitBreaker
+	circuitBreaker       *cb.CircuitBreaker
 }
 
 func NewProxy(bundle CreationBundle, serviceName string, objectName string) *proxy {
@@ -116,7 +115,7 @@ func NewProxy(bundle CreationBundle, serviceName string, objectName string) *pro
 		ListenerBinder:       bundle.ListenerBinder,
 		SmartRouting:         bundle.SmartRouting,
 		logger:               bundle.Logger,
-		CircuitBreaker:       circuitBreaker,
+		circuitBreaker:       circuitBreaker,
 	}
 }
 
@@ -213,29 +212,29 @@ func (p *proxy) ValidateAndSerializeMapAndGetPartitions(entries map[interface{}]
 	return partitions, nil
 }
 
-func (p *proxy) TryInvoke(f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
-	if res, err := p.CircuitBreaker.Try(f).Result(); err != nil {
+func (p *proxy) TryInvoke(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
+	if res, err := p.circuitBreaker.TryWithContext(ctx, f).Result(); err != nil {
 		return nil, err
 	} else {
 		return res.(*proto.ClientMessage), nil
 	}
 }
 
-func (p *proxy) InvokeOnKey(request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
+func (p *proxy) InvokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
 	partitionID := p.PartitionService.GetPartitionID(keyData)
-	return p.InvokeOnPartition(request, partitionID)
+	return p.InvokeOnPartition(ctx, request, partitionID)
 }
 
-func (p *proxy) InvokeOnRandomTarget(request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
-	return p.TryInvoke(func(ctx context.Context) (interface{}, error) {
+func (p *proxy) InvokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	return p.TryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
 		return inv.GetWithTimeout(1 * time.Second)
 	})
 }
 
-func (p *proxy) InvokeOnPartition(request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	return p.TryInvoke(func(ctx context.Context) (interface{}, error) {
+func (p *proxy) InvokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+	return p.TryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
 		return p.InvokeOnPartitionAsync(request, partitionID).GetWithTimeout(1 * time.Second)
 	})
 }
@@ -339,42 +338,4 @@ func (p *proxy) ConvertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 		kvPairs[i] = types.Entry{key, value}
 	}
 	return kvPairs, nil
-}
-
-type partitionSpecificProxy struct {
-	*proxy
-	partitionID int32
-}
-
-func newPartitionSpecificProxy(
-	serializationService iserialization.SerializationService,
-	partitionService *cluster.PartitionService,
-	//invocationService invocation.Service,
-	requestCh chan<- invocation.Invocation,
-	clusterService *cluster.ServiceImpl,
-	smartRouting bool,
-	serviceName string,
-	name string,
-) *partitionSpecificProxy {
-	parSpecProxy := &partitionSpecificProxy{
-		proxy: &proxy{
-			requestCh:            requestCh,
-			serializationService: serializationService,
-			PartitionService:     partitionService,
-			clusterService:       clusterService,
-			SmartRouting:         smartRouting,
-			serviceName:          serviceName,
-			Name:                 name,
-		},
-	}
-	var err error
-	if parSpecProxy.partitionID, err = partitionService.GetPartitionIDWithKey(parSpecProxy.PartitionKey()); err != nil {
-		panic(fmt.Errorf("error creating partitionSpecificProxy: %w", err))
-	} else {
-		return parSpecProxy
-	}
-}
-
-func (parSpecProxy *partitionSpecificProxy) invoke(request *proto.ClientMessage) (*proto.ClientMessage, error) {
-	return parSpecProxy.InvokeOnPartition(request, parSpecProxy.partitionID)
 }
