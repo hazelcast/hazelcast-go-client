@@ -2,7 +2,6 @@ package hazelcast
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
 )
 
@@ -21,24 +20,14 @@ func newManager(bundle CreationBundle) *proxyManager {
 	}
 }
 
-func (m *proxyManager) GetMap(name string) (*Map, error) {
-	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
-		return nil, err
-	} else {
-		return NewMapImpl(p), nil
-	}
+func (m *proxyManager) GetMap(name string) *Map {
+	p := m.proxyFor("hz:impl:mapService", name)
+	return NewMapImpl(p)
 }
 
-func (m *proxyManager) GetReplicatedMap(objectName string) (*ReplicatedMapImpl, error) {
-	// returns an interface to not depend on hztypes.ReplicatedMap
-	// TODO: change return type to ReplicatedMap
-	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
-		return nil, err
-	} else {
-		partitionCount := m.serviceBundle.PartitionService.PartitionCount()
-		partitionID := rand.Int31n(partitionCount)
-		return NewReplicatedMapImpl(p, partitionID), nil
-	}
+func (m *proxyManager) GetReplicatedMap(objectName string) *ReplicatedMap {
+	p := m.proxyFor("hz:impl:replicatedMapService", objectName)
+	return NewReplicatedMapImpl(p)
 }
 
 func (m *proxyManager) Remove(serviceName string, objectName string) error {
@@ -54,26 +43,23 @@ func (m *proxyManager) Remove(serviceName string, objectName string) error {
 	return p.Destroy()
 }
 
-func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, error) {
+func (m *proxyManager) proxyFor(serviceName string, objectName string) *proxy {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	obj, ok := m.proxies[name]
 	m.mu.RUnlock()
 	if ok {
-		return obj, nil
+		return obj
 	}
-	if p, err := m.createProxy(serviceName, objectName); err != nil {
-		return nil, err
-	} else {
-		m.mu.Lock()
-		m.proxies[name] = p
-		m.mu.Unlock()
-		return p, nil
-	}
+	p := m.createProxy(serviceName, objectName)
+	m.mu.Lock()
+	m.proxies[name] = p
+	m.mu.Unlock()
+	return p
 }
 
-func (m proxyManager) createProxy(serviceName string, objectName string) (*proxy, error) {
-	return NewProxy(m.serviceBundle, serviceName, objectName), nil
+func (m proxyManager) createProxy(serviceName string, objectName string) *proxy {
+	return NewProxy(m.serviceBundle, serviceName, objectName)
 }
 
 func makeProxyName(serviceName string, objectName string) string {

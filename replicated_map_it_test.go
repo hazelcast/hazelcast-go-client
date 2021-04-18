@@ -19,7 +19,7 @@ import (
 )
 
 func TestPutGetReplicatedMap(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -33,7 +33,7 @@ func TestPutGetReplicatedMap(t *testing.T) {
 }
 
 func TestReplicatedMapClearSetGet(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
 		if ok := it.MustBool(m.ContainsKey("key")); !ok {
@@ -55,7 +55,7 @@ func TestReplicatedMapClearSetGet(t *testing.T) {
 }
 
 func TestReplicatedMapRemove(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
 		if !it.MustBool(m.ContainsKey("key")) {
@@ -73,7 +73,7 @@ func TestReplicatedMapRemove(t *testing.T) {
 }
 
 func TestReplicatedMapGetEntrySet(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		target := []types.Entry{
 			types.NewEntry("k1", "v1"),
 			types.NewEntry("k2", "v2"),
@@ -92,7 +92,7 @@ func TestReplicatedMapGetEntrySet(t *testing.T) {
 }
 
 func TestReplicatedMapGetKeySet(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		it.MustValue(m.Put("k1", "v1"))
 		it.MustValue(m.Put("k2", "v2"))
@@ -110,7 +110,7 @@ func TestReplicatedMapGetKeySet(t *testing.T) {
 }
 
 func TestReplicatedMapIsEmptySize(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
 		} else if !value {
@@ -140,7 +140,7 @@ func TestReplicatedMapIsEmptySize(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -170,7 +170,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -199,7 +199,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -228,7 +228,7 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMapImpl) {
+	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -255,10 +255,10 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	})
 }
 
-func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMapImpl)) {
+func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	var (
 		client *hz.Client
-		m      *hz.ReplicatedMapImpl
+		m      *hz.ReplicatedMap
 	)
 	t.Run("Smart Client", func(t *testing.T) {
 		cb := hz.NewConfigBuilder()
@@ -296,7 +296,7 @@ func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 	})
 }
 
-func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMapImpl) {
+func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMap) {
 	if it.TraceLoggingEnabled() {
 		cb.Logger().SetLevel(logger.TraceLevel)
 	}

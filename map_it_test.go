@@ -2,6 +2,7 @@ package hazelcast_test
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -427,10 +428,8 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map Flush
 // TODO: Test Map ForceUnlock
 // TODO: Test Map GetValuesWithPredicate
-// TODO: Test Map IsLocked
 // TODO: Test Map LoadAll
 // TODO: Test Map LoadAllReplacingExisting
-// TODO: Test Map Lock
 // TODO: Test Map LockWithLease
 // TODO: Test Map SetTTL
 // TODO: Test Map SetWithTTL
@@ -443,6 +442,28 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
 // TODO: Test Map TryRemoveWithTimeout
+
+func TestMap_Lock(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if err := m.Lock("k1"); err != nil {
+			t.Fatal(err)
+		}
+		if locked, err := m.IsLocked("k1"); err != nil {
+			log.Fatal(err)
+		} else {
+			it.AssertEquals(t, true, locked)
+		}
+		if err := m.Unlock("k1"); err != nil {
+			log.Fatal(err)
+		}
+	})
+}
+
+func TestMapLockWithContext(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+
+	})
+}
 
 func TestMapIsEmptySize(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
