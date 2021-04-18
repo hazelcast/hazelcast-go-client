@@ -152,21 +152,18 @@ func (c *Client) Name() string {
 
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(name string) (*Map, error) {
-	if !c.ready() {
-		return nil, ErrClientNotReady
-	}
-	return c.proxyManager.GetMap(name), nil
+	return c.GetMapWithContext(context.Background(), name)
 }
 
 // GetMapWithContext returns a distributed map instance.
-func (c *Client) GetMapWithContext(name string, ctx context.Context) (*Map, error) {
+func (c *Client) GetMapWithContext(ctx context.Context, name string) (*Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
 	if ctx == nil {
 		return nil, ErrContextIsNil
 	}
-	return c.proxyManager.GetMap(name).withContext(ctx), nil
+	return c.proxyManager.GetMapWithContext(ctx, name), nil
 }
 
 // GetReplicatedMap returns a replicated map instance.
@@ -178,7 +175,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 }
 
 // GetReplicatedMapWithContext returns a replicated map instance.
-func (c *Client) GetReplicatedMapWithContext(name string, ctx context.Context) (*ReplicatedMap, error) {
+func (c *Client) GetReplicatedMapWithContext(ctx context.Context, name string) (*ReplicatedMap, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
