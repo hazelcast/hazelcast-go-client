@@ -47,7 +47,7 @@ type Map struct {
 	lockID         int64
 }
 
-func NewMap(ctx context.Context, p *proxy) *Map {
+func newMap(ctx context.Context, p *proxy) *Map {
 	lockID := ctx.Value(lockIDKey).(int64)
 	return &Map{
 		proxy:          p,
@@ -230,7 +230,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 		return m.circuitBreaker.TryWithContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapGetAllRequest(m.name, keys)
 			inv := m.invokeOnPartitionAsync(request, partitionID)
-			return inv.GetContext(ctx)
+			return inv.GetWithTimeout(1 * time.Second)
 		})
 	}
 	futures := make([]cb.Future, 0, len(partitionToKeys))
@@ -481,7 +481,7 @@ func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 			return m.circuitBreaker.TryWithContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 				request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 				inv := m.invokeOnPartitionAsync(request, partitionID)
-				return inv.GetContext(ctx)
+				return inv.GetWithTimeout(1 * time.Second)
 			})
 		}
 		futures := make([]cb.Future, 0, len(partitionToPairs))
