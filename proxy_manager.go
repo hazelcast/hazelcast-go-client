@@ -32,7 +32,7 @@ func newManager(bundle CreationBundle) *proxyManager {
 func (m *proxyManager) GetMapWithContext(ctx context.Context, name string) *Map {
 	p := m.proxyFor("hz:impl:mapService", name)
 	ctx = context.WithValue(ctx, lockIDKey, m.refIDGenerator.NextID())
-	return NewMapImpl(ctx, p)
+	return NewMap(ctx, p)
 }
 
 func (m *proxyManager) GetReplicatedMap(objectName string) *ReplicatedMap {

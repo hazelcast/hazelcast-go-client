@@ -1,6 +1,7 @@
 package invocation
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -14,6 +15,7 @@ type Invocation interface {
 	Completed() bool
 	EventHandler() proto.ClientMessageHandler
 	Get() (*proto.ClientMessage, error)
+	GetContext(ctx context.Context) (*proto.ClientMessage, error)
 	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
@@ -59,6 +61,18 @@ func (i *Impl) EventHandler() proto.ClientMessageHandler {
 func (i *Impl) Get() (*proto.ClientMessage, error) {
 	response := <-i.response
 	return i.unwrapResponse(response)
+}
+
+func (i *Impl) GetContext(ctx context.Context) (*proto.ClientMessage, error) {
+	select {
+	case response, ok := <-i.response:
+		if ok {
+			return i.unwrapResponse(response)
+		}
+		return nil, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error) {
