@@ -200,13 +200,13 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
-		return inv.GetWithTimeout(1 * time.Second)
+		return inv.GetContext(ctx)
 	})
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
-		return p.invokeOnPartitionAsync(request, partitionID).GetWithTimeout(1 * time.Second)
+		return p.invokeOnPartitionAsync(request, partitionID).GetContext(ctx)
 	})
 }
 
