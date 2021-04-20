@@ -1,11 +1,7 @@
 package types_test
 
-import (
-	"log"
-
-	"github.com/hazelcast/hazelcast-go-client"
-)
-
+/*
+// Disabling the Example test for now... --YT
 func Example() {
 	// Start the client.
 	client, err := hazelcast.StartNewClient()
@@ -23,3 +19,4 @@ func Example() {
 		log.Fatal(err)
 	}
 }
+*/

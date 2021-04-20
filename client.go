@@ -18,8 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync/atomic"
 	"time"
+
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -112,7 +115,8 @@ type Client struct {
 	logger              logger.Logger
 
 	// state
-	state atomic.Value
+	state    atomic.Value
+	refIDGen *iproxy.ReferenceIDGenerator
 }
 
 func newClient(name string, config Config) (*Client, error) {
@@ -136,6 +140,7 @@ func newClient(name string, config Config) (*Client, error) {
 		eventDispatcher:     event.NewDispatchService(),
 		userEventDispatcher: event.NewDispatchService(),
 		logger:              clientLogger,
+		refIDGen:            iproxy.NewReferenceIDGenerator(),
 	}
 	client.state.Store(created)
 	client.subscribeUserEvents()
@@ -220,10 +225,11 @@ func (c *Client) Shutdown() error {
 
 // ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
-func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler LifecycleStateChangeHandler) error {
+func (c *Client) ListenLifecycleStateChange(handler LifecycleStateChangeHandler) (string, error) {
 	if !c.canStartOrReady() {
-		return ErrClientNotReady
+		return "", ErrClientNotReady
 	}
+	subscriptionID := int(c.refIDGen.NextID())
 	c.userEventDispatcher.SubscribeSync(EventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
 			handler(*stateChangeEvent)
@@ -231,23 +237,28 @@ func (c *Client) ListenLifecycleStateChange(subscriptionID int, handler Lifecycl
 			c.logger.Errorf("cannot cast event to lifecycle.LifecycleStateChanged event")
 		}
 	})
-	return nil
+	return strconv.Itoa(subscriptionID), nil
 }
 
 // UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
-func (c *Client) UnlistenLifecycleStateChange(subscriptionID int) error {
+func (c *Client) UnlistenLifecycleStateChange(subscriptionID string) error {
 	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
-	c.userEventDispatcher.Unsubscribe(EventLifecycleEventStateChanged, subscriptionID)
+	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		c.userEventDispatcher.Unsubscribe(EventLifecycleEventStateChanged, subscriptionIDInt)
+	}
 	return nil
 }
 
 // ListenMembershipStateChange adds a member state change handler with a unique subscription ID.
-func (c *Client) ListenMembershipStateChange(subscriptionID int, handler cluster.MembershipStateChangedHandler) error {
+func (c *Client) ListenMembershipStateChange(handler cluster.MembershipStateChangedHandler) error {
 	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
+	subscriptionID := int(c.refIDGen.NextID())
 	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
 		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
 			for _, member := range membersAddedEvent.Members {
@@ -276,12 +287,16 @@ func (c *Client) ListenMembershipStateChange(subscriptionID int, handler cluster
 }
 
 // UnlistenMembershipStateChange removes the member state change handler with the given subscription ID.
-func (c *Client) UnlistenMembershipStateChange(subscriptionID int) error {
+func (c *Client) UnlistenMembershipStateChange(subscriptionID string) error {
 	if !c.canStartOrReady() {
 		return ErrClientNotReady
 	}
-	c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionID)
-	c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, subscriptionID)
+	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionIDInt)
+		c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, subscriptionIDInt)
+	}
 	return nil
 }
 

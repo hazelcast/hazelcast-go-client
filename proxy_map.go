@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -42,7 +43,7 @@ type MapEntryListenerConfig struct {
 
 type Map struct {
 	*proxy
-	refIDGenerator iproxy.ReferenceIDGenerator
+	refIDGenerator *iproxy.ReferenceIDGenerator
 	ctx            context.Context
 	lockID         int64
 }
@@ -51,7 +52,7 @@ func newMap(ctx context.Context, p *proxy) *Map {
 	lockID := ctx.Value(lockIDKey).(int64)
 	return &Map{
 		proxy:          p,
-		refIDGenerator: iproxy.NewReferenceIDGeneratorImpl(),
+		refIDGenerator: iproxy.NewReferenceIDGenerator(),
 		ctx:            ctx,
 		lockID:         lockID,
 	}
@@ -751,15 +752,23 @@ func (m *Map) Unlock(key interface{}) error {
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
-func (m *Map) ListenEntryNotification(config MapEntryListenerConfig, subscriptionID int, handler EntryNotifiedHandler) error {
+func (m *Map) ListenEntryNotification(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
 	flags := makeListenerFlags(&config)
-	return m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler)
+	subscriptionID := int(m.refIDGenerator.NextID())
+	if err := m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
+		return "", err
+	}
+	return strconv.Itoa(subscriptionID), nil
 }
 
 // UnlistenEntryNotification removes the specified entry listener.
-func (m *Map) UnlistenEntryNotification(subscriptionID int) error {
-	m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
-	return m.listenerBinder.Remove(m.name, subscriptionID)
+func (m *Map) UnlistenEntryNotification(subscriptionID string) error {
+	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionIDInt)
+		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
+	}
 }
 
 func (m *Map) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
