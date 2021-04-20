@@ -149,7 +149,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		if _, err := m.Put("k1", "v1"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
