@@ -163,7 +163,7 @@ func (c *Client) GetMapWithContext(ctx context.Context, name string) (*Map, erro
 	if ctx == nil {
 		return nil, ErrContextIsNil
 	}
-	return c.proxyManager.GetMapWithContext(ctx, name), nil
+	return c.proxyManager.getMapWithContext(ctx, name), nil
 }
 
 // GetReplicatedMap returns a replicated map instance.
@@ -171,7 +171,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	return c.proxyManager.GetReplicatedMap(name), nil
+	return c.proxyManager.getReplicatedMap(name), nil
 }
 
 // GetReplicatedMapWithContext returns a replicated map instance.
@@ -182,7 +182,7 @@ func (c *Client) GetReplicatedMapWithContext(ctx context.Context, name string) (
 	if ctx == nil {
 		return nil, ErrContextIsNil
 	}
-	return c.proxyManager.GetReplicatedMap(name).withContext(ctx), nil
+	return c.proxyManager.getReplicatedMap(name).withContext(ctx), nil
 }
 
 // Start connects the client to the cluster.
@@ -316,8 +316,13 @@ func (c *Client) subscribeUserEvents() {
 	})
 }
 
+func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCredentials {
+	securityConfig := config.ClusterConfig.SecurityConfig
+	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
+}
+
 func (c *Client) createComponents(config *Config) {
-	credentials := security.NewUsernamePasswordCredentials("dev", "dev-pass")
+	credentials := c.makeCredentials(config)
 	serializationService, err := serialization.NewService(&config.SerializationConfig)
 	if err != nil {
 		panic(fmt.Errorf("error creating client: %w", err))
@@ -369,7 +374,7 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationService.SetHandler(invocationHandler)
 	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)
-	proxyManagerServiceBundle := CreationBundle{
+	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
 		SerializationService: serializationService,
 		PartitionService:     partitionService,

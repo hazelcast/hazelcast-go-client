@@ -15,11 +15,11 @@ const (
 type proxyManager struct {
 	mu             *sync.RWMutex
 	proxies        map[string]*proxy
-	serviceBundle  CreationBundle
+	serviceBundle  creationBundle
 	refIDGenerator iproxy.ReferenceIDGenerator
 }
 
-func newManager(bundle CreationBundle) *proxyManager {
+func newManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
 	return &proxyManager{
 		mu:             &sync.RWMutex{},
@@ -29,18 +29,18 @@ func newManager(bundle CreationBundle) *proxyManager {
 	}
 }
 
-func (m *proxyManager) GetMapWithContext(ctx context.Context, name string) *Map {
+func (m *proxyManager) getMapWithContext(ctx context.Context, name string) *Map {
 	p := m.proxyFor("hz:impl:mapService", name)
 	ctx = context.WithValue(ctx, lockIDKey, m.refIDGenerator.NextID())
 	return newMap(ctx, p)
 }
 
-func (m *proxyManager) GetReplicatedMap(objectName string) *ReplicatedMap {
+func (m *proxyManager) getReplicatedMap(objectName string) *ReplicatedMap {
 	p := m.proxyFor("hz:impl:replicatedMapService", objectName)
 	return NewReplicatedMapImpl(p)
 }
 
-func (m *proxyManager) Remove(serviceName string, objectName string) error {
+func (m *proxyManager) remove(serviceName string, objectName string) error {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()
 	p, ok := m.proxies[name]
@@ -69,7 +69,7 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) *proxy {
 }
 
 func (m *proxyManager) createProxy(serviceName string, objectName string) *proxy {
-	return NewProxy(m.serviceBundle, serviceName, objectName)
+	return newProxy(m.serviceBundle, serviceName, objectName)
 }
 
 func makeProxyName(serviceName string, objectName string) string {

@@ -97,17 +97,17 @@ type ConnectionManager struct {
 	clusterConfig        *pubcluster.Config
 	credentials          security.Credentials
 	clientName           string
-
-	connMap           *connectionMap
-	nextConnID        int64
-	addressTranslator AddressTranslator
-	smartRouting      bool
-	alive             atomic.Value
-	started           atomic.Value
-	ownerConn         atomic.Value
-	logger            logger.Logger
-	doneCh            chan struct{}
-	cb                *cb.CircuitBreaker
+	clientUUID           internal.UUID
+	connMap              *connectionMap
+	nextConnID           int64
+	addressTranslator    AddressTranslator
+	smartRouting         bool
+	alive                atomic.Value
+	started              atomic.Value
+	ownerConn            atomic.Value
+	logger               logger.Logger
+	doneCh               chan struct{}
+	cb                   *cb.CircuitBreaker
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
@@ -136,6 +136,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
+		clientUUID:           internal.NewUUID(),
 		connMap:              newConnectionMap(),
 		addressTranslator:    NewDefaultAddressTranslator(),
 		smartRouting:         bundle.SmartRouting,
@@ -376,9 +377,9 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
-		return hzerror.NewHazelcastAuthenticationError("invalid credentials!", nil)
+		return hzerror.NewHazelcastAuthenticationError("invalid credentials", nil)
 	case serializationVersionMismatch:
-		return hzerror.NewHazelcastAuthenticationError("serialization version mismatches with the server!", nil)
+		return hzerror.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
 	}
 	return nil
 }
@@ -394,9 +395,9 @@ func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {
 func (m *ConnectionManager) createAuthenticationRequest(creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	return codec.EncodeClientAuthenticationRequest(
 		m.clusterConfig.Name,
-		"",
-		"",
-		internal.NewUUID(),
+		creds.Username(),
+		creds.Password(),
+		m.clientUUID,
 		proto.ClientType,
 		byte(serializationVersion),
 		ClientVersion,
