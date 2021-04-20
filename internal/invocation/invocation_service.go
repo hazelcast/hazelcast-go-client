@@ -9,6 +9,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
+type Handler interface {
+	Invoke(invocation Invocation) error
+}
+
 type ServiceCreationBundle struct {
 	Handler      Handler
 	RequestCh    <-chan Invocation
@@ -46,9 +50,6 @@ type Service struct {
 func NewServiceImpl(bundle ServiceCreationBundle) *Service {
 	bundle.Check()
 	handler := bundle.Handler
-	if handler == nil {
-		handler = &DefaultHandler{}
-	}
 	service := &Service{
 		requestCh:         bundle.RequestCh,
 		responseCh:        bundle.ResponseCh,
