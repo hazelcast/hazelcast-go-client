@@ -33,4 +33,4 @@ jobs:
 
       - name: "Run All Tests with Race Detector"
         run: |
-          make test-all-race
+          make test-all
