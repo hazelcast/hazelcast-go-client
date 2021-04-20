@@ -17,6 +17,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -27,7 +28,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/colutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -120,7 +120,7 @@ func newProxy(bundle creationBundle, serviceName string, objectName string) *pro
 }
 
 func (p *proxy) destroy() error {
-	request := proto.ClientDestroyProxyEncodeRequest(p.name, p.serviceName)
+	request := codec.EncodeClientDestroyProxyRequest(p.name, p.serviceName)
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv
 	if _, err := inv.Get(); err != nil {
@@ -172,14 +172,6 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data serial
 		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilPredicateIsNotAllowed, nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
-	return
-}
-
-func (p *proxy) validateAndSerializeSlice(elements []interface{}) (elementsData []serialization.Data, err error) {
-	if elements == nil {
-		return nil, hzerror.NewHazelcastSerializationError(bufutil.NilSliceIsNotAllowed, nil)
-	}
-	elementsData, err = colutil.ObjectToDataCollection(elements, p.serializationService)
 	return
 }
 
@@ -244,38 +236,6 @@ func (p *proxy) decodeToBoolAndError(responseMessage *proto.ClientMessage, input
 	decodeFunc func(*proto.ClientMessage) func() bool) (response bool, err error) {
 	if inputError != nil {
 		return false, inputError
-	}
-	return decodeFunc(responseMessage)(), nil
-}
-
-func (p *proxy) decodeToInterfaceSliceAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() []serialization.Data) (response []interface{}, err error) {
-	if inputError != nil {
-		return nil, inputError
-	}
-	return colutil.DataToObjectCollection(decodeFunc(responseMessage)(), p.serializationService)
-}
-
-func (p *proxy) decodeToPairSliceAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() []*proto.Pair) (response []proto.Pair, err error) {
-	if inputError != nil {
-		return nil, inputError
-	}
-	return colutil.DataToObjectPairCollection(decodeFunc(responseMessage)(), p.serializationService)
-}
-
-func (p *proxy) decodeToInt32AndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() int32) (response int32, err error) {
-	if inputError != nil {
-		return 0, inputError
-	}
-	return decodeFunc(responseMessage)(), nil
-}
-
-func (p *proxy) decodeToInt64AndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() int64) (response int64, err error) {
-	if inputError != nil {
-		return 0, inputError
 	}
 	return decodeFunc(responseMessage)(), nil
 }

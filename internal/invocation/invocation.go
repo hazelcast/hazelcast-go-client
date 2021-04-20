@@ -10,6 +10,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
+type Result interface {
+	Get() (*proto.ClientMessage, error)
+	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
+}
+
 type Invocation interface {
 	Complete(message *proto.ClientMessage)
 	Completed() bool

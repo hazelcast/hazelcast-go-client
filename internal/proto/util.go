@@ -14,29 +14,4 @@
 
 package proto
 
-import (
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
-)
-
 const ClientType = "GO"
-
-func dataCalculateSize(d serialization.Data) int {
-	return len(d.Buffer()) + bufutil.Int32SizeInBytes
-}
-
-func stringCalculateSize(str string) int {
-	return len(str) + bufutil.Int32SizeInBytes
-}
-
-func int64CalculateSize(v int64) int {
-	return bufutil.Int64SizeInBytes
-}
-
-func addressCalculateSize(a pubcluster.Address) int {
-	dataSize := 0
-	dataSize += stringCalculateSize(a.Host())
-	dataSize += bufutil.Int32SizeInBytes
-	return dataSize
-}
