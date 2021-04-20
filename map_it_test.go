@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -443,6 +444,10 @@ func TestGetEntryView(t *testing.T) {
 // TODO: Test Map TryRemove
 // TODO: Test Map TryRemoveWithTimeout
 
+func TestMapContext(t *testing.T) {
+
+}
+
 func TestMap_Lock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		if err := m.Lock("k1"); err != nil {
@@ -460,8 +465,34 @@ func TestMap_Lock(t *testing.T) {
 }
 
 func TestMapLockWithContext(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-
+	t.SkipNow()
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		it.Must(client.Start())
+		const mapName = "lock-map"
+		m := it.GetMapWithContext(nil, client, mapName)
+		defer m.EvictAll()
+		it.MustValue(m.Put("k1", "v1"))
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			m := it.GetMapWithContext(nil, client, mapName)
+			it.Must(m.Lock("k1"))
+			time.Sleep(2 * time.Second)
+			fmt.Println("=== goroutine is locked:", it.MustBool(m.IsLocked("k1")))
+		}()
+		wg.Wait()
+		isLocked := it.MustBool(m.IsLocked("k1"))
+		fmt.Println("=== MAIN is locked:", isLocked)
+		if true != isLocked {
+			t.Fatalf("target: true != %t", isLocked)
+		}
+		it.AssertEquals(t, false, it.MustBool(m.TryPut("k1", "v2")))
+		if value, err := m.Get("k1"); err != nil {
+			t.Fatal(err)
+		} else if "v1" != value {
+			t.Fatalf("target: v1 != %s", value)
+		}
 	})
 }
 

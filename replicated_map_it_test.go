@@ -1,14 +1,11 @@
 package hazelcast_test
 
 import (
-	"fmt"
-	"math/rand"
 	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -19,7 +16,7 @@ import (
 )
 
 func TestPutGetReplicatedMap(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -33,7 +30,7 @@ func TestPutGetReplicatedMap(t *testing.T) {
 }
 
 func TestReplicatedMapClearSetGet(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
 		if ok := it.MustBool(m.ContainsKey("key")); !ok {
@@ -55,7 +52,7 @@ func TestReplicatedMapClearSetGet(t *testing.T) {
 }
 
 func TestReplicatedMapRemove(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
 		if !it.MustBool(m.ContainsKey("key")) {
@@ -73,7 +70,7 @@ func TestReplicatedMapRemove(t *testing.T) {
 }
 
 func TestReplicatedMapGetEntrySet(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		target := []types.Entry{
 			types.NewEntry("k1", "v1"),
 			types.NewEntry("k2", "v2"),
@@ -92,7 +89,7 @@ func TestReplicatedMapGetEntrySet(t *testing.T) {
 }
 
 func TestReplicatedMapGetKeySet(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		it.MustValue(m.Put("k1", "v1"))
 		it.MustValue(m.Put("k2", "v2"))
@@ -110,7 +107,7 @@ func TestReplicatedMapGetKeySet(t *testing.T) {
 }
 
 func TestReplicatedMapIsEmptySize(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
 		} else if !value {
@@ -140,7 +137,7 @@ func TestReplicatedMapIsEmptySize(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -170,7 +167,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
-	replicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -199,7 +196,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -228,7 +225,7 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
-	replicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -253,62 +250,4 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 			t.Fatalf("handler was called")
 		}
 	})
-}
-
-func replicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
-	var (
-		client *hz.Client
-		m      *hz.ReplicatedMap
-	)
-	t.Run("Smart Client", func(t *testing.T) {
-		cb := hz.NewConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		client, m = getClientReplicatedMapWithConfig("test-map", cb)
-		defer func() {
-			if err := m.Clear(); err != nil {
-				panic(err)
-			}
-			client.Shutdown()
-		}()
-		f(t, m)
-	})
-	t.Run("Non-Smart Client", func(t *testing.T) {
-		cb := hz.NewConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		cb.Cluster().SetSmartRouting(false)
-		config, err := cb.Config()
-		if err != nil {
-			panic(err)
-		}
-		config.ClusterConfig.SmartRouting = false
-		client, m = getClientReplicatedMapWithConfig("test-map", cb)
-		defer func() {
-			if err := m.Clear(); err != nil {
-				panic(err)
-			}
-			client.Shutdown()
-		}()
-		f(t, m)
-	})
-}
-
-func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMap) {
-	if it.TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("Map Name:", mapName)
-	if m, err := client.GetReplicatedMap(mapName); err != nil {
-		panic(err)
-	} else {
-		return client, m
-	}
 }

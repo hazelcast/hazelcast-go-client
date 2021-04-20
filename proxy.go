@@ -40,7 +40,7 @@ const (
 	MaxIdleDefault = -1
 )
 
-type CreationBundle struct {
+type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	SerializationService iserialization.SerializationService
 	PartitionService     *cluster.PartitionService
@@ -52,7 +52,7 @@ type CreationBundle struct {
 	Logger               logger.Logger
 }
 
-func (b CreationBundle) Check() {
+func (b creationBundle) Check() {
 	if b.RequestCh == nil {
 		panic("RequestCh is nil")
 	}
@@ -94,7 +94,7 @@ type proxy struct {
 	circuitBreaker       *cb.CircuitBreaker
 }
 
-func NewProxy(bundle CreationBundle, serviceName string, objectName string) *proxy {
+func newProxy(bundle creationBundle, serviceName string, objectName string) *proxy {
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(

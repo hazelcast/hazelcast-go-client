@@ -60,34 +60,25 @@ func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 
 // Cluster returns the cluster configuration builder.
 func (c *ConfigBuilder) Cluster() *ClusterConfigBuilder {
-	if c.clusterConfigBuilder == nil {
-		c.clusterConfigBuilder = &ClusterConfigBuilder{}
-	}
 	return c.clusterConfigBuilder
 }
 
 // Serialization returns the serialization configuration builder.
 func (c *ConfigBuilder) Serialization() *SerializationConfigBuilder {
-	if c.serializationConfigBuilder == nil {
-		c.serializationConfigBuilder = newSerializationConfigBuilder()
-	}
 	return c.serializationConfigBuilder
 }
 
 func (c *ConfigBuilder) Logger() *LoggerConfigBuilder {
-	if c.loggerConfigBuilder == nil {
-		c.loggerConfigBuilder = &LoggerConfigBuilder{}
-	}
 	return c.loggerConfigBuilder
 }
 
 // Config completes building the configuration and returns it.
 func (c ConfigBuilder) Config() (*Config, error) {
 	if c.clusterConfigBuilder != nil {
-		if networkConfig, err := c.clusterConfigBuilder.buildConfig(); err != nil {
+		if clusterConfig, err := c.clusterConfigBuilder.buildConfig(); err != nil {
 			return nil, err
 		} else {
-			c.config.ClusterConfig = *networkConfig
+			c.config.ClusterConfig = *clusterConfig
 		}
 	}
 	if c.serializationConfigBuilder != nil {
@@ -121,13 +112,15 @@ func newClusterConfig() *cluster.Config {
 }
 
 type ClusterConfigBuilder struct {
-	config *cluster.Config
-	err    error
+	config                *cluster.Config
+	securityConfigBuilder *ClusterSecurityConfigBuilder
+	err                   error
 }
 
 func newClusterConfigBuilder() *ClusterConfigBuilder {
 	return &ClusterConfigBuilder{
-		config: newClusterConfig(),
+		config:                newClusterConfig(),
+		securityConfigBuilder: newClusterSecurityConfigBuilder(),
 	}
 }
 
@@ -201,15 +194,38 @@ func (b *ClusterConfigBuilder) SetInvocationTimeout(timeout time.Duration) *Clus
 	return b
 }
 
+func (b *ClusterConfigBuilder) Security() *ClusterSecurityConfigBuilder {
+	return b.securityConfigBuilder
+}
+
 func (b *ClusterConfigBuilder) buildConfig() (*cluster.Config, error) {
 	if b.err != nil {
-		return b.config, b.err
+		return nil, b.err
 	}
+	b.config.SecurityConfig = *b.securityConfigBuilder.buildConfig()
 	return b.config, nil
 }
 
 func checkAddress(addr string) error {
 	return nil
+}
+
+type ClusterSecurityConfigBuilder struct {
+	config *cluster.SecurityConfig
+}
+
+func newClusterSecurityConfigBuilder() *ClusterSecurityConfigBuilder {
+	return &ClusterSecurityConfigBuilder{config: &cluster.SecurityConfig{}}
+}
+
+func (b *ClusterSecurityConfigBuilder) SetCredentials(username string, password string) *ClusterSecurityConfigBuilder {
+	b.config.Username = username
+	b.config.Password = password
+	return b
+}
+
+func (b *ClusterSecurityConfigBuilder) buildConfig() *cluster.SecurityConfig {
+	return b.config
 }
 
 type SerializationConfigBuilder struct {
@@ -273,7 +289,7 @@ func (b *SerializationConfigBuilder) AddClassDefinition(definition serialization
 
 func (b *SerializationConfigBuilder) buildConfig() (*serialization.Config, error) {
 	if b.err != nil {
-		return b.config, b.err
+		return nil, b.err
 	}
 	return b.config, nil
 }

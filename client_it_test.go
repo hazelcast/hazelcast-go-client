@@ -11,73 +11,72 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func TestLifecycleEvents(t *testing.T) {
-	receivedStates := []hz.LifecycleState{}
-	receivedStatesMu := &sync.RWMutex{}
-	client := it.MustClient(hz.NewClient())
-	if err := client.ListenLifecycleStateChange(1, func(event hz.LifecycleStateChanged) {
-		receivedStatesMu.Lock()
-		defer receivedStatesMu.Unlock()
-		switch event.State {
-		case hz.LifecycleStateStarting:
-			fmt.Println("Received starting state")
-		case hz.LifecycleStateStarted:
-			fmt.Println("Received started state")
-		case hz.LifecycleStateShuttingDown:
-			fmt.Println("Received shutting down state")
-		case hz.LifecycleStateShutDown:
-			fmt.Println("Received shut down state")
-		case hz.LifecycleStateClientConnected:
-			fmt.Println("Received client connected state")
-		case hz.LifecycleStateClientDisconnected:
-			fmt.Println("Received client disconnected state")
-		default:
-			fmt.Println("Received unknown state:", event.State)
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		receivedStates := []hz.LifecycleState{}
+		receivedStatesMu := &sync.RWMutex{}
+		if err := client.ListenLifecycleStateChange(1, func(event hz.LifecycleStateChanged) {
+			receivedStatesMu.Lock()
+			defer receivedStatesMu.Unlock()
+			switch event.State {
+			case hz.LifecycleStateStarting:
+				fmt.Println("Received starting state")
+			case hz.LifecycleStateStarted:
+				fmt.Println("Received started state")
+			case hz.LifecycleStateShuttingDown:
+				fmt.Println("Received shutting down state")
+			case hz.LifecycleStateShutDown:
+				fmt.Println("Received shut down state")
+			case hz.LifecycleStateClientConnected:
+				fmt.Println("Received client connected state")
+			case hz.LifecycleStateClientDisconnected:
+				fmt.Println("Received client disconnected state")
+			default:
+				fmt.Println("Received unknown state:", event.State)
+			}
+			receivedStates = append(receivedStates, event.State)
+		}); err != nil {
+			t.Fatal(err)
 		}
-		receivedStates = append(receivedStates, event.State)
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := client.Start(); err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(1 * time.Millisecond)
-	if err := client.Shutdown(); err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(1 * time.Millisecond)
-	targetStates := []hz.LifecycleState{
-		hz.LifecycleStateStarting,
-		hz.LifecycleStateClientConnected,
-		hz.LifecycleStateStarted,
-		hz.LifecycleStateShuttingDown,
-		hz.LifecycleStateShutDown,
-	}
-	receivedStatesMu.RLock()
-	defer receivedStatesMu.RUnlock()
-	if !reflect.DeepEqual(targetStates, receivedStates) {
-		t.Fatalf("target %v != %v", targetStates, receivedStates)
-	}
+		if err := client.Start(); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Millisecond)
+		if err := client.Shutdown(); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Millisecond)
+		targetStates := []hz.LifecycleState{
+			hz.LifecycleStateStarting,
+			hz.LifecycleStateClientConnected,
+			hz.LifecycleStateStarted,
+			hz.LifecycleStateShuttingDown,
+			hz.LifecycleStateShutDown,
+		}
+		receivedStatesMu.RLock()
+		defer receivedStatesMu.RUnlock()
+		if !reflect.DeepEqual(targetStates, receivedStates) {
+			t.Fatalf("target %v != %v", targetStates, receivedStates)
+		}
+	})
 }
 
 func TestMemberEvents(t *testing.T) {
-	cb := hz.NewConfigBuilder()
-	cb.Logger().SetLevel(logger.TraceLevel)
-	client := it.MustClient(hz.NewClient())
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	handlerCalled := int32(0)
-	client.ListenMembershipStateChange(1, func(event cluster.MembershipStateChanged) {
-		if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
-			wg.Done()
-		}
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		handlerCalled := int32(0)
+		client.ListenMembershipStateChange(1, func(event cluster.MembershipStateChanged) {
+			if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
+				wg.Done()
+			}
 
+		})
+		it.Must(client.Start())
+		wg.Wait()
 	})
-	it.Must(client.Start())
-	wg.Wait()
 }
 
 func TestHeartbeat(t *testing.T) {
@@ -95,29 +94,33 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestClient_Shutdown(t *testing.T) {
-	client := getClient(t)
-	if err := client.Shutdown(); err != nil {
-		t.Fatal(err)
-	}
-	if err := client.Shutdown(); err == nil {
-		t.Fatalf("shutting down second time should return an error")
-	}
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		it.Must(client.Start())
+		if err := client.Shutdown(); err != nil {
+			t.Fatal(err)
+		}
+		if err := client.Shutdown(); err == nil {
+			t.Fatalf("shutting down second time should return an error")
+		}
+	})
 }
 
 func TestClient_Start(t *testing.T) {
-	client := getClient(t)
-	if err := client.Start(); err == nil {
-		t.Fatalf("starting second time should return an error")
-	}
-	if err := client.Shutdown(); err != nil {
-		t.Fatal(err)
-	}
-	if err := client.Shutdown(); err == nil {
-		t.Fatalf("shutting down second time should return an error")
-	}
-	if err := client.Start(); err == nil {
-		t.Fatalf("starting after shutdown should return an error")
-	}
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		it.Must(client.Start())
+		if err := client.Start(); err == nil {
+			t.Fatalf("starting second time should return an error")
+		}
+		if err := client.Shutdown(); err != nil {
+			t.Fatal(err)
+		}
+		if err := client.Shutdown(); err == nil {
+			t.Fatalf("shutting down second time should return an error")
+		}
+		if err := client.Start(); err == nil {
+			t.Fatalf("starting after shutdown should return an error")
+		}
+	})
 }
 
 func getClient(t *testing.T) *hz.Client {
