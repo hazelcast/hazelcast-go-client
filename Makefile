@@ -2,6 +2,7 @@
 
 PORT ?= 5050
 TEST_FLAGS ?=
+MEMBER_COUNT ?= 3
 
 build:
 	go build ./...
@@ -9,10 +10,10 @@ build:
 test: test-all
 
 test-all:
-	go test $(TEST_FLAGS) -count=1 ./...
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -count=1 ./...
 
 test-all-race:
-	go test $(TEST_FLAGS) -count=4 -race ./...
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -count=4 -race ./...
 
 doc:
 	godoc -http=localhost:$(PORT)

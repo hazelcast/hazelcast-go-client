@@ -28,3 +28,4 @@ vet.txt
 #Log
 *.log
 
+test.pid

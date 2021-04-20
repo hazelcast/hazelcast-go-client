@@ -1,22 +1,16 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 set -u
-
-cleanup() {
-    echo "cleanup is being performed."
-    if [ "x${rcPid}" != "x" ]
-    then
-        echo "Killing remote controller server with pid ${rcPid}"
-        kill -9 ${rcPid}
-    fi
-    exit
-}
-
 # Disables printing security sensitive data to the logs
 set +x
 
-trap cleanup EXIT
+PID_FILE="test.pid"
+
+if [ -f "$PID_FILE" ]; then
+  echo "PID file $PID_FILE exists. Is there an another instance of Hazelcast Remote Controller running?"
+  exit 1
+fi
 
 HZ_VERSION="4.1"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
@@ -68,10 +62,10 @@ else
         exit 1
     fi
 fi
+
 CLASSPATH="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar:hazelcast-${HZ_VERSION}.jar:hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar"
 echo "Starting Remote Controller..."
 
 java -cp ${CLASSPATH} -Dhazelcast.phone.home.enabled=false com.hazelcast.remotecontroller.Main --use-simple-server &
-rcPid=$!
-wait ${rcPid}
-exit $?
+pid=$!
+echo "$pid" > "$PID_FILE"
