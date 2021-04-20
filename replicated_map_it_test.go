@@ -142,7 +142,8 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
-		if err := m.ListenEntryNotification(1, handler); err != nil {
+		subscriptionID, err := m.ListenEntryNotification(handler)
+		if err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -153,7 +154,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 			t.Fatalf("handler was not called")
 		}
 		atomic.StoreInt32(&handlerCalled, 0)
-		if err := m.UnlistenEntryNotification(1); err != nil {
+		if err := m.UnlistenEntryNotification(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {

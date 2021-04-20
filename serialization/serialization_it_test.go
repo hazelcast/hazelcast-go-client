@@ -12,20 +12,17 @@ import (
 )
 
 func TestPortableSerialize(t *testing.T) {
-	cb := hz.NewConfigBuilder()
-	cb.Serialization().AddPortableFactory(&portableFactory{})
-	client, m := it.GetClientMapWithConfigBuilder("ser-map", cb)
-	defer func() {
-		m.EvictAll()
-		client.Shutdown()
-	}()
-	target := newEmployee("Ford Prefect", 33, true)
-	it.Must(m.Set("ford", target))
-	if value, err := m.Get("ford"); err != nil {
-		t.Fatal(err)
-	} else if !reflect.DeepEqual(target, value) {
-		t.Fatalf("target %#v: %#v", target, value)
-	}
+	it.MapTesterWithConfigBuilder(t, func(cb *hz.ConfigBuilder) {
+		cb.Serialization().AddPortableFactory(&portableFactory{})
+	}, func(t *testing.T, m *hz.Map) {
+		target := newEmployee("Ford Prefect", 33, true)
+		it.Must(m.Set("ford", target))
+		if value, err := m.Get("ford"); err != nil {
+			t.Fatal(err)
+		} else if !reflect.DeepEqual(target, value) {
+			t.Fatalf("target %#v: %#v", target, value)
+		}
+	})
 }
 
 type employee struct {

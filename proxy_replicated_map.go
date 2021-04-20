@@ -3,6 +3,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -17,9 +18,9 @@ import (
 
 type ReplicatedMap struct {
 	*proxy
-	referenceIDGenerator iproxy.ReferenceIDGenerator
-	partitionID          int32
-	ctx                  context.Context
+	refIDGenerator *iproxy.ReferenceIDGenerator
+	partitionID    int32
+	ctx            context.Context
 }
 
 func NewReplicatedMapImpl(p *proxy) *ReplicatedMap {
@@ -28,19 +29,19 @@ func NewReplicatedMapImpl(p *proxy) *ReplicatedMap {
 		panic(fmt.Sprintf("error getting partition id with key: %s", p.name))
 	}
 	return &ReplicatedMap{
-		proxy:                p,
-		referenceIDGenerator: iproxy.NewReferenceIDGeneratorImpl(),
-		partitionID:          partitionID,
-		ctx:                  context.Background(),
+		proxy:          p,
+		refIDGenerator: iproxy.NewReferenceIDGenerator(),
+		partitionID:    partitionID,
+		ctx:            context.Background(),
 	}
 }
 
 func (m *ReplicatedMap) withContext(ctx context.Context) *ReplicatedMap {
 	return &ReplicatedMap{
-		proxy:                m.proxy,
-		referenceIDGenerator: m.referenceIDGenerator,
-		partitionID:          m.partitionID,
-		ctx:                  ctx,
+		proxy:          m.proxy,
+		refIDGenerator: m.refIDGenerator,
+		partitionID:    m.partitionID,
+		ctx:            ctx,
 	}
 }
 
@@ -155,8 +156,12 @@ func (m ReplicatedMap) IsEmpty() (bool, error) {
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotification(subscriptionID int, handler EntryNotifiedHandler) error {
-	return m.listenEntryNotified(nil, nil, subscriptionID, handler)
+func (m ReplicatedMap) ListenEntryNotification(handler EntryNotifiedHandler) (string, error) {
+	subscriptionID := int(m.refIDGenerator.NextID())
+	if err := m.listenEntryNotified(nil, nil, subscriptionID, handler); err != nil {
+		return "", err
+	}
+	return strconv.Itoa(subscriptionID), nil
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
@@ -237,9 +242,13 @@ func (m ReplicatedMap) Size() (int, error) {
 }
 
 // UnlistenEntryNotification removes the specified entry listener.
-func (m ReplicatedMap) UnlistenEntryNotification(subscriptionID int) error {
-	m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionID)
-	return m.listenerBinder.Remove(m.name, subscriptionID)
+func (m ReplicatedMap) UnlistenEntryNotification(subscriptionID string) error {
+	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionIDInt)
+		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
+	}
 }
 
 func (m *ReplicatedMap) listenEntryNotified(key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {

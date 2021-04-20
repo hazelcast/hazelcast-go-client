@@ -16,7 +16,7 @@ type proxyManager struct {
 	mu             *sync.RWMutex
 	proxies        map[string]*proxy
 	serviceBundle  creationBundle
-	refIDGenerator iproxy.ReferenceIDGenerator
+	refIDGenerator *iproxy.ReferenceIDGenerator
 }
 
 func newManager(bundle creationBundle) *proxyManager {
@@ -25,7 +25,7 @@ func newManager(bundle creationBundle) *proxyManager {
 		mu:             &sync.RWMutex{},
 		proxies:        map[string]*proxy{},
 		serviceBundle:  bundle,
-		refIDGenerator: iproxy.NewReferenceIDGeneratorImpl(),
+		refIDGenerator: iproxy.NewReferenceIDGenerator(),
 	}
 }
 
