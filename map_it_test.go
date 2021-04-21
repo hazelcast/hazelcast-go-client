@@ -505,8 +505,8 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		it.Must(m.LoadAllWithoutReplacing("k0", "k1"))
 		targetEntrySet := []types.Entry{
-			{"k0", "new-v0"},
-			{"k1", "new-v1"},
+			{Key: "k0", Value: "new-v0"},
+			{Key: "k1", Value: "new-v1"},
 		}
 		entrySet := it.MustValue(m.GetAll("k0", "k1")).([]types.Entry)
 		if !entriesEqualUnordered(targetEntrySet, entrySet) {

@@ -746,7 +746,7 @@ func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerErrorImpl {
 }
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {
-	return pubcluster.EndpointQualifier{qualifierType, identifier}
+	return pubcluster.EndpointQualifier{Type: qualifierType, Identifier: identifier}
 }
 
 // DistributedObject is the base interface for all distributed objects.

@@ -282,7 +282,7 @@ func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 		if err != nil {
 			return nil, err
 		}
-		kvPairs[i] = types.Entry{key, value}
+		kvPairs[i] = types.Entry{Key: key, Value: value}
 	}
 	return kvPairs, nil
 }
