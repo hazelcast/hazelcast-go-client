@@ -34,10 +34,10 @@ var BitmapIndexOptionsCodec bitmapindexoptionsCodec
 func EncodeBitmapIndexOptions(clientMessage *proto.ClientMessage, bitmapIndexOptions types.BitmapIndexOptions) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, BitmapIndexOptionsCodecUniqueKeyTransformationInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, BitmapIndexOptionsCodecUniqueKeyTransformationFieldOffset, int32(bitmapIndexOptions.UniqueKeyTransformation()))
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, BitmapIndexOptionsCodecUniqueKeyTransformationFieldOffset, int32(bitmapIndexOptions.UniqueKeyTransformation))
 	clientMessage.AddFrame(initialFrame)
 
-	EncodeString(clientMessage, bitmapIndexOptions.UniqueKey())
+	EncodeString(clientMessage, bitmapIndexOptions.UniqueKey)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -50,5 +50,5 @@ func DecodeBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.B
 
 	uniqueKey := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return types.NewBitmapIndexOptions(uniqueKey, uniqueKeyTransformation)
+	return types.BitmapIndexOptions{UniqueKey: uniqueKey, UniqueKeyTransformation: uniqueKeyTransformation}
 }

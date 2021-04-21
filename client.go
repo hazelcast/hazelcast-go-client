@@ -168,7 +168,7 @@ func (c *Client) GetMapWithContext(ctx context.Context, name string) (*Map, erro
 	if ctx == nil {
 		return nil, ErrContextIsNil
 	}
-	return c.proxyManager.getMapWithContext(ctx, name), nil
+	return c.proxyManager.getMapWithContext(ctx, name)
 }
 
 // GetReplicatedMap returns a replicated map instance.
@@ -176,7 +176,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	return c.proxyManager.getReplicatedMap(name), nil
+	return c.GetReplicatedMapWithContext(context.Background(), name)
 }
 
 // GetReplicatedMapWithContext returns a replicated map instance.
@@ -187,7 +187,7 @@ func (c *Client) GetReplicatedMapWithContext(ctx context.Context, name string) (
 	if ctx == nil {
 		return nil, ErrContextIsNil
 	}
-	return c.proxyManager.getReplicatedMap(name).withContext(ctx), nil
+	return c.proxyManager.getReplicatedMapWithContext(ctx, name)
 }
 
 // Start connects the client to the cluster.

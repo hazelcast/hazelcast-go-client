@@ -12,8 +12,6 @@ import (
 	"testing"
 
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/hazelcast/hazelcast-go-client/internal/remote_controller"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -33,11 +31,16 @@ const xmlConfig = `
             <network>
                <port>7701</port>
             </network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
         </hazelcast>
 `
 
-var rc *remote_controller.RemoteControllerClient
-var rcMu *sync.RWMutex = &sync.RWMutex{}
+var rc *RemoteControllerClient
+var rcMu = &sync.RWMutex{}
 var defaultTestCluster *testCluster
 
 func GetMapWithContext(ctx context.Context, client *hz.Client, name string) *hz.Map {
@@ -48,7 +51,7 @@ func GetMapWithContext(ctx context.Context, client *hz.Client, name string) *hz.
 	return MustValue(client.GetMapWithContext(ctx, mapName)).(*hz.Map)
 }
 
-func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
+func GetClientMapWithConfigBuilder(mapName string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
 	if TraceLoggingEnabled() {
 		configBuilder.Logger().SetLevel(logger.TraceLevel)
 	}
@@ -56,7 +59,6 @@ func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder)
 	if err != nil {
 		panic(err)
 	}
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
 	fmt.Println("Map Name:", mapName)
 	if m, err := client.GetMap(mapName); err != nil {
 		panic(err)
@@ -67,7 +69,7 @@ func GetClientMapWithConfigBuilder(name string, configBuilder *hz.ConfigBuilder)
 
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
 	ensureRemoteController()
-	runner := func(smart bool) {
+	runner := func(t *testing.T, smart bool) {
 		cb := defaultTestCluster.configBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
@@ -84,12 +86,12 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder)
 	}
 	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {
-			runner(true)
+			runner(t, true)
 		})
 	}
 	if NonSmartEnabled() {
 		t.Run("Non-Smart Client", func(t *testing.T) {
-			runner(false)
+			runner(t, false)
 		})
 	}
 }
@@ -101,18 +103,23 @@ func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 }
 
 func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
+	mapName := fmt.Sprintf("test-map-%d", rand.Int())
+	MapTesterWithConfigBuilderWithName(t, mapName, cbCallback, f)
+}
+
+func MapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
 	var (
 		client *hz.Client
 		m      *hz.Map
 	)
 	ensureRemoteController()
-	runner := func(smart bool) {
+	runner := func(t *testing.T, smart bool) {
 		cb := defaultTestCluster.configBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
 		cb.Cluster().SetSmartRouting(smart)
-		client, m = GetClientMapWithConfigBuilder("test-map", cb)
+		client, m = GetClientMapWithConfigBuilder(mapName, cb)
 		defer func() {
 			if err := m.EvictAll(); err != nil {
 				panic(err)
@@ -123,12 +130,12 @@ func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuild
 	}
 	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {
-			runner(true)
+			runner(t, true)
 		})
 	}
 	if NonSmartEnabled() {
 		t.Run("Non-Smart Client", func(t *testing.T) {
-			runner(false)
+			runner(t, false)
 		})
 	}
 }
@@ -139,7 +146,7 @@ func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 		m      *hz.ReplicatedMap
 	)
 	ensureRemoteController()
-	runner := func(smart bool) {
+	runner := func(t *testing.T, smart bool) {
 		cb := defaultTestCluster.configBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
@@ -153,10 +160,10 @@ func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 		f(t, m)
 	}
 	t.Run("Smart Client", func(t *testing.T) {
-		runner(true)
+		runner(t, true)
 	})
 	t.Run("Non-Smart Client", func(t *testing.T) {
-		runner(false)
+		runner(t, false)
 	})
 }
 
@@ -191,14 +198,6 @@ type SamplePortable struct {
 	B int32
 }
 
-func SamplePortableFromJSONValue(value serialization.JSONValue) SamplePortable {
-	sample := SamplePortable{}
-	if err := json.Unmarshal(value, &sample); err != nil {
-		panic(err)
-	}
-	return sample
-}
-
 func (s SamplePortable) FactoryID() int32 {
 	return SamplePortableFactoryID
 }
@@ -219,7 +218,7 @@ func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) error
 	return nil
 }
 
-func (s SamplePortable) JSONValue() serialization.JSONValue {
+func (s SamplePortable) Json() serialization.JSON {
 	byteArr, err := json.Marshal(s)
 	if err != nil {
 		panic(err)
@@ -272,14 +271,6 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 	return client
 }
 
-type trivialConfigProvider struct {
-	config *hz.Config
-}
-
-func (p trivialConfigProvider) Config() (*hz.Config, error) {
-	return p.config, nil
-}
-
 func TraceLoggingEnabled() bool {
 	return os.Getenv(EnvTraceLogging) == "1"
 }
@@ -303,17 +294,17 @@ func defaultMemberCount() int {
 	return 1
 }
 
-func createRemoteController() *remote_controller.RemoteControllerClient {
+func createRemoteController() *RemoteControllerClient {
 	transport := MustValue(thrift.NewTSocketConf("localhost:9701", nil)).(*thrift.TSocket)
 	bufferedTransport := thrift.NewTBufferedTransport(transport, 4096)
 	protocol := thrift.NewTBinaryProtocolConf(bufferedTransport, nil)
 	client := thrift.NewTStandardClient(protocol, protocol)
-	rc := remote_controller.NewRemoteControllerClient(client)
+	rc := NewRemoteControllerClient(client)
 	Must(transport.Open())
 	return rc
 }
 
-func ensureRemoteController() *remote_controller.RemoteControllerClient {
+func ensureRemoteController() *RemoteControllerClient {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
@@ -329,16 +320,16 @@ func ensureRemoteController() *remote_controller.RemoteControllerClient {
 }
 
 type testCluster struct {
-	rc          *remote_controller.RemoteControllerClient
+	rc          *RemoteControllerClient
 	clusterID   string
 	memberUUIDs []string
 }
 
-func startNewCluster(rc *remote_controller.RemoteControllerClient, memberCount int) *testCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.1", xmlConfig)).(*remote_controller.Cluster)
+func startNewCluster(rc *RemoteControllerClient, memberCount int) *testCluster {
+	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.1", xmlConfig)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*remote_controller.Member)
+		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &testCluster{

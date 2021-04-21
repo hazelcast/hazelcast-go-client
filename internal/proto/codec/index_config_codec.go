@@ -34,12 +34,12 @@ var IndexConfigCodec indexconfigCodec
 func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig types.IndexConfig) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, IndexConfigCodecTypeInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type()))
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type))
 	clientMessage.AddFrame(initialFrame)
 
-	CodecUtil.EncodeNullableForString(clientMessage, indexConfig.Name())
-	EncodeListMultiFrameForString(clientMessage, indexConfig.Attributes())
-	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, indexConfig.BitmapIndexOptions())
+	CodecUtil.EncodeNullableForString(clientMessage, indexConfig.Name)
+	EncodeListMultiFrameForString(clientMessage, indexConfig.Attributes)
+	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, indexConfig.BitmapIndexOptions)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -54,5 +54,5 @@ func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) types.IndexCon
 	attributes := DecodeListMultiFrameForString(frameIterator)
 	bitmapIndexOptions := CodecUtil.DecodeNullableForBitmapIndexOptions(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return types.NewIndexConfig(name, _type, attributes, bitmapIndexOptions)
+	return types.IndexConfig{Name: name, Type: _type, Attributes: attributes, BitmapIndexOptions: bitmapIndexOptions}
 }

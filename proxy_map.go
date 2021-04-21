@@ -68,6 +68,11 @@ func (m *Map) withContext(ctx context.Context) *Map {
 	}
 }
 
+// AddIndexWithConfig adds an index to this map for the specified entries so that queries can run faster.
+func (m *Map) AddIndexWithConfig(indexConfig types.IndexConfig) error {
+	return m.addIndex(indexConfig)
+}
+
 // AddInterceptor adds an interceptor for this map.
 func (m *Map) AddInterceptor(interceptor interface{}) (string, error) {
 	if interceptorData, err := m.proxy.convertToData(interceptor); err != nil {
@@ -400,14 +405,14 @@ func (m *Map) IsLocked(key interface{}) (bool, error) {
 	}
 }
 
-// LoadAll loads all keys from the store at server side or loads the given keys if provided.
-func (m *Map) LoadAll(keys ...interface{}) error {
+// LoadAllWithoutReplacing loads all keys from the store at server side or loads the given keys if provided.
+func (m *Map) LoadAllWithoutReplacing(keys ...interface{}) error {
 	return m.loadAll(false, keys...)
 }
 
-// LoadAllReplacingExisting loads all keys from the store at server side or loads the given keys if provided.
+// LoadAllReplacing loads all keys from the store at server side or loads the given keys if provided.
 // Replaces existing keys.
-func (m *Map) LoadAllReplacingExisting(keys ...interface{}) error {
+func (m *Map) LoadAllReplacing(keys ...interface{}) error {
 	return m.loadAll(true, keys...)
 }
 
@@ -771,6 +776,12 @@ func (m *Map) UnlistenEntryNotification(subscriptionID string) error {
 	}
 }
 
+func (m *Map) addIndex(indexConfig types.IndexConfig) error {
+	request := codec.EncodeMapAddIndexRequest(m.name, indexConfig)
+	_, err := m.invokeOnRandomTarget(m.ctx, request, nil)
+	return err
+}
+
 func (m *Map) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
@@ -833,18 +844,20 @@ func (m *Map) listenEntryNotified(flags int32, includeValue bool, key interface{
 }
 
 func (m *Map) loadAll(replaceExisting bool, keys ...interface{}) error {
+	var request *proto.ClientMessage
 	if len(keys) == 0 {
-		return nil
-	}
-	keyDatas := make([]pubserialization.Data, 0, len(keys))
-	for _, key := range keys {
-		if keyData, err := m.convertToData(key); err != nil {
-			return err
-		} else {
-			keyDatas = append(keyDatas, keyData)
+		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
+	} else {
+		keyDatas := make([]pubserialization.Data, 0, len(keys))
+		for _, key := range keys {
+			if keyData, err := m.convertToData(key); err != nil {
+				return err
+			} else {
+				keyDatas = append(keyDatas, keyData)
+			}
 		}
+		request = codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
 	}
-	request := codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
 	_, err := m.invokeOnRandomTarget(m.ctx, request, nil)
 	return err
 }
