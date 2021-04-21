@@ -29,15 +29,22 @@ func newManager(bundle creationBundle) *proxyManager {
 	}
 }
 
-func (m *proxyManager) getMapWithContext(ctx context.Context, name string) *Map {
-	p := m.proxyFor("hz:impl:mapService", name)
-	ctx = context.WithValue(ctx, lockIDKey, m.refIDGenerator.NextID())
-	return newMap(ctx, p)
+func (m *proxyManager) getMapWithContext(ctx context.Context, name string) (*Map, error) {
+	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
+		return nil, err
+	} else {
+		ctx = context.WithValue(ctx, lockIDKey, m.refIDGenerator.NextID())
+		return newMap(ctx, p), nil
+	}
 }
 
-func (m *proxyManager) getReplicatedMap(objectName string) *ReplicatedMap {
-	p := m.proxyFor("hz:impl:replicatedMapService", objectName)
-	return NewReplicatedMapImpl(p)
+func (m *proxyManager) getReplicatedMapWithContext(ctx context.Context, objectName string) (*ReplicatedMap, error) {
+	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
+		return nil, err
+	} else {
+		return NewReplicatedMapImpl(ctx, p), nil
+	}
+
 }
 
 func (m *proxyManager) remove(serviceName string, objectName string) error {
@@ -53,22 +60,25 @@ func (m *proxyManager) remove(serviceName string, objectName string) error {
 	return p.destroy()
 }
 
-func (m *proxyManager) proxyFor(serviceName string, objectName string) *proxy {
+func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, error) {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	obj, ok := m.proxies[name]
 	m.mu.RUnlock()
 	if ok {
-		return obj
+		return obj, nil
 	}
-	p := m.createProxy(serviceName, objectName)
-	m.mu.Lock()
-	m.proxies[name] = p
-	m.mu.Unlock()
-	return p
+	if p, err := m.createProxy(serviceName, objectName); err != nil {
+		return nil, err
+	} else {
+		m.mu.Lock()
+		m.proxies[name] = p
+		m.mu.Unlock()
+		return p, nil
+	}
 }
 
-func (m *proxyManager) createProxy(serviceName string, objectName string) *proxy {
+func (m *proxyManager) createProxy(serviceName string, objectName string) (*proxy, error) {
 	return newProxy(m.serviceBundle, serviceName, objectName)
 }
 

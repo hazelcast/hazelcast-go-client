@@ -17,8 +17,9 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -94,7 +95,7 @@ type proxy struct {
 	circuitBreaker       *cb.CircuitBreaker
 }
 
-func newProxy(bundle creationBundle, serviceName string, objectName string) *proxy {
+func newProxy(bundle creationBundle, serviceName string, objectName string) (*proxy, error) {
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
@@ -103,7 +104,7 @@ func newProxy(bundle creationBundle, serviceName string, objectName string) *pro
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
-	return &proxy{
+	p := &proxy{
 		serviceName:          serviceName,
 		name:                 objectName,
 		requestCh:            bundle.RequestCh,
@@ -117,6 +118,20 @@ func newProxy(bundle creationBundle, serviceName string, objectName string) *pro
 		logger:               bundle.Logger,
 		circuitBreaker:       circuitBreaker,
 	}
+	if err := p.create(); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (p *proxy) create() error {
+	request := codec.EncodeClientCreateProxyRequest(p.name, p.serviceName)
+	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
+	p.requestCh <- inv
+	if _, err := inv.Get(); err != nil {
+		return fmt.Errorf("error creating proxy: %w", err)
+	}
+	return nil
 }
 
 func (p *proxy) destroy() error {

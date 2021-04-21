@@ -55,11 +55,11 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 }
 
 func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options types.BitmapIndexOptions) {
-	if options.IsDefault() {
-		message.AddFrame(proto.NullFrame.Copy())
-	} else {
-		EncodeBitmapIndexOptions(message, options)
-	}
+	//if options.IsDefault() {
+	//	message.AddFrame(proto.NullFrame.Copy())
+	//} else {
+	EncodeBitmapIndexOptions(message, options)
+	//}
 }
 
 func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data serialization.Data) {
@@ -561,6 +561,7 @@ func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterat
 	return result
 }
 
+/*
 func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []DistributedObjectInfo {
 	result := make([]DistributedObjectInfo, 0)
 	frameIterator.Next()
@@ -570,6 +571,7 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 	frameIterator.Next()
 	return result
 }
+*/
 
 func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator) []pubcluster.MemberInfo {
 	result := make([]pubcluster.MemberInfo, 0)

@@ -1,3 +1,3 @@
 package serialization
 
-type JSONValue []byte
+type JSON []byte

@@ -23,7 +23,7 @@ type ReplicatedMap struct {
 	ctx            context.Context
 }
 
-func NewReplicatedMapImpl(p *proxy) *ReplicatedMap {
+func NewReplicatedMapImpl(ctx context.Context, p *proxy) *ReplicatedMap {
 	partitionID, err := p.partitionService.GetPartitionIDWithKey(p.name)
 	if err != nil {
 		panic(fmt.Sprintf("error getting partition id with key: %s", p.name))
@@ -32,7 +32,7 @@ func NewReplicatedMapImpl(p *proxy) *ReplicatedMap {
 		proxy:          p,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(),
 		partitionID:    partitionID,
-		ctx:            context.Background(),
+		ctx:            ctx,
 	}
 }
 
@@ -170,13 +170,21 @@ func (m ReplicatedMap) ListenEntryNotificationToKey(key interface{}, subscriptio
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotificationWithPredicate(predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
-	return m.listenEntryNotified(nil, predicate, subscriptionID, handler)
+func (m ReplicatedMap) ListenEntryNotificationWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
+	subscriptionID := int(m.refIDGenerator.NextID())
+	if err := m.listenEntryNotified(nil, predicate, subscriptionID, handler); err != nil {
+		return "", err
+	}
+	return strconv.Itoa(subscriptionID), nil
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
-	return m.listenEntryNotified(key, predicate, subscriptionID, handler)
+func (m ReplicatedMap) ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
+	subscriptionID := int(m.refIDGenerator.NextID())
+	if err := m.listenEntryNotified(key, predicate, subscriptionID, handler); err != nil {
+		return "", err
+	}
+	return strconv.Itoa(subscriptionID), nil
 }
 
 // Put sets the value for the given key and returns the old value.

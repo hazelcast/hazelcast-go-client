@@ -1,0 +1,3 @@
+MEMBER_COUNT=3
+TEST_FLAGS=
+env MEMBER_COUNT=${MEMBER_COUNT} go test ${TEST_FLAGS} -count=1 -coverpkg "$(go list ./... | grep -v /internal/it | tr "\n" ",")" -coverprofile=coverage.out ./...
