@@ -153,10 +153,11 @@ Currently we support only Linux and MacOS for testing the client.
 
 You need to have the following installed in order to run integration tests:
 * Java 8
-* Maven 3 or better.
+* Maven 3 or better
 * Bash
 * Make
 
+You can run the tests using one of the following approaches:
 * Run `make test-all` to run integration tests.
 * Run `make test-all-race` to run integration tests with race detection.
 * Run `make test-cover` to generate the coverage report and `make view-cover` to view the test coverage summary and generate an HTML report.
