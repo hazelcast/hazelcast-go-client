@@ -21,11 +21,14 @@ vet.txt
 .idea
 *.iml
 
-#MAC
+# Mac
 .DS_Store
 .directory
 
 #Log
 *.log
 
+# Test artifacts
 test.pid
+coverage.html
+coverage.out
