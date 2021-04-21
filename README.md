@@ -147,6 +147,20 @@ $ go get -u golang.org/x/tools/...`
 
 Join us at [Go Client channel](https://hazelcastcommunity.slack.com/channels/go-client) or [Hazelcast at Google Groups](https://groups.google.com/g/hazelcast).
 
+## Running the tests
+
+Currently we support only Linux and MacOS for testing the client.
+
+You need to have the following installed in order to run integration tests:
+* Java 8
+* Maven 3 or better.
+* Bash
+* Make
+
+* Run `make test-all` to run integration tests.
+* Run `make test-all-race` to run integration tests with race detection.
+* Run `make test-cover` to generate the coverage report and `make view-cover` to view the test coverage summary and generate an HTML report.
+
 ## License
 
 [Apache 2 License](https://github.com/hazelcast/hazelcast-go-client/blob/master/LICENSE).
