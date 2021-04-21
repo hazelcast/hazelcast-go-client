@@ -22,10 +22,10 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -34,7 +34,7 @@ type PartitionServiceCreationBundle struct {
 	EventDispatcher      *event.DispatchService
 	startCh              chan struct{}
 	startChAtom          int32
-	Logger               logger.Logger
+	Logger               ilogger.Logger
 }
 
 func (b PartitionServiceCreationBundle) Check() {
@@ -54,7 +54,7 @@ type PartitionService struct {
 	eventDispatcher      *event.DispatchService
 	partitionTable       partitionTable
 	partitionCount       int32
-	logger               logger.Logger
+	logger               ilogger.Logger
 }
 
 func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionService {

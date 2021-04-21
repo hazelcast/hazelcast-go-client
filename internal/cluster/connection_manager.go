@@ -33,11 +33,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (
@@ -55,7 +55,7 @@ type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
 	SmartRouting         bool
-	Logger               logger.Logger
+	Logger               ilogger.Logger
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionService
 	SerializationService iserialization.SerializationService
@@ -121,7 +121,7 @@ type ConnectionManager struct {
 	alive                atomic.Value
 	started              atomic.Value
 	ownerConn            atomic.Value
-	logger               logger.Logger
+	logger               ilogger.Logger
 	doneCh               chan struct{}
 	cb                   *cb.CircuitBreaker
 }

@@ -25,13 +25,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
 	ClusterService    *ServiceImpl
-	Logger            logger.Logger
+	Logger            ilogger.Logger
 }
 
 func (b ConnectionInvocationHandlerCreationBundle) Check() {
@@ -50,7 +50,7 @@ type ConnectionInvocationHandler struct {
 	connectionManager *ConnectionManager
 	clusterService    *ServiceImpl
 	smart             int32
-	logger            logger.Logger
+	logger            ilogger.Logger
 	cb                *cb.CircuitBreaker
 }
 

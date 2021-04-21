@@ -30,10 +30,10 @@ import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 var nextId int32
@@ -114,7 +114,7 @@ type Client struct {
 	eventDispatcher     *event.DispatchService
 	userEventDispatcher *event.DispatchService
 	invocationHandler   invocation.Handler
-	logger              logger.Logger
+	logger              ilogger.Logger
 
 	// state
 	state    atomic.Value
@@ -131,11 +131,11 @@ func newClient(name string, config Config) (*Client, error) {
 	if config.ClientName != "" {
 		name = config.ClientName
 	}
-	logLevel, err := logger.GetLogLevel(config.LoggerConfig.Level)
+	logLevel, err := ilogger.GetLogLevel(config.LoggerConfig.Level)
 	if err != nil {
 		return nil, err
 	}
-	clientLogger := logger.NewWithLevel(logLevel)
+	clientLogger := ilogger.NewWithLevel(logLevel)
 	client := &Client{
 		name:                name,
 		clusterConfig:       &config.ClusterConfig,

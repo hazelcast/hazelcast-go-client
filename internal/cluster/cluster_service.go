@@ -25,9 +25,9 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (
@@ -44,7 +44,7 @@ type ServiceImpl struct {
 	startChAtom         int32
 	invocationFactory   *ConnectionInvocationFactory
 	eventDispatcher     *event.DispatchService
-	logger              logger.Logger
+	logger              ilogger.Logger
 	config              *pubcluster.Config
 
 	membersMap   membersMap
@@ -56,7 +56,7 @@ type CreationBundle struct {
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
-	Logger            logger.Logger
+	Logger            ilogger.Logger
 	Config            *pubcluster.Config
 }
 

@@ -21,8 +21,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 type Handler interface {
@@ -34,7 +34,7 @@ type ServiceCreationBundle struct {
 	RequestCh    <-chan Invocation
 	ResponseCh   <-chan *proto.ClientMessage
 	SmartRouting bool
-	Logger       logger.Logger
+	Logger       ilogger.Logger
 }
 
 func (b ServiceCreationBundle) Check() {
@@ -60,7 +60,7 @@ type Service struct {
 	shutDown          atomic.Value
 	smartRouting      bool
 	handler           Handler
-	logger            logger.Logger
+	logger            ilogger.Logger
 }
 
 func NewServiceImpl(bundle ServiceCreationBundle) *Service {

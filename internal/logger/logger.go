@@ -21,26 +21,9 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	publogger "github.com/hazelcast/hazelcast-go-client/logger"
 )
 
-type Level string
-
-const (
-	// OffLevel disables logging.
-	OffLevel Level = "off"
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
-	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel Level = "error"
-	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel Level = "warn"
-	// InfoLevel level. General operational entries about what's going on inside the
-	// application.
-	InfoLevel Level = "info"
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
-	DebugLevel Level = "debug"
-	// TraceLevel level. Designates finer-grained informational events than the Debug.
-	TraceLevel Level = "trace"
-)
 const (
 	offLevel = iota * 100
 	errorLevel
@@ -51,13 +34,13 @@ const (
 )
 
 // nameToLevel is used to get corresponding level for log level strings.
-var nameToLevel = map[Level]int{
-	ErrorLevel: errorLevel,
-	WarnLevel:  warnLevel,
-	InfoLevel:  infoLevel,
-	DebugLevel: debugLevel,
-	TraceLevel: traceLevel,
-	OffLevel:   offLevel,
+var nameToLevel = map[publogger.Level]int{
+	publogger.ErrorLevel: errorLevel,
+	publogger.WarnLevel:  warnLevel,
+	publogger.InfoLevel:  infoLevel,
+	publogger.DebugLevel: debugLevel,
+	publogger.TraceLevel: traceLevel,
+	publogger.OffLevel:   offLevel,
 }
 
 // Logger is the interface that is used by client for logging.
@@ -78,14 +61,14 @@ type Logger interface {
 
 // isValidLogLevel returns true if the given log level is valid.
 // The check is done case insensitive.
-func isValidLogLevel(logLevel Level) bool {
+func isValidLogLevel(logLevel publogger.Level) bool {
 	logLevelStr := strings.ToLower(string(logLevel))
-	_, found := nameToLevel[Level(logLevelStr)]
+	_, found := nameToLevel[publogger.Level(logLevelStr)]
 	return found
 }
 
 // GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
-func GetLogLevel(logLevel Level) (int, error) {
+func GetLogLevel(logLevel publogger.Level) (int, error) {
 	if !isValidLogLevel(logLevel) {
 		return 0, hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel), nil)
 	}

@@ -21,18 +21,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -52,7 +51,7 @@ type creationBundle struct {
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinderImpl
 	SmartRouting         bool
-	Logger               logger.Logger
+	Logger               ilogger.Logger
 }
 
 func (b creationBundle) Check() {
@@ -93,7 +92,7 @@ type proxy struct {
 	smartRouting         bool
 	serviceName          string
 	name                 string
-	logger               logger.Logger
+	logger               ilogger.Logger
 	circuitBreaker       *cb.CircuitBreaker
 }
 
