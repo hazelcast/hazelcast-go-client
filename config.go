@@ -21,9 +21,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 

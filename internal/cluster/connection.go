@@ -31,10 +31,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
-	publogger "github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (
@@ -61,7 +61,7 @@ type Connection struct {
 	connectedServerVersion    int32
 	connectedServerVersionStr string
 	startTime                 int64
-	logger                    publogger.Logger
+	logger                    ilogger.Logger
 }
 
 func (c *Connection) ConnectionID() int64 {
