@@ -493,7 +493,9 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 			{"k1", "new-v1"},
 		}
 		entrySet := it.MustValue(m.GetAll("k0", "k1")).([]types.Entry)
-		it.AssertEquals(t, targetEntrySet, entrySet)
+		if !entriesEqualUnordered(targetEntrySet, entrySet) {
+			t.Fatalf("target %#v != %#v", targetEntrySet, entrySet)
+		}
 	})
 }
 
