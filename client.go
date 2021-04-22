@@ -159,11 +159,11 @@ func (c *Client) Name() string {
 
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(name string) (*Map, error) {
-	return c.GetMapWithContext(context.Background(), name)
+	return c.GetMapContext(context.Background(), name)
 }
 
-// GetMapWithContext returns a distributed map instance.
-func (c *Client) GetMapWithContext(ctx context.Context, name string) (*Map, error) {
+// GetMapContext returns a distributed map instance.
+func (c *Client) GetMapContext(ctx context.Context, name string) (*Map, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
@@ -178,11 +178,11 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}
-	return c.GetReplicatedMapWithContext(context.Background(), name)
+	return c.GetReplicatedMapContext(context.Background(), name)
 }
 
-// GetReplicatedMapWithContext returns a replicated map instance.
-func (c *Client) GetReplicatedMapWithContext(ctx context.Context, name string) (*ReplicatedMap, error) {
+// GetReplicatedMapContext returns a replicated map instance.
+func (c *Client) GetReplicatedMapContext(ctx context.Context, name string) (*ReplicatedMap, error) {
 	if !c.ready() {
 		return nil, ErrClientNotReady
 	}

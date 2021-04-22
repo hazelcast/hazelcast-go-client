@@ -64,7 +64,7 @@ func GetMapWithContext(ctx context.Context, client *hz.Client, name string) *hz.
 	if ctx == nil {
 		return MustValue(client.GetMap(mapName)).(*hz.Map)
 	}
-	return MustValue(client.GetMapWithContext(ctx, mapName)).(*hz.Map)
+	return MustValue(client.GetMapContext(ctx, mapName)).(*hz.Map)
 }
 
 func GetClientMapWithConfigBuilder(mapName string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hz.Map) {

@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"reflect"
@@ -555,6 +556,31 @@ func TestMap_Lock(t *testing.T) {
 	})
 }
 
+func TestMapLockWithContext(t *testing.T) {
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		it.Must(client.Start())
+		const mapName = "lock-map"
+		m, _ := client.GetMapContext(context.Background(), mapName)
+		defer m.EvictAll()
+		it.Must(m.Lock("k1"))
+		locked := false
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var err error
+			m, _ := client.GetMapContext(context.Background(), mapName)
+			if locked, err = m.IsLocked("k1"); err != nil {
+				panic(err)
+			}
+		}()
+		wg.Wait()
+		if !locked {
+			t.Fatalf("should be locked")
+		}
+	})
+}
+
 func TestMap_ForceUnlock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		if err := m.Lock("k1"); err != nil {
@@ -572,38 +598,6 @@ func TestMap_ForceUnlock(t *testing.T) {
 			log.Fatal(err)
 		} else {
 			it.AssertEquals(t, false, locked)
-		}
-	})
-}
-
-func TestMapLockWithContext(t *testing.T) {
-	t.SkipNow()
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
-		it.Must(client.Start())
-		const mapName = "lock-map"
-		m := it.GetMapWithContext(nil, client, mapName)
-		defer m.EvictAll()
-		it.MustValue(m.Put("k1", "v1"))
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			m := it.GetMapWithContext(nil, client, mapName)
-			it.Must(m.Lock("k1"))
-			time.Sleep(2 * time.Second)
-			fmt.Println("=== goroutine is locked:", it.MustBool(m.IsLocked("k1")))
-		}()
-		wg.Wait()
-		isLocked := it.MustBool(m.IsLocked("k1"))
-		fmt.Println("=== MAIN is locked:", isLocked)
-		if true != isLocked {
-			t.Fatalf("target: true != %t", isLocked)
-		}
-		it.AssertEquals(t, false, it.MustBool(m.TryPut("k1", "v2")))
-		if value, err := m.Get("k1"); err != nil {
-			t.Fatal(err)
-		} else if "v1" != value {
-			t.Fatalf("target: v1 != %s", value)
 		}
 	})
 }
