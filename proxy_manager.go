@@ -73,7 +73,7 @@ func (m *proxyManager) remove(serviceName string, objectName string) error {
 	}
 	delete(m.proxies, name)
 	m.mu.Unlock()
-	return p.destroy()
+	return p.Destroy()
 }
 
 func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, error) {

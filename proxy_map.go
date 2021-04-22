@@ -235,7 +235,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	result := make([]types.Entry, 0, len(keys))
 	// create futures
 	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
-		return m.circuitBreaker.TryWithContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapGetAllRequest(m.name, keys)
 			inv := m.invokeOnPartitionAsync(request, partitionID)
 			return inv.GetWithTimeout(1 * time.Second)
@@ -486,7 +486,7 @@ func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 	} else {
 		// create futures
 		f := func(partitionID int32, entries []proto.Pair) cb.Future {
-			return m.circuitBreaker.TryWithContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+			return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 				request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 				inv := m.invokeOnPartitionAsync(request, partitionID)
 				return inv.GetWithTimeout(1 * time.Second)

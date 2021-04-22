@@ -139,6 +139,27 @@ func TestClient_Start(t *testing.T) {
 	})
 }
 
+func TestClientStartRace(t *testing.T) {
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		for i := 0; i < 100; i++ {
+			go func() {
+				client.Start()
+			}()
+		}
+	})
+}
+
+func TestClientShutdownRace(t *testing.T) {
+	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+		it.Must(client.Start())
+		for i := 0; i < 100; i++ {
+			go func() {
+				client.Shutdown()
+			}()
+		}
+	})
+}
+
 func getClient(t *testing.T) *hz.Client {
 	client, err := hz.StartNewClient()
 	if err != nil {

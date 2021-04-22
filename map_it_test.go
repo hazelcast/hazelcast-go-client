@@ -841,6 +841,14 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	})
 }
 
+func TestMap_Destroy(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if err := m.Destroy(); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func makeStringSet(items []interface{}) map[string]struct{} {
 	result := map[string]struct{}{}
 	for _, item := range items {

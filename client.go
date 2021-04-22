@@ -38,10 +38,9 @@ import (
 
 var nextId int32
 
-type clientState int
-
 const (
-	created clientState = iota
+	created int32 = iota
+	starting
 	ready
 	stopping
 	stopped
@@ -117,7 +116,7 @@ type Client struct {
 	logger              ilogger.Logger
 
 	// state
-	state    atomic.Value
+	state    int32
 	refIDGen *iproxy.ReferenceIDGenerator
 }
 
@@ -144,7 +143,6 @@ func newClient(name string, config Config) (*Client, error) {
 		logger:              clientLogger,
 		refIDGen:            iproxy.NewReferenceIDGenerator(),
 	}
-	client.state.Store(created)
 	client.subscribeUserEvents()
 	client.createComponents(&config)
 	return client, nil
@@ -164,7 +162,7 @@ func (c *Client) GetMap(name string) (*Map, error) {
 
 // GetMapContext returns a distributed map instance.
 func (c *Client) GetMapContext(ctx context.Context, name string) (*Map, error) {
-	if !c.ready() {
+	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotReady
 	}
 	if ctx == nil {
@@ -175,7 +173,7 @@ func (c *Client) GetMapContext(ctx context.Context, name string) (*Map, error) {
 
 // GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
-	if !c.ready() {
+	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotReady
 	}
 	return c.GetReplicatedMapContext(context.Background(), name)
@@ -183,7 +181,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 
 // GetReplicatedMapContext returns a replicated map instance.
 func (c *Client) GetReplicatedMapContext(ctx context.Context, name string) (*ReplicatedMap, error) {
-	if !c.ready() {
+	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotReady
 	}
 	if ctx == nil {
@@ -194,7 +192,7 @@ func (c *Client) GetReplicatedMapContext(ctx context.Context, name string) (*Rep
 
 // Start connects the client to the cluster.
 func (c *Client) Start() error {
-	if !c.canStart() {
+	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return ErrClientCannotStart
 	}
 	// TODO: Recover from panics and return as error
@@ -205,22 +203,21 @@ func (c *Client) Start() error {
 		return err
 	}
 	<-clusterServiceStartCh
-	c.state.Store(ready)
+	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil
 }
 
 // Shutdown disconnects the client from the cluster.
 func (c *Client) Shutdown() error {
-	if !c.ready() {
+	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return ErrClientNotReady
 	}
-	c.state.Store(stopping)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.clusterService.Stop()
 	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
-	c.state.Store(stopped)
+	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
 	return nil
 }
@@ -228,7 +225,7 @@ func (c *Client) Shutdown() error {
 // ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
 func (c *Client) ListenLifecycleStateChange(handler LifecycleStateChangeHandler) (string, error) {
-	if !c.canStartOrReady() {
+	if atomic.LoadInt32(&c.state) >= stopping {
 		return "", ErrClientNotReady
 	}
 	subscriptionID := int(c.refIDGen.NextID())
@@ -244,7 +241,7 @@ func (c *Client) ListenLifecycleStateChange(handler LifecycleStateChangeHandler)
 
 // UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
 func (c *Client) UnlistenLifecycleStateChange(subscriptionID string) error {
-	if !c.canStartOrReady() {
+	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
 	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
@@ -257,7 +254,7 @@ func (c *Client) UnlistenLifecycleStateChange(subscriptionID string) error {
 
 // ListenMembershipStateChange adds a member state change handler with a unique subscription ID.
 func (c *Client) ListenMembershipStateChange(handler cluster.MembershipStateChangedHandler) error {
-	if !c.canStartOrReady() {
+	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
 	subscriptionID := int(c.refIDGen.NextID())
@@ -290,7 +287,7 @@ func (c *Client) ListenMembershipStateChange(handler cluster.MembershipStateChan
 
 // UnlistenMembershipStateChange removes the member state change handler with the given subscription ID.
 func (c *Client) UnlistenMembershipStateChange(subscriptionID string) error {
-	if !c.canStartOrReady() {
+	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
 	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
@@ -300,19 +297,6 @@ func (c *Client) UnlistenMembershipStateChange(subscriptionID string) error {
 		c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, subscriptionIDInt)
 	}
 	return nil
-}
-
-func (c *Client) canStart() bool {
-	return c.state.Load() == created
-}
-
-func (c *Client) ready() bool {
-	return c.state.Load() == ready
-}
-
-func (c *Client) canStartOrReady() bool {
-	state := c.state.Load()
-	return state == created || state == ready
 }
 
 func (c *Client) subscribeUserEvents() {

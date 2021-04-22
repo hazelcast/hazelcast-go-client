@@ -66,10 +66,10 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 }
 
 func (cb *CircuitBreaker) Try(tryHandler TryHandler) Future {
-	return cb.TryWithContext(context.Background(), tryHandler)
+	return cb.TryContext(context.Background(), tryHandler)
 }
 
-func (cb *CircuitBreaker) TryWithContext(ctx context.Context, tryHandler TryHandler) Future {
+func (cb *CircuitBreaker) TryContext(ctx context.Context, tryHandler TryHandler) Future {
 	if state := atomic.LoadInt32(&cb.State); state == StateOpen {
 		return NewFailedFuture(ErrCircuitOpen)
 	}

@@ -135,7 +135,7 @@ func (p *proxy) create() error {
 	return nil
 }
 
-func (p *proxy) destroy() error {
+func (p *proxy) Destroy() error {
 	request := codec.EncodeClientDestroyProxyRequest(p.name, p.serviceName)
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv
@@ -192,7 +192,7 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data serial
 }
 
 func (p *proxy) tryInvoke(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
-	if res, err := p.circuitBreaker.TryWithContext(ctx, f).Result(); err != nil {
+	if res, err := p.circuitBreaker.TryContext(ctx, f).Result(); err != nil {
 		return nil, err
 	} else {
 		return res.(*proto.ClientMessage), nil

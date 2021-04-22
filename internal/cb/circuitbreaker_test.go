@@ -112,7 +112,7 @@ func TestCancelFuture(t *testing.T) {
 	c := cb.NewCircuitBreaker(cb.MaxFailureCount(3), cb.MaxRetries(2))
 	funcCancelled := int32(0)
 	myCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	c.TryWithContext(myCtx, func(ctx context.Context) (interface{}, error) {
+	c.TryContext(myCtx, func(ctx context.Context) (interface{}, error) {
 		for {
 			select {
 			case <-ctx.Done():
