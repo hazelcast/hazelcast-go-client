@@ -83,7 +83,8 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int, handle
 	}
 }
 
-// Subscribe attaches handler to listen for events with eventName.
+// SubscribeSync attaches handler to listen for events with eventName.
+// Sync handlers are dispatched first, the events are ordered.
 // Do not rely on the order of handlers, they may be shuffled.
 func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, handler EventHandler) {
 	// subscribing to a not-runnning service is no-op
