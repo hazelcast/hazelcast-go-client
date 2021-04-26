@@ -303,10 +303,6 @@ type ServerError interface {
 }
 
 func CreateHazelcastError(err *ServerErrorImpl) HazelcastError {
-	return createHazelcastError(err)
-}
-
-func createHazelcastError(err *ServerErrorImpl) HazelcastError {
 	stackTrace := ""
 	for _, trace := range err.StackTrace() {
 		stackTrace += fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(),
