@@ -19,3 +19,15 @@ package cb
 import "errors"
 
 var ErrCircuitOpen = errors.New("circuit open")
+
+type NonRetryableError struct {
+	Err error
+}
+
+func NewNonRetryableError(err error) *NonRetryableError {
+	return &NonRetryableError{err}
+}
+
+func (n NonRetryableError) Error() string {
+	return n.Err.Error()
+}

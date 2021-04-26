@@ -35,6 +35,7 @@ type ConfigProvider interface {
 // prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
 type Config struct {
 	ClientName          string
+	InvocationTimeout   time.Duration
 	ClusterConfig       cluster.Config
 	SerializationConfig serialization.Config
 	LoggerConfig        logger.Config
@@ -60,7 +61,9 @@ type ConfigBuilder struct {
 // NewConfigBuilder creates a new ConfigBuilder.
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
-		config:                     &Config{},
+		config: &Config{
+			InvocationTimeout: 120 * time.Second,
+		},
 		clusterConfigBuilder:       newClusterConfigBuilder(),
 		serializationConfigBuilder: newSerializationConfigBuilder(),
 		loggerConfigBuilder:        newLoggerConfigBuilder(),
@@ -70,6 +73,11 @@ func NewConfigBuilder() *ConfigBuilder {
 // SetClientName sets the client name
 func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 	c.config.ClientName = name
+	return c
+}
+
+func (c *ConfigBuilder) SetInvocationTimeout(timeout time.Duration) *ConfigBuilder {
+	c.config.InvocationTimeout = timeout
 	return c
 }
 

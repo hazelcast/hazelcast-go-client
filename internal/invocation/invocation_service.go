@@ -66,15 +66,14 @@ func NewServiceImpl(bundle ServiceCreationBundle) *Service {
 	bundle.Check()
 	handler := bundle.Handler
 	service := &Service{
-		requestCh:         bundle.RequestCh,
-		responseCh:        bundle.ResponseCh,
-		doneCh:            make(chan struct{}),
-		invocations:       map[int64]Invocation{},
-		invocationTimeout: 120 * time.Second,
-		retryPause:        1 * time.Second,
-		smartRouting:      bundle.SmartRouting,
-		handler:           handler,
-		logger:            bundle.Logger,
+		requestCh:    bundle.RequestCh,
+		responseCh:   bundle.ResponseCh,
+		doneCh:       make(chan struct{}),
+		invocations:  map[int64]Invocation{},
+		retryPause:   1 * time.Second,
+		smartRouting: bundle.SmartRouting,
+		handler:      handler,
+		logger:       bundle.Logger,
 	}
 	go service.processIncoming()
 	return service

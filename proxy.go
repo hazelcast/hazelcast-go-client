@@ -210,13 +210,21 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
-		return inv.GetContext(ctx)
+		msg, err := inv.GetContext(ctx)
+		if err != nil && !request.IsRetryable() {
+			err = cb.NewNonRetryableError(err)
+		}
+		return msg, err
 	})
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
-		return p.invokeOnPartitionAsync(request, partitionID).GetContext(ctx)
+		msg, err := p.invokeOnPartitionAsync(request, partitionID).GetContext(ctx)
+		if err != nil && !request.IsRetryable() {
+			err = cb.NewNonRetryableError(err)
+		}
+		return msg, err
 	})
 }
 

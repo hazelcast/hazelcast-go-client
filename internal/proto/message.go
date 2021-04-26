@@ -204,23 +204,22 @@ func (m *ClientMessage) WriteBytes(w io.Writer) error {
 	return nil
 }
 
-func (m *ClientMessage) Bytes(bytes []byte) int {
-	pos := 0
+func (m *ClientMessage) Bytes(offset int, bytes []byte) int {
 	currentFrame := m.StartFrame
 	for currentFrame != nil {
 		isLastFrame := currentFrame.next == nil
-		binary.LittleEndian.PutUint32(bytes[pos:], uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
+		binary.LittleEndian.PutUint32(bytes[offset:], uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
 		if isLastFrame {
-			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], currentFrame.flags|IsFinalFlag)
+			binary.LittleEndian.PutUint16(bytes[offset+IntSizeInBytes:], currentFrame.flags|IsFinalFlag)
 		} else {
-			binary.LittleEndian.PutUint16(bytes[pos+IntSizeInBytes:], currentFrame.flags)
+			binary.LittleEndian.PutUint16(bytes[offset+IntSizeInBytes:], currentFrame.flags)
 		}
-		pos += SizeOfFrameLengthAndFlags
-		copy(bytes[pos:], currentFrame.Content)
-		pos += len(currentFrame.Content)
+		offset += SizeOfFrameLengthAndFlags
+		copy(bytes[offset:], currentFrame.Content)
+		offset += len(currentFrame.Content)
 		currentFrame = currentFrame.next
 	}
-	return pos
+	return offset
 }
 
 func (m *ClientMessage) DropFragmentationFrame() {

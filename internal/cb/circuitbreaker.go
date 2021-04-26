@@ -92,6 +92,10 @@ loop:
 				// succeeded
 				break loop
 			}
+			if nonRetryableErr, ok := err.(*NonRetryableError); ok {
+				err = nonRetryableErr.Err
+				break loop
+			}
 			if trial < cb.MaxRetries {
 				time.Sleep(cb.RetryPolicyFunc(trial))
 			}

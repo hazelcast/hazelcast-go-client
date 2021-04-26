@@ -302,7 +302,7 @@ type ServerError interface {
 	CauseClassName() string
 }
 
-func CreateHazelcastError(err *ServerErrorImpl) HazelcastError {
+func NewHazelcastError(err *ServerErrorImpl) HazelcastError {
 	stackTrace := ""
 	for _, trace := range err.StackTrace() {
 		stackTrace += fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(),

@@ -50,9 +50,8 @@ type ResponseHandler func(msg *proto.ClientMessage)
 type Connection struct {
 	responseCh                chan<- *proto.ClientMessage
 	pending                   chan *proto.ClientMessage
-	received                  chan *proto.ClientMessage
-	socket                    net.Conn
 	doneCh                    chan struct{}
+	socket                    net.Conn
 	endpoint                  atomic.Value
 	status                    int32
 	lastRead                  atomic.Value
@@ -184,7 +183,7 @@ func (c *Connection) socketReadLoop() {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
 				if clientMessage.Type() == bufutil.MessageTypeException {
-					clientMessage.Err = ihzerror.CreateHazelcastError(codec.DecodeError(clientMessage))
+					clientMessage.Err = ihzerror.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage
 			}
@@ -212,7 +211,7 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	if len(c.writeBuffer) < msgLen {
 		c.writeBuffer = make([]byte, 0, msgLen)
 	}
-	clientMessage.Bytes(c.writeBuffer)
+	clientMessage.Bytes(0, c.writeBuffer)
 	//c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
 	_, err := c.socket.Write(c.writeBuffer[:msgLen])
 	return err
