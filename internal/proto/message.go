@@ -18,6 +18,9 @@ package proto
 
 import (
 	"encoding/binary"
+	"io"
+
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 const (
@@ -85,6 +88,7 @@ type ClientMessage struct {
 	EndFrame   *Frame
 	Retryable  bool
 	Err        error
+	Buf        []byte
 }
 
 func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *ClientMessage {
@@ -106,12 +110,20 @@ func NewClientMessageForDecode(frame *Frame) *ClientMessage {
 	return NewClientMessage(frame)
 }
 
+func (m *ClientMessage) Free() {
+	if m.Buf != nil {
+		internal.GlobalBufferPool.Put(m.Buf)
+		m.Buf = nil
+	}
+}
+
 func (m *ClientMessage) Copy() *ClientMessage {
 	return &ClientMessage{
 		StartFrame: m.StartFrame.DeepCopy(),
-		EndFrame:   m.EndFrame.DeepCopy(),
-		Retryable:  m.Retryable,
-		Err:        m.Err,
+		//EndFrame:   m.EndFrame.DeepCopy(),
+		EndFrame:  m.EndFrame,
+		Retryable: m.Retryable,
+		Err:       m.Err,
 	}
 }
 
@@ -178,6 +190,27 @@ func (m *ClientMessage) TotalLength() int {
 		currentFrame = currentFrame.next
 	}
 	return totalLength
+}
+
+func (m *ClientMessage) WriteBytes(w io.Writer) error {
+	buf := make([]byte, 4)
+	currentFrame := m.StartFrame
+	for currentFrame != nil {
+		isLastFrame := currentFrame.next == nil
+		binary.LittleEndian.PutUint32(buf, uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
+		// TODO: err handling
+		w.Write(buf)
+		if isLastFrame {
+			binary.LittleEndian.PutUint16(buf, currentFrame.flags|IsFinalFlag)
+			w.Write(buf[:2])
+		} else {
+			binary.LittleEndian.PutUint16(buf, currentFrame.flags)
+			w.Write(buf[:2])
+		}
+		w.Write(currentFrame.Content)
+		currentFrame = currentFrame.next
+	}
+	return nil
 }
 
 func (m *ClientMessage) Bytes(bytes []byte) int {

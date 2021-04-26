@@ -32,8 +32,6 @@ import (
 type PartitionServiceCreationBundle struct {
 	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
-	startCh              chan struct{}
-	startChAtom          int32
 	Logger               ilogger.Logger
 }
 

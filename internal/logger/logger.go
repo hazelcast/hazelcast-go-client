@@ -49,14 +49,16 @@ type Logger interface {
 	Debug(f func() string)
 	// Trace logs the given arg at trace level.
 	Trace(f func() string)
-	// Info logs the given args at info level.
+	// Infof logs the given args at info level.
 	Infof(format string, values ...interface{})
 	// Warnf logs the given args at warn level.
 	Warnf(format string, values ...interface{})
 	// Error logs the given args at error level.
 	Error(err error)
-	// Error logs the given args at error level with the given format
+	// Errorf logs the given args at error level with the given format
 	Errorf(format string, values ...interface{})
+	// CanLogDebug returns true if this logger can log messages in the debug level
+	CanLogDebug() bool
 }
 
 // isValidLogLevel returns true if the given log level is valid.

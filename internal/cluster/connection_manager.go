@@ -46,6 +46,14 @@ const (
 	serializationVersionMismatch
 )
 
+const (
+	created int32 = iota
+	starting
+	ready
+	stopping
+	stopped
+)
+
 const serializationVersion = 1
 
 // TODO: This should be replace with a build time version variable, BuildInfo etc.
@@ -118,8 +126,7 @@ type ConnectionManager struct {
 	nextConnID           int64
 	addressTranslator    AddressTranslator
 	smartRouting         bool
-	alive                atomic.Value
-	started              atomic.Value
+	state                int32
 	ownerConn            atomic.Value
 	logger               ilogger.Logger
 	doneCh               chan struct{}
@@ -160,13 +167,11 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		doneCh:               make(chan struct{}, 1),
 		cb:                   circuitBreaker,
 	}
-	manager.alive.Store(false)
-	manager.started.Store(false)
 	return manager
 }
 
 func (m *ConnectionManager) Start() error {
-	if m.started.Load() == true {
+	if !atomic.CompareAndSwapInt32(&m.state, created, starting) {
 		return nil
 	}
 	if _, err := m.cb.Try(func(ctx context.Context) (interface{}, error) {
@@ -178,25 +183,29 @@ func (m *ConnectionManager) Start() error {
 	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionClosedSubscriptionID, m.handleConnectionClosed)
 	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
 	m.eventDispatcher.Subscribe(EventMembersAdded, memberAddedSubscriptionID, m.handleMembersAdded)
-	go m.logStatus()
 	go m.doctor()
-	m.started.Store(true)
+	if m.logger.CanLogDebug() {
+		go m.logStatus()
+	}
+	atomic.StoreInt32(&m.state, ready)
 	m.eventDispatcher.Publish(NewConnected())
 	return nil
 }
 
 func (m *ConnectionManager) Stop() chan struct{} {
-	if m.started.Load() == true {
-		go func() {
-			connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
-			m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionClosedSubscriptionID)
-			memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
-			m.eventDispatcher.Unsubscribe(EventMembersAdded, memberAddedSubscriptionID)
-			m.connMap.CloseAll()
-			m.started.Store(false)
-			close(m.doneCh)
-		}()
+	if !atomic.CompareAndSwapInt32(&m.state, ready, stopping) {
+		close(m.doneCh)
+		return m.doneCh
 	}
+	go func() {
+		connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
+		m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionClosedSubscriptionID)
+		memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
+		m.eventDispatcher.Unsubscribe(EventMembersAdded, memberAddedSubscriptionID)
+		m.connMap.CloseAll()
+		atomic.StoreInt32(&m.state, stopped)
+		close(m.doneCh)
+	}()
 	return m.doneCh
 }
 
@@ -237,14 +246,14 @@ func (m *ConnectionManager) OwnerConnectionAddr() *pubcluster.AddressImpl {
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
-	if m.started.Load() != true {
+	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
 	if memberAddedEvent, ok := event.(*MembersAdded); ok {
 		missingAddrs := m.connMap.FindAddedAddrs(memberAddedEvent.Members)
 		for _, addr := range missingAddrs {
 			if err := m.connectAddr(addr); err != nil {
-				m.logger.Errorf("error connecting addr: %s", err.Error())
+				m.logger.Errorf("error connecting addr: %w", err)
 			} else {
 				m.logger.Infof("connectionManager member added: %s", addr.String())
 			}
@@ -253,7 +262,7 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	if m.started.Load() != true {
+	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
 	if memberRemovedEvent, ok := event.(MembersRemoved); ok {
@@ -265,7 +274,7 @@ func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
 }
 
 func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
-	if m.started.Load() != true {
+	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
 	if connectionClosedEvent, ok := event.(*ConnectionClosed); ok {
@@ -344,6 +353,7 @@ func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Con
 	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
+		conn.close(nil)
 		return nil, err
 	}
 	return conn, nil
@@ -354,7 +364,7 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 		responseCh:      m.responseCh,
 		pending:         make(chan *proto.ClientMessage, 1),
 		doneCh:          make(chan struct{}),
-		readBuffer:      make([]byte, 0),
+		writeBuffer:     make([]byte, bufferSize),
 		connectionID:    m.NextConnectionID(),
 		eventDispatcher: m.eventDispatcher,
 		status:          0,
@@ -366,11 +376,15 @@ func (m *ConnectionManager) authenticate(connection *Connection) error {
 	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := m.encodeAuthenticationRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout, nil)
-	m.requestCh <- inv
-	if result, err := inv.GetWithTimeout(m.clusterConfig.HeartbeatTimeout); err != nil {
-		return err
-	} else {
-		return m.processAuthenticationResult(connection, result)
+	select {
+	case m.requestCh <- inv:
+		if result, err := inv.GetWithTimeout(m.clusterConfig.HeartbeatTimeout); err != nil {
+			return err
+		} else {
+			return m.processAuthenticationResult(connection, result)
+		}
+	case <-m.doneCh:
+		return errors.New("done")
 	}
 }
 

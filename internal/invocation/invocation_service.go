@@ -18,7 +18,6 @@ package invocation
 
 import (
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -54,10 +53,10 @@ type Service struct {
 	//nextCorrelationID int64
 	requestCh         <-chan Invocation
 	responseCh        <-chan *proto.ClientMessage
+	doneCh            chan struct{}
 	invocations       map[int64]Invocation
 	invocationTimeout time.Duration
 	retryPause        time.Duration
-	shutDown          atomic.Value
 	smartRouting      bool
 	handler           Handler
 	logger            ilogger.Logger
@@ -69,6 +68,7 @@ func NewServiceImpl(bundle ServiceCreationBundle) *Service {
 	service := &Service{
 		requestCh:         bundle.RequestCh,
 		responseCh:        bundle.ResponseCh,
+		doneCh:            make(chan struct{}),
 		invocations:       map[int64]Invocation{},
 		invocationTimeout: 120 * time.Second,
 		retryPause:        1 * time.Second,
@@ -76,9 +76,12 @@ func NewServiceImpl(bundle ServiceCreationBundle) *Service {
 		handler:           handler,
 		logger:            bundle.Logger,
 	}
-	service.shutDown.Store(false)
 	go service.processIncoming()
 	return service
+}
+
+func (s *Service) Stop() {
+	close(s.doneCh)
 }
 
 func (s *Service) SetHandler(handler Handler) {
@@ -86,22 +89,29 @@ func (s *Service) SetHandler(handler Handler) {
 }
 
 func (s *Service) processIncoming() {
+loop:
 	for {
 		select {
 		case inv := <-s.requestCh:
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
+		case <-s.doneCh:
+			break loop
 		}
 	}
+	// remove invocations
+	for _, invocation := range s.invocations {
+		invocation.Close()
+	}
+	s.invocations = nil
 }
 
-func (s *Service) sendInvocation(invocation Invocation) Result {
+func (s *Service) sendInvocation(invocation Invocation) {
 	s.registerInvocation(invocation)
 	if err := s.handler.Invoke(invocation); err != nil {
 		s.handleError(invocation.Request().CorrelationID(), err)
 	}
-	return invocation
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {

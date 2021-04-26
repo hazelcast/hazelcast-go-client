@@ -20,14 +20,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
-
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
-func TestDefaultConfig(t *testing.T) {
+func TestConfigBuilderDefault(t *testing.T) {
 	configBuilder := hazelcast.NewConfigBuilder()
 	if config, err := configBuilder.Config(); err != nil {
 		t.Fatal(err)
@@ -38,7 +36,7 @@ func TestDefaultConfig(t *testing.T) {
 	}
 }
 
-func TestConfig(t *testing.T) {
+func TestConfigNewConfigBuilder(t *testing.T) {
 	configBuilder := hazelcast.NewConfigBuilder()
 	configBuilder.Cluster().
 		SetMembers("192.168.1.2").

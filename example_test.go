@@ -58,6 +58,7 @@ func ExampleNewClientWithConfig() {
 	client.Shutdown()
 }
 
+/*
 func ExampleClient_ListenLifecycleStateChange() {
 	// Create a client without starting it.
 	client, err := hazelcast.NewClient()
@@ -88,3 +89,5 @@ func ExampleClient_ListenLifecycleStateChange() {
 		log.Fatal(err)
 	}
 }
+
+*/

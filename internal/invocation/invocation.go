@@ -18,6 +18,7 @@ package invocation
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
@@ -25,6 +26,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
+
+var ErrResponseChannelClosed = errors.New("response channel closed")
 
 type Result interface {
 	Get() (*proto.ClientMessage, error)
@@ -41,6 +44,7 @@ type Invocation interface {
 	PartitionID() int32
 	Request() *proto.ClientMessage
 	Address() *pubcluster.AddressImpl
+	Close()
 }
 
 type Impl struct {
@@ -80,8 +84,10 @@ func (i *Impl) EventHandler() proto.ClientMessageHandler {
 }
 
 func (i *Impl) Get() (*proto.ClientMessage, error) {
-	response := <-i.response
-	return i.unwrapResponse(response)
+	if response, ok := <-i.response; ok {
+		return i.unwrapResponse(response)
+	}
+	return nil, ErrResponseChannelClosed
 }
 
 func (i *Impl) GetContext(ctx context.Context) (*proto.ClientMessage, error) {
@@ -90,7 +96,7 @@ func (i *Impl) GetContext(ctx context.Context) (*proto.ClientMessage, error) {
 		if ok {
 			return i.unwrapResponse(response)
 		}
-		return nil, nil
+		return nil, ErrResponseChannelClosed
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -98,8 +104,11 @@ func (i *Impl) GetContext(ctx context.Context) (*proto.ClientMessage, error) {
 
 func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error) {
 	select {
-	case response := <-i.response:
-		return i.unwrapResponse(response)
+	case response, ok := <-i.response:
+		if ok {
+			return i.unwrapResponse(response)
+		}
+		return nil, ErrResponseChannelClosed
 	case <-time.After(duration):
 		return nil, hzerror.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
 	}
@@ -127,6 +136,10 @@ func (i *Proxy) StoreSentConnection(conn interface{}) {
 // It should only be called at the site of creation.
 func (i *Impl) SetEventHandler(handler proto.ClientMessageHandler) {
 	i.eventHandler = handler
+}
+
+func (i *Impl) Close() {
+	close(i.response)
 }
 
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {

@@ -145,12 +145,11 @@ func (p *proxy) Destroy() error {
 	return nil
 }
 
-func (p *proxy) validateAndSerialize(arg1 interface{}) (arg1Data serialization.Data, err error) {
+func (p *proxy) validateAndSerialize(arg1 interface{}) (serialization.Data, error) {
 	if nilutil.IsNil(arg1) {
 		return nil, hzerror.NewHazelcastNilPointerError(bufutil.NilArgIsNotAllowed, nil)
 	}
-	arg1Data, err = p.serializationService.ToData(arg1)
-	return
+	return p.serializationService.ToData(arg1)
 }
 
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data serialization.Data,

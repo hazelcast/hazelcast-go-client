@@ -23,9 +23,12 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"testing"
+
+	"go.uber.org/goleak"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -35,8 +38,9 @@ import (
 
 const EnvDisableSmart = "DISABLE_SMART"
 const EnvDisableNonsmart = "DISABLE_NONSMART"
-const EnvTraceLogging = "ENABLE_TRACE"
+const EnvEnableTraceLogging = "ENABLE_TRACE"
 const EnvMemberCount = "MEMBER_COUNT"
+const EnvEnableLeakCheck = "ENABLE_LEAKCHECK"
 
 const xmlConfig = `
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -59,23 +63,16 @@ var rc *RemoteControllerClient
 var rcMu = &sync.RWMutex{}
 var defaultTestCluster *testCluster
 
-func GetMapWithContext(ctx context.Context, client *hz.Client, name string) *hz.Map {
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	if ctx == nil {
-		return MustValue(client.GetMap(mapName)).(*hz.Map)
-	}
-	return MustValue(client.GetMapContext(ctx, mapName)).(*hz.Map)
-}
-
-func GetClientMapWithConfigBuilder(mapName string, configBuilder *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
+func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
 	if TraceLoggingEnabled() {
-		configBuilder.Logger().SetLevel(logger.TraceLevel)
+		cb.Logger().SetLevel(logger.TraceLevel)
+	} else {
+		cb.Logger().SetLevel(logger.WarnLevel)
 	}
-	client, err := hz.StartNewClientWithConfig(configBuilder)
+	client, err := hz.StartNewClientWithConfig(cb)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Map Name:", mapName)
 	if m, err := client.GetMap(mapName); err != nil {
 		panic(err)
 	} else {
@@ -86,17 +83,25 @@ func GetClientMapWithConfigBuilder(mapName string, configBuilder *hz.ConfigBuild
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
 	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
+		if LeakCheckEnabled() {
+			t.Logf("enabled leak check")
+			defer goleak.VerifyNone(t)
+		}
 		cb := defaultTestCluster.configBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
 		if TraceLoggingEnabled() {
 			cb.Logger().SetLevel(logger.TraceLevel)
+		} else {
+			cb.Logger().SetLevel(logger.WarnLevel)
 		}
-		cb.Cluster().SetSmartRouting(false)
-		client := MustClient(hz.NewClientWithConfig(cb))
+		cb.Cluster().SetSmartRouting(smart)
+		client := MustClient(hz.StartNewClientWithConfig(cb))
 		defer func() {
-			client.Shutdown()
+			if err := client.Shutdown(); err != nil {
+				t.Logf("Test warning, client not shutdown: %s", err.Error())
+			}
 		}()
 		f(t, client)
 	}
@@ -130,6 +135,10 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback
 	)
 	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
+		if LeakCheckEnabled() {
+			t.Logf("enabled leak check")
+			defer goleak.VerifyNone(t)
+		}
 		cb := defaultTestCluster.configBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
@@ -137,10 +146,10 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback
 		cb.Cluster().SetSmartRouting(smart)
 		client, m = GetClientMapWithConfigBuilder(mapName, cb)
 		defer func() {
-			if err := m.EvictAll(); err != nil {
-				panic(err)
+			m.EvictAll()
+			if err := client.Shutdown(); err != nil {
+				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
-			client.Shutdown()
 		}()
 		f(t, m)
 	}
@@ -157,18 +166,27 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback
 }
 
 func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
+	mapName := fmt.Sprintf("test-map-%d", rand.Int())
+	ReplicatedMapTesterWithConfigBuilderWithName(t, mapName, cbCallback, f)
+}
+
+func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	var (
 		client *hz.Client
 		m      *hz.ReplicatedMap
 	)
 	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
+		if LeakCheckEnabled() {
+			t.Logf("enabled leak check")
+			defer goleak.VerifyNone(t)
+		}
 		cb := defaultTestCluster.configBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
 		cb.Cluster().SetSmartRouting(smart)
-		client, m = getClientReplicatedMapWithConfig("test-map", cb)
+		client, m = getClientReplicatedMapWithConfig(mapName, cb)
 		defer func() {
 			m.Clear()
 			client.Shutdown()
@@ -186,14 +204,14 @@ func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.C
 func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMap) {
 	if TraceLoggingEnabled() {
 		cb.Logger().SetLevel(logger.TraceLevel)
+	} else {
+		cb.Logger().SetLevel(logger.WarnLevel)
 	}
 	client, err := hz.StartNewClientWithConfig(cb)
 	if err != nil {
 		panic(err)
 	}
-	mapName := fmt.Sprintf("%s-%d", name, rand.Int())
-	fmt.Println("Map Name:", mapName)
-	if m, err := client.GetReplicatedMap(mapName); err != nil {
+	if m, err := client.GetReplicatedMap(name); err != nil {
 		panic(err)
 	} else {
 		return client, m
@@ -202,6 +220,7 @@ func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Cl
 
 func AssertEquals(t *testing.T, target, value interface{}) {
 	if !reflect.DeepEqual(target, value) {
+		t.Log(string(debug.Stack()))
 		t.Fatalf("target: %#v != %#v", target, value)
 	}
 }
@@ -288,7 +307,7 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 }
 
 func TraceLoggingEnabled() bool {
-	return os.Getenv(EnvTraceLogging) == "1"
+	return os.Getenv(EnvEnableTraceLogging) == "1"
 }
 
 func SmartEnabled() bool {
@@ -297,6 +316,10 @@ func SmartEnabled() bool {
 
 func NonSmartEnabled() bool {
 	return os.Getenv(EnvDisableNonsmart) != "1"
+}
+
+func LeakCheckEnabled() bool {
+	return os.Getenv(EnvEnableLeakCheck) == "1"
 }
 
 func defaultMemberCount() int {

@@ -22,13 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/types"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
-
-	"github.com/hazelcast/hazelcast-go-client/predicate"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestPutGetReplicatedMap(t *testing.T) {
@@ -153,7 +150,7 @@ func TestReplicatedMapIsEmptySize(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
-	// This tests sometimes fails. Skipping it for now...
+	// This test sometimes fails. Skipping it for now...
 	t.SkipNow()
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
@@ -186,7 +183,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 }
 
 func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
-	// This tests sometimes fails. Skipping it for now...
+	// This test sometimes fails. Skipping it for now...
 	t.SkipNow()
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)

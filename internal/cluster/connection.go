@@ -23,23 +23,26 @@ import (
 	"sync/atomic"
 	"time"
 
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
 const (
-	bufferSize      = 128 * 1024
+	bufferSize      = 8 * 1024
 	protocolStarter = "CP2"
+)
+
+const (
+	open int32 = iota
+	closed
 )
 
 type ResponseHandler func(msg *proto.ClientMessage)
@@ -55,7 +58,7 @@ type Connection struct {
 	lastRead                  atomic.Value
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
-	readBuffer                []byte
+	writeBuffer               []byte
 	connectionID              int64
 	eventDispatcher           *event.DispatchService
 	connectedServerVersion    int32
@@ -73,8 +76,13 @@ func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Addres
 		return err
 	} else {
 		c.socket = socket
-		c.init()
+		c.lastWrite.Store(time.Time{})
+		c.closedTime.Store(time.Time{})
+		c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
+		c.lastRead.Store(time.Now())
 		if err := c.sendProtocolStarter(); err != nil {
+			c.socket.Close()
+			c.socket = nil
 			return err
 		}
 		go c.socketReadLoop()
@@ -118,15 +126,8 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 	}
 }
 
-func (c *Connection) init() {
-	c.lastWrite.Store(time.Time{})
-	c.closedTime.Store(time.Time{})
-	c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
-	c.lastRead.Store(time.Now())
-}
-
 func (c *Connection) isAlive() bool {
-	return atomic.LoadInt32(&c.status) == 0
+	return atomic.LoadInt32(&c.status) == open
 }
 
 func (c *Connection) socketWriteLoop() {
@@ -141,6 +142,7 @@ func (c *Connection) socketWriteLoop() {
 				// XXX: create a new client message?
 				request.Err = err
 				c.responseCh <- request
+				c.close(err)
 			} else {
 				c.lastWrite.Store(time.Now())
 			}
@@ -156,9 +158,9 @@ func (c *Connection) socketReadLoop() {
 	buf := make([]byte, bufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
-		c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
+		//c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
 		n, err = c.socket.Read(buf)
-		if !c.isAlive() {
+		if atomic.LoadInt32(&c.status) != open {
 			break
 		}
 		if err != nil {
@@ -206,10 +208,13 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	c.logger.Trace(func() string {
 		return fmt.Sprintf("%d: writing invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 	})
-	buf := make([]byte, clientMessage.TotalLength())
-	clientMessage.Bytes(buf)
-	c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
-	_, err := c.socket.Write(buf)
+	msgLen := clientMessage.TotalLength()
+	if len(c.writeBuffer) < msgLen {
+		c.writeBuffer = make([]byte, 0, msgLen)
+	}
+	clientMessage.Bytes(c.writeBuffer)
+	//c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
+	_, err := c.socket.Write(c.writeBuffer[:msgLen])
 	return err
 }
 
@@ -235,7 +240,7 @@ func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
 }
 
 func (c *Connection) close(closeErr error) {
-	if !atomic.CompareAndSwapInt32(&c.status, 0, 1) {
+	if !atomic.CompareAndSwapInt32(&c.status, open, closed) {
 		return
 	}
 	close(c.doneCh)

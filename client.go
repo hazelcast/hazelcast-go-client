@@ -57,13 +57,17 @@ var (
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
 func StartNewClient() (*Client, error) {
-	if client, err := NewClient(); err != nil {
-		return nil, err
-	} else if err = client.Start(); err != nil {
-		return nil, err
-	} else {
-		return client, nil
-	}
+	/*
+		if client, err := newClient("", config); err != nil {
+			return nil, err
+		} else if err = client.Start(); err != nil {
+			return nil, err
+		} else {
+			return client, nil
+		}
+
+	*/
+	return StartNewClientWithConfig(NewConfigBuilder())
 }
 
 // StartNewClientWithConfig creates and starts a new client with the given configuration.
@@ -71,15 +75,16 @@ func StartNewClient() (*Client, error) {
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
 func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
-	if client, err := NewClientWithConfig(configProvider); err != nil {
+	if client, err := newClientWithConfig(configProvider); err != nil {
 		return nil, err
-	} else if err = client.Start(); err != nil {
+	} else if err = client.start(); err != nil {
 		return nil, err
 	} else {
 		return client, nil
 	}
 }
 
+/*
 // NewClient creates and returns a new client.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
@@ -87,12 +92,13 @@ func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 func NewClient() (*Client, error) {
 	return NewClientWithConfig(NewConfigBuilder())
 }
+*/
 
-// NewClientWithConfig creates and returns a new client with the given config.
+// newClientWithConfig creates and returns a new client with the given config.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
-func NewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
+func newClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 	if config, err := configProvider.Config(); err != nil {
 		return nil, err
 	} else {
@@ -110,6 +116,7 @@ type Client struct {
 	connectionManager   *icluster.ConnectionManager
 	clusterService      *icluster.ServiceImpl
 	partitionService    *icluster.PartitionService
+	invocationService   *invocation.Service
 	eventDispatcher     *event.DispatchService
 	userEventDispatcher *event.DispatchService
 	invocationHandler   invocation.Handler
@@ -191,7 +198,7 @@ func (c *Client) GetReplicatedMapContext(ctx context.Context, name string) (*Rep
 }
 
 // Start connects the client to the cluster.
-func (c *Client) Start() error {
+func (c *Client) start() error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return ErrClientCannotStart
 	}
@@ -214,11 +221,16 @@ func (c *Client) Shutdown() error {
 		return ErrClientNotReady
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
+	c.invocationService.Stop()
 	c.clusterService.Stop()
 	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
+	// wait for the shut down ebent to be dispatched
+	time.Sleep(10 * time.Millisecond)
+	c.eventDispatcher.Stop()
+	c.userEventDispatcher.Stop()
 	return nil
 }
 
@@ -389,6 +401,7 @@ func (c *Client) createComponents(config *Config) {
 	c.connectionManager = connectionManager
 	c.clusterService = clusterService
 	c.partitionService = partitionService
+	c.invocationService = invocationService
 	c.proxyManager = newManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
 }

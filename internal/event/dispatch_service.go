@@ -18,7 +18,6 @@ package event
 
 import (
 	"fmt"
-	"sync"
 	"sync/atomic"
 )
 
@@ -38,6 +37,12 @@ const (
 	unsubscribe
 )
 
+const (
+	created int32 = iota
+	ready
+	stopped
+)
+
 type controlMessage struct {
 	controlType    controlType
 	eventName      string
@@ -50,7 +55,8 @@ type DispatchService struct {
 	syncSubscriptions map[string]map[int]EventHandler
 	eventCh           chan Event
 	controlCh         chan controlMessage
-	running           atomic.Value
+	doneCh            chan struct{}
+	state             int32
 }
 
 func NewDispatchService() *DispatchService {
@@ -59,17 +65,29 @@ func NewDispatchService() *DispatchService {
 		syncSubscriptions: map[string]map[int]EventHandler{},
 		eventCh:           make(chan Event, 1),
 		controlCh:         make(chan controlMessage, 1),
+		doneCh:            make(chan struct{}),
+		state:             created,
 	}
-	service.running.Store(false)
-	service.start()
+	startCh := make(chan struct{})
+	go service.start(startCh)
+	<-startCh
+	atomic.StoreInt32(&service.state, ready)
 	return service
+}
+
+func (s *DispatchService) Stop() {
+	// stopping a not-running service is no-op
+	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
+		return
+	}
+	close(s.doneCh)
 }
 
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
 func (s *DispatchService) Subscribe(eventName string, subscriptionID int, handler EventHandler) {
 	// subscribing to a not-runnning service is no-op
-	if s.running.Load() != true {
+	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
 	if subscriptionID == DefaultSubscriptionID {
@@ -88,7 +106,7 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int, handle
 // Do not rely on the order of handlers, they may be shuffled.
 func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, handler EventHandler) {
 	// subscribing to a not-runnning service is no-op
-	if s.running.Load() != true {
+	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
 	if subscriptionID == DefaultSubscriptionID {
@@ -104,7 +122,7 @@ func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, ha
 
 func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int) {
 	// unsubscribing from a not-runnning service is no-op
-	if s.running.Load() != true {
+	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
 	s.controlCh <- controlMessage{
@@ -117,54 +135,33 @@ func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int) {
 
 func (s *DispatchService) Publish(event Event) {
 	// publishing to a not-runnning service is no-op
-	if s.running.Load() != true || event == nil {
+	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
 	s.eventCh <- event
 }
 
-func (s *DispatchService) start() {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		wg.Done()
-		for {
-			select {
-			case event, ok := <-s.eventCh:
-				if ok {
-					s.dispatch(event)
-				}
-			case control, ok := <-s.controlCh:
-				if !ok {
-					continue
-				}
-				switch control.controlType {
-				case subscribe:
-					s.subscribe(control.eventName, control.subscriptionID, control.handler)
-				case subscribeSync:
-					s.subscribeSync(control.eventName, control.subscriptionID, control.handler)
-				case unsubscribe:
-					s.unsubscribe(control.eventName, control.subscriptionID)
-				default:
-					panic(fmt.Sprintf("unknown control type: %d", control.controlType))
-				}
+func (s *DispatchService) start(startCh chan<- struct{}) {
+	startCh <- struct{}{}
+	for {
+		select {
+		case event := <-s.eventCh:
+			s.dispatch(event)
+		case control := <-s.controlCh:
+			switch control.controlType {
+			case subscribe:
+				s.subscribe(control.eventName, control.subscriptionID, control.handler)
+			case subscribeSync:
+				s.subscribeSync(control.eventName, control.subscriptionID, control.handler)
+			case unsubscribe:
+				s.unsubscribe(control.eventName, control.subscriptionID)
+			default:
+				panic(fmt.Sprintf("unknown control type: %d", control.controlType))
 			}
+		case <-s.doneCh:
+			return
 		}
-	}()
-	wg.Wait()
-	s.running.Store(true)
-}
-
-func (s *DispatchService) Stop() {
-	// stopping a not-running service is no-op
-	if s.running.Load() != true {
-		return
 	}
-	s.running.Store(false)
-	//s.doneCh <- struct{}{}
-	//close(s.doneCh)
-	close(s.eventCh)
-	close(s.controlCh)
 }
 
 func (s *DispatchService) dispatch(event Event) {

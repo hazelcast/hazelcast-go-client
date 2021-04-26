@@ -87,7 +87,7 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 		addrProviders:     bundle.AddrProviders,
 		requestCh:         bundle.RequestCh,
 		doneCh:            make(chan struct{}),
-		startCh:           make(chan struct{}, 1),
+		startCh:           make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		logger:            bundle.Logger,
@@ -146,7 +146,6 @@ func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 		added, removed := s.membersMap.Update(membersUpdateEvent.Members, membersUpdateEvent.Version)
 		if atomic.CompareAndSwapInt32(&s.startChAtom, 0, 1) {
 			close(s.startCh)
-			s.startCh = nil
 		}
 		if len(added) > 0 {
 			s.eventDispatcher.Publish(NewMembersAdded(added))
@@ -188,16 +187,16 @@ func (s *ServiceImpl) enableSmartRouting() {
 	atomic.StoreInt32(&s.smartRouting, smartRoutingEnabled)
 }
 
-func (m *ServiceImpl) logStatus() {
+func (s *ServiceImpl) logStatus() {
 	ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
-		case <-m.doneCh:
+		case <-s.doneCh:
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			m.membersMap.Info(func(members map[string]*Member) {
-				m.logger.Trace(func() string {
+			s.membersMap.Info(func(members map[string]*Member) {
+				s.logger.Trace(func() string {
 					mems := map[string]string{}
 					for uuid, member := range members {
 						mems[uuid] = member.Address().String()

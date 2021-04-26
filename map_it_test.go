@@ -26,11 +26,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -54,9 +55,9 @@ func TestMapPutWithTTL(t *testing.T) {
 		if _, err := m.PutWithTTL("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
 		time.Sleep(2 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
 
@@ -558,9 +559,8 @@ func TestMap_Lock(t *testing.T) {
 
 func TestMapLockWithContext(t *testing.T) {
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
-		it.Must(client.Start())
 		const mapName = "lock-map"
-		m, _ := client.GetMapContext(context.Background(), mapName)
+		m := it.MustValue(client.GetMapContext(context.Background(), mapName)).(*hz.Map)
 		defer m.EvictAll()
 		it.Must(m.Lock("k1"))
 		locked := false
@@ -755,8 +755,9 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 		if _, err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put("k1", "v1"))
-		time.Sleep(1 * time.Second)
+		it.Must(m.Set("k1", "v1"))
+		assert.Equal(t, "v1", it.MustValue(m.Get("k1")))
+		time.Sleep(2 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}

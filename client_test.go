@@ -19,12 +19,10 @@ package hazelcast_test
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
-
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
-func TestNewClientConfigBuilder(t *testing.T) {
+func TestClient_NewConfigBuilder(t *testing.T) {
 	builder := hazelcast.NewConfigBuilder()
 	builder.Cluster().
 		SetMembers("192.168.1.1").
@@ -38,12 +36,17 @@ func TestNewClientConfigBuilder(t *testing.T) {
 	}
 }
 
-func TestNewClientWithConfig(t *testing.T) {
+/*
+func TestClient_NewClientWithConfig(t *testing.T) {
 	builder := hazelcast.NewConfigBuilder()
 	builder.SetClientName("my-client")
-	hz := it.MustClient(hazelcast.NewClientWithConfig(builder))
+	hz := it.MustClient(hazelcast.StartNewClientWithConfig(builder))
+	defer hz.Shutdown()
 	targetClientName := "my-client"
 	if targetClientName != hz.Name() {
 		t.Errorf("target: %v != %v", targetClientName, hz.Name())
 	}
 }
+
+
+*/

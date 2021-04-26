@@ -61,7 +61,7 @@ func NewWithLevel(loggingLevel int) *DefaultLogger {
 
 // Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
 func (l *DefaultLogger) Debug(f func() string) {
-	if l.canLogDebug() && f != nil {
+	if l.CanLogDebug() && f != nil {
 		s := fmt.Sprintf("DEBUG: %s", f())
 		l.Output(logCallDepth, s)
 	}
@@ -139,6 +139,6 @@ func (l *DefaultLogger) canLogError() bool {
 	return l.Level >= errorLevel
 }
 
-func (l *DefaultLogger) canLogDebug() bool {
+func (l *DefaultLogger) CanLogDebug() bool {
 	return l.Level >= debugLevel
 }

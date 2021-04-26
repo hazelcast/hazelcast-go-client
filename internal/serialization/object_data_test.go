@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"bytes"
 	"reflect"
 	"testing"
 
@@ -31,10 +30,8 @@ func TestObjectDataOutput_EnsureAvailable(t *testing.T) {
 	o := NewObjectDataOutput(2, nil, false)
 	o.EnsureAvailable(5)
 	buf := o.buffer
-	expectedBuf := []byte{0, 0, 0, 0, 0}
-
-	if !bytes.Equal(buf, expectedBuf) {
-		t.Error("EnsureAvailable() makes ", buf, " expected ", expectedBuf)
+	if len(buf) < 5 {
+		t.Fatalf("expected len(buf) >= 5, but it is: %d", len(buf))
 	}
 }
 
@@ -45,7 +42,7 @@ func TestObjectDataOutput_ToBuffer(t *testing.T) {
 	o.WriteInt32(3)
 	o.WriteByte(5)
 	o.WriteByte(6)
-	if !reflect.DeepEqual(o.buffer, o.ToBuffer()) {
+	if !reflect.DeepEqual(o.buffer[:o.position], o.ToBuffer()) {
 		t.Error("ToBuffer() works wrong!")
 	}
 }
@@ -59,7 +56,7 @@ func TestObjectDataOutput_WriteData(t *testing.T) {
 	data.Buffer()[1] = 0
 	data.Buffer()[2] = 0
 	data.Buffer()[3] = 0
-	if !reflect.DeepEqual(o.buffer, expectedRet) {
+	if !reflect.DeepEqual(o.buffer[:o.position], expectedRet) {
 		t.Error("WriteData() works wrong!")
 	}
 }

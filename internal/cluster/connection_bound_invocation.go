@@ -24,17 +24,15 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-type invocationImpl = invocation.Impl
-
 type ConnectionBoundInvocation struct {
-	*invocationImpl
+	*invocation.Impl
 	boundConnection *Connection
 }
 
 func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl,
 	connection *Connection, timeout time.Duration) *ConnectionBoundInvocation {
 	return &ConnectionBoundInvocation{
-		invocationImpl:  invocation.NewImpl(clientMessage, partitionID, address, timeout),
+		Impl:            invocation.NewImpl(clientMessage, partitionID, address, timeout),
 		boundConnection: connection,
 	}
 }
@@ -44,5 +42,5 @@ func (i *ConnectionBoundInvocation) Connection() *Connection {
 }
 
 func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageHandler) {
-	i.invocationImpl.SetEventHandler(handler)
+	i.Impl.SetEventHandler(handler)
 }
