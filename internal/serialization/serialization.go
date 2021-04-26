@@ -287,8 +287,7 @@ func (s *Service) registerIdentifiedFactories() error {
 	for id := range s.serializationConfig.IdentifiedDataSerializableFactories {
 		factories[id] = s.serializationConfig.IdentifiedDataSerializableFactories[id]
 	}
-	err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories))
-	if err != nil {
+	if err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories)); err != nil {
 		return err
 	}
 	s.nameToID["identified"] = ConstantTypeDataSerializable

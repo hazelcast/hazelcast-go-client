@@ -92,15 +92,16 @@ type Client struct {
 	clusterConfig *cluster.Config
 
 	// components
-	proxyManager        *proxyManager
-	connectionManager   *icluster.ConnectionManager
-	clusterService      *icluster.ServiceImpl
-	partitionService    *icluster.PartitionService
-	invocationService   *invocation.Service
-	eventDispatcher     *event.DispatchService
-	userEventDispatcher *event.DispatchService
-	invocationHandler   invocation.Handler
-	logger              ilogger.Logger
+	proxyManager         *proxyManager
+	connectionManager    *icluster.ConnectionManager
+	clusterService       *icluster.ServiceImpl
+	partitionService     *icluster.PartitionService
+	invocationService    *invocation.Service
+	serializationService *serialization.Service
+	eventDispatcher      *event.DispatchService
+	userEventDispatcher  *event.DispatchService
+	invocationHandler    invocation.Handler
+	logger               ilogger.Logger
 
 	// state
 	state    int32
@@ -121,14 +122,19 @@ func newClient(name string, config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	serializationService, err := serialization.NewService(&config.SerializationConfig)
+	if err != nil {
+		return nil, err
+	}
 	clientLogger := ilogger.NewWithLevel(logLevel)
 	client := &Client{
-		name:                name,
-		clusterConfig:       &config.ClusterConfig,
-		eventDispatcher:     event.NewDispatchService(),
-		userEventDispatcher: event.NewDispatchService(),
-		logger:              clientLogger,
-		refIDGen:            iproxy.NewReferenceIDGenerator(),
+		name:                 name,
+		clusterConfig:        &config.ClusterConfig,
+		serializationService: serializationService,
+		eventDispatcher:      event.NewDispatchService(),
+		userEventDispatcher:  event.NewDispatchService(),
+		logger:               clientLogger,
+		refIDGen:             iproxy.NewReferenceIDGenerator(),
 	}
 	client.subscribeUserEvents()
 	client.createComponents(&config)
@@ -316,17 +322,13 @@ func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCrede
 
 func (c *Client) createComponents(config *Config) {
 	credentials := c.makeCredentials(config)
-	serializationService, err := serialization.NewService(&config.SerializationConfig)
-	if err != nil {
-		panic(fmt.Errorf("error creating client: %w", err))
-	}
 	smartRouting := config.ClusterConfig.SmartRouting
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
 	requestCh := make(chan invocation.Invocation, 1)
 	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
-		SerializationService: serializationService,
+		SerializationService: c.serializationService,
 		EventDispatcher:      c.eventDispatcher,
 		Logger:               c.logger,
 	})
@@ -353,7 +355,7 @@ func (c *Client) createComponents(config *Config) {
 		Logger:               c.logger,
 		ClusterService:       clusterService,
 		PartitionService:     partitionService,
-		SerializationService: serializationService,
+		SerializationService: c.serializationService,
 		EventDispatcher:      c.eventDispatcher,
 		InvocationFactory:    invocationFactory,
 		ClusterConfig:        &config.ClusterConfig,
@@ -369,7 +371,7 @@ func (c *Client) createComponents(config *Config) {
 	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
-		SerializationService: serializationService,
+		SerializationService: c.serializationService,
 		PartitionService:     partitionService,
 		ClusterService:       clusterService,
 		SmartRouting:         smartRouting,
