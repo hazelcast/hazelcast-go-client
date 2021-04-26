@@ -25,6 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
+// Disabled these until we have config attached listeners
 /*
 func TestClientLifecycleEvents(t *testing.T) {
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
@@ -118,42 +119,6 @@ func TestClient_Shutdown(t *testing.T) {
 	})
 }
 
-/*
-func TestClient_Start(t *testing.T) {
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
-		it.Must(client.Start())
-		if err := client.Start(); err == nil {
-			t.Fatalf("starting second time should return an error")
-		}
-		if err := client.Shutdown(); err != nil {
-			t.Fatal(err)
-		}
-		if err := client.Shutdown(); err == nil {
-			t.Fatalf("shutting down second time should return an error")
-		}
-		if err := client.Start(); err == nil {
-			t.Fatalf("starting after shutdown should return an error")
-		}
-	})
-}
-
-func TestClientStartRace(t *testing.T) {
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
-		defer client.Shutdown()
-		const goroutineCount = 100
-		wg := &sync.WaitGroup{}
-		wg.Add(goroutineCount)
-		for i := 0; i < goroutineCount; i++ {
-			go func() {
-				defer wg.Done()
-				client.Start()
-			}()
-		}
-		wg.Wait()
-	})
-}
-*/
-
 func TestClientShutdownRace(t *testing.T) {
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
 		const goroutineCount = 100
@@ -162,6 +127,7 @@ func TestClientShutdownRace(t *testing.T) {
 		for i := 0; i < goroutineCount; i++ {
 			go func() {
 				defer wg.Done()
+				client.Shutdown()
 			}()
 		}
 		wg.Wait()
