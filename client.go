@@ -226,7 +226,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (stri
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return "", ErrClientNotReady
 	}
-	subscriptionID := int(c.refIDGen.NextID())
+	subscriptionID := c.refIDGen.NextID()
 	c.userEventDispatcher.SubscribeSync(EventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
 			handler(*stateChangeEvent)
@@ -234,7 +234,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (stri
 			c.logger.Errorf("cannot cast event to lifecycle.LifecycleStateChanged event")
 		}
 	})
-	return strconv.Itoa(subscriptionID), nil
+	return strconv.FormatInt(subscriptionID, 10), nil
 }
 
 // RemoveLifecycleListener removes the lifecycle state change handler with the given subscription ID
@@ -242,7 +242,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID string) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
-	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
 		c.userEventDispatcher.Unsubscribe(EventLifecycleEventStateChanged, subscriptionIDInt)
@@ -255,7 +255,7 @@ func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangedHan
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
-	subscriptionID := int(c.refIDGen.NextID())
+	subscriptionID := c.refIDGen.NextID()
 	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
 		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
 			for _, member := range membersAddedEvent.Members {
@@ -288,7 +288,7 @@ func (c *Client) RemoveMembershipListener(subscriptionID string) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
-	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
 		c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionIDInt)

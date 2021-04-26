@@ -19,7 +19,6 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 
@@ -174,34 +173,34 @@ func (m ReplicatedMap) IsEmpty() (bool, error) {
 
 // ListenEntryNotification adds a continuous entry listener to this map.
 func (m ReplicatedMap) ListenEntryNotification(handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := int(m.refIDGenerator.NextID())
+	subscriptionID := m.refIDGenerator.NextID()
 	if err := m.listenEntryNotified(nil, nil, subscriptionID, handler); err != nil {
 		return "", err
 	}
-	return strconv.Itoa(subscriptionID), nil
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotificationToKey(key interface{}, subscriptionID int, handler EntryNotifiedHandler) error {
+func (m ReplicatedMap) ListenEntryNotificationToKey(key interface{}, subscriptionID int64, handler EntryNotifiedHandler) error {
 	return m.listenEntryNotified(key, nil, subscriptionID, handler)
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
 func (m ReplicatedMap) ListenEntryNotificationWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := int(m.refIDGenerator.NextID())
+	subscriptionID := m.refIDGenerator.NextID()
 	if err := m.listenEntryNotified(nil, predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
-	return strconv.Itoa(subscriptionID), nil
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 // ListenEntryNotification adds a continuous entry listener to this map.
 func (m ReplicatedMap) ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := int(m.refIDGenerator.NextID())
+	subscriptionID := m.refIDGenerator.NextID()
 	if err := m.listenEntryNotified(key, predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
-	return strconv.Itoa(subscriptionID), nil
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 // Put sets the value for the given key and returns the old value.
@@ -257,7 +256,7 @@ func (m ReplicatedMap) Size() (int, error) {
 
 // UnlistenEntryNotification removes the specified entry listener.
 func (m ReplicatedMap) UnlistenEntryNotification(subscriptionID string) error {
-	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
 		m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionIDInt)
@@ -265,7 +264,7 @@ func (m ReplicatedMap) UnlistenEntryNotification(subscriptionID string) error {
 	}
 }
 
-func (m *ReplicatedMap) listenEntryNotified(key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
+func (m *ReplicatedMap) listenEntryNotified(key interface{}, predicate predicate.Predicate, subscriptionID int64, handler EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data

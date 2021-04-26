@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -754,16 +753,16 @@ func (m *Map) Unlock(key interface{}) error {
 // ListenEntryNotification adds a continuous entry listener to this map.
 func (m *Map) ListenEntryNotification(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
 	flags := makeListenerFlags(&config)
-	subscriptionID := int(m.refIDGenerator.NextID())
+	subscriptionID := m.refIDGenerator.NextID()
 	if err := m.listenEntryNotified(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
-	return strconv.Itoa(subscriptionID), nil
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 // UnlistenEntryNotification removes the specified entry listener.
 func (m *Map) UnlistenEntryNotification(subscriptionID string) error {
-	if subscriptionIDInt, err := strconv.Atoi(subscriptionID); err != nil {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
 		m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionIDInt)
@@ -780,7 +779,7 @@ func (m *Map) addIndex(indexConfig types.IndexConfig) error {
 	return err
 }
 
-func (m *Map) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int, handler EntryNotifiedHandler) error {
+func (m *Map) listenEntryNotified(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int64, handler EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data

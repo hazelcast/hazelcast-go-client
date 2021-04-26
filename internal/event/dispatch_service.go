@@ -27,7 +27,7 @@ type Event interface {
 	EventName() string
 }
 
-type EventHandler func(event Event)
+type Handler func(event Event)
 
 type controlType int
 
@@ -46,13 +46,13 @@ const (
 type controlMessage struct {
 	controlType    controlType
 	eventName      string
-	subscriptionID int
-	handler        EventHandler
+	subscriptionID int64
+	handler        Handler
 }
 
 type DispatchService struct {
-	subscriptions     map[string]map[int]EventHandler
-	syncSubscriptions map[string]map[int]EventHandler
+	subscriptions     map[string]map[int64]Handler
+	syncSubscriptions map[string]map[int64]Handler
 	eventCh           chan Event
 	controlCh         chan controlMessage
 	doneCh            chan struct{}
@@ -61,8 +61,8 @@ type DispatchService struct {
 
 func NewDispatchService() *DispatchService {
 	service := &DispatchService{
-		subscriptions:     map[string]map[int]EventHandler{},
-		syncSubscriptions: map[string]map[int]EventHandler{},
+		subscriptions:     map[string]map[int64]Handler{},
+		syncSubscriptions: map[string]map[int64]Handler{},
 		eventCh:           make(chan Event, 1),
 		controlCh:         make(chan controlMessage, 1),
 		doneCh:            make(chan struct{}),
@@ -85,7 +85,7 @@ func (s *DispatchService) Stop() {
 
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchService) Subscribe(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, handler Handler) {
 	// subscribing to a not-runnning service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
@@ -104,7 +104,7 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int, handle
 // SubscribeSync attaches handler to listen for events with eventName.
 // Sync handlers are dispatched first, the events are ordered.
 // Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, handler Handler) {
 	// subscribing to a not-runnning service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
@@ -120,7 +120,7 @@ func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int, ha
 	}
 }
 
-func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int) {
+func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
 	// unsubscribing from a not-runnning service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
@@ -179,25 +179,25 @@ func (s *DispatchService) dispatch(event Event) {
 	}
 }
 
-func (s *DispatchService) subscribe(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) subscribe(eventName string, subscriptionID int64, handler Handler) {
 	subscriptionHandlers, ok := s.subscriptions[eventName]
 	if !ok {
-		subscriptionHandlers = map[int]EventHandler{}
+		subscriptionHandlers = map[int64]Handler{}
 		s.subscriptions[eventName] = subscriptionHandlers
 	}
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchService) subscribeSync(eventName string, subscriptionID int, handler EventHandler) {
+func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, handler Handler) {
 	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
 	if !ok {
-		subscriptionHandlers = map[int]EventHandler{}
+		subscriptionHandlers = map[int64]Handler{}
 		s.syncSubscriptions[eventName] = subscriptionHandlers
 	}
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionID int) {
+func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionID int64) {
 	if handlers, ok := s.syncSubscriptions[eventName]; ok {
 		for subscriptionID, _ := range handlers {
 			if subscriptionID == unsubscribeSubscriptionID {

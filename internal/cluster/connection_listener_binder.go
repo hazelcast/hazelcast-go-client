@@ -28,7 +28,7 @@ import (
 
 type connRegistration struct {
 	conn   *Connection
-	client int
+	client int64
 	server internal.UUID
 }
 
@@ -42,8 +42,8 @@ type ConnectionListenerBinderImpl struct {
 	invocationFactory     *ConnectionInvocationFactory
 	eventDispatcher       *event.DispatchService
 	requestCh             chan<- invocation.Invocation
-	connToRegistration    map[int64]map[int]internal.UUID
-	registrationToMessage map[int]messageHandler
+	connToRegistration    map[int64]map[int64]internal.UUID
+	registrationToMessage map[int64]messageHandler
 	connToRegistrationMu  *sync.RWMutex
 }
 
@@ -57,8 +57,8 @@ func NewConnectionListenerBinderImpl(
 		invocationFactory:     invocationFactory,
 		eventDispatcher:       eventDispatcher,
 		requestCh:             requestCh,
-		connToRegistration:    map[int64]map[int]internal.UUID{},
-		registrationToMessage: map[int]messageHandler{},
+		connToRegistration:    map[int64]map[int64]internal.UUID{},
+		registrationToMessage: map[int64]messageHandler{},
 		connToRegistrationMu:  &sync.RWMutex{},
 	}
 	eventDispatcher.Subscribe(EventConnectionOpened, event.DefaultSubscriptionID, binder.handleConnectionOpened)
@@ -67,7 +67,7 @@ func NewConnectionListenerBinderImpl(
 
 func (b *ConnectionListenerBinderImpl) Add(
 	request *proto.ClientMessage,
-	clientRegistrationID int,
+	clientRegistrationID int64,
 	handler proto.ClientMessageHandler) error {
 	connToRegistration := map[int64]connRegistration{}
 	for _, conn := range b.connectionManager.ActiveConnections() {
@@ -99,7 +99,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 		if connReg, ok := b.connToRegistration[connID]; ok {
 			connReg[reg.client] = reg.server
 		} else {
-			b.connToRegistration[connID] = map[int]internal.UUID{
+			b.connToRegistration[connID] = map[int64]internal.UUID{
 				reg.client: reg.server,
 			}
 		}
@@ -113,7 +113,7 @@ func (b *ConnectionListenerBinderImpl) Add(
 
 func (b *ConnectionListenerBinderImpl) Remove(
 	mapName string,
-	clientRegistrationID int) error {
+	clientRegistrationID int64) error {
 	activeConnections := b.connectionManager.ActiveConnections()
 	connToRegistration := []connRegistration{}
 	b.connToRegistrationMu.RLock()
