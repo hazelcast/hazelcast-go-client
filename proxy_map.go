@@ -246,8 +246,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
 		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapGetAllRequest(m.name, keys)
-			inv := m.invokeOnPartitionAsync(request, partitionID)
-			return inv.GetWithTimeout(1 * time.Second)
+			return m.invokeOnPartition(ctx, request, partitionID)
 		})
 	}
 	futures := make([]cb.Future, 0, len(partitionToKeys))
@@ -490,28 +489,13 @@ func (m *Map) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
 func (m *Map) PutAll(keyValuePairs []types.Entry) error {
-	if partitionToPairs, err := m.partitionToPairs(keyValuePairs); err != nil {
-		return err
-	} else {
-		// create futures
-		f := func(partitionID int32, entries []proto.Pair) cb.Future {
-			return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
-				request := codec.EncodeMapPutAllRequest(m.name, entries, true)
-				inv := m.invokeOnPartitionAsync(request, partitionID)
-				return inv.GetWithTimeout(1 * time.Second)
-			})
-		}
-		futures := make([]cb.Future, 0, len(partitionToPairs))
-		for partitionID, entries := range partitionToPairs {
-			futures = append(futures, f(partitionID, entries))
-		}
-		for _, future := range futures {
-			if _, err := future.Result(); err != nil {
-				return err
-			}
-		}
-		return nil
+	f := func(partitionID int32, entries []proto.Pair) cb.Future {
+		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+			request := codec.EncodeMapPutAllRequest(m.name, entries, true)
+			return m.invokeOnPartition(ctx, request, partitionID)
+		})
 	}
+	return m.putAll(keyValuePairs, f)
 }
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.

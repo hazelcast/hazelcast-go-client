@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -217,28 +218,17 @@ func (m ReplicatedMap) Put(key interface{}, value interface{}) (interface{}, err
 	}
 }
 
-// PutALl copies all of the mappings from the specified map to this map.
+// PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
 func (m ReplicatedMap) PutAll(keyValuePairs []types.Entry) error {
-	if partitionToPairs, err := m.partitionToPairs(keyValuePairs); err != nil {
-		return err
-	} else {
-		// create invocations
-		invs := make([]invocation.Invocation, 0, len(partitionToPairs))
-		for partitionID, entries := range partitionToPairs {
-			inv := m.invokeOnPartitionAsync(codec.EncodeReplicatedMapPutAllRequest(m.name, entries), partitionID)
-			invs = append(invs, inv)
-		}
-		// wait for responses
-		for _, inv := range invs {
-			if _, err := inv.Get(); err != nil {
-				// TODO: prevent leak when some inv.Get()s are not executed due to error of other ones.
-				return err
-			}
-		}
-		return nil
+	f := func(partitionID int32, entries []proto.Pair) cb.Future {
+		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+			request := codec.EncodeReplicatedMapPutAllRequest(m.name, entries)
+			return m.invokeOnPartition(ctx, request, partitionID)
+		})
 	}
+	return m.putAll(keyValuePairs, f)
 }
 
 // Remove deletes the value for the given key and returns it.

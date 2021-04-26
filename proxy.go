@@ -291,3 +291,21 @@ func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 	}
 	return kvPairs, nil
 }
+
+func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, entries []proto.Pair) cb.Future) error {
+	if partitionToPairs, err := p.partitionToPairs(keyValuePairs); err != nil {
+		return err
+	} else {
+		// create futures
+		futures := make([]cb.Future, 0, len(partitionToPairs))
+		for partitionID, entries := range partitionToPairs {
+			futures = append(futures, f(partitionID, entries))
+		}
+		for _, future := range futures {
+			if _, err := future.Result(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
