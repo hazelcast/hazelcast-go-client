@@ -199,8 +199,11 @@ func (p *proxy) tryInvoke(ctx context.Context, f func(ctx context.Context) (inte
 }
 
 func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData serialization.Data) (*proto.ClientMessage, error) {
-	partitionID := p.partitionService.GetPartitionID(keyData)
-	return p.invokeOnPartition(ctx, request, partitionID)
+	if partitionID, err := p.partitionService.GetPartitionID(keyData); err != nil {
+		return nil, err
+	} else {
+		return p.invokeOnPartition(ctx, request, partitionID)
+	}
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
@@ -262,9 +265,12 @@ func (p *proxy) partitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto
 		if keyData, valueData, err := p.validateAndSerialize2(pair.Key, pair.Value); err != nil {
 			return nil, err
 		} else {
-			partitionKey := ps.GetPartitionID(keyData)
-			arr := partitionToPairs[partitionKey]
-			partitionToPairs[partitionKey] = append(arr, proto.NewPair(keyData, valueData))
+			if partitionKey, err := ps.GetPartitionID(keyData); err != nil {
+				return nil, err
+			} else {
+				arr := partitionToPairs[partitionKey]
+				partitionToPairs[partitionKey] = append(arr, proto.NewPair(keyData, valueData))
+			}
 		}
 	}
 	return partitionToPairs, nil

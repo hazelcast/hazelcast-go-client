@@ -17,9 +17,14 @@
 package hzerror
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
+)
+
+var (
+	ErrClientOffline = errors.New("client offline")
 )
 
 // HazelcastError is the general error interface.

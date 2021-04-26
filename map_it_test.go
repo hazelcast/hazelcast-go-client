@@ -474,6 +474,24 @@ func TestMap_AddIndexWithConfig(t *testing.T) {
 	})
 }
 
+func TestMapAddIndexValidationError(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		indexConfig := types.IndexConfig{
+			Name:               "my-index",
+			Type:               types.IndexTypeBitmap,
+			Attributes:         []string{"A", "B"},
+			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
+		}
+		if err := m.AddIndexWithConfig(indexConfig); err == nil {
+			t.Fatalf("should have failed")
+		} else {
+			if _, ok := err.(hz.ValidationError); !ok {
+				t.Fatalf("should have returned a validation error")
+			}
+		}
+	})
+}
+
 func TestMap_Flush(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		it.Must(m.Set("k1", "v1"))

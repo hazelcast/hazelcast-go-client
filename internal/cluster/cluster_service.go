@@ -163,7 +163,7 @@ func (s *ServiceImpl) sendMemberListViewRequest(conn *Connection) {
 			s.logger.Debug(func() string { return "members updated" })
 			s.eventDispatcher.Publish(NewMembersUpdated(memberInfos, version))
 		}, func(version int32, partitions []proto.Pair) {
-			s.eventDispatcher.Publish(NewPartitionsUpdated(partitions, version))
+			s.eventDispatcher.Publish(NewPartitionsUpdated(partitions, version, conn.connectionID))
 			s.logger.Debug(func() string { return "partitions updated" })
 		})
 	})

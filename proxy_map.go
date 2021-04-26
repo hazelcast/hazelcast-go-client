@@ -18,9 +18,11 @@ package hazelcast
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -32,6 +34,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
+)
+
+const (
+	maxIndexAttributes = 255
 )
 
 type MapEntryListenerConfig struct {
@@ -227,9 +233,12 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 		if keyData, err := m.validateAndSerialize(key); err != nil {
 			return nil, err
 		} else {
-			partitionKey := ps.GetPartitionID(keyData)
-			arr := partitionToKeys[partitionKey]
-			partitionToKeys[partitionKey] = append(arr, keyData)
+			if partitionKey, err := ps.GetPartitionID(keyData); err != nil {
+				return nil, err
+			} else {
+				arr := partitionToKeys[partitionKey]
+				partitionToKeys[partitionKey] = append(arr, keyData)
+			}
 		}
 	}
 	result := make([]types.Entry, 0, len(keys))
@@ -779,6 +788,9 @@ func (m *Map) UnlistenEntryNotification(subscriptionID string) error {
 }
 
 func (m *Map) addIndex(indexConfig types.IndexConfig) error {
+	if err := validateAndNormalizeIndexConfig(&indexConfig); err != nil {
+		return err
+	}
 	request := codec.EncodeMapAddIndexRequest(m.name, indexConfig)
 	_, err := m.invokeOnRandomTarget(m.ctx, request, nil)
 	return err
@@ -992,22 +1004,6 @@ func (m *Map) convertToObjects(valueDatas []pubserialization.Data) ([]interface{
 	return values, nil
 }
 
-func (m *Map) makePartitionIDMapFromArray(items []interface{}) (map[int32][]proto.Pair, error) {
-	ps := m.partitionService
-	pairsMap := map[int32][]proto.Pair{}
-	for i := 0; i < len(items)/2; i += 2 {
-		key := items[i]
-		value := items[i+1]
-		if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-			return nil, err
-		} else {
-			arr := pairsMap[ps.GetPartitionID(keyData)]
-			pairsMap[ps.GetPartitionID(keyData)] = append(arr, proto.NewPair(keyData, valueData))
-		}
-	}
-	return pairsMap, nil
-}
-
 func makeListenerFlags(config *MapEntryListenerConfig) int32 {
 	var flags int32
 	if config.NotifyEntryAdded {
@@ -1020,4 +1016,69 @@ func makeListenerFlags(config *MapEntryListenerConfig) int32 {
 		flags |= NotifyEntryRemoved
 	}
 	return flags
+}
+
+type indexValidationError struct {
+	Err error
+}
+
+func (ic indexValidationError) Error() string {
+	return ic.Err.Error()
+}
+
+func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {
+	attrSet := newAttributeSet()
+	for _, attr := range ic.Attributes {
+		if err := attrSet.Add(attr); err != nil {
+			return err
+		}
+	}
+	attrs := attrSet.Attrs()
+	if len(attrs) == 0 {
+		return &indexValidationError{errors.New("index must have at least one attribute")}
+	}
+	if len(attrs) > maxIndexAttributes {
+		return &indexValidationError{fmt.Errorf("index cannot have more than %d attributes", maxIndexAttributes)}
+	}
+	if ic.Type == types.IndexTypeBitmap && len(attrs) > 1 {
+		return &indexValidationError{errors.New("composite bitmap indexes are not supported")}
+	}
+	ic.Attributes = attrs
+	return nil
+}
+
+type attributeSet struct {
+	attrs map[string]struct{}
+}
+
+func newAttributeSet() attributeSet {
+	return attributeSet{map[string]struct{}{}}
+}
+
+func (as attributeSet) Add(attr string) error {
+	if attr == "" {
+		return &indexValidationError{errors.New("attribute name cannot be not empty")}
+	}
+	if strings.HasSuffix(attr, ".") {
+		return &indexValidationError{fmt.Errorf("attribute name cannot end with dot: %s", attr)}
+	}
+	if strings.HasPrefix(attr, "this.") {
+		attr = strings.Replace(attr, "this.", "", 1)
+		if attr == "" {
+			return &indexValidationError{errors.New("attribute name cannot be 'this.'")}
+		}
+	}
+	if _, ok := as.attrs[attr]; ok {
+		return &indexValidationError{fmt.Errorf("duplicate attribute name not allowed: %s", attr)}
+	}
+	as.attrs[attr] = struct{}{}
+	return nil
+}
+
+func (as attributeSet) Attrs() []string {
+	attrs := make([]string, 0, len(as.attrs))
+	for attr := range as.attrs {
+		attrs = append(attrs, attr)
+	}
+	return attrs
 }

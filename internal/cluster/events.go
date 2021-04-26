@@ -142,14 +142,16 @@ func (m MembersRemoved) EventName() string {
 }
 
 type PartitionsUpdated struct {
-	Partitions []proto.Pair
-	Version    int32
+	Partitions   []proto.Pair
+	Version      int32
+	ConnectionID int64
 }
 
-func NewPartitionsUpdated(pairs []proto.Pair, version int32) *PartitionsUpdated {
+func NewPartitionsUpdated(pairs []proto.Pair, version int32, connectionID int64) *PartitionsUpdated {
 	return &PartitionsUpdated{
-		Partitions: pairs,
-		Version:    version,
+		Partitions:   pairs,
+		Version:      version,
+		ConnectionID: connectionID,
 	}
 }
 

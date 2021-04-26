@@ -20,6 +20,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -51,7 +53,7 @@ type PartitionService struct {
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
 	partitionTable       partitionTable
-	partitionCount       int32
+	partitionCount       atomic.Value
 	logger               ilogger.Logger
 }
 
@@ -80,20 +82,18 @@ func (s *PartitionService) GetPartitionOwner(partitionId int32) internal.UUID {
 }
 
 func (s *PartitionService) PartitionCount() int32 {
-	return atomic.LoadInt32(&s.partitionCount)
+	return s.partitionCount.Load().(int32)
 }
 
-func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) int32 {
+func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32, error) {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
 		// We are initializing the partition count with the value coming from the server with authentication.
 		// This exception is used only for async mode client.
-		// TODO: panic
-		//core.NewHazelcastClientOfflineException()
-		return 0
+		return 0, hzerror.ErrClientOffline
 	} else {
-		return murmur.HashToIndex(keyData.PartitionHash(), count)
+		return murmur.HashToIndex(keyData.PartitionHash(), count), nil
 	}
 }
 
@@ -101,45 +101,50 @@ func (s *PartitionService) GetPartitionIDWithKey(key interface{}) (int32, error)
 	if data, err := s.serializationService.ToData(key); err != nil {
 		return 0, err
 	} else {
-		return s.GetPartitionID(data), nil
+		return s.GetPartitionID(data)
 	}
 }
 
 func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
-	if partitionsUpdatedEvent, ok := event.(*PartitionsUpdated); ok {
-		s.partitionTable.Update(partitionsUpdatedEvent.Partitions, partitionsUpdatedEvent.Version)
-		s.eventDispatcher.Publish(NewPartitionsLoaded())
-		s.logger.Debug(func() string { return "partitions loaded" })
+	if ev, ok := event.(*PartitionsUpdated); ok {
+		if s.partitionTable.Update(ev.Partitions, ev.Version, ev.ConnectionID) {
+			s.eventDispatcher.Publish(NewPartitionsLoaded())
+			s.logger.Debug(func() string { return "partitions loaded" })
+		}
 	}
 }
 
 func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) {
-	atomic.CompareAndSwapInt32(&s.partitionCount, 0, newPartitionCount)
+	s.partitionCount.Store(newPartitionCount)
 }
 
 type partitionTable struct {
 	partitionStateVersion int32
 	partitions            map[int32]internal.UUID
+	connectionID          int64
 	mu                    *sync.RWMutex
 }
 
-func (p *partitionTable) Update(pairs []proto.Pair, version int32) {
+func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID int64) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if version > p.partitionStateVersion {
-		newPartitions := map[int32]internal.UUID{}
-		for _, pair := range pairs {
-			uuids := pair.Key().([]internal.UUID)
-			ids := pair.Value().([]int32)
-			for _, uuid := range uuids {
-				for _, id := range ids {
-					newPartitions[id] = uuid
-				}
+	if len(pairs) == 0 || p.connectionID == connectionID && version <= p.partitionStateVersion {
+		return false
+	}
+	newPartitions := map[int32]internal.UUID{}
+	for _, pair := range pairs {
+		uuids := pair.Key().([]internal.UUID)
+		ids := pair.Value().([]int32)
+		for _, uuid := range uuids {
+			for _, id := range ids {
+				newPartitions[id] = uuid
 			}
 		}
-		p.partitions = newPartitions
-		p.partitionStateVersion = version
 	}
+	p.partitions = newPartitions
+	p.partitionStateVersion = version
+	p.connectionID = connectionID
+	return true
 }
 
 func (p *partitionTable) GetOwnerUUID(partitionID int32) internal.UUID {
