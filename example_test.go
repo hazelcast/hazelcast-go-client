@@ -66,7 +66,7 @@ func ExampleClient_ListenLifecycleStateChange() {
 		log.Fatal(err)
 	}
 	// Attach an event listener.
-	client.ListenLifecycleStateChange(func(event hazelcast.LifecycleStateChanged) {
+	client.AddLifecycleListener(func(event hazelcast.LifecycleStateChanged) {
 		switch event.State {
 		case hazelcast.LifecycleStateStarting:
 			log.Println("Received starting state.")

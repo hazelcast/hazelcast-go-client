@@ -19,8 +19,6 @@ package proto
 import (
 	"encoding/binary"
 	"io"
-
-	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 const (
@@ -108,13 +106,6 @@ func NewClientMessageForEncode() *ClientMessage {
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
 	return NewClientMessage(frame)
-}
-
-func (m *ClientMessage) Free() {
-	if m.Buf != nil {
-		internal.GlobalBufferPool.Put(m.Buf)
-		m.Buf = nil
-	}
 }
 
 func (m *ClientMessage) Copy() *ClientMessage {

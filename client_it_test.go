@@ -30,7 +30,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
 		receivedStates := []hz.LifecycleState{}
 		receivedStatesMu := &sync.RWMutex{}
-		if _, err := client.ListenLifecycleStateChange(func(event hz.LifecycleStateChanged) {
+		if _, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 			receivedStatesMu.Lock()
 			defer receivedStatesMu.Unlock()
 			switch event.State {
@@ -81,7 +81,7 @@ func TestClientMemberEvents(t *testing.T) {
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		handlerCalled := int32(0)
-		it.Must(client.ListenMembershipStateChange(func(event cluster.MembershipStateChanged) {
+		it.Must(client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
 			if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
 				wg.Done()
 			}

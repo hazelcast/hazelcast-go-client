@@ -57,16 +57,6 @@ var (
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
 func StartNewClient() (*Client, error) {
-	/*
-		if client, err := newClient("", config); err != nil {
-			return nil, err
-		} else if err = client.Start(); err != nil {
-			return nil, err
-		} else {
-			return client, nil
-		}
-
-	*/
 	return StartNewClientWithConfig(NewConfigBuilder())
 }
 
@@ -83,16 +73,6 @@ func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 		return client, nil
 	}
 }
-
-/*
-// NewClient creates and returns a new client.
-// Hazelcast client enables you to do all Hazelcast operations without
-// being a member of the cluster. It connects to one or more of the
-// cluster members and delegates all cluster wide operations to them.
-func NewClient() (*Client, error) {
-	return NewClientWithConfig(NewConfigBuilder())
-}
-*/
 
 // newClientWithConfig creates and returns a new client with the given config.
 // Hazelcast client enables you to do all Hazelcast operations without
@@ -234,9 +214,9 @@ func (c *Client) Shutdown() error {
 	return nil
 }
 
-// ListenLifecycleStateChange adds a lifecycle state change handler with a unique subscription ID.
+// AddLifecycleListener adds a lifecycle state change handler with a unique subscription ID.
 // The handler must not block.
-func (c *Client) ListenLifecycleStateChange(handler LifecycleStateChangeHandler) (string, error) {
+func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (string, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return "", ErrClientNotReady
 	}
@@ -251,8 +231,8 @@ func (c *Client) ListenLifecycleStateChange(handler LifecycleStateChangeHandler)
 	return strconv.Itoa(subscriptionID), nil
 }
 
-// UnlistenLifecycleStateChange removes the lifecycle state change handler with the given subscription ID
-func (c *Client) UnlistenLifecycleStateChange(subscriptionID string) error {
+// RemoveLifecycleListener removes the lifecycle state change handler with the given subscription ID
+func (c *Client) RemoveLifecycleListener(subscriptionID string) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
@@ -264,8 +244,8 @@ func (c *Client) UnlistenLifecycleStateChange(subscriptionID string) error {
 	return nil
 }
 
-// ListenMembershipStateChange adds a member state change handler with a unique subscription ID.
-func (c *Client) ListenMembershipStateChange(handler cluster.MembershipStateChangedHandler) error {
+// AddMembershipListener adds a member state change handler with a unique subscription ID.
+func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangedHandler) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
@@ -297,8 +277,8 @@ func (c *Client) ListenMembershipStateChange(handler cluster.MembershipStateChan
 	return nil
 }
 
-// UnlistenMembershipStateChange removes the member state change handler with the given subscription ID.
-func (c *Client) UnlistenMembershipStateChange(subscriptionID string) error {
+// RemoveMembershipListener removes the member state change handler with the given subscription ID.
+func (c *Client) RemoveMembershipListener(subscriptionID string) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
