@@ -157,7 +157,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
-		subscriptionID, err := m.ListenEntryNotification(handler)
+		subscriptionID, err := m.AddEntryListener(handler)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -169,7 +169,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 			t.Fatalf("handler was not called")
 		}
 		atomic.StoreInt32(&handlerCalled, 0)
-		if err := m.UnlistenEntryNotification(subscriptionID); err != nil {
+		if err := m.RemoveEntryListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -190,7 +190,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
-		if err := m.ListenEntryNotificationToKey("k1", 1, handler); err != nil {
+		if err := m.AddEntryListenerToKey("k1", 1, handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -220,7 +220,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
-		if _, err := m.ListenEntryNotificationWithPredicate(predicate.Equal("A", "foo"), handler); err != nil {
+		if _, err := m.AddEntryListenerWithPredicate(predicate.Equal("A", "foo"), handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
@@ -248,7 +248,7 @@ func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
-		if _, err := m.ListenEntryNotificationToKeyWithPredicate("k1", predicate.Equal("A", "foo"), handler); err != nil {
+		if _, err := m.AddEntryListenerToKeyWithPredicate("k1", predicate.Equal("A", "foo"), handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))

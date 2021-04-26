@@ -736,7 +736,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 			NotifyEntryUpdated: true,
 			IncludeValue:       true,
 		}
-		subscriptionID, err := m.ListenEntryNotification(listenerConfig, handler)
+		subscriptionID, err := m.AddEntryListener(listenerConfig, handler)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -746,7 +746,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 			t.Fatalf("handler was not called")
 		}
 		atomic.StoreInt32(&handlerCalled, 0)
-		if err := m.UnlistenEntryNotification(subscriptionID); err != nil {
+		if err := m.RemoveEntryListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", "v1"))
@@ -770,7 +770,7 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 			IncludeValue:       true,
 			Key:                "k1",
 		}
-		if _, err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
 		it.Must(m.Set("k1", "v1"))
@@ -804,7 +804,7 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 			IncludeValue:       true,
 			Predicate:          predicate.Equal("A", "foo"),
 		}
-		if _, err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
@@ -838,7 +838,7 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 			Key:                "k1",
 			Predicate:          predicate.Equal("A", "foo"),
 		}
-		if _, err := m.ListenEntryNotification(listenerConfig, handler); err != nil {
+		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))

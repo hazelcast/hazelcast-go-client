@@ -171,33 +171,33 @@ func (m ReplicatedMap) IsEmpty() (bool, error) {
 	}
 }
 
-// ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotification(handler EntryNotifiedHandler) (string, error) {
+// AddEntryListener adds a continuous entry listener to this map.
+func (m ReplicatedMap) AddEntryListener(handler EntryNotifiedHandler) (string, error) {
 	subscriptionID := m.refIDGenerator.NextID()
-	if err := m.listenEntryNotified(nil, nil, subscriptionID, handler); err != nil {
+	if err := m.addEntryListener(nil, nil, subscriptionID, handler); err != nil {
 		return "", err
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
-// ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotificationToKey(key interface{}, subscriptionID int64, handler EntryNotifiedHandler) error {
-	return m.listenEntryNotified(key, nil, subscriptionID, handler)
+// AddEntryListener adds a continuous entry listener to this map.
+func (m ReplicatedMap) AddEntryListenerToKey(key interface{}, subscriptionID int64, handler EntryNotifiedHandler) error {
+	return m.addEntryListener(key, nil, subscriptionID, handler)
 }
 
-// ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotificationWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
+// AddEntryListener adds a continuous entry listener to this map.
+func (m ReplicatedMap) AddEntryListenerWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
 	subscriptionID := m.refIDGenerator.NextID()
-	if err := m.listenEntryNotified(nil, predicate, subscriptionID, handler); err != nil {
+	if err := m.addEntryListener(nil, predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
-// ListenEntryNotification adds a continuous entry listener to this map.
-func (m ReplicatedMap) ListenEntryNotificationToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
+// AddEntryListener adds a continuous entry listener to this map.
+func (m ReplicatedMap) AddEntryListenerToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
 	subscriptionID := m.refIDGenerator.NextID()
-	if err := m.listenEntryNotified(key, predicate, subscriptionID, handler); err != nil {
+	if err := m.addEntryListener(key, predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
@@ -258,8 +258,8 @@ func (m ReplicatedMap) Size() (int, error) {
 	}
 }
 
-// UnlistenEntryNotification removes the specified entry listener.
-func (m ReplicatedMap) UnlistenEntryNotification(subscriptionID string) error {
+// RemoveEntryListener removes the specified entry listener.
+func (m ReplicatedMap) RemoveEntryListener(subscriptionID string) error {
 	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
@@ -268,7 +268,7 @@ func (m ReplicatedMap) UnlistenEntryNotification(subscriptionID string) error {
 	}
 }
 
-func (m *ReplicatedMap) listenEntryNotified(key interface{}, predicate predicate.Predicate, subscriptionID int64, handler EntryNotifiedHandler) error {
+func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Predicate, subscriptionID int64, handler EntryNotifiedHandler) error {
 	var request *proto.ClientMessage
 	var err error
 	var keyData pubserialization.Data
@@ -296,10 +296,10 @@ func (m *ReplicatedMap) listenEntryNotified(key interface{}, predicate predicate
 	}
 	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
-			key := m.mustConvertToInterface(binKey, "invalid key at ListenEntryNotification")
-			value := m.mustConvertToInterface(binValue, "invalid value at ListenEntryNotification")
-			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at ListenEntryNotification")
-			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at ListenEntryNotification")
+			key := m.mustConvertToInterface(binKey, "invalid key at AddEntryListener")
+			value := m.mustConvertToInterface(binValue, "invalid value at AddEntryListener")
+			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at AddEntryListener")
+			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at AddEntryListener")
 			m.userEventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
 		}
 		if keyData != nil {
