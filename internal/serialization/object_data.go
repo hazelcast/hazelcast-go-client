@@ -618,19 +618,14 @@ func (i *ObjectDataInput) ReadString() string {
 	if i.err != nil {
 		return ""
 	}
-	var ret string
-	ret, i.err = i.readString()
-	return ret
-}
-
-func (i *ObjectDataInput) readString() (string, error) {
 	size, err := i.readInt32()
 	if err != nil || size == bufutil.NilArrayLength {
-		return "", err
+		i.err = err
+		return ""
 	}
 	s := string(i.buffer[i.position : i.position+size])
 	i.position += size
-	return s, nil
+	return s
 }
 
 func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) string {

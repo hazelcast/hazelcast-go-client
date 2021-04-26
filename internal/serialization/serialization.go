@@ -60,7 +60,7 @@ func (s *Service) ToData(object interface{}) (pubserialization.Data, error) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	err = serializer.Write(dataOutput, object)
-	return &SerializationData{dataOutput.buffer}, err
+	return &SerializationData{dataOutput.buffer[:dataOutput.position]}, err
 }
 
 // ToObject deserializes the given Data to an object.
