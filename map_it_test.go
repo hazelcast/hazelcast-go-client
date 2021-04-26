@@ -403,20 +403,22 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		okValue := "foo-Ğİ"
+		noValue := "foo"
 		entries := []types.Entry{
-			types.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
-			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
-			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+			types.NewEntry("k1", &it.SamplePortable{A: okValue, B: 10}),
+			types.NewEntry("k2", &it.SamplePortable{A: noValue, B: 15}),
+			types.NewEntry("k3", &it.SamplePortable{A: okValue, B: 10}),
 		}
 		if err := m.PutAll(entries); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
 		target := []types.Entry{
-			types.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
-			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
+			types.NewEntry("k1", &it.SamplePortable{A: okValue, B: 10}),
+			types.NewEntry("k3", &it.SamplePortable{A: okValue, B: 10}),
 		}
-		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
+		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", okValue), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
 			t.Fatalf("target: %#v != %#v", target, entries)

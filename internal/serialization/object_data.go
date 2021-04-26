@@ -18,7 +18,6 @@ package serialization
 
 import (
 	"fmt"
-	"unicode/utf8"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
@@ -126,13 +125,13 @@ func (o *ObjectDataOutput) WriteFloat64(v float64) {
 }
 
 func (o *ObjectDataOutput) WriteString(v string) {
-	length := int32(utf8.RuneCountInString(v))
-	o.WriteInt32(length)
-	if length > 0 {
-		o.EnsureAvailable(len(v))
-		for _, s := range v {
-			o.position += int32(utf8.EncodeRune(o.buffer[o.position:], s))
-		}
+	b := []byte(v)
+	size := int32(len(b))
+	o.WriteInt32(size)
+	if len(b) > 0 {
+		o.EnsureAvailable(len(b))
+		copy(o.buffer[o.position:o.position+size], b)
+		o.position += size
 	}
 }
 
@@ -241,14 +240,12 @@ func (o *ObjectDataOutput) WriteFloat64Array(v []float64) {
 }
 
 func (o *ObjectDataOutput) WriteStringArray(v []string) {
-	var length int32
-	if v != nil {
-		length = int32(len(v))
-	} else {
-		length = bufutil.NilArrayLength
+	if v == nil {
+		o.WriteInt32(bufutil.NilArrayLength)
+		return
 	}
-	o.WriteInt32(length)
-	for j := int32(0); j < length; j++ {
+	o.WriteInt32(int32(len(v)))
+	for j := 0; j < len(v); j++ {
 		o.WriteString(v[j])
 	}
 }
@@ -622,22 +619,18 @@ func (i *ObjectDataInput) ReadString() string {
 		return ""
 	}
 	var ret string
-	ret, i.err = i.readUTF()
+	ret, i.err = i.readString()
 	return ret
 }
 
-func (i *ObjectDataInput) readUTF() (string, error) {
-	length, err := i.readInt32()
-	if err != nil || length == bufutil.NilArrayLength {
+func (i *ObjectDataInput) readString() (string, error) {
+	size, err := i.readInt32()
+	if err != nil || size == bufutil.NilArrayLength {
 		return "", err
 	}
-	var ret = make([]rune, length)
-	for j := 0; j < int(length); j++ {
-		r, n := utf8.DecodeRune(i.buffer[i.position:])
-		i.position += int32(n)
-		ret[j] = r
-	}
-	return string(ret), nil
+	s := string(i.buffer[i.position : i.position+size])
+	i.position += size
+	return s, nil
 }
 
 func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) string {
@@ -650,18 +643,14 @@ func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) string {
 }
 
 func (i *ObjectDataInput) readUTFWithPosition(pos int32) (string, error) {
-	length := i.ReadInt32WithPosition(pos)
-	if i.err != nil || length == bufutil.NilArrayLength {
+	size := i.ReadInt32WithPosition(pos)
+	if i.err != nil || size == bufutil.NilArrayLength {
 		return "", i.err
 	}
 	pos += bufutil.Int32SizeInBytes
-	var ret = make([]rune, length)
-	for j := 0; j < int(length); j++ {
-		r, n := utf8.DecodeRune(i.buffer[pos:])
-		pos += int32(n)
-		ret[j] = r
-	}
-	return string(ret), nil
+	s := string(i.buffer[pos : pos+size])
+	pos += size
+	return s, nil
 }
 
 func (i *ObjectDataInput) ReadObject() interface{} {
