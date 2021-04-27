@@ -39,17 +39,22 @@ type ReplicatedMap struct {
 	ctx            context.Context
 }
 
-func NewReplicatedMapImpl(ctx context.Context, p *proxy) *ReplicatedMap {
-	partitionID, err := p.partitionService.GetPartitionIDWithKey(p.name)
+func NewReplicatedMapImpl(ctx context.Context, p *proxy) (*ReplicatedMap, error) {
+	nameData, err := p.validateAndSerialize(p.name)
+	if err != nil {
+		return nil, err
+	}
+	partitionID, err := p.partitionService.GetPartitionID(nameData)
 	if err != nil {
 		panic(fmt.Sprintf("error getting partition id with key: %s", p.name))
 	}
-	return &ReplicatedMap{
+	rp := &ReplicatedMap{
 		proxy:          p,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(),
 		partitionID:    partitionID,
 		ctx:            ctx,
 	}
+	return rp, nil
 }
 
 func (m *ReplicatedMap) withContext(ctx context.Context) *ReplicatedMap {

@@ -112,14 +112,14 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 		return nil, err
 	} else {
 		tcpConn := conn.(*net.TCPConn)
-		if err = tcpConn.SetNoDelay(true); err != nil {
-			panic(fmt.Errorf("error setting tcp no delay: %w", err))
+		if err = tcpConn.SetNoDelay(false); err != nil {
+			c.logger.Warnf("error setting tcp no delay: %w", err)
 		}
 		if err = tcpConn.SetReadBuffer(bufferSize); err != nil {
-			panic(fmt.Errorf("error setting read buffer: %w", err))
+			c.logger.Warnf("error setting read buffer: %w", err)
 		}
 		if err = tcpConn.SetWriteBuffer(bufferSize); err != nil {
-			panic(fmt.Errorf("error setting write buffer: %w", err))
+			c.logger.Warnf("error setting write buffer: %w", err)
 		}
 		return tcpConn, nil
 	}

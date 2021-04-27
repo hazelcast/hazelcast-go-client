@@ -326,11 +326,10 @@ func (c *Client) createComponents(config *Config) {
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
-	requestCh := make(chan invocation.Invocation, 1)
+	requestCh := make(chan invocation.Invocation, 1024)
 	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
-		SerializationService: c.serializationService,
-		EventDispatcher:      c.eventDispatcher,
-		Logger:               c.logger,
+		EventDispatcher: c.eventDispatcher,
+		Logger:          c.logger,
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(config.InvocationTimeout)
 	clusterService := icluster.NewServiceImpl(icluster.CreationBundle{
@@ -341,7 +340,7 @@ func (c *Client) createComponents(config *Config) {
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
 	})
-	responseCh := make(chan *proto.ClientMessage, 1)
+	responseCh := make(chan *proto.ClientMessage, 1024)
 	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
 		RequestCh:    requestCh,
 		ResponseCh:   responseCh,

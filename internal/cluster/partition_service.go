@@ -20,27 +20,21 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type PartitionServiceCreationBundle struct {
-	SerializationService *iserialization.Service
-	EventDispatcher      *event.DispatchService
-	Logger               ilogger.Logger
+	EventDispatcher *event.DispatchService
+	Logger          ilogger.Logger
 }
 
 func (b PartitionServiceCreationBundle) Check() {
-	if b.SerializationService == nil {
-		panic("SerializationService is nil")
-	}
 	if b.EventDispatcher == nil {
 		panic("EventDispatcher is nil")
 	}
@@ -50,20 +44,18 @@ func (b PartitionServiceCreationBundle) Check() {
 }
 
 type PartitionService struct {
-	serializationService *iserialization.Service
-	eventDispatcher      *event.DispatchService
-	partitionTable       partitionTable
-	partitionCount       atomic.Value
-	logger               ilogger.Logger
+	eventDispatcher *event.DispatchService
+	partitionTable  partitionTable
+	partitionCount  atomic.Value
+	logger          ilogger.Logger
 }
 
 func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionService {
 	bundle.Check()
 	return &PartitionService{
-		serializationService: bundle.SerializationService,
-		eventDispatcher:      bundle.EventDispatcher,
-		partitionTable:       defaultPartitionTable(),
-		logger:               bundle.Logger,
+		eventDispatcher: bundle.EventDispatcher,
+		partitionTable:  defaultPartitionTable(),
+		logger:          bundle.Logger,
 	}
 }
 
@@ -97,14 +89,6 @@ func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32,
 	}
 }
 
-func (s *PartitionService) GetPartitionIDWithKey(key interface{}) (int32, error) {
-	if data, err := s.serializationService.ToData(key); err != nil {
-		return 0, err
-	} else {
-		return s.GetPartitionID(data)
-	}
-}
-
 func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
 	if ev, ok := event.(*PartitionsUpdated); ok {
 		if s.partitionTable.Update(ev.Partitions, ev.Version, ev.ConnectionID) {
@@ -128,7 +112,8 @@ type partitionTable struct {
 func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID int64) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if len(pairs) == 0 || p.connectionID == connectionID && version <= p.partitionStateVersion {
+	cantApply := len(pairs) == 0 || p.connectionID == connectionID && version <= p.partitionStateVersion
+	if cantApply {
 		return false
 	}
 	newPartitions := map[int32]internal.UUID{}
