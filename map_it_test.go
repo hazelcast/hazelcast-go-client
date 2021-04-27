@@ -67,22 +67,19 @@ func TestMapPutWithMaxIdle(t *testing.T) {
 		if _, err := m.PutWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
 		time.Sleep(2 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
 
 func TestMapPutWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		// TODO: better test
 		if _, err := m.PutWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
 		time.Sleep(2 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
 

@@ -373,7 +373,7 @@ func (c *Client) createComponents(config *Config) {
 		SerializationService: c.serializationService,
 		PartitionService:     partitionService,
 		ClusterService:       clusterService,
-		SmartRouting:         smartRouting,
+		Config:               config,
 		InvocationFactory:    invocationFactory,
 		UserEventDispatcher:  c.userEventDispatcher,
 		ListenerBinder:       listenerBinder,
@@ -383,6 +383,6 @@ func (c *Client) createComponents(config *Config) {
 	c.clusterService = clusterService
 	c.partitionService = partitionService
 	c.invocationService = invocationService
-	c.proxyManager = newManager(proxyManagerServiceBundle)
+	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
 }

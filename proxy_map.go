@@ -483,7 +483,7 @@ func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 			msg, err := m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
-			if err != nil && !request.IsRetryable() {
+			if err != nil && !m.canRetry(request) {
 				err = cb.NewNonRetryableError(err)
 			}
 			return msg, err
@@ -790,14 +790,14 @@ func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, 
 	}
 	if keyData != nil {
 		if predicateData != nil {
-			request = codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.smartRouting)
+			request = codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
 		} else {
-			request = codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.smartRouting)
+			request = codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
 		}
 	} else if predicateData != nil {
-		request = codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.smartRouting)
+		request = codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
 	} else {
-		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smartRouting)
+		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.ClusterConfig.SmartRouting)
 	}
 	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {

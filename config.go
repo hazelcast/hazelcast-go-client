@@ -209,6 +209,11 @@ func (b *ClusterConfigBuilder) SetInvocationTimeout(timeout time.Duration) *Clus
 	return b
 }
 
+func (b *ClusterConfigBuilder) SetRedoOperation(enable bool) *ClusterConfigBuilder {
+	b.config.RedoOperation = enable
+	return b
+}
+
 func (b *ClusterConfigBuilder) Security() *ClusterSecurityConfigBuilder {
 	return b.securityConfigBuilder
 }

@@ -45,6 +45,7 @@ type Config struct {
 	HeartbeatInterval time.Duration
 	HeartbeatTimeout  time.Duration
 	InvocationTimeout time.Duration
+	RedoOperation     bool
 	SecurityConfig    SecurityConfig
 }
 

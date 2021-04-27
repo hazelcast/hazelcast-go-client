@@ -118,10 +118,6 @@ func (m *ClientMessage) Copy() *ClientMessage {
 	}
 }
 
-func (m *ClientMessage) IsRetryable() bool {
-	return m.Retryable
-}
-
 func (m *ClientMessage) SetRetryable(retryable bool) {
 	m.Retryable = retryable
 }

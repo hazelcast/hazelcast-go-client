@@ -35,7 +35,7 @@ type proxyManager struct {
 	refIDGenerator *iproxy.ReferenceIDGenerator
 }
 
-func newManager(bundle creationBundle) *proxyManager {
+func newProxyManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
 	return &proxyManager{
 		mu:             &sync.RWMutex{},

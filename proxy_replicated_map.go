@@ -230,7 +230,7 @@ func (m ReplicatedMap) PutAll(keyValuePairs []types.Entry) error {
 		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeReplicatedMapPutAllRequest(m.name, entries)
 			msg, err := m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
-			if err != nil && !request.IsRetryable() {
+			if err != nil && !!m.canRetry(request) {
 				err = cb.NewNonRetryableError(err)
 			}
 			return msg, err
@@ -290,14 +290,14 @@ func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Pr
 	}
 	if keyData != nil {
 		if predicateData != nil {
-			request = codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, m.smartRouting)
+			request = codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, m.config.ClusterConfig.SmartRouting)
 		} else {
-			request = codec.EncodeReplicatedMapAddEntryListenerToKeyRequest(m.name, keyData, m.smartRouting)
+			request = codec.EncodeReplicatedMapAddEntryListenerToKeyRequest(m.name, keyData, m.config.ClusterConfig.SmartRouting)
 		}
 	} else if predicateData != nil {
-		request = codec.EncodeReplicatedMapAddEntryListenerWithPredicateRequest(m.name, predicateData, m.smartRouting)
+		request = codec.EncodeReplicatedMapAddEntryListenerWithPredicateRequest(m.name, predicateData, m.config.ClusterConfig.SmartRouting)
 	} else {
-		request = codec.EncodeReplicatedMapAddEntryListenerRequest(m.name, m.smartRouting)
+		request = codec.EncodeReplicatedMapAddEntryListenerRequest(m.name, m.config.ClusterConfig.SmartRouting)
 	}
 	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {

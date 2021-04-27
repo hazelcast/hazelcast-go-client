@@ -50,7 +50,7 @@ type creationBundle struct {
 	ClusterService       *cluster.ServiceImpl
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinderImpl
-	SmartRouting         bool
+	Config               *Config
 	Logger               ilogger.Logger
 }
 
@@ -76,6 +76,9 @@ func (b creationBundle) Check() {
 	if b.ListenerBinder == nil {
 		panic("ListenerBinder is nil")
 	}
+	if b.Config == nil {
+		panic("Config is nil")
+	}
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
@@ -89,7 +92,7 @@ type proxy struct {
 	clusterService       *cluster.ServiceImpl
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinderImpl
-	smartRouting         bool
+	config               *Config
 	serviceName          string
 	name                 string
 	logger               ilogger.Logger
@@ -115,7 +118,7 @@ func newProxy(bundle creationBundle, serviceName string, objectName string) (*pr
 		clusterService:       bundle.ClusterService,
 		invocationFactory:    bundle.InvocationFactory,
 		listenerBinder:       bundle.ListenerBinder,
-		smartRouting:         bundle.SmartRouting,
+		config:               bundle.Config,
 		logger:               bundle.Logger,
 		circuitBreaker:       circuitBreaker,
 	}
@@ -211,7 +214,7 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
 		msg, err := inv.GetWithContext(ctx)
-		if err != nil && !request.IsRetryable() {
+		if err != nil && !!p.canRetry(request) {
 			err = cb.NewNonRetryableError(err)
 		}
 		return msg, err
@@ -221,7 +224,7 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
 		msg, err := p.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
-		if err != nil && !request.IsRetryable() {
+		if err != nil && !p.canRetry(request) {
 			err = cb.NewNonRetryableError(err)
 		}
 		return msg, err
@@ -316,4 +319,8 @@ func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, en
 		}
 		return nil
 	}
+}
+
+func (p *proxy) canRetry(msg *proto.ClientMessage) bool {
+	return msg.Retryable || p.config.ClusterConfig.RedoOperation
 }
