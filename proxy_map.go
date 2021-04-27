@@ -491,7 +491,7 @@ func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapPutAllRequest(m.name, entries, true)
-			msg, err := m.invokeOnPartitionAsync(request, partitionID).GetContext(ctx)
+			msg, err := m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 			if err != nil && !request.IsRetryable() {
 				err = cb.NewNonRetryableError(err)
 			}

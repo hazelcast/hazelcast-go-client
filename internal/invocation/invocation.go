@@ -39,7 +39,7 @@ type Invocation interface {
 	Completed() bool
 	EventHandler() proto.ClientMessageHandler
 	Get() (*proto.ClientMessage, error)
-	GetContext(ctx context.Context) (*proto.ClientMessage, error)
+	GetWithContext(ctx context.Context) (*proto.ClientMessage, error)
 	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
@@ -90,7 +90,7 @@ func (i *Impl) Get() (*proto.ClientMessage, error) {
 	return nil, ErrResponseChannelClosed
 }
 
-func (i *Impl) GetContext(ctx context.Context) (*proto.ClientMessage, error) {
+func (i *Impl) GetWithContext(ctx context.Context) (*proto.ClientMessage, error) {
 	select {
 	case response, ok := <-i.response:
 		if ok {
