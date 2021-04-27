@@ -23,7 +23,6 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -40,7 +39,6 @@ type Invocation interface {
 	EventHandler() proto.ClientMessageHandler
 	Get() (*proto.ClientMessage, error)
 	GetWithContext(ctx context.Context) (*proto.ClientMessage, error)
-	GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
 	Address() *pubcluster.AddressImpl
@@ -54,18 +52,17 @@ type Impl struct {
 	boundConnection *Impl
 	address         *pubcluster.AddressImpl
 	partitionID     int32
-	//sentConnection  atomic.Value
-	eventHandler func(clientMessage *proto.ClientMessage)
-	deadline     time.Time
+	eventHandler    func(clientMessage *proto.ClientMessage)
+	deadline        time.Time
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl, timeout time.Duration) *Impl {
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl, deadline time.Time) *Impl {
 	return &Impl{
 		partitionID: partitionID,
 		address:     address,
 		request:     clientMessage,
 		response:    make(chan *proto.ClientMessage, 1),
-		deadline:    time.Now().Add(timeout),
+		deadline:    deadline,
 	}
 }
 
@@ -84,10 +81,10 @@ func (i *Impl) EventHandler() proto.ClientMessageHandler {
 }
 
 func (i *Impl) Get() (*proto.ClientMessage, error) {
-	if response, ok := <-i.response; ok {
-		return i.unwrapResponse(response)
-	}
-	return nil, ErrResponseChannelClosed
+	ctx, cancel := context.WithDeadline(context.Background(), i.deadline)
+	msg, err := i.GetWithContext(ctx)
+	cancel()
+	return msg, err
 }
 
 func (i *Impl) GetWithContext(ctx context.Context) (*proto.ClientMessage, error) {
@@ -99,18 +96,6 @@ func (i *Impl) GetWithContext(ctx context.Context) (*proto.ClientMessage, error)
 		return nil, ErrResponseChannelClosed
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	}
-}
-
-func (i *Impl) GetWithTimeout(duration time.Duration) (*proto.ClientMessage, error) {
-	select {
-	case response, ok := <-i.response:
-		if ok {
-			return i.unwrapResponse(response)
-		}
-		return nil, ErrResponseChannelClosed
-	case <-time.After(duration):
-		return nil, hzerror.NewHazelcastOperationTimeoutError("invocation timed out after "+duration.String(), nil)
 	}
 }
 

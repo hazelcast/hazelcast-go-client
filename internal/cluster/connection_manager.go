@@ -375,10 +375,10 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 func (m *ConnectionManager) authenticate(connection *Connection) error {
 	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
 	request := m.encodeAuthenticationRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, m.clusterConfig.InvocationTimeout, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, nil)
 	select {
 	case m.requestCh <- inv:
-		if result, err := inv.GetWithTimeout(m.clusterConfig.HeartbeatTimeout); err != nil {
+		if result, err := inv.Get(); err != nil {
 			return err
 		} else {
 			return m.processAuthenticationResult(connection, result)
@@ -453,7 +453,7 @@ func (m *ConnectionManager) heartbeat() {
 
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, m.clusterConfig.HeartbeatTimeout, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, nil)
 	m.requestCh <- inv
 }
 

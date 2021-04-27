@@ -158,7 +158,7 @@ func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 
 func (s *ServiceImpl) sendMemberListViewRequest(conn *Connection) {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
-	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, s.config.InvocationTimeout, func(response *proto.ClientMessage) {
+	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
 			s.logger.Debug(func() string { return "members updated" })
 			s.eventDispatcher.Publish(NewMembersUpdated(memberInfos, version))

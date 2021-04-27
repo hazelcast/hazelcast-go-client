@@ -76,7 +76,6 @@ func (b *ConnectionListenerBinderImpl) Add(
 			-1,
 			nil,
 			conn,
-			b.connectionManager.clusterConfig.InvocationTimeout,
 			handler)
 		b.requestCh <- inv
 		if response, err := inv.Get(); err != nil {
@@ -136,7 +135,6 @@ func (b *ConnectionListenerBinderImpl) Remove(
 			-1,
 			nil,
 			reg.conn,
-			b.connectionManager.clusterConfig.InvocationTimeout,
 			nil)
 		b.requestCh <- inv
 		if _, err := inv.Get(); err != nil {
@@ -164,7 +162,6 @@ func (b *ConnectionListenerBinderImpl) handleConnectionOpened(event event.Event)
 				-1,
 				nil,
 				connectionOpenedEvent.Conn,
-				b.connectionManager.clusterConfig.InvocationTimeout,
 				msg.handler)
 			b.requestCh <- inv
 		}

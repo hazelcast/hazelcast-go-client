@@ -40,14 +40,14 @@ func (f *ConnectionInvocationFactory) NewInvocationOnPartitionOwner(message *pro
 	// TODO: remove this when message pool is implemented
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	return invocation.NewImpl(message, partitionID, nil, f.invocationTimeout)
+	return invocation.NewImpl(message, partitionID, nil, time.Now().Add(f.invocationTimeout))
 }
 
 func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage, handler proto.ClientMessageHandler) invocation.Invocation {
 	// TODO: remove this when message pool is implemented
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := invocation.NewImpl(message, -1, nil, f.invocationTimeout)
+	inv := invocation.NewImpl(message, -1, nil, time.Now().Add(f.invocationTimeout))
 	inv.SetEventHandler(handler)
 	return inv
 }
@@ -56,15 +56,15 @@ func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.Clien
 	// TODO: remove this when message pool is implemented
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	return invocation.NewImpl(message, -1, address, f.invocationTimeout)
+	return invocation.NewImpl(message, -1, address, time.Now().Add(f.invocationTimeout))
 }
 
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl,
-	connection *Connection, timeout time.Duration, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
+	connection *Connection, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	// TODO: remove this when message pool is implemented
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := newConnectionBoundInvocation(message, partitionID, address, connection, timeout)
+	inv := newConnectionBoundInvocation(message, partitionID, address, connection, time.Now().Add(f.invocationTimeout))
 	inv.SetEventHandler(handler)
 	return inv
 }
