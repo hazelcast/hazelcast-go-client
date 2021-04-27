@@ -18,6 +18,7 @@ package cb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -81,6 +82,7 @@ func (cb *CircuitBreaker) TryContext(ctx context.Context, tryHandler TryHandler)
 func (cb *CircuitBreaker) try(ctx context.Context, resultCh chan interface{}, tryHandler TryHandler) {
 	var result interface{}
 	var err error
+	var nonRetryableErr *NonRetryableError
 loop:
 	for trial := 0; trial <= cb.MaxRetries; trial++ {
 		select {
@@ -92,7 +94,7 @@ loop:
 				// succeeded
 				break loop
 			}
-			if nonRetryableErr, ok := err.(*NonRetryableError); ok {
+			if errors.As(err, &nonRetryableErr) {
 				err = nonRetryableErr.Err
 				break loop
 			}
