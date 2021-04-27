@@ -388,6 +388,6 @@ func (c testCluster) configBuilder() *hz.ConfigBuilder {
 	cb := hz.NewConfigBuilder()
 	cb.Cluster().
 		SetName(c.clusterID).
-		SetMembers("localhost:7701")
+		SetAddrs("localhost:7701")
 	return cb
 }

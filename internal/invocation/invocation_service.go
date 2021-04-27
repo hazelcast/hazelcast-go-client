@@ -50,7 +50,6 @@ func (b ServiceCreationBundle) Check() {
 }
 
 type Service struct {
-	//nextCorrelationID int64
 	requestCh         <-chan Invocation
 	responseCh        <-chan *proto.ClientMessage
 	doneCh            chan struct{}

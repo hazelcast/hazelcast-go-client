@@ -47,7 +47,7 @@ func ExampleNewClientWithConfig() {
 	configBuilder := hazelcast.NewConfigBuilder()
 	configBuilder.Cluster().
 		SetName("my-cluster").
-		SetMembers("192.168.1.42:5000", "192.168.1.42:5001")
+		SetAddrs("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
 	client, err := hazelcast.StartNewClientWithConfig(configBuilder)
 	if err != nil {

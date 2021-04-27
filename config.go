@@ -155,10 +155,10 @@ func (b *ClusterConfigBuilder) SetName(name string) *ClusterConfigBuilder {
 	return b
 }
 
-// SetMembers sets the candidate address list that client will use to establish initial connection.
+// SetAddrs sets the candidate address list that client will use to establish initial connection.
 // Other members of the cluster will be discovered when the client starts.
 // By default localhost:5701 is set as the member address.
-func (b *ClusterConfigBuilder) SetMembers(addrs ...string) *ClusterConfigBuilder {
+func (b *ClusterConfigBuilder) SetAddrs(addrs ...string) *ClusterConfigBuilder {
 	selfAddresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		if err := checkAddress(addr); err != nil {
