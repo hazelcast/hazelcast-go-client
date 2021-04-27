@@ -39,15 +39,6 @@ const (
 	maxIndexAttributes = 255
 )
 
-type MapEntryListenerConfig struct {
-	Predicate          predicate.Predicate
-	IncludeValue       bool
-	Key                interface{}
-	NotifyEntryAdded   bool
-	NotifyEntryRemoved bool
-	NotifyEntryUpdated bool
-}
-
 type Map struct {
 	*proxy
 	refIDGenerator *iproxy.ReferenceIDGenerator
@@ -756,9 +747,8 @@ func (m *Map) Unlock(key interface{}) error {
 
 // AddEntryListener adds a continuous entry listener to this map.
 func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
-	flags := makeListenerFlags(&config)
 	subscriptionID := m.refIDGenerator.NextID()
-	if err := m.addEntryListener(flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
+	if err := m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
@@ -991,20 +981,6 @@ func (m *Map) convertToObjects(valueDatas []pubserialization.Data) ([]interface{
 	return values, nil
 }
 
-func makeListenerFlags(config *MapEntryListenerConfig) int32 {
-	var flags int32
-	if config.NotifyEntryAdded {
-		flags |= NotifyEntryAdded
-	}
-	if config.NotifyEntryUpdated {
-		flags |= NotifyEntryUpdated
-	}
-	if config.NotifyEntryRemoved {
-		flags |= NotifyEntryRemoved
-	}
-	return flags
-}
-
 type indexValidationError struct {
 	Err error
 }
@@ -1068,4 +1044,59 @@ func (as attributeSet) Attrs() []string {
 		attrs = append(attrs, attr)
 	}
 	return attrs
+}
+
+type MapEntryListenerConfig struct {
+	Predicate    predicate.Predicate
+	IncludeValue bool
+	Key          interface{}
+	Flags        int32
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryAdded(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryAdded, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryRemoved, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryUpdated(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryUpdated, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryEvicted, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryExpired(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryExpired, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryAllEvicted, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryAllCleared(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryAllCleared, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryMerged(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryMerged, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryInvalidated, enable)
+}
+
+func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
+	flagsSetOrClear(&c.Flags, NotifyEntryLoaded, enable)
+}
+
+func flagsSetOrClear(flags *int32, flag int32, enable bool) {
+	if enable {
+		*flags |= flag
+	} else {
+		*flags &^= flag
+	}
 }

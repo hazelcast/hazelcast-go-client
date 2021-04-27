@@ -734,10 +734,10 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
-			NotifyEntryAdded:   true,
-			NotifyEntryUpdated: true,
-			IncludeValue:       true,
+			IncludeValue: true,
 		}
+		listenerConfig.NotifyEntryAdded(true)
+		listenerConfig.NotifyEntryAdded(true)
 		subscriptionID, err := m.AddEntryListener(listenerConfig, handler)
 		if err != nil {
 			t.Fatal(err)
@@ -767,11 +767,11 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
-			NotifyEntryAdded:   true,
-			NotifyEntryUpdated: true,
-			IncludeValue:       true,
-			Key:                "k1",
+			IncludeValue: true,
+			Key:          "k1",
 		}
+		listenerConfig.NotifyEntryAdded(true)
+		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
@@ -801,11 +801,11 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
-			NotifyEntryAdded:   true,
-			NotifyEntryUpdated: true,
-			IncludeValue:       true,
-			Predicate:          predicate.Equal("A", "foo"),
+			IncludeValue: true,
+			Predicate:    predicate.Equal("A", "foo"),
 		}
+		listenerConfig.NotifyEntryAdded(true)
+		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
@@ -834,12 +834,12 @@ func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
-			NotifyEntryAdded:   true,
-			NotifyEntryUpdated: true,
-			IncludeValue:       true,
-			Key:                "k1",
-			Predicate:          predicate.Equal("A", "foo"),
+			IncludeValue: true,
+			Key:          "k1",
+			Predicate:    predicate.Equal("A", "foo"),
 		}
+		listenerConfig.NotifyEntryAdded(true)
+		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}

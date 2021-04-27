@@ -33,8 +33,8 @@ const (
 	NotifyEntryAllCleared = int32(1 << 6)
 	// NotifyEntryMerged is dispatched if an entry is merged after a network partition.
 	NotifyEntryMerged = int32(1 << 7)
-	// NotifyEntryInvalidation is dispatched if an entry is invalidated.
-	NotifyEntryInvalidation = int32(1 << 8)
+	// NotifyEntryInvalidated is dispatched if an entry is invalidated.
+	NotifyEntryInvalidated = int32(1 << 8)
 	// NotifyEntryLoaded is dispatched if an entry is loaded.
 	NotifyEntryLoaded = int32(1 << 9)
 )
