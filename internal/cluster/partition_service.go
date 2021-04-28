@@ -92,7 +92,6 @@ func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32,
 func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
 	if ev, ok := event.(*PartitionsUpdated); ok {
 		if s.partitionTable.Update(ev.Partitions, ev.Version, ev.ConnectionID) {
-			s.eventDispatcher.Publish(NewPartitionsLoaded())
 			s.logger.Debug(func() string { return "partitions loaded" })
 		}
 	}

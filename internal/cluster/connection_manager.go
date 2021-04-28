@@ -62,7 +62,6 @@ var ClientVersion = "4.0.0"
 type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
-	SmartRouting         bool
 	Logger               ilogger.Logger
 	ClusterService       *ServiceImpl
 	PartitionService     *PartitionService
@@ -161,7 +160,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clientUUID:           internal.NewUUID(),
 		connMap:              newConnectionMap(),
 		addressTranslator:    NewDefaultAddressTranslator(),
-		smartRouting:         bundle.SmartRouting,
+		smartRouting:         bundle.ClusterConfig.SmartRouting,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
 		cb:                   circuitBreaker,

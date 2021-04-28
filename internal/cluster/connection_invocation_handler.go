@@ -35,6 +35,7 @@ type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
 	ClusterService    *ServiceImpl
 	Logger            ilogger.Logger
+	Config            *pubcluster.Config
 }
 
 func (b ConnectionInvocationHandlerCreationBundle) Check() {
@@ -47,12 +48,15 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
+	if b.Config == nil {
+		panic("Config is nil")
+	}
 }
 
 type ConnectionInvocationHandler struct {
 	connectionManager *ConnectionManager
 	clusterService    *ServiceImpl
-	smart             int32
+	smart             bool
 	logger            ilogger.Logger
 	cb                *cb.CircuitBreaker
 }
@@ -71,12 +75,13 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 		clusterService:    bundle.ClusterService,
 		logger:            bundle.Logger,
 		cb:                circuitBreaker,
+		smart:             bundle.Config.SmartRouting,
 	}
 }
 
 func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
 	_, err := h.cb.Try(func(ctx context.Context) (interface{}, error) {
-		if h.clusterService.SmartRoutingEnabled() {
+		if h.smart {
 			if err := h.invokeSmart(inv); err != nil {
 				if errors.Is(err, errPartitionOwnerNotAssigned) {
 					h.logger.Debug(func() string { return fmt.Sprintf("invoking non-smart since: %s", err.Error()) })

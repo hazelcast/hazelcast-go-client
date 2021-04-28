@@ -190,12 +190,11 @@ func (c *Client) start() error {
 	}
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
-	clusterServiceStartCh := c.clusterService.Start(c.clusterConfig.SmartRouting)
+	c.clusterService.Start()
 	c.partitionService.Start()
 	if err := c.connectionManager.Start(); err != nil {
 		return err
 	}
-	<-clusterServiceStartCh
 	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil
@@ -322,7 +321,6 @@ func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCrede
 
 func (c *Client) createComponents(config *Config) {
 	credentials := c.makeCredentials(config)
-	smartRouting := config.ClusterConfig.SmartRouting
 	addressProviders := []icluster.AddressProvider{
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
@@ -344,7 +342,6 @@ func (c *Client) createComponents(config *Config) {
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
 		ResponseCh:           responseCh,
-		SmartRouting:         smartRouting,
 		Logger:               c.logger,
 		ClusterService:       clusterService,
 		PartitionService:     partitionService,
@@ -359,6 +356,7 @@ func (c *Client) createComponents(config *Config) {
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
 		Logger:            c.logger,
+		Config:            &config.ClusterConfig,
 	})
 	invocationService := invocation.NewService(requestCh, responseCh, invocationHandler, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)

@@ -38,10 +38,6 @@ const (
 	// EventMembersAdded is dispatched when cluster service finds out new members are removed from the cluster
 	EventMembersRemoved = "internal.cluster.membersremoved"
 
-	// EventPartitionsLoaded is dispatched when partition service updates its partition table
-	// This is required to enable smart routing
-	EventPartitionsLoaded = "internal.cluster.partitionsloaded"
-
 	// EventConnected is dispatched after the very first connection to the cluster or the first connection after client disconnected.
 	EventConnected = "internal.cluster.connected"
 
@@ -138,17 +134,6 @@ func NewMembersUpdated(memberInfos []cluster.MemberInfo, version int32) *Members
 
 func (m MembersUpdated) EventName() string {
 	return EventMembersUpdated
-}
-
-type PartitionsLoaded struct {
-}
-
-func NewPartitionsLoaded() *PartitionsLoaded {
-	return &PartitionsLoaded{}
-}
-
-func (p PartitionsLoaded) EventName() string {
-	return EventPartitionsLoaded
 }
 
 type Connected struct {
