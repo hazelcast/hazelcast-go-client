@@ -341,12 +341,6 @@ func (c *Client) createComponents(config *Config) {
 		Config:            &config.ClusterConfig,
 	})
 	responseCh := make(chan *proto.ClientMessage, 1024)
-	invocationService := invocation.NewServiceImpl(invocation.ServiceCreationBundle{
-		RequestCh:    requestCh,
-		ResponseCh:   responseCh,
-		SmartRouting: smartRouting,
-		Logger:       c.logger,
-	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
 		ResponseCh:           responseCh,
@@ -366,7 +360,7 @@ func (c *Client) createComponents(config *Config) {
 		ClusterService:    clusterService,
 		Logger:            c.logger,
 	})
-	invocationService.SetHandler(invocationHandler)
+	invocationService := invocation.NewService(requestCh, responseCh, invocationHandler, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,

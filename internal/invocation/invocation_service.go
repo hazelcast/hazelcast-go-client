@@ -18,7 +18,6 @@ package invocation
 
 import (
 	"fmt"
-	"time"
 
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -28,51 +27,23 @@ type Handler interface {
 	Invoke(invocation Invocation) error
 }
 
-type ServiceCreationBundle struct {
-	Handler      Handler
-	RequestCh    <-chan Invocation
-	ResponseCh   <-chan *proto.ClientMessage
-	SmartRouting bool
-	Logger       ilogger.Logger
-}
-
-func (b ServiceCreationBundle) Check() {
-	// Handler can be nil
-	if b.Logger == nil {
-		panic("Logger is nil")
-	}
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
-	if b.ResponseCh == nil {
-		panic("ResponseCh is nil")
-	}
-}
-
 type Service struct {
-	requestCh         <-chan Invocation
-	responseCh        <-chan *proto.ClientMessage
-	doneCh            chan struct{}
-	invocations       map[int64]Invocation
-	invocationTimeout time.Duration
-	retryPause        time.Duration
-	smartRouting      bool
-	handler           Handler
-	logger            ilogger.Logger
+	requestCh   <-chan Invocation
+	responseCh  <-chan *proto.ClientMessage
+	doneCh      chan struct{}
+	invocations map[int64]Invocation
+	handler     Handler
+	logger      ilogger.Logger
 }
 
-func NewServiceImpl(bundle ServiceCreationBundle) *Service {
-	bundle.Check()
-	handler := bundle.Handler
+func NewService(requestCh <-chan Invocation, responseCh <-chan *proto.ClientMessage, handler Handler, logger ilogger.Logger) *Service {
 	service := &Service{
-		requestCh:    bundle.RequestCh,
-		responseCh:   bundle.ResponseCh,
-		doneCh:       make(chan struct{}),
-		invocations:  map[int64]Invocation{},
-		retryPause:   1 * time.Second,
-		smartRouting: bundle.SmartRouting,
-		handler:      handler,
-		logger:       bundle.Logger,
+		requestCh:   requestCh,
+		responseCh:  responseCh,
+		doneCh:      make(chan struct{}),
+		invocations: map[int64]Invocation{},
+		handler:     handler,
+		logger:      logger,
 	}
 	go service.processIncoming()
 	return service
