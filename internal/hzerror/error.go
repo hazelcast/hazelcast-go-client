@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	ErrClientOffline = errors.New("client offline")
+	ErrClientOffline             = errors.New("client offline")
+	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
 )
 
 // HazelcastError is the general error interface.

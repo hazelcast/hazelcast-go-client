@@ -372,7 +372,9 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		conn.endpoint.Store(addrImpl)
 		m.connMap.AddConnection(conn, addrImpl)
 		// TODO: detect cluster change
-		m.partitionService.checkAndSetPartitionCount(partitionCount)
+		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
+			return err
+		}
 		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:

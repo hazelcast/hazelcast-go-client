@@ -46,7 +46,7 @@ func (b PartitionServiceCreationBundle) Check() {
 type PartitionService struct {
 	eventDispatcher *event.DispatchService
 	partitionTable  partitionTable
-	partitionCount  atomic.Value
+	partitionCount  int32
 	logger          ilogger.Logger
 }
 
@@ -74,7 +74,7 @@ func (s *PartitionService) GetPartitionOwner(partitionId int32) internal.UUID {
 }
 
 func (s *PartitionService) PartitionCount() int32 {
-	return s.partitionCount.Load().(int32)
+	return atomic.LoadInt32(&s.partitionCount)
 }
 
 func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32, error) {
@@ -98,8 +98,14 @@ func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
 	}
 }
 
-func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) {
-	s.partitionCount.Store(newPartitionCount)
+func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) error {
+	if atomic.CompareAndSwapInt32(&s.partitionCount, 0, newPartitionCount) {
+		return nil
+	}
+	if atomic.LoadInt32(&s.partitionCount) != newPartitionCount {
+		return hzerror.ErrClientNotAllowedInCluster
+	}
+	return nil
 }
 
 type partitionTable struct {
