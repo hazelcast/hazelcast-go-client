@@ -63,7 +63,7 @@ type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
 	Logger               ilogger.Logger
-	ClusterService       *ServiceImpl
+	ClusterService       *Service
 	PartitionService     *PartitionService
 	SerializationService iserialization.SerializationService
 	EventDispatcher      *event.DispatchService
@@ -112,7 +112,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 type ConnectionManager struct {
 	requestCh            chan<- invocation.Invocation
 	responseCh           chan<- *proto.ClientMessage
-	clusterService       *ServiceImpl
+	clusterService       *Service
 	partitionService     *PartitionService
 	serializationService iserialization.SerializationService
 	eventDispatcher      *event.DispatchService

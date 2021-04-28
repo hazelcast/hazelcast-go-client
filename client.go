@@ -94,7 +94,7 @@ type Client struct {
 	// components
 	proxyManager         *proxyManager
 	connectionManager    *icluster.ConnectionManager
-	clusterService       *icluster.ServiceImpl
+	clusterService       *icluster.Service
 	partitionService     *icluster.PartitionService
 	invocationService    *invocation.Service
 	serializationService *serialization.Service

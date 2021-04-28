@@ -47,7 +47,7 @@ type creationBundle struct {
 	SerializationService iserialization.SerializationService
 	PartitionService     *cluster.PartitionService
 	UserEventDispatcher  *event.DispatchService
-	ClusterService       *cluster.ServiceImpl
+	ClusterService       *cluster.Service
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinderImpl
 	Config               *Config
@@ -89,7 +89,7 @@ type proxy struct {
 	serializationService iserialization.SerializationService
 	partitionService     *cluster.PartitionService
 	userEventDispatcher  *event.DispatchService
-	clusterService       *cluster.ServiceImpl
+	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinderImpl
 	config               *Config

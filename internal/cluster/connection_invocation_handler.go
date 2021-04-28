@@ -33,7 +33,7 @@ var errPartitionOwnerNotAssigned = errors.New("partition owner not assigned")
 
 type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
-	ClusterService    *ServiceImpl
+	ClusterService    *Service
 	Logger            ilogger.Logger
 	Config            *pubcluster.Config
 }
@@ -55,7 +55,7 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 
 type ConnectionInvocationHandler struct {
 	connectionManager *ConnectionManager
-	clusterService    *ServiceImpl
+	clusterService    *Service
 	smart             bool
 	logger            ilogger.Logger
 	cb                *cb.CircuitBreaker

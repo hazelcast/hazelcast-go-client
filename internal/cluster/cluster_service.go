@@ -19,7 +19,6 @@ package cluster
 import (
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -30,16 +29,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
-const (
-	smartRoutingEnabled int32 = 1
-)
-
-type ServiceImpl struct {
+type Service struct {
 	addrProviders     []AddressProvider
 	requestCh         chan<- invocation.Invocation
 	doneCh            chan struct{}
-	startCh           chan struct{}
-	startChAtom       int32
 	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
 	logger            ilogger.Logger
@@ -78,13 +71,12 @@ func (b CreationBundle) Check() {
 	}
 }
 
-func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
+func NewServiceImpl(bundle CreationBundle) *Service {
 	bundle.Check()
-	return &ServiceImpl{
+	return &Service{
 		addrProviders:     bundle.AddrProviders,
 		requestCh:         bundle.RequestCh,
 		doneCh:            make(chan struct{}),
-		startCh:           make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		logger:            bundle.Logger,
@@ -93,28 +85,28 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 	}
 }
 
-func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
+func (s *Service) GetMemberByUUID(uuid string) pubcluster.Member {
 	return s.membersMap.Find(uuid)
 }
 
-func (s *ServiceImpl) Start() {
+func (s *Service) Start() {
 	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
 	s.eventDispatcher.Subscribe(EventConnectionOpened, subscriptionID, s.handleConnectionOpened)
 	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
 	go s.logStatus()
 }
 
-func (s *ServiceImpl) Stop() {
+func (s *Service) Stop() {
 	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
 	s.eventDispatcher.Unsubscribe(EventConnectionOpened, subscriptionID)
 	close(s.doneCh)
 }
 
-func (s *ServiceImpl) MemberAddrs() []string {
+func (s *Service) MemberAddrs() []string {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *ServiceImpl) memberCandidateAddrs() []*pubcluster.AddressImpl {
+func (s *Service) memberCandidateAddrs() []*pubcluster.AddressImpl {
 	addrSet := NewAddrSet()
 	for _, addrProvider := range s.addrProviders {
 		addrSet.AddAddrs(addrProvider.Addresses())
@@ -122,18 +114,15 @@ func (s *ServiceImpl) memberCandidateAddrs() []*pubcluster.AddressImpl {
 	return addrSet.Addrs()
 }
 
-func (s *ServiceImpl) handleConnectionOpened(event event.Event) {
+func (s *Service) handleConnectionOpened(event event.Event) {
 	if e, ok := event.(*ConnectionOpened); ok {
 		go s.sendMemberListViewRequest(e.Conn)
 	}
 }
 
-func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
+func (s *Service) handleMembersUpdated(event event.Event) {
 	if membersUpdateEvent, ok := event.(*MembersUpdated); ok {
 		added, removed := s.membersMap.Update(membersUpdateEvent.Members, membersUpdateEvent.Version)
-		if atomic.CompareAndSwapInt32(&s.startChAtom, 0, 1) {
-			close(s.startCh)
-		}
 		if len(added) > 0 {
 			s.eventDispatcher.Publish(NewMembersAdded(added))
 		}
@@ -143,7 +132,7 @@ func (s *ServiceImpl) handleMembersUpdated(event event.Event) {
 	}
 }
 
-func (s *ServiceImpl) sendMemberListViewRequest(conn *Connection) {
+func (s *Service) sendMemberListViewRequest(conn *Connection) {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
@@ -160,7 +149,7 @@ func (s *ServiceImpl) sendMemberListViewRequest(conn *Connection) {
 	}
 }
 
-func (s *ServiceImpl) logStatus() {
+func (s *Service) logStatus() {
 	ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
