@@ -104,9 +104,10 @@ func TestMapPutIfAbsentWithTTL(t *testing.T) {
 		if _, err := m.PutIfAbsentWithTTL("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		time.Sleep(100 * time.Millisecond)
+		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
 		time.Sleep(2 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
 
@@ -117,9 +118,9 @@ func TestMapPutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 		if _, err := m.PutIfAbsentWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
 		time.Sleep(2 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
 

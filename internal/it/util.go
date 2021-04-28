@@ -36,32 +36,20 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const EnvDisableSmart = "DISABLE_SMART"
-const EnvDisableNonsmart = "DISABLE_NONSMART"
-const EnvEnableTraceLogging = "ENABLE_TRACE"
-const EnvMemberCount = "MEMBER_COUNT"
-const EnvEnableLeakCheck = "ENABLE_LEAKCHECK"
+const (
+	EnvDisableSmart       = "DISABLE_SMART"
+	EnvDisableNonsmart    = "DISABLE_NONSMART"
+	EnvEnableTraceLogging = "ENABLE_TRACE"
+	EnvMemberCount        = "MEMBER_COUNT"
+	EnvEnableLeakCheck    = "ENABLE_LEAKCHECK"
+)
 
-const xmlConfig = `
-        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-            <cluster-name>integration-test</cluster-name>
-            <network>
-               <port>7701</port>
-            </network>
-			<map name="test-map">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-        </hazelcast>
-`
+const DefaultPort = 7701
+const DefaultClusterName = "integration-test"
 
 var rc *RemoteControllerClient
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster *testCluster
+var defaultTestCluster *TestCluster
 
 func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
 	if TraceLoggingEnabled() {
@@ -81,7 +69,7 @@ func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Cl
 }
 
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
-	ensureRemoteController()
+	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")
@@ -133,7 +121,7 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback
 		client *hz.Client
 		m      *hz.Map
 	)
-	ensureRemoteController()
+	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")
@@ -175,7 +163,7 @@ func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, mapName string, 
 		client *hz.Client
 		m      *hz.ReplicatedMap
 	)
-	ensureRemoteController()
+	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")
@@ -343,7 +331,7 @@ func createRemoteController() *RemoteControllerClient {
 	return rc
 }
 
-func ensureRemoteController() *RemoteControllerClient {
+func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
@@ -353,41 +341,68 @@ func ensureRemoteController() *RemoteControllerClient {
 		} else if !ping {
 			panic("remote controller not accesible")
 		}
-		defaultTestCluster = startNewCluster(rc, defaultMemberCount())
+		if launchDefaultCluster {
+			defaultTestCluster = startNewCluster(rc, defaultMemberCount())
+		}
 	}
 	return rc
 }
 
-type testCluster struct {
+type TestCluster struct {
 	rc          *RemoteControllerClient
 	clusterID   string
 	memberUUIDs []string
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int) *testCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.1", xmlConfig)).(*Cluster)
+func StartNewCluster(memberCount int) *TestCluster {
+	ensureRemoteController(false)
+	return startNewCluster(rc, memberCount)
+}
+
+func startNewCluster(rc *RemoteControllerClient, memberCount int) *TestCluster {
+	config := xmlConfig(DefaultClusterName, DefaultPort)
+	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.1", config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
 		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
-	return &testCluster{
+	return &TestCluster{
 		rc:          rc,
 		clusterID:   cluster.ID,
 		memberUUIDs: memberUUIDs,
 	}
 }
 
-func (c testCluster) shutdown() {
+func (c TestCluster) Shutdown() {
 	for _, memberUUID := range c.memberUUIDs {
 		c.rc.ShutdownMember(context.Background(), c.clusterID, memberUUID)
 	}
 }
 
-func (c testCluster) configBuilder() *hz.ConfigBuilder {
+func (c TestCluster) configBuilder() *hz.ConfigBuilder {
 	cb := hz.NewConfigBuilder()
 	cb.Cluster().
 		SetName(c.clusterID).
 		SetAddrs("localhost:7701")
 	return cb
+}
+
+func xmlConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+               <port>%d</port>
+            </network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+        </hazelcast>
+	`, clusterName, port)
 }

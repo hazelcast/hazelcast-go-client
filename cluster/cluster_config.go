@@ -60,6 +60,7 @@ func (c Config) Clone() Config {
 		HeartbeatInterval: c.HeartbeatInterval,
 		HeartbeatTimeout:  c.HeartbeatTimeout,
 		InvocationTimeout: c.InvocationTimeout,
+		RedoOperation:     c.RedoOperation,
 		SecurityConfig:    c.SecurityConfig.Clone(),
 	}
 }

@@ -213,21 +213,13 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
-		msg, err := inv.GetWithContext(ctx)
-		if err != nil && !!p.canRetry(request) {
-			err = cb.NewNonRetryableError(err)
-		}
-		return msg, err
+		return inv.GetWithContext(ctx)
 	})
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
-		msg, err := p.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
-		if err != nil && !p.canRetry(request) {
-			err = cb.NewNonRetryableError(err)
-		}
-		return msg, err
+		return p.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 	})
 }
 
@@ -319,8 +311,4 @@ func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, en
 		}
 		return nil
 	}
-}
-
-func (p *proxy) canRetry(msg *proto.ClientMessage) bool {
-	return msg.Retryable || p.config.ClusterConfig.RedoOperation
 }

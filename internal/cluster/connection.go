@@ -19,6 +19,7 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"sync/atomic"
 	"time"
@@ -138,8 +139,8 @@ func (c *Connection) socketWriteLoop() {
 			}
 			if err := c.write(request); err != nil {
 				c.logger.Errorf("write error: %w", err)
-				// XXX: create a new client message?
-				request.Err = err
+				request = request.Copy()
+				request.Err = ihzerror.NewHazelcastIOError("writing message", err)
 				c.responseCh <- request
 				c.close(err)
 			} else {
@@ -166,7 +167,9 @@ func (c *Connection) socketReadLoop() {
 			if c.isTimeoutError(err) {
 				continue
 			}
-			c.logger.Errorf("read error: %w", err)
+			if err != io.EOF {
+				c.logger.Errorf("read error: %w", err)
+			}
 			break
 		}
 		if n == 0 {

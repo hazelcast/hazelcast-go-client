@@ -22,6 +22,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
@@ -43,26 +47,28 @@ type Invocation interface {
 	Request() *proto.ClientMessage
 	Address() *pubcluster.AddressImpl
 	Close()
+	CanRetry(err error) bool
 }
 
 type Impl struct {
-	request         *proto.ClientMessage
-	response        chan *proto.ClientMessage
-	completed       int32
-	boundConnection *Impl
-	address         *pubcluster.AddressImpl
-	partitionID     int32
-	eventHandler    func(clientMessage *proto.ClientMessage)
-	deadline        time.Time
+	request       *proto.ClientMessage
+	response      chan *proto.ClientMessage
+	completed     int32
+	address       *pubcluster.AddressImpl
+	partitionID   int32
+	eventHandler  func(clientMessage *proto.ClientMessage)
+	deadline      time.Time
+	redoOperation bool
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl, deadline time.Time) *Impl {
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl, deadline time.Time, redoOperation bool) *Impl {
 	return &Impl{
-		partitionID: partitionID,
-		address:     address,
-		request:     clientMessage,
-		response:    make(chan *proto.ClientMessage, 1),
-		deadline:    deadline,
+		partitionID:   partitionID,
+		address:       address,
+		request:       clientMessage,
+		response:      make(chan *proto.ClientMessage, 1),
+		deadline:      deadline,
+		redoOperation: redoOperation,
 	}
 }
 
@@ -93,9 +99,13 @@ func (i *Impl) GetWithContext(ctx context.Context) (*proto.ClientMessage, error)
 		if ok {
 			return i.unwrapResponse(response)
 		}
-		return nil, ErrResponseChannelClosed
+		return nil, cb.WrapNonRetryableError(ErrResponseChannelClosed)
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		err := ctx.Err()
+		if err != nil && !i.CanRetry(err) {
+			err = cb.WrapNonRetryableError(err)
+		}
+		return nil, err
 	}
 }
 
@@ -127,9 +137,42 @@ func (i *Impl) Close() {
 	close(i.response)
 }
 
+func (i *Impl) CanRetry(err error) bool {
+	var nonRetryableError *cb.NonRetryableError
+	if errors.Is(err, nonRetryableError) {
+		return false
+	}
+
+	// TODO: Check the following condition when invoke on member is implemented
+	/*
+		var targetNotMemberError *hzerror.HazelcastTargetNotMemberError
+		if (uuid != null && t instanceof TargetNotMemberException) {
+			//when invocation send to a specific member
+			//if target is no longer a member, we should not retry
+			//note that this exception could come from the server
+			return false;
+		}
+	*/
+
+	var ioError *hzerror.HazelcastIOError
+	var instanceNotActiveError *hzerror.HazelcastInstanceNotActiveError
+	if errors.Is(err, ioError) || errors.Is(err, instanceNotActiveError) {
+		return true
+	}
+
+	var targetDisconnectedError *hzerror.HazelcastTargetDisconnectedError
+	if errors.Is(err, targetDisconnectedError) {
+		return i.Request().Retryable || i.redoOperation
+	}
+	return false
+}
+
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {
 	if response.Err != nil {
-		return nil, response.Err
+		if i.CanRetry(response.Err) {
+			return nil, response.Err
+		}
+		return nil, cb.WrapNonRetryableError(response.Err)
 	}
 	return response, nil
 }

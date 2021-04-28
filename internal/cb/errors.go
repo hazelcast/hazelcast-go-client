@@ -24,7 +24,7 @@ type NonRetryableError struct {
 	Err error
 }
 
-func NewNonRetryableError(err error) *NonRetryableError {
+func WrapNonRetryableError(err error) *NonRetryableError {
 	return &NonRetryableError{err}
 }
 

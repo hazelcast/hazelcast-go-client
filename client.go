@@ -331,7 +331,7 @@ func (c *Client) createComponents(config *Config) {
 		EventDispatcher: c.eventDispatcher,
 		Logger:          c.logger,
 	})
-	invocationFactory := icluster.NewConnectionInvocationFactory(config.ClusterConfig.InvocationTimeout)
+	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
 	clusterService := icluster.NewServiceImpl(icluster.CreationBundle{
 		AddrProviders:     addressProviders,
 		RequestCh:         requestCh,

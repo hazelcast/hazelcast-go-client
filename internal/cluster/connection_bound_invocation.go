@@ -17,7 +17,12 @@
 package cluster
 
 import (
+	"errors"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -30,9 +35,9 @@ type ConnectionBoundInvocation struct {
 }
 
 func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl,
-	connection *Connection, deadline time.Time) *ConnectionBoundInvocation {
+	connection *Connection, deadline time.Time, redoOperation bool) *ConnectionBoundInvocation {
 	return &ConnectionBoundInvocation{
-		Impl:            invocation.NewImpl(clientMessage, partitionID, address, deadline),
+		Impl:            invocation.NewImpl(clientMessage, partitionID, address, deadline, redoOperation),
 		boundConnection: connection,
 	}
 }
@@ -43,4 +48,14 @@ func (i *ConnectionBoundInvocation) Connection() *Connection {
 
 func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageHandler) {
 	i.Impl.SetEventHandler(handler)
+}
+
+func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
+	var nonRetryableError *cb.NonRetryableError
+	if errors.Is(err, nonRetryableError) {
+		return false
+	}
+	var ioError *hzerror.HazelcastIOError
+	var targetDisconnectedError *hzerror.HazelcastTargetDisconnectedError
+	return errors.Is(err, ioError) || errors.Is(err, targetDisconnectedError)
 }

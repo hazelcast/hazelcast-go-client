@@ -19,6 +19,7 @@ package hzerror
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
@@ -36,7 +37,7 @@ type HazelcastError interface {
 	Cause() error
 
 	// ServerError returns error info from server side.
-	ServerError() ServerError
+	ServerError() *ServerErrorImpl
 }
 
 // HazelcastErrorType is the general error struct.
@@ -61,9 +62,10 @@ func (e *HazelcastErrorType) Cause() error {
 // ServerError returns error info from server side.
 // It checks if the cause implements ServerError and if it doesnt
 // it return nil.
-func (e *HazelcastErrorType) ServerError() ServerError {
-	if serverErr, ok := e.cause.(ServerError); ok {
-		return serverErr
+func (e *HazelcastErrorType) ServerError() *ServerErrorImpl {
+	serverError := &ServerErrorImpl{}
+	if errors.As(e.cause, &serverError) {
+		return serverError
 	}
 	return nil
 }
@@ -260,7 +262,7 @@ func NewHazelcastClientServiceNotFoundError(message string, cause error) *Hazelc
 
 // StackTraceElement contains stacktrace information for server side exception.
 type StackTraceElement interface {
-	// DeclaringClass returns the fully qualified name of the class containing
+	// ClassName returns the fully qualified name of the class containing
 	// the execution point represented by the stack trace element.
 	ClassName() string
 
@@ -281,6 +283,7 @@ type StackTraceElement interface {
 	LineNumber() int32
 }
 
+/*
 // ServerError contains error information that occurred in the server.
 type ServerError interface {
 	// ErrorCode returns the error code.
@@ -301,14 +304,14 @@ type ServerError interface {
 	// CauseClassName returns the cause class name.
 	CauseClassName() string
 }
+*/
 
 func NewHazelcastError(err *ServerErrorImpl) HazelcastError {
-	stackTrace := ""
+	sb := strings.Builder{}
 	for _, trace := range err.StackTrace() {
-		stackTrace += fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(),
-			trace.LineNumber())
+		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))
 	}
-	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), stackTrace)
+	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), sb.String())
 	switch bufutil.ErrorCode(err.ErrorCode()) {
 	case bufutil.ErrorCodeAuthentication:
 		return NewHazelcastAuthenticationError(message, err)
