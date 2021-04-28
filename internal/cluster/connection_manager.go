@@ -175,7 +175,7 @@ func (m *ConnectionManager) Start() error {
 	}
 	if _, err := m.cb.Try(func(ctx context.Context) (interface{}, error) {
 		return nil, m.connectCluster()
-	}).Result(); err != nil {
+	}); err != nil {
 		return err
 	}
 	connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)

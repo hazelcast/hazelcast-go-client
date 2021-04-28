@@ -88,7 +88,7 @@ func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
 		} else {
 			return nil, h.invokeNonSmart(inv)
 		}
-	}).Result()
+	})
 	return err
 }
 

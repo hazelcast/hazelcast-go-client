@@ -66,22 +66,36 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 	}
 }
 
-func (cb *CircuitBreaker) Try(tryHandler TryHandler) Future {
-	return cb.TryContext(context.Background(), tryHandler)
+func (cb *CircuitBreaker) Try(handler TryHandler) (interface{}, error) {
+	return cb.TryContext(context.Background(), handler)
 }
 
-func (cb *CircuitBreaker) TryContext(ctx context.Context, tryHandler TryHandler) Future {
+func (cb *CircuitBreaker) TryContext(ctx context.Context, handler TryHandler) (interface{}, error) {
+	if state := atomic.LoadInt32(&cb.State); state == StateOpen {
+		return nil, ErrCircuitOpen
+	}
+	return cb.try(ctx, handler)
+}
+
+func (cb *CircuitBreaker) TryContextFuture(ctx context.Context, tryHandler TryHandler) Future {
 	if state := atomic.LoadInt32(&cb.State); state == StateOpen {
 		return NewFailedFuture(ErrCircuitOpen)
 	}
 	future := NewFutureImpl()
-	go cb.try(ctx, future.resultCh, tryHandler)
+	cb.tryChan(ctx, future.resultCh, tryHandler)
 	return future
 }
 
-func (cb *CircuitBreaker) try(ctx context.Context, resultCh chan interface{}, tryHandler TryHandler) {
-	var result interface{}
-	var err error
+func (cb *CircuitBreaker) tryChan(ctx context.Context, resultCh chan interface{}, tryHandler TryHandler) {
+	if result, err := cb.try(ctx, tryHandler); err != nil {
+		resultCh <- err
+	} else {
+		resultCh <- result
+	}
+	close(resultCh)
+}
+
+func (cb *CircuitBreaker) try(ctx context.Context, tryHandler TryHandler) (result interface{}, err error) {
 	var nonRetryableErr *NonRetryableError
 loop:
 	for trial := 0; trial <= cb.MaxRetries; trial++ {
@@ -106,10 +120,8 @@ loop:
 	if err != nil {
 		// failed
 		cb.notifyFailed()
-		result = err
 	}
-	resultCh <- result
-	close(resultCh)
+	return result, err
 }
 
 func (cb *CircuitBreaker) notifyFailed() {

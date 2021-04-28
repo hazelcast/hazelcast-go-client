@@ -227,7 +227,7 @@ func (m ReplicatedMap) Put(key interface{}, value interface{}) (interface{}, err
 // while others are not.
 func (m ReplicatedMap) PutAll(keyValuePairs []types.Entry) error {
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
-		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+		return m.circuitBreaker.TryContextFuture(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeReplicatedMapPutAllRequest(m.name, entries)
 			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 		})

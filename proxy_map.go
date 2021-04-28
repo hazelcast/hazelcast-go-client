@@ -234,7 +234,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	result := make([]types.Entry, 0, len(keys))
 	// create futures
 	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
-		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+		return m.circuitBreaker.TryContextFuture(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapGetAllRequest(m.name, keys)
 			return m.invokeOnPartition(ctx, request, partitionID)
 		})
@@ -480,7 +480,7 @@ func (m *Map) PutWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.
 // while others are not.
 func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
-		return m.circuitBreaker.TryContext(m.ctx, func(ctx context.Context) (interface{}, error) {
+		return m.circuitBreaker.TryContextFuture(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 		})

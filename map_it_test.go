@@ -104,7 +104,6 @@ func TestMapPutIfAbsentWithTTL(t *testing.T) {
 		if _, err := m.PutIfAbsentWithTTL("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(100 * time.Millisecond)
 		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
 		time.Sleep(2 * time.Second)
 		assert.Equal(t, nil, it.MustValue(m.Get("key")))
