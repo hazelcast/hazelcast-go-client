@@ -27,11 +27,6 @@ const (
 	EventConnectionOpened = "internal.cluster.connectionopened"
 	// EventConnectionClosed is dispatched when a connection to a member is closed.
 	EventConnectionClosed = "internal.cluster.connectionclosed"
-	// EventOwnerConnectionChanged is dispatched when the owner connection is opened.
-	EventOwnerConnectionChanged = "internal.cluster.ownerconnectionchanged"
-	// EventOwnerConnectionClosed is dispatched when the owner connection is closed.
-	// This event is dispatch in addition to EventConnectionClosed.
-	EventOwnerConnectionClosed = "internal.cluster.ownerconnectionclosed"
 
 	// EventMembersUpdated is dispatched when cluster service receives MembersUpdated event from the server
 	EventMembersUpdated = "internal.cluster.membersupdated"
@@ -56,8 +51,6 @@ const (
 
 type ConnectionOpenedHandler func(event *ConnectionOpened)
 type ConnectionClosedHandler func(event *ConnectionClosed)
-type OwnerConnectionChangedHandler func(event *OwnerConnectionChanged)
-type OwnerConnectionClosedHandler func(event *OwnerConnectionClosed)
 type ConnectedHandler func(event *Connected)
 type DisconnectedHandler func(event *Disconnected)
 
@@ -87,34 +80,6 @@ func NewConnectionClosed(conn *Connection, err error) *ConnectionClosed {
 
 func (c ConnectionClosed) EventName() string {
 	return EventConnectionClosed
-}
-
-type OwnerConnectionChanged struct {
-	Conn *Connection
-}
-
-func NewOwnerConnectionChanged(conn *Connection) *OwnerConnectionChanged {
-	return &OwnerConnectionChanged{Conn: conn}
-}
-
-func (c OwnerConnectionChanged) EventName() string {
-	return EventOwnerConnectionChanged
-}
-
-type OwnerConnectionClosed struct {
-	Conn *Connection
-	Err  error
-}
-
-func NewOwnerConnectionClosed(conn *Connection, err error) *ConnectionClosed {
-	return &ConnectionClosed{
-		Conn: conn,
-		Err:  err,
-	}
-}
-
-func (c OwnerConnectionClosed) EventName() string {
-	return EventOwnerConnectionClosed
 }
 
 type MembersAdded struct {

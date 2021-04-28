@@ -127,7 +127,6 @@ type ConnectionManager struct {
 	addressTranslator    AddressTranslator
 	smartRouting         bool
 	state                int32
-	ownerConn            atomic.Value
 	logger               ilogger.Logger
 	doneCh               chan struct{}
 	cb                   *cb.CircuitBreaker
@@ -238,13 +237,6 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 	return m.connMap.RandomConn()
 }
 
-func (m *ConnectionManager) OwnerConnectionAddr() *pubcluster.AddressImpl {
-	if conn, ok := m.ownerConn.Load().(*Connection); ok && conn != nil {
-		return m.connMap.GetAddrForConnectionID(conn.connectionID)
-	}
-	return nil
-}
-
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	if atomic.LoadInt32(&m.state) != ready {
 		return
@@ -298,24 +290,6 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
-		// set nil *Connection as owner conn
-		var conn *Connection
-		m.ownerConn.Store(conn)
-	} else {
-		ownerConn := m.ownerConn.Load().(*Connection)
-		if ownerConn == nil || ownerConn.connectionID == conn.connectionID {
-			m.assignNewOwner()
-		}
-	}
-}
-
-func (m *ConnectionManager) assignNewOwner() {
-	if newOwner := m.RandomConnection(); newOwner != nil {
-		m.logger.Infof("assigning new owner connection %d", newOwner.connectionID)
-		m.ownerConn.Store(newOwner)
-		m.eventDispatcher.Publish(NewOwnerConnectionChanged(newOwner))
-	} else {
-		m.logger.Warnf("could not assign new owner connection, no connections found")
 	}
 }
 
@@ -389,21 +363,16 @@ func (m *ConnectionManager) authenticate(connection *Connection) error {
 }
 
 func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
-	status, address, memberUuid, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
+	// TODO: use memberUUID v
+	status, address, _, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
-		conn.endpoint.Store(address)
-		m.connMap.AddConnection(conn, address)
-		if ownerConn, ok := m.ownerConn.Load().(*Connection); !ok || ownerConn == nil {
-			// TODO: detect cluster change
-			m.partitionService.checkAndSetPartitionCount(partitionCount)
-			m.ownerConn.Store(conn)
-			// TODO: remove v ?
-			m.clusterService.ownerUUID.Store(memberUuid.String())
-			m.logger.Debug(func() string { return fmt.Sprintf("setting %d as owner.", conn.connectionID) })
-			m.eventDispatcher.Publish(NewOwnerConnectionChanged(conn))
-		}
+		addrImpl := address.(*pubcluster.AddressImpl)
+		conn.endpoint.Store(addrImpl)
+		m.connMap.AddConnection(conn, addrImpl)
+		// TODO: detect cluster change
+		m.partitionService.checkAndSetPartitionCount(partitionCount)
 		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
@@ -471,7 +440,7 @@ func (m *ConnectionManager) logStatus() {
 					for addr, conn := range connections {
 						conns[addr] = int(conn.connectionID)
 					}
-					return fmt.Sprintf("connections: %#v", conns)
+					return fmt.Sprintf("addrToConn: %#v", conns)
 				})
 				m.logger.Debug(func() string {
 					ctas := map[int]string{}
@@ -513,18 +482,14 @@ func (m *ConnectionManager) doctor() {
 					m.logger.Errorf("while trying to fix cluster connection: %w", err)
 				}
 			}
-			// if the owner connection is not found, try to assign a new one.
-			if m.ownerConn.Load().(*Connection) == nil {
-				m.assignNewOwner()
-			}
 		}
 	}
 }
 
 type connectionMap struct {
 	connectionsMu *sync.RWMutex
-	// connections maps connection address to connection
-	connections map[string]*Connection
+	// addrToConn maps connection address to connection
+	addrToConn map[string]*Connection
 	// connToAddr maps connection ID to address
 	connToAddr map[int64]*pubcluster.AddressImpl
 }
@@ -532,28 +497,28 @@ type connectionMap struct {
 func newConnectionMap() *connectionMap {
 	return &connectionMap{
 		connectionsMu: &sync.RWMutex{},
-		connections:   map[string]*Connection{},
+		addrToConn:    map[string]*Connection{},
 		connToAddr:    map[int64]*pubcluster.AddressImpl{},
 	}
 }
 
-func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {
+func (m *connectionMap) AddConnection(conn *Connection, addr *pubcluster.AddressImpl) {
 	m.connectionsMu.Lock()
 	defer m.connectionsMu.Unlock()
-	m.connections[addr.String()] = conn
-	m.connToAddr[conn.connectionID] = addr.(*pubcluster.AddressImpl)
+	m.addrToConn[addr.String()] = conn
+	m.connToAddr[conn.connectionID] = addr
 }
 
-// RemoveConnection removes a connection and returns true if there are no more connections left.
+// RemoveConnection removes a connection and returns true if there are no more addrToConn left.
 func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	m.connectionsMu.Lock()
 	defer m.connectionsMu.Unlock()
 	var remaining int
-	for addr, conn := range m.connections {
+	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
-			delete(m.connections, addr)
+			delete(m.addrToConn, addr)
 			delete(m.connToAddr, conn.connectionID)
-			remaining = len(m.connections)
+			remaining = len(m.addrToConn)
 			break
 		}
 	}
@@ -563,7 +528,7 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 func (m *connectionMap) CloseAll() {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
-	for _, conn := range m.connections {
+	for _, conn := range m.addrToConn {
 		conn.close(nil)
 	}
 }
@@ -571,7 +536,7 @@ func (m *connectionMap) CloseAll() {
 func (m *connectionMap) GetConnectionForAddr(addr string) *Connection {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
-	if conn, ok := m.connections[addr]; ok {
+	if conn, ok := m.addrToConn[addr]; ok {
 		return conn
 	}
 	return nil
@@ -599,8 +564,8 @@ func (m *connectionMap) GetRandomAddr() *pubcluster.AddressImpl {
 func (m *connectionMap) RandomConn() *Connection {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
-	for _, conn := range m.connections {
-		// get the first connection
+	for _, conn := range m.addrToConn {
+		// Go randomizes maps, this is random enough for now.
 		return conn
 	}
 	return nil
@@ -609,8 +574,8 @@ func (m *connectionMap) RandomConn() *Connection {
 func (m *connectionMap) Connections() []*Connection {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
-	conns := make([]*Connection, 0, len(m.connections))
-	for _, conn := range m.connections {
+	conns := make([]*Connection, 0, len(m.addrToConn))
+	for _, conn := range m.addrToConn {
 		conns = append(conns, conn)
 	}
 	return conns
@@ -622,7 +587,7 @@ func (m *connectionMap) FindAddedAddrs(members []pubcluster.Member) []*pubcluste
 	addedAddrs := []*pubcluster.AddressImpl{}
 	for _, member := range members {
 		addr := member.Address()
-		if _, exists := m.connections[addr.String()]; !exists {
+		if _, exists := m.addrToConn[addr.String()]; !exists {
 			addedAddrs = append(addedAddrs, addr.(*pubcluster.AddressImpl))
 		}
 	}
@@ -635,7 +600,7 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connect
 	removedConns := []*Connection{}
 	for _, member := range members {
 		addr := member.Address()
-		if conn, exists := m.connections[addr.String()]; exists {
+		if conn, exists := m.addrToConn[addr.String()]; exists {
 			removedConns = append(removedConns, conn)
 		}
 	}
@@ -645,7 +610,7 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connect
 func (m *connectionMap) Info(infoFun func(connections map[string]*Connection, connToAddr map[int64]*pubcluster.AddressImpl)) {
 	m.connectionsMu.RLock()
 	defer m.connectionsMu.RUnlock()
-	infoFun(m.connections, m.connToAddr)
+	infoFun(m.addrToConn, m.connToAddr)
 }
 
 func (m *connectionMap) Len() int {

@@ -35,17 +35,15 @@ const (
 )
 
 type ServiceImpl struct {
-	addrProviders       []AddressProvider
-	ownerConnectionAddr atomic.Value
-	ownerUUID           atomic.Value
-	requestCh           chan<- invocation.Invocation
-	doneCh              chan struct{}
-	startCh             chan struct{}
-	startChAtom         int32
-	invocationFactory   *ConnectionInvocationFactory
-	eventDispatcher     *event.DispatchService
-	logger              ilogger.Logger
-	config              *pubcluster.Config
+	addrProviders     []AddressProvider
+	requestCh         chan<- invocation.Invocation
+	doneCh            chan struct{}
+	startCh           chan struct{}
+	startChAtom       int32
+	invocationFactory *ConnectionInvocationFactory
+	eventDispatcher   *event.DispatchService
+	logger            ilogger.Logger
+	config            *pubcluster.Config
 
 	membersMap   membersMap
 	smartRouting int32
@@ -83,7 +81,7 @@ func (b CreationBundle) Check() {
 
 func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 	bundle.Check()
-	service := &ServiceImpl{
+	return &ServiceImpl{
 		addrProviders:     bundle.AddrProviders,
 		requestCh:         bundle.RequestCh,
 		doneCh:            make(chan struct{}),
@@ -94,8 +92,6 @@ func NewServiceImpl(bundle CreationBundle) *ServiceImpl {
 		membersMap:        newMembersMap(),
 		config:            bundle.Config,
 	}
-	service.ownerConnectionAddr.Store(&pubcluster.AddressImpl{})
-	return service
 }
 
 func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
@@ -103,8 +99,8 @@ func (s *ServiceImpl) GetMemberByUUID(uuid string) pubcluster.Member {
 }
 
 func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
-	subscriptionID := event.MakeSubscriptionID(s.handleOwnerConnectionOpened)
-	s.eventDispatcher.Subscribe(EventOwnerConnectionChanged, subscriptionID, s.handleOwnerConnectionOpened)
+	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
+	s.eventDispatcher.Subscribe(EventConnectionOpened, subscriptionID, s.handleConnectionOpened)
 	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
 	if wantSmartRouting {
 		s.listenPartitionsLoaded()
@@ -114,8 +110,8 @@ func (s *ServiceImpl) Start(wantSmartRouting bool) <-chan struct{} {
 }
 
 func (s *ServiceImpl) Stop() {
-	subscriptionID := event.MakeSubscriptionID(s.handleOwnerConnectionOpened)
-	s.eventDispatcher.Unsubscribe(EventOwnerConnectionChanged, subscriptionID)
+	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
+	s.eventDispatcher.Unsubscribe(EventConnectionOpened, subscriptionID)
 	close(s.doneCh)
 }
 
@@ -135,9 +131,9 @@ func (s *ServiceImpl) memberCandidateAddrs() []*pubcluster.AddressImpl {
 	return addrSet.Addrs()
 }
 
-func (s *ServiceImpl) handleOwnerConnectionOpened(event event.Event) {
-	if ownerConnectionOpenedEvent, ok := event.(*OwnerConnectionChanged); ok {
-		go s.sendMemberListViewRequest(ownerConnectionOpenedEvent.Conn)
+func (s *ServiceImpl) handleConnectionOpened(event event.Event) {
+	if e, ok := event.(*ConnectionOpened); ok {
+		go s.sendMemberListViewRequest(e.Conn)
 	}
 }
 

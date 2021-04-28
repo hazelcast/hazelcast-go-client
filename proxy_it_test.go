@@ -29,7 +29,7 @@ import (
 
 func TestRetryWithoutRedoOperation(t *testing.T) {
 	// The connection should be retried on IOError
-	retryResult(t, false, false)
+	retryResult(t, false, true)
 }
 
 func retryResult(t *testing.T, redo bool, target bool) {

@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -27,6 +28,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
+
+var errPartitionOwnerNotAssigned = errors.New("partition owner not assigned")
 
 type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
@@ -75,8 +78,11 @@ func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
 	_, err := h.cb.Try(func(ctx context.Context) (interface{}, error) {
 		if h.clusterService.SmartRoutingEnabled() {
 			if err := h.invokeSmart(inv); err != nil {
-				h.logger.Warnf("invoking non smart since: %s", err.Error())
-				return nil, h.invokeNonSmart(inv)
+				if errors.Is(err, errPartitionOwnerNotAssigned) {
+					h.logger.Debug(func() string { return fmt.Sprintf("invoking non-smart since: %s", err.Error()) })
+					return nil, h.invokeNonSmart(inv)
+				}
+				return nil, err
 			}
 			return nil, nil
 		} else {
@@ -91,14 +97,14 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	} else if inv.PartitionID() != -1 {
 		if conn := h.connectionManager.GetConnectionForPartition(inv.PartitionID()); conn == nil {
-			return fmt.Errorf("connection for partition ID %d not found", inv.PartitionID())
+			return errPartitionOwnerNotAssigned
 		} else {
 			return h.sendToConnection(inv, conn)
 		}
 	} else if inv.Address() != nil {
 		return h.sendToAddress(inv, inv.Address())
 	} else {
-		return h.sendToOwnerAddress(inv)
+		return h.sendToRandomAddress(inv)
 	}
 }
 
@@ -106,7 +112,7 @@ func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) 
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok && boundInvocation.Connection() != nil {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	}
-	return h.sendToOwnerAddress(inv)
+	return h.sendToRandomAddress(inv)
 }
 
 func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) error {
@@ -133,11 +139,11 @@ func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, a
 	return h.sendToConnection(inv, conn)
 }
 
-func (h *ConnectionInvocationHandler) sendToOwnerAddress(inv invocation.Invocation) error {
-	if addr := h.connectionManager.OwnerConnectionAddr(); addr == nil {
-		// TODO: change error type
-		return hzerror.NewHazelcastIOError("cannot send to owner address: not found", nil)
+func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
+	if conn := h.connectionManager.RandomConnection(); conn == nil {
+		// TODO: use correct error type
+		return hzerror.NewHazelcastIOError("no connection found", nil)
 	} else {
-		return h.sendToAddress(inv, addr)
+		return h.sendToConnection(inv, conn)
 	}
 }
