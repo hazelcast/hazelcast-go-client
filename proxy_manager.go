@@ -95,7 +95,7 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, 
 }
 
 func (m *proxyManager) createProxy(serviceName string, objectName string) (*proxy, error) {
-	return newProxy(m.serviceBundle, serviceName, objectName)
+	return newProxy(m.serviceBundle, serviceName, objectName, m.refIDGenerator)
 }
 
 func makeProxyName(serviceName string, objectName string) string {

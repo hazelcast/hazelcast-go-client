@@ -793,7 +793,6 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)

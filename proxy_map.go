@@ -743,7 +743,7 @@ func (m *Map) Unlock(key interface{}) error {
 
 // AddEntryListener adds a continuous entry listener to this map.
 func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := m.refIDGenerator.NextID()
+	subscriptionID := m.subscriptionIDGen.NextID()
 	if err := m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}

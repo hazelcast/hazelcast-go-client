@@ -178,30 +178,34 @@ func (m ReplicatedMap) IsEmpty() (bool, error) {
 
 // AddEntryListener adds a continuous entry listener to this map.
 func (m ReplicatedMap) AddEntryListener(handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := m.refIDGenerator.NextID()
+	subscriptionID := m.subscriptionIDGen.NextID()
 	if err := m.addEntryListener(nil, nil, subscriptionID, handler); err != nil {
 		return "", err
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
-// AddEntryListener adds a continuous entry listener to this map.
-func (m ReplicatedMap) AddEntryListenerToKey(key interface{}, subscriptionID int64, handler EntryNotifiedHandler) error {
-	return m.addEntryListener(key, nil, subscriptionID, handler)
+// AddEntryListenerToKey adds a continuous entry listener to this map.
+func (m ReplicatedMap) AddEntryListenerToKey(key interface{}, handler EntryNotifiedHandler) (string, error) {
+	subscriptionID := m.subscriptionIDGen.NextID()
+	if err := m.addEntryListener(key, nil, subscriptionID, handler); err != nil {
+		return "", err
+	}
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
-// AddEntryListener adds a continuous entry listener to this map.
+// AddEntryListenerWithPredicate adds a continuous entry listener to this map.
 func (m ReplicatedMap) AddEntryListenerWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := m.refIDGenerator.NextID()
+	subscriptionID := m.subscriptionIDGen.NextID()
 	if err := m.addEntryListener(nil, predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
-// AddEntryListener adds a continuous entry listener to this map.
+// AddEntryListenerToKeyWithPredicate adds a continuous entry listener to this map.
 func (m ReplicatedMap) AddEntryListenerToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := m.refIDGenerator.NextID()
+	subscriptionID := m.subscriptionIDGen.NextID()
 	if err := m.addEntryListener(key, predicate, subscriptionID, handler); err != nil {
 		return "", err
 	}

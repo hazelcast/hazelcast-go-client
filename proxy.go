@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -89,7 +90,6 @@ type proxy struct {
 	serializationService iserialization.SerializationService
 	partitionService     *cluster.PartitionService
 	userEventDispatcher  *event.DispatchService
-	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinderImpl
 	config               *Config
@@ -97,9 +97,10 @@ type proxy struct {
 	name                 string
 	logger               ilogger.Logger
 	circuitBreaker       *cb.CircuitBreaker
+	subscriptionIDGen    *iproxy.ReferenceIDGenerator
 }
 
-func newProxy(bundle creationBundle, serviceName string, objectName string) (*proxy, error) {
+func newProxy(bundle creationBundle, serviceName string, objectName string, subscriptionIDGen *iproxy.ReferenceIDGenerator) (*proxy, error) {
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
@@ -115,12 +116,12 @@ func newProxy(bundle creationBundle, serviceName string, objectName string) (*pr
 		serializationService: bundle.SerializationService,
 		userEventDispatcher:  bundle.UserEventDispatcher,
 		partitionService:     bundle.PartitionService,
-		clusterService:       bundle.ClusterService,
 		invocationFactory:    bundle.InvocationFactory,
 		listenerBinder:       bundle.ListenerBinder,
 		config:               bundle.Config,
 		logger:               bundle.Logger,
 		circuitBreaker:       circuitBreaker,
+		subscriptionIDGen:    subscriptionIDGen,
 	}
 	if err := p.create(); err != nil {
 		return nil, err

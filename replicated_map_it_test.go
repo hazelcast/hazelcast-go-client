@@ -161,10 +161,8 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := m.Put("k1", "v1"); err != nil {
-			t.Fatal(err)
-		}
-		time.Sleep(2 * time.Second)
+		it.MustValue(m.Put("k1", "v1"))
+		time.Sleep(1 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
@@ -190,7 +188,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
 		}
-		if err := m.AddEntryListenerToKey("k1", 1, handler); err != nil {
+		if _, err := m.AddEntryListenerToKey("k1", handler); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := m.Put("k1", "v1"); err != nil {
@@ -215,7 +213,6 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.ReplicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
-		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -224,8 +221,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
-		it.AssertEquals(t, &it.SamplePortable{A: "foo", B: 10}, it.MustValue(m.Get("k1")))
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
