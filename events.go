@@ -126,8 +126,8 @@ func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 }
 
 type MessagePublished struct {
-	Name        string
-	Data        interface{}
+	TopicName   string
+	Value       interface{}
 	PublishTime time.Time
 	Member      *cluster.Member
 }
@@ -136,12 +136,21 @@ func (m *MessagePublished) EventName() string {
 	return eventMessagePublished
 }
 
+func newMessagePublished(name string, value interface{}, publishTime time.Time, member *cluster.Member) *MessagePublished {
+	return &MessagePublished{
+		TopicName:   name,
+		Value:       value,
+		PublishTime: publishTime,
+		Member:      member,
+	}
+}
+
 type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
 type QueueItemNotified struct {
-	OwnerName string
+	QueueName string
 	Value     interface{}
-	Member    *cluster.Member
+	Member    cluster.Member
 	EventType int32
 }
 
@@ -149,10 +158,10 @@ func (q QueueItemNotified) EventName() string {
 	return eventQueueItemNotified
 }
 
-func newQueueItemNotified(ownerName string, item interface{}, member *cluster.Member, eventType int32) *QueueItemNotified {
+func newQueueItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *QueueItemNotified {
 	return &QueueItemNotified{
-		OwnerName: ownerName,
-		Value:     item,
+		QueueName: name,
+		Value:     value,
 		Member:    member,
 		EventType: eventType,
 	}

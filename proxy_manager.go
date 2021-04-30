@@ -70,6 +70,14 @@ func (m *proxyManager) getQueue(objectName string) (*Queue, error) {
 	}
 }
 
+func (m *proxyManager) getTopic(objectName string) (*Topic, error) {
+	if p, err := m.proxyFor("hz:impl:topicService", objectName); err != nil {
+		return nil, err
+	} else {
+		return newTopic(p)
+	}
+}
+
 func (m *proxyManager) remove(serviceName string, objectName string) error {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()

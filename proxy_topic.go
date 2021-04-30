@@ -18,6 +18,10 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -42,7 +46,7 @@ func newTopic(p *proxy) (*Topic, error) {
 
 func (t *Topic) AddListener(handler TopicMessageHandler) (string, error) {
 	subscriptionID := t.subscriptionIDGen.NextID()
-	if err := t.addListener(false, subscriptionID, handler); err != nil {
+	if err := t.addListener(subscriptionID, handler); err != nil {
 		return "", nil
 	}
 	return event.FormatSubscriptionID(subscriptionID), nil
@@ -59,22 +63,55 @@ func (t *Topic) Publish(message interface{}) error {
 	}
 }
 
-func (t *Topic) addListener(includeValue bool, subscriptionID int64, handler TopicMessageHandler) error {
-	request := codec.EncodeQueueAddListenerRequest(t.name, includeValue, t.config.ClusterConfig.SmartRouting)
+func (t *Topic) PublishAll(messages ...interface{}) error {
+	if messagesData, err := t.validateAndSerializeValues(messages...); err != nil {
+		return err
+	} else {
+		request := codec.EncodeTopicPublishAllRequest(t.name, messagesData)
+		_, err := t.invokeOnPartition(context.Background(), request, t.partitionID)
+		return err
+	}
+}
+
+func (t *Topic) RemoveListener(subscriptionID string) error {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		t.userEventDispatcher.Unsubscribe(eventMessagePublished, subscriptionIDInt)
+		return t.listenerBinder.Remove(t.name, subscriptionIDInt)
+	}
+}
+
+func (t *Topic) addListener(subscriptionID int64, handler TopicMessageHandler) error {
+	request := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		t.userEventDispatcher.Subscribe(eventMessagePublished, subscriptionID, func(event event.Event) {
-			if e, ok := event.(*MessagePublished); ok {
-				handler(e)
+		codec.HandleTopicAddMessageListener(msg, func(itemData serialization.Data, publishTime int64, uuid internal.UUID) {
+			if item, err := t.convertToObject(itemData); err != nil {
+				t.logger.Warnf("cannot convert data to Go value")
 			} else {
-				t.logger.Warnf("cannot cast to MessagePublished event")
+				// TODO: get member from uuid
+				t.userEventDispatcher.Publish(newMessagePublished(t.name, item, time.Unix(0, publishTime*1000000), nil))
 			}
 		})
 	}
 	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
-		return codec.DecodeMapAddEntryListenerResponse(response)
+		return codec.DecodeTopicAddMessageListenerResponse(response)
 	}
 	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
-		return codec.EncodeMapRemoveEntryListenerRequest(t.name, subscriptionID)
+		return codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	}
-	return t.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
+	err := t.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
+	if err != nil {
+		return err
+	}
+	t.userEventDispatcher.Subscribe(eventMessagePublished, subscriptionID, func(event event.Event) {
+		if e, ok := event.(*MessagePublished); ok {
+			if e.TopicName == t.name {
+				handler(e)
+			}
+		} else {
+			t.logger.Warnf("cannot cast to MessagePublished event")
+		}
+	})
+	return nil
 }

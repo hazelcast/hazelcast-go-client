@@ -269,7 +269,7 @@ func (q *Queue) addListener(ctx context.Context, subscriptionID int64, includeVa
 	}
 	q.userEventDispatcher.Subscribe(eventQueueItemNotified, subscriptionID, func(event event.Event) {
 		if e, ok := event.(*QueueItemNotified); ok {
-			if e.OwnerName == q.name {
+			if e.QueueName == q.name {
 				handler(e)
 			}
 		} else {
