@@ -60,7 +60,14 @@ func (m *proxyManager) getReplicatedMapWithContext(ctx context.Context, objectNa
 	} else {
 		return newReplicatedMapImpl(ctx, p)
 	}
+}
 
+func (m *proxyManager) getQueue(objectName string) (*Queue, error) {
+	if p, err := m.proxyFor("hz:impl:queueService", objectName); err != nil {
+		return nil, err
+	} else {
+		return newQueue(p)
+	}
 }
 
 func (m *proxyManager) remove(serviceName string, objectName string) error {

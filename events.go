@@ -16,7 +16,11 @@
 
 package hazelcast
 
-import "github.com/hazelcast/hazelcast-go-client/cluster"
+import (
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+)
 
 const (
 	// NotifyEntryAdded is dispatched if an entry is added.
@@ -51,6 +55,7 @@ type EntryNotifiedHandler func(event *EntryNotified)
 const (
 	eventEntryNotified              = "entrynotified"
 	eventLifecycleEventStateChanged = "lifecyclestatechanged"
+	eventMessagePublished           = "messagepublished"
 )
 
 type EntryNotified struct {
@@ -117,4 +122,15 @@ func (e *LifecycleStateChanged) EventName() string {
 
 func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 	return &LifecycleStateChanged{State: state}
+}
+
+type MessagePublished struct {
+	Name        string
+	Data        interface{}
+	PublishTime time.Time
+	Member      *cluster.Member
+}
+
+func (m *MessagePublished) EventName() string {
+	return eventMessagePublished
 }
