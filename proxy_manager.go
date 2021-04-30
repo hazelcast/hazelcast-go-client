@@ -58,7 +58,7 @@ func (m *proxyManager) getReplicatedMapWithContext(ctx context.Context, objectNa
 	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
 		return nil, err
 	} else {
-		return NewReplicatedMapImpl(ctx, p)
+		return newReplicatedMapImpl(ctx, p)
 	}
 
 }

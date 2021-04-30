@@ -39,7 +39,7 @@ type ReplicatedMap struct {
 	ctx            context.Context
 }
 
-func NewReplicatedMapImpl(ctx context.Context, p *proxy) (*ReplicatedMap, error) {
+func newReplicatedMapImpl(ctx context.Context, p *proxy) (*ReplicatedMap, error) {
 	nameData, err := p.validateAndSerialize(p.name)
 	if err != nil {
 		return nil, err
@@ -268,7 +268,7 @@ func (m ReplicatedMap) RemoveEntryListener(subscriptionID string) error {
 	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
-		m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionIDInt)
+		m.userEventDispatcher.Unsubscribe(eventEntryNotified, subscriptionIDInt)
 		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
 	}
 }
@@ -299,7 +299,7 @@ func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Pr
 	} else {
 		request = codec.EncodeReplicatedMapAddEntryListenerRequest(m.name, m.config.ClusterConfig.SmartRouting)
 	}
-	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
+	listenerHandler := func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.mustConvertToInterface(binKey, "invalid key at AddEntryListener")
 			value := m.mustConvertToInterface(binValue, "invalid value at AddEntryListener")
@@ -318,11 +318,18 @@ func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Pr
 		} else {
 			codec.HandleReplicatedMapAddEntryListener(msg, handler)
 		}
-	})
+	}
+	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
+		return codec.DecodeReplicatedMapAddEntryListenerResponse(response)
+	}
+	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
+		return codec.EncodeReplicatedMapRemoveEntryListenerRequest(m.name, subscriptionID)
+	}
+	err = m.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
 	if err != nil {
 		return err
 	}
-	m.userEventDispatcher.Subscribe(EventEntryNotified, subscriptionID, func(event event.Event) {
+	m.userEventDispatcher.Subscribe(eventEntryNotified, subscriptionID, func(event event.Event) {
 		if entryNotifiedEvent, ok := event.(*EntryNotified); ok {
 			if entryNotifiedEvent.OwnerName == m.name {
 				handler(entryNotifiedEvent)

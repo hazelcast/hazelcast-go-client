@@ -30,7 +30,7 @@ type UUID interface {
 	LeastSignificantBits() uint64
 }
 
-type UuidImpl struct {
+type UUIDImpl struct {
 	mostSigBits  uint64
 	leastSigBits uint64
 }
@@ -44,32 +44,27 @@ func NewUUID() UUID {
 	buf[8] &= 0x3f // clear variant
 	buf[8] |= 0x80 // set to IETF variant
 
-	return UuidImpl{binary.BigEndian.Uint64(buf[0:8]),
+	return UUIDImpl{binary.BigEndian.Uint64(buf[0:8]),
 		binary.BigEndian.Uint64(buf[8:])}
 }
 
 func NewUUIDWith(mostSigBits, leastSigBits uint64) UUID {
-	return UuidImpl{mostSigBits, leastSigBits}
+	return UUIDImpl{mostSigBits, leastSigBits}
 }
 
-func NewUUIDFromString(uuidStr string) UUID {
-	// TODO:
-	return NewUUID()
-}
-
-func (u UuidImpl) String() string {
+func (u UUIDImpl) String() string {
 	return string(u.marshalText())
 }
 
-func (u UuidImpl) MostSignificantBits() uint64 {
+func (u UUIDImpl) MostSignificantBits() uint64 {
 	return u.mostSigBits
 }
 
-func (u UuidImpl) LeastSignificantBits() uint64 {
+func (u UUIDImpl) LeastSignificantBits() uint64 {
 	return u.leastSigBits
 }
 
-func (u UuidImpl) marshalText() []byte {
+func (u UUIDImpl) marshalText() []byte {
 	data := make([]byte, 16)
 	binary.BigEndian.PutUint64(data[0:8], u.mostSigBits)
 	binary.BigEndian.PutUint64(data[8:16], u.leastSigBits)

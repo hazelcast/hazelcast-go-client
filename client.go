@@ -226,7 +226,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (stri
 		return "", ErrClientNotReady
 	}
 	subscriptionID := c.refIDGen.NextID()
-	c.userEventDispatcher.SubscribeSync(EventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
+	c.userEventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
 			handler(*stateChangeEvent)
 		} else {
@@ -244,7 +244,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID string) error {
 	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
-		c.userEventDispatcher.Unsubscribe(EventLifecycleEventStateChanged, subscriptionIDInt)
+		c.userEventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, subscriptionIDInt)
 	}
 	return nil
 }
@@ -297,7 +297,7 @@ func (c *Client) RemoveMembershipListener(subscriptionID string) error {
 }
 
 func (c *Client) subscribeUserEvents() {
-	c.eventDispatcher.SubscribeSync(EventLifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
 	})
 	c.eventDispatcher.Subscribe(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {

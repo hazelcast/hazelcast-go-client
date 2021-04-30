@@ -23,13 +23,20 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
+type ListenerResponseDecoder func(response *proto.ClientMessage) internal.UUID
+type ListenerRemoveMsgMaker func(subscriptionID internal.UUID) *proto.ClientMessage
+
+type serverRegistration struct {
+	id            internal.UUIDImpl
+	removeRequest *proto.ClientMessage
+}
 type connRegistration struct {
-	conn   *Connection
-	client int64
-	server internal.UUID
+	conn          *Connection
+	client        int64
+	server        internal.UUIDImpl
+	removeRequest *proto.ClientMessage
 }
 
 type messageHandler struct {
@@ -42,7 +49,7 @@ type ConnectionListenerBinderImpl struct {
 	invocationFactory     *ConnectionInvocationFactory
 	eventDispatcher       *event.DispatchService
 	requestCh             chan<- invocation.Invocation
-	connToRegistration    map[int64]map[int64]internal.UUID
+	connToRegistration    map[int64]map[int64]serverRegistration
 	registrationToMessage map[int64]messageHandler
 	connToRegistrationMu  *sync.RWMutex
 }
@@ -57,7 +64,7 @@ func NewConnectionListenerBinderImpl(
 		invocationFactory:     invocationFactory,
 		eventDispatcher:       eventDispatcher,
 		requestCh:             requestCh,
-		connToRegistration:    map[int64]map[int64]internal.UUID{},
+		connToRegistration:    map[int64]map[int64]serverRegistration{},
 		registrationToMessage: map[int64]messageHandler{},
 		connToRegistrationMu:  &sync.RWMutex{},
 	}
@@ -66,27 +73,23 @@ func NewConnectionListenerBinderImpl(
 }
 
 func (b *ConnectionListenerBinderImpl) Add(
-	request *proto.ClientMessage,
+	addRequest *proto.ClientMessage,
 	clientRegistrationID int64,
-	handler proto.ClientMessageHandler) error {
+	handler proto.ClientMessageHandler,
+	responseDecoder ListenerResponseDecoder,
+	listenerRemover ListenerRemoveMsgMaker) error {
 	connToRegistration := map[int64]connRegistration{}
 	for _, conn := range b.connectionManager.ActiveConnections() {
-		inv := b.invocationFactory.NewConnectionBoundInvocation(
-			request,
-			-1,
-			nil,
-			conn,
-			handler)
+		inv := b.invocationFactory.NewConnectionBoundInvocation(addRequest, -1, nil, conn, handler)
 		b.requestCh <- inv
 		if response, err := inv.Get(); err != nil {
 			return err
 		} else {
-			// TODO: Instead of using DecodeMapAddEntryListenerResponse use the appropriate Decoder
-			// Currently all such decoders decode the same value.
-			serverRegistrationID := codec.DecodeMapAddEntryListenerResponse(response)
+			serverRegistrationID := responseDecoder(response).(internal.UUIDImpl)
 			connToRegistration[conn.connectionID] = connRegistration{
-				client: clientRegistrationID,
-				server: serverRegistrationID,
+				client:        clientRegistrationID,
+				server:        serverRegistrationID,
+				removeRequest: listenerRemover(serverRegistrationID),
 			}
 		}
 	}
@@ -94,16 +97,20 @@ func (b *ConnectionListenerBinderImpl) Add(
 	b.connToRegistrationMu.Lock()
 	defer b.connToRegistrationMu.Unlock()
 	for connID, reg := range connToRegistration {
+		serverReg := serverRegistration{
+			id:            reg.server,
+			removeRequest: reg.removeRequest,
+		}
 		// if the map for connection ID doesn't exist, create it
 		if connReg, ok := b.connToRegistration[connID]; ok {
-			connReg[reg.client] = reg.server
+			connReg[reg.client] = serverReg
 		} else {
-			b.connToRegistration[connID] = map[int64]internal.UUID{
-				reg.client: reg.server,
+			b.connToRegistration[connID] = map[int64]serverRegistration{
+				reg.client: serverReg,
 			}
 		}
 		b.registrationToMessage[reg.client] = messageHandler{
-			message: request,
+			message: addRequest,
 			handler: handler,
 		}
 	}
@@ -113,29 +120,24 @@ func (b *ConnectionListenerBinderImpl) Add(
 func (b *ConnectionListenerBinderImpl) Remove(
 	mapName string,
 	clientRegistrationID int64) error {
-	activeConnections := b.connectionManager.ActiveConnections()
+	activeConns := b.connectionManager.ActiveConnections()
 	connToRegistration := []connRegistration{}
 	b.connToRegistrationMu.RLock()
-	for _, conn := range activeConnections {
+	for _, conn := range activeConns {
 		if regs, ok := b.connToRegistration[conn.connectionID]; ok {
-			if serverRegistrationID, ok := regs[clientRegistrationID]; ok {
+			if serverReg, ok := regs[clientRegistrationID]; ok {
 				connToRegistration = append(connToRegistration, connRegistration{
-					conn:   conn,
-					client: clientRegistrationID,
-					server: serverRegistrationID,
+					conn:          conn,
+					client:        clientRegistrationID,
+					server:        serverReg.id,
+					removeRequest: serverReg.removeRequest,
 				})
 			}
 		}
 	}
 	b.connToRegistrationMu.RUnlock()
 	for _, reg := range connToRegistration {
-		request := codec.EncodeMapRemoveEntryListenerRequest(mapName, reg.server)
-		inv := b.invocationFactory.NewConnectionBoundInvocation(
-			request,
-			-1,
-			nil,
-			reg.conn,
-			nil)
+		inv := b.invocationFactory.NewConnectionBoundInvocation(reg.removeRequest, -1, nil, reg.conn, nil)
 		b.requestCh <- inv
 		if _, err := inv.Get(); err != nil {
 			return err

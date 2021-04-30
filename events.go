@@ -47,8 +47,8 @@ const (
 type EntryNotifiedHandler func(event *EntryNotified)
 
 const (
-	EventEntryNotified              = "entrynotified"
-	EventLifecycleEventStateChanged = "lifecyclestatechanged"
+	eventEntryNotified              = "entrynotified"
+	eventLifecycleEventStateChanged = "lifecyclestatechanged"
 )
 
 type EntryNotified struct {
@@ -63,7 +63,7 @@ type EntryNotified struct {
 }
 
 func (e *EntryNotified) EventName() string {
-	return EventEntryNotified
+	return eventEntryNotified
 }
 
 func newEntryNotifiedEventImpl(
@@ -110,7 +110,7 @@ type LifecycleStateChanged struct {
 }
 
 func (e *LifecycleStateChanged) EventName() string {
-	return EventLifecycleEventStateChanged
+	return eventLifecycleEventStateChanged
 }
 
 func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {

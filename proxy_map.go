@@ -755,7 +755,7 @@ func (m *Map) RemoveEntryListener(subscriptionID string) error {
 	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
-		m.userEventDispatcher.Unsubscribe(EventEntryNotified, subscriptionIDInt)
+		m.userEventDispatcher.Unsubscribe(eventEntryNotified, subscriptionIDInt)
 		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
 	}
 }
@@ -795,7 +795,7 @@ func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, 
 	} else {
 		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.ClusterConfig.SmartRouting)
 	}
-	err = m.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
+	listenerHandler := func(msg *proto.ClientMessage) {
 		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
 			key := m.mustConvertToInterface(binKey, "invalid key at AddEntryListener")
 			value := m.mustConvertToInterface(binValue, "invalid value at AddEntryListener")
@@ -814,11 +814,18 @@ func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, 
 		} else {
 			codec.HandleMapAddEntryListener(msg, handler)
 		}
-	})
+	}
+	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
+		return codec.DecodeMapAddEntryListenerResponse(response)
+	}
+	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
+		return codec.EncodeMapRemoveEntryListenerRequest(m.name, subscriptionID)
+	}
+	err = m.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
 	if err != nil {
 		return err
 	}
-	m.userEventDispatcher.Subscribe(EventEntryNotified, subscriptionID, func(event event.Event) {
+	m.userEventDispatcher.Subscribe(eventEntryNotified, subscriptionID, func(event event.Event) {
 		if entryNotifiedEvent, ok := event.(*EntryNotified); ok {
 			if entryNotifiedEvent.OwnerName == m.name {
 				handler(entryNotifiedEvent)
