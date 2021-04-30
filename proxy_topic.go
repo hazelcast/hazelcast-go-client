@@ -20,9 +20,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
-
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
@@ -70,7 +70,7 @@ func (t *Topic) Publish(message interface{}) error {
 
 func (t *Topic) addListener(includeValue bool, subscriptionID int64, handler TopicMessageHandler) error {
 	request := codec.EncodeQueueAddListenerRequest(t.name, includeValue, t.config.ClusterConfig.SmartRouting)
-	return t.listenerBinder.Add(request, subscriptionID, func(msg *proto.ClientMessage) {
+	listenerHandler := func(msg *proto.ClientMessage) {
 		t.userEventDispatcher.Subscribe(eventMessagePublished, subscriptionID, func(event event.Event) {
 			if e, ok := event.(*MessagePublished); ok {
 				handler(e)
@@ -78,5 +78,12 @@ func (t *Topic) addListener(includeValue bool, subscriptionID int64, handler Top
 				t.logger.Warnf("cannot cast to MessagePublished event")
 			}
 		})
-	})
+	}
+	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
+		return codec.DecodeMapAddEntryListenerResponse(response)
+	}
+	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
+		return codec.EncodeMapRemoveEntryListenerRequest(t.name, subscriptionID)
+	}
+	return t.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
 }
