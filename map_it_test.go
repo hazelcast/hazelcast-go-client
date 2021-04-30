@@ -517,7 +517,10 @@ func TestMap_Flush(t *testing.T) {
 // TODO: Test Map TryRemoveWithTimeout
 
 func TestMap_LoadAllWithoutReplacing(t *testing.T) {
-	it.MapTesterWithConfigBuilderWithName(t, "test-map", nil, func(t *testing.T, m *hz.Map) {
+	makeMapName := func() string {
+		return "test-map"
+	}
+	it.MapTesterWithConfigBuilderWithName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		putSampleKeyValues(m, 2)
 		it.Must(m.EvictAll())
 		it.Must(m.PutTransient("k0", "new-v0"))
@@ -536,7 +539,10 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 }
 
 func TestMap_LoadAllReplacing(t *testing.T) {
-	it.MapTesterWithConfigBuilderWithName(t, "test-map", nil, func(t *testing.T, m *hz.Map) {
+	makeMapName := func() string {
+		return "test-map"
+	}
+	it.MapTesterWithConfigBuilderWithName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		keys := putSampleKeyValues(m, 10)
 		it.Must(m.EvictAll())
 		it.Must(m.LoadAllReplacing())

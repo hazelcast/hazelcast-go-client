@@ -20,13 +20,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"reflect"
 	"runtime/debug"
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 
 	"go.uber.org/goleak"
 
@@ -50,23 +51,7 @@ const DefaultClusterName = "integration-test"
 var rc *RemoteControllerClient
 var rcMu = &sync.RWMutex{}
 var defaultTestCluster *TestCluster
-
-func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
-	if m, err := client.GetMap(mapName); err != nil {
-		panic(err)
-	} else {
-		return client, m
-	}
-}
+var idGen = proxy.ReferenceIDGenerator{}
 
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
 	ensureRemoteController(true)
@@ -102,107 +87,6 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder)
 		t.Run("Non-Smart Client", func(t *testing.T) {
 			runner(t, false)
 		})
-	}
-}
-
-func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-	}
-	MapTesterWithConfigBuilder(t, cbCallback, f)
-}
-
-func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
-	mapName := fmt.Sprintf("test-map-%d", rand.Int())
-	MapTesterWithConfigBuilderWithName(t, mapName, cbCallback, f)
-}
-
-func MapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
-	var (
-		client *hz.Client
-		m      *hz.Map
-	)
-	ensureRemoteController(true)
-	runner := func(t *testing.T, smart bool) {
-		if LeakCheckEnabled() {
-			t.Logf("enabled leak check")
-			defer goleak.VerifyNone(t)
-		}
-		cb := defaultTestCluster.configBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, m = GetClientMapWithConfigBuilder(mapName, cb)
-		defer func() {
-			m.EvictAll()
-			if err := client.Shutdown(); err != nil {
-				t.Logf("Test warning, client not shutdown: %s", err.Error())
-			}
-		}()
-		f(t, m)
-	}
-	if SmartEnabled() {
-		t.Run("Smart Client", func(t *testing.T) {
-			runner(t, true)
-		})
-	}
-	if NonSmartEnabled() {
-		t.Run("Non-Smart Client", func(t *testing.T) {
-			runner(t, false)
-		})
-	}
-}
-
-func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
-	mapName := fmt.Sprintf("test-map-%d", rand.Int())
-	ReplicatedMapTesterWithConfigBuilderWithName(t, mapName, cbCallback, f)
-}
-
-func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, mapName string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
-	var (
-		client *hz.Client
-		m      *hz.ReplicatedMap
-	)
-	ensureRemoteController(true)
-	runner := func(t *testing.T, smart bool) {
-		if LeakCheckEnabled() {
-			t.Logf("enabled leak check")
-			defer goleak.VerifyNone(t)
-		}
-		cb := defaultTestCluster.configBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
-		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, m = getClientReplicatedMapWithConfig(mapName, cb)
-		defer func() {
-			m.Clear()
-			client.Shutdown()
-		}()
-		f(t, m)
-	}
-	t.Run("Smart Client", func(t *testing.T) {
-		runner(t, true)
-	})
-	t.Run("Non-Smart Client", func(t *testing.T) {
-		runner(t, false)
-	})
-}
-
-func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMap) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
-	if m, err := client.GetReplicatedMap(name); err != nil {
-		panic(err)
-	} else {
-		return client, m
 	}
 }
 
