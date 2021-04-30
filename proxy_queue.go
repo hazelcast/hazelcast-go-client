@@ -62,7 +62,7 @@ func (q *Queue) Take() (interface{}, error) {
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
-		return codec.DecodeQueueTakeResponse(response), nil
+		return q.convertToObject(codec.DecodeQueueTakeResponse(response))
 	}
 }
 

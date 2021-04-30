@@ -41,7 +41,7 @@ func TestQueueOfferTake(t *testing.T) {
 
 func TestQueue_AddAll(t *testing.T) {
 	it.QueueTest(t, func(t *testing.T, q *hz.Queue) {
-		targetValues := []interface{}{1, 2, 3, 4}
+		targetValues := []interface{}{int64(1), int64(2), int64(3), int64(4)}
 		if ok, err := q.AddAll(targetValues...); err != nil {
 			t.Fatal(err)
 		} else {
