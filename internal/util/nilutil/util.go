@@ -28,5 +28,9 @@ import "reflect"
 //fmt.Println(inf == nil) // false
 //fmt.Println(isNil(inf)) // true
 func IsNil(arg interface{}) bool {
-	return arg == nil || (reflect.ValueOf(arg).Kind() == reflect.Ptr) && reflect.ValueOf(arg).IsNil()
+	if arg == nil {
+		return true
+	}
+	value := reflect.ValueOf(arg)
+	return value.Kind() == reflect.Ptr && value.IsNil()
 }

@@ -194,6 +194,18 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data serial
 	return
 }
 
+func (p *proxy) validateAndSerializeValues(values ...interface{}) ([]serialization.Data, error) {
+	valuesData := make([]serialization.Data, len(values))
+	for i, value := range values {
+		if data, err := p.validateAndSerialize(value); err != nil {
+			return nil, err
+		} else {
+			valuesData[i] = data
+		}
+	}
+	return valuesData, nil
+}
+
 func (p *proxy) tryInvoke(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
 	if res, err := p.circuitBreaker.TryContext(ctx, f); err != nil {
 		return nil, err
