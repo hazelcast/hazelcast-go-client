@@ -258,22 +258,6 @@ func (p *proxy) convertToData(object interface{}) (serialization.Data, error) {
 	return p.serializationService.ToData(object)
 }
 
-func (p *proxy) decodeToObjectAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() serialization.Data) (response interface{}, err error) {
-	if inputError != nil {
-		return nil, inputError
-	}
-	return p.convertToObject(decodeFunc(responseMessage)())
-}
-
-func (p *proxy) decodeToBoolAndError(responseMessage *proto.ClientMessage, inputError error,
-	decodeFunc func(*proto.ClientMessage) func() bool) (response bool, err error) {
-	if inputError != nil {
-		return false, inputError
-	}
-	return decodeFunc(responseMessage)(), nil
-}
-
 func (p *proxy) partitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto.Pair, error) {
 	ps := p.partitionService
 	partitionToPairs := map[int32][]proto.Pair{}
