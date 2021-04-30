@@ -36,6 +36,14 @@ func newQueue(p *proxy) (*Queue, error) {
 	}
 }
 
+func (q *Queue) Add(value interface{}) (bool, error) {
+	return q.addWithTTL(value, 0)
+}
+
+func (q *Queue) AddWithTTL(value interface{}, ttl time.Duration) (bool, error) {
+	return q.addWithTTL(value, ttl.Milliseconds())
+}
+
 func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
@@ -49,12 +57,73 @@ func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 	}
 }
 
-func (q *Queue) Offer(value interface{}) (bool, error) {
-	return q.offerWithTTL(value, 0)
+func (q *Queue) Clear() error {
+	request := codec.EncodeQueueClearRequest(q.name)
+	_, err := q.invokeOnPartition(context.Background(), request, q.partitionID)
+	return err
 }
 
-func (q *Queue) OfferWithTTL(value interface{}, ttl time.Duration) (bool, error) {
-	return q.offerWithTTL(value, ttl.Milliseconds())
+func (q *Queue) Contains(value interface{}) (bool, error) {
+	if valueData, err := q.validateAndSerialize(value); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeQueueContainsRequest(q.name, valueData)
+		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+			return false, err
+		} else {
+			return codec.DecodeQueueContainsResponse(response), nil
+		}
+	}
+}
+
+func (q *Queue) ContainsAll(values ...interface{}) (bool, error) {
+	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeQueueContainsAllRequest(q.name, valuesData)
+		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+			return false, err
+		} else {
+			return codec.DecodeQueueContainsAllResponse(response), nil
+		}
+	}
+}
+
+func (q *Queue) Drain() ([]interface{}, error) {
+	request := codec.EncodeQueueDrainToRequest(q.name)
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return nil, err
+	} else {
+		decodedValues := []interface{}{}
+		for _, data := range codec.DecodeQueueDrainToResponse(response) {
+			if obj, err := q.convertToObject(data); err != nil {
+				return nil, err
+			} else {
+				decodedValues = append(decodedValues, obj)
+			}
+		}
+		return decodedValues, nil
+	}
+}
+
+func (q *Queue) IsEmpty() (bool, error) {
+	request := codec.EncodeQueueIsEmptyRequest(q.name)
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return false, err
+	} else {
+		return codec.DecodeQueueIsEmptyResponse(response), nil
+	}
+}
+
+// TODO: iterator
+
+func (q *Queue) Peek() (interface{}, error) {
+	request := codec.EncodeQueuePeekRequest(q.name)
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return nil, err
+	} else {
+		return q.convertToObject(codec.DecodeQueuePeekResponse(response))
+	}
 }
 
 func (q *Queue) Take() (interface{}, error) {
@@ -66,7 +135,7 @@ func (q *Queue) Take() (interface{}, error) {
 	}
 }
 
-func (q *Queue) offerWithTTL(value interface{}, ttl int64) (bool, error) {
+func (q *Queue) addWithTTL(value interface{}, ttl int64) (bool, error) {
 	if valueData, err := q.validateAndSerialize(value); err != nil {
 		return false, nil
 	} else {

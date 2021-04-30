@@ -18,21 +18,12 @@ package hazelcast
 
 import (
 	"context"
-	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
-
-type TopicMessage struct {
-	Name        string
-	Data        interface{}
-	PublishTime time.Time
-	Member      *cluster.Member
-}
 
 type Topic struct {
 	*proxy
