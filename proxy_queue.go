@@ -36,6 +36,19 @@ func newQueue(p *proxy) (*Queue, error) {
 	}
 }
 
+func (q *Queue) AddAll(values ...interface{}) (bool, error) {
+	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeQueueAddAllRequest(q.name, valuesData)
+		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+			return false, err
+		} else {
+			return codec.DecodeQueueAddAllResponse(response), nil
+		}
+	}
+}
+
 func (q *Queue) Offer(value interface{}) (bool, error) {
 	return q.offerWithTTL(value, 0)
 }

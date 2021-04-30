@@ -19,9 +19,9 @@ package hazelcast_test
 import (
 	"testing"
 
-	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/stretchr/testify/assert"
 
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
@@ -35,6 +35,20 @@ func TestQueueOfferTake(t *testing.T) {
 		}
 		if value, err := q.Take(); err != nil {
 			assert.Equal(t, targetValue, value)
+		}
+	})
+}
+
+func TestQueue_AddAll(t *testing.T) {
+	it.QueueTest(t, func(t *testing.T, q *hz.Queue) {
+		targetValues := []interface{}{1, 2, 3, 4}
+		if ok, err := q.AddAll(targetValues...); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Equal(t, true, ok)
+		}
+		for _, value := range targetValues {
+			assert.Equal(t, value, it.MustValue(q.Take()))
 		}
 	})
 }
