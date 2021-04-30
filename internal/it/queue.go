@@ -21,8 +21,10 @@ import (
 	"math/rand"
 	"testing"
 
-	hz "github.com/hazelcast/hazelcast-go-client"
 	"go.uber.org/goleak"
+
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func QueueTester(t *testing.T, f func(t *testing.T, q *hz.Queue)) {
@@ -65,5 +67,22 @@ func QueueTesterWithConfigBuilderWithName(t *testing.T, queueName func() string,
 		t.Run("Non-Smart Client", func(t *testing.T) {
 			runner(t, false)
 		})
+	}
+}
+
+func getClientQueueWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Queue) {
+	if TraceLoggingEnabled() {
+		cb.Logger().SetLevel(logger.TraceLevel)
+	} else {
+		cb.Logger().SetLevel(logger.WarnLevel)
+	}
+	client, err := hz.StartNewClientWithConfig(cb)
+	if err != nil {
+		panic(err)
+	}
+	if q, err := client.GetQueue(name); err != nil {
+		panic(err)
+	} else {
+		return client, q
 	}
 }

@@ -18,9 +18,14 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type Queue struct {
@@ -37,11 +42,11 @@ func newQueue(p *proxy) (*Queue, error) {
 }
 
 func (q *Queue) Add(value interface{}) (bool, error) {
-	return q.addWithTTL(value, 0)
+	return q.add(context.Background(), value, 0)
 }
 
-func (q *Queue) AddWithTTL(value interface{}, ttl time.Duration) (bool, error) {
-	return q.addWithTTL(value, ttl.Milliseconds())
+func (q *Queue) AddWithTimeout(value interface{}, timeout time.Duration) (bool, error) {
+	return q.add(context.Background(), value, timeout.Milliseconds())
 }
 
 func (q *Queue) AddAll(values ...interface{}) (bool, error) {
@@ -55,6 +60,22 @@ func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 			return codec.DecodeQueueAddAllResponse(response), nil
 		}
 	}
+}
+
+func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (string, error) {
+	subscriptionID := q.subscriptionIDGen.NextID()
+	if err := q.addListener(context.Background(), subscriptionID, false, handler); err != nil {
+		return "", err
+	}
+	return event.FormatSubscriptionID(subscriptionID), nil
+}
+
+func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (string, error) {
+	subscriptionID := q.subscriptionIDGen.NextID()
+	if err := q.addListener(context.Background(), subscriptionID, true, handler); err != nil {
+		return "", err
+	}
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 func (q *Queue) Clear() error {
@@ -94,15 +115,16 @@ func (q *Queue) Drain() ([]interface{}, error) {
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
-		decodedValues := []interface{}{}
-		for _, data := range codec.DecodeQueueDrainToResponse(response) {
-			if obj, err := q.convertToObject(data); err != nil {
-				return nil, err
-			} else {
-				decodedValues = append(decodedValues, obj)
-			}
-		}
-		return decodedValues, nil
+		return q.convertToObjects(codec.DecodeQueueDrainToResponse(response))
+	}
+}
+
+func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
+	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, int32(maxSize))
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return nil, err
+	} else {
+		return q.convertToObjects(codec.DecodeQueueDrainToMaxSizeResponse(response))
 	}
 }
 
@@ -126,6 +148,81 @@ func (q *Queue) Peek() (interface{}, error) {
 	}
 }
 
+func (q *Queue) Poll() (interface{}, error) {
+	return q.poll(context.Background(), 0)
+}
+
+func (q *Queue) PollWithTimeout(timeout time.Duration) (interface{}, error) {
+	return q.poll(context.Background(), timeout.Milliseconds())
+}
+
+func (q *Queue) RemainingCapacity() (int, error) {
+	request := codec.EncodeQueueRemainingCapacityRequest(q.name)
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return 0, err
+	} else {
+		return int(codec.DecodeQueueRemainingCapacityResponse(response)), nil
+	}
+}
+
+func (q *Queue) Remove(value interface{}) (bool, error) {
+	if data, err := q.validateAndSerialize(value); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeQueueRemoveRequest(q.name, data)
+		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+			return false, nil
+		} else {
+			return codec.DecodeQueueRemoveResponse(response), nil
+		}
+	}
+}
+
+func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
+	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeQueueCompareAndRemoveAllRequest(q.name, valuesData)
+		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+			return false, err
+		} else {
+			return codec.DecodeQueueCompareAndRemoveAllResponse(response), nil
+		}
+	}
+}
+
+// RemoveListener removes the specified listener.
+func (q *Queue) RemoveListener(subscriptionID string) error {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		q.userEventDispatcher.Unsubscribe(eventQueueItemNotified, subscriptionIDInt)
+		return q.listenerBinder.Remove(q.name, subscriptionIDInt)
+	}
+}
+
+func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
+	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeQueueCompareAndRetainAllRequest(q.name, valuesData)
+		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+			return false, err
+		} else {
+			return codec.DecodeQueueCompareAndRetainAllResponse(response), nil
+		}
+	}
+}
+
+func (q *Queue) Size() (int, error) {
+	request := codec.EncodeQueueSizeRequest(q.name)
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return 0, err
+	} else {
+		return int(codec.DecodeQueueSizeResponse(response)), nil
+	}
+}
+
 func (q *Queue) Take() (interface{}, error) {
 	request := codec.EncodeQueueTakeRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -135,15 +232,70 @@ func (q *Queue) Take() (interface{}, error) {
 	}
 }
 
-func (q *Queue) addWithTTL(value interface{}, ttl int64) (bool, error) {
+func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool, error) {
 	if valueData, err := q.validateAndSerialize(value); err != nil {
 		return false, nil
 	} else {
-		request := codec.EncodeQueueOfferRequest(q.name, valueData, ttl)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		request := codec.EncodeQueueOfferRequest(q.name, valueData, timeout)
+		if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 			return false, nil
 		} else {
 			return codec.DecodeQueueOfferResponse(response), nil
 		}
 	}
+}
+
+func (q *Queue) addListener(ctx context.Context, subscriptionID int64, includeValue bool, handler QueueItemNotifiedHandler) error {
+	request := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.ClusterConfig.SmartRouting)
+	listenerHandler := func(msg *proto.ClientMessage) {
+		codec.HandleQueueAddListener(msg, func(itemData serialization.Data, uuid internal.UUID, eventType int32) {
+			if item, err := q.convertToObject(itemData); err != nil {
+				q.logger.Warnf("cannot convert data to Go value")
+			} else {
+				// TODO: get member from uuid
+				q.userEventDispatcher.Publish(newQueueItemNotified(q.name, item, nil, eventType))
+			}
+		})
+	}
+	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
+		return codec.DecodeQueueAddListenerResponse(response)
+	}
+	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
+		return codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
+	}
+	err := q.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
+	if err != nil {
+		return err
+	}
+	q.userEventDispatcher.Subscribe(eventQueueItemNotified, subscriptionID, func(event event.Event) {
+		if e, ok := event.(*QueueItemNotified); ok {
+			if e.OwnerName == q.name {
+				handler(e)
+			}
+		} else {
+			q.logger.Warnf("cannot cast to QueueItemNotified event")
+		}
+	})
+	return nil
+}
+
+func (q *Queue) poll(ctx context.Context, timeout int64) (interface{}, error) {
+	request := codec.EncodeQueuePollRequest(q.name, timeout)
+	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
+		return nil, err
+	} else {
+		return q.convertToObject(codec.DecodeQueuePollResponse(response))
+	}
+}
+
+func (q *Queue) convertToObjects(data []serialization.Data) ([]interface{}, error) {
+	decodedValues := []interface{}{}
+	for _, datum := range data {
+		if obj, err := q.convertToObject(datum); err != nil {
+			return nil, err
+		} else {
+			decodedValues = append(decodedValues, obj)
+		}
+	}
+	return decodedValues, nil
 }

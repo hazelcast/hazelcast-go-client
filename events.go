@@ -56,6 +56,7 @@ const (
 	eventEntryNotified              = "entrynotified"
 	eventLifecycleEventStateChanged = "lifecyclestatechanged"
 	eventMessagePublished           = "messagepublished"
+	eventQueueItemNotified          = "queue.itemnotified"
 )
 
 type EntryNotified struct {
@@ -133,4 +134,26 @@ type MessagePublished struct {
 
 func (m *MessagePublished) EventName() string {
 	return eventMessagePublished
+}
+
+type QueueItemNotifiedHandler func(event *QueueItemNotified)
+
+type QueueItemNotified struct {
+	OwnerName string
+	Value     interface{}
+	Member    *cluster.Member
+	EventType int32
+}
+
+func (q QueueItemNotified) EventName() string {
+	return eventQueueItemNotified
+}
+
+func newQueueItemNotified(ownerName string, item interface{}, member *cluster.Member, eventType int32) *QueueItemNotified {
+	return &QueueItemNotified{
+		OwnerName: ownerName,
+		Value:     item,
+		Member:    member,
+		EventType: eventType,
+	}
 }

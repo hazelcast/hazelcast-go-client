@@ -17,7 +17,9 @@
 package hazelcast_test
 
 import (
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -25,16 +27,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
-func TestQueueOfferTake(t *testing.T) {
+func TestQueue_Add(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
-		targetValue := "item1"
-		if ok, err := q.Add(targetValue); err != nil {
+		if ok, err := q.Add("value"); err != nil {
 			t.Fatal(err)
 		} else {
 			assert.True(t, ok)
 		}
-		if value, err := q.Take(); err != nil {
-			assert.Equal(t, targetValue, value)
+		assert.Equal(t, "value", it.MustValue(q.Take()))
+		// TODO: set the size of the queue
+		if ok, err := q.AddWithTimeout("other-value", 1*time.Second); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.True(t, ok)
 		}
 	})
 }
@@ -50,6 +55,55 @@ func TestQueue_AddAll(t *testing.T) {
 		for _, value := range targetValues {
 			assert.Equal(t, value, it.MustValue(q.Take()))
 		}
+	})
+}
+
+func TestQueue_AddListener(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		handlerCalled := int32(0)
+		subscriptionID, err := q.AddListener(func(event *hz.QueueItemNotified) {
+			atomic.StoreInt32(&handlerCalled, 1)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(q.Add("value1"))
+		time.Sleep(1 * time.Second)
+		if atomic.LoadInt32(&handlerCalled) != 1 {
+			t.Fatalf("handler was not called")
+		}
+		atomic.StoreInt32(&handlerCalled, 0)
+		if err = q.RemoveListener(subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(q.Add("value2"))
+		time.Sleep(1 * time.Second)
+		if atomic.LoadInt32(&handlerCalled) == 1 {
+			t.Fatalf("handler was called")
+		}
+	})
+}
+
+func TestQueue_AddListenerIncludeValue(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		var handlerValue atomic.Value
+		handlerValue.Store("base-value")
+		subscriptionID, err := q.AddListenerIncludeValue(func(event *hz.QueueItemNotified) {
+			handlerValue.Store(event.Value)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(q.Add("value1"))
+		time.Sleep(1 * time.Second)
+		assert.Equal(t, "value1", handlerValue.Load())
+		handlerValue.Store("base-value")
+		if err = q.RemoveListener(subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(q.Add("value2"))
+		time.Sleep(1 * time.Second)
+		assert.Equal(t, handlerValue.Load(), "base-value")
 	})
 }
 
@@ -98,6 +152,18 @@ func TestQueue_Drain(t *testing.T) {
 	})
 }
 
+func TestQueue_DrainWithMaxSize(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.AddAll(int64(1), int64(2), int64(3), int64(4)))
+		if values, err := q.DrainWithMaxSize(2); err != nil {
+			t.Fatal(err)
+		} else {
+			targetValues := []interface{}{int64(1), int64(2)}
+			assert.Equal(t, targetValues, values)
+		}
+	})
+}
+
 func TestQueue_Peek(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		if value, err := q.Peek(); err != nil {
@@ -110,6 +176,92 @@ func TestQueue_Peek(t *testing.T) {
 			t.Fatal(err)
 		} else {
 			assert.Equal(t, "value1", value)
+		}
+	})
+}
+
+func TestQueue_Poll(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.Add("value1"))
+		if value, err := q.Poll(); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Equal(t, "value1", value)
+		}
+		if value, err := q.PollWithTimeout(1 * time.Second); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Nil(t, value)
+		}
+	})
+}
+
+func TestQueue_RemainingCapacity(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		if remCap, err := q.RemainingCapacity(); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Greater(t, remCap, 0)
+		}
+	})
+}
+
+func TestQueue_Remove(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.Add("value"))
+		assert.Equal(t, false, it.MustValue(q.IsEmpty()))
+		if ok, err := q.Remove("value"); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.True(t, ok)
+		}
+		assert.Equal(t, true, it.MustValue(q.IsEmpty()))
+	})
+}
+
+func TestQueue_RemoveAll(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.AddAll("v1", "v2", "v3"))
+		if ok, err := q.RemoveAll("v1", "v3"); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.True(t, ok)
+		}
+		values := it.MustValue(q.Drain())
+		assert.Equal(t, []interface{}{"v2"}, values)
+	})
+}
+func TestQueue_RetainAll(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.AddAll("v1", "v2", "v3"))
+		if ok, err := q.RetainAll("v1", "v3"); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.True(t, ok)
+		}
+		values := it.MustValue(q.Drain())
+		assert.Equal(t, []interface{}{"v1", "v3"}, values)
+	})
+}
+
+func TestQueue_Size(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.AddAll("v1", "v2", "v3"))
+		if size, err := q.Size(); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Equal(t, 3, size)
+		}
+	})
+}
+
+func TestQueue_Take(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		it.MustValue(q.Add("value"))
+		if value, err := q.Take(); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Equal(t, "value", value)
 		}
 	})
 }
