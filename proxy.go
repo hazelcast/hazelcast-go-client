@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -309,3 +310,37 @@ func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, en
 		return nil
 	}
 }
+
+func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue serialization.Data) (key, value, oldValue, mergingValue interface{}, err error) {
+	if key, err = p.convertToObject(binKey); err != nil {
+		err = fmt.Errorf("invalid key: %w", err)
+	} else if value, err = p.convertToObject(binValue); err != nil {
+		err = fmt.Errorf("invalid value: %w", err)
+	} else if oldValue, err = p.convertToObject(binOldValue); err != nil {
+		err = fmt.Errorf("invalid oldValue: %w", err)
+	} else if mergingValue, err = p.convertToObject(binMergingValue); err != nil {
+		err = fmt.Errorf("invalid mergingValue: %w", err)
+	}
+	return
+}
+
+func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) entryNotifiedHandler {
+	return func(
+		binKey, binValue, binOldValue, binMergingValue serialization.Data,
+		binEventType int32,
+		binUUID internal.UUID,
+		affectedEntries int32) {
+		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+		if err != nil {
+			p.logger.Errorf("error at AddEntryListener: %w", err)
+			return
+		}
+		handler(newEntryNotifiedEvent(p.name, binUUID.String(), key, value, oldValue, mergingValue, int(affectedEntries)))
+	}
+}
+
+type entryNotifiedHandler func(
+	binKey, binValue, binOldValue, binMergingValue serialization.Data,
+	binEventType int32,
+	binUUID internal.UUID,
+	affectedEntries int32)

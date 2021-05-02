@@ -66,7 +66,7 @@ func (e *EntryNotified) EventName() string {
 	return eventEntryNotified
 }
 
-func newEntryNotifiedEventImpl(
+func newEntryNotifiedEvent(
 	ownerName string,
 	memberName string,
 	key interface{},

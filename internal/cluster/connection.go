@@ -113,7 +113,7 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 		return nil, err
 	} else {
 		tcpConn := conn.(*net.TCPConn)
-		if err = tcpConn.SetNoDelay(false); err != nil {
+		if err = tcpConn.SetNoDelay(true); err != nil {
 			c.logger.Warnf("error setting tcp no delay: %w", err)
 		}
 		if err = tcpConn.SetReadBuffer(bufferSize); err != nil {

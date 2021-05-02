@@ -28,7 +28,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-func TestPutGetReplicatedMap(t *testing.T) {
+func TestReplicatedMap_Put(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
@@ -42,7 +42,7 @@ func TestPutGetReplicatedMap(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapClearSetGet(t *testing.T) {
+func TestReplicatedMap_Clear(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
@@ -64,7 +64,7 @@ func TestReplicatedMapClearSetGet(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapRemove(t *testing.T) {
+func TestReplicatedMap_Remove(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
@@ -82,7 +82,7 @@ func TestReplicatedMapRemove(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapGetEntrySet(t *testing.T) {
+func TestReplicatedMap_GetEntrySet(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		target := []types.Entry{
 			types.NewEntry("k1", "v1"),
@@ -101,7 +101,7 @@ func TestReplicatedMapGetEntrySet(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapGetKeySet(t *testing.T) {
+func TestReplicatedMap_GetKeySet(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		it.MustValue(m.Put("k1", "v1"))
@@ -119,7 +119,7 @@ func TestReplicatedMapGetKeySet(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapIsEmptySize(t *testing.T) {
+func TestReplicatedMap_IsEmptySize(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
@@ -149,9 +149,7 @@ func TestReplicatedMapIsEmptySize(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
-	// This test sometimes fails. Skipping it for now...
-	t.SkipNow()
+func TestReplicatedMap_AddEntryListener_EntryNotifiedEvent(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -180,9 +178,7 @@ func TestReplicatedMapEntryNotifiedEvent(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
-	// This test sometimes fails. Skipping it for now...
-	t.SkipNow()
+func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) {
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -207,7 +203,7 @@ func TestReplicatedMapEntryNotifiedEventWithKey(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
+func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testing.T) {
 	t.SkipNow()
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
@@ -234,7 +230,7 @@ func TestReplicatedMapEntryNotifiedEventWithPredicate(t *testing.T) {
 	})
 }
 
-func TestReplicatedMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
+func TestReplicatedMap_AddEntryListener_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	t.SkipNow()
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})

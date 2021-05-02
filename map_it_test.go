@@ -49,7 +49,7 @@ func TestMapPutGet(t *testing.T) {
 	})
 }
 
-func TestMapPutWithTTL(t *testing.T) {
+func TestMap_PutWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if _, err := m.PutWithTTL("key", targetValue, 1*time.Second); err != nil {
@@ -61,7 +61,7 @@ func TestMapPutWithTTL(t *testing.T) {
 	})
 }
 
-func TestMapPutWithMaxIdle(t *testing.T) {
+func TestMap_PutWithMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if _, err := m.PutWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
@@ -72,7 +72,7 @@ func TestMapPutWithMaxIdle(t *testing.T) {
 	})
 }
 
-func TestMapPutWithTTLAndMaxIdle(t *testing.T) {
+func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if _, err := m.PutWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
@@ -84,7 +84,7 @@ func TestMapPutWithTTLAndMaxIdle(t *testing.T) {
 	})
 }
 
-func TestMapPutIfAbsent(t *testing.T) {
+func TestMap_PutIfAbsent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if _, err := m.PutIfAbsent("key", targetValue); err != nil {
@@ -98,7 +98,7 @@ func TestMapPutIfAbsent(t *testing.T) {
 	})
 }
 
-func TestMapPutIfAbsentWithTTL(t *testing.T) {
+func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if _, err := m.PutIfAbsentWithTTL("key", targetValue, 1*time.Second); err != nil {
@@ -110,7 +110,7 @@ func TestMapPutIfAbsentWithTTL(t *testing.T) {
 	})
 }
 
-func TestMapPutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
+func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		// TODO: better test
@@ -123,7 +123,7 @@ func TestMapPutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 	})
 }
 
-func TestMapPutTransient(t *testing.T) {
+func TestMap_PutTransient(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if err := m.PutTransient("key", targetValue); err != nil {
@@ -133,7 +133,7 @@ func TestMapPutTransient(t *testing.T) {
 	})
 }
 
-func TestMapPutTransientWithTTL(t *testing.T) {
+func TestMap_PutTransientWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if err := m.PutTransientWithTTL("key", targetValue, 1*time.Second); err != nil {
@@ -145,7 +145,7 @@ func TestMapPutTransientWithTTL(t *testing.T) {
 	})
 }
 
-func TestMapPutTransientWithMaxIdle(t *testing.T) {
+func TestMap_PutTransientWithMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if err := m.PutTransientWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
@@ -157,7 +157,7 @@ func TestMapPutTransientWithMaxIdle(t *testing.T) {
 	})
 }
 
-func TestMapPutTransientWithTTLAndMaxIdle(t *testing.T) {
+func TestMap_PutTransientWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		// TODO: better test
@@ -170,21 +170,20 @@ func TestMapPutTransientWithTTLAndMaxIdle(t *testing.T) {
 	})
 }
 
-func TestSetGetMap(t *testing.T) {
+func TestMap_Set(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
 			t.Fatal(err)
 		}
-		if value, err := m.Get("key"); err != nil {
-			t.Fatal(err)
-		} else if targetValue != value {
+		value := it.MustValue(m.Get("key"))
+		if targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
 	})
 }
 
-func TestSetGet1000(t *testing.T) {
+func TestMapSetGet1000(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		const setGetCount = 1000
 		for i := 0; i < setGetCount; i++ {
@@ -200,7 +199,7 @@ func TestSetGet1000(t *testing.T) {
 	})
 }
 
-func TestDelete(t *testing.T) {
+func TestMap_Delete(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		it.Must(m.Set("key", targetValue))
@@ -216,7 +215,7 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-func TestMapEvict(t *testing.T) {
+func TestMap_Evict(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if err := m.Set("key", targetValue); err != nil {
@@ -230,7 +229,7 @@ func TestMapEvict(t *testing.T) {
 	})
 }
 
-func TestMapClearSetGet(t *testing.T) {
+func TestMap_Clear(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		it.Must(m.Set("key", targetValue))
@@ -240,19 +239,21 @@ func TestMapClearSetGet(t *testing.T) {
 		if ok := it.MustBool(m.ContainsValue("value")); !ok {
 			t.Fatalf("value not found")
 		}
-		if value := it.MustValue(m.Get("key")); targetValue != value {
+		value := it.MustValue(m.Get("key"))
+		if targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
 		if err := m.Clear(); err != nil {
 			t.Fatal(err)
 		}
-		if value := it.MustValue(m.Get("key")); nil != value {
+		value = it.MustValue(m.Get("key"))
+		if nil != value {
 			t.Fatalf("target nil!= %v", value)
 		}
 	})
 }
 
-func TestMapRemove(t *testing.T) {
+func TestMap_Remove(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		it.Must(m.Set("key", targetValue))
@@ -270,7 +271,7 @@ func TestMapRemove(t *testing.T) {
 	})
 }
 
-func TestGetAll(t *testing.T) {
+func TestMap_GetAll(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		const maxKeys = 100
 		makeKey := func(id int) string {
@@ -306,7 +307,7 @@ func TestGetAll(t *testing.T) {
 	})
 }
 
-func TestMapGetKeySet(t *testing.T) {
+func TestMap_GetKeySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		it.Must(m.Set("k1", "v1"))
@@ -360,7 +361,7 @@ func TestMap_GetValuesWithPredicate(t *testing.T) {
 	})
 }
 
-func TestPutAll(t *testing.T) {
+func TestMap_PutAll(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		pairs := []types.Entry{
 			types.NewEntry("k1", "v1"),
@@ -377,7 +378,7 @@ func TestPutAll(t *testing.T) {
 	})
 }
 
-func TestMapGetEntrySet(t *testing.T) {
+func TestMap_GetEntrySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		target := []types.Entry{
 			types.NewEntry("k1", "v1"),
@@ -396,7 +397,7 @@ func TestMapGetEntrySet(t *testing.T) {
 	})
 }
 
-func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
+func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
@@ -424,7 +425,7 @@ func TestGetEntrySetWithPredicateUsingPortable(t *testing.T) {
 	})
 }
 
-func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
+func TestMap_GetEntrySetWithPredicateUsingJSON(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		entries := []types.Entry{
 			types.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.Json()),
@@ -447,7 +448,7 @@ func TestGetEntrySetWithPredicateUsingJSON(t *testing.T) {
 	})
 }
 
-func TestGetEntryView(t *testing.T) {
+func TestMap_GetEntryView(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		it.Must(m.Set("k1", "v1"))
 		if ev, err := m.GetEntryView("k1"); err != nil {
@@ -474,7 +475,7 @@ func TestMap_AddIndexWithConfig(t *testing.T) {
 	})
 }
 
-func TestMapAddIndexValidationError(t *testing.T) {
+func TestMap_AddIndexValidationError(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		indexConfig := types.IndexConfig{
 			Name:               "my-index",
@@ -581,7 +582,7 @@ func TestMap_Lock(t *testing.T) {
 	})
 }
 
-func TestMapLockWithContext(t *testing.T) {
+func TestMap_LockWithContext(t *testing.T) {
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
 		const mapName = "lock-map"
 		m := it.MustValue(client.GetMapContext(context.Background(), mapName)).(*hz.Map)
@@ -626,7 +627,7 @@ func TestMap_ForceUnlock(t *testing.T) {
 	})
 }
 
-func TestMapIsEmptySize(t *testing.T) {
+func TestMap_IsEmptySize(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
@@ -656,7 +657,7 @@ func TestMapIsEmptySize(t *testing.T) {
 	})
 }
 
-func TestRemoveAll(t *testing.T) {
+func TestMap_RemoveAll(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
@@ -683,7 +684,7 @@ func TestRemoveAll(t *testing.T) {
 	})
 }
 
-func TestRemoveIfSame(t *testing.T) {
+func TestMap_RemoveIfSame(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		it.Must(m.Set("k1", "v1"))
 		it.Must(m.Set("k2", "v2"))
@@ -704,7 +705,7 @@ func TestRemoveIfSame(t *testing.T) {
 	})
 }
 
-func TestReplace(t *testing.T) {
+func TestMap_Replace(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		it.Must(m.Set("k1", "v1"))
 		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
@@ -717,7 +718,7 @@ func TestReplace(t *testing.T) {
 	})
 }
 
-func TestReplaceIfSame(t *testing.T) {
+func TestMap_ReplaceIfSame(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		it.Must(m.Set("k1", "v1"))
 		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
@@ -730,7 +731,7 @@ func TestReplaceIfSame(t *testing.T) {
 	})
 }
 
-func TestMapEntryNotifiedEvent(t *testing.T) {
+func TestMap_EntryNotifiedEvent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
@@ -763,7 +764,7 @@ func TestMapEntryNotifiedEvent(t *testing.T) {
 	})
 }
 
-func TestMapEntryNotifiedEventToKey(t *testing.T) {
+func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		time.Sleep(1 * time.Second)
 		handlerCalled := int32(0)
@@ -794,7 +795,7 @@ func TestMapEntryNotifiedEventToKey(t *testing.T) {
 	})
 }
 
-func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
+func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
@@ -826,7 +827,7 @@ func TestMapEntryNotifiedEventWithPredicate(t *testing.T) {
 	})
 }
 
-func TestMapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
+func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}

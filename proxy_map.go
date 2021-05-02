@@ -31,7 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
-	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	pubser "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -64,6 +64,15 @@ func (m *Map) withContext(ctx context.Context) *Map {
 		ctx:            ctx,
 		lockID:         lockID,
 	}
+}
+
+// AddEntryListener adds a continuous entry listener to this map.
+func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
+	subscriptionID := m.subscriptionIDGen.NextID()
+	if err := m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
+		return "", err
+	}
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 // AddIndexWithConfig adds an index to this map for the specified entries so that queries can run faster.
@@ -156,7 +165,7 @@ func (m *Map) EvictAll() error {
 	return err
 }
 
-// ExecuteOnEntries pplies the user defined EntryProcessor to all the entries in the map.
+// ExecuteOnEntries applies the user defined EntryProcessor to all the entries in the map.
 func (m *Map) ExecuteOnEntries(entryProcessor interface{}) ([]types.Entry, error) {
 	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
 		return nil, err
@@ -217,7 +226,7 @@ func (m *Map) Get(key interface{}) (interface{}, error) {
 
 // GetAll returns the entries for the given keys.
 func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
-	partitionToKeys := map[int32][]pubserialization.Data{}
+	partitionToKeys := map[int32][]pubser.Data{}
 	ps := m.proxy.partitionService
 	for _, key := range keys {
 		if keyData, err := m.validateAndSerialize(key); err != nil {
@@ -233,7 +242,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	}
 	result := make([]types.Entry, 0, len(keys))
 	// create futures
-	f := func(partitionID int32, keys []pubserialization.Data) cb.Future {
+	f := func(partitionID int32, keys []pubser.Data) cb.Future {
 		return m.circuitBreaker.TryContextFuture(m.ctx, func(ctx context.Context) (interface{}, error) {
 			request := codec.EncodeMapGetAllRequest(m.name, keys)
 			return m.invokeOnPartition(ctx, request, partitionID)
@@ -251,9 +260,9 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				if key, err = m.convertToObject(pair.Key().(pubserialization.Data)); err != nil {
+				if key, err = m.convertToObject(pair.Key().(pubser.Data)); err != nil {
 					return nil, err
-				} else if value, err = m.convertToObject(pair.Value().(pubserialization.Data)); err != nil {
+				} else if value, err = m.convertToObject(pair.Value().(pubser.Data)); err != nil {
 					return nil, err
 				}
 				result = append(result, types.NewEntry(key, value))
@@ -298,11 +307,11 @@ func (m *Map) GetEntryView(key string) (*types.SimpleEntryView, error) {
 		} else {
 			ev, maxIdle := codec.DecodeMapGetEntryViewResponse(response)
 			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
-			deserializedKey, err := m.convertToObject(ev.Key().(pubserialization.Data))
+			deserializedKey, err := m.convertToObject(ev.Key().(pubser.Data))
 			if err != nil {
 				return nil, err
 			}
-			deserializedValue, err := m.convertToObject(ev.Value().(pubserialization.Data))
+			deserializedValue, err := m.convertToObject(ev.Value().(pubser.Data))
 			if err != nil {
 				return nil, err
 			}
@@ -574,6 +583,15 @@ func (m *Map) RemoveAll(predicate predicate.Predicate) error {
 	}
 }
 
+// RemoveEntryListener removes the specified entry listener.
+func (m *Map) RemoveEntryListener(subscriptionID string) error {
+	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
+		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
+	} else {
+		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
+	}
+}
+
 // RemoveInterceptor removes the interceptor.
 func (m *Map) RemoveInterceptor(registrationID string) (bool, error) {
 	request := codec.EncodeMapRemoveInterceptorRequest(m.name, registrationID)
@@ -741,25 +759,6 @@ func (m *Map) Unlock(key interface{}) error {
 	}
 }
 
-// AddEntryListener adds a continuous entry listener to this map.
-func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := m.subscriptionIDGen.NextID()
-	if err := m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
-		return "", err
-	}
-	return event.FormatSubscriptionID(subscriptionID), nil
-}
-
-// RemoveEntryListener removes the specified entry listener.
-func (m *Map) RemoveEntryListener(subscriptionID string) error {
-	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
-		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
-	} else {
-		m.userEventDispatcher.Unsubscribe(eventEntryNotified, subscriptionIDInt)
-		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
-	}
-}
-
 func (m *Map) addIndex(indexConfig types.IndexConfig) error {
 	if err := validateAndNormalizeIndexConfig(&indexConfig); err != nil {
 		return err
@@ -770,10 +769,9 @@ func (m *Map) addIndex(indexConfig types.IndexConfig) error {
 }
 
 func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int64, handler EntryNotifiedHandler) error {
-	var request *proto.ClientMessage
 	var err error
-	var keyData pubserialization.Data
-	var predicateData pubserialization.Data
+	var keyData pubser.Data
+	var predicateData pubser.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return err
@@ -784,36 +782,9 @@ func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, 
 			return err
 		}
 	}
-	if keyData != nil {
-		if predicateData != nil {
-			request = codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
-		} else {
-			request = codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
-		}
-	} else if predicateData != nil {
-		request = codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
-	} else {
-		request = codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.ClusterConfig.SmartRouting)
-	}
+	request := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.ClusterConfig.SmartRouting)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		handler := func(binKey pubserialization.Data, binValue pubserialization.Data, binOldValue pubserialization.Data, binMergingValue pubserialization.Data, binEventType int32, binUUID internal.UUID, numberOfAffectedEntries int32) {
-			key := m.mustConvertToInterface(binKey, "invalid key at AddEntryListener")
-			value := m.mustConvertToInterface(binValue, "invalid value at AddEntryListener")
-			oldValue := m.mustConvertToInterface(binOldValue, "invalid oldValue at AddEntryListener")
-			mergingValue := m.mustConvertToInterface(binMergingValue, "invalid mergingValue at AddEntryListener")
-			m.userEventDispatcher.Publish(newEntryNotifiedEventImpl(m.name, binUUID.String(), key, value, oldValue, mergingValue, int(numberOfAffectedEntries)))
-		}
-		if keyData != nil {
-			if predicateData != nil {
-				codec.HandleMapAddEntryListenerToKeyWithPredicate(msg, handler)
-			} else {
-				codec.HandleMapAddEntryListenerToKey(msg, handler)
-			}
-		} else if predicateData != nil {
-			codec.HandleMapAddEntryListenerWithPredicate(msg, handler)
-		} else {
-			codec.HandleMapAddEntryListener(msg, handler)
-		}
+		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
 	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
 		return codec.DecodeMapAddEntryListenerResponse(response)
@@ -821,20 +792,7 @@ func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, 
 	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
 		return codec.EncodeMapRemoveEntryListenerRequest(m.name, subscriptionID)
 	}
-	err = m.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
-	if err != nil {
-		return err
-	}
-	m.userEventDispatcher.Subscribe(eventEntryNotified, subscriptionID, func(event event.Event) {
-		if entryNotifiedEvent, ok := event.(*EntryNotified); ok {
-			if entryNotifiedEvent.OwnerName == m.name {
-				handler(entryNotifiedEvent)
-			}
-		} else {
-			panic("cannot cast event to hztypes.EntryNotified event")
-		}
-	})
-	return nil
+	return m.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
 }
 
 func (m *Map) loadAll(replaceExisting bool, keys ...interface{}) error {
@@ -842,7 +800,7 @@ func (m *Map) loadAll(replaceExisting bool, keys ...interface{}) error {
 	if len(keys) == 0 {
 		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
 	} else {
-		keyDatas := make([]pubserialization.Data, 0, len(keys))
+		keyDatas := make([]pubser.Data, 0, len(keys))
 		for _, key := range keys {
 			if keyData, err := m.convertToData(key); err != nil {
 				return err
@@ -972,7 +930,7 @@ func (m *Map) tryRemove(key interface{}, timeout int64) (interface{}, error) {
 	}
 }
 
-func (m *Map) convertToObjects(valueDatas []pubserialization.Data) ([]interface{}, error) {
+func (m *Map) convertToObjects(valueDatas []pubser.Data) ([]interface{}, error) {
 	values := make([]interface{}, len(valueDatas))
 	for i, valueData := range valueDatas {
 		if value, err := m.convertToObject(valueData); err != nil {
@@ -982,6 +940,34 @@ func (m *Map) convertToObjects(valueDatas []pubserialization.Data) ([]interface{
 		}
 	}
 	return values, nil
+}
+
+func (m *Map) makeListenerRequest(keyData, predicateData pubser.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
+	if keyData != nil {
+		if predicateData != nil {
+			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, smart)
+		} else {
+			return codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
+		}
+	} else if predicateData != nil {
+		return codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
+	} else {
+		return codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.ClusterConfig.SmartRouting)
+	}
+}
+
+func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData pubser.Data, handler entryNotifiedHandler) {
+	if keyData != nil {
+		if predicateData != nil {
+			codec.HandleMapAddEntryListenerToKeyWithPredicate(msg, handler)
+		} else {
+			codec.HandleMapAddEntryListenerToKey(msg, handler)
+		}
+	} else if predicateData != nil {
+		codec.HandleMapAddEntryListenerWithPredicate(msg, handler)
+	} else {
+		codec.HandleMapAddEntryListener(msg, handler)
+	}
 }
 
 type indexValidationError struct {
