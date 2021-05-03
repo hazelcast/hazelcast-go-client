@@ -77,7 +77,6 @@ func (t *Topic) RemoveListener(subscriptionID string) error {
 	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
 		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
 	} else {
-		t.userEventDispatcher.Unsubscribe(eventMessagePublished, subscriptionIDInt)
 		return t.listenerBinder.Remove(t.name, subscriptionIDInt)
 	}
 }
@@ -90,7 +89,7 @@ func (t *Topic) addListener(subscriptionID int64, handler TopicMessageHandler) e
 				t.logger.Warnf("cannot convert data to Go value")
 			} else {
 				// TODO: get member from uuid
-				t.userEventDispatcher.Publish(newMessagePublished(t.name, item, time.Unix(0, publishTime*1000000), nil))
+				handler(newMessagePublished(t.name, item, time.Unix(0, publishTime*1000000), nil))
 			}
 		})
 	}
@@ -100,18 +99,5 @@ func (t *Topic) addListener(subscriptionID int64, handler TopicMessageHandler) e
 	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
 		return codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	}
-	err := t.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
-	if err != nil {
-		return err
-	}
-	t.userEventDispatcher.Subscribe(eventMessagePublished, subscriptionID, func(event event.Event) {
-		if e, ok := event.(*MessagePublished); ok {
-			if e.TopicName == t.name {
-				handler(e)
-			}
-		} else {
-			t.logger.Warnf("cannot cast to MessagePublished event")
-		}
-	})
-	return nil
+	return t.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
 }
