@@ -18,13 +18,11 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
@@ -44,13 +42,8 @@ func newTopic(p *proxy) (*Topic, error) {
 	}
 }
 
-func (t *Topic) AddListener(handler TopicMessageHandler) (string, error) {
-	subscriptionID := t.subscriptionIDGen.NextID()
-	if err := t.addListener(subscriptionID, handler); err != nil {
-		return "", nil
-	}
-	return event.FormatSubscriptionID(subscriptionID), nil
-
+func (t *Topic) AddListener(handler TopicMessageHandler) (internal.UUID, error) {
+	return t.addListener(handler)
 }
 
 func (t *Topic) Publish(message interface{}) error {
@@ -73,16 +66,14 @@ func (t *Topic) PublishAll(messages ...interface{}) error {
 	}
 }
 
-func (t *Topic) RemoveListener(subscriptionID string) error {
-	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
-		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
-	} else {
-		return t.listenerBinder.Remove(t.name, subscriptionIDInt)
-	}
+func (t *Topic) RemoveListener(subscriptionID internal.UUID) error {
+	return t.listenerBinder.Remove(subscriptionID)
 }
 
-func (t *Topic) addListener(subscriptionID int64, handler TopicMessageHandler) error {
-	request := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
+func (t *Topic) addListener(handler TopicMessageHandler) (internal.UUID, error) {
+	subscriptionID := internal.NewUUID()
+	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
+	removeRequest := codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleTopicAddMessageListener(msg, func(itemData serialization.Data, publishTime int64, uuid internal.UUID) {
 			if item, err := t.convertToObject(itemData); err != nil {
@@ -93,11 +84,6 @@ func (t *Topic) addListener(subscriptionID int64, handler TopicMessageHandler) e
 			}
 		})
 	}
-	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
-		return codec.DecodeTopicAddMessageListenerResponse(response)
-	}
-	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
-		return codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
-	}
-	return t.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
+	err := t.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	return subscriptionID, err
 }

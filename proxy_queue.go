@@ -18,11 +18,9 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -62,20 +60,12 @@ func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 	}
 }
 
-func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (string, error) {
-	subscriptionID := q.subscriptionIDGen.NextID()
-	if err := q.addListener(context.Background(), subscriptionID, false, handler); err != nil {
-		return "", err
-	}
-	return event.FormatSubscriptionID(subscriptionID), nil
+func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (internal.UUID, error) {
+	return q.addListener(false, handler)
 }
 
-func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (string, error) {
-	subscriptionID := q.subscriptionIDGen.NextID()
-	if err := q.addListener(context.Background(), subscriptionID, true, handler); err != nil {
-		return "", err
-	}
-	return event.FormatSubscriptionID(subscriptionID), nil
+func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (internal.UUID, error) {
+	return q.addListener(true, handler)
 }
 
 func (q *Queue) Clear() error {
@@ -192,13 +182,8 @@ func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
 }
 
 // RemoveListener removes the specified listener.
-func (q *Queue) RemoveListener(subscriptionID string) error {
-	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
-		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
-	} else {
-		q.userEventDispatcher.Unsubscribe(eventQueueItemNotified, subscriptionIDInt)
-		return q.listenerBinder.Remove(q.name, subscriptionIDInt)
-	}
+func (q *Queue) RemoveListener(subscriptionID internal.UUID) error {
+	return q.listenerBinder.Remove(subscriptionID)
 }
 
 func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
@@ -245,38 +230,22 @@ func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool
 	}
 }
 
-func (q *Queue) addListener(ctx context.Context, subscriptionID int64, includeValue bool, handler QueueItemNotifiedHandler) error {
-	request := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.ClusterConfig.SmartRouting)
+func (q *Queue) addListener(includeValue bool, handler QueueItemNotifiedHandler) (internal.UUID, error) {
+	subscriptionID := internal.NewUUID()
+	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.ClusterConfig.SmartRouting)
+	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleQueueAddListener(msg, func(itemData serialization.Data, uuid internal.UUID, eventType int32) {
 			if item, err := q.convertToObject(itemData); err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
 			} else {
 				// TODO: get member from uuid
-				q.userEventDispatcher.Publish(newQueueItemNotified(q.name, item, nil, eventType))
+				handler(newQueueItemNotified(q.name, item, nil, eventType))
 			}
 		})
 	}
-	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
-		return codec.DecodeQueueAddListenerResponse(response)
-	}
-	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
-		return codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
-	}
-	err := q.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
-	if err != nil {
-		return err
-	}
-	q.userEventDispatcher.Subscribe(eventQueueItemNotified, subscriptionID, func(event event.Event) {
-		if e, ok := event.(*QueueItemNotified); ok {
-			if e.QueueName == q.name {
-				handler(e)
-			}
-		} else {
-			q.logger.Warnf("cannot cast to QueueItemNotified event")
-		}
-	})
-	return nil
+	err := q.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	return subscriptionID, err
 }
 
 func (q *Queue) poll(ctx context.Context, timeout int64) (interface{}, error) {

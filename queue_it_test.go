@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -60,50 +61,62 @@ func TestQueue_AddAll(t *testing.T) {
 
 func TestQueue_AddListener(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
-		handlerCalled := int32(0)
+		const targetCallCount = int32(100)
+		callCount := int32(0)
 		subscriptionID, err := q.AddListener(func(event *hz.QueueItemNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(q.Add("value1"))
-		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
+		for i := 0; i < int(targetCallCount); i++ {
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(q.Add(value))
 		}
-		atomic.StoreInt32(&handlerCalled, 0)
+		time.Sleep(1 * time.Second)
+		if !assert.Equal(t, targetCallCount, callCount) {
+			t.FailNow()
+		}
+		atomic.StoreInt32(&callCount, 0)
 		if err = q.RemoveListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(q.Add("value2"))
 		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) == 1 {
-			t.Fatalf("handler was called")
+		it.MustValue(q.Add("value2"))
+		if !assert.Equal(t, int32(0), callCount) {
+			t.FailNow()
 		}
 	})
 }
 
 func TestQueue_AddListenerIncludeValue(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
-		var handlerValue atomic.Value
-		handlerValue.Store("base-value")
+		const targetCallCount = int32(0)
+		callCount := int32(0)
 		subscriptionID, err := q.AddListenerIncludeValue(func(event *hz.QueueItemNotified) {
-			handlerValue.Store(event.Value)
+			fmt.Println("value:", event.Value)
+			atomic.AddInt32(&callCount, 1)
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(q.Add("value1"))
+		for i := 0; i < int(targetCallCount); i++ {
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(q.Add(value))
+		}
+
 		time.Sleep(1 * time.Second)
-		assert.Equal(t, "value1", handlerValue.Load())
-		handlerValue.Store("base-value")
+		if !assert.Equal(t, targetCallCount, callCount) {
+			t.FailNow()
+		}
+		atomic.StoreInt32(&callCount, 0)
 		if err = q.RemoveListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(q.Add("value2"))
-		time.Sleep(1 * time.Second)
-		assert.Equal(t, handlerValue.Load(), "base-value")
+		if !assert.Equal(t, int32(0), callCount) {
+			t.FailNow()
+		}
 	})
 }
 
