@@ -98,6 +98,7 @@ func (b *ConnectionListenerBinder) Remove(id internal.UUID) error {
 	if !ok {
 		return nil
 	}
+	delete(b.regs, id)
 	for _, conn := range b.connectionManager.ActiveConnections() {
 		if err := b.sendRemoveListenerRequest(reg.removeRequest, conn); err != nil {
 			return err
