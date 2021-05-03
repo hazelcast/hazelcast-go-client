@@ -434,7 +434,7 @@ func (fixSizedTypesCodec) DecodeByte(buffer []byte, offset int32) byte {
 }
 
 func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid internal.UUID) {
-	isNullEncode := uuid == nil
+	isNullEncode := uuid.Default()
 	FixSizedTypesCodec.EncodeBoolean(buffer, offset, isNullEncode)
 	if isNullEncode {
 		return
@@ -447,7 +447,7 @@ func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid internal.
 func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) internal.UUID {
 	isNull := FixSizedTypesCodec.DecodeBoolean(buffer, offset)
 	if isNull {
-		return nil
+		return internal.UUID{}
 	}
 
 	mostSignificantOffset := offset + proto.BooleanSizeInBytes

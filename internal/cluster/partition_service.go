@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"reflect"
 	"sync"
 	"sync/atomic"
 
@@ -59,17 +60,7 @@ func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionServic
 	}
 }
 
-func (s *PartitionService) Start() {
-	subscriptionID := event.MakeSubscriptionID(s.handlePartitionsUpdated)
-	s.eventDispatcher.Subscribe(EventPartitionsUpdated, subscriptionID, s.handlePartitionsUpdated)
-}
-
-func (s *PartitionService) Stop() {
-	subscriptionID := event.MakeSubscriptionID(s.handlePartitionsUpdated)
-	s.eventDispatcher.Unsubscribe(EventPartitionsUpdated, subscriptionID)
-}
-
-func (s *PartitionService) GetPartitionOwner(partitionId int32) internal.UUID {
+func (s *PartitionService) GetPartitionOwner(partitionId int32) *internal.UUID {
 	return s.partitionTable.GetOwnerUUID(partitionId)
 }
 
@@ -89,11 +80,9 @@ func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32,
 	}
 }
 
-func (s *PartitionService) handlePartitionsUpdated(event event.Event) {
-	if ev, ok := event.(*PartitionsUpdated); ok {
-		if s.partitionTable.Update(ev.Partitions, ev.Version, ev.ConnectionID) {
-			s.logger.Debug(func() string { return "partitions loaded" })
-		}
+func (s *PartitionService) Update(connID int64, partitions []proto.Pair, version int32) {
+	if s.partitionTable.Update(partitions, version, connID) {
+		s.logger.Debug(func() string { return "partitions updated" })
 	}
 }
 
@@ -131,17 +120,21 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 			}
 		}
 	}
+	if reflect.DeepEqual(p.partitions, newPartitions) {
+		return false
+	}
 	p.partitions = newPartitions
 	p.partitionStateVersion = version
 	p.connectionID = connectionID
 	return true
 }
 
-func (p *partitionTable) GetOwnerUUID(partitionID int32) internal.UUID {
+func (p *partitionTable) GetOwnerUUID(partitionID int32) *internal.UUID {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if uuid, ok := p.partitions[partitionID]; ok {
-		return uuid
+		uuidCopy := uuid
+		return &uuidCopy
 	}
 	return nil
 }

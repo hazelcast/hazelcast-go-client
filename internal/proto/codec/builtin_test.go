@@ -422,7 +422,7 @@ func TestFixSizedTypesCodec_EncodeUUID_When_UUID_Is_Nil(t *testing.T) {
 	offset := int32(0)
 
 	//when
-	FixSizedTypesCodec.EncodeUUID(buffer, offset, nil)
+	FixSizedTypesCodec.EncodeUUID(buffer, offset, internal.UUID{})
 
 	//then
 	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), true)

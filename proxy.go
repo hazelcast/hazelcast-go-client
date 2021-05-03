@@ -51,7 +51,7 @@ type creationBundle struct {
 	UserEventDispatcher  *event.DispatchService
 	ClusterService       *cluster.Service
 	InvocationFactory    *cluster.ConnectionInvocationFactory
-	ListenerBinder       *cluster.ConnectionListenerBinderImpl
+	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
 	Logger               ilogger.Logger
 }
@@ -92,7 +92,7 @@ type proxy struct {
 	partitionService     *cluster.PartitionService
 	userEventDispatcher  *event.DispatchService
 	invocationFactory    *cluster.ConnectionInvocationFactory
-	listenerBinder       *cluster.ConnectionListenerBinderImpl
+	listenerBinder       *cluster.ConnectionListenerBinder
 	config               *Config
 	serviceName          string
 	name                 string

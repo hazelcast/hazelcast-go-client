@@ -191,8 +191,7 @@ func (c *Client) start() error {
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	c.clusterService.Start()
-	c.partitionService.Start()
-	if err := c.connectionManager.Start(); err != nil {
+	if err := c.connectionManager.Start(10 * time.Second); err != nil {
 		return err
 	}
 	atomic.StoreInt32(&c.state, ready)
@@ -208,7 +207,6 @@ func (c *Client) Shutdown() error {
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
 	c.clusterService.Stop()
-	c.partitionService.Stop()
 	<-c.connectionManager.Stop()
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
@@ -335,6 +333,7 @@ func (c *Client) createComponents(config *Config) {
 		RequestCh:         requestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,
+		PartitionService:  partitionService,
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
 	})
@@ -359,7 +358,7 @@ func (c *Client) createComponents(config *Config) {
 		Config:            &config.ClusterConfig,
 	})
 	invocationService := invocation.NewService(requestCh, responseCh, invocationHandler, c.logger)
-	listenerBinder := icluster.NewConnectionListenerBinderImpl(connectionManager, invocationFactory, requestCh, c.eventDispatcher)
+	listenerBinder := icluster.NewConnectionListenerBinder(connectionManager, invocationFactory, requestCh, c.eventDispatcher, c.logger, config.ClusterConfig.SmartRouting)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
 		SerializationService: c.serializationService,

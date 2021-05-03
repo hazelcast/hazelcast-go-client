@@ -105,7 +105,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 		panic("Credentials is nil")
 	}
 	if b.ClientName == "" {
-		panic("clientName is blank")
+		panic("ClientName is blank")
 	}
 }
 
@@ -128,6 +128,7 @@ type ConnectionManager struct {
 	state                int32
 	logger               ilogger.Logger
 	doneCh               chan struct{}
+	startCh              chan struct{}
 	cb                   *cb.CircuitBreaker
 }
 
@@ -163,12 +164,13 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		smartRouting:         bundle.ClusterConfig.SmartRouting,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
+		startCh:              make(chan struct{}, 1),
 		cb:                   circuitBreaker,
 	}
 	return manager
 }
 
-func (m *ConnectionManager) Start() error {
+func (m *ConnectionManager) Start(timeout time.Duration) error {
 	if !atomic.CompareAndSwapInt32(&m.state, created, starting) {
 		return nil
 	}
@@ -179,9 +181,18 @@ func (m *ConnectionManager) Start() error {
 	}
 	connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
 	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionClosedSubscriptionID, m.handleConnectionClosed)
-	memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
-	m.eventDispatcher.Subscribe(EventMembersAdded, memberAddedSubscriptionID, m.handleMembersAdded)
-	go m.doctor()
+	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
+	// wait for the initial member list
+	select {
+	case <-m.startCh:
+		break
+	case <-time.After(timeout):
+		return errors.New("initial member list not received in deadline")
+	}
+	if m.smartRouting {
+		// fix broken connections only in the smart mode
+		go m.detectFixBrokenConnections()
+	}
 	if m.logger.CanLogDebug() {
 		go m.logStatus()
 	}
@@ -236,8 +247,19 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 	return m.connMap.RandomConn()
 }
 
+func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
+	m.handleMembersAdded(e)
+	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersAdded)
+	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleInitialMembersAdded))
+	close(m.startCh)
+}
+
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
-	if atomic.LoadInt32(&m.state) != ready {
+	//if atomic.LoadInt32(&m.state) != ready {
+	//	return
+	//}
+	// do not add new members in non-smart mode
+	if !m.smartRouting && m.connMap.Len() > 0 {
 		return
 	}
 	if memberAddedEvent, ok := event.(*MembersAdded); ok {
@@ -455,7 +477,7 @@ func (m *ConnectionManager) logStatus() {
 	}
 }
 
-func (m *ConnectionManager) doctor() {
+func (m *ConnectionManager) detectFixBrokenConnections() {
 	ticker := time.NewTicker(5 * time.Second)
 	for {
 		select {
@@ -464,7 +486,7 @@ func (m *ConnectionManager) doctor() {
 			return
 		case <-ticker.C:
 			// TODO: very inefficent, fix this
-			// find and connect the first connection which exists in the cluster but not in th connection manager
+			// find and connect the first connection which exists in the cluster but not in the connection manager
 			for _, addrStr := range m.clusterService.MemberAddrs() {
 				if conn := m.connMap.GetConnectionForAddr(addrStr); conn == nil {
 					m.logger.Infof("found a broken connection to: %s, trying to fix it.", addrStr)
@@ -616,6 +638,7 @@ func (m *connectionMap) Info(infoFun func(connections map[string]*Connection, co
 
 func (m *connectionMap) Len() int {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
-	return len(m.connToAddr)
+	l := len(m.connToAddr)
+	m.connectionsMu.RUnlock()
+	return l
 }

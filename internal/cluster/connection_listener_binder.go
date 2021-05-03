@@ -17,155 +17,124 @@
 package cluster
 
 import (
+	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-type ListenerResponseDecoder func(response *proto.ClientMessage) internal.UUID
-type ListenerRemoveMsgMaker func(subscriptionID internal.UUID) *proto.ClientMessage
-
-type serverRegistration struct {
-	id            internal.UUIDImpl
+type listenerRegistration struct {
+	addRequest    *proto.ClientMessage
 	removeRequest *proto.ClientMessage
-}
-type connRegistration struct {
-	conn          *Connection
-	client        int64
-	server        internal.UUIDImpl
-	removeRequest *proto.ClientMessage
+	handler       proto.ClientMessageHandler
 }
 
-type messageHandler struct {
-	message *proto.ClientMessage
-	handler proto.ClientMessageHandler
+type ConnectionListenerBinder struct {
+	connectionManager *ConnectionManager
+	invocationFactory *ConnectionInvocationFactory
+	eventDispatcher   *event.DispatchService
+	requestCh         chan<- invocation.Invocation
+	regs              map[internal.UUID]listenerRegistration
+	regsMu            *sync.RWMutex
+	smart             bool
+	logger            logger.Logger
+	connectionCount   int32
 }
 
-type ConnectionListenerBinderImpl struct {
-	connectionManager     *ConnectionManager
-	invocationFactory     *ConnectionInvocationFactory
-	eventDispatcher       *event.DispatchService
-	requestCh             chan<- invocation.Invocation
-	connToRegistration    map[int64]map[int64]serverRegistration
-	registrationToMessage map[int64]messageHandler
-	connToRegistrationMu  *sync.RWMutex
-}
-
-func NewConnectionListenerBinderImpl(
+func NewConnectionListenerBinder(
 	connManager *ConnectionManager,
 	invocationFactory *ConnectionInvocationFactory,
 	requestCh chan<- invocation.Invocation,
-	eventDispatcher *event.DispatchService) *ConnectionListenerBinderImpl {
-	binder := &ConnectionListenerBinderImpl{
-		connectionManager:     connManager,
-		invocationFactory:     invocationFactory,
-		eventDispatcher:       eventDispatcher,
-		requestCh:             requestCh,
-		connToRegistration:    map[int64]map[int64]serverRegistration{},
-		registrationToMessage: map[int64]messageHandler{},
-		connToRegistrationMu:  &sync.RWMutex{},
+	eventDispatcher *event.DispatchService,
+	logger logger.Logger,
+	smart bool) *ConnectionListenerBinder {
+	binder := &ConnectionListenerBinder{
+		connectionManager: connManager,
+		invocationFactory: invocationFactory,
+		eventDispatcher:   eventDispatcher,
+		requestCh:         requestCh,
+		regs:              map[internal.UUID]listenerRegistration{},
+		regsMu:            &sync.RWMutex{},
+		logger:            logger,
+		smart:             smart,
 	}
 	eventDispatcher.Subscribe(EventConnectionOpened, event.DefaultSubscriptionID, binder.handleConnectionOpened)
+	eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, binder.handleConnectionClosed)
 	return binder
 }
 
-func (b *ConnectionListenerBinderImpl) Add(
-	addRequest *proto.ClientMessage,
-	clientRegistrationID int64,
-	handler proto.ClientMessageHandler,
-	responseDecoder ListenerResponseDecoder,
-	listenerRemover ListenerRemoveMsgMaker) error {
-	connToRegistration := map[int64]connRegistration{}
+func (b *ConnectionListenerBinder) sendAddListenerRequest(request *proto.ClientMessage, conn *Connection, handler proto.ClientMessageHandler) error {
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, handler)
+	b.requestCh <- inv
+	_, err := inv.Get()
+	return err
+}
+
+func (b *ConnectionListenerBinder) Add(id internal.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
+	b.regsMu.Lock()
+	b.regs[id] = listenerRegistration{
+		addRequest:    add,
+		removeRequest: remove,
+		handler:       handler,
+	}
+	b.regsMu.Unlock()
 	for _, conn := range b.connectionManager.ActiveConnections() {
-		inv := b.invocationFactory.NewConnectionBoundInvocation(addRequest, -1, nil, conn, handler)
-		b.requestCh <- inv
-		if response, err := inv.Get(); err != nil {
+		if err := b.sendAddListenerRequest(add, conn, handler); err != nil {
 			return err
-		} else {
-			serverRegistrationID := responseDecoder(response).(internal.UUIDImpl)
-			connToRegistration[conn.connectionID] = connRegistration{
-				client:        clientRegistrationID,
-				server:        serverRegistrationID,
-				removeRequest: listenerRemover(serverRegistrationID),
-			}
-		}
-	}
-	// merge connToRegistration to the main one
-	b.connToRegistrationMu.Lock()
-	defer b.connToRegistrationMu.Unlock()
-	for connID, reg := range connToRegistration {
-		serverReg := serverRegistration{
-			id:            reg.server,
-			removeRequest: reg.removeRequest,
-		}
-		// if the map for connection ID doesn't exist, create it
-		if connReg, ok := b.connToRegistration[connID]; ok {
-			connReg[reg.client] = serverReg
-		} else {
-			b.connToRegistration[connID] = map[int64]serverRegistration{
-				reg.client: serverReg,
-			}
-		}
-		b.registrationToMessage[reg.client] = messageHandler{
-			message: addRequest,
-			handler: handler,
 		}
 	}
 	return nil
 }
 
-func (b *ConnectionListenerBinderImpl) Remove(
-	mapName string,
-	clientRegistrationID int64) error {
-	activeConns := b.connectionManager.ActiveConnections()
-	connToRegistration := []connRegistration{}
-	b.connToRegistrationMu.RLock()
-	for _, conn := range activeConns {
-		if regs, ok := b.connToRegistration[conn.connectionID]; ok {
-			if serverReg, ok := regs[clientRegistrationID]; ok {
-				connToRegistration = append(connToRegistration, connRegistration{
-					conn:          conn,
-					client:        clientRegistrationID,
-					server:        serverReg.id,
-					removeRequest: serverReg.removeRequest,
-				})
-			}
-		}
+func (b *ConnectionListenerBinder) Remove(id internal.UUID) error {
+	b.regsMu.Lock()
+	defer b.regsMu.Unlock()
+	reg, ok := b.regs[id]
+	if !ok {
+		return nil
 	}
-	b.connToRegistrationMu.RUnlock()
-	for _, reg := range connToRegistration {
-		inv := b.invocationFactory.NewConnectionBoundInvocation(reg.removeRequest, -1, nil, reg.conn, nil)
-		b.requestCh <- inv
-		if _, err := inv.Get(); err != nil {
+	for _, conn := range b.connectionManager.ActiveConnections() {
+		if err := b.sendRemoveListenerRequest(reg.removeRequest, conn); err != nil {
 			return err
-		}
-	}
-	b.connToRegistrationMu.Lock()
-	defer b.connToRegistrationMu.Unlock()
-	for _, reg := range connToRegistration {
-		if regs, ok := b.connToRegistration[reg.conn.connectionID]; ok {
-			delete(regs, reg.client)
-			delete(b.registrationToMessage, reg.client)
 		}
 	}
 	return nil
 }
 
-func (b *ConnectionListenerBinderImpl) handleConnectionOpened(event event.Event) {
-	b.connToRegistrationMu.RLock()
-	defer b.connToRegistrationMu.RUnlock()
-	if connectionOpenedEvent, ok := event.(*ConnectionOpened); ok {
-		for _, msg := range b.registrationToMessage {
-			inv := b.invocationFactory.NewConnectionBoundInvocation(
-				msg.message,
-				-1,
-				nil,
-				connectionOpenedEvent.Conn,
-				msg.handler)
-			b.requestCh <- inv
+func (b *ConnectionListenerBinder) sendRemoveListenerRequest(request *proto.ClientMessage, conn *Connection) error {
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, nil)
+	b.requestCh <- inv
+	_, err := inv.Get()
+	return err
+}
+
+func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
+	if e, ok := event.(*ConnectionOpened); ok {
+		connectionCount := atomic.AddInt32(&b.connectionCount, 1)
+		b.regsMu.RLock()
+		defer b.regsMu.RUnlock()
+		if !b.smart && connectionCount > 0 {
+			// do not register new connections in non-smart mode
+			return
 		}
+		for regID, reg := range b.regs {
+			b.logger.Debug(func() string {
+				return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
+			})
+			if err := b.sendAddListenerRequest(reg.addRequest, e.Conn, reg.handler); err != nil {
+				b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
+			}
+		}
+	}
+}
+
+func (b *ConnectionListenerBinder) handleConnectionClosed(event event.Event) {
+	if _, ok := event.(*ConnectionOpened); ok {
+		atomic.AddInt32(&b.connectionCount, -1)
 	}
 }

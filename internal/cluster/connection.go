@@ -249,7 +249,7 @@ func (c *Connection) close(closeErr error) {
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
-	c.logger.Trace(func() string { return "connection closed" })
+	c.logger.Trace(func() string { return fmt.Sprintf("%d: connection closed", c.connectionID) })
 }
 
 func (c *Connection) String() string {

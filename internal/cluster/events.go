@@ -19,7 +19,6 @@ package cluster
 import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 const (
@@ -100,24 +99,6 @@ func NewMemberRemoved(members []cluster.Member) *MembersRemoved {
 
 func (m MembersRemoved) EventName() string {
 	return EventMembersRemoved
-}
-
-type PartitionsUpdated struct {
-	Partitions   []proto.Pair
-	Version      int32
-	ConnectionID int64
-}
-
-func NewPartitionsUpdated(pairs []proto.Pair, version int32, connectionID int64) *PartitionsUpdated {
-	return &PartitionsUpdated{
-		Partitions:   pairs,
-		Version:      version,
-		ConnectionID: connectionID,
-	}
-}
-
-func (p PartitionsUpdated) EventName() string {
-	return EventPartitionsUpdated
 }
 
 type MembersUpdated struct {

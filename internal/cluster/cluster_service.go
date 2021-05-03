@@ -35,6 +35,7 @@ type Service struct {
 	doneCh            chan struct{}
 	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
+	partitionService  *PartitionService
 	logger            ilogger.Logger
 	config            *pubcluster.Config
 
@@ -46,6 +47,7 @@ type CreationBundle struct {
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
+	PartitionService  *PartitionService
 	Logger            ilogger.Logger
 	Config            *pubcluster.Config
 }
@@ -63,6 +65,9 @@ func (b CreationBundle) Check() {
 	if b.EventDispatcher == nil {
 		panic("InvocationFactory is nil")
 	}
+	if b.PartitionService == nil {
+		panic("PartitionService is nil")
+	}
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
@@ -79,6 +84,7 @@ func NewServiceImpl(bundle CreationBundle) *Service {
 		doneCh:            make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
+		partitionService:  bundle.PartitionService,
 		logger:            bundle.Logger,
 		membersMap:        newMembersMap(),
 		config:            bundle.Config,
@@ -92,7 +98,6 @@ func (s *Service) GetMemberByUUID(uuid string) pubcluster.Member {
 func (s *Service) Start() {
 	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
 	s.eventDispatcher.Subscribe(EventConnectionOpened, subscriptionID, s.handleConnectionOpened)
-	s.eventDispatcher.Subscribe(EventMembersUpdated, event.DefaultSubscriptionID, s.handleMembersUpdated)
 	go s.logStatus()
 }
 
@@ -120,15 +125,14 @@ func (s *Service) handleConnectionOpened(event event.Event) {
 	}
 }
 
-func (s *Service) handleMembersUpdated(event event.Event) {
-	if membersUpdateEvent, ok := event.(*MembersUpdated); ok {
-		added, removed := s.membersMap.Update(membersUpdateEvent.Members, membersUpdateEvent.Version)
-		if len(added) > 0 {
-			s.eventDispatcher.Publish(NewMembersAdded(added))
-		}
-		if len(removed) > 0 {
-			s.eventDispatcher.Publish(NewMemberRemoved(removed))
-		}
+func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
+	s.logger.Debug(func() string { return fmt.Sprintf("%d: members updated", conn.connectionID) })
+	added, removed := s.membersMap.Update(memberInfos, version)
+	if len(added) > 0 {
+		s.eventDispatcher.Publish(NewMembersAdded(added))
+	}
+	if len(removed) > 0 {
+		s.eventDispatcher.Publish(NewMemberRemoved(removed))
 	}
 }
 
@@ -136,11 +140,9 @@ func (s *Service) sendMemberListViewRequest(conn *Connection) {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
-			s.logger.Debug(func() string { return "members updated" })
-			s.eventDispatcher.Publish(NewMembersUpdated(memberInfos, version))
+			s.handleMembersUpdated(conn, version, memberInfos)
 		}, func(version int32, partitions []proto.Pair) {
-			s.eventDispatcher.Publish(NewPartitionsUpdated(partitions, version, conn.connectionID))
-			s.logger.Debug(func() string { return "partitions updated" })
+			s.partitionService.Update(conn.connectionID, partitions, version)
 		})
 	})
 	s.requestCh <- inv

@@ -57,12 +57,16 @@ func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func
 		}()
 		f(t, m)
 	}
-	t.Run("Smart Client", func(t *testing.T) {
-		runner(t, true)
-	})
-	t.Run("Non-Smart Client", func(t *testing.T) {
-		runner(t, false)
-	})
+	if SmartEnabled() {
+		t.Run("Smart Client", func(t *testing.T) {
+			runner(t, true)
+		})
+	}
+	if NonSmartEnabled() {
+		t.Run("Non-Smart Client", func(t *testing.T) {
+			runner(t, false)
+		})
+	}
 }
 
 func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMap) {

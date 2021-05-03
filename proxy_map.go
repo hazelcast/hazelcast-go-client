@@ -26,7 +26,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -67,12 +66,8 @@ func (m *Map) withContext(ctx context.Context) *Map {
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
-func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (string, error) {
-	subscriptionID := m.subscriptionIDGen.NextID()
-	if err := m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, subscriptionID, handler); err != nil {
-		return "", err
-	}
-	return event.FormatSubscriptionID(subscriptionID), nil
+func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (internal.UUID, error) {
+	return m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, handler)
 }
 
 // AddIndexWithConfig adds an index to this map for the specified entries so that queries can run faster.
@@ -584,12 +579,8 @@ func (m *Map) RemoveAll(predicate predicate.Predicate) error {
 }
 
 // RemoveEntryListener removes the specified entry listener.
-func (m *Map) RemoveEntryListener(subscriptionID string) error {
-	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
-		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
-	} else {
-		return m.listenerBinder.Remove(m.name, subscriptionIDInt)
-	}
+func (m *Map) RemoveEntryListener(subscriptionID internal.UUID) error {
+	return m.listenerBinder.Remove(subscriptionID)
 }
 
 // RemoveInterceptor removes the interceptor.
@@ -768,31 +759,28 @@ func (m *Map) addIndex(indexConfig types.IndexConfig) error {
 	return err
 }
 
-func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, subscriptionID int64, handler EntryNotifiedHandler) error {
+func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (internal.UUID, error) {
 	var err error
 	var keyData pubser.Data
 	var predicateData pubser.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
-			return err
+			return internal.UUID{}, err
 		}
 	}
 	if predicate != nil {
 		if predicateData, err = m.validateAndSerialize(predicate); err != nil {
-			return err
+			return internal.UUID{}, err
 		}
 	}
-	request := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.ClusterConfig.SmartRouting)
+	subscriptionID := internal.NewUUID()
+	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.ClusterConfig.SmartRouting)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
-	responseDecoder := func(response *proto.ClientMessage) internal.UUID {
-		return codec.DecodeMapAddEntryListenerResponse(response)
-	}
-	makeRemoveMsg := func(subscriptionID internal.UUID) *proto.ClientMessage {
-		return codec.EncodeMapRemoveEntryListenerRequest(m.name, subscriptionID)
-	}
-	return m.listenerBinder.Add(request, subscriptionID, listenerHandler, responseDecoder, makeRemoveMsg)
+	removeRequest := codec.EncodeMapRemoveEntryListenerRequest(m.name, subscriptionID)
+	err = m.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	return subscriptionID, err
 }
 
 func (m *Map) loadAll(replaceExisting bool, keys ...interface{}) error {

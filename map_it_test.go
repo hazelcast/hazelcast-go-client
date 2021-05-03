@@ -733,64 +733,61 @@ func TestMap_ReplaceIfSame(t *testing.T) {
 
 func TestMap_EntryNotifiedEvent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		time.Sleep(1 * time.Second)
-		handlerCalled := int32(0)
+		const totalCallCount = int32(100)
+		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
 			IncludeValue: true,
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		listenerConfig.NotifyEntryAdded(true)
 		subscriptionID, err := m.AddEntryListener(listenerConfig, handler)
 		if err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put("k1", "v1"))
-		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(m.Put(key, value))
 		}
-		atomic.StoreInt32(&handlerCalled, 0)
+		time.Sleep(1 * time.Second)
+		if !assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount)) {
+			t.FailNow()
+		}
+		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put("k1", "v1"))
-		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(m.Put(key, value))
+		}
+		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
+			t.FailNow()
 		}
 	})
 }
 
 func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		time.Sleep(1 * time.Second)
-		handlerCalled := int32(0)
+		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
 			IncludeValue: true,
 			Key:          "k1",
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		it.Must(m.Set("k1", "v1"))
-		assert.Equal(t, "v1", it.MustValue(m.Get("k1")))
-		time.Sleep(2 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
-		}
-		atomic.StoreInt32(&handlerCalled, 0)
-		it.MustValue(m.Put("k2", "v1"))
+		it.MustValue(m.Put("k1", "v1"))
 		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
+		if !assert.Equal(t, int32(1), atomic.LoadInt32(&callCount)) {
+			t.FailNow()
 		}
 	})
 }
@@ -800,29 +797,27 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		handlerCalled := int32(0)
+		const totalCallCount = int32(100)
+		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
 			IncludeValue: true,
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
-		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := &it.SamplePortable{A: "foo", B: int32(i)}
+			it.MustValue(m.Put(key, value))
 		}
-		atomic.StoreInt32(&handlerCalled, 0)
-		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
+		if !assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount)) {
+			t.FailNow()
 		}
 	})
 }
@@ -832,10 +827,9 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		time.Sleep(1 * time.Second)
-		handlerCalled := int32(0)
+		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
 			IncludeValue: true,
@@ -843,25 +837,15 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
-		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
-		}
-		atomic.StoreInt32(&handlerCalled, 0)
+		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
 		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
-		}
-		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
-		time.Sleep(1 * time.Second)
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
+		if !assert.Equal(t, int32(1), atomic.LoadInt32(&callCount)) {
+			t.FailNow()
 		}
 	})
 }
