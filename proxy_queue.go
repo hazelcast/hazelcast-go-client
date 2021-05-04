@@ -293,8 +293,8 @@ func (q *Queue) addListener(includeValue bool, handler QueueItemNotifiedHandler)
 			if item, err := q.convertToObject(itemData); err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
 			} else {
-				// TODO: get member from uuid
-				handler(newQueueItemNotified(q.name, item, nil, eventType))
+				member := q.clusterService.GetMemberByUUID(uuid.String())
+				handler(newQueueItemNotified(q.name, item, member, eventType))
 			}
 		})
 	}
