@@ -163,6 +163,17 @@ func TestQueue_Drain(t *testing.T) {
 		}
 	})
 }
+func TestQueue_Iterator(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		targetValues := []interface{}{int64(1), int64(2), int64(3), int64(4)}
+		it.MustValue(q.AddAll(targetValues...))
+		if values, err := q.Iterator(); err != nil {
+			t.Fatal(err)
+		} else {
+			assert.Equal(t, targetValues, values)
+		}
+	})
+}
 
 func TestQueue_DrainWithMaxSize(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
@@ -205,6 +216,15 @@ func TestQueue_Poll(t *testing.T) {
 		} else {
 			assert.Nil(t, value)
 		}
+	})
+}
+
+func TestQueue_Put(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		if err := q.Put("value"); err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, "value", it.MustValue(q.Take()))
 	})
 }
 

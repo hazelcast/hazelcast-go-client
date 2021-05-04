@@ -27,6 +27,17 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
+/*
+Topic is a distribution mechanism for publishing messages that are delivered to multiple subscribers,
+which is also known as a publish/subscribe (pub/sub) messaging model.
+
+Publish and subscriptions are cluster-wide. When a member subscribes for a topic,
+it is actually registering for messages published by any member in the cluster,
+including the new members joined after you added the listener.
+
+Messages are ordered, meaning that listeners(subscribers) will process the messages in the order they are actually
+published.
+*/
 type Topic struct {
 	*proxy
 	partitionID int32
@@ -42,10 +53,12 @@ func newTopic(p *proxy) (*Topic, error) {
 	}
 }
 
+// AddListener adds a subscriber to this topic.
 func (t *Topic) AddListener(handler TopicMessageHandler) (internal.UUID, error) {
 	return t.addListener(handler)
 }
 
+// Publish publishes the given message to all subscribers of this topic.
 func (t *Topic) Publish(message interface{}) error {
 	if messageData, err := t.validateAndSerialize(message); err != nil {
 		return err
@@ -56,6 +69,7 @@ func (t *Topic) Publish(message interface{}) error {
 	}
 }
 
+// PublishAll published all given messages to all subscribers of this topic.
 func (t *Topic) PublishAll(messages ...interface{}) error {
 	if messagesData, err := t.validateAndSerializeValues(messages...); err != nil {
 		return err
@@ -66,6 +80,7 @@ func (t *Topic) PublishAll(messages ...interface{}) error {
 	}
 }
 
+// RemoveListener removes the given subscription from this topic.
 func (t *Topic) RemoveListener(subscriptionID internal.UUID) error {
 	return t.listenerBinder.Remove(subscriptionID)
 }

@@ -26,6 +26,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+/*
+Queue is a concurrent, blocking, distributed, observable queue.
+
+Queue is not a partitioned data-structure.
+All of the Queue content is stored in a single machine (and in the backup).
+Queue will not scale by adding more members in the cluster.
+*/
 type Queue struct {
 	*proxy
 	partitionID int32
@@ -39,14 +46,20 @@ func newQueue(p *proxy) (*Queue, error) {
 	}
 }
 
+// Add adds the specified item to this queue if there is available space.
+// Returns true when element is successfully added
 func (q *Queue) Add(value interface{}) (bool, error) {
 	return q.add(context.Background(), value, 0)
 }
 
+// AddWithTimeout adds the specified item to this queue if there is available space.
+// Returns true when element is successfully added
 func (q *Queue) AddWithTimeout(value interface{}, timeout time.Duration) (bool, error) {
 	return q.add(context.Background(), value, timeout.Milliseconds())
 }
 
+// AddAll adds the elements in the specified collection to this queue.
+// Returns true if the queue is changed after the call.
 func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
@@ -60,20 +73,25 @@ func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 	}
 }
 
+// AddListener adds an item listener for this queue. Listener will be notified for all queue add/remove events.
 func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (internal.UUID, error) {
 	return q.addListener(false, handler)
 }
 
+// AddListenerIncludeValue adds an item listener for this queue. Listener will be notified for all queue add/remove events.
+// Received events inclues the updated item.
 func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (internal.UUID, error) {
 	return q.addListener(true, handler)
 }
 
+// Clear Clear this queue. Queue will be empty after this call.
 func (q *Queue) Clear() error {
 	request := codec.EncodeQueueClearRequest(q.name)
 	_, err := q.invokeOnPartition(context.Background(), request, q.partitionID)
 	return err
 }
 
+// Contains returns true if the queue includes the given value.
 func (q *Queue) Contains(value interface{}) (bool, error) {
 	if valueData, err := q.validateAndSerialize(value); err != nil {
 		return false, err
@@ -87,6 +105,7 @@ func (q *Queue) Contains(value interface{}) (bool, error) {
 	}
 }
 
+// ContainsAll returns true if the queue includes all given values.
 func (q *Queue) ContainsAll(values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
@@ -100,6 +119,7 @@ func (q *Queue) ContainsAll(values ...interface{}) (bool, error) {
 	}
 }
 
+// Drain returns all items in the queue and empties it.
 func (q *Queue) Drain() ([]interface{}, error) {
 	request := codec.EncodeQueueDrainToRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -109,6 +129,7 @@ func (q *Queue) Drain() ([]interface{}, error) {
 	}
 }
 
+// DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
 func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
 	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, int32(maxSize))
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -116,8 +137,20 @@ func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
 	} else {
 		return q.convertToObjects(codec.DecodeQueueDrainToMaxSizeResponse(response))
 	}
+
 }
 
+// Iterator returns all of the items in this queue.
+func (q *Queue) Iterator() ([]interface{}, error) {
+	request := codec.EncodeQueueIteratorRequest(q.name)
+	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		return nil, err
+	} else {
+		return q.convertToObjects(codec.DecodeQueueIteratorResponse(response))
+	}
+}
+
+// IsEmpty returns true if the queue is empty.
 func (q *Queue) IsEmpty() (bool, error) {
 	request := codec.EncodeQueueIsEmptyRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -127,8 +160,7 @@ func (q *Queue) IsEmpty() (bool, error) {
 	}
 }
 
-// TODO: iterator
-
+// Peek retrieves the head of queue without removing it from the queue.
 func (q *Queue) Peek() (interface{}, error) {
 	request := codec.EncodeQueuePeekRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -138,14 +170,30 @@ func (q *Queue) Peek() (interface{}, error) {
 	}
 }
 
+// Poll retrieves and removes the head of this queue.
 func (q *Queue) Poll() (interface{}, error) {
 	return q.poll(context.Background(), 0)
 }
 
+// PollWithTimeout retrieves and removes the head of this queue.
+// Waits until this timeout elapses and returns the result.
 func (q *Queue) PollWithTimeout(timeout time.Duration) (interface{}, error) {
 	return q.poll(context.Background(), timeout.Milliseconds())
 }
 
+// Put adds the specified element into this queue.
+// If there is no space, it waits until necessary space becomes available.
+func (q *Queue) Put(value interface{}) error {
+	if valueData, err := q.validateAndSerialize(value); err != nil {
+		return err
+	} else {
+		request := codec.EncodeQueuePutRequest(q.name, valueData)
+		_, err := q.invokeOnPartition(context.Background(), request, q.partitionID)
+		return err
+	}
+}
+
+// RemainingCapacity returns the remaining capacity of this queue.
 func (q *Queue) RemainingCapacity() (int, error) {
 	request := codec.EncodeQueueRemainingCapacityRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -155,6 +203,7 @@ func (q *Queue) RemainingCapacity() (int, error) {
 	}
 }
 
+// Remove removes the specified element from the queue if it exists.
 func (q *Queue) Remove(value interface{}) (bool, error) {
 	if data, err := q.validateAndSerialize(value); err != nil {
 		return false, err
@@ -168,6 +217,7 @@ func (q *Queue) Remove(value interface{}) (bool, error) {
 	}
 }
 
+// RemoveAll removes all of the elements of the specified collection from this queue.
 func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
@@ -186,6 +236,7 @@ func (q *Queue) RemoveListener(subscriptionID internal.UUID) error {
 	return q.listenerBinder.Remove(subscriptionID)
 }
 
+// RetainAll removes the items which are not contained in the specified collection.
 func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
@@ -199,6 +250,7 @@ func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
 	}
 }
 
+// Size returns the number of elements in this collection.
 func (q *Queue) Size() (int, error) {
 	request := codec.EncodeQueueSizeRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
@@ -208,6 +260,7 @@ func (q *Queue) Size() (int, error) {
 	}
 }
 
+// Take retrieves and removes the head of this queue, if necessary, waits until an item becomes available.
 func (q *Queue) Take() (interface{}, error) {
 	request := codec.EncodeQueueTakeRequest(q.name)
 	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
