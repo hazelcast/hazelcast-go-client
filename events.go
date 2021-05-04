@@ -129,14 +129,14 @@ type MessagePublished struct {
 	TopicName   string
 	Value       interface{}
 	PublishTime time.Time
-	Member      *cluster.Member
+	Member      cluster.Member
 }
 
 func (m *MessagePublished) EventName() string {
 	return eventMessagePublished
 }
 
-func newMessagePublished(name string, value interface{}, publishTime time.Time, member *cluster.Member) *MessagePublished {
+func newMessagePublished(name string, value interface{}, publishTime time.Time, member cluster.Member) *MessagePublished {
 	return &MessagePublished{
 		TopicName:   name,
 		Value:       value,

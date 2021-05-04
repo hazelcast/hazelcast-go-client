@@ -20,11 +20,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 /*
@@ -54,7 +53,7 @@ func newTopic(p *proxy) (*Topic, error) {
 }
 
 // AddListener adds a subscriber to this topic.
-func (t *Topic) AddListener(handler TopicMessageHandler) (internal.UUID, error) {
+func (t *Topic) AddListener(handler TopicMessageHandler) (types.UUID, error) {
 	return t.addListener(handler)
 }
 
@@ -81,21 +80,21 @@ func (t *Topic) PublishAll(messages ...interface{}) error {
 }
 
 // RemoveListener removes the given subscription from this topic.
-func (t *Topic) RemoveListener(subscriptionID internal.UUID) error {
+func (t *Topic) RemoveListener(subscriptionID types.UUID) error {
 	return t.listenerBinder.Remove(subscriptionID)
 }
 
-func (t *Topic) addListener(handler TopicMessageHandler) (internal.UUID, error) {
-	subscriptionID := internal.NewUUID()
+func (t *Topic) addListener(handler TopicMessageHandler) (types.UUID, error) {
+	subscriptionID := types.NewUUID()
 	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleTopicAddMessageListener(msg, func(itemData serialization.Data, publishTime int64, uuid internal.UUID) {
+		codec.HandleTopicAddMessageListener(msg, func(itemData serialization.Data, publishTime int64, uuid types.UUID) {
 			if item, err := t.convertToObject(itemData); err != nil {
 				t.logger.Warnf("cannot convert data to Go value")
 			} else {
-				// TODO: get member from uuid
-				handler(newMessagePublished(t.name, item, time.Unix(0, publishTime*1000000), nil))
+				member := t.clusterService.GetMemberByUUID(uuid.String())
+				handler(newMessagePublished(t.name, item, time.Unix(0, publishTime*1000000), member))
 			}
 		})
 	}

@@ -20,7 +20,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/types"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -74,13 +75,13 @@ func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 }
 
 // AddListener adds an item listener for this queue. Listener will be notified for all queue add/remove events.
-func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (internal.UUID, error) {
+func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(false, handler)
 }
 
 // AddListenerIncludeValue adds an item listener for this queue. Listener will be notified for all queue add/remove events.
 // Received events inclues the updated item.
-func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (internal.UUID, error) {
+func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(true, handler)
 }
 
@@ -232,7 +233,7 @@ func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
 }
 
 // RemoveListener removes the specified listener.
-func (q *Queue) RemoveListener(subscriptionID internal.UUID) error {
+func (q *Queue) RemoveListener(subscriptionID types.UUID) error {
 	return q.listenerBinder.Remove(subscriptionID)
 }
 
@@ -283,12 +284,12 @@ func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool
 	}
 }
 
-func (q *Queue) addListener(includeValue bool, handler QueueItemNotifiedHandler) (internal.UUID, error) {
-	subscriptionID := internal.NewUUID()
+func (q *Queue) addListener(includeValue bool, handler QueueItemNotifiedHandler) (types.UUID, error) {
+	subscriptionID := types.NewUUID()
 	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleQueueAddListener(msg, func(itemData serialization.Data, uuid internal.UUID, eventType int32) {
+		codec.HandleQueueAddListener(msg, func(itemData serialization.Data, uuid types.UUID, eventType int32) {
 			if item, err := q.convertToObject(itemData); err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
 			} else {

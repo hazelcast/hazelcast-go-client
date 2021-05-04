@@ -14,8 +14,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 
 // Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
 
-func EncodeTopicRemoveMessageListenerRequest(name string, registrationId internal.UUID) *proto.ClientMessage {
+func EncodeTopicRemoveMessageListenerRequest(name string, registrationId types.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
