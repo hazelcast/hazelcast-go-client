@@ -240,9 +240,6 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	f := func(partitionID int32, keys []pubser.Data) cb.Future {
 		request := codec.EncodeMapGetAllRequest(m.name, keys)
 		return m.circuitBreaker.TryContextFuture(m.ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-			if attempt > 0 {
-				request = request.Copy()
-			}
 			return m.invokeOnPartition(ctx, request, partitionID)
 		})
 	}
@@ -489,9 +486,6 @@ func (m *Map) PutAll(keyValuePairs []types.Entry) error {
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 		return m.circuitBreaker.TryContextFuture(m.ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-			if attempt > 0 {
-				request = request.Copy()
-			}
 			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 		})
 	}
