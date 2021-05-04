@@ -61,7 +61,7 @@ func TestQueue_AddAll(t *testing.T) {
 
 func TestQueue_AddListener(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
-		const targetCallCount = int32(100)
+		const targetCallCount = int32(10)
 		callCount := int32(0)
 		subscriptionID, err := q.AddListener(func(event *hz.QueueItemNotified) {
 			atomic.AddInt32(&callCount, 1)
@@ -74,16 +74,15 @@ func TestQueue_AddListener(t *testing.T) {
 			it.MustValue(q.Add(value))
 		}
 		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, callCount) {
+		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
 		atomic.StoreInt32(&callCount, 0)
 		if err = q.RemoveListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
 		it.MustValue(q.Add("value2"))
-		if !assert.Equal(t, int32(0), callCount) {
+		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
 	})
@@ -106,7 +105,7 @@ func TestQueue_AddListenerIncludeValue(t *testing.T) {
 		}
 
 		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, callCount) {
+		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
 		atomic.StoreInt32(&callCount, 0)
@@ -114,7 +113,7 @@ func TestQueue_AddListenerIncludeValue(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.MustValue(q.Add("value2"))
-		if !assert.Equal(t, int32(0), callCount) {
+		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
 	})
