@@ -32,6 +32,7 @@ type listenerRegistration struct {
 	addRequest    *proto.ClientMessage
 	removeRequest *proto.ClientMessage
 	handler       proto.ClientMessageHandler
+	id            internal.UUID
 }
 
 type ConnectionListenerBinder struct {
@@ -39,7 +40,9 @@ type ConnectionListenerBinder struct {
 	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
 	requestCh         chan<- invocation.Invocation
+	removeCh          chan<- int64
 	regs              map[internal.UUID]listenerRegistration
+	correlationIDs    map[internal.UUID][]int64
 	regsMu            *sync.RWMutex
 	smart             bool
 	logger            logger.Logger
@@ -50,6 +53,7 @@ func NewConnectionListenerBinder(
 	connManager *ConnectionManager,
 	invocationFactory *ConnectionInvocationFactory,
 	requestCh chan<- invocation.Invocation,
+	removeCh chan<- int64,
 	eventDispatcher *event.DispatchService,
 	logger logger.Logger,
 	smart bool) *ConnectionListenerBinder {
@@ -58,7 +62,9 @@ func NewConnectionListenerBinder(
 		invocationFactory: invocationFactory,
 		eventDispatcher:   eventDispatcher,
 		requestCh:         requestCh,
+		removeCh:          removeCh,
 		regs:              map[internal.UUID]listenerRegistration{},
+		correlationIDs:    map[internal.UUID][]int64{},
 		regsMu:            &sync.RWMutex{},
 		logger:            logger,
 		smart:             smart,
@@ -68,50 +74,115 @@ func NewConnectionListenerBinder(
 	return binder
 }
 
-func (b *ConnectionListenerBinder) sendAddListenerRequest(request *proto.ClientMessage, conn *Connection, handler proto.ClientMessageHandler) error {
-	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, handler)
-	b.requestCh <- inv
-	_, err := inv.Get()
-	return err
-}
-
 func (b *ConnectionListenerBinder) Add(id internal.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
 	b.regsMu.Lock()
 	b.regs[id] = listenerRegistration{
 		addRequest:    add,
 		removeRequest: remove,
 		handler:       handler,
+		id:            id,
 	}
 	b.regsMu.Unlock()
-	for _, conn := range b.connectionManager.ActiveConnections() {
-		if err := b.sendAddListenerRequest(add, conn, handler); err != nil {
-			return err
-		}
+	corrIDs, err := b.sendAddListenerRequests(add, handler, b.connectionManager.ActiveConnections()...)
+	if err != nil {
+		return err
 	}
+	b.updateCorrelationIDs(id, corrIDs)
 	return nil
 }
 
 func (b *ConnectionListenerBinder) Remove(id internal.UUID) error {
 	b.regsMu.Lock()
-	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
+		b.regsMu.Unlock()
 		return nil
 	}
 	delete(b.regs, id)
-	for _, conn := range b.connectionManager.ActiveConnections() {
-		if err := b.sendRemoveListenerRequest(reg.removeRequest, conn); err != nil {
+	b.removeCorrelationIDs(id)
+	b.regsMu.Unlock()
+	return b.sendRemoveListenerRequests(reg.removeRequest, b.connectionManager.ActiveConnections()...)
+}
+
+func (b *ConnectionListenerBinder) updateCorrelationIDs(regID internal.UUID, correlationIDs []int64) {
+	b.regsMu.Lock()
+	if ids, ok := b.correlationIDs[regID]; ok {
+		b.correlationIDs[regID] = append(ids, correlationIDs...)
+	} else {
+		b.correlationIDs[regID] = correlationIDs
+	}
+	b.regsMu.Unlock()
+}
+
+func (b *ConnectionListenerBinder) removeCorrelationIDs(regId internal.UUID) {
+	if ids, ok := b.correlationIDs[regId]; ok {
+		delete(b.correlationIDs, regId)
+		for _, id := range ids {
+			b.removeCh <- id
+		}
+	}
+}
+
+func (b *ConnectionListenerBinder) sendAddListenerRequests(request *proto.ClientMessage, handler proto.ClientMessageHandler, conns ...*Connection) ([]int64, error) {
+	if len(conns) == 0 {
+		return nil, nil
+	}
+	if len(conns) == 1 {
+		inv := b.sendAddListenerRequest(request, handler, conns[0])
+		_, err := inv.Get()
+		return []int64{inv.Request().CorrelationID()}, err
+	}
+	invs := make([]invocation.Invocation, len(conns))
+	corrIDs := make([]int64, len(conns))
+	for i, conn := range conns {
+		invs[i] = b.sendAddListenerRequest(request, handler, conn)
+	}
+	for i, inv := range invs {
+		if _, err := inv.Get(); err != nil {
+			return nil, err
+		}
+		corrIDs[i] = inv.Request().CorrelationID()
+	}
+	return corrIDs, nil
+}
+
+func (b *ConnectionListenerBinder) sendAddListenerRequest(
+	request *proto.ClientMessage,
+	handler proto.ClientMessageHandler,
+	conn *Connection) invocation.Invocation {
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, handler)
+	b.requestCh <- inv
+	return inv
+}
+
+func (b *ConnectionListenerBinder) sendRemoveListenerRequests(request *proto.ClientMessage, conns ...*Connection) error {
+	if len(conns) == 0 {
+		return nil
+	}
+	if len(conns) == 1 {
+		inv := b.sendRemoveListenerRequest(request, conns[0])
+		_, err := inv.Get()
+		return err
+	}
+	invs := make([]invocation.Invocation, len(conns))
+	for i, conn := range conns {
+		invs[i] = b.sendRemoveListenerRequest(request, conn)
+	}
+	for _, inv := range invs {
+		if _, err := inv.Get(); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *ConnectionListenerBinder) sendRemoveListenerRequest(request *proto.ClientMessage, conn *Connection) error {
+func (b *ConnectionListenerBinder) sendRemoveListenerRequest(request *proto.ClientMessage, conn *Connection) invocation.Invocation {
+	b.logger.Trace(func() string {
+		return fmt.Sprintf("%d: removing listener", conn.connectionID)
+	})
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, nil)
 	b.requestCh <- inv
-	_, err := inv.Get()
-	return err
+	return inv
 }
 
 func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
@@ -127,8 +198,10 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 			b.logger.Debug(func() string {
 				return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
 			})
-			if err := b.sendAddListenerRequest(reg.addRequest, e.Conn, reg.handler); err != nil {
+			if corrIDs, err := b.sendAddListenerRequests(reg.addRequest, reg.handler, e.Conn); err != nil {
 				b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
+			} else {
+				b.updateCorrelationIDs(regID, corrIDs)
 			}
 		}
 	}

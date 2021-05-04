@@ -28,18 +28,26 @@ type Handler interface {
 }
 
 type Service struct {
-	requestCh   <-chan Invocation
-	responseCh  <-chan *proto.ClientMessage
+	requestCh  <-chan Invocation
+	responseCh <-chan *proto.ClientMessage
+	// removeCh carries correlationIDs to be removed
+	removeCh    <-chan int64
 	doneCh      chan struct{}
 	invocations map[int64]Invocation
 	handler     Handler
 	logger      ilogger.Logger
 }
 
-func NewService(requestCh <-chan Invocation, responseCh <-chan *proto.ClientMessage, handler Handler, logger ilogger.Logger) *Service {
+func NewService(
+	requestCh <-chan Invocation,
+	responseCh <-chan *proto.ClientMessage,
+	removeCh <-chan int64,
+	handler Handler,
+	logger ilogger.Logger) *Service {
 	service := &Service{
 		requestCh:   requestCh,
 		responseCh:  responseCh,
+		removeCh:    removeCh,
 		doneCh:      make(chan struct{}),
 		invocations: map[int64]Invocation{},
 		handler:     handler,
@@ -65,6 +73,8 @@ loop:
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
+		case id := <-s.removeCh:
+			s.removeCorrelationID(id)
 		case <-s.doneCh:
 			break loop
 		}
@@ -106,6 +116,10 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			return fmt.Sprintf("no invocation found with the correlation ID: %d", correlationID)
 		})
 	}
+}
+
+func (s *Service) removeCorrelationID(id int64) {
+	delete(s.invocations, id)
 }
 
 func (s *Service) handleError(correlationID int64, invocationErr error) {

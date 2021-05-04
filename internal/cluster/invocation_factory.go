@@ -61,12 +61,16 @@ func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.Clien
 	return invocation.NewImpl(message, -1, address, time.Now().Add(f.invocationTimeout), f.redoOperation)
 }
 
-func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl,
-	connection *Connection, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
+func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(
+	message *proto.ClientMessage,
+	partitionID int32,
+	address *pubcluster.AddressImpl,
+	conn *Connection,
+	handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	// TODO: remove this when message pool is implemented
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := newConnectionBoundInvocation(message, partitionID, address, connection, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	inv := newConnectionBoundInvocation(message, partitionID, address, conn, time.Now().Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
 	return inv
 }

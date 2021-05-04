@@ -323,6 +323,8 @@ func (c *Client) createComponents(config *Config) {
 		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
 	}
 	requestCh := make(chan invocation.Invocation, 1024)
+	responseCh := make(chan *proto.ClientMessage, 1024)
+	removeCh := make(chan int64, 1024)
 	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
 		EventDispatcher: c.eventDispatcher,
 		Logger:          c.logger,
@@ -337,7 +339,6 @@ func (c *Client) createComponents(config *Config) {
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
 	})
-	responseCh := make(chan *proto.ClientMessage, 1024)
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
 		ResponseCh:           responseCh,
@@ -357,8 +358,15 @@ func (c *Client) createComponents(config *Config) {
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
 	})
-	invocationService := invocation.NewService(requestCh, responseCh, invocationHandler, c.logger)
-	listenerBinder := icluster.NewConnectionListenerBinder(connectionManager, invocationFactory, requestCh, c.eventDispatcher, c.logger, config.ClusterConfig.SmartRouting)
+	invocationService := invocation.NewService(requestCh, responseCh, removeCh, invocationHandler, c.logger)
+	listenerBinder := icluster.NewConnectionListenerBinder(
+		connectionManager,
+		invocationFactory,
+		requestCh,
+		removeCh,
+		c.eventDispatcher,
+		c.logger,
+		config.ClusterConfig.SmartRouting)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
 		SerializationService: c.serializationService,

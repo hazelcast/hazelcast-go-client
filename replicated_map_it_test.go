@@ -182,31 +182,12 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEvent(t *testing.T) {
 		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
-		/*
-			time.Sleep(1 * time.Second)
-			if atomic.LoadInt32(&handlerCalled) != 1 {
-				t.Fatalf("handler was not called")
-			}
-			atomic.StoreInt32(&handlerCalled, 0)
-			if err := m.RemoveEntryListener(subscriptionID); err != nil {
-				t.Fatal(err)
-			}
-			if _, err := m.Put("k1", "v1"); err != nil {
-				t.Fatal(err)
-			}
-			time.Sleep(1 * time.Second)
-			if atomic.LoadInt32(&handlerCalled) != 0 {
-				t.Fatalf("handler was called")
-			}
-
-		*/
 	})
 }
 
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) {
-	t.SkipNow()
 	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
-		const targetCallCount = 10
+		const targetCallCount = int32(10)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.AddInt32(&callCount, 1)
@@ -214,28 +195,21 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) 
 		if _, err := m.AddEntryListenerToKey("k1", handler); err != nil {
 			t.Fatal(err)
 		}
-		for i := 0; i < targetCallCount; i++ {
-			key := fmt.Sprintf("key-%d", i)
+		for i := 0; i < int(targetCallCount); i++ {
 			value := fmt.Sprintf("value-%d", i)
-			if _, err := m.Put(key, value); err != nil {
+			if _, err := m.Put("k1", value); err != nil {
 				t.Fatal(err)
 			}
 		}
+		time.Sleep(1 * time.Second)
 		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
-		/*
-			atomic.StoreInt32(&callCount, 0)
-			it.MustValue(m.Put("k2", "v1"))
-			time.Sleep(2 * time.Second)
-			if atomic.LoadInt32(&callCount) != 0 {
-				t.Fatalf("handler was called")
-			}
-		*/
 	})
 }
 
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testing.T) {
+	// Skipping, since predicates are not supported with portable and JSON values
 	t.SkipNow()
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
@@ -249,13 +223,11 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testi
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
-		time.Sleep(2 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
 		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
-		time.Sleep(2 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
@@ -263,6 +235,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testi
 }
 
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
+	// Skipping, since predicates are not supported with portable and JSON values
 	t.SkipNow()
 	cbCallback := func(cb *hz.ConfigBuilder) {
 		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
@@ -276,18 +249,15 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventToKeyAndPredicate(t *t
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
-		time.Sleep(1 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 1 {
 			t.Fatalf("handler was not called")
 		}
 		atomic.StoreInt32(&handlerCalled, 0)
 		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
-		time.Sleep(1 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
 		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
-		time.Sleep(1 * time.Second)
 		if atomic.LoadInt32(&handlerCalled) != 0 {
 			t.Fatalf("handler was called")
 		}
