@@ -224,11 +224,11 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 			if member := m.addMember(member); member != nil {
 				added = append(added, member)
 			}
-			newUUIDs[member.Uuid().String()] = struct{}{}
+			newUUIDs[member.UUID().String()] = struct{}{}
 		}
 		removed = []pubcluster.Member{}
 		for _, member := range m.members {
-			if _, ok := newUUIDs[member.Uuid().String()]; !ok {
+			if _, ok := newUUIDs[member.UUID().String()]; !ok {
 				m.removeMember(member)
 				removed = append(removed, member)
 			}
@@ -272,7 +272,7 @@ func (m *membersMap) MemberAddrs() []string {
 }
 
 func (m *membersMap) addMember(memberInfo pubcluster.MemberInfo) *Member {
-	uuid := memberInfo.Uuid().String()
+	uuid := memberInfo.UUID().String()
 	addr := memberInfo.Address().String()
 	if _, uuidFound := m.members[uuid]; uuidFound {
 		return nil
@@ -280,13 +280,13 @@ func (m *membersMap) addMember(memberInfo pubcluster.MemberInfo) *Member {
 	if existingUUID, addrFound := m.addrToMemberUUID[addr]; addrFound {
 		delete(m.members, existingUUID)
 	}
-	member := NewMember(memberInfo.Address(), memberInfo.Uuid(), memberInfo.LiteMember(), memberInfo.Attributes(), memberInfo.Version(), nil)
+	member := NewMember(memberInfo.Address(), memberInfo.UUID(), memberInfo.LiteMember(), memberInfo.Attributes(), memberInfo.Version(), nil)
 	m.members[uuid] = member
 	m.addrToMemberUUID[addr] = uuid
 	return member
 }
 
 func (m *membersMap) removeMember(member *Member) {
-	delete(m.members, member.Uuid().String())
+	delete(m.members, member.UUID().String())
 	delete(m.addrToMemberUUID, member.Address().String())
 }

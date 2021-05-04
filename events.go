@@ -16,6 +16,8 @@
 
 package hazelcast
 
+import "github.com/hazelcast/hazelcast-go-client/cluster"
+
 const (
 	// NotifyEntryAdded is dispatched if an entry is added.
 	NotifyEntryAdded = int32(1 << 0)
@@ -53,8 +55,8 @@ const (
 
 type EntryNotified struct {
 	EventType               int32
-	OwnerName               string
-	MemberName              string
+	MapName                 string
+	Member                  cluster.Member
 	Key                     interface{}
 	Value                   interface{}
 	OldValue                interface{}
@@ -67,8 +69,8 @@ func (e *EntryNotified) EventName() string {
 }
 
 func newEntryNotifiedEvent(
-	ownerName string,
-	memberName string,
+	mapName string,
+	member cluster.Member,
 	key interface{},
 	value interface{},
 	oldValue interface{},
@@ -76,8 +78,8 @@ func newEntryNotifiedEvent(
 	numberOfAffectedEntries int,
 ) *EntryNotified {
 	return &EntryNotified{
-		OwnerName:               ownerName,
-		MemberName:              memberName,
+		MapName:                 mapName,
+		Member:                  member,
 		Key:                     key,
 		Value:                   value,
 		OldValue:                oldValue,

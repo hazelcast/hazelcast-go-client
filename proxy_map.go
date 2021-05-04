@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -66,7 +65,7 @@ func (m *Map) withContext(ctx context.Context) *Map {
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
-func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(config.Flags, config.IncludeValue, config.Key, config.Predicate, handler)
 }
 
@@ -579,7 +578,7 @@ func (m *Map) RemoveAll(predicate predicate.Predicate) error {
 }
 
 // RemoveEntryListener removes the specified entry listener.
-func (m *Map) RemoveEntryListener(subscriptionID internal.UUID) error {
+func (m *Map) RemoveEntryListener(subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(subscriptionID)
 }
 
@@ -759,21 +758,21 @@ func (m *Map) addIndex(indexConfig types.IndexConfig) error {
 	return err
 }
 
-func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
 	var keyData pubser.Data
 	var predicateData pubser.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
-			return internal.UUID{}, err
+			return types.UUID{}, err
 		}
 	}
 	if predicate != nil {
 		if predicateData, err = m.validateAndSerialize(predicate); err != nil {
-			return internal.UUID{}, err
+			return types.UUID{}, err
 		}
 	}
-	subscriptionID := internal.NewUUID()
+	subscriptionID := types.NewUUID()
 	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.ClusterConfig.SmartRouting)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))

@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -91,6 +90,7 @@ type proxy struct {
 	serializationService iserialization.SerializationService
 	partitionService     *cluster.PartitionService
 	userEventDispatcher  *event.DispatchService
+	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinder
 	config               *Config
@@ -117,6 +117,7 @@ func newProxy(bundle creationBundle, serviceName string, objectName string, subs
 		serializationService: bundle.SerializationService,
 		userEventDispatcher:  bundle.UserEventDispatcher,
 		partitionService:     bundle.PartitionService,
+		clusterService:       bundle.ClusterService,
 		invocationFactory:    bundle.InvocationFactory,
 		listenerBinder:       bundle.ListenerBinder,
 		config:               bundle.Config,
@@ -328,19 +329,20 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 	return func(
 		binKey, binValue, binOldValue, binMergingValue serialization.Data,
 		binEventType int32,
-		binUUID internal.UUID,
+		binUUID types.UUID,
 		affectedEntries int32) {
 		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
 		if err != nil {
 			p.logger.Errorf("error at AddEntryListener: %w", err)
 			return
 		}
-		handler(newEntryNotifiedEvent(p.name, binUUID.String(), key, value, oldValue, mergingValue, int(affectedEntries)))
+		member := p.clusterService.GetMemberByUUID(binUUID.String())
+		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries)))
 	}
 }
 
 type entryNotifiedHandler func(
 	binKey, binValue, binOldValue, binMergingValue serialization.Data,
 	binEventType int32,
-	binUUID internal.UUID,
+	binUUID types.UUID,
 	affectedEntries int32)

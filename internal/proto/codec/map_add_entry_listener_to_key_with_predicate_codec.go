@@ -16,9 +16,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -63,14 +63,14 @@ func EncodeMapAddEntryListenerToKeyWithPredicateRequest(name string, key seriali
 	return clientMessage
 }
 
-func DecodeMapAddEntryListenerToKeyWithPredicateResponse(clientMessage *proto.ClientMessage) internal.UUID {
+func DecodeMapAddEntryListenerToKeyWithPredicateResponse(clientMessage *proto.ClientMessage) types.UUID {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateResponseResponseOffset)
 }
 
-func HandleMapAddEntryListenerToKeyWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid internal.UUID, numberOfAffectedEntries int32)) {
+func HandleMapAddEntryListenerToKeyWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerToKeyWithPredicateCodecEventEntryMessageType {

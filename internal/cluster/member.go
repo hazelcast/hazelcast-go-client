@@ -21,8 +21,7 @@ import (
 	"reflect"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type uuid struct {
@@ -32,14 +31,14 @@ type uuid struct {
 
 type Member struct {
 	address      pubcluster.Address
-	uuid         internal.UUID
+	uuid         types.UUID
 	isLiteMember bool
 	attributes   map[string]string
 	version      pubcluster.MemberVersion
 	addressMap   map[pubcluster.EndpointQualifier]pubcluster.Address
 }
 
-func NewMember(address pubcluster.Address, uuid internal.UUID, isLiteMember bool, attributes map[string]string, version pubcluster.MemberVersion, addressMap map[pubcluster.EndpointQualifier]pubcluster.Address) *Member {
+func NewMember(address pubcluster.Address, uuid types.UUID, isLiteMember bool, attributes map[string]string, version pubcluster.MemberVersion, addressMap map[pubcluster.EndpointQualifier]pubcluster.Address) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes, version: version, addressMap: addressMap}
 }
 
@@ -47,7 +46,7 @@ func (m Member) Address() pubcluster.Address {
 	return m.address
 }
 
-func (m Member) Uuid() internal.UUID {
+func (m Member) UUID() types.UUID {
 	return m.uuid
 }
 
@@ -60,7 +59,7 @@ func (m Member) Attributes() map[string]string {
 }
 
 func (m *Member) String() string {
-	memberInfo := fmt.Sprintf("Member %s - %s", m.address.String(), m.Uuid())
+	memberInfo := fmt.Sprintf("Member %s - %s", m.address.String(), m.UUID())
 	if m.LiteMember() {
 		memberInfo += " lite"
 	}

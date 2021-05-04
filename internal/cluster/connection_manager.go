@@ -25,10 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
@@ -37,7 +34,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -120,7 +119,7 @@ type ConnectionManager struct {
 	clusterConfig        *pubcluster.Config
 	credentials          security.Credentials
 	clientName           string
-	clientUUID           internal.UUID
+	clientUUID           types.UUID
 	connMap              *connectionMap
 	nextConnID           int64
 	addressTranslator    AddressTranslator
@@ -158,7 +157,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
-		clientUUID:           internal.NewUUID(),
+		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(),
 		addressTranslator:    NewDefaultAddressTranslator(),
 		smartRouting:         bundle.ClusterConfig.SmartRouting,

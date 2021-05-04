@@ -21,8 +21,6 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
-
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -66,22 +64,22 @@ func (m *ReplicatedMap) withContext(ctx context.Context) *ReplicatedMap {
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListener(handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *ReplicatedMap) AddEntryListener(handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(nil, nil, handler)
 }
 
 // AddEntryListenerToKey adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListenerToKey(key interface{}, handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *ReplicatedMap) AddEntryListenerToKey(key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(key, nil, handler)
 }
 
 // AddEntryListenerWithPredicate adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListenerWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *ReplicatedMap) AddEntryListenerWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(nil, predicate, handler)
 }
 
 // AddEntryListenerToKeyWithPredicate adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListenerToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *ReplicatedMap) AddEntryListenerToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(key, predicate, handler)
 }
 
@@ -237,7 +235,7 @@ func (m *ReplicatedMap) Remove(key interface{}) (interface{}, error) {
 }
 
 // RemoveEntryListener removes the specified entry listener.
-func (m *ReplicatedMap) RemoveEntryListener(subscriptionID internal.UUID) error {
+func (m *ReplicatedMap) RemoveEntryListener(subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(subscriptionID)
 }
 
@@ -251,21 +249,21 @@ func (m *ReplicatedMap) Size() (int, error) {
 	}
 }
 
-func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (internal.UUID, error) {
+func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
 	var keyData pubser.Data
 	var predicateData pubser.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
-			return internal.UUID{}, err
+			return types.UUID{}, err
 		}
 	}
 	if predicate != nil {
 		if predicateData, err = m.validateAndSerialize(predicate); err != nil {
-			return internal.UUID{}, err
+			return types.UUID{}, err
 		}
 	}
-	subscriptionID := internal.NewUUID()
+	subscriptionID := types.NewUUID()
 	addRequest := m.makeListenerRequest(keyData, predicateData, m.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeReplicatedMapRemoveEntryListenerRequest(m.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {

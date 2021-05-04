@@ -21,13 +21,13 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type PartitionServiceCreationBundle struct {
@@ -60,7 +60,7 @@ func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionServic
 	}
 }
 
-func (s *PartitionService) GetPartitionOwner(partitionId int32) *internal.UUID {
+func (s *PartitionService) GetPartitionOwner(partitionId int32) *types.UUID {
 	return s.partitionTable.GetOwnerUUID(partitionId)
 }
 
@@ -98,7 +98,7 @@ func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) er
 
 type partitionTable struct {
 	partitionStateVersion int32
-	partitions            map[int32]internal.UUID
+	partitions            map[int32]types.UUID
 	connectionID          int64
 	mu                    *sync.RWMutex
 }
@@ -110,9 +110,9 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 	if cantApply {
 		return false
 	}
-	newPartitions := map[int32]internal.UUID{}
+	newPartitions := map[int32]types.UUID{}
 	for _, pair := range pairs {
-		uuids := pair.Key().([]internal.UUID)
+		uuids := pair.Key().([]types.UUID)
 		ids := pair.Value().([]int32)
 		for _, uuid := range uuids {
 			for _, id := range ids {
@@ -129,7 +129,7 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 	return true
 }
 
-func (p *partitionTable) GetOwnerUUID(partitionID int32) *internal.UUID {
+func (p *partitionTable) GetOwnerUUID(partitionID int32) *types.UUID {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if uuid, ok := p.partitions[partitionID]; ok {
@@ -148,7 +148,7 @@ func (p *partitionTable) PartitionCount() int {
 func defaultPartitionTable() partitionTable {
 	return partitionTable{
 		partitionStateVersion: -1,
-		partitions:            map[int32]internal.UUID{},
+		partitions:            map[int32]types.UUID{},
 		mu:                    &sync.RWMutex{},
 	}
 }

@@ -16,8 +16,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 // Removes the specified entry listener. If there is no such listener added before, this call does no change in the
 // cluster and returns false.
 
-func EncodeMapRemoveEntryListenerRequest(name string, registrationId internal.UUID) *proto.ClientMessage {
+func EncodeMapRemoveEntryListenerRequest(name string, registrationId types.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

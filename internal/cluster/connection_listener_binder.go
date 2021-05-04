@@ -21,18 +21,18 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type listenerRegistration struct {
 	addRequest    *proto.ClientMessage
 	removeRequest *proto.ClientMessage
 	handler       proto.ClientMessageHandler
-	id            internal.UUID
+	id            types.UUID
 }
 
 type ConnectionListenerBinder struct {
@@ -41,8 +41,8 @@ type ConnectionListenerBinder struct {
 	eventDispatcher   *event.DispatchService
 	requestCh         chan<- invocation.Invocation
 	removeCh          chan<- int64
-	regs              map[internal.UUID]listenerRegistration
-	correlationIDs    map[internal.UUID][]int64
+	regs              map[types.UUID]listenerRegistration
+	correlationIDs    map[types.UUID][]int64
 	regsMu            *sync.RWMutex
 	smart             bool
 	logger            logger.Logger
@@ -63,8 +63,8 @@ func NewConnectionListenerBinder(
 		eventDispatcher:   eventDispatcher,
 		requestCh:         requestCh,
 		removeCh:          removeCh,
-		regs:              map[internal.UUID]listenerRegistration{},
-		correlationIDs:    map[internal.UUID][]int64{},
+		regs:              map[types.UUID]listenerRegistration{},
+		correlationIDs:    map[types.UUID][]int64{},
 		regsMu:            &sync.RWMutex{},
 		logger:            logger,
 		smart:             smart,
@@ -74,7 +74,7 @@ func NewConnectionListenerBinder(
 	return binder
 }
 
-func (b *ConnectionListenerBinder) Add(id internal.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
+func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
 	b.regsMu.Lock()
 	b.regs[id] = listenerRegistration{
 		addRequest:    add,
@@ -91,7 +91,7 @@ func (b *ConnectionListenerBinder) Add(id internal.UUID, add *proto.ClientMessag
 	return nil
 }
 
-func (b *ConnectionListenerBinder) Remove(id internal.UUID) error {
+func (b *ConnectionListenerBinder) Remove(id types.UUID) error {
 	b.regsMu.Lock()
 	reg, ok := b.regs[id]
 	if !ok {
@@ -104,7 +104,7 @@ func (b *ConnectionListenerBinder) Remove(id internal.UUID) error {
 	return b.sendRemoveListenerRequests(reg.removeRequest, b.connectionManager.ActiveConnections()...)
 }
 
-func (b *ConnectionListenerBinder) updateCorrelationIDs(regID internal.UUID, correlationIDs []int64) {
+func (b *ConnectionListenerBinder) updateCorrelationIDs(regID types.UUID, correlationIDs []int64) {
 	b.regsMu.Lock()
 	if ids, ok := b.correlationIDs[regID]; ok {
 		b.correlationIDs[regID] = append(ids, correlationIDs...)
@@ -114,7 +114,7 @@ func (b *ConnectionListenerBinder) updateCorrelationIDs(regID internal.UUID, cor
 	b.regsMu.Unlock()
 }
 
-func (b *ConnectionListenerBinder) removeCorrelationIDs(regId internal.UUID) {
+func (b *ConnectionListenerBinder) removeCorrelationIDs(regId types.UUID) {
 	if ids, ok := b.correlationIDs[regId]; ok {
 		delete(b.correlationIDs, regId)
 		for _, id := range ids {
