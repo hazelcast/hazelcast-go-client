@@ -80,7 +80,7 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 }
 
 func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
-	_, err := h.cb.Try(func(ctx context.Context) (interface{}, error) {
+	_, err := h.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
 		if h.smart {
 			if err := h.invokeSmart(inv); err != nil {
 				if errors.Is(err, errPartitionOwnerNotAssigned) {

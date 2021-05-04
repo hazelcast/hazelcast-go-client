@@ -207,7 +207,7 @@ func (p *proxy) validateAndSerializeValues(values ...interface{}) ([]serializati
 	return valuesData, nil
 }
 
-func (p *proxy) tryInvoke(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (*proto.ClientMessage, error) {
+func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMessage, error) {
 	if res, err := p.circuitBreaker.TryContext(ctx, f); err != nil {
 		return nil, err
 	} else {
@@ -224,7 +224,10 @@ func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, k
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
-	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
+	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			request = request.Copy()
+		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
 		return inv.GetWithContext(ctx)
@@ -232,7 +235,10 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	return p.tryInvoke(ctx, func(ctx context.Context) (interface{}, error) {
+	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			request = request.Copy()
+		}
 		return p.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 	})
 }

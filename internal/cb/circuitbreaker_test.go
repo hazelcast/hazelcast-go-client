@@ -30,7 +30,7 @@ func TestFailingCircuitBreaker(t *testing.T) {
 	targetErr := errors.New("ERR")
 	c := cb.NewCircuitBreaker(cb.MaxFailureCount(3), cb.MaxRetries(2))
 	tries := 0
-	fut := c.TryContextFuture(context.Background(), func(ctx context.Context) (interface{}, error) {
+	fut := c.TryContextFuture(context.Background(), func(ctx context.Context, attempt int) (interface{}, error) {
 		tries++
 		return nil, targetErr
 	})
@@ -50,11 +50,11 @@ func TestFailingCircuitBreaker(t *testing.T) {
 func TestFailingCircuitBreakerCircuitOpen(t *testing.T) {
 	targetErr := errors.New("ERR")
 	c := cb.NewCircuitBreaker(cb.MaxFailureCount(0))
-	failingFunc := func(ctx context.Context) (interface{}, error) {
+	failingFunc := func(ctx context.Context, attempt int) (interface{}, error) {
 		return nil, targetErr
 	}
 	targetVal := "ok"
-	succeedingFunc := func(ctx context.Context) (interface{}, error) {
+	succeedingFunc := func(ctx context.Context, attempt int) (interface{}, error) {
 		return targetVal, nil
 	}
 	if _, err := c.Try(failingFunc); err == nil {
@@ -91,7 +91,7 @@ func TestFailingCircuitBreakerCircuitOpen(t *testing.T) {
 func TestSucceedingCircuitBreaker(t *testing.T) {
 	targetVal := "ok"
 	c := cb.NewCircuitBreaker(cb.MaxFailureCount(3), cb.MaxRetries(2))
-	fut := c.TryContextFuture(context.Background(), func(ctx context.Context) (interface{}, error) {
+	fut := c.TryContextFuture(context.Background(), func(ctx context.Context, attempt int) (interface{}, error) {
 		return targetVal, nil
 	})
 	if val, err := fut.Result(); err != nil {
@@ -107,7 +107,7 @@ func TestCancelFuture(t *testing.T) {
 	c := cb.NewCircuitBreaker(cb.MaxFailureCount(3), cb.MaxRetries(2))
 	funcCancelled := int32(0)
 	myCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	c.TryContextFuture(myCtx, func(ctx context.Context) (interface{}, error) {
+	c.TryContextFuture(myCtx, func(ctx context.Context, attempt int) (interface{}, error) {
 		for {
 			select {
 			case <-ctx.Done():

@@ -174,7 +174,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	if !atomic.CompareAndSwapInt32(&m.state, created, starting) {
 		return nil
 	}
-	if _, err := m.cb.Try(func(ctx context.Context) (interface{}, error) {
+	if _, err := m.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
 		return nil, m.connectCluster()
 	}); err != nil {
 		return err

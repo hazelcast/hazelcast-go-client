@@ -29,7 +29,7 @@ const (
 	StateClosed = int32(2)
 )
 
-type TryHandler func(ctx context.Context) (interface{}, error)
+type TryHandler func(ctx context.Context, attempt int) (interface{}, error)
 type EventHandler func(state int32)
 type RetryPolicyFunc func(currentTry int) time.Duration
 
@@ -98,13 +98,13 @@ func (cb *CircuitBreaker) tryChan(ctx context.Context, resultCh chan interface{}
 func (cb *CircuitBreaker) try(ctx context.Context, tryHandler TryHandler) (result interface{}, err error) {
 	var nonRetryableErr *NonRetryableError
 loop:
-	for trial := 0; trial <= cb.MaxRetries; trial++ {
+	for attempt := 0; attempt <= cb.MaxRetries; attempt++ {
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
 			break loop
 		default:
-			if result, err = tryHandler(ctx); err == nil {
+			if result, err = tryHandler(ctx, attempt); err == nil {
 				// succeeded
 				break loop
 			}
@@ -112,8 +112,8 @@ loop:
 				err = nonRetryableErr.Err
 				break loop
 			}
-			if trial < cb.MaxRetries {
-				time.Sleep(cb.RetryPolicyFunc(trial))
+			if attempt < cb.MaxRetries {
+				time.Sleep(cb.RetryPolicyFunc(attempt))
 			}
 		}
 	}
