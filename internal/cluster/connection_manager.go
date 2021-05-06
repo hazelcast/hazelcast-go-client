@@ -363,6 +363,7 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 		eventDispatcher: m.eventDispatcher,
 		status:          0,
 		logger:          m.logger,
+		clusterConfig:   m.clusterConfig,
 	}
 }
 

@@ -16,16 +16,26 @@
 # limitations under the License.
 #
 
+# TODO: merge this with start-rc.sh to rc.sh
+
 set -e
 set -u
 # Disables printing security sensitive data to the logs
 set +x
 
+log_info () {
+  local msg=$1
+  local ts
+  ts=$(date "$TIMESTAMP_FMT")
+  echo "$ts INFO : $msg"
+}
+
+TIMESTAMP_FMT="+%Y-%m-%d %H:%M:%S"
 PID_FILE="test.pid"
 
 if [ -f "$PID_FILE" ]; then
   pid=$(cat "$PID_FILE")
-  echo "Stopping $pid"
+  log_info "Stopping $pid ..."
   kill -9 $pid
   rm "$PID_FILE"
 fi

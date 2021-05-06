@@ -109,7 +109,7 @@ func TestClientHeartbeat(t *testing.T) {
 }
 
 func TestClient_Shutdown(t *testing.T) {
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		if err := client.Shutdown(); err != nil {
 			t.Fatal(err)
 		}
@@ -120,7 +120,7 @@ func TestClient_Shutdown(t *testing.T) {
 }
 
 func TestClientShutdownRace(t *testing.T) {
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		const goroutineCount = 100
 		wg := &sync.WaitGroup{}
 		wg.Add(goroutineCount)

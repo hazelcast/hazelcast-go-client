@@ -45,7 +45,7 @@ func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.configBuilder()
+		cb := defaultTestCluster.DefaultConfigBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
 		}

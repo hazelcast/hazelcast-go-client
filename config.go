@@ -17,11 +17,17 @@
 package hazelcast
 
 import (
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -129,6 +135,7 @@ func newClusterConfig() *cluster.Config {
 type ClusterConfigBuilder struct {
 	config                *cluster.Config
 	securityConfigBuilder *ClusterSecurityConfigBuilder
+	sslConfigBuilder      *ClusterSSLConfigBuilder
 	err                   error
 }
 
@@ -136,6 +143,7 @@ func newClusterConfigBuilder() *ClusterConfigBuilder {
 	return &ClusterConfigBuilder{
 		config:                newClusterConfig(),
 		securityConfigBuilder: newClusterSecurityConfigBuilder(),
+		sslConfigBuilder:      newClusterSSLConfigBuilder(),
 	}
 }
 
@@ -218,11 +226,20 @@ func (b *ClusterConfigBuilder) Security() *ClusterSecurityConfigBuilder {
 	return b.securityConfigBuilder
 }
 
+func (b *ClusterConfigBuilder) SSL() *ClusterSSLConfigBuilder {
+	return b.sslConfigBuilder
+}
+
 func (b *ClusterConfigBuilder) buildConfig() (*cluster.Config, error) {
 	if b.err != nil {
 		return nil, b.err
 	}
 	b.config.SecurityConfig = *b.securityConfigBuilder.buildConfig()
+	if sslConfig, err := b.sslConfigBuilder.buildConfig(); err != nil {
+		return nil, err
+	} else {
+		b.config.SSLConfig = *sslConfig
+	}
 	return b.config, nil
 }
 
@@ -246,6 +263,103 @@ func (b *ClusterSecurityConfigBuilder) SetCredentials(username string, password 
 
 func (b *ClusterSecurityConfigBuilder) buildConfig() *cluster.SecurityConfig {
 	return b.config
+}
+
+type ClusterSSLConfigBuilder struct {
+	config *cluster.SSLConfig
+	err    error
+}
+
+func newClusterSSLConfigBuilder() *ClusterSSLConfigBuilder {
+	return &ClusterSSLConfigBuilder{config: &cluster.SSLConfig{TLSConfig: &tls.Config{}}}
+}
+
+func (b *ClusterSSLConfigBuilder) buildConfig() (*cluster.SSLConfig, error) {
+	return b.config, b.err
+}
+
+func (b *ClusterSSLConfigBuilder) SetEnabled(enabled bool) *ClusterSSLConfigBuilder {
+	b.config.Enabled = enabled
+	return b
+}
+
+func (b *ClusterSSLConfigBuilder) ResetTLSConfig(tlsConfig *tls.Config) *ClusterSSLConfigBuilder {
+	b.config.TLSConfig = tlsConfig.Clone()
+	return b
+}
+
+// SetCAPath sets CA file path.
+func (b *ClusterSSLConfigBuilder) SetCAPath(path string) *ClusterSSLConfigBuilder {
+	// XXX: what happens if the path is loaded multiple times?
+	// load CA cert
+	if caCert, err := ioutil.ReadFile(path); err != nil {
+		b.err = err
+	} else {
+		caCertPool := x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+			b.err = hzerror.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
+				"the format is pem", nil)
+		} else {
+			b.config.TLSConfig.RootCAs = caCertPool
+		}
+	}
+	return b
+}
+
+// AddClientCertAndKeyPath adds client certificate path and client private key path to tls config.
+// The files in the given paths must contain PEM encoded data.
+// In order to add multiple client certificate-key pairs one should call this function for each of them.
+// If certificates is empty then no certificate will be sent to
+// the server. If this is unacceptable to the server then it may abort the handshake.
+// For mutual authentication at least one client certificate should be added.
+// It returns an error if any of files cannot be loaded.
+func (b *ClusterSSLConfigBuilder) AddClientCertAndKeyPath(clientCertPath string, clientPrivateKeyPath string) *ClusterSSLConfigBuilder {
+	if cert, err := tls.LoadX509KeyPair(clientCertPath, clientPrivateKeyPath); err != nil {
+		b.err = err
+	} else {
+		b.config.TLSConfig.Certificates = append(b.config.TLSConfig.Certificates, cert)
+	}
+	return b
+}
+
+// AddClientCertAndEncryptedKeyPath decrypts the keyfile with the given password and
+// adds client certificate path and the decrypted client private key to tls config.
+// The files in the given paths must contain PEM encoded data.
+// The key file should have a DEK-info header otherwise an error will be returned.
+// In order to add multiple client certificate-key pairs one should call this function for each of them.
+// If certificates is empty then no certificate will be sent to
+// the server. If this is unacceptable to the server then it may abort the handshake.
+// For mutual authentication at least one client certificate should be added.
+// It returns an error if any of files cannot be loaded.
+func (b *ClusterSSLConfigBuilder) AddClientCertAndEncryptedKeyPath(certPath string, privateKeyPath string, password string) *ClusterSSLConfigBuilder {
+	var certPEMBlock, privatePEM, der []byte
+	var privKey *rsa.PrivateKey
+	var cert tls.Certificate
+	var err error
+	if certPEMBlock, err = ioutil.ReadFile(certPath); err != nil {
+		b.err = err
+		return b
+	}
+	if privatePEM, err = ioutil.ReadFile(privateKeyPath); err != nil {
+		b.err = err
+		return b
+	}
+	privatePEMBlock, _ := pem.Decode(privatePEM)
+	if der, err = x509.DecryptPEMBlock(privatePEMBlock, []byte(password)); err != nil {
+		b.err = err
+		return b
+	}
+	if privKey, err = x509.ParsePKCS1PrivateKey(der); err != nil {
+		b.err = err
+		return b
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: privatePEMBlock.Type, Bytes: x509.MarshalPKCS1PrivateKey(privKey)})
+	if cert, err = tls.X509KeyPair(certPEMBlock, keyPEM); err != nil {
+		b.err = err
+		return b
+	}
+	b.config.TLSConfig.Certificates = append(b.config.TLSConfig.Certificates, cert)
+	return b
 }
 
 type SerializationConfigBuilder struct {

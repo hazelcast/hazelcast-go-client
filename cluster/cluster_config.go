@@ -30,7 +30,7 @@ type SecurityConfig struct {
 	Password string
 }
 
-func (c SecurityConfig) Clone() SecurityConfig {
+func (c SecurityConfig) clone() SecurityConfig {
 	return SecurityConfig{
 		Username: c.Username,
 		Password: c.Password,
@@ -47,9 +47,10 @@ type Config struct {
 	InvocationTimeout time.Duration
 	RedoOperation     bool
 	SecurityConfig    SecurityConfig
+	SSLConfig         SSLConfig
 }
 
-func (c Config) Clone() Config {
+func (c *Config) Clone() Config {
 	addrs := make([]string, len(c.Addrs))
 	copy(addrs, c.Addrs)
 	return Config{
@@ -61,6 +62,7 @@ func (c Config) Clone() Config {
 		HeartbeatTimeout:  c.HeartbeatTimeout,
 		InvocationTimeout: c.InvocationTimeout,
 		RedoOperation:     c.RedoOperation,
-		SecurityConfig:    c.SecurityConfig.Clone(),
+		SecurityConfig:    c.SecurityConfig.clone(),
+		SSLConfig:         c.SSLConfig.clone(),
 	}
 }

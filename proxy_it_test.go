@@ -17,7 +17,6 @@
 package hazelcast_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -34,16 +33,10 @@ func TestRetryWithoutRedoOperation(t *testing.T) {
 
 func retryResult(t *testing.T, redo bool, target bool) {
 	cluster := it.StartNewCluster(1)
-	addr := fmt.Sprintf("localhost:%d", it.DefaultPort)
-	cb := hz.NewConfigBuilder()
-	cb.Cluster().
-		SetName(it.DefaultClusterName).
-		SetAddrs(addr).
-		SetRedoOperation(redo)
+	cb := cluster.DefaultConfigBuilder()
+	cb.Cluster().SetRedoOperation(redo)
 	client := it.MustClient(hz.StartNewClientWithConfig(cb))
 	m := it.MustValue(client.GetMap("redo-test")).(*hz.Map)
-	// ensure that operations complete OK.
-	//it.Must(m.Set("key", "value"))
 	// shutdown the cluster and try again
 	cluster.Shutdown()
 	okCh := make(chan bool)

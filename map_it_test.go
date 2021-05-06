@@ -35,7 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-func TestMapPutGet(t *testing.T) {
+func TestMap_Put(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
@@ -583,7 +583,7 @@ func TestMap_Lock(t *testing.T) {
 }
 
 func TestMap_LockWithContext(t *testing.T) {
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		const mapName = "lock-map"
 		m := it.MustValue(client.GetMapContext(context.Background(), mapName)).(*hz.Map)
 		defer m.EvictAll()

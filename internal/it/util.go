@@ -18,6 +18,7 @@ package it
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -43,6 +44,7 @@ const (
 	EnvEnableTraceLogging = "ENABLE_TRACE"
 	EnvMemberCount        = "MEMBER_COUNT"
 	EnvEnableLeakCheck    = "ENABLE_LEAKCHECK"
+	EnvEnableSSL          = "ENABLE_SSL"
 )
 
 const DefaultPort = 7701
@@ -53,6 +55,10 @@ var rcMu = &sync.RWMutex{}
 var defaultTestCluster *TestCluster
 var idGen = proxy.ReferenceIDGenerator{}
 
+func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
+	TesterWithConfigBuilder(t, nil, f)
+}
+
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
@@ -60,7 +66,7 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder)
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.configBuilder()
+		cb := defaultTestCluster.DefaultConfigBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
 		}
@@ -194,6 +200,10 @@ func LeakCheckEnabled() bool {
 	return os.Getenv(EnvEnableLeakCheck) == "1"
 }
 
+func SSLEnabled() bool {
+	return os.Getenv(EnvEnableSSL) == "1"
+}
+
 func defaultMemberCount() int {
 	if memberCountStr := os.Getenv(EnvMemberCount); memberCountStr != "" {
 		if memberCount, err := strconv.Atoi(memberCountStr); err != nil {
@@ -226,7 +236,11 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 			panic("remote controller not accesible")
 		}
 		if launchDefaultCluster {
-			defaultTestCluster = startNewCluster(rc, defaultMemberCount())
+			if SSLEnabled() {
+				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort))
+			} else {
+				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlConfig(DefaultClusterName, DefaultPort))
+			}
 		}
 	}
 	return rc
@@ -240,12 +254,15 @@ type TestCluster struct {
 
 func StartNewCluster(memberCount int) *TestCluster {
 	ensureRemoteController(false)
-	return startNewCluster(rc, memberCount)
+	config := xmlConfig(DefaultClusterName, DefaultPort)
+	if SSLEnabled() {
+		config = xmlSSLConfig(DefaultClusterName, DefaultPort)
+	}
+	return startNewCluster(rc, memberCount, config)
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int) *TestCluster {
-	config := xmlConfig(DefaultClusterName, DefaultPort)
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.1", config)).(*Cluster)
+func startNewCluster(rc *RemoteControllerClient, memberCount int, config string) *TestCluster {
+	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.2", config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
 		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
@@ -264,11 +281,16 @@ func (c TestCluster) Shutdown() {
 	}
 }
 
-func (c TestCluster) configBuilder() *hz.ConfigBuilder {
+func (c TestCluster) DefaultConfigBuilder() *hz.ConfigBuilder {
 	cb := hz.NewConfigBuilder()
 	cb.Cluster().
 		SetName(c.clusterID).
 		SetAddrs("localhost:7701")
+	if SSLEnabled() {
+		cb.Cluster().SSL().
+			SetEnabled(true).
+			ResetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+	}
 	return cb
 }
 
@@ -289,4 +311,34 @@ func xmlConfig(clusterName string, port int) string {
 			</map>
         </hazelcast>
 	`, clusterName, port)
+}
+
+func xmlSSLConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+			<cluster-name>%s</cluster-name>
+			<network>
+			   <port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
+			</network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+		</hazelcast>
+			`, clusterName, port)
 }

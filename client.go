@@ -114,7 +114,6 @@ func newClient(name string, config Config) (*Client, error) {
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
-	// TODO: consider disabling manual client name
 	if config.ClientName != "" {
 		name = config.ClientName
 	}

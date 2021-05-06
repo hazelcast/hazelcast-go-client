@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -65,6 +66,7 @@ type Connection struct {
 	connectedServerVersionStr string
 	startTime                 int64
 	logger                    ilogger.Logger
+	clusterConfig             *pubcluster.Config
 }
 
 func (c *Connection) ConnectionID() int64 {
@@ -98,14 +100,21 @@ func (c *Connection) sendProtocolStarter() error {
 
 func (c *Connection) createSocket(networkCfg *pubcluster.Config, address pubcluster.Address) (net.Conn, error) {
 	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout)
-	socket, err := c.dialToAddressWithTimeout(address, conTimeout)
-	if err != nil {
+	if socket, err := c.dialToAddressWithTimeout(address, conTimeout); err != nil {
 		return nil, err
+	} else {
+		if !c.clusterConfig.SSLConfig.Enabled {
+			return socket, err
+		}
+		c.logger.Debug(func() string {
+			return fmt.Sprintf("%d: SSL is enabled for connection", c.connectionID)
+		})
+		tlsCon := tls.Client(socket, c.clusterConfig.SSLConfig.TLSConfig)
+		if err = tlsCon.Handshake(); err != nil {
+			return nil, err
+		}
+		return tlsCon, nil
 	}
-	//if networkCfg.SSLConfig().Enabled() {
-	//	socket, err = c.openTLSConnection(networkCfg.SSLConfig(), socket)
-	//}
-	return socket, err
 }
 
 func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
