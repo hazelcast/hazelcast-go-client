@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package bufferutil
+package serialization
 
 import (
 	"encoding/binary"

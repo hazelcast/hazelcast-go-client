@@ -21,7 +21,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization/bufferutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -77,50 +76,50 @@ func (o *ObjectDataOutput) EnsureAvailable(size int) {
 
 func (o *ObjectDataOutput) WriteByte(v byte) error {
 	o.EnsureAvailable(bufutil.ByteSizeInBytes)
-	bufferutil.WriteUInt8(o.buffer, o.position, v)
+	WriteUInt8(o.buffer, o.position, v)
 	o.position += bufutil.ByteSizeInBytes
 	return nil
 }
 
 func (o *ObjectDataOutput) WriteBool(v bool) {
 	o.EnsureAvailable(bufutil.BoolSizeInBytes)
-	bufferutil.WriteBool(o.buffer, o.position, v)
+	WriteBool(o.buffer, o.position, v)
 	o.position += bufutil.BoolSizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteUInt16(v uint16) {
 	o.EnsureAvailable(bufutil.Uint16SizeInBytes)
-	bufferutil.WriteUInt16(o.buffer, o.position, v, o.bigEndian)
+	WriteUInt16(o.buffer, o.position, v, o.bigEndian)
 	o.position += bufutil.Uint16SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteInt16(v int16) {
 	o.EnsureAvailable(bufutil.Int16SizeInBytes)
-	bufferutil.WriteInt16(o.buffer, o.position, v, o.bigEndian)
+	WriteInt16(o.buffer, o.position, v, o.bigEndian)
 	o.position += bufutil.Int16SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteInt32(v int32) {
 	o.EnsureAvailable(bufutil.Int32SizeInBytes)
-	bufferutil.WriteInt32(o.buffer, o.position, v, o.bigEndian)
+	WriteInt32(o.buffer, o.position, v, o.bigEndian)
 	o.position += bufutil.Int32SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteInt64(v int64) {
 	o.EnsureAvailable(bufutil.Int64SizeInBytes)
-	bufferutil.WriteInt64(o.buffer, o.position, v, o.bigEndian)
+	WriteInt64(o.buffer, o.position, v, o.bigEndian)
 	o.position += bufutil.Int64SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteFloat32(v float32) {
 	o.EnsureAvailable(bufutil.Float32SizeInBytes)
-	bufferutil.WriteFloat32(o.buffer, o.position, v, o.bigEndian)
+	WriteFloat32(o.buffer, o.position, v, o.bigEndian)
 	o.position += bufutil.Float32SizeInBytes
 }
 
 func (o *ObjectDataOutput) WriteFloat64(v float64) {
 	o.EnsureAvailable(bufutil.Float64SizeInBytes)
-	bufferutil.WriteFloat64(o.buffer, o.position, v, o.bigEndian)
+	WriteFloat64(o.buffer, o.position, v, o.bigEndian)
 	o.position += bufutil.Float64SizeInBytes
 }
 
@@ -325,7 +324,7 @@ func (i *ObjectDataInput) readByte() (byte, error) {
 	var err = i.AssertAvailable(bufutil.ByteSizeInBytes)
 	var ret byte
 	if err == nil {
-		ret = bufferutil.ReadUInt8(i.buffer, i.position)
+		ret = ReadUInt8(i.buffer, i.position)
 		i.position += bufutil.ByteSizeInBytes
 	}
 	return ret, err
@@ -344,7 +343,7 @@ func (i *ObjectDataInput) readByteWithPosition(pos int32) (byte, error) {
 	var err = i.AssertAvailable(bufutil.ByteSizeInBytes)
 	var ret byte
 	if err == nil {
-		ret = bufferutil.ReadUInt8(i.buffer, pos)
+		ret = ReadUInt8(i.buffer, pos)
 	}
 	return ret, err
 }
@@ -362,7 +361,7 @@ func (i *ObjectDataInput) readBool() (bool, error) {
 	var err = i.AssertAvailable(bufutil.BoolSizeInBytes)
 	var ret bool
 	if err == nil {
-		ret = bufferutil.ReadBool(i.buffer, i.position)
+		ret = ReadBool(i.buffer, i.position)
 		i.position += bufutil.BoolSizeInBytes
 	}
 	return ret, err
@@ -381,7 +380,7 @@ func (i *ObjectDataInput) readBoolWithPosition(pos int32) (bool, error) {
 	var err = i.AssertAvailable(bufutil.BoolSizeInBytes)
 	var ret bool
 	if err == nil {
-		ret = bufferutil.ReadBool(i.buffer, pos)
+		ret = ReadBool(i.buffer, pos)
 	}
 	return ret, err
 }
@@ -399,7 +398,7 @@ func (i *ObjectDataInput) readUInt16() (uint16, error) {
 	var err = i.AssertAvailable(bufutil.Uint16SizeInBytes)
 	var ret uint16
 	if err == nil {
-		ret = bufferutil.ReadUInt16(i.buffer, i.position, i.bigEndian)
+		ret = ReadUInt16(i.buffer, i.position, i.bigEndian)
 		i.position += bufutil.Uint16SizeInBytes
 	}
 	return ret, err
@@ -418,7 +417,7 @@ func (i *ObjectDataInput) readUInt16WithPosition(pos int32) (uint16, error) {
 	var err = i.AssertAvailable(bufutil.Uint16SizeInBytes)
 	var ret uint16
 	if err == nil {
-		ret = bufferutil.ReadUInt16(i.buffer, pos, i.bigEndian)
+		ret = ReadUInt16(i.buffer, pos, i.bigEndian)
 	}
 	return ret, err
 }
@@ -436,7 +435,7 @@ func (i *ObjectDataInput) readInt16() (int16, error) {
 	var err = i.AssertAvailable(bufutil.Int16SizeInBytes)
 	var ret int16
 	if err == nil {
-		ret = bufferutil.ReadInt16(i.buffer, i.position, i.bigEndian)
+		ret = ReadInt16(i.buffer, i.position, i.bigEndian)
 		i.position += bufutil.Int16SizeInBytes
 	}
 	return ret, err
@@ -455,7 +454,7 @@ func (i *ObjectDataInput) readInt16WithPosition(pos int32) (int16, error) {
 	var err = i.AssertAvailable(bufutil.Int16SizeInBytes)
 	var ret int16
 	if err == nil {
-		ret = bufferutil.ReadInt16(i.buffer, pos, i.bigEndian)
+		ret = ReadInt16(i.buffer, pos, i.bigEndian)
 	}
 	return ret, err
 }
@@ -473,7 +472,7 @@ func (i *ObjectDataInput) readInt32() (int32, error) {
 	var err = i.AssertAvailable(bufutil.Int32SizeInBytes)
 	var ret int32
 	if err == nil {
-		ret = bufferutil.ReadInt32(i.buffer, i.position, i.bigEndian)
+		ret = ReadInt32(i.buffer, i.position, i.bigEndian)
 		i.position += bufutil.Int32SizeInBytes
 	}
 	return ret, err
@@ -492,7 +491,7 @@ func (i *ObjectDataInput) readInt32WithPosition(pos int32) (int32, error) {
 	var err = i.AssertAvailable(bufutil.Int32SizeInBytes)
 	var ret int32
 	if err == nil {
-		ret = bufferutil.ReadInt32(i.buffer, pos, i.bigEndian)
+		ret = ReadInt32(i.buffer, pos, i.bigEndian)
 	}
 	return ret, err
 }
@@ -510,7 +509,7 @@ func (i *ObjectDataInput) readInt64() (int64, error) {
 	var err = i.AssertAvailable(bufutil.Int64SizeInBytes)
 	var ret int64
 	if err == nil {
-		ret = bufferutil.ReadInt64(i.buffer, i.position, i.bigEndian)
+		ret = ReadInt64(i.buffer, i.position, i.bigEndian)
 		i.position += bufutil.Int64SizeInBytes
 		return ret, err
 	}
@@ -530,7 +529,7 @@ func (i *ObjectDataInput) readInt64WithPosition(pos int32) (int64, error) {
 	var err = i.AssertAvailable(bufutil.Int64SizeInBytes)
 	var ret int64
 	if err == nil {
-		ret = bufferutil.ReadInt64(i.buffer, pos, i.bigEndian)
+		ret = ReadInt64(i.buffer, pos, i.bigEndian)
 		return ret, err
 	}
 	return ret, err
@@ -549,7 +548,7 @@ func (i *ObjectDataInput) readFloat32() (float32, error) {
 	var err = i.AssertAvailable(bufutil.Float32SizeInBytes)
 	var ret float32
 	if err == nil {
-		ret = bufferutil.ReadFloat32(i.buffer, i.position, i.bigEndian)
+		ret = ReadFloat32(i.buffer, i.position, i.bigEndian)
 		i.position += bufutil.Float32SizeInBytes
 		return ret, err
 	}
@@ -569,7 +568,7 @@ func (i *ObjectDataInput) readFloat32WithPosition(pos int32) (float32, error) {
 	var err = i.AssertAvailable(bufutil.Float32SizeInBytes)
 	var ret float32
 	if err == nil {
-		ret = bufferutil.ReadFloat32(i.buffer, pos, i.bigEndian)
+		ret = ReadFloat32(i.buffer, pos, i.bigEndian)
 		return ret, err
 	}
 	return ret, err
@@ -588,7 +587,7 @@ func (i *ObjectDataInput) readFloat64() (float64, error) {
 	var err = i.AssertAvailable(bufutil.Float64SizeInBytes)
 	var ret float64
 	if err == nil {
-		ret = bufferutil.ReadFloat64(i.buffer, i.position, i.bigEndian)
+		ret = ReadFloat64(i.buffer, i.position, i.bigEndian)
 		i.position += bufutil.Float64SizeInBytes
 		return ret, err
 	}
@@ -608,7 +607,7 @@ func (i *ObjectDataInput) readFloat64WithPosition(pos int32) (float64, error) {
 	var err = i.AssertAvailable(bufutil.Float64SizeInBytes)
 	var ret float64
 	if err == nil {
-		ret = bufferutil.ReadFloat64(i.buffer, pos, i.bigEndian)
+		ret = ReadFloat64(i.buffer, pos, i.bigEndian)
 		return ret, err
 	}
 	return ret, err
@@ -1097,33 +1096,33 @@ func NewPositionalObjectDataOutput(length int, service *Service, bigEndian bool)
 }
 
 func (p *PositionalObjectDataOutput) PWriteByte(pos int32, v byte) {
-	bufferutil.WriteUInt8(p.buffer, pos, v)
+	WriteUInt8(p.buffer, pos, v)
 }
 
 func (p *PositionalObjectDataOutput) PWriteBool(pos int32, v bool) {
-	bufferutil.WriteBool(p.buffer, pos, v)
+	WriteBool(p.buffer, pos, v)
 }
 
 func (p *PositionalObjectDataOutput) PWriteUInt16(pos int32, v uint16) {
-	bufferutil.WriteUInt16(p.buffer, pos, v, p.bigEndian)
+	WriteUInt16(p.buffer, pos, v, p.bigEndian)
 }
 
 func (p *PositionalObjectDataOutput) PWriteInt16(pos int32, v int16) {
-	bufferutil.WriteInt16(p.buffer, pos, v, p.bigEndian)
+	WriteInt16(p.buffer, pos, v, p.bigEndian)
 }
 
 func (p *PositionalObjectDataOutput) PWriteInt32(pos int32, v int32) {
-	bufferutil.WriteInt32(p.buffer, pos, v, p.bigEndian)
+	WriteInt32(p.buffer, pos, v, p.bigEndian)
 }
 
 func (p *PositionalObjectDataOutput) PWriteInt64(pos int32, v int64) {
-	bufferutil.WriteInt64(p.buffer, pos, v, p.bigEndian)
+	WriteInt64(p.buffer, pos, v, p.bigEndian)
 }
 
 func (p *PositionalObjectDataOutput) PWriteFloat32(pos int32, v float32) {
-	bufferutil.WriteFloat32(p.buffer, pos, v, p.bigEndian)
+	WriteFloat32(p.buffer, pos, v, p.bigEndian)
 }
 
 func (p *PositionalObjectDataOutput) PWriteFloat64(pos int32, v float64) {
-	bufferutil.WriteFloat64(p.buffer, pos, v, p.bigEndian)
+	WriteFloat64(p.buffer, pos, v, p.bigEndian)
 }

@@ -20,14 +20,18 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
 func TestClientLifecycleEvents(t *testing.T) {
+	t.SkipNow()
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		receivedStates := []hz.LifecycleState{}
 		receivedStatesMu := &sync.RWMutex{}
@@ -74,8 +78,8 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
-/*
 func TestClientMemberEvents(t *testing.T) {
+	t.SkipNow()
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
@@ -86,11 +90,9 @@ func TestClientMemberEvents(t *testing.T) {
 			}
 
 		}))
-		it.Must(client.Start())
 		wg.Wait()
 	})
 }
-*/
 
 func TestClientHeartbeat(t *testing.T) {
 	// Slow test.
