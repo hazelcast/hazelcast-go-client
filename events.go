@@ -16,7 +16,11 @@
 
 package hazelcast
 
-import "github.com/hazelcast/hazelcast-go-client/cluster"
+import (
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+)
 
 const (
 	// NotifyEntryAdded is dispatched if an entry is added.
@@ -51,6 +55,8 @@ type EntryNotifiedHandler func(event *EntryNotified)
 const (
 	eventEntryNotified              = "entrynotified"
 	eventLifecycleEventStateChanged = "lifecyclestatechanged"
+	eventMessagePublished           = "messagepublished"
+	eventQueueItemNotified          = "queue.itemnotified"
 )
 
 type EntryNotified struct {
@@ -117,4 +123,46 @@ func (e *LifecycleStateChanged) EventName() string {
 
 func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 	return &LifecycleStateChanged{State: state}
+}
+
+type MessagePublished struct {
+	TopicName   string
+	Value       interface{}
+	PublishTime time.Time
+	Member      cluster.Member
+}
+
+func (m *MessagePublished) EventName() string {
+	return eventMessagePublished
+}
+
+func newMessagePublished(name string, value interface{}, publishTime time.Time, member cluster.Member) *MessagePublished {
+	return &MessagePublished{
+		TopicName:   name,
+		Value:       value,
+		PublishTime: publishTime,
+		Member:      member,
+	}
+}
+
+type QueueItemNotifiedHandler func(event *QueueItemNotified)
+
+type QueueItemNotified struct {
+	QueueName string
+	Value     interface{}
+	Member    cluster.Member
+	EventType int32
+}
+
+func (q QueueItemNotified) EventName() string {
+	return eventQueueItemNotified
+}
+
+func newQueueItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *QueueItemNotified {
+	return &QueueItemNotified{
+		QueueName: name,
+		Value:     value,
+		Member:    member,
+		EventType: eventType,
+	}
 }

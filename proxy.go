@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -309,6 +310,17 @@ func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, en
 			}
 		}
 		return nil
+	}
+}
+
+func (p *proxy) stringToPartitionID(key string) (int32, error) {
+	idx := strings.Index(key, "@")
+	if keyData, err := p.convertToData(key[idx+1:]); err != nil {
+		return 0, err
+	} else if partitionID, err := p.partitionService.GetPartitionID(keyData); err != nil {
+		return 0, err
+	} else {
+		return partitionID, nil
 	}
 }
 

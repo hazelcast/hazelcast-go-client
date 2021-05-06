@@ -182,6 +182,20 @@ func (c *Client) GetReplicatedMapContext(ctx context.Context, name string) (*Rep
 	return c.proxyManager.getReplicatedMapWithContext(ctx, name)
 }
 
+func (c *Client) GetQueue(name string) (*Queue, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotReady
+	}
+	return c.proxyManager.getQueue(name)
+}
+
+func (c *Client) GetTopic(name string) (*Topic, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotReady
+	}
+	return c.proxyManager.getTopic(name)
+}
+
 // Start connects the client to the cluster.
 func (c *Client) start() error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
