@@ -46,7 +46,7 @@ const (
 
 type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
-	SerializationService iserialization.SerializationService
+	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
 	UserEventDispatcher  *event.DispatchService
 	ClusterService       *cluster.Service
@@ -88,7 +88,7 @@ func (b creationBundle) Check() {
 
 type proxy struct {
 	requestCh            chan<- invocation.Invocation
-	serializationService iserialization.SerializationService
+	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	userEventDispatcher  *event.DispatchService
 	clusterService       *cluster.Service
@@ -99,7 +99,6 @@ type proxy struct {
 	name                 string
 	logger               ilogger.Logger
 	circuitBreaker       *cb.CircuitBreaker
-	subscriptionIDGen    *iproxy.ReferenceIDGenerator
 }
 
 func newProxy(bundle creationBundle, serviceName string, objectName string, subscriptionIDGen *iproxy.ReferenceIDGenerator) (*proxy, error) {
@@ -124,7 +123,6 @@ func newProxy(bundle creationBundle, serviceName string, objectName string, subs
 		config:               bundle.Config,
 		logger:               bundle.Logger,
 		circuitBreaker:       circuitBreaker,
-		subscriptionIDGen:    subscriptionIDGen,
 	}
 	if err := p.create(); err != nil {
 		return nil, err

@@ -17,6 +17,8 @@
 package hazelcast_test
 
 import (
+	"fmt"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -25,10 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
-// Disabled these until we have config attached listeners
-/*
 func TestClientLifecycleEvents(t *testing.T) {
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		receivedStates := []hz.LifecycleState{}
 		receivedStatesMu := &sync.RWMutex{}
 		if _, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
@@ -54,9 +54,6 @@ func TestClientLifecycleEvents(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		if err := client.Start(); err != nil {
-			t.Fatal(err)
-		}
 		time.Sleep(1 * time.Millisecond)
 		if err := client.Shutdown(); err != nil {
 			t.Fatal(err)
@@ -77,6 +74,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
+/*
 func TestClientMemberEvents(t *testing.T) {
 	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
 		wg := &sync.WaitGroup{}

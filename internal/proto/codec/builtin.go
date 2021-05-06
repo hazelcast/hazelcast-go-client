@@ -162,7 +162,7 @@ func EncodeNullableData(message *proto.ClientMessage, data serialization.Data) {
 }
 
 func DecodeData(frameIterator *proto.ForwardFrameIterator) serialization.Data {
-	return iserialization.NewData(frameIterator.Next().Content)
+	return iserialization.NewSerializationData(frameIterator.Next().Content)
 }
 
 func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) serialization.Data {

@@ -1426,7 +1426,7 @@ func TestNewMorphingPortableReader(t *testing.T) {
 
 	data, _ := service.ToData(s)
 
-	service.serializationConfig.PortableVersion = 1
+	service.SerializationConfig.PortableVersion = 1
 	expectedRet := &student2{10, 22, "Furkan Şenharputlu"}
 	ret, _ := service.ToObject(data)
 

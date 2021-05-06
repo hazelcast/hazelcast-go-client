@@ -45,7 +45,7 @@ func QueueTesterWithConfigBuilderWithName(t *testing.T, queueName func() string,
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.configBuilder()
+		cb := defaultTestCluster.DefaultConfigBuilder()
 		if cbCallback != nil {
 			cbCallback(cb)
 		}

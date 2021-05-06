@@ -98,7 +98,9 @@ func (s *Service) GetMemberByUUID(uuid string) pubcluster.Member {
 func (s *Service) Start() {
 	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
 	s.eventDispatcher.Subscribe(EventConnectionOpened, subscriptionID, s.handleConnectionOpened)
-	go s.logStatus()
+	if s.logger.CanLogDebug() {
+		go s.logStatus()
+	}
 }
 
 func (s *Service) Stop() {

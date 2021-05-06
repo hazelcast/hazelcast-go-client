@@ -64,7 +64,7 @@ type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
 	ClusterService       *Service
 	PartitionService     *PartitionService
-	SerializationService iserialization.SerializationService
+	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
@@ -113,7 +113,7 @@ type ConnectionManager struct {
 	responseCh           chan<- *proto.ClientMessage
 	clusterService       *Service
 	partitionService     *PartitionService
-	serializationService iserialization.SerializationService
+	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
 	invocationFactory    *ConnectionInvocationFactory
 	clusterConfig        *pubcluster.Config
@@ -200,21 +200,16 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	return nil
 }
 
-func (m *ConnectionManager) Stop() chan struct{} {
+func (m *ConnectionManager) Stop() {
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopping) {
 		close(m.doneCh)
-		return m.doneCh
+		return
 	}
-	go func() {
-		connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
-		m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionClosedSubscriptionID)
-		memberAddedSubscriptionID := event.MakeSubscriptionID(m.handleMembersAdded)
-		m.eventDispatcher.Unsubscribe(EventMembersAdded, memberAddedSubscriptionID)
-		m.connMap.CloseAll()
-		atomic.StoreInt32(&m.state, stopped)
-		close(m.doneCh)
-	}()
-	return m.doneCh
+	m.eventDispatcher.Unsubscribe(EventConnectionClosed, event.MakeSubscriptionID(m.handleConnectionClosed))
+	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
+	m.connMap.CloseAll()
+	atomic.StoreInt32(&m.state, stopped)
+	close(m.doneCh)
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {

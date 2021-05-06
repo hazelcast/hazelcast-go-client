@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package serialization
+package serialization_test
 
 import (
 	"bytes"
@@ -20,9 +20,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-
 	"github.com/stretchr/testify/require"
+
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -32,8 +33,11 @@ const (
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	service, _ := NewService(&serialization.Config{})
-	id := service.lookUpDefaultSerializer(a).ID()
+	service, err := iserialization.NewService(&serialization.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := service.LookUpDefaultSerializer(a).ID()
 	var expectedID int32 = -7
 	if id != expectedID {
 		t.Error("LookUpDefaultSerializer() returns ", id, " expected ", expectedID)
@@ -41,10 +45,11 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 }
 
 func TestSerializationService_ToData(t *testing.T) {
-	t.SkipNow()
 	var expected int32 = 5
-	c := &serialization.Config{}
-	service, err := NewService(c)
+	c := &serialization.Config{
+		BigEndian: true,
+	}
+	service, err := iserialization.NewService(c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,12 +57,11 @@ func TestSerializationService_ToData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var ret int32
 	temp, err := service.ToObject(data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ret = temp.(int32)
+	ret := temp.(int32)
 	if expected != ret {
 		t.Error("ToData() returns ", ret, " expected ", expected)
 	}
@@ -96,7 +100,7 @@ func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj inte
 	}
 	payload := (&network).Bytes()
 	output.WriteInt32(obj.(artist).Type())
-	output.WriteData(NewSerializationData(payload))
+	output.WriteData(iserialization.NewSerializationData(payload))
 	return nil
 }
 
@@ -130,7 +134,7 @@ func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{
 		return err
 	}
 	payload := (&network).Bytes()
-	output.WriteData(NewSerializationData(payload))
+	output.WriteData(iserialization.NewSerializationData(payload))
 	return nil
 }
 
@@ -160,13 +164,16 @@ func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
 	p := &painter{"Leonardo", "da Vinci"}
 	customSerializer := &CustomArtistSerializer{}
-	config := &serialization.Config{CustomSerializers: map[reflect.Type]serialization.Serializer{}}
+	config := &serialization.Config{
+		BigEndian:         true,
+		CustomSerializers: map[reflect.Type]serialization.Serializer{},
+	}
 	config.CustomSerializers[reflect.TypeOf((*artist)(nil)).Elem()] = customSerializer
-	service, _ := NewService(config)
-	data, _ := service.ToData(m)
-	ret, _ := service.ToObject(data)
-	data2, _ := service.ToData(p)
-	ret2, _ := service.ToObject(data2)
+	service := MustValue(iserialization.NewService(config)).(*iserialization.Service)
+	data := MustValue(service.ToData(m)).(serialization.Data)
+	ret := MustValue(service.ToObject(data))
+	data2 := MustValue(service.ToData(p)).(serialization.Data)
+	ret2 := MustValue(service.ToObject(data2))
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
 		t.Error("custom serialization failed")
@@ -175,8 +182,11 @@ func TestCustomSerializer(t *testing.T) {
 
 func TestGlobalSerializer(t *testing.T) {
 	obj := &customObject{10, "Furkan Şenharputlu"}
-	config := &serialization.Config{GlobalSerializer: &GlobalSerializer{}}
-	service, _ := NewService(config)
+	config := &serialization.Config{
+		BigEndian:        true,
+		GlobalSerializer: &GlobalSerializer{},
+	}
+	service, _ := iserialization.NewService(config)
 	data, _ := service.ToData(obj)
 	ret, _ := service.ToObject(data)
 
@@ -246,7 +256,7 @@ func TestGobSerializer(t *testing.T) {
 	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
 		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
 		nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	service, _ := NewService(&serialization.Config{})
+	service, _ := iserialization.NewService(&serialization.Config{BigEndian: true})
 	data, _ := service.ToData(expected)
 	ret, _ := service.ToObject(data)
 
@@ -258,8 +268,8 @@ func TestGobSerializer(t *testing.T) {
 
 func TestInt64SerializerWithInt(t *testing.T) {
 	var id = 15
-	config := &serialization.Config{}
-	service, _ := NewService(config)
+	config := &serialization.Config{BigEndian: true}
+	service, _ := iserialization.NewService(config)
 	data, _ := service.ToData(id)
 	ret, _ := service.ToObject(data)
 
@@ -270,8 +280,8 @@ func TestInt64SerializerWithInt(t *testing.T) {
 
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	var ids = []int{15, 10, 20, 12, 35}
-	config := &serialization.Config{}
-	service, _ := NewService(config)
+	config := &serialization.Config{BigEndian: true}
+	service, _ := iserialization.NewService(config)
 	data, _ := service.ToData(ids)
 	ret, _ := service.ToObject(data)
 
@@ -286,9 +296,9 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 }
 
 func TestSerializeData(t *testing.T) {
-	data := NewSerializationData([]byte{10, 20, 0, 30, 5, 7, 6})
-	config := &serialization.Config{}
-	service, _ := NewService(config)
+	data := iserialization.NewSerializationData([]byte{10, 20, 0, 30, 5, 7, 6})
+	config := &serialization.Config{BigEndian: true}
+	service, _ := iserialization.NewService(config)
 	serializedData, _ := service.ToData(data)
 	if !reflect.DeepEqual(data, serializedData) {
 		t.Error("Data type should not be serialized")
@@ -296,12 +306,20 @@ func TestSerializeData(t *testing.T) {
 }
 
 func TestUndefinedDataDeserialization(t *testing.T) {
-	s, _ := NewService(&serialization.Config{})
-	dataOutput := NewPositionalObjectDataOutput(1, s, s.serializationConfig.BigEndian)
+	s, _ := iserialization.NewService(&serialization.Config{BigEndian: true})
+	dataOutput := iserialization.NewPositionalObjectDataOutput(1, s, s.SerializationConfig.BigEndian)
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
 	dataOutput.WriteString("Furkan")
-	data := &SerializationData{dataOutput.buffer}
+	data := &iserialization.SerializationData{dataOutput.ToBuffer()}
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
+}
+
+// MustValue returns value if err is nil, otherwise it panics.
+func MustValue(value interface{}, err error) interface{} {
+	if err != nil {
+		panic(err)
+	}
+	return value
 }

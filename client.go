@@ -82,7 +82,7 @@ func newClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 	if config, err := configProvider.Config(); err != nil {
 		return nil, err
 	} else {
-		return newClient("", *config)
+		return newClient(*config)
 	}
 }
 
@@ -108,14 +108,15 @@ type Client struct {
 	refIDGen *iproxy.ReferenceIDGenerator
 }
 
-func newClient(name string, config Config) (*Client, error) {
+func newClient(config Config) (*Client, error) {
 	config = config.clone()
 	id := atomic.AddInt32(&nextId, 1)
-	if name == "" {
-		name = fmt.Sprintf("hz.client_%d", id)
-	}
+	name := ""
 	if config.ClientName != "" {
 		name = config.ClientName
+	}
+	if name == "" {
+		name = fmt.Sprintf("hz.client_%d", id)
 	}
 	logLevel, err := ilogger.GetLogLevel(config.LoggerConfig.Level)
 	if err != nil {
@@ -205,6 +206,9 @@ func (c *Client) start() error {
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	c.clusterService.Start()
 	if err := c.connectionManager.Start(10 * time.Second); err != nil {
+		c.clusterService.Stop()
+		c.eventDispatcher.Stop()
+		c.userEventDispatcher.Stop()
 		return err
 	}
 	atomic.StoreInt32(&c.state, ready)
@@ -220,10 +224,10 @@ func (c *Client) Shutdown() error {
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
 	c.clusterService.Stop()
-	<-c.connectionManager.Stop()
+	c.connectionManager.Stop()
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
-	// wait for the shut down ebent to be dispatched
+	// wait for the shut down event to be dispatched
 	time.Sleep(10 * time.Millisecond)
 	c.eventDispatcher.Stop()
 	c.userEventDispatcher.Stop()
