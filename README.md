@@ -68,6 +68,7 @@ func main() {
 ## Features
 
 * Distributed, partitioned and queryable in-memory key-value store implementation, called Map.
+* Additional data structures and simple messaging constructs such as Replicated Map, Queue and Topic.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Ability to listen to client lifecycle, cluster state, and distributed data structure events.
 
@@ -78,8 +79,12 @@ Requirements:
 * Hazelcast Go client is compatible only with Hazelcast IMDG 4.x and above.
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
-```
-go get github.com/hazelcast/hazelcast-go-client
+```shell
+# Depend on the latest version
+$ go get github.com/hazelcast/hazelcast-go-client
+
+# Depend on a specific release
+$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.1
 ```
 
 ## Quick Start
@@ -119,12 +124,12 @@ Complete creating the configuration in a single go routine, do not pass configur
 
 ```go
 // create the config builder
-cb := hz.NewConfigBuilder()
+cb := hazelcast.NewConfigBuilder()
 
 // optionally turn off smart routing
 cb.Cluster().SetSmartRouting(false).
     // optionally set cluster addresses manually
-    SetMembers("member1.example.com", "member2.example.com")
+    SetAddrs("member1.example.com", "member2.example.com")
 
 // create and start the client with the configuration provider
 client, err := hazelcast.StartNewClientWithConfig(cb)
@@ -157,10 +162,24 @@ You need to have the following installed in order to run integration tests:
 * Bash
 * Make
 
+Before running the tests, starts Hazelcast Remote Controller, which enables the test suite to create clusters:
+```shell
+# Start RC with Hazelcast Community features
+$ ./start-rc.sh
+
+# Or, start RC with Hazelcast Enterprise features
+$ HAZELCAST_ENTERPRISE_KEY=ENTERPRISE-KEY-HERE ./start-rc.sh 
+```
+
 You can run the tests using one of the following approaches:
 * Run `make test-all` to run integration tests.
 * Run `make test-all-race` to run integration tests with race detection.
 * Run `make test-cover` to generate the coverage report and `make view-cover` to view the test coverage summary and generate an HTML report.
+
+Testing the client with SSL support requires running the remote controller with Hazelcast Enterprise features.
+To enable SSL connections, add `ENABLE_SSL=1` to environment variables, or prepend it to the make commands above.
+
+In order to turn on verbose logging, add `ENABLE_TRACE=1` to environment variables, or prepend it to the make commands above.
 
 ## License
 
