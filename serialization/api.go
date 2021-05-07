@@ -122,7 +122,7 @@ type DataOutput interface {
 	SetPosition(pos int32)
 
 	// WriteByte writes a byte.
-	WriteByte(v byte) error
+	WriteByte(v byte)
 
 	// WriteBool writes a bool.
 	WriteBool(v bool)
