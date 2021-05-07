@@ -28,6 +28,28 @@ Hazelcast is an open-source distributed in-memory data store and computation pla
 
 Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and access the cluster data.
 
+## Release Notes
+
+### 1.0.0 Preview 1 (2021-05-07)
+
+The first preview release of the Hazelcast Go client has the following features:
+
+* Distributed data structures:
+  1. [Map](https://docs.hazelcast.com/imdg/4.2/data-structures/map.html),
+  2. [Replicated Map](https://docs.hazelcast.com/imdg/4.2/data-structures/replicated-map.html),
+  3. [Queue](https://docs.hazelcast.com/imdg/4.2/data-structures/queue.html)
+  4. [Topic](https://docs.hazelcast.com/imdg/4.2/data-structures/topic.html)
+* Distributed queries via predicates. [Documentation](https://docs.hazelcast.com/imdg/4.2/query/how-distributed-query-works.html)
+* [Lifecycle](https://docs.hazelcast.com/imdg/4.2/events/cluster-events.html#listening-for-lifecycle-events) and [cluster membership](https://docs.hazelcast.com/imdg/4.2/events/cluster-events.html#listening-for-member-events) event listeners.
+* [Smart routing](https://docs.hazelcast.com/imdg/4.2/clients/java.html#java-client-operation-modes)
+* Ownerless client.
+* JSON, identified and portable serialization.
+* SSL connections.
+
+Expect breaking changes in the following areas:
+* Configuration.
+* Map lock functions.
+
 ## Sample Code
 
 ```go
