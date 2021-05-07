@@ -1,89 +1,135 @@
 #!/bin/bash
 
-HZ_VERSION="3.12.12"
+#
+# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License")
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
+set -e
+set -u
+# Disables printing security sensitive data to the logs
+set +x
+
+log_info () {
+  local msg=$1
+  local ts
+  ts=$(date "$TIMESTAMP_FMT")
+  echo "$ts INFO : $msg"
+}
+
+log_fatal () {
+  local msg=$1
+  local ts
+  ts=$(date "$TIMESTAMP_FMT")
+  echo "$ts FATAL: $msg"
+  exit 1
+}
+
+download () {
+  local repo=$1
+  local jar_path=$2
+  local artifact=$3
+  if [ -f "$jar_path" ]; then
+      log_info "$jar_path already exists, skipping download."
+  else
+      log_info "Downloading: $jar_path ($artifact)"
+      mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path"
+      if [ $? -ne 0 ]; then
+          log_fatal "Failed downloading $jar_path ($artifact) from $repo"
+      fi
+  fi
+}
+
+downloadRC () {
+  local jar_path="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar"
+  local artifact="com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}"
+  download "$SNAPSHOT_REPO" "$jar_path" "$artifact"
+  classpath="$classpath:$jar_path"
+}
+
+downloadTests () {
+  local jar_path="hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar"
+  local artifact="com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests"
+  download "$SNAPSHOT_REPO" "$jar_path" "$artifact"
+  classpath="$classpath:$jar_path"
+}
+
+downloadHazelcast () {
+  local jar_path="hazelcast-${HZ_VERSION}.jar"
+  local artifact="com.hazelcast:hazelcast:${HZ_VERSION}"
+  download "${repo}" "$jar_path" "$artifact"
+  classpath="$classpath:$jar_path"
+}
+
+downloadHazelcastEnterprise () {
+  local jar_path="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar"
+  local artifact="com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}"
+  download "${enterprise_repo}" "$jar_path" "$artifact"
+  classpath="$classpath:$jar_path"
+}
+
+downloadTestsEnterprise () {
+  local jar_path="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}-tests.jar"
+  local artifact="com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}:jar:tests"
+  download "${enterprise_repo}" "$jar_path" "$artifact"
+  classpath="$classpath:$jar_path"
+}
+
+TIMESTAMP_FMT="+%Y-%m-%d %H:%M:%S"
+PID_FILE="test.pid"
+HZ_VERSION="4.2"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
-HAZELCAST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
-HAZELCAST_RC_VERSION="0.4-SNAPSHOT"
+HAZELCAST_RC_VERSION="0.8-SNAPSHOT"
 SNAPSHOT_REPO="https://oss.sonatype.org/content/repositories/snapshots"
 RELEASE_REPO="http://repo1.maven.apache.org/maven2"
 ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
 ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
-if [[ ${HZ_VERSION} == *-SNAPSHOT ]]
+if [ -f "$PID_FILE" ]; then
+  log_fatal "PID file $PID_FILE exists. Is there an another instance of Hazelcast Remote Controller running?"
+fi
+
+if [ "${HZ_VERSION}" = "*-SNAPSHOT" ]
 then
-	REPO=${SNAPSHOT_REPO}
-	ENTERPRISE_REPO=${ENTERPRISE_SNAPSHOT_REPO}
+	repo=${SNAPSHOT_REPO}
+	enterprise_repo=${ENTERPRISE_SNAPSHOT_REPO}
 else
-	REPO=${RELEASE_REPO}
-	ENTERPRISE_REPO=${ENTERPRISE_RELEASE_REPO}
+	repo=${RELEASE_REPO}
+	enterprise_repo=${ENTERPRISE_RELEASE_REPO}
 fi
 
-if [ -f "hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar" ]; then
-    echo "remote controller already exist, not downloading from maven."
-else
-    echo "Downloading: remote-controller jar com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}"
-    mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.8:get -DrepoUrl=${SNAPSHOT_REPO} -Dartifact=com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION} -Ddest=hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar
-    if [ $? -ne 0 ]; then
-        echo "Failed download remote-controller jar com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}"
-        exit 1
-    fi
+classpath=""
+java_opts="-Dhazelcast.phone.home.enabled=false com.hazelcast.remotecontroller.Main --use-simple-server"
+
+# Download Remote Controller
+downloadRC
+# Download Hazelcast Community jars
+downloadTests
+downloadHazelcast
+
+if [ "x${HAZELCAST_ENTERPRISE_KEY:-}" != "x" ]; then
+    # Download Hazelcast Enterprise jars
+    downloadHazelcastEnterprise
+    downloadTestsEnterprise
+    java_opts="-Dhazelcast.enterprise.license.key=${HAZELCAST_ENTERPRISE_KEY} $java_opts"
 fi
 
-if [ -f "hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar" ]; then
-    echo "hazelcast-tests.jar already exists, not downloading from maven."
-else
-    echo "Downloading: hazelcast test jar com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests"
-    mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.8:get -DrepoUrl=${REPO} -Dartifact=com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests -Ddest=hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar
-    if [ $? -ne 0 ]; then
-        echo "Failed download hazelcast test jar com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests"
-        exit 1
-    fi
-fi
+java_opts="-cp ${classpath} $java_opts"
 
-CLASSPATH="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar:hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar:test/javaclasses"
-
-if [ -n "${HAZELCAST_ENTERPRISE_KEY}" ]; then
-    if [ -f "hazelcast-enterprise-${HAZELCAST_TEST_VERSION}-tests.jar" ]; then
-        echo "hazelcast-enterprise-tests.jar already exists, not downloading from maven."
-    else
-        echo "Downloading: hazelcast enterprise test jar com.hazelcast:hazelcast-enterprise:${HAZELCAST_TEST_VERSION}:jar:tests"
-        mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.8:get -DrepoUrl=${ENTERPRISE_REPO} -Dartifact=com.hazelcast:hazelcast-enterprise:${HAZELCAST_TEST_VERSION}:jar:tests -Ddest=hazelcast-enterprise-${HAZELCAST_TEST_VERSION}-tests.jar
-        if [ $? -ne 0 ]; then
-            echo "Failed to download hazelcast enterprise test jar com.hazelcast:hazelcast-enterprise:${HAZELCAST_TEST_VERSION}:jar:tests"
-            exit 1
-        fi
-    fi
-
-    CLASSPATH="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}-tests.jar:"${CLASSPATH}
-
-    if [ -f "hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar" ]; then
-        echo "hazelcast-enterprise.jar already exists, not downloading from maven."
-    else
-        echo "Downloading: hazelcast enterprise jar com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}"
-        mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.8:get -DrepoUrl=${ENTERPRISE_REPO} -Dartifact=com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION} -Ddest=hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar
-        if [ $? -ne 0 ]; then
-            echo "Failed download hazelcast enterprise jar com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}"
-            exit 1
-        fi
-    fi
-    CLASSPATH="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar:"${CLASSPATH}
-    echo "Starting Remote Controller ... enterprise ..."
-else
-    if [ -f "hazelcast-${HAZELCAST_VERSION}.jar" ]; then
-        echo "hazelcast.jar already exists, not downloading from maven."
-    else
-        echo "Downloading: hazelcast jar com.hazelcast:hazelcast:${HAZELCAST_VERSION}"
-        mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.8:get -DrepoUrl=${REPO} -Dartifact=com.hazelcast:hazelcast:${HAZELCAST_VERSION} -Ddest=hazelcast-${HAZELCAST_VERSION}.jar
-        if [ $? -ne 0 ]; then
-            echo "Failed download hazelcast jar com.hazelcast:hazelcast:${HAZELCAST_VERSION}"
-            exit 1
-        fi
-    fi
-    CLASSPATH="hazelcast-${HAZELCAST_VERSION}.jar:"${CLASSPATH}
-    echo "Starting Remote Controller ... oss ..."
-fi
-echo ${CLASSPATH}
-java -Dhazelcast.enterprise.license.key=${HAZELCAST_ENTERPRISE_KEY} -cp ${CLASSPATH} com.hazelcast.remotecontroller.Main>rc_stdout.log 2>rc_stderr.log &
-serverPid=$!
+log_info "Starting Remote Controller in the background..."
+log_info "Run ./stop-rc.sh to stop the controller."
+java $java_opts &
+pid=$!
+echo "$pid" > "$PID_FILE"

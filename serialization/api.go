@@ -1,16 +1,18 @@
-// Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License")
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 // Package serialization serializes user objects to Data and back to Object.
 // Data is the internal representation of binary data in Hazelcast.
@@ -20,6 +22,8 @@ package serialization
 type IdentifiedDataSerializableFactory interface {
 	// Creates an IdentifiedDataSerializable instance using given type ID.
 	Create(id int32) (instance IdentifiedDataSerializable)
+	// FactoryID returns the factory ID.
+	FactoryID() int32
 }
 
 // IdentifiedDataSerializable is a serialization method as an alternative to standard Gob serialization.
@@ -41,11 +45,8 @@ type IdentifiedDataSerializable interface {
 // Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
 // created by a registered PortableFactory.
 // Portable serialization has the following advantages:
-//
 // * Supporting multiversion of the same object type.
-//
 // * Fetching individual fields without having to rely on reflection.
-//
 // * Querying and indexing support without deserialization and/or reflection.
 type Portable interface {
 	// FactoryID returns PortableFactory ID for this portable struct.
@@ -75,6 +76,8 @@ type PortableFactory interface {
 	// Create creates a Portable instance using given class ID and
 	// returns portable instance or nil if class ID is not known by this factory.
 	Create(classID int32) (instance Portable)
+	// FactoryID returns the factory ID.
+	FactoryID() int32
 }
 
 // Serializer is base interface of serializers.
@@ -95,8 +98,10 @@ type Data interface {
 	// Buffer returns byte array representation of internal binary format.
 	Buffer() []byte
 
-	// GetType returns serialization type of binary form.
-	GetType() int32
+	ToByteArray() []byte
+
+	// Type returns serialization type of binary form.
+	Type() int32
 
 	// TotalSize returns the total size of Data in bytes.
 	TotalSize() int
@@ -104,8 +109,8 @@ type Data interface {
 	// DataSize returns size of internal binary data in bytes.
 	DataSize() int
 
-	// GetPartitionHash returns partition hash calculated for serialized object.
-	GetPartitionHash() int32
+	// PartitionHash returns partition hash calculated for serialized object.
+	PartitionHash() int32
 }
 
 // DataOutput provides serialization methods.
@@ -117,7 +122,7 @@ type DataOutput interface {
 	SetPosition(pos int32)
 
 	// WriteByte writes a byte.
-	WriteByte(v byte)
+	WriteByte(v byte) error
 
 	// WriteBool writes a bool.
 	WriteBool(v bool)
@@ -140,8 +145,8 @@ type DataOutput interface {
 	// WriteFloat64 writes a float64.
 	WriteFloat64(v float64)
 
-	// WriteUTF writes a string in UTF-8 format.
-	WriteUTF(v string)
+	// WriteString writes a string in UTF-8 format.
+	WriteString(v string)
 
 	// WriteObject writes an object.
 	WriteObject(i interface{}) error
@@ -173,8 +178,8 @@ type DataOutput interface {
 	// WriteFloat64Array writes a []float64.
 	WriteFloat64Array(v []float64)
 
-	// WriteUTFArray writes a []string in UTF-8 format.
-	WriteUTFArray(v []string)
+	// WriteStringArray writes a []string in UTF-8 format.
+	WriteStringArray(v []string)
 
 	// WriteBytes writes a string's characters.
 	WriteBytes(bytes string)
@@ -217,8 +222,8 @@ type PositionalDataOutput interface {
 // If any of the methods results in an error, all following methods will return the zero value
 // for that type immediately.
 // Example usage:
-//  field1 = input.ReadUTF()
-//  field2 = input.ReadUTF()
+//  field1 = input.ReadString()
+//  field2 = input.ReadString()
 //  return input.Error()
 type DataInput interface {
 	// Error returns the first error encountered by DataInput.
@@ -262,9 +267,9 @@ type DataInput interface {
 	// It returns zero if an error is set previously.
 	ReadFloat64() float64
 
-	// ReadUTF returns string read.
+	// ReadString returns string read.
 	// It returns empty string if an error is set previously.
-	ReadUTF() string
+	ReadString() string
 
 	// ReadObject returns object read.
 	// It returns nil if an error is set previously.
@@ -338,8 +343,8 @@ type PortableWriter interface {
 	// WriteFloat64 writes a float64 with fieldName.
 	WriteFloat64(fieldName string, value float64)
 
-	// WriteUTF writes a string in UTF-8 format with fieldName.
-	WriteUTF(fieldName string, value string)
+	// WriteString writes a string in UTF-8 format with fieldName.
+	WriteString(fieldName string, value string)
 
 	// WritePortable writes a Portable with fieldName.
 	WritePortable(fieldName string, value Portable) error
@@ -371,8 +376,8 @@ type PortableWriter interface {
 	// WriteFloat64Array writes a []float64 with fieldName.
 	WriteFloat64Array(fieldName string, value []float64)
 
-	// WriteUTFArray writes a []string in UTF-8 format with fieldName.
-	WriteUTFArray(fieldName string, value []string)
+	// WriteStringArray writes a []string in UTF-8 format with fieldName.
+	WriteStringArray(fieldName string, value []string)
 
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable) error
@@ -389,83 +394,83 @@ type PortableReader interface {
 	// Error returns the first error encountered by Portable Reader.
 	Error() error
 
-	// ReadByte takes fieldName name of the field and returns the byte value read.
+	// ReadByte takes fieldName Name of the field and returns the byte value read.
 	// It returns zero if an error is set previously.
 	ReadByte(fieldName string) byte
 
-	// ReadBool takes fieldName name of the field and returns the bool value read.
+	// ReadBool takes fieldName Name of the field and returns the bool value read.
 	// It returns false if an error is set previously.
 	ReadBool(fieldName string) bool
 
-	// ReadUInt16 takes fieldName name of the field and returns the uint16 value read.
+	// ReadUInt16 takes fieldName Name of the field and returns the uint16 value read.
 	// It returns zero if an error is set previously.
 	ReadUInt16(fieldName string) uint16
 
-	// ReadInt16 takes fieldName name of the field and returns the int16 value read.
+	// ReadInt16 takes fieldName Name of the field and returns the int16 value read.
 	// It returns zero if an error is set previously.
 	ReadInt16(fieldName string) int16
 
-	// ReadInt32 takes fieldName name of the field and returns the int32 value read.
+	// ReadInt32 takes fieldName Name of the field and returns the int32 value read.
 	// It returns zero if an error is set previously.
 	ReadInt32(fieldName string) int32
 
-	// ReadInt64 takes fieldName name of the field and returns the int64 value read.
+	// ReadInt64 takes fieldName Name of the field and returns the int64 value read.
 	// It returns zero if an error is set previously.
 	ReadInt64(fieldName string) int64
 
-	// ReadFloat32 takes fieldName name of the field and returns the float32 value read.
+	// ReadFloat32 takes fieldName Name of the field and returns the float32 value read.
 	// It returns zero if an error is set previously.
 	ReadFloat32(fieldName string) float32
 
-	// ReadFloat64 takes fieldName name of the field and returns the float64 value read.
+	// ReadFloat64 takes fieldName Name of the field and returns the float64 value read.
 	// It returns zero if an error is set previously.
 	ReadFloat64(fieldName string) float64
 
-	// ReadUTF takes fieldName name of the field and returns the string value read.
+	// ReadUTF takes fieldName Name of the field and returns the string value read.
 	// It returns empty string if an error is set previously.
-	ReadUTF(fieldName string) string
+	ReadString(fieldName string) string
 
-	// ReadPortable takes fieldName name of the field and returns the Portable value read.
+	// ReadPortable takes fieldName Name of the field and returns the Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortable(fieldName string) Portable
 
-	// ReadByteArray takes fieldName name of the field and returns the []byte value read.
+	// ReadByteArray takes fieldName Name of the field and returns the []byte value read.
 	// It returns nil if an error is set previously.
 	ReadByteArray(fieldName string) []byte
 
-	// ReadBoolArray takes fieldName name of the field and returns the []bool value read.
+	// ReadBoolArray takes fieldName Name of the field and returns the []bool value read.
 	// It returns nil if an error is set previously.
 	ReadBoolArray(fieldName string) []bool
 
-	// ReadUInt16Array takes fieldName name of the field and returns the []uint16 value read.
+	// ReadUInt16Array takes fieldName Name of the field and returns the []uint16 value read.
 	// It returns nil if an error is set previously.
 	ReadUInt16Array(fieldName string) []uint16
 
-	// ReadInt16Array takes fieldName name of the field and returns the []int16 value read.
+	// ReadInt16Array takes fieldName Name of the field and returns the []int16 value read.
 	// It returns nil if an error is set previously.
 	ReadInt16Array(fieldName string) []int16
 
-	// ReadInt32Array takes fieldName name of the field and returns the []int32 value read.
+	// ReadInt32Array takes fieldName Name of the field and returns the []int32 value read.
 	// It returns nil if an error is set previously.
 	ReadInt32Array(fieldName string) []int32
 
-	// ReadInt64Array takes fieldName name of the field and returns the []int64 value read.
+	// ReadInt64Array takes fieldName Name of the field and returns the []int64 value read.
 	// It returns nil if an error is set previously.
 	ReadInt64Array(fieldName string) []int64
 
-	// ReadFloat32Array takes fieldName name of the field and returns the []float32 value read.
+	// ReadFloat32Array takes fieldName Name of the field and returns the []float32 value read.
 	// It returns nil if an error is set previously.
 	ReadFloat32Array(fieldName string) []float32
 
-	// ReadFloat64Array takes fieldName name of the field and returns the []float64 value read.
+	// ReadFloat64Array takes fieldName Name of the field and returns the []float64 value read.
 	// It returns nil if an error is set previously.
 	ReadFloat64Array(fieldName string) []float64
 
-	// ReadUTFArray takes fieldName name of the field and returns the []string value read.
+	// ReadUTFArray takes fieldName Name of the field and returns the []string value read.
 	// It returns nil if an error is set previously.
-	ReadUTFArray(fieldName string) []string
+	ReadStringArray(fieldName string) []string
 
-	// ReadPortableArray takes fieldName name of the field and returns the []Portable value read.
+	// ReadPortableArray takes fieldName Name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
 }
@@ -481,19 +486,19 @@ type ClassDefinition interface {
 	// Version returns version of struct.
 	Version() int32
 
-	// Field returns field definition of field by given name.
+	// Field returns field definition of field by given Name.
 	Field(name string) FieldDefinition
 
 	// FieldCount returns the number of fields in struct.
 	FieldCount() int
 }
 
-// FieldDefinition defines name, type, index of a field.
+// FieldDefinition defines Name, type, index of a field.
 type FieldDefinition interface {
 	// Type returns field type.
 	Type() int32
 
-	// Name returns field name.
+	// Name returns field Name.
 	Name() string
 
 	// Index returns field index.

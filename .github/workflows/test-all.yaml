@@ -1,0 +1,36 @@
+
+name: "Test Go Client"
+on: ["push", "pull_request"]
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    env:
+      GOPATH: "${{ github.workspace }}"
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "$HOME/hazelcast-go-client"
+    steps:
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
+        with:
+          path: "$HOME/hazelcast-go-client"
+
+      - name: "Install Dependencies"
+        run: |
+          sudo apt-get update &&\
+          sudo apt-get install -y openjdk-8-jdk-headless maven
+
+      - name: "Start Hazelcast Remote Controller"
+        run: |
+          bash ./start-rc.sh
+          sleep 2
+
+      - name: "Setup Go"
+        uses: "actions/setup-go@v2"
+        with:
+          go-version: "1.15"
+
+      - name: "Run All Tests"
+        run: |
+          make test-all
