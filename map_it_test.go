@@ -17,7 +17,6 @@
 package hazelcast_test
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"reflect"
@@ -585,7 +584,7 @@ func TestMap_Lock(t *testing.T) {
 func TestMap_LockWithContext(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		const mapName = "lock-map"
-		m := it.MustValue(client.GetMapContext(context.Background(), mapName)).(*hz.Map)
+		m := it.MustValue(client.GetMap(mapName)).(*hz.Map)
 		defer m.EvictAll()
 		it.Must(m.Lock("k1"))
 		locked := false
@@ -594,7 +593,7 @@ func TestMap_LockWithContext(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			var err error
-			m, _ := client.GetMapContext(context.Background(), mapName)
+			m, _ := client.GetMap(mapName)
 			if locked, err = m.IsLocked("k1"); err != nil {
 				panic(err)
 			}

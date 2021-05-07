@@ -45,12 +45,11 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 	}
 }
 
-func (m *proxyManager) getMapWithContext(ctx context.Context, name string) (*Map, error) {
+func (m *proxyManager) getMap(name string) (*Map, error) {
 	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
 		return nil, err
 	} else {
-		ctx = context.WithValue(ctx, lockIDKey, m.refIDGenerator.NextID())
-		return newMap(ctx, p), nil
+		return newMap(p), nil
 	}
 }
 
