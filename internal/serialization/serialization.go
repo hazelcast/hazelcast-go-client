@@ -51,9 +51,9 @@ func NewService(serializationConfig *pubserialization.Config) (*Service, error) 
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (pubserialization.Data, error) {
-	if _, ok := object.(*SerializationData); ok {
-		return object.(*SerializationData), nil
+func (s *Service) ToData(object interface{}) (*Data, error) {
+	if serData, ok := object.(*Data); ok {
+		return serData, nil
 	}
 	dataOutput := NewPositionalObjectDataOutput(1, s, s.SerializationConfig.BigEndian)
 	serializer, err := s.FindSerializerFor(object)
@@ -63,14 +63,14 @@ func (s *Service) ToData(object interface{}) (pubserialization.Data, error) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	err = serializer.Write(dataOutput, object)
-	return &SerializationData{dataOutput.buffer[:dataOutput.position]}, err
+	return &Data{dataOutput.buffer[:dataOutput.position]}, err
 }
 
 // ToObject deserializes the given Data to an object.
 // It can safely be called on an object that is already deserialized. In that case, that instance
 // is returned.
 // If this is called with nil, nil is returned.
-func (s *Service) ToObject(data pubserialization.Data) (interface{}, error) {
+func (s *Service) ToObject(data *Data) (interface{}, error) {
 	if data == nil {
 		return nil, nil
 	}

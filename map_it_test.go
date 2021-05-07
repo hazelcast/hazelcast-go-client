@@ -326,11 +326,11 @@ func TestMap_GetKeySet(t *testing.T) {
 }
 func TestMap_GetKeySetWithPredicate(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		targetKeySet := []interface{}{serialization.JSON(`{"a": 10}`), serialization.JSON(`{"a": 15}`)}
+		targetKeySet := []interface{}{serialization.JSON(`{"a": 15}`)}
 		it.Must(m.Set(serialization.JSON(`{"a": 5}`), "v1"))
 		it.Must(m.Set(serialization.JSON(`{"a": 10}`), "v2"))
 		it.Must(m.Set(serialization.JSON(`{"a": 15}`), "v3"))
-		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 10)); err != nil {
+		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 11)); err != nil {
 			t.Fatal(err)
 		} else if !assert.Equal(t, targetKeySet, keys) {
 			t.FailNow()

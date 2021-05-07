@@ -92,27 +92,6 @@ type Serializer interface {
 	Write(output DataOutput, object interface{}) (err error)
 }
 
-// Data is the basic unit of serialization. It stores binary form of an object serialized
-// by serialization service's ToData() method.
-type Data interface {
-	// Buffer returns byte array representation of internal binary format.
-	Buffer() []byte
-
-	ToByteArray() []byte
-
-	// Type returns serialization type of binary form.
-	Type() int32
-
-	// TotalSize returns the total size of Data in bytes.
-	TotalSize() int
-
-	// DataSize returns size of internal binary data in bytes.
-	DataSize() int
-
-	// PartitionHash returns partition hash calculated for serialized object.
-	PartitionHash() int32
-}
-
 // DataOutput provides serialization methods.
 type DataOutput interface {
 	// Position returns the head position in the byte array.
@@ -151,9 +130,6 @@ type DataOutput interface {
 	// WriteObject writes an object.
 	WriteObject(i interface{}) error
 
-	// WriteData writes an Data.
-	WriteData(data Data)
-
 	// WriteByteArray writes a []byte.
 	WriteByteArray(v []byte)
 
@@ -186,36 +162,6 @@ type DataOutput interface {
 
 	// WriteZeroBytes writes zero bytes as given length.
 	WriteZeroBytes(count int)
-}
-
-// PositionalDataOutput provides some serialization methods for a specific position.
-type PositionalDataOutput interface {
-	// DataOutput provides serialization methods.
-	DataOutput
-
-	// PWriteByte writes a byte to a specific position.
-	PWriteByte(position int32, v byte)
-
-	// PWriteBool writes a bool to a specific position.
-	PWriteBool(position int32, v bool)
-
-	// PWriteUInt16 writes an uint16 to a specific position.
-	PWriteUInt16(position int32, v uint16)
-
-	// PWriteInt16 writes an int16 to a specific position.
-	PWriteInt16(position int32, v int16)
-
-	// PWriteInt32 writes an int32 to a specific position.
-	PWriteInt32(position int32, v int32)
-
-	// PWriteInt64 writes an int64 to a specific position.
-	PWriteInt64(position int32, v int64)
-
-	// PWriteFloat32 writes a float32 to a specific position.
-	PWriteFloat32(position int32, v float32)
-
-	// PWriteFloat64 writes a float64 to a specific position.
-	PWriteFloat64(position int32, v float64)
 }
 
 // DataInput provides deserialization methods.
@@ -274,10 +220,6 @@ type DataInput interface {
 	// ReadObject returns object read.
 	// It returns nil if an error is set previously.
 	ReadObject() interface{}
-
-	// ReadData returns Data read.
-	// It returns nil if an error is set previously.
-	ReadData() Data
 
 	// ReadByteArray returns []byte read.
 	// It returns nil if an error is set previously.

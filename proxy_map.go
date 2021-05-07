@@ -27,8 +27,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
-	pubser "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -205,7 +205,7 @@ func (m *Map) Get(key interface{}) (interface{}, error) {
 
 // GetAll returns the entries for the given keys.
 func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
-	partitionToKeys := map[int32][]pubser.Data{}
+	partitionToKeys := map[int32][]*iserialization.Data{}
 	ps := m.proxy.partitionService
 	for _, key := range keys {
 		if keyData, err := m.validateAndSerialize(key); err != nil {
@@ -221,7 +221,7 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 	}
 	result := make([]types.Entry, 0, len(keys))
 	// create futures
-	f := func(partitionID int32, keys []pubser.Data) cb.Future {
+	f := func(partitionID int32, keys []*iserialization.Data) cb.Future {
 		request := codec.EncodeMapGetAllRequest(m.name, keys)
 		return m.circuitBreaker.TryContextFuture(context.TODO(), func(ctx context.Context, attempt int) (interface{}, error) {
 			return m.invokeOnPartition(ctx, request, partitionID)
@@ -239,9 +239,9 @@ func (m *Map) GetAll(keys ...interface{}) ([]types.Entry, error) {
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				if key, err = m.convertToObject(pair.Key().(pubser.Data)); err != nil {
+				if key, err = m.convertToObject(pair.Key().(*iserialization.Data)); err != nil {
 					return nil, err
-				} else if value, err = m.convertToObject(pair.Value().(pubser.Data)); err != nil {
+				} else if value, err = m.convertToObject(pair.Value().(*iserialization.Data)); err != nil {
 					return nil, err
 				}
 				result = append(result, types.NewEntry(key, value))
@@ -286,11 +286,11 @@ func (m *Map) GetEntryView(key string) (*types.SimpleEntryView, error) {
 		} else {
 			ev, maxIdle := codec.DecodeMapGetEntryViewResponse(response)
 			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
-			deserializedKey, err := m.convertToObject(ev.Key().(pubser.Data))
+			deserializedKey, err := m.convertToObject(ev.Key().(*iserialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			deserializedValue, err := m.convertToObject(ev.Value().(pubser.Data))
+			deserializedValue, err := m.convertToObject(ev.Value().(*iserialization.Data))
 			if err != nil {
 				return nil, err
 			}
@@ -745,8 +745,8 @@ func (m *Map) addIndex(indexConfig types.IndexConfig) error {
 
 func (m *Map) addEntryListener(flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
-	var keyData pubser.Data
-	var predicateData pubser.Data
+	var keyData *iserialization.Data
+	var predicateData *iserialization.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return types.UUID{}, err
@@ -772,7 +772,7 @@ func (m *Map) loadAll(replaceExisting bool, keys ...interface{}) error {
 	if len(keys) == 0 {
 		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
 	} else {
-		keyDatas := make([]pubser.Data, 0, len(keys))
+		keyDatas := make([]*iserialization.Data, 0, len(keys))
 		for _, key := range keys {
 			if keyData, err := m.convertToData(key); err != nil {
 				return err
@@ -902,7 +902,7 @@ func (m *Map) tryRemove(key interface{}, timeout int64) (interface{}, error) {
 	}
 }
 
-func (m *Map) convertToObjects(valueDatas []pubser.Data) ([]interface{}, error) {
+func (m *Map) convertToObjects(valueDatas []*iserialization.Data) ([]interface{}, error) {
 	values := make([]interface{}, len(valueDatas))
 	for i, valueData := range valueDatas {
 		if value, err := m.convertToObject(valueData); err != nil {
@@ -914,7 +914,7 @@ func (m *Map) convertToObjects(valueDatas []pubser.Data) ([]interface{}, error) 
 	return values, nil
 }
 
-func (m *Map) makeListenerRequest(keyData, predicateData pubser.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
+func (m *Map) makeListenerRequest(keyData, predicateData *iserialization.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {
 			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, smart)
@@ -928,7 +928,7 @@ func (m *Map) makeListenerRequest(keyData, predicateData pubser.Data, flags int3
 	}
 }
 
-func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData pubser.Data, handler entryNotifiedHandler) {
+func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
 	if keyData != nil {
 		if predicateData != nil {
 			codec.HandleMapAddEntryListenerToKeyWithPredicate(msg, handler)

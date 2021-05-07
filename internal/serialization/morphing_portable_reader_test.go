@@ -1418,25 +1418,31 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 }
 
 func TestNewMorphingPortableReader(t *testing.T) {
-	t.SkipNow()
 	s := &student{10, 22, "Furkan Şenharputlu"}
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
-	service, _ := NewService(config)
-
-	data, _ := service.ToData(s)
-
+	config := &serialization.Config{
+		PortableFactories: map[int32]serialization.PortableFactory{},
+	}
+	config.PortableFactories[2] = &portableFactory2{}
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := service.ToData(s)
+	if err != nil {
+		t.Fatal(err)
+	}
 	service.SerializationConfig.PortableVersion = 1
 	expectedRet := &student2{10, 22, "Furkan Şenharputlu"}
-	ret, _ := service.ToObject(data)
-
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Error("MorphingPortableReader failed")
 	}
 }
 
 func TestMorphingPortableReader_SameErrorIsReturned(t *testing.T) {
-
 	pr := &MorphingPortableReader{&DefaultPortableReader{}}
 	expectedError := errors.New("error")
 	pr.err = expectedError

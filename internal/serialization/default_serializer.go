@@ -400,11 +400,11 @@ func (*GobSerializer) ID() int32 {
 
 func (*GobSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
-	data := input.ReadData()
+	data := input.ReadByteArray()
 	if input.Error() != nil {
 		return nil, input.Error()
 	}
-	network.Write(data.Buffer())
+	network.Write(data)
 	dec := gob.NewDecoder(&network)
 	var result interface{}
 	err := dec.Decode(&result)
@@ -415,13 +415,13 @@ func (*GobSerializer) Write(output serialization.DataOutput, i interface{}) erro
 	var network bytes.Buffer
 	t := reflect.TypeOf(i)
 	v := reflect.New(t).Elem().Interface()
+	// TODO: Do not auto-register types!
 	gob.Register(v)
 	enc := gob.NewEncoder(&network)
-	err := enc.Encode(&i)
-	if err != nil {
+	if err := enc.Encode(&i); err != nil {
 		return err
 	}
-	output.WriteData(&SerializationData{network.Bytes()})
+	output.WriteByteArray(network.Bytes())
 	return nil
 }
 

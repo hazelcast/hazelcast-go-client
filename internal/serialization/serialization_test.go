@@ -77,8 +77,8 @@ func (*CustomArtistSerializer) ID() int32 {
 func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
 	typ := input.ReadInt32()
-	data := input.ReadData()
-	network.Write(data.Buffer())
+	data := input.ReadByteArray()
+	network.Write(data)
 	dec := gob.NewDecoder(&network)
 	var v artist
 	if typ == musicianType {
@@ -100,7 +100,7 @@ func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj inte
 	}
 	payload := (&network).Bytes()
 	output.WriteInt32(obj.(artist).Type())
-	output.WriteData(iserialization.NewSerializationData(payload))
+	output.WriteByteArray(payload)
 	return nil
 }
 
@@ -118,8 +118,8 @@ func (s *GlobalSerializer) ID() int32 {
 
 func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
 	var network bytes.Buffer
-	data := input.ReadData()
-	network.Write(data.Buffer())
+	data := input.ReadByteArray()
+	network.Write(data)
 	dec := gob.NewDecoder(&network)
 	v := &customObject{}
 	dec.Decode(v)
@@ -134,7 +134,7 @@ func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{
 		return err
 	}
 	payload := (&network).Bytes()
-	output.WriteData(iserialization.NewSerializationData(payload))
+	output.WriteByteArray(payload)
 	return nil
 }
 
@@ -170,9 +170,9 @@ func TestCustomSerializer(t *testing.T) {
 	}
 	config.CustomSerializers[reflect.TypeOf((*artist)(nil)).Elem()] = customSerializer
 	service := MustValue(iserialization.NewService(config)).(*iserialization.Service)
-	data := MustValue(service.ToData(m)).(serialization.Data)
+	data := MustValue(service.ToData(m)).(*iserialization.Data)
 	ret := MustValue(service.ToObject(data))
-	data2 := MustValue(service.ToData(p)).(serialization.Data)
+	data2 := MustValue(service.ToData(p)).(*iserialization.Data)
 	ret2 := MustValue(service.ToObject(data2))
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
@@ -296,7 +296,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 }
 
 func TestSerializeData(t *testing.T) {
-	data := iserialization.NewSerializationData([]byte{10, 20, 0, 30, 5, 7, 6})
+	data := iserialization.NewData([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{BigEndian: true}
 	service, _ := iserialization.NewService(config)
 	serializedData, _ := service.ToData(data)
@@ -311,7 +311,7 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
 	dataOutput.WriteString("Furkan")
-	data := &iserialization.SerializationData{dataOutput.ToBuffer()}
+	data := &iserialization.Data{dataOutput.ToBuffer()}
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
 }

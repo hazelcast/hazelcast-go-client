@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -44,7 +44,7 @@ const (
 // Adds an continuous entry listener for this map. Listener will get notified for map add/remove/update/evict events
 // filtered by the given predicate.
 
-func EncodeMapAddEntryListenerWithPredicateRequest(name string, predicate serialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *proto.ClientMessage {
+func EncodeMapAddEntryListenerWithPredicateRequest(name string, predicate *iserialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -69,7 +69,7 @@ func DecodeMapAddEntryListenerWithPredicateResponse(clientMessage *proto.ClientM
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerWithPredicateResponseResponseOffset)
 }
 
-func HandleMapAddEntryListenerWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
+func HandleMapAddEntryListenerWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key *iserialization.Data, value *iserialization.Data, oldValue *iserialization.Data, mergingValue *iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerWithPredicateCodecEventEntryMessageType {

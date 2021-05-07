@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 // Adds an interceptor for this map. Added interceptor will intercept operations
 // and execute user defined methods and will cancel operations if user defined method throw exception.
 
-func EncodeMapAddInterceptorRequest(name string, interceptor serialization.Data) *proto.ClientMessage {
+func EncodeMapAddInterceptorRequest(name string, interceptor *iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

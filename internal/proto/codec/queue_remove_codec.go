@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 // Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
 // if this queue is empty.
 
-func EncodeQueueRemoveRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeQueueRemoveRequest(name string, value *iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

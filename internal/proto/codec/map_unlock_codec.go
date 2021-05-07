@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 // then the lock is released.  If the current thread is not the holder of this lock,
 // then ILLEGAL_MONITOR_STATE is thrown.
 
-func EncodeMapUnlockRequest(name string, key serialization.Data, threadId int64, referenceId int64) *proto.ClientMessage {
+func EncodeMapUnlockRequest(name string, key *iserialization.Data, threadId int64, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

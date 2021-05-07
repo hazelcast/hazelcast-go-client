@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 // be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
 // to define when the value is outdated and thus should be removed from the replicated map.
 
-func EncodeReplicatedMapPutRequest(name string, key serialization.Data, value serialization.Data, ttl int64) *proto.ClientMessage {
+func EncodeReplicatedMapPutRequest(name string, key *iserialization.Data, value *iserialization.Data, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -51,7 +51,7 @@ func EncodeReplicatedMapPutRequest(name string, key serialization.Data, value se
 	return clientMessage
 }
 
-func DecodeReplicatedMapPutResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeReplicatedMapPutResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

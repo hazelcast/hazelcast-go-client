@@ -119,7 +119,7 @@ func (ps *PortableSerializer) WriteObject(output serialization.DataOutput, i int
 		return err
 	}
 	output.WriteInt32(classDefinition.Version())
-	writer := NewDefaultPortableWriter(ps, output.(serialization.PositionalDataOutput), classDefinition)
+	writer := NewDefaultPortableWriter(ps, output.(*PositionalObjectDataOutput), classDefinition)
 	err = i.(serialization.Portable).WritePortable(writer)
 	if err != nil {
 		return err

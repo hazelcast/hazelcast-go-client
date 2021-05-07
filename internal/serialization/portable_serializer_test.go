@@ -51,6 +51,10 @@ func (*portableFactory2) Create(classID int32) serialization.Portable {
 	return nil
 }
 
+func (*portableFactory2) FactoryID() int32 {
+	return 2
+}
+
 type student struct {
 	id   int16
 	age  int32

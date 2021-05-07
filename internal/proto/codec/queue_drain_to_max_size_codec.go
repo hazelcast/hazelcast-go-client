@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -49,7 +49,7 @@ func EncodeQueueDrainToMaxSizeRequest(name string, maxSize int32) *proto.ClientM
 	return clientMessage
 }
 
-func DecodeQueueDrainToMaxSizeResponse(clientMessage *proto.ClientMessage) []serialization.Data {
+func DecodeQueueDrainToMaxSizeResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

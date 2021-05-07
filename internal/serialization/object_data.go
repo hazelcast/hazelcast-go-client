@@ -22,7 +22,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type ObjectDataOutput struct {
@@ -257,20 +256,6 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteData(data serialization.Data) {
-	if data == nil {
-		o.WriteInt32(bufutil.NilArrayLength)
-		return
-	}
-	length := data.TotalSize()
-	o.WriteInt32(int32(length))
-	if length > 0 {
-		o.EnsureAvailable(length)
-		copy(o.buffer[o.position:], data.Buffer())
-		o.position += int32(length)
-	}
-}
-
 //// ObjectDataInput ////
 
 type ObjectDataInput struct {
@@ -309,7 +294,7 @@ func (i *ObjectDataInput) AssertAvailable(k int) error {
 		return hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf("negative pos -> %v", i.position), nil)
 	}
 	if len(i.buffer) < int(i.position)+k {
-		return hzerror.NewHazelcastEOFError(fmt.Sprintf("cannot read %v bytes", k), nil)
+		return hzerror.NewHazelcastSerializationError(fmt.Sprintf("cannot read %v bytes", k), nil)
 	}
 	return nil
 }
@@ -1076,26 +1061,6 @@ func (i *ObjectDataInput) readUTFArrayWithPosition(pos int32) ([]string, error) 
 	}
 	i.position = backupPos
 	return arr, i.err
-}
-
-func (i *ObjectDataInput) ReadData() serialization.Data {
-	if i.err != nil {
-		return nil
-	}
-	var ret serialization.Data
-	ret, i.err = i.readData()
-	return ret
-}
-
-func (i *ObjectDataInput) readData() (serialization.Data, error) {
-	array, err := i.readByteArray()
-	if err != nil {
-		return nil, err
-	}
-	if array == nil {
-		return nil, nil
-	}
-	return &SerializationData{array}, nil
 }
 
 type PositionalObjectDataOutput struct {

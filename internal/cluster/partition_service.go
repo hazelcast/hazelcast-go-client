@@ -25,8 +25,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
-	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -68,7 +68,7 @@ func (s *PartitionService) PartitionCount() int32 {
 	return atomic.LoadInt32(&s.partitionCount)
 }
 
-func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32, error) {
+func (s *PartitionService) GetPartitionID(keyData *iserialization.Data) (int32, error) {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
