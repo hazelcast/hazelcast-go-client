@@ -22,6 +22,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+/*
+Regex creates a predicate that will pass items if the given pattern matches the value stored under the given item attribute.
+
+The pattern interpreted exactly the same as described in https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html.
+*/
 func Regex(attributeName string, expression string) *predRegex {
 	return &predRegex{
 		attribute:  attributeName,
@@ -56,8 +61,4 @@ func (p predRegex) WriteData(output serialization.DataOutput) error {
 
 func (p predRegex) String() string {
 	return fmt.Sprintf("Regex(%s, %s)", p.attribute, p.expression)
-}
-
-func (p predRegex) enforcePredicate() {
-
 }

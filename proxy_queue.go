@@ -50,13 +50,13 @@ func newQueue(p *proxy) (*Queue, error) {
 // Add adds the specified item to this queue if there is available space.
 // Returns true when element is successfully added
 func (q *Queue) Add(value interface{}) (bool, error) {
-	return q.add(context.Background(), value, 0)
+	return q.add(context.TODO(), value, 0)
 }
 
 // AddWithTimeout adds the specified item to this queue if there is available space.
 // Returns true when element is successfully added
 func (q *Queue) AddWithTimeout(value interface{}, timeout time.Duration) (bool, error) {
-	return q.add(context.Background(), value, timeout.Milliseconds())
+	return q.add(context.TODO(), value, timeout.Milliseconds())
 }
 
 // AddAll adds the elements in the specified collection to this queue.
@@ -66,7 +66,7 @@ func (q *Queue) AddAll(values ...interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeQueueAddAllRequest(q.name, valuesData)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeQueueAddAllResponse(response), nil
@@ -88,7 +88,7 @@ func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (types
 // Clear Clear this queue. Queue will be empty after this call.
 func (q *Queue) Clear() error {
 	request := codec.EncodeQueueClearRequest(q.name)
-	_, err := q.invokeOnPartition(context.Background(), request, q.partitionID)
+	_, err := q.invokeOnPartition(context.TODO(), request, q.partitionID)
 	return err
 }
 
@@ -98,7 +98,7 @@ func (q *Queue) Contains(value interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeQueueContainsRequest(q.name, valueData)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeQueueContainsResponse(response), nil
@@ -112,7 +112,7 @@ func (q *Queue) ContainsAll(values ...interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeQueueContainsAllRequest(q.name, valuesData)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeQueueContainsAllResponse(response), nil
@@ -123,7 +123,7 @@ func (q *Queue) ContainsAll(values ...interface{}) (bool, error) {
 // Drain returns all items in the queue and empties it.
 func (q *Queue) Drain() ([]interface{}, error) {
 	request := codec.EncodeQueueDrainToRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
 		return q.convertToObjects(codec.DecodeQueueDrainToResponse(response))
@@ -133,7 +133,7 @@ func (q *Queue) Drain() ([]interface{}, error) {
 // DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
 func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
 	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, int32(maxSize))
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
 		return q.convertToObjects(codec.DecodeQueueDrainToMaxSizeResponse(response))
@@ -144,7 +144,7 @@ func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
 // Iterator returns all of the items in this queue.
 func (q *Queue) Iterator() ([]interface{}, error) {
 	request := codec.EncodeQueueIteratorRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
 		return q.convertToObjects(codec.DecodeQueueIteratorResponse(response))
@@ -154,7 +154,7 @@ func (q *Queue) Iterator() ([]interface{}, error) {
 // IsEmpty returns true if the queue is empty.
 func (q *Queue) IsEmpty() (bool, error) {
 	request := codec.EncodeQueueIsEmptyRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return false, err
 	} else {
 		return codec.DecodeQueueIsEmptyResponse(response), nil
@@ -164,7 +164,7 @@ func (q *Queue) IsEmpty() (bool, error) {
 // Peek retrieves the head of queue without removing it from the queue.
 func (q *Queue) Peek() (interface{}, error) {
 	request := codec.EncodeQueuePeekRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
 		return q.convertToObject(codec.DecodeQueuePeekResponse(response))
@@ -173,13 +173,13 @@ func (q *Queue) Peek() (interface{}, error) {
 
 // Poll retrieves and removes the head of this queue.
 func (q *Queue) Poll() (interface{}, error) {
-	return q.poll(context.Background(), 0)
+	return q.poll(context.TODO(), 0)
 }
 
 // PollWithTimeout retrieves and removes the head of this queue.
 // Waits until this timeout elapses and returns the result.
 func (q *Queue) PollWithTimeout(timeout time.Duration) (interface{}, error) {
-	return q.poll(context.Background(), timeout.Milliseconds())
+	return q.poll(context.TODO(), timeout.Milliseconds())
 }
 
 // Put adds the specified element into this queue.
@@ -189,7 +189,7 @@ func (q *Queue) Put(value interface{}) error {
 		return err
 	} else {
 		request := codec.EncodeQueuePutRequest(q.name, valueData)
-		_, err := q.invokeOnPartition(context.Background(), request, q.partitionID)
+		_, err := q.invokeOnPartition(context.TODO(), request, q.partitionID)
 		return err
 	}
 }
@@ -197,7 +197,7 @@ func (q *Queue) Put(value interface{}) error {
 // RemainingCapacity returns the remaining capacity of this queue.
 func (q *Queue) RemainingCapacity() (int, error) {
 	request := codec.EncodeQueueRemainingCapacityRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return 0, err
 	} else {
 		return int(codec.DecodeQueueRemainingCapacityResponse(response)), nil
@@ -210,7 +210,7 @@ func (q *Queue) Remove(value interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeQueueRemoveRequest(q.name, data)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 			return false, nil
 		} else {
 			return codec.DecodeQueueRemoveResponse(response), nil
@@ -224,7 +224,7 @@ func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeQueueCompareAndRemoveAllRequest(q.name, valuesData)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeQueueCompareAndRemoveAllResponse(response), nil
@@ -243,7 +243,7 @@ func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
 		return false, err
 	} else {
 		request := codec.EncodeQueueCompareAndRetainAllRequest(q.name, valuesData)
-		if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+		if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeQueueCompareAndRetainAllResponse(response), nil
@@ -254,7 +254,7 @@ func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
 // Size returns the number of elements in this collection.
 func (q *Queue) Size() (int, error) {
 	request := codec.EncodeQueueSizeRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return 0, err
 	} else {
 		return int(codec.DecodeQueueSizeResponse(response)), nil
@@ -264,7 +264,7 @@ func (q *Queue) Size() (int, error) {
 // Take retrieves and removes the head of this queue, if necessary, waits until an item becomes available.
 func (q *Queue) Take() (interface{}, error) {
 	request := codec.EncodeQueueTakeRequest(q.name)
-	if response, err := q.invokeOnPartition(context.Background(), request, q.partitionID); err != nil {
+	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
 		return q.convertToObject(codec.DecodeQueueTakeResponse(response))

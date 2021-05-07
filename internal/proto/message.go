@@ -18,7 +18,6 @@ package proto
 
 import (
 	"encoding/binary"
-	"io"
 )
 
 const (
@@ -177,27 +176,6 @@ func (m *ClientMessage) TotalLength() int {
 		currentFrame = currentFrame.next
 	}
 	return totalLength
-}
-
-func (m *ClientMessage) WriteBytes(w io.Writer) error {
-	buf := make([]byte, 4)
-	currentFrame := m.StartFrame
-	for currentFrame != nil {
-		isLastFrame := currentFrame.next == nil
-		binary.LittleEndian.PutUint32(buf, uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
-		// TODO: err handling
-		w.Write(buf)
-		if isLastFrame {
-			binary.LittleEndian.PutUint16(buf, currentFrame.flags|IsFinalFlag)
-			w.Write(buf[:2])
-		} else {
-			binary.LittleEndian.PutUint16(buf, currentFrame.flags)
-			w.Write(buf[:2])
-		}
-		w.Write(currentFrame.Content)
-		currentFrame = currentFrame.next
-	}
-	return nil
 }
 
 func (m *ClientMessage) Bytes(offset int, bytes []byte) int {

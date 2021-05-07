@@ -31,6 +31,14 @@ func TestRetryWithoutRedoOperation(t *testing.T) {
 	retryResult(t, false, true)
 }
 
+func TestProxy_Destroy(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if err := m.Destroy(); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func retryResult(t *testing.T, redo bool, target bool) {
 	cluster := it.StartNewCluster(1)
 	cb := cluster.DefaultConfigBuilder()

@@ -17,3 +17,7 @@
 package serialization
 
 type JSON []byte
+
+func (j JSON) String() string {
+	return string(j)
+}

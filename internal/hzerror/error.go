@@ -38,7 +38,7 @@ type HazelcastError interface {
 	Cause() error
 
 	// ServerError returns error info from server side.
-	ServerError() *ServerErrorImpl
+	ServerError() *ServerError
 }
 
 // HazelcastErrorType is the general error struct.
@@ -63,8 +63,8 @@ func (e *HazelcastErrorType) Cause() error {
 // ServerError returns error info from server side.
 // It checks if the cause implements ServerError and if it doesnt
 // it return nil.
-func (e *HazelcastErrorType) ServerError() *ServerErrorImpl {
-	serverError := &ServerErrorImpl{}
+func (e *HazelcastErrorType) ServerError() *ServerError {
+	serverError := &ServerError{}
 	if errors.As(e.cause, &serverError) {
 		return serverError
 	}
@@ -307,7 +307,7 @@ type ServerError interface {
 }
 */
 
-func NewHazelcastError(err *ServerErrorImpl) HazelcastError {
+func NewHazelcastError(err *ServerError) HazelcastError {
 	sb := strings.Builder{}
 	for _, trace := range err.StackTrace() {
 		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))

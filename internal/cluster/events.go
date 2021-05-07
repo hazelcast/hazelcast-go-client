@@ -101,22 +101,6 @@ func (m MembersRemoved) EventName() string {
 	return EventMembersRemoved
 }
 
-type MembersUpdated struct {
-	Members []cluster.MemberInfo
-	Version int32
-}
-
-func NewMembersUpdated(memberInfos []cluster.MemberInfo, version int32) *MembersUpdated {
-	return &MembersUpdated{
-		Members: memberInfos,
-		Version: version,
-	}
-}
-
-func (m MembersUpdated) EventName() string {
-	return EventMembersUpdated
-}
-
 type Connected struct {
 }
 

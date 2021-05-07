@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// In creates a predicate that will pass items if the value stored under the given item attribute is a member of the given values.
 func In(attributeName string, values ...interface{}) *predIn {
 	return &predIn{
 		attribute: attributeName,
@@ -71,8 +72,4 @@ func (p predIn) String() string {
 		vs[i] = fmt.Sprintf("%#v", value)
 	}
 	return fmt.Sprintf("In(%s, %s)", p.attribute, strings.Join(vs, ", "))
-}
-
-func (p predIn) enforcePredicate() {
-
 }

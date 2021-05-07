@@ -17,7 +17,6 @@
 package hazelcast
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
@@ -53,11 +52,11 @@ func (m *proxyManager) getMap(name string) (*Map, error) {
 	}
 }
 
-func (m *proxyManager) getReplicatedMapWithContext(ctx context.Context, objectName string) (*ReplicatedMap, error) {
+func (m *proxyManager) getReplicatedMap(objectName string) (*ReplicatedMap, error) {
 	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
 		return nil, err
 	} else {
-		return newReplicatedMapImpl(ctx, p)
+		return newReplicatedMapImpl(p)
 	}
 }
 

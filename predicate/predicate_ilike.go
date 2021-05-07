@@ -22,10 +22,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func ILike(attributeName string, expression string) *predILike {
+/*
+ILike creates a predicate that will pass items if the given pattern matches
+the value stored under the given item attribute in a case-insensitive manner.
+
+The % (percentage sign) is a placeholder for multiplecharacters,
+the _ (underscore) is a placeholder for a single character.
+If you need to match the percentage sign or the underscore character itself, escape it with the backslash,
+for example "\\%" string will match the percentage sign.
+*/
+func ILike(attributeName string, pattern string) *predILike {
 	return &predILike{
 		attribute:  attributeName,
-		expression: expression,
+		expression: pattern,
 	}
 }
 
@@ -56,8 +65,4 @@ func (p predILike) WriteData(output serialization.DataOutput) error {
 
 func (p predILike) String() string {
 	return fmt.Sprintf("ILike(%s, %s)", p.attribute, p.expression)
-}
-
-func (p predILike) enforcePredicate() {
-
 }

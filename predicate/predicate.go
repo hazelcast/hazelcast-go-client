@@ -27,8 +27,6 @@ const factoryID = -20
 type Predicate interface {
 	serialization.IdentifiedDataSerializable
 	fmt.Stringer
-	// disallow creating predicates by the user
-	enforcePredicate()
 }
 
 type PagingPredicate interface {

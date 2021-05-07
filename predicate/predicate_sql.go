@@ -22,6 +22,23 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+/*
+SQL creates a predicate that will pass items that match the given SQL where expression.
+
+The following operators are supported: =, <, >, <=, >=, ==, !=, <>,
+BETWEEN, IN, LIKE, ILIKE, REGEX, AND, OR, NOT.
+
+The operators are case-insensitive, but attribute names are case sensitive.
+
+Example:
+
+	active AND (age > 20 OR salary < 60000)
+
+Differences to standard SQL:
+* We don't use ternary boolean logic. field=10 evaluates to false, if field is null, in standard SQL it evaluates to UNKNOWN.
+* IS [NOT] NULL is not supported, use =NULL or <>NULL.
+* IS [NOT] DISTINCT FROM is not supported, but = and <> behave like it.
+*/
 func SQL(expression string) *predSQL {
 	return &predSQL{
 		expression: expression,
@@ -52,8 +69,4 @@ func (p predSQL) WriteData(output serialization.DataOutput) error {
 
 func (p predSQL) String() string {
 	return fmt.Sprintf("SQL(%s)", p.expression)
-}
-
-func (p predSQL) enforcePredicate() {
-
 }

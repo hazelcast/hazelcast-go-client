@@ -22,6 +22,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+/*
+Between creates a predicate that will pass items if the value stored under the given item attribute is contained inside the given range.
+
+The bounds are inclusive.
+*/
 func Between(attribute string, from interface{}, to interface{}) *predBetween {
 	return &predBetween{
 		attribute: attribute,
@@ -46,25 +51,21 @@ func (p predBetween) ClassID() int32 {
 
 func (p *predBetween) ReadData(input serialization.DataInput) error {
 	p.attribute = input.ReadString()
-	p.from = input.ReadObject()
 	p.to = input.ReadObject()
+	p.from = input.ReadObject()
 	return input.Error()
 }
 
 func (p predBetween) WriteData(output serialization.DataOutput) error {
 	var err error
 	output.WriteString(p.attribute)
-	err = output.WriteObject(p.from)
+	err = output.WriteObject(p.to)
 	if err != nil {
 		return err
 	}
-	return output.WriteObject(p.to)
+	return output.WriteObject(p.from)
 }
 
 func (p predBetween) String() string {
 	return fmt.Sprintf("Between('%s', %#v, %#v)", p.attribute, p.from, p.to)
-}
-
-func (p predBetween) enforcePredicate() {
-
 }

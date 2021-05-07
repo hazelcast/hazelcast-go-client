@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// InstanceOf creates a predicate that will pass entries for which the value class is an instance of the given className.
 func InstanceOf(className string) *predInstanceOf {
 	return &predInstanceOf{
 		className: className,
@@ -52,8 +53,4 @@ func (p predInstanceOf) WriteData(output serialization.DataOutput) error {
 
 func (p predInstanceOf) String() string {
 	return fmt.Sprintf("InstanceOf(%s)", p.className)
-}
-
-func (p predInstanceOf) enforcePredicate() {
-
 }

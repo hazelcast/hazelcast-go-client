@@ -23,6 +23,10 @@ import (
 	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+/*
+And creates a predicate that will perform the logical and operation on the given predicates.
+If no predicate is provided as argument, the created predicate will always evaluate to true.
+*/
 func And(predicates ...Predicate) *predAnd {
 	return &predAnd{predicates: predicates}
 }
@@ -67,8 +71,4 @@ func (p predAnd) String() string {
 		ps[i] = pr.String()
 	}
 	return fmt.Sprintf("And(%s)", strings.Join(ps, ", "))
-}
-
-func (p predAnd) enforcePredicate() {
-
 }

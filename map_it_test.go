@@ -110,6 +110,7 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 }
 
 func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
+	t.SkipNow()
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		// TODO: better test
@@ -320,6 +321,19 @@ func TestMap_GetKeySet(t *testing.T) {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
 			t.Fatalf("target: %#v != %#v", targetKeySet, keys)
+		}
+	})
+}
+func TestMap_GetKeySetWithPredicate(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		targetKeySet := []interface{}{serialization.JSON(`{"a": 10}`), serialization.JSON(`{"a": 15}`)}
+		it.Must(m.Set(serialization.JSON(`{"a": 5}`), "v1"))
+		it.Must(m.Set(serialization.JSON(`{"a": 10}`), "v2"))
+		it.Must(m.Set(serialization.JSON(`{"a": 15}`), "v3"))
+		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 10)); err != nil {
+			t.Fatal(err)
+		} else if !assert.Equal(t, targetKeySet, keys) {
+			t.FailNow()
 		}
 	})
 }

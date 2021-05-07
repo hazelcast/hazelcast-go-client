@@ -139,12 +139,6 @@ func (p *partitionTable) GetOwnerUUID(partitionID int32) *types.UUID {
 	return nil
 }
 
-func (p *partitionTable) PartitionCount() int {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return len(p.partitions)
-}
-
 func defaultPartitionTable() partitionTable {
 	return partitionTable{
 		partitionStateVersion: -1,

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"sync/atomic"
 	"time"
@@ -33,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/timeutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
@@ -64,7 +64,6 @@ type Connection struct {
 	eventDispatcher           *event.DispatchService
 	connectedServerVersion    int32
 	connectedServerVersionStr string
-	startTime                 int64
 	logger                    ilogger.Logger
 	clusterConfig             *pubcluster.Config
 }
@@ -80,7 +79,6 @@ func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Addres
 		c.socket = socket
 		c.lastWrite.Store(time.Time{})
 		c.closedTime.Store(time.Time{})
-		c.startTime = timeutil.GetCurrentTimeInMilliSeconds()
 		c.lastRead.Store(time.Now())
 		if err := c.sendProtocolStarter(); err != nil {
 			c.socket.Close()
@@ -98,8 +96,8 @@ func (c *Connection) sendProtocolStarter() error {
 	return err
 }
 
-func (c *Connection) createSocket(networkCfg *pubcluster.Config, address pubcluster.Address) (net.Conn, error) {
-	conTimeout := timeutil.GetPositiveDurationOrMax(networkCfg.ConnectionTimeout)
+func (c *Connection) createSocket(clusterCfg *pubcluster.Config, address pubcluster.Address) (net.Conn, error) {
+	conTimeout := positiveDurationOrMax(clusterCfg.ConnectionTimeout)
 	if socket, err := c.dialToAddressWithTimeout(address, conTimeout); err != nil {
 		return nil, err
 	} else {
@@ -237,10 +235,6 @@ func (c *Connection) isTimeoutError(err error) bool {
 	return false
 }
 
-func (c *Connection) StartTime() int64 {
-	return c.startTime
-}
-
 func (c *Connection) localAddress() net.Addr {
 	return c.socket.LocalAddr()
 }
@@ -264,4 +258,11 @@ func (c *Connection) close(closeErr error) {
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{isAlive=%t, connectionID=%d, endpoint=%s, lastReadTime=%s, lastWriteTime=%s, closedTime=%s, connected server version=%s",
 		c.isAlive(), c.connectionID, c.endpoint.Load(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
+}
+
+func positiveDurationOrMax(duration time.Duration) time.Duration {
+	if duration > 0 {
+		return duration
+	}
+	return time.Duration(math.MaxInt64)
 }

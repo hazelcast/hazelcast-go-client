@@ -22,34 +22,39 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-// Not creates a predicate that will negate the result of the given predicate.
-func Not(predicate Predicate) *predNot {
-	return &predNot{
-		pred: predicate,
-	}
+type predGreaterLess struct {
+	attribute string
+	value     interface{}
+	equal     bool
+	less      bool
 }
 
-type predNot struct {
-	pred Predicate
-}
-
-func (p predNot) FactoryID() int32 {
+func (p predGreaterLess) FactoryID() int32 {
 	return factoryID
 }
 
-func (p predNot) ClassID() int32 {
-	return 10
+func (p predGreaterLess) ClassID() int32 {
+	return 4
 }
 
-func (p *predNot) ReadData(input serialization.DataInput) error {
-	p.pred = input.ReadObject().(Predicate)
+func (p *predGreaterLess) ReadData(input serialization.DataInput) error {
+	p.attribute = input.ReadString()
+	p.value = input.ReadObject()
+	p.equal = input.ReadBool()
+	p.less = input.ReadBool()
 	return input.Error()
 }
 
-func (p predNot) WriteData(output serialization.DataOutput) error {
-	return output.WriteObject(p.pred)
+func (p predGreaterLess) WriteData(output serialization.DataOutput) error {
+	output.WriteString(p.attribute)
+	if err := output.WriteObject(p.value); err != nil {
+		return err
+	}
+	output.WriteBool(p.equal)
+	output.WriteBool(p.less)
+	return nil
 }
 
-func (p predNot) String() string {
-	return fmt.Sprintf("~%v", p.pred)
+func (p predGreaterLess) String() string {
+	return fmt.Sprintf("%s>=%v", p.attribute, p.value)
 }

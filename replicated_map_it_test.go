@@ -105,12 +105,11 @@ func TestReplicatedMap_GetEntrySet(t *testing.T) {
 }
 
 func TestReplicatedMap_GetKeySet(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTester(t, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
 		it.MustValue(m.Put("k1", "v1"))
 		it.MustValue(m.Put("k2", "v2"))
 		it.MustValue(m.Put("k3", "v3"))
-		time.Sleep(1 * time.Second)
 		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
 		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
 		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
@@ -118,6 +117,22 @@ func TestReplicatedMap_GetKeySet(t *testing.T) {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
 			t.Fatalf("target: %#v != %#v", targetKeySet, keys)
+		}
+	})
+}
+func TestReplicatedMap_GetValues(t *testing.T) {
+	it.ReplicatedMapTester(t, func(t *testing.T, m *hz.ReplicatedMap) {
+		targetValues := []interface{}{"v1", "v2", "v3"}
+		it.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put("k2", "v2"))
+		it.MustValue(m.Put("k3", "v3"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
+		if values, err := m.GetValues(); err != nil {
+			t.Fatal(err)
+		} else if !reflect.DeepEqual(makeStringSet(targetValues), makeStringSet(values)) {
+			t.Fatalf("target: %#v != %#v", targetValues, values)
 		}
 	})
 }

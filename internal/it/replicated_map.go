@@ -27,6 +27,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
+func ReplicatedMapTester(t *testing.T, f func(t *testing.T, m *hz.ReplicatedMap)) {
+	ReplicatedMapTesterWithConfigBuilder(t, nil, f)
+}
+
 func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	makeMapName := func() string {
 		return fmt.Sprintf("test-replicated-map-%d-%d", idGen.NextID(), rand.Int())

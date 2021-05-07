@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// Or creates a predicate that will perform the logical or operation on the given predicates.
 func Or(predicates ...Predicate) *predOr {
 	return &predOr{predicates: predicates}
 }
@@ -67,8 +68,4 @@ func (p predOr) String() string {
 		ps[i] = pr.String()
 	}
 	return fmt.Sprintf("Or(%s)", strings.Join(ps, ", "))
-}
-
-func (p predOr) enforcePredicate() {
-
 }

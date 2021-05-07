@@ -17,10 +17,8 @@
 package hazelcast
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -161,18 +159,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotReady
 	}
-	return c.GetReplicatedMapContext(context.Background(), name)
-}
-
-// GetReplicatedMapContext returns a replicated map instance.
-func (c *Client) GetReplicatedMapContext(ctx context.Context, name string) (*ReplicatedMap, error) {
-	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotReady
-	}
-	if ctx == nil {
-		return nil, ErrContextIsNil
-	}
-	return c.proxyManager.getReplicatedMapWithContext(ctx, name)
+	return c.proxyManager.getReplicatedMap(name)
 }
 
 func (c *Client) GetQueue(name string) (*Queue, error) {
@@ -240,7 +227,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (stri
 			c.logger.Errorf("cannot cast event to lifecycle.LifecycleStateChanged event")
 		}
 	})
-	return strconv.FormatInt(subscriptionID, 10), nil
+	return event.FormatSubscriptionID(subscriptionID), nil
 }
 
 // RemoveLifecycleListener removes the lifecycle state change handler with the given subscription ID
@@ -383,7 +370,6 @@ func (c *Client) createComponents(config *Config) {
 		ClusterService:       clusterService,
 		Config:               config,
 		InvocationFactory:    invocationFactory,
-		UserEventDispatcher:  c.userEventDispatcher,
 		ListenerBinder:       listenerBinder,
 		Logger:               c.logger,
 	}

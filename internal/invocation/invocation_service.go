@@ -145,9 +145,8 @@ func (s *Service) registerInvocation(invocation Invocation) {
 func (s *Service) unregisterInvocation(correlationID int64) Invocation {
 	if invocation, ok := s.invocations[correlationID]; ok {
 		if invocation.EventHandler() == nil {
-			// XXX: we don't remove invocations with event handlers.
-			// that may leak memory
-			delete(s.invocations, correlationID)
+			// invocations with event handlers are removed with RemoveListener functions
+			s.removeCorrelationID(correlationID)
 		}
 		return invocation
 	}

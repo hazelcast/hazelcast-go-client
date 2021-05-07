@@ -18,7 +18,8 @@ package predicate
 
 import "github.com/hazelcast/hazelcast-go-client/serialization"
 
-func False(predicate Predicate) *predFalse {
+// False creates a predicate that always evaluates to false and passes no items.
+func False() *predFalse {
 	return &predFalse{}
 }
 
@@ -43,8 +44,4 @@ func (p predFalse) WriteData(output serialization.DataOutput) error {
 
 func (p predFalse) String() string {
 	return "(false)"
-}
-
-func (p predFalse) enforcePredicate() {
-
 }

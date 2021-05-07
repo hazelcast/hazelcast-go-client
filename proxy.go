@@ -24,7 +24,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -48,7 +47,6 @@ type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
-	UserEventDispatcher  *event.DispatchService
 	ClusterService       *cluster.Service
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinder
@@ -65,9 +63,6 @@ func (b creationBundle) Check() {
 	}
 	if b.PartitionService == nil {
 		panic("PartitionService is nil")
-	}
-	if b.UserEventDispatcher == nil {
-		panic("UserEventDispatcher is nil")
 	}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
@@ -90,7 +85,6 @@ type proxy struct {
 	requestCh            chan<- invocation.Invocation
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
-	userEventDispatcher  *event.DispatchService
 	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinder
@@ -115,7 +109,6 @@ func newProxy(bundle creationBundle, serviceName string, objectName string, subs
 		name:                 objectName,
 		requestCh:            bundle.RequestCh,
 		serializationService: bundle.SerializationService,
-		userEventDispatcher:  bundle.UserEventDispatcher,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
 		invocationFactory:    bundle.InvocationFactory,
@@ -245,14 +238,6 @@ func (p *proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID
 
 func (p *proxy) convertToObject(data serialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
-}
-
-func (p *proxy) mustConvertToInterface(data serialization.Data, panicMsg string) interface{} {
-	if value, err := p.serializationService.ToObject(data); err != nil {
-		panic(panicMsg)
-	} else {
-		return value
-	}
 }
 
 func (p *proxy) convertToData(object interface{}) (serialization.Data, error) {

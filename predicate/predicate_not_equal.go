@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// NotEqual creates a predicate that will pass items if the given value and the value stored under the given item attribute are not equal.
 func NotEqual(attributeName string, value interface{}) *predNotEqual {
 	return &predNotEqual{
 		attribute: attributeName,
@@ -55,8 +56,4 @@ func (p predNotEqual) WriteData(output serialization.DataOutput) error {
 
 func (p predNotEqual) String() string {
 	return fmt.Sprintf("%s!=%v", p.attribute, p.value)
-}
-
-func (p predNotEqual) enforcePredicate() {
-
 }

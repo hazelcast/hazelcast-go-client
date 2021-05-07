@@ -729,7 +729,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 	return string(frameIterator.Next().Content)
 }
 
-func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerErrorImpl {
+func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
 	errorHolders := []proto.ErrorHolder{}

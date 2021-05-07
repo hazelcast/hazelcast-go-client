@@ -16,36 +16,12 @@
 
 package predicate
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
-
-// True creates a predicate that always evaluates to true and passes all items.
-func True() *predTrue {
-	return &predTrue{}
-}
-
-type predTrue struct {
-}
-
-func (p predTrue) FactoryID() int32 {
-	return factoryID
-}
-
-func (p predTrue) ClassID() int32 {
-	return 14
-}
-
-func (p *predTrue) ReadData(input serialization.DataInput) error {
-	return nil
-}
-
-func (p predTrue) WriteData(output serialization.DataOutput) error {
-	return nil
-}
-
-func (p predTrue) String() string {
-	return "(false)"
-}
-
-func (p predTrue) enforcePredicate() {
-
+// LessOrEqual creates a predicate that will pass items if the value stored under the given item attribute is less than or equal to the given value.
+func LessOrEqual(attributeName string, value interface{}) *predGreaterLess {
+	return &predGreaterLess{
+		attribute: attributeName,
+		value:     value,
+		equal:     true,
+		less:      true,
+	}
 }

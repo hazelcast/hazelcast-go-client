@@ -22,6 +22,15 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+/*
+Like creates a predicate that will pass items if the given pattern matches
+the value stored under the given item attribute in a case-sensitive manner.
+
+The % (percentage sign) is a placeholder for multiplecharacters,
+the _ (underscore) is a placeholder for a single character.
+If you need to match the percentage sign or the underscore character itself, escape it with the backslash,
+for example "\\%" string will match the percentage sign.
+*/
 func Like(attributeName string, expression string) *predLike {
 	return &predLike{
 		attribute:  attributeName,
@@ -56,8 +65,4 @@ func (p predLike) WriteData(output serialization.DataOutput) error {
 
 func (p predLike) String() string {
 	return fmt.Sprintf("Like(%s, %s)", p.attribute, p.expression)
-}
-
-func (p predLike) enforcePredicate() {
-
 }

@@ -63,7 +63,7 @@ func (t *Topic) Publish(message interface{}) error {
 		return err
 	} else {
 		request := codec.EncodeTopicPublishRequest(t.name, messageData)
-		_, err := t.invokeOnPartition(context.Background(), request, t.partitionID)
+		_, err := t.invokeOnPartition(context.TODO(), request, t.partitionID)
 		return err
 	}
 }
@@ -74,7 +74,7 @@ func (t *Topic) PublishAll(messages ...interface{}) error {
 		return err
 	} else {
 		request := codec.EncodeTopicPublishAllRequest(t.name, messagesData)
-		_, err := t.invokeOnPartition(context.Background(), request, t.partitionID)
+		_, err := t.invokeOnPartition(context.TODO(), request, t.partitionID)
 		return err
 	}
 }

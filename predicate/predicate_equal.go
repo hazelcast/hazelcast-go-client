@@ -22,6 +22,7 @@ import (
 	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// Equal creates a predicate that will pass items if the given value and the value stored under the given item attribute are equal.
 func Equal(attributeName string, value interface{}) *predEqual {
 	return &predEqual{
 		attribute: attributeName,
@@ -55,8 +56,4 @@ func (p predEqual) WriteData(output serialization.DataOutput) error {
 
 func (p predEqual) String() string {
 	return fmt.Sprintf("%s=%v", p.attribute, p.value)
-}
-
-func (p predEqual) enforcePredicate() {
-
 }
