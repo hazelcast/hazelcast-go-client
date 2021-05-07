@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type ConfigProvider interface {
@@ -44,6 +45,8 @@ type Config struct {
 	ClusterConfig       cluster.Config
 	SerializationConfig serialization.Config
 	LoggerConfig        logger.Config
+	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
+	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
 }
 
 func (c Config) clone() Config {
@@ -52,6 +55,8 @@ func (c Config) clone() Config {
 		ClusterConfig:       c.ClusterConfig.Clone(),
 		SerializationConfig: c.SerializationConfig.Clone(),
 		LoggerConfig:        c.LoggerConfig.Clone(),
+		lifecycleListeners:  c.lifecycleListeners,
+		membershipListeners: c.membershipListeners,
 	}
 }
 
@@ -66,7 +71,10 @@ type ConfigBuilder struct {
 // NewConfigBuilder creates a new ConfigBuilder.
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
-		config:                     &Config{},
+		config: &Config{
+			lifecycleListeners:  map[types.UUID]LifecycleStateChangeHandler{},
+			membershipListeners: map[types.UUID]cluster.MembershipStateChangeHandler{},
+		},
 		clusterConfigBuilder:       newClusterConfigBuilder(),
 		serializationConfigBuilder: newSerializationConfigBuilder(),
 		loggerConfigBuilder:        newLoggerConfigBuilder(),
@@ -77,6 +85,25 @@ func NewConfigBuilder() *ConfigBuilder {
 func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 	c.config.ClientName = name
 	return c
+}
+
+// AddLifecycleListener adds a lifecycle listener.
+// The listener is attached to the client before the client starts, so all lifecycle events can be received.
+// Use the returned subscription ID to remove the listener.
+// The handler must not block.
+func (c *ConfigBuilder) AddLifecycleListener(handler LifecycleStateChangeHandler) types.UUID {
+	id := types.NewUUID()
+	c.config.lifecycleListeners[id] = handler
+	return id
+}
+
+// AddMembershipListener adds a membership listeener.
+// The listener is attached to the client before the client starts, so all membership events can be received.
+// Use the returned subscription ID to remove the listener.
+func (c *ConfigBuilder) AddMembershipListener(handler cluster.MembershipStateChangeHandler) types.UUID {
+	id := types.NewUUID()
+	c.config.membershipListeners[id] = handler
+	return id
 }
 
 // Cluster returns the cluster configuration builder.

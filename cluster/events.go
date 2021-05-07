@@ -23,7 +23,7 @@ const (
 	MembershipStateRemoved
 )
 
-type MembershipStateChangedHandler func(event MembershipStateChanged)
+type MembershipStateChangeHandler func(event MembershipStateChanged)
 
 type MembershipStateChanged struct {
 	State  MembershipState

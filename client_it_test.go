@@ -17,7 +17,6 @@
 package hazelcast_test
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -31,33 +30,37 @@ import (
 )
 
 func TestClientLifecycleEvents(t *testing.T) {
-	t.SkipNow()
-	it.Tester(t, func(t *testing.T, client *hz.Client) {
-		receivedStates := []hz.LifecycleState{}
-		receivedStatesMu := &sync.RWMutex{}
-		if _, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+	receivedStates := []hz.LifecycleState{}
+	receivedStatesMu := &sync.RWMutex{}
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 			receivedStatesMu.Lock()
 			defer receivedStatesMu.Unlock()
 			switch event.State {
 			case hz.LifecycleStateStarting:
-				fmt.Println("Received starting state")
+				t.Logf("Received starting state")
 			case hz.LifecycleStateStarted:
-				fmt.Println("Received started state")
+				t.Logf("Received started state")
 			case hz.LifecycleStateShuttingDown:
-				fmt.Println("Received shutting down state")
+				t.Logf("Received shutting down state")
 			case hz.LifecycleStateShutDown:
-				fmt.Println("Received shut down state")
+				t.Logf("Received shut down state")
 			case hz.LifecycleStateClientConnected:
-				fmt.Println("Received client connected state")
+				t.Logf("Received client connected state")
 			case hz.LifecycleStateClientDisconnected:
-				fmt.Println("Received client disconnected state")
+				t.Logf("Received client disconnected state")
 			default:
-				fmt.Println("Received unknown state:", event.State)
+				t.Log("Received unknown state:", event.State)
 			}
 			receivedStates = append(receivedStates, event.State)
-		}); err != nil {
-			t.Fatal(err)
-		}
+		})
+	}
+	it.TesterWithConfigBuilder(t, cbCallback, func(t *testing.T, client *hz.Client) {
+		defer func() {
+			receivedStatesMu.Lock()
+			receivedStates = []hz.LifecycleState{}
+			receivedStatesMu.Unlock()
+		}()
 		time.Sleep(1 * time.Millisecond)
 		if err := client.Shutdown(); err != nil {
 			t.Fatal(err)
@@ -79,17 +82,21 @@ func TestClientLifecycleEvents(t *testing.T) {
 }
 
 func TestClientMemberEvents(t *testing.T) {
-	t.SkipNow()
-	it.TesterWithConfigBuilder(t, nil, func(t *testing.T, client *hz.Client) {
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		handlerCalled := int32(0)
-		it.Must(client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+	handlerCalled := int32(0)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	cbCallback := func(cb *hz.ConfigBuilder) {
+		cb.AddMembershipListener(func(event cluster.MembershipStateChanged) {
 			if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
 				wg.Done()
 			}
-
-		}))
+		})
+	}
+	it.TesterWithConfigBuilder(t, cbCallback, func(t *testing.T, client *hz.Client) {
+		defer func() {
+			atomic.StoreInt32(&handlerCalled, 0)
+			wg.Add(1)
+		}()
 		wg.Wait()
 	})
 }

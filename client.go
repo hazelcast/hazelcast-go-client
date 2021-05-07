@@ -19,10 +19,9 @@ package hazelcast
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
-
-	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -30,8 +29,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 var nextId int32
@@ -102,8 +103,12 @@ type Client struct {
 	logger               ilogger.Logger
 
 	// state
-	state    int32
-	refIDGen *iproxy.ReferenceIDGenerator
+	state                   int32
+	refIDGen                *iproxy.ReferenceIDGenerator
+	lifecyleListenerMap     map[types.UUID]int64
+	lifecyleListenerMapMu   *sync.Mutex
+	membershipListenerMap   map[types.UUID]int64
+	membershipListenerMapMu *sync.Mutex
 }
 
 func newClient(config Config) (*Client, error) {
@@ -126,14 +131,19 @@ func newClient(config Config) (*Client, error) {
 	}
 	clientLogger := ilogger.NewWithLevel(logLevel)
 	client := &Client{
-		name:                 name,
-		clusterConfig:        &config.ClusterConfig,
-		serializationService: serializationService,
-		eventDispatcher:      event.NewDispatchService(),
-		userEventDispatcher:  event.NewDispatchService(),
-		logger:               clientLogger,
-		refIDGen:             iproxy.NewReferenceIDGenerator(),
+		name:                    name,
+		clusterConfig:           &config.ClusterConfig,
+		serializationService:    serializationService,
+		eventDispatcher:         event.NewDispatchService(),
+		userEventDispatcher:     event.NewDispatchService(),
+		logger:                  clientLogger,
+		refIDGen:                iproxy.NewReferenceIDGenerator(),
+		lifecyleListenerMap:     map[types.UUID]int64{},
+		lifecyleListenerMapMu:   &sync.Mutex{},
+		membershipListenerMap:   map[types.UUID]int64{},
+		membershipListenerMapMu: &sync.Mutex{},
 	}
+	client.addConfigEvents(&config)
 	client.subscribeUserEvents()
 	client.createComponents(&config)
 	return client, nil
@@ -207,63 +217,100 @@ func (c *Client) Shutdown() error {
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
 	// wait for the shut down event to be dispatched
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(1 * time.Millisecond)
 	c.eventDispatcher.Stop()
 	c.userEventDispatcher.Stop()
 	return nil
 }
 
-// AddLifecycleListener adds a lifecycle state change handler with a unique subscription ID.
+// AddLifecycleListener adds a lifecycle state change handler after the client starts.
+// The listener is attached to the client after the client starts, so lifecyle events after the client start can be received.
+// Use the returned subscription ID to remove the listener.
 // The handler must not block.
-func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (string, error) {
+func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return "", ErrClientNotReady
+		return types.UUID{}, ErrClientNotReady
 	}
+	uuid := types.NewUUID()
 	subscriptionID := c.refIDGen.NextID()
-	c.userEventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
-		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
-			handler(*stateChangeEvent)
-		} else {
-			c.logger.Errorf("cannot cast event to lifecycle.LifecycleStateChanged event")
-		}
-	})
-	return event.FormatSubscriptionID(subscriptionID), nil
+	c.addLifecycleListener(subscriptionID, handler)
+	c.lifecyleListenerMapMu.Lock()
+	c.lifecyleListenerMap[uuid] = subscriptionID
+	c.lifecyleListenerMapMu.Unlock()
+	return uuid, nil
 }
 
 // RemoveLifecycleListener removes the lifecycle state change handler with the given subscription ID
-func (c *Client) RemoveLifecycleListener(subscriptionID string) error {
+func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
-	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
-		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
-	} else {
-		c.userEventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, subscriptionIDInt)
+	c.lifecyleListenerMapMu.Lock()
+	if intID, ok := c.lifecyleListenerMap[subscriptionID]; ok {
+		c.userEventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, intID)
+		delete(c.lifecyleListenerMap, subscriptionID)
 	}
+	c.lifecyleListenerMapMu.Unlock()
 	return nil
 }
 
 // AddMembershipListener adds a member state change handler with a unique subscription ID.
-func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangedHandler) error {
+// The listener is attached to the client after the client starts, so membership events after the client start can be received.
+// Use the returned subscription ID to remove the listener.
+func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHandler) (types.UUID, error) {
+	if atomic.LoadInt32(&c.state) >= stopping {
+		return types.UUID{}, ErrClientNotReady
+	}
+	uuid := types.NewUUID()
+	subscriptionID := c.refIDGen.NextID()
+	c.addMembershipListener(subscriptionID, handler)
+	c.membershipListenerMapMu.Lock()
+	c.membershipListenerMap[uuid] = subscriptionID
+	c.membershipListenerMapMu.Unlock()
+	return uuid, nil
+}
+
+// RemoveMembershipListener removes the member state change handler with the given subscription ID.
+func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotReady
 	}
-	subscriptionID := c.refIDGen.NextID()
-	c.userEventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
-		if membersAddedEvent, ok := event.(*icluster.MembersAdded); ok {
-			for _, member := range membersAddedEvent.Members {
+	c.membershipListenerMapMu.Lock()
+	if intID, ok := c.membershipListenerMap[subscriptionID]; ok {
+		c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, intID)
+		c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, intID)
+		delete(c.membershipListenerMap, subscriptionID)
+	}
+	c.membershipListenerMapMu.Unlock()
+	return nil
+}
+
+func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
+	c.userEventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
+		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
+			handler(*stateChangeEvent)
+		} else {
+			c.logger.Warnf("cannot cast event to hazelcast.LifecycleStateChanged event")
+		}
+	})
+}
+
+func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.MembershipStateChangeHandler) {
+	c.userEventDispatcher.SubscribeSync(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
+		if e, ok := event.(*icluster.MembersAdded); ok {
+			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
 					State:  cluster.MembershipStateAdded,
 					Member: member,
 				})
 			}
 		} else {
-			c.logger.Errorf("cannot cast event to cluster.MembersAdded event")
+			c.logger.Warnf("cannot cast event to cluster.MembershipStateChanged event")
 		}
 	})
-	c.userEventDispatcher.Subscribe(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
-		if membersRemovedEvent, ok := event.(*icluster.MembersRemoved); ok {
-			for _, member := range membersRemovedEvent.Members {
+	c.userEventDispatcher.SubscribeSync(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
+		if e, ok := event.(*icluster.MembersRemoved); ok {
+			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
 					State:  cluster.MembershipStateRemoved,
 					Member: member,
@@ -273,37 +320,35 @@ func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangedHan
 			c.logger.Errorf("cannot cast event to cluster.MembersRemoved event")
 		}
 	})
-	return nil
 }
 
-// RemoveMembershipListener removes the member state change handler with the given subscription ID.
-func (c *Client) RemoveMembershipListener(subscriptionID string) error {
-	if atomic.LoadInt32(&c.state) >= stopping {
-		return ErrClientNotReady
+func (c *Client) addConfigEvents(config *Config) {
+	for uuid, handler := range config.lifecycleListeners {
+		subscriptionID := c.refIDGen.NextID()
+		c.addLifecycleListener(subscriptionID, handler)
+		c.lifecyleListenerMap[uuid] = subscriptionID
 	}
-	if subscriptionIDInt, err := event.ParseSubscriptionID(subscriptionID); err != nil {
-		return fmt.Errorf("invalid subscription ID: %s", subscriptionID)
-	} else {
-		c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, subscriptionIDInt)
-		c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, subscriptionIDInt)
+	for uuid, handler := range config.membershipListeners {
+		subscriptionID := c.refIDGen.NextID()
+		c.addMembershipListener(subscriptionID, handler)
+		c.membershipListenerMap[uuid] = subscriptionID
 	}
-	return nil
 }
 
 func (c *Client) subscribeUserEvents() {
 	c.eventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
 	})
-	c.eventDispatcher.Subscribe(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientConnected))
 	})
-	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientDisconnected))
 	})
-	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
 	})
-	c.eventDispatcher.Subscribe(icluster.EventMembersRemoved, event.DefaultSubscriptionID, func(event event.Event) {
+	c.eventDispatcher.SubscribeSync(icluster.EventMembersRemoved, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
 	})
 }

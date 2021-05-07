@@ -27,11 +27,6 @@ const (
 	// EventConnectionClosed is dispatched when a connection to a member is closed.
 	EventConnectionClosed = "internal.cluster.connectionclosed"
 
-	// EventMembersUpdated is dispatched when cluster service receives MembersUpdated event from the server
-	EventMembersUpdated = "internal.cluster.membersupdated"
-	// EventPartitionsUpdated when cluster service receives PartitionsUpdated event from the server
-	EventPartitionsUpdated = "internal.cluster.partitionsupdates"
-
 	// EventMembersAdded is dispatched when cluster service finds out new members are added to the cluster
 	EventMembersAdded = "internal.cluster.membersadded"
 	// EventMembersAdded is dispatched when cluster service finds out new members are removed from the cluster
