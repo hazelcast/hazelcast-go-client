@@ -36,10 +36,10 @@ type IdentifiedDataSerializable interface {
 	ClassID() (classID int32)
 
 	// WriteData writes object fields to output stream.
-	WriteData(output DataOutput) (err error)
+	WriteData(output DataOutput)
 
 	// ReadData reads fields from the input stream.
-	ReadData(input DataInput) (err error)
+	ReadData(input DataInput)
 }
 
 // Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
@@ -56,10 +56,10 @@ type Portable interface {
 	ClassID() (classID int32)
 
 	// WritePortable serializes this portable object using PortableWriter.
-	WritePortable(writer PortableWriter) (err error)
+	WritePortable(writer PortableWriter)
 
 	// ReadPortable reads portable fields using PortableReader.
-	ReadPortable(reader PortableReader) (err error)
+	ReadPortable(reader PortableReader)
 }
 
 // VersionedPortable is an extension to Portable
@@ -86,10 +86,10 @@ type Serializer interface {
 	ID() (id int32)
 
 	// Read reads an object from ObjectDataInput.
-	Read(input DataInput) (object interface{}, err error)
+	Read(input DataInput) interface{}
 
 	// Write writes an object to ObjectDataOutput.
-	Write(output DataOutput, object interface{}) (err error)
+	Write(output DataOutput, object interface{})
 }
 
 // DataOutput provides serialization methods.
@@ -128,7 +128,7 @@ type DataOutput interface {
 	WriteString(v string)
 
 	// WriteObject writes an object.
-	WriteObject(i interface{}) error
+	WriteObject(i interface{})
 
 	// WriteByteArray writes a []byte.
 	WriteByteArray(v []byte)
@@ -172,9 +172,6 @@ type DataOutput interface {
 //  field2 = input.ReadString()
 //  return input.Error()
 type DataInput interface {
-	// Error returns the first error encountered by DataInput.
-	Error() error
-
 	// Position returns the head position in the byte array.
 	Position() int32
 
@@ -255,7 +252,7 @@ type DataInput interface {
 
 	// ReadUTFArray returns []string read.
 	// It returns nil if an error is set previously.
-	ReadUTFArray() []string
+	ReadStringArray() []string
 }
 
 // PortableWriter provides a mean of writing portable fields to a binary in form of go primitives
@@ -289,10 +286,10 @@ type PortableWriter interface {
 	WriteString(fieldName string, value string)
 
 	// WritePortable writes a Portable with fieldName.
-	WritePortable(fieldName string, value Portable) error
+	WritePortable(fieldName string, value Portable)
 
 	// WriteNilPortable writes a NilPortable with fieldName, factoryID and classID.
-	WriteNilPortable(fieldName string, factoryID int32, classID int32) error
+	WriteNilPortable(fieldName string, factoryID int32, classID int32)
 
 	// WriteByteArray writes a []byte with fieldName.
 	WriteByteArray(fieldName string, value []byte)
@@ -322,7 +319,7 @@ type PortableWriter interface {
 	WriteStringArray(fieldName string, value []string)
 
 	// WritePortableArray writes a []Portable with fieldName.
-	WritePortableArray(fieldName string, value []Portable) error
+	WritePortableArray(fieldName string, value []Portable)
 }
 
 // PortableReader provides a mean of reading portable fields from a binary in form of go primitives
@@ -332,10 +329,6 @@ type PortableWriter interface {
 //  s.age = reader.ReadInt32("age")
 //  return reader.Error()
 type PortableReader interface {
-
-	// Error returns the first error encountered by Portable Reader.
-	Error() error
-
 	// ReadByte takes fieldName Name of the field and returns the byte value read.
 	// It returns zero if an error is set previously.
 	ReadByte(fieldName string) byte
@@ -368,7 +361,7 @@ type PortableReader interface {
 	// It returns zero if an error is set previously.
 	ReadFloat64(fieldName string) float64
 
-	// ReadUTF takes fieldName Name of the field and returns the string value read.
+	// ReadString takes fieldName Name of the field and returns the string value read.
 	// It returns empty string if an error is set previously.
 	ReadString(fieldName string) string
 
@@ -408,7 +401,7 @@ type PortableReader interface {
 	// It returns nil if an error is set previously.
 	ReadFloat64Array(fieldName string) []float64
 
-	// ReadUTFArray takes fieldName Name of the field and returns the []string value read.
+	// ReadStringArray takes fieldName Name of the field and returns the []string value read.
 	// It returns nil if an error is set previously.
 	ReadStringArray(fieldName string) []string
 

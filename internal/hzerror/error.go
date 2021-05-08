@@ -25,6 +25,7 @@ import (
 var (
 	ErrClientOffline             = errors.New("client offline")
 	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
+	ErrAddressNotFound           = errors.New("address not found")
 )
 
 type ErrorCode int32
@@ -403,4 +404,15 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 	}
 
 	return NewHazelcastErrorType(message, err)
+}
+
+func MakeError(rec interface{}) error {
+	switch v := rec.(type) {
+	case error:
+		return v
+	case string:
+		return errors.New(v)
+	default:
+		return fmt.Errorf("%v", rec)
+	}
 }

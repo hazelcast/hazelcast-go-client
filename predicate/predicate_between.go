@@ -49,21 +49,16 @@ func (p predBetween) ClassID() int32 {
 	return 2
 }
 
-func (p *predBetween) ReadData(input serialization.DataInput) error {
+func (p *predBetween) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	p.to = input.ReadObject()
 	p.from = input.ReadObject()
-	return input.Error()
 }
 
-func (p predBetween) WriteData(output serialization.DataOutput) error {
-	var err error
+func (p predBetween) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
-	err = output.WriteObject(p.to)
-	if err != nil {
-		return err
-	}
-	return output.WriteObject(p.from)
+	output.WriteObject(p.to)
+	output.WriteObject(p.from)
 }
 
 func (p predBetween) String() string {

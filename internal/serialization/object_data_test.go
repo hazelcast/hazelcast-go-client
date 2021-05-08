@@ -22,7 +22,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -59,20 +58,23 @@ func TestObjectDataOutput_WriteInt32(t *testing.T) {
 }
 
 func TestObjectDataInput_AssertAvailable(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("AssertAvailable() should panic but it did not.")
+		}
+	}()
 	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
-	ret := o.AssertAvailable(2)
-	if ret == nil {
-		t.Errorf("AssertAvailable() should return error %v but it returns nil!", ret)
-	}
-
+	o.AssertAvailable(2)
 }
 
 func TestObjectDataInput_AssertAvailable2(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("AssertAvailable() should panic but it did not.")
+		}
+	}()
 	o := NewObjectDataInput([]byte{0, 1, 2, 3}, 3, &Service{}, true)
-	ret := o.AssertAvailable(2)
-	if _, ok := ret.(*hzerror.HazelcastSerializationError); !ok {
-		t.Errorf("AssertAvailable() should return error type *hzerror.HazelcastSerializationError but it returns %v", reflect.TypeOf(ret))
-	}
+	o.AssertAvailable(2)
 }
 
 func TestObjectDataInput_ReadByte(t *testing.T) {
@@ -110,9 +112,9 @@ func TestObjectDataInput_ReadBoolWithPosition(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 7, &Service{}, false)
 	var expectedRet = true
 	var ret bool
-	ret = i.ReadBoolWithPosition(8)
+	ret = i.ReadBoolAtPosition(8)
 	if ret != expectedRet {
-		t.Errorf("ReadBoolWithPosition() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadBoolAtPosition() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -138,10 +140,10 @@ func TestObjectDataInput_ReadUInt16WithPosition(t *testing.T) {
 	o.WriteUInt16(expectedRet)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
 
-	ret := i.ReadUInt16WithPosition(4)
+	ret := i.ReadUInt16AtPosition(4)
 
 	if ret != expectedRet {
-		t.Errorf("ReadUInt16WithPosition() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadUInt16AtPosition() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -158,10 +160,10 @@ func TestObjectDataInput_ReadInt32(t *testing.T) {
 func TestObjectDataInput_ReadInt32WithPosition(t *testing.T) {
 	o := NewObjectDataInput([]byte{0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0}, 4, nil, false)
 	expectedRet := 2
-	ret := o.ReadInt32WithPosition(8)
+	ret := o.ReadInt32AtPosition(8)
 
 	if ret != int32(expectedRet) {
-		t.Errorf("ReadInt32WithPosition() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadInt32AtPosition() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -187,9 +189,9 @@ func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
 	i := NewObjectDataInput(o.buffer, 16, nil, false)
 	var expectedRet = 2.544
 	var ret float64
-	ret = i.ReadFloat64WithPosition(8)
+	ret = i.ReadFloat64AtPosition(8)
 	if ret != expectedRet {
-		t.Errorf("ReadFloat64WithPosition() returns %v expected %v", ret, expectedRet)
+		t.Errorf("ReadFloat64AtPosition() returns %v expected %v", ret, expectedRet)
 	}
 }
 
@@ -364,12 +366,12 @@ func TestObjectDataInput_ReadFloat64Array(t *testing.T) {
 	}
 }
 
-func TestObjectDataInput_ReadUTFArray(t *testing.T) {
+func TestObjectDataInput_ReadStringArray(t *testing.T) {
 	var array = []string{"aAüÜiİıIöÖşŞçÇ", "akdha", "üğpoıuişlk", "üğpreÜaişfçxaaöc"}
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteStringArray(array)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	retArray := i.ReadUTFArray()
+	retArray := i.ReadStringArray()
 
 	if !reflect.DeepEqual(array, retArray) {
 		t.Error("There is a problem in WriteStringArray() or ReadStringArray()!")
@@ -399,8 +401,7 @@ func TestPositionalObjectDataOutput_PWriteByte(t *testing.T) {
 	var expected = byte(32)
 	o.PWriteByte(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadByteWithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadByteAtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -409,8 +410,7 @@ func TestPositionalObjectDataOutput_PWriteInt16(t *testing.T) {
 	var expected = int16(32)
 	o.PWriteInt16(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadInt16WithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadInt16AtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -419,8 +419,7 @@ func TestPositionalObjectDataOutput_PWriteInt32(t *testing.T) {
 	var expected = int32(32)
 	o.PWriteInt32(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadInt32WithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadInt32AtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -429,8 +428,7 @@ func TestPositionalObjectDataOutput_PWriteInt64(t *testing.T) {
 	var expected = int64(32)
 	o.PWriteInt64(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadInt64WithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadInt64AtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -439,8 +437,7 @@ func TestPositionalObjectDataOutput_PWriteFloat64(t *testing.T) {
 	var expected = float64(32)
 	o.PWriteFloat64(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadFloat64WithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadFloat64AtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -449,8 +446,7 @@ func TestPositionalObjectDataOutput_PWriteFloat32(t *testing.T) {
 	var expected = float32(32)
 	o.PWriteFloat32(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadFloat32WithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadFloat32AtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -459,8 +455,7 @@ func TestPositionalObjectDataOutput_PWriteUint16(t *testing.T) {
 	var expected = uint16(32)
 	o.PWriteUInt16(15, expected)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadUInt16WithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadUInt16AtPosition(15)
 	assert.Equal(t, res, expected)
 }
 
@@ -468,11 +463,11 @@ func TestPositionalObjectDataOutput_PWriteBool(t *testing.T) {
 	o := NewPositionalObjectDataOutput(100, nil, false)
 	o.PWriteBool(15, true)
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	res := i.ReadBoolWithPosition(15)
-	assert.NoError(t, i.err)
+	res := i.ReadBoolAtPosition(15)
 	assert.Equal(t, res, true)
 }
 
+/*
 func TestObjectDataInput_ReadingAfterError(t *testing.T) {
 	o := NewObjectDataOutput(9, nil, false)
 	var a byte = 120
@@ -507,7 +502,7 @@ func TestObjectDataInput_ReadingAfterError(t *testing.T) {
 	assert.Error(t, i.Error())
 	i.ReadFloat32Array()
 	assert.Error(t, i.Error())
-	i.ReadUTFArray()
+	i.ReadStringArray()
 	assert.Error(t, i.Error())
 	i.ReadUInt16Array()
 	assert.Error(t, i.Error())
@@ -522,41 +517,42 @@ func TestObjectDataInput_ReadingAfterError(t *testing.T) {
 	i.ReadInt64Array()
 	assert.Error(t, i.Error())
 
-	i.ReadBoolArrayWithPosition(0)
+	i.ReadBoolArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadByteWithPosition(0)
+	i.ReadByteAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadBoolArrayWithPosition(0)
+	i.ReadBoolArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadBoolWithPosition(0)
+	i.ReadBoolAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadByteArrayWithPosition(0)
+	i.ReadByteArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadUTFWithPosition(0)
+	i.ReadStringAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadInt32WithPosition(0)
+	i.ReadInt32AtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadInt64WithPosition(0)
+	i.ReadInt64AtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadFloat64WithPosition(0)
+	i.ReadFloat64AtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadFloat32WithPosition(0)
+	i.ReadFloat32AtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadFloat32ArrayWithPosition(0)
+	i.ReadFloat32ArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadUTFArrayWithPosition(0)
+	i.ReadStringArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadUInt16ArrayWithPosition(0)
+	i.ReadUInt16ArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadFloat64ArrayWithPosition(0)
+	i.ReadFloat64ArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadInt32ArrayWithPosition(0)
+	i.ReadInt32ArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadInt16ArrayWithPosition(0)
+	i.ReadInt16ArrayAtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadInt16WithPosition(0)
+	i.ReadInt16AtPosition(0)
 	assert.Error(t, i.Error())
-	i.ReadInt64ArrayWithPosition(0)
+	i.ReadInt64ArrayAtPosition(0)
 	assert.Error(t, i.Error())
-
 }
+
+*/

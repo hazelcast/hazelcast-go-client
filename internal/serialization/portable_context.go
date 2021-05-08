@@ -35,7 +35,7 @@ func (c *PortableContext) Version() int32 {
 }
 
 func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataInput, factoryID int32, classID int32,
-	version int32) (serialization.ClassDefinition, error) {
+	version int32) serialization.ClassDefinition {
 	var err error
 	register := true
 	classDefBuilder := NewClassDefinitionBuilder(factoryID, classID, version)
@@ -43,7 +43,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 	fieldCount := input.ReadInt32()
 	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
-		pos := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*Int32SizeInBytes)
+		pos := input.(*ObjectDataInput).ReadInt32AtPosition(offset + i*Int32SizeInBytes)
 		input.SetPosition(pos)
 
 		length := input.ReadInt16()
@@ -66,10 +66,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 			fieldClassID = input.ReadInt32()
 			if register {
 				fieldVersion = input.ReadInt32()
-				_, err := c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
-				if err != nil {
-					return nil, err
-				}
+				c.ReadClassDefinitionFromInput(input, fieldFactoryID, fieldClassID, fieldVersion)
 			}
 		} else if fieldType == TypePortableArray {
 			k := input.ReadInt32()
@@ -85,28 +82,18 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 				register = false
 			}
 		}
-		if input.Error() != nil {
-			return nil, input.Error()
+		if err = classDefBuilder.AddField(NewFieldDefinitionImpl(i, name, int32(fieldType),
+			fieldFactoryID, fieldClassID, fieldVersion)); err != nil {
+			panic(err)
 		}
-		err = classDefBuilder.AddField(NewFieldDefinitionImpl(i, name, int32(fieldType),
-			fieldFactoryID, fieldClassID, fieldVersion))
-		if err != nil {
-			return nil, err
-		}
-	}
-	if input.Error() != nil {
-		return nil, input.Error()
 	}
 	classDefinition := classDefBuilder.Build()
-
 	if register {
-		var err error
-		classDefinition, err = c.RegisterClassDefinition(classDefinition)
-		if err != nil {
-			return nil, err
+		if classDefinition, err = c.RegisterClassDefinition(classDefinition); err != nil {
+			panic(err)
 		}
 	}
-	return classDefinition, nil
+	return classDefinition
 }
 
 func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable serialization.Portable) (serialization.ClassDefinition, error) {
@@ -115,10 +102,7 @@ func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable serialization.
 	classDef := c.LookUpClassDefinition(portable.FactoryID(), portable.ClassID(), version)
 	if classDef == nil {
 		writer := NewClassDefinitionWriter(c, portable.FactoryID(), portable.ClassID(), version)
-		err = portable.WritePortable(writer)
-		if err != nil {
-			return nil, err
-		}
+		portable.WritePortable(writer)
 		classDef, err = writer.registerAndGet()
 	}
 	return classDef, err

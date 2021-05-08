@@ -68,26 +68,24 @@ func (cdw *ClassDefinitionWriter) WriteString(fieldName string, value string) {
 	cdw.classDefinitionBuilder.AddUTFField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable serialization.Portable) error {
+func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable serialization.Portable) {
 	if portable == nil {
-		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		panic(hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil))
 	}
 	nestedCD, err := cdw.portableContext.LookUpOrRegisterClassDefiniton(portable)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
-	return nil
 }
 
-func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) error {
+func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) {
 	var version int32
 	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if nestedCD == nil {
-		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		panic(hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil))
 	}
 	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
-	return nil
 }
 
 func (cdw *ClassDefinitionWriter) WriteByteArray(fieldName string, value []byte) {
@@ -126,21 +124,16 @@ func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []str
 	cdw.classDefinitionBuilder.AddUTFArrayField(fieldName)
 }
 
-func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) error {
-	if portables == nil {
-		return hzerror.NewHazelcastSerializationError("non nil value expected", nil)
-	}
-	if len(portables) == 0 || portables == nil {
-		return hzerror.NewHazelcastSerializationError("cannot write empty array", nil)
+func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) {
+	if len(portables) == 0 {
+		panic(hzerror.NewHazelcastSerializationError("cannot write empty array", nil))
 	}
 	var sample = portables[0]
 	var nestedCD, err = cdw.portableContext.LookUpOrRegisterClassDefiniton(sample)
 	if err != nil {
-		return nil
+		panic(err)
 	}
-
 	cdw.classDefinitionBuilder.AddPortableArrayField(fieldName, nestedCD)
-	return nil
 }
 
 func (cdw *ClassDefinitionWriter) registerAndGet() (serialization.ClassDefinition, error) {

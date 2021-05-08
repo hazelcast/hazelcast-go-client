@@ -111,5 +111,5 @@ const (
 	TypeInt64Array
 	TypeFloat32Array
 	TypeFloat64Array
-	TypeUTFArray
+	TypeStringArray
 )

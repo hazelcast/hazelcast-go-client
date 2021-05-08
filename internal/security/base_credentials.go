@@ -17,7 +17,7 @@
 package security
 
 import (
-	serialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -39,16 +39,14 @@ func (bc *BaseCredentials) ClassID() int32 {
 	return classID
 }
 
-func (bc *BaseCredentials) WritePortable(writer serialization.PortableWriter) (err error) {
+func (bc *BaseCredentials) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteString("principal", bc.principal)
 	writer.WriteString("endpoint", bc.endpoint)
-	return nil
 }
 
-func (bc *BaseCredentials) ReadPortable(reader serialization.PortableReader) (err error) {
+func (bc *BaseCredentials) ReadPortable(reader serialization.PortableReader) {
 	bc.endpoint = reader.ReadString("endpoint")
 	bc.principal = reader.ReadString("principal")
-	return reader.Error()
 }
 
 func (bc *BaseCredentials) Endpoint() string {

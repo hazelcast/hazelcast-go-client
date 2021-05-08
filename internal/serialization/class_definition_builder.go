@@ -267,7 +267,7 @@ func (cdb *ClassDefinitionBuilder) AddUTFArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeUTFArray,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeStringArray,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil

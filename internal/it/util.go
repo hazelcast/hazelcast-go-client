@@ -119,16 +119,14 @@ func (s SamplePortable) ClassID() int32 {
 	return SamplePortableClassID
 }
 
-func (s SamplePortable) WritePortable(writer serialization.PortableWriter) error {
+func (s SamplePortable) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteString("A", s.A)
 	writer.WriteInt32("B", s.B)
-	return nil
 }
 
-func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) error {
+func (s *SamplePortable) ReadPortable(reader serialization.PortableReader) {
 	s.A = reader.ReadString("A")
 	s.B = reader.ReadInt32("B")
-	return nil
 }
 
 func (s SamplePortable) Json() serialization.JSON {

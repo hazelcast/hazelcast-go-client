@@ -44,7 +44,7 @@ func (p predIn) ClassID() int32 {
 	return 7
 }
 
-func (p *predIn) ReadData(input serialization.DataInput) error {
+func (p *predIn) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	numValues := int(input.ReadInt32())
 	values := make([]interface{}, numValues)
@@ -52,18 +52,14 @@ func (p *predIn) ReadData(input serialization.DataInput) error {
 		values[i] = input.ReadObject()
 	}
 	p.values = values
-	return input.Error()
 }
 
-func (p predIn) WriteData(output serialization.DataOutput) error {
+func (p predIn) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
 	output.WriteInt32(int32(len(p.values)))
 	for _, value := range p.values {
-		if err := output.WriteObject(value); err != nil {
-			return err
-		}
+		output.WriteObject(value)
 	}
-	return nil
 }
 
 func (p predIn) String() string {

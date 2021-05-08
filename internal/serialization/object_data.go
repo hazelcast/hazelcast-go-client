@@ -19,8 +19,6 @@ package serialization
 import (
 	"encoding/binary"
 	"fmt"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 )
 
 const (
@@ -158,8 +156,8 @@ func (o *ObjectDataOutput) WriteString(v string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteObject(object interface{}) error {
-	return o.service.WriteObject(o, object)
+func (o *ObjectDataOutput) WriteObject(object interface{}) {
+	o.service.WriteObject(o, object)
 }
 
 func (o *ObjectDataOutput) WriteByteArray(v []byte) {
@@ -281,7 +279,6 @@ type ObjectDataInput struct {
 	service  *Service
 	bo       binary.ByteOrder
 	position int32
-	err      error
 }
 
 func NewObjectDataInput(buffer []byte, offset int32, service *Service, bigEndian bool) *ObjectDataInput {
@@ -298,22 +295,17 @@ func NewObjectDataInput(buffer []byte, offset int32, service *Service, bigEndian
 	}
 }
 
-func (i *ObjectDataInput) Error() error {
-	return i.err
-}
-
 func (i *ObjectDataInput) Available() int32 {
 	return int32(len(i.buffer)) - i.position
 }
 
-func (i *ObjectDataInput) AssertAvailable(k int) error {
+func (i *ObjectDataInput) AssertAvailable(k int) {
 	if i.position < 0 {
-		return hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf("negative pos -> %v", i.position), nil)
+		panic(fmt.Sprintf("negative pos -> %v", i.position))
 	}
 	if len(i.buffer) < int(i.position)+k {
-		return hzerror.NewHazelcastSerializationError(fmt.Sprintf("cannot read %v bytes", k), nil)
+		panic(fmt.Sprintf("cannot read %v bytes", k))
 	}
-	return nil
 }
 
 func (i *ObjectDataInput) Position() int32 {
@@ -325,314 +317,108 @@ func (i *ObjectDataInput) SetPosition(pos int32) {
 }
 
 func (i *ObjectDataInput) ReadByte() byte {
-	if i.err != nil {
-		return 0
-	}
-	var ret byte
-	ret, i.err = i.readByte()
+	i.AssertAvailable(ByteSizeInBytes)
+	return i.readByte()
+}
+
+func (i *ObjectDataInput) readByte() byte {
+	ret := i.buffer[i.position]
+	i.position += ByteSizeInBytes
 	return ret
 }
 
-func (i *ObjectDataInput) readByte() (byte, error) {
-	var err = i.AssertAvailable(ByteSizeInBytes)
-	var ret byte
-	if err == nil {
-		ret = i.buffer[i.position]
-		i.position += ByteSizeInBytes
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadByteWithPosition(pos int32) byte {
-	if i.err != nil {
-		return 0
-	}
-	var res byte
-	res, i.err = i.readByteWithPosition(pos)
-	return res
-}
-
-func (i *ObjectDataInput) readByteWithPosition(pos int32) (byte, error) {
-	var err = i.AssertAvailable(ByteSizeInBytes)
-	var ret byte
-	if err == nil {
-		ret = i.buffer[pos]
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadByteAtPosition(pos int32) byte {
+	return i.buffer[pos]
 }
 
 func (i *ObjectDataInput) ReadBool() bool {
-	if i.err != nil {
-		return false
-	}
-	var ret bool
-	ret, i.err = i.readBool()
+	i.AssertAvailable(BoolSizeInBytes)
+	return i.readBool()
+}
+
+func (i *ObjectDataInput) readBool() bool {
+	ret := ReadBool(i.buffer, i.position)
+	i.position += BoolSizeInBytes
 	return ret
 }
 
-func (i *ObjectDataInput) readBool() (bool, error) {
-	var err = i.AssertAvailable(BoolSizeInBytes)
-	var ret bool
-	if err == nil {
-		ret = ReadBool(i.buffer, i.position)
-		i.position += BoolSizeInBytes
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadBoolWithPosition(pos int32) bool {
-	if i.err != nil {
-		return false
-	}
-	var res bool
-	res, i.err = i.readBoolWithPosition(pos)
-	return res
-}
-
-func (i *ObjectDataInput) readBoolWithPosition(pos int32) (bool, error) {
-	var err = i.AssertAvailable(BoolSizeInBytes)
-	var ret bool
-	if err == nil {
-		ret = ReadBool(i.buffer, pos)
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadBoolAtPosition(pos int32) bool {
+	return ReadBool(i.buffer, pos)
 }
 
 func (i *ObjectDataInput) ReadUInt16() uint16 {
-	if i.err != nil {
-		return 0
-	}
-	var ret uint16
-	ret, i.err = i.readUInt16()
-	return ret
+	i.AssertAvailable(Uint16SizeInBytes)
+	r := ReadUInt16(i.buffer, i.position, i.bo)
+	i.position += Uint16SizeInBytes
+	return r
 }
 
-func (i *ObjectDataInput) readUInt16() (uint16, error) {
-	var err = i.AssertAvailable(Uint16SizeInBytes)
-	var ret uint16
-	if err == nil {
-		ret = ReadUInt16(i.buffer, i.position, i.bo)
-		i.position += Uint16SizeInBytes
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadUInt16WithPosition(pos int32) uint16 {
-	if i.err != nil {
-		return 0
-	}
-	var res uint16
-	res, i.err = i.readUInt16WithPosition(pos)
-	return res
-}
-
-func (i *ObjectDataInput) readUInt16WithPosition(pos int32) (uint16, error) {
-	var err = i.AssertAvailable(Uint16SizeInBytes)
-	var ret uint16
-	if err == nil {
-		ret = ReadUInt16(i.buffer, pos, i.bo)
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadUInt16AtPosition(pos int32) uint16 {
+	return ReadUInt16(i.buffer, pos, i.bo)
 }
 
 func (i *ObjectDataInput) ReadInt16() int16 {
-	if i.err != nil {
-		return 0
-	}
-	var ret int16
-	ret, i.err = i.readInt16()
-	return ret
+	i.AssertAvailable(Int16SizeInBytes)
+	r := ReadInt16(i.buffer, i.position, i.bo)
+	i.position += Int16SizeInBytes
+	return r
 }
 
-func (i *ObjectDataInput) readInt16() (int16, error) {
-	var err = i.AssertAvailable(Int16SizeInBytes)
-	var ret int16
-	if err == nil {
-		ret = ReadInt16(i.buffer, i.position, i.bo)
-		i.position += Int16SizeInBytes
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadInt16WithPosition(pos int32) int16 {
-	if i.err != nil {
-		return 0
-	}
-	var ret int16
-	ret, i.err = i.readInt16WithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readInt16WithPosition(pos int32) (int16, error) {
-	var err = i.AssertAvailable(Int16SizeInBytes)
-	var ret int16
-	if err == nil {
-		ret = ReadInt16(i.buffer, pos, i.bo)
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadInt16AtPosition(pos int32) int16 {
+	return ReadInt16(i.buffer, pos, i.bo)
 }
 
 func (i *ObjectDataInput) ReadInt32() int32 {
-	if i.err != nil {
-		return 0
-	}
-	var ret int32
-	ret, i.err = i.readInt32()
-	return ret
+	return i.readInt32()
 }
 
-func (i *ObjectDataInput) readInt32() (int32, error) {
-	var err = i.AssertAvailable(Int32SizeInBytes)
-	var ret int32
-	if err == nil {
-		ret = ReadInt32(i.buffer, i.position, i.bo)
-		i.position += Int32SizeInBytes
-	}
-	return ret, err
+func (i *ObjectDataInput) readInt32() int32 {
+	i.AssertAvailable(Int32SizeInBytes)
+	r := ReadInt32(i.buffer, i.position, i.bo)
+	i.position += Int32SizeInBytes
+	return r
 }
 
-func (i *ObjectDataInput) ReadInt32WithPosition(pos int32) int32 {
-	if i.err != nil {
-		return 0
-	}
-	var ret int32
-	ret, i.err = i.readInt32WithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readInt32WithPosition(pos int32) (int32, error) {
-	var err = i.AssertAvailable(Int32SizeInBytes)
-	var ret int32
-	if err == nil {
-		ret = ReadInt32(i.buffer, pos, i.bo)
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadInt32AtPosition(pos int32) int32 {
+	return ReadInt32(i.buffer, pos, i.bo)
 }
 
 func (i *ObjectDataInput) ReadInt64() int64 {
-	if i.err != nil {
-		return 0
-	}
-	var ret int64
-	ret, i.err = i.readInt64()
-	return ret
+	i.AssertAvailable(Int64SizeInBytes)
+	r := ReadInt64(i.buffer, i.position, i.bo)
+	i.position += Int64SizeInBytes
+	return r
 }
 
-func (i *ObjectDataInput) readInt64() (int64, error) {
-	var err = i.AssertAvailable(Int64SizeInBytes)
-	var ret int64
-	if err == nil {
-		ret = ReadInt64(i.buffer, i.position, i.bo)
-		i.position += Int64SizeInBytes
-		return ret, err
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadInt64WithPosition(pos int32) int64 {
-	if i.err != nil {
-		return 0
-	}
-	var ret int64
-	ret, i.err = i.readInt64WithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readInt64WithPosition(pos int32) (int64, error) {
-	var err = i.AssertAvailable(Int64SizeInBytes)
-	var ret int64
-	if err == nil {
-		ret = ReadInt64(i.buffer, pos, i.bo)
-		return ret, err
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadInt64AtPosition(pos int32) int64 {
+	return ReadInt64(i.buffer, pos, i.bo)
 }
 
 func (i *ObjectDataInput) ReadFloat32() float32 {
-	if i.err != nil {
-		return 0
-	}
-	var ret float32
-	ret, i.err = i.readFloat32()
-	return ret
+	i.AssertAvailable(Float32SizeInBytes)
+	r := ReadFloat32(i.buffer, i.position, i.bo)
+	i.position += Float32SizeInBytes
+	return r
 }
 
-func (i *ObjectDataInput) readFloat32() (float32, error) {
-	var err = i.AssertAvailable(Float32SizeInBytes)
-	var ret float32
-	if err == nil {
-		ret = ReadFloat32(i.buffer, i.position, i.bo)
-		i.position += Float32SizeInBytes
-		return ret, err
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadFloat32WithPosition(pos int32) float32 {
-	if i.err != nil {
-		return 0
-	}
-	var ret float32
-	ret, i.err = i.readFloat32WithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readFloat32WithPosition(pos int32) (float32, error) {
-	var err = i.AssertAvailable(Float32SizeInBytes)
-	var ret float32
-	if err == nil {
-		ret = ReadFloat32(i.buffer, pos, i.bo)
-		return ret, err
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadFloat32AtPosition(pos int32) float32 {
+	return ReadFloat32(i.buffer, pos, i.bo)
 }
 
 func (i *ObjectDataInput) ReadFloat64() float64 {
-	if i.err != nil {
-		return 0
-	}
-	var ret float64
-	ret, i.err = i.readFloat64()
-	return ret
+	i.AssertAvailable(Float64SizeInBytes)
+	r := ReadFloat64(i.buffer, i.position, i.bo)
+	i.position += Float64SizeInBytes
+	return r
 }
 
-func (i *ObjectDataInput) readFloat64() (float64, error) {
-	var err = i.AssertAvailable(Float64SizeInBytes)
-	var ret float64
-	if err == nil {
-		ret = ReadFloat64(i.buffer, i.position, i.bo)
-		i.position += Float64SizeInBytes
-		return ret, err
-	}
-	return ret, err
-}
-
-func (i *ObjectDataInput) ReadFloat64WithPosition(pos int32) float64 {
-	if i.err != nil {
-		return 0
-	}
-	var ret float64
-	ret, i.err = i.readFloat64WithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readFloat64WithPosition(pos int32) (float64, error) {
-	var err = i.AssertAvailable(Float64SizeInBytes)
-	var ret float64
-	if err == nil {
-		ret = ReadFloat64(i.buffer, pos, i.bo)
-		return ret, err
-	}
-	return ret, err
+func (i *ObjectDataInput) ReadFloat64AtPosition(pos int32) float64 {
+	return ReadFloat64(i.buffer, pos, i.bo)
 }
 
 func (i *ObjectDataInput) ReadString() string {
-	if i.err != nil {
-		return ""
-	}
-	size, err := i.readInt32()
-	if err != nil || size == nilArrayLength {
-		i.err = err
+	size := i.readInt32()
+	if size == nilArrayLength {
 		return ""
 	}
 	s := string(i.buffer[i.position : i.position+size])
@@ -640,443 +426,198 @@ func (i *ObjectDataInput) ReadString() string {
 	return s
 }
 
-func (i *ObjectDataInput) ReadUTFWithPosition(pos int32) string {
-	if i.err != nil {
+func (i *ObjectDataInput) ReadStringAtPosition(pos int32) string {
+	size := i.ReadInt32AtPosition(pos)
+	if size == nilArrayLength {
 		return ""
-	}
-	var ret string
-	ret, i.err = i.readUTFWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readUTFWithPosition(pos int32) (string, error) {
-	size := i.ReadInt32WithPosition(pos)
-	if i.err != nil || size == nilArrayLength {
-		return "", i.err
 	}
 	pos += Int32SizeInBytes
 	s := string(i.buffer[pos : pos+size])
 	pos += size
-	return s, nil
+	return s
 }
 
 func (i *ObjectDataInput) ReadObject() interface{} {
-	if i.err != nil {
-		return nil
-	}
-	var ret interface{}
-	ret, i.err = i.readObject()
-	return ret
-}
-
-func (i *ObjectDataInput) readObject() (interface{}, error) {
 	return i.service.ReadObject(i)
 }
 
 func (i *ObjectDataInput) ReadByteArray() []byte {
-	if i.err != nil {
+	length := i.readInt32()
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []byte
-	ret, i.err = i.readByteArray()
-	return ret
-}
-
-func (i *ObjectDataInput) readByteArray() ([]byte, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]byte, length)
-	copy(arr, i.buffer[i.position:i.position+length])
+	arr := i.buffer[i.position : i.position+length]
 	i.position += length
-	return arr, nil
+	return arr
 }
 
-func (i *ObjectDataInput) ReadByteArrayWithPosition(pos int32) []byte {
-	if i.err != nil {
-		return nil
-	}
-	var ret []byte
-	ret, i.err = i.readByteArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readByteArrayWithPosition(pos int32) ([]byte, error) {
+func (i *ObjectDataInput) ReadByteArrayAtPosition(pos int32) []byte {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]byte, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadByte()
-	}
+	arr := i.ReadByteArray()
 	i.position = backupPos
-	return arr, nil
+	return arr
 }
 
 func (i *ObjectDataInput) ReadBoolArray() []bool {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []bool
-	ret, i.err = i.readBoolArray()
-	return ret
-}
-
-func (i *ObjectDataInput) readBoolArray() ([]bool, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]bool, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]bool, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadBool()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadBoolArrayWithPosition(pos int32) []bool {
-	if i.err != nil {
-		return nil
-	}
-	var ret []bool
-	ret, i.err = i.readBoolArrayWithPosition(pos)
-	return ret
-
-}
-
-func (i *ObjectDataInput) readBoolArrayWithPosition(pos int32) ([]bool, error) {
+func (i *ObjectDataInput) ReadBoolArrayAtPosition(pos int32) []bool {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]bool, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadBool()
-	}
+	arr := i.ReadBoolArray()
 	i.position = backupPos
-	return arr, i.err
+	return arr
+
 }
 
 func (i *ObjectDataInput) ReadUInt16Array() []uint16 {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []uint16
-	ret, i.err = i.readUInt16Array()
-	return ret
-}
-
-func (i *ObjectDataInput) readUInt16Array() ([]uint16, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]uint16, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]uint16, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadUInt16()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadUInt16ArrayWithPosition(pos int32) []uint16 {
-	if i.err != nil {
-		return nil
-	}
-	var ret []uint16
-	ret, i.err = i.readUInt16ArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readUInt16ArrayWithPosition(pos int32) ([]uint16, error) {
+func (i *ObjectDataInput) ReadUInt16ArrayAtPosition(pos int32) []uint16 {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]uint16, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadUInt16()
-	}
+	arr := i.ReadUInt16Array()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
 func (i *ObjectDataInput) ReadInt16Array() []int16 {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []int16
-	ret, i.err = i.readInt16Array()
-	return ret
-}
-
-func (i *ObjectDataInput) readInt16Array() ([]int16, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]int16, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]int16, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadInt16()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadInt16ArrayWithPosition(pos int32) []int16 {
-	if i.err != nil {
-		return nil
-	}
-	var ret []int16
-	ret, i.err = i.readInt16ArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readInt16ArrayWithPosition(pos int32) ([]int16, error) {
+func (i *ObjectDataInput) ReadInt16ArrayAtPosition(pos int32) []int16 {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]int16, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadInt16()
-	}
+	arr := i.ReadInt16Array()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
 func (i *ObjectDataInput) ReadInt32Array() []int32 {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []int32
-	ret, i.err = i.readInt32Array()
-	return ret
-}
-
-func (i *ObjectDataInput) readInt32Array() ([]int32, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]int32, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]int32, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadInt32()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadInt32ArrayWithPosition(pos int32) []int32 {
-	if i.err != nil {
-		return nil
-	}
-	var ret []int32
-	ret, i.err = i.readInt32ArrayWithPosition(pos)
-	return ret
-
-}
-
-func (i *ObjectDataInput) readInt32ArrayWithPosition(pos int32) ([]int32, error) {
+func (i *ObjectDataInput) ReadInt32ArrayAtPosition(pos int32) []int32 {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]int32, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadInt32()
-	}
+	arr := i.ReadInt32Array()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
 func (i *ObjectDataInput) ReadInt64Array() []int64 {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []int64
-	ret, i.err = i.readInt64Array()
-	return ret
-}
-
-func (i *ObjectDataInput) readInt64Array() ([]int64, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]int64, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]int64, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadInt64()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadInt64ArrayWithPosition(pos int32) []int64 {
-	if i.err != nil {
-		return nil
-	}
-	var ret []int64
-	ret, i.err = i.readInt64ArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readInt64ArrayWithPosition(pos int32) ([]int64, error) {
+func (i *ObjectDataInput) ReadInt64ArrayAtPosition(pos int32) []int64 {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]int64, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadInt64()
-	}
+	arr := i.ReadInt64Array()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
 func (i *ObjectDataInput) ReadFloat32Array() []float32 {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []float32
-	ret, i.err = i.readFloat32Array()
-	return ret
-}
-
-func (i *ObjectDataInput) readFloat32Array() ([]float32, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]float32, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]float32, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadFloat32()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadFloat32ArrayWithPosition(pos int32) []float32 {
-	if i.err != nil {
-		return nil
-	}
-	var ret []float32
-	ret, i.err = i.readFloat32ArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readFloat32ArrayWithPosition(pos int32) ([]float32, error) {
+func (i *ObjectDataInput) ReadFloat32ArrayAtPosition(pos int32) []float32 {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]float32, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadFloat32()
-	}
+	arr := i.ReadFloat32Array()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
 func (i *ObjectDataInput) ReadFloat64Array() []float64 {
-	if i.err != nil {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []float64
-	ret, i.err = i.readFloat64Array()
-	return ret
-}
-
-func (i *ObjectDataInput) readFloat64Array() ([]float64, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]float64, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]float64, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadFloat64()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadFloat64ArrayWithPosition(pos int32) []float64 {
-	if i.err != nil {
-		return nil
-	}
-	var ret []float64
-	ret, i.err = i.readFloat64ArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readFloat64ArrayWithPosition(pos int32) ([]float64, error) {
+func (i *ObjectDataInput) ReadFloat64ArrayAtPosition(pos int32) []float64 {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]float64, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadFloat64()
-	}
+	arr := i.ReadFloat64Array()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadUTFArray() []string {
-	if i.err != nil {
+func (i *ObjectDataInput) ReadStringArray() []string {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
 		return nil
 	}
-	var ret []string
-	ret, i.err = i.readUTFArray()
-	return ret
-}
-
-func (i *ObjectDataInput) readUTFArray() ([]string, error) {
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]string, length)
-	for j := int32(0); j < length; j++ {
+	arr := make([]string, length)
+	for j := 0; j < length; j++ {
 		arr[j] = i.ReadString()
 	}
-	return arr, i.err
+	return arr
 }
 
-func (i *ObjectDataInput) ReadUTFArrayWithPosition(pos int32) []string {
-	if i.err != nil {
-		return nil
-	}
-	var ret []string
-	ret, i.err = i.readUTFArrayWithPosition(pos)
-	return ret
-}
-
-func (i *ObjectDataInput) readUTFArrayWithPosition(pos int32) ([]string, error) {
+func (i *ObjectDataInput) ReadStringArrayAtPosition(pos int32) []string {
 	backupPos := i.position
 	i.position = pos
-	length, err := i.readInt32()
-	if err != nil || length == nilArrayLength {
-		return nil, err
-	}
-	var arr = make([]string, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadString()
-	}
+	arr := i.ReadStringArray()
 	i.position = backupPos
-	return arr, i.err
+	return arr
 }
 
 type PositionalObjectDataOutput struct {

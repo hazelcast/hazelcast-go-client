@@ -57,14 +57,12 @@ func (p predSQL) ClassID() int32 {
 	return 0
 }
 
-func (p *predSQL) ReadData(input serialization.DataInput) error {
+func (p *predSQL) ReadData(input serialization.DataInput) {
 	p.expression = input.ReadString()
-	return input.Error()
 }
 
-func (p predSQL) WriteData(output serialization.DataOutput) error {
+func (p predSQL) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.expression)
-	return nil
 }
 
 func (p predSQL) String() string {

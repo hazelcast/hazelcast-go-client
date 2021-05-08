@@ -51,7 +51,12 @@ func NewService(serializationConfig *pubserialization.Config) (*Service, error) 
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (*Data, error) {
+func (s *Service) ToData(object interface{}) (r *Data, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = hzerror.MakeError(rec)
+		}
+	}()
 	if serData, ok := object.(*Data); ok {
 		return serData, nil
 	}
@@ -62,7 +67,7 @@ func (s *Service) ToData(object interface{}) (*Data, error) {
 	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
-	err = serializer.Write(dataOutput, object)
+	serializer.Write(dataOutput, object)
 	return &Data{dataOutput.buffer[:dataOutput.position]}, err
 }
 
@@ -70,7 +75,12 @@ func (s *Service) ToData(object interface{}) (*Data, error) {
 // It can safely be called on an object that is already deserialized. In that case, that instance
 // is returned.
 // If this is called with nil, nil is returned.
-func (s *Service) ToObject(data *Data) (interface{}, error) {
+func (s *Service) ToObject(data *Data) (r interface{}, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = hzerror.MakeError(rec)
+		}
+	}()
 	if data == nil {
 		return nil, nil
 	}
@@ -83,23 +93,20 @@ func (s *Service) ToObject(data *Data) (interface{}, error) {
 		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 	}
 	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.SerializationConfig.BigEndian)
-	return serializer.Read(dataInput)
+	return serializer.Read(dataInput), nil
 }
 
-func (s *Service) WriteObject(output pubserialization.DataOutput, object interface{}) error {
+func (s *Service) WriteObject(output pubserialization.DataOutput, object interface{}) {
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
-		return err
+		panic(fmt.Errorf("error finding serializer: %w", err))
 	}
 	output.WriteInt32(serializer.ID())
-	return serializer.Write(output, object)
+	serializer.Write(output, object)
 }
 
-func (s *Service) ReadObject(input pubserialization.DataInput) (interface{}, error) {
+func (s *Service) ReadObject(input pubserialization.DataInput) interface{} {
 	serializerID := input.ReadInt32()
-	if input.Error() != nil {
-		return nil, input.Error()
-	}
 	serializer := s.registry[serializerID]
 	return serializer.Read(input)
 }

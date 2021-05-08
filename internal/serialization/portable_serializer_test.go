@@ -69,18 +69,16 @@ func (*student) ClassID() int32 {
 	return 1
 }
 
-func (s *student) WritePortable(writer serialization.PortableWriter) error {
+func (s *student) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteInt16("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteString("name", s.name)
-	return nil
 }
 
-func (s *student) ReadPortable(reader serialization.PortableReader) error {
+func (s *student) ReadPortable(reader serialization.PortableReader) {
 	s.id = reader.ReadInt16("id")
 	s.age = reader.ReadInt32("age")
 	s.name = reader.ReadString("name")
-	return reader.Error()
 }
 
 type student2 struct {
@@ -101,18 +99,16 @@ func (*student2) Version() int32 {
 	return 1
 }
 
-func (s *student2) WritePortable(writer serialization.PortableWriter) error {
+func (s *student2) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteInt32("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteString("name", s.name)
-	return nil
 }
 
-func (s *student2) ReadPortable(reader serialization.PortableReader) error {
+func (s *student2) ReadPortable(reader serialization.PortableReader) {
 	s.id = reader.ReadInt32("id")
 	s.age = reader.ReadInt32("age")
 	s.name = reader.ReadString("name")
-	return nil
 }
 
 type student3 struct {
@@ -220,7 +216,7 @@ func (*fake) ClassID() int32 {
 	return 2
 }
 
-func (f *fake) WritePortable(writer serialization.PortableWriter) error {
+func (f *fake) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteByte("byt", f.byt)
 	writer.WriteBool("boo", f.boo)
 	writer.WriteUInt16("ui16", f.ui16)
@@ -245,10 +241,9 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteFloat64Array("f64Arr", f.f64Arr)
 	writer.WriteStringArray("utfArr", f.utfArr)
 	writer.WritePortableArray("portableArr", f.portableArr)
-	return nil
 }
 
-func (f *fake) ReadPortable(reader serialization.PortableReader) error {
+func (f *fake) ReadPortable(reader serialization.PortableReader) {
 	f.byt = reader.ReadByte("byt")
 	f.boo = reader.ReadBool("boo")
 	f.ui16 = reader.ReadUInt16("ui16")
@@ -269,7 +264,6 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) error {
 	f.f64Arr = reader.ReadFloat64Array("f64Arr")
 	f.utfArr = reader.ReadStringArray("utfArr")
 	f.portableArr = reader.ReadPortableArray("portableArr")
-	return nil
 }
 
 func TestPortableSerializer2(t *testing.T) {
@@ -406,14 +400,12 @@ func (*child) ClassID() (classID int32) {
 	return 2
 }
 
-func (c *child) WritePortable(writer serialization.PortableWriter) (err error) {
+func (c *child) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteString("name", c.name)
-	return
 }
 
-func (c *child) ReadPortable(reader serialization.PortableReader) (err error) {
+func (c *child) ReadPortable(reader serialization.PortableReader) {
 	c.name = reader.ReadString("name")
-	return
 }
 
 type parent struct {
@@ -428,14 +420,13 @@ func (*parent) ClassID() (classID int32) {
 	return 1
 }
 
-func (p *parent) WritePortable(writer serialization.PortableWriter) (err error) {
-	return writer.WritePortable("child", p.child)
+func (p *parent) WritePortable(writer serialization.PortableWriter) {
+	writer.WritePortable("child", p.child)
 }
 
-func (p *parent) ReadPortable(reader serialization.PortableReader) (err error) {
+func (p *parent) ReadPortable(reader serialization.PortableReader) {
 	obj := reader.ReadPortable("child")
 	p.child = obj.(*child)
-	return
 }
 
 func TestPortableSerializer_NestedPortableVersion(t *testing.T) {

@@ -17,11 +17,8 @@
 package serialization
 
 import (
-	"errors"
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -44,7 +41,7 @@ func TestDefaultPortableReader_ReadByte(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadBool(t *testing.T) {
-	var expectedRet = false
+	expectedRet := false
 	classDef := NewClassDefinitionImpl(1, 2, 3)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "isReady", TypeBool,
 		classDef.FactoryID(), classDef.ClassID(), 0))
@@ -372,7 +369,7 @@ func TestDefaultPortableReader_ReadFloat64Array(t *testing.T) {
 func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 	var expectedRet = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeUTFArray,
+	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeStringArray,
 		classDef.FactoryID(), classDef.ClassID(), 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -437,7 +434,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 		classDef.FactoryID(), classDef.ClassID(), 3))
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(9, "a8", TypeFloat64Array,
 		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(10, "a9", TypeUTFArray,
+	classDef.AddFieldDefinition(NewFieldDefinitionImpl(10, "a9", TypeStringArray,
 		classDef.FactoryID(), classDef.ClassID(), 3))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
@@ -474,94 +471,4 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 		ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
 	}
-}
-
-func TestDefaultPortableReader_SameErrorIsReturned(t *testing.T) {
-	pr := &DefaultPortableReader{}
-	expectedError := errors.New("error")
-	pr.err = expectedError
-	pr.ReadBool("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadByte("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt64Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt64("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt16Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt16Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt32Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt32("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat64Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat64("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadString("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadByteArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadBoolArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadUInt16Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadUInt16("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadStringArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadPortable("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadPortableArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt16("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat32("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat32Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
 }

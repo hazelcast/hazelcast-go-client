@@ -74,7 +74,7 @@ func (*CustomArtistSerializer) ID() int32 {
 	return 10
 }
 
-func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{}, error) {
+func (s *CustomArtistSerializer) Read(input serialization.DataInput) interface{} {
 	var network bytes.Buffer
 	typ := input.ReadInt32()
 	data := input.ReadByteArray()
@@ -86,22 +86,21 @@ func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{
 	} else if typ == painterType {
 		v = &painter{}
 	}
-
-	dec.Decode(v)
-	return v, nil
+	if err := dec.Decode(v); err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) error {
+func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
-	err := enc.Encode(obj)
-	if err != nil {
-		return err
+	if err := enc.Encode(obj); err != nil {
+		panic(err)
 	}
 	payload := (&network).Bytes()
 	output.WriteInt32(obj.(artist).Type())
 	output.WriteByteArray(payload)
-	return nil
 }
 
 type customObject struct {
@@ -116,26 +115,26 @@ func (s *GlobalSerializer) ID() int32 {
 	return 123
 }
 
-func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
+func (s *GlobalSerializer) Read(input serialization.DataInput) interface{} {
 	var network bytes.Buffer
 	data := input.ReadByteArray()
 	network.Write(data)
 	dec := gob.NewDecoder(&network)
 	v := &customObject{}
-	dec.Decode(v)
-	return v, nil
+	if err := dec.Decode(v); err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) error {
+func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
-	err := enc.Encode(obj)
-	if err != nil {
-		return err
+	if err := enc.Encode(obj); err != nil {
+		panic(err)
 	}
 	payload := (&network).Bytes()
 	output.WriteByteArray(payload)
-	return nil
 }
 
 type artist interface {
@@ -256,10 +255,18 @@ func TestGobSerializer(t *testing.T) {
 	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
 		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
 		nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	service, _ := iserialization.NewService(&serialization.Config{BigEndian: true})
-	data, _ := service.ToData(expected)
-	ret, _ := service.ToObject(data)
-
+	service, err := iserialization.NewService(&serialization.Config{BigEndian: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := service.ToData(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(expected, ret) {
 		t.Error("Gob Serializer failed")
 	}

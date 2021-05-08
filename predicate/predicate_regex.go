@@ -47,16 +47,14 @@ func (p predRegex) ClassID() int32 {
 	return 12
 }
 
-func (p *predRegex) ReadData(input serialization.DataInput) error {
+func (p *predRegex) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	p.expression = input.ReadString()
-	return input.Error()
 }
 
-func (p predRegex) WriteData(output serialization.DataOutput) error {
+func (p predRegex) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
 	output.WriteString(p.expression)
-	return nil
 }
 
 func (p predRegex) String() string {

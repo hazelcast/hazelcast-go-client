@@ -43,15 +43,14 @@ func (p predNotEqual) ClassID() int32 {
 	return 9
 }
 
-func (p *predNotEqual) ReadData(input serialization.DataInput) error {
+func (p *predNotEqual) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	p.value = input.ReadObject()
-	return input.Error()
 }
 
-func (p predNotEqual) WriteData(output serialization.DataOutput) error {
+func (p predNotEqual) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
-	return output.WriteObject(p.value)
+	output.WriteObject(p.value)
 }
 
 func (p predNotEqual) String() string {

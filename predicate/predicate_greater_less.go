@@ -37,22 +37,18 @@ func (p predGreaterLess) ClassID() int32 {
 	return 4
 }
 
-func (p *predGreaterLess) ReadData(input serialization.DataInput) error {
+func (p *predGreaterLess) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	p.value = input.ReadObject()
 	p.equal = input.ReadBool()
 	p.less = input.ReadBool()
-	return input.Error()
 }
 
-func (p predGreaterLess) WriteData(output serialization.DataOutput) error {
+func (p predGreaterLess) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
-	if err := output.WriteObject(p.value); err != nil {
-		return err
-	}
+	output.WriteObject(p.value)
 	output.WriteBool(p.equal)
 	output.WriteBool(p.less)
-	return nil
 }
 
 func (p predGreaterLess) String() string {

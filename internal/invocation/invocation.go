@@ -139,7 +139,7 @@ func (i *Impl) Close() {
 
 func (i *Impl) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
-	if errors.Is(err, nonRetryableError) {
+	if errors.As(err, &nonRetryableError) {
 		return false
 	}
 
@@ -156,12 +156,12 @@ func (i *Impl) CanRetry(err error) bool {
 
 	var ioError *hzerror.HazelcastIOError
 	var instanceNotActiveError *hzerror.HazelcastInstanceNotActiveError
-	if errors.Is(err, ioError) || errors.Is(err, instanceNotActiveError) {
+	if errors.As(err, &ioError) || errors.As(err, &instanceNotActiveError) {
 		return true
 	}
 
 	var targetDisconnectedError *hzerror.HazelcastTargetDisconnectedError
-	if errors.Is(err, targetDisconnectedError) {
+	if errors.As(err, &targetDisconnectedError) {
 		return i.Request().Retryable || i.redoOperation
 	}
 	return false

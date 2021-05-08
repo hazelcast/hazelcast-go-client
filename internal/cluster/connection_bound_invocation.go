@@ -52,10 +52,10 @@ func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageH
 
 func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
-	if errors.Is(err, nonRetryableError) {
+	if errors.As(err, &nonRetryableError) {
 		return false
 	}
 	var ioError *hzerror.HazelcastIOError
 	var targetDisconnectedError *hzerror.HazelcastTargetDisconnectedError
-	return errors.Is(err, ioError) || errors.Is(err, targetDisconnectedError)
+	return errors.As(err, &ioError) || errors.As(err, &targetDisconnectedError)
 }

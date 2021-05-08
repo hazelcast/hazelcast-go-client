@@ -33,482 +33,270 @@ func NewMorphingPortableReader(portableSerializer *PortableSerializer, input ser
 }
 
 func (mpr *MorphingPortableReader) ReadByte(fieldName string) byte {
-	if mpr.err != nil {
-		return 0
-	}
-	var res byte
-	res, mpr.err = mpr.readByte(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readByte(fieldName string) (byte, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeByte)
-	if err != nil {
-		return 0, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeByte); err != nil {
+		panic(fmt.Errorf("MorphingPortableReader.ReadByte: %w", err))
 	}
 	return mpr.DefaultPortableReader.readByte(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadBool(fieldName string) bool {
-	if mpr.err != nil {
-		return false
-	}
-	var res bool
-	res, mpr.err = mpr.readBool(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readBool(fieldName string) (bool, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return false, nil
+		return false
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeBool)
-	if err != nil {
-		return false, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeBool); err != nil {
+		panic(fmt.Errorf("MorphingPortableReader.ReadBool: %w", err))
 	}
 	return mpr.DefaultPortableReader.readBool(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadUInt16(fieldName string) uint16 {
-	if mpr.err != nil {
-		return 0
-	}
-	var res uint16
-	res, mpr.err = mpr.readUInt16(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readUInt16(fieldName string) (uint16, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeUint16)
-	if err != nil {
-		return 0, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeUint16); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadUInt16(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadUInt16(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadInt16(fieldName string) int16 {
-	if mpr.err != nil {
-		return 0
-	}
-	var res int16
-	res, mpr.err = mpr.readInt16(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readInt16(fieldName string) (int16, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
 	switch fieldDef.Type() {
 	case TypeInt16:
-		return mpr.DefaultPortableReader.ReadInt16(fieldName), mpr.err
+		return mpr.DefaultPortableReader.ReadInt16(fieldName)
 	case TypeByte:
 		ret := mpr.DefaultPortableReader.ReadByte(fieldName)
-		return int16(ret), mpr.err
+		return int16(ret)
 	default:
-		return 0, mpr.createIncompatibleClassChangeError(fieldDef, TypeInt16)
+		panic(mpr.createIncompatibleClassChangeError(fieldDef, TypeInt16))
 	}
 }
 
 func (mpr *MorphingPortableReader) ReadInt32(fieldName string) int32 {
-	if mpr.err != nil {
-		return 0
-	}
-	var res int32
-	res, mpr.err = mpr.readInt32(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readInt32(fieldName string) (int32, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
 	switch fieldDef.Type() {
 	case TypeInt32:
-		return mpr.DefaultPortableReader.ReadInt32(fieldName), mpr.err
+		return mpr.DefaultPortableReader.ReadInt32(fieldName)
 	case TypeByte:
-		ret := mpr.DefaultPortableReader.ReadByte(fieldName)
-		return int32(ret), mpr.err
+		return int32(mpr.DefaultPortableReader.ReadByte(fieldName))
 	case TypeUint16:
-		ret := mpr.DefaultPortableReader.ReadUInt16(fieldName)
-		return int32(ret), mpr.err
+		return int32(mpr.DefaultPortableReader.ReadUInt16(fieldName))
 	case TypeInt16:
-		ret := mpr.DefaultPortableReader.ReadInt16(fieldName)
-		return int32(ret), mpr.err
+		return int32(mpr.DefaultPortableReader.ReadInt16(fieldName))
 	default:
-		return 0, mpr.createIncompatibleClassChangeError(fieldDef, TypeInt32)
+		panic(mpr.createIncompatibleClassChangeError(fieldDef, TypeInt32))
 	}
 }
 
 func (mpr *MorphingPortableReader) ReadInt64(fieldName string) int64 {
-	if mpr.err != nil {
-		return 0
-	}
-	var res int64
-	res, mpr.err = mpr.readInt64(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readInt64(fieldName string) (int64, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
 	switch fieldDef.Type() {
 	case TypeInt64:
-		return mpr.DefaultPortableReader.ReadInt64(fieldName), mpr.err
+		return mpr.DefaultPortableReader.ReadInt64(fieldName)
 	case TypeInt32:
-		ret := mpr.DefaultPortableReader.ReadInt32(fieldName)
-		return int64(ret), mpr.err
+		return int64(mpr.DefaultPortableReader.ReadInt32(fieldName))
 	case TypeByte:
-		ret := mpr.DefaultPortableReader.ReadByte(fieldName)
-		return int64(ret), mpr.err
+		return int64(mpr.DefaultPortableReader.ReadByte(fieldName))
 	case TypeUint16:
-		ret := mpr.DefaultPortableReader.ReadUInt16(fieldName)
-		return int64(ret), mpr.err
+		return int64(mpr.DefaultPortableReader.ReadUInt16(fieldName))
 	case TypeInt16:
-		ret := mpr.DefaultPortableReader.ReadInt16(fieldName)
-		return int64(ret), mpr.err
+		return int64(mpr.DefaultPortableReader.ReadInt16(fieldName))
 	default:
-		return 0, mpr.createIncompatibleClassChangeError(fieldDef, TypeInt64)
+		panic(mpr.createIncompatibleClassChangeError(fieldDef, TypeInt64))
 	}
 }
 
 func (mpr *MorphingPortableReader) ReadFloat32(fieldName string) float32 {
-	if mpr.err != nil {
-		return 0
-	}
-	var res float32
-	res, mpr.err = mpr.readFloat32(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readFloat32(fieldName string) (float32, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
 	switch fieldDef.Type() {
 	case TypeFloat32:
-		return mpr.DefaultPortableReader.ReadFloat32(fieldName), mpr.err
+		return mpr.DefaultPortableReader.ReadFloat32(fieldName)
 	case TypeInt32:
-		ret := mpr.DefaultPortableReader.ReadInt32(fieldName)
-		return float32(ret), mpr.err
+		return float32(mpr.DefaultPortableReader.ReadInt32(fieldName))
 	case TypeByte:
-		ret := mpr.DefaultPortableReader.ReadByte(fieldName)
-		return float32(ret), mpr.err
+		return float32(mpr.DefaultPortableReader.ReadByte(fieldName))
 	case TypeUint16:
-		ret := mpr.DefaultPortableReader.ReadUInt16(fieldName)
-		return float32(ret), mpr.err
+		return float32(mpr.DefaultPortableReader.ReadUInt16(fieldName))
 	case TypeInt16:
-		ret := mpr.DefaultPortableReader.ReadInt16(fieldName)
-		return float32(ret), mpr.err
+		return float32(mpr.DefaultPortableReader.ReadInt16(fieldName))
 	default:
-		return 0, mpr.createIncompatibleClassChangeError(fieldDef, TypeFloat32)
+		panic(mpr.createIncompatibleClassChangeError(fieldDef, TypeFloat32))
 	}
 }
 
 func (mpr *MorphingPortableReader) ReadFloat64(fieldName string) float64 {
-	if mpr.err != nil {
-		return 0
-	}
-	var res float64
-	res, mpr.err = mpr.readFloat64(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readFloat64(fieldName string) (float64, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return 0, nil
+		return 0
 	}
 	switch fieldDef.Type() {
 	case TypeFloat64:
-		return mpr.DefaultPortableReader.ReadFloat64(fieldName), mpr.err
+		return mpr.DefaultPortableReader.ReadFloat64(fieldName)
 	case TypeInt64:
-		ret := mpr.DefaultPortableReader.ReadInt64(fieldName)
-		return float64(ret), mpr.err
+		return float64(mpr.DefaultPortableReader.ReadInt64(fieldName))
 	case TypeFloat32:
-		ret := mpr.DefaultPortableReader.ReadFloat32(fieldName)
-		return float64(ret), mpr.err
+		return float64(mpr.DefaultPortableReader.ReadFloat32(fieldName))
 	case TypeInt32:
-		ret := mpr.DefaultPortableReader.ReadInt32(fieldName)
-		return float64(ret), mpr.err
+		return float64(mpr.DefaultPortableReader.ReadInt32(fieldName))
 	case TypeByte:
-		ret := mpr.DefaultPortableReader.ReadByte(fieldName)
-		return float64(ret), mpr.err
+		return float64(mpr.DefaultPortableReader.ReadByte(fieldName))
 	case TypeUint16:
-		ret := mpr.DefaultPortableReader.ReadUInt16(fieldName)
-		return float64(ret), mpr.err
+		return float64(mpr.DefaultPortableReader.ReadUInt16(fieldName))
 	case TypeInt16:
-		ret := mpr.DefaultPortableReader.ReadInt16(fieldName)
-		return float64(ret), mpr.err
+		return float64(mpr.DefaultPortableReader.ReadInt16(fieldName))
 	default:
-		return 0, mpr.createIncompatibleClassChangeError(fieldDef, TypeFloat64)
+		panic(mpr.createIncompatibleClassChangeError(fieldDef, TypeFloat64))
 	}
 }
 
 func (mpr *MorphingPortableReader) ReadString(fieldName string) string {
-	if mpr.err != nil {
-		return ""
-	}
-	var res string
-	res, mpr.err = mpr.readUTF(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readUTF(fieldName string) (string, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return "", nil
+		return ""
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeUTF)
-	if err != nil {
-		return "", err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeUTF); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadString(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadString(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadPortable(fieldName string) serialization.Portable {
-	if mpr.err != nil {
-		return nil
-	}
-	var res serialization.Portable
-	res, mpr.err = mpr.readPortable(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readPortable(fieldName string) (serialization.Portable, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypePortable)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypePortable); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadPortable(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadPortable(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadByteArray(fieldName string) []byte {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []byte
-	res, mpr.err = mpr.readByteArray(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readByteArray(fieldName string) ([]byte, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeByteArray)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeByteArray); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadByteArray(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadByteArray(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadBoolArray(fieldName string) []bool {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []bool
-	res, mpr.err = mpr.readBoolArray(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readBoolArray(fieldName string) ([]bool, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeBoolArray)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeBoolArray); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadBoolArray(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadBoolArray(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadUInt16Array(fieldName string) []uint16 {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []uint16
-	res, mpr.err = mpr.readUInt16Array(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readUInt16Array(fieldName string) ([]uint16, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeUint16Array)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeUint16Array); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadUInt16Array(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadUInt16Array(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadInt16Array(fieldName string) []int16 {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []int16
-	res, mpr.err = mpr.readInt16Array(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readInt16Array(fieldName string) ([]int16, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeInt16Array)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeInt16Array); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadInt16Array(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadInt16Array(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadInt32Array(fieldName string) []int32 {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []int32
-	res, mpr.err = mpr.readInt32Array(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readInt32Array(fieldName string) ([]int32, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeInt32Array)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeInt32Array); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadInt32Array(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadInt32Array(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadInt64Array(fieldName string) []int64 {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []int64
-	res, mpr.err = mpr.readInt64Array(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readInt64Array(fieldName string) ([]int64, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeInt64Array)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeInt64Array); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadInt64Array(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadInt64Array(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadFloat32Array(fieldName string) []float32 {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []float32
-	res, mpr.err = mpr.readFloat32Array(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readFloat32Array(fieldName string) ([]float32, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeFloat32Array)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeFloat32Array); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadFloat32Array(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadFloat32Array(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadFloat64Array(fieldName string) []float64 {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []float64
-	res, mpr.err = mpr.readFloat64Array(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readFloat64Array(fieldName string) ([]float64, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeFloat64Array)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeFloat64Array); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadFloat64Array(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadFloat64Array(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadStringArray(fieldName string) []string {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []string
-	res, mpr.err = mpr.readUTFArray(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readUTFArray(fieldName string) ([]string, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypeUTFArray)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypeStringArray); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadStringArray(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadStringArray(fieldName)
 }
 
 func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []serialization.Portable {
-	if mpr.err != nil {
-		return nil
-	}
-	var res []serialization.Portable
-	res, mpr.err = mpr.readPortableArray(fieldName)
-	return res
-}
-
-func (mpr *MorphingPortableReader) readPortableArray(fieldName string) ([]serialization.Portable, error) {
 	fieldDef := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
 	if fieldDef == nil {
-		return nil, nil
+		return nil
 	}
-	err := mpr.validateTypeCompatibility(fieldDef, TypePortableArray)
-	if err != nil {
-		return nil, err
+	if err := mpr.validateTypeCompatibility(fieldDef, TypePortableArray); err != nil {
+		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
-	return mpr.DefaultPortableReader.ReadPortableArray(fieldName), mpr.err
+	return mpr.DefaultPortableReader.ReadPortableArray(fieldName)
 }
 
 func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd serialization.FieldDefinition,
