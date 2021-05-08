@@ -219,7 +219,7 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	})
 	msgLen := clientMessage.TotalLength()
 	if len(c.writeBuffer) < msgLen {
-		c.writeBuffer = make([]byte, 0, msgLen)
+		c.writeBuffer = make([]byte, msgLen)
 	}
 	clientMessage.Bytes(0, c.writeBuffer)
 	//c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))

@@ -688,9 +688,8 @@ func (i *ObjectDataInput) readByteArray() ([]byte, error) {
 		return nil, err
 	}
 	var arr = make([]byte, length)
-	for j := int32(0); j < length; j++ {
-		arr[j] = i.ReadByte()
-	}
+	copy(arr, i.buffer[i.position:i.position+length])
+	i.position += length
 	return arr, nil
 }
 
