@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -35,7 +34,7 @@ func NewDefaultPortableWriter(serializer *PortableSerializer, output *Positional
 	output.WriteZeroBytes(4)
 	output.WriteInt32(int32(classDefinition.FieldCount()))
 	offset := output.Position()
-	fieldIndexesLength := (classDefinition.FieldCount() + 1) * bufutil.Int32SizeInBytes
+	fieldIndexesLength := (classDefinition.FieldCount() + 1) * Int32SizeInBytes
 	output.WriteZeroBytes(fieldIndexesLength)
 	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset}
 }
@@ -157,7 +156,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	fieldDefinition := pw.setPosition(fieldName, TypePortableArray)
 	length := len(portableArray)
 	if portableArray == nil {
-		length = bufutil.NilArrayLength
+		length = nilArrayLength
 	}
 	pw.output.WriteInt32(int32(length))
 	pw.output.WriteInt32(fieldDefinition.FactoryID())
@@ -171,7 +170,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	for i := 0; i < length; i++ {
 		sample := portableArray[i]
 		posVal := pw.output.Position()
-		pw.output.PWriteInt32(innerOffset+int32(i)*bufutil.Int32SizeInBytes, posVal)
+		pw.output.PWriteInt32(innerOffset+int32(i)*Int32SizeInBytes, posVal)
 		if err := pw.serializer.WriteObject(pw.output, sample); err != nil {
 			return err
 		}
@@ -183,7 +182,7 @@ func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) 
 	field := pw.classDefinition.Field(fieldName)
 	pos := pw.output.Position()
 	index := field.Index()
-	pw.output.PWriteInt32(pw.offset+index*bufutil.Int32SizeInBytes, pos)
+	pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
 	pw.output.WriteInt16(int16(len(fieldName)))
 	pw.output.WriteBytes(fieldName)
 	pw.output.WriteByte(byte(fieldType))

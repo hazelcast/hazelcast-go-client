@@ -55,9 +55,6 @@ func (d *Data) Type() int32 {
 }
 
 func (d *Data) TotalSize() int {
-	if d.Payload == nil {
-		return 0
-	}
 	return len(d.Payload)
 }
 

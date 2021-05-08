@@ -32,14 +32,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
 const (
-	bufferSize      = 8 * 1024
-	protocolStarter = "CP2"
+	bufferSize           = 8 * 1024
+	protocolStarter      = "CP2"
+	messageTypeException = int32(0)
 )
 
 const (
@@ -192,7 +192,7 @@ func (c *Connection) socketReadLoop() {
 				c.logger.Trace(func() string {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
-				if clientMessage.Type() == bufutil.MessageTypeException {
+				if clientMessage.Type() == messageTypeException {
 					clientMessage.Err = ihzerror.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage

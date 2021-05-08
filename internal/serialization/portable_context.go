@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -44,7 +43,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 	fieldCount := input.ReadInt32()
 	offset := input.Position()
 	for i := int32(0); i < fieldCount; i++ {
-		pos := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*bufutil.Int32SizeInBytes)
+		pos := input.(*ObjectDataInput).ReadInt32WithPosition(offset + i*Int32SizeInBytes)
 		input.SetPosition(pos)
 
 		length := input.ReadInt16()
