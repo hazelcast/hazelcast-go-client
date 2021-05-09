@@ -1009,9 +1009,9 @@ func (as attributeSet) Attrs() []string {
 
 type MapEntryListenerConfig struct {
 	Predicate    predicate.Predicate
-	IncludeValue bool
 	Key          interface{}
 	flags        int32
+	IncludeValue bool
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryAdded(enable bool) {

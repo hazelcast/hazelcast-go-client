@@ -19,10 +19,10 @@ package serialization
 import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type ClassDefinitionImpl struct {
+	fields    map[string]serialization.FieldDefinition
 	factoryID int32
 	classID   int32
 	version   int32
-	fields    map[string]serialization.FieldDefinition
 }
 
 func NewClassDefinitionImpl(factoryID int32, classID int32, version int32) *ClassDefinitionImpl {
@@ -59,8 +59,8 @@ func (cd *ClassDefinitionImpl) AddFieldDefinition(definition serialization.Field
 }
 
 type FieldDefinitionImpl struct {
-	index     int32
 	fieldName string
+	index     int32
 	fieldType int32
 	factoryID int32
 	classID   int32

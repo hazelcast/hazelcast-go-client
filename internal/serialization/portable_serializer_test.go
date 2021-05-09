@@ -56,9 +56,9 @@ func (*portableFactory2) FactoryID() int32 {
 }
 
 type student struct {
-	id   int16
-	age  int32
 	name string
+	age  int32
+	id   int16
 }
 
 func (*student) FactoryID() int32 {
@@ -82,9 +82,9 @@ func (s *student) ReadPortable(reader serialization.PortableReader) {
 }
 
 type student2 struct {
+	name string
 	id   int32
 	age  int32
-	name string
 }
 
 func (*student2) FactoryID() int32 {
@@ -186,26 +186,26 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 }
 
 type fake struct {
-	byt         byte
-	boo         bool
-	ui16        uint16
-	i16         int16
-	i32         int32
+	portable    serialization.Portable
+	utf         string
+	boolArr     []bool
+	utfArr      []string
+	i64Arr      []int64
+	i32Arr      []int32
+	i16Arr      []int16
+	ui16Arr     []uint16
+	f64Arr      []float64
+	f32Arr      []float32
+	bytArr      []byte
+	portableArr []serialization.Portable
+	f64         float64
 	i64         int64
 	f32         float32
-	f64         float64
-	utf         string
-	portable    serialization.Portable
-	bytArr      []byte
-	boolArr     []bool
-	ui16Arr     []uint16
-	i16Arr      []int16
-	i32Arr      []int32
-	i64Arr      []int64
-	f32Arr      []float32
-	f64Arr      []float64
-	utfArr      []string
-	portableArr []serialization.Portable
+	i32         int32
+	i16         int16
+	ui16        uint16
+	boo         bool
+	byt         byte
 }
 
 func (*fake) FactoryID() int32 {
@@ -280,7 +280,7 @@ func TestPortableSerializer2(t *testing.T) {
 	var f32 float32 = -3.4e+38
 	var f64 = -1.7e+308
 	var utf = "Günaydın, こんにちは"
-	var portable serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var portable serialization.Portable = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	var bytArr = []byte{127, 128, 255, 0, 4, 6, 8, 121}
 	var boolArr = []bool{true, true, false, true, false, false, false, true, false, true}
 	var ui16Arr = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}

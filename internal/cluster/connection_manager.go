@@ -109,26 +109,26 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManager struct {
-	requestCh            chan<- invocation.Invocation
-	responseCh           chan<- *proto.ClientMessage
-	clusterService       *Service
+	logger               ilogger.Logger
+	credentials          security.Credentials
+	addressTranslator    AddressTranslator
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
 	invocationFactory    *ConnectionInvocationFactory
+	clusterService       *Service
+	responseCh           chan<- *proto.ClientMessage
+	startCh              chan struct{}
+	requestCh            chan<- invocation.Invocation
+	connMap              *connectionMap
+	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
-	credentials          security.Credentials
+	cb                   *cb.CircuitBreaker
 	clientName           string
 	clientUUID           types.UUID
-	connMap              *connectionMap
 	nextConnID           int64
-	addressTranslator    AddressTranslator
-	smartRouting         bool
 	state                int32
-	logger               ilogger.Logger
-	doneCh               chan struct{}
-	startCh              chan struct{}
-	cb                   *cb.CircuitBreaker
+	smartRouting         bool
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {

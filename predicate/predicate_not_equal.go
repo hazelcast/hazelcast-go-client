@@ -31,8 +31,8 @@ func NotEqual(attributeName string, value interface{}) *predNotEqual {
 }
 
 type predNotEqual struct {
-	attribute string
 	value     interface{}
+	attribute string
 }
 
 func (p predNotEqual) FactoryID() int32 {

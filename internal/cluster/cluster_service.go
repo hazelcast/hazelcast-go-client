@@ -30,26 +30,25 @@ import (
 )
 
 type Service struct {
-	addrProviders     []AddressProvider
+	logger            ilogger.Logger
 	requestCh         chan<- invocation.Invocation
 	doneCh            chan struct{}
 	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
-	logger            ilogger.Logger
 	config            *pubcluster.Config
-
-	membersMap membersMap
+	membersMap        membersMap
+	addrProviders     []AddressProvider
 }
 
 type CreationBundle struct {
-	AddrProviders     []AddressProvider
+	Logger            ilogger.Logger
+	Config            *pubcluster.Config
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
-	Logger            ilogger.Logger
-	Config            *pubcluster.Config
+	AddrProviders     []AddressProvider
 }
 
 func (b CreationBundle) Check() {

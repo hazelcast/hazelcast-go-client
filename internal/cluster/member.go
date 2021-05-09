@@ -31,11 +31,11 @@ type uuid struct {
 
 type Member struct {
 	address      pubcluster.Address
-	uuid         types.UUID
-	isLiteMember bool
 	attributes   map[string]string
-	version      pubcluster.MemberVersion
 	addressMap   map[pubcluster.EndpointQualifier]pubcluster.Address
+	uuid         types.UUID
+	version      pubcluster.MemberVersion
+	isLiteMember bool
 }
 
 func NewMember(address pubcluster.Address, uuid types.UUID, isLiteMember bool, attributes map[string]string, version pubcluster.MemberVersion, addressMap map[pubcluster.EndpointQualifier]pubcluster.Address) *Member {

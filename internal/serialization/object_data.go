@@ -35,9 +35,9 @@ const (
 )
 
 type ObjectDataOutput struct {
-	buffer   []byte
-	service  *Service
 	bo       binary.ByteOrder
+	service  *Service
+	buffer   []byte
 	position int32
 }
 
@@ -274,10 +274,10 @@ func (o *ObjectDataOutput) WriteBytes(v string) {
 //// ObjectDataInput ////
 
 type ObjectDataInput struct {
+	bo       binary.ByteOrder
+	service  *Service
 	buffer   []byte
 	offset   int32
-	service  *Service
-	bo       binary.ByteOrder
 	position int32
 }
 

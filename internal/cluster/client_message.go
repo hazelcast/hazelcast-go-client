@@ -28,9 +28,9 @@ const messageBufferSize = 64
 type clientMessageReader struct {
 	src                *bytes.Buffer
 	clientMessage      *proto.ClientMessage
-	readHeader         bool
 	currentFrameLength uint32
 	currentFlags       uint16
+	readHeader         bool
 }
 
 func newClientMessageReader() *clientMessageReader {

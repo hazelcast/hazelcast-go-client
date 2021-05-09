@@ -45,10 +45,10 @@ func (b PartitionServiceCreationBundle) Check() {
 }
 
 type PartitionService struct {
+	logger          ilogger.Logger
 	eventDispatcher *event.DispatchService
 	partitionTable  partitionTable
 	partitionCount  int32
-	logger          ilogger.Logger
 }
 
 func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionService {
@@ -97,10 +97,10 @@ func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) er
 }
 
 type partitionTable struct {
-	partitionStateVersion int32
 	partitions            map[int32]types.UUID
-	connectionID          int64
 	mu                    *sync.RWMutex
+	connectionID          int64
+	partitionStateVersion int32
 }
 
 func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID int64) bool {

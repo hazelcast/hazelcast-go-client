@@ -36,9 +36,9 @@ func Between(attribute string, from interface{}, to interface{}) *predBetween {
 }
 
 type predBetween struct {
-	attribute string
 	from      interface{}
 	to        interface{}
+	attribute string
 }
 
 func (p predBetween) FactoryID() int32 {

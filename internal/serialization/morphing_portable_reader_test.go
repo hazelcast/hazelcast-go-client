@@ -832,7 +832,7 @@ func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
-	var value serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var value serialization.Portable = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	var expectedRet serialization.Portable
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
@@ -1377,8 +1377,10 @@ func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *
 }
 
 func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
-	var expectedRet = []serialization.Portable{&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
-		&student{11, 20, "Jack Purcell"}}
+	var expectedRet = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 11, age: 20, name: "Jack Purcell"},
+	}
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
@@ -1400,8 +1402,10 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T) {
-	var value = []serialization.Portable{&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
-		&student{11, 20, "Jack Purcell"}}
+	var value = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 11, age: 20, name: "Jack Purcell"},
+	}
 	var expectedRet []serialization.Portable
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
@@ -1444,7 +1448,7 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 }
 
 func TestNewMorphingPortableReader(t *testing.T) {
-	s := &student{10, 22, "Furkan Şenharputlu"}
+	s := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{
 		PortableFactories: map[int32]serialization.PortableFactory{},
 	}
@@ -1458,7 +1462,7 @@ func TestNewMorphingPortableReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	service.SerializationConfig.PortableVersion = 1
-	expectedRet := &student2{10, 22, "Furkan Şenharputlu"}
+	expectedRet := &student2{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	ret, err := service.ToObject(data)
 	if err != nil {
 		t.Fatal(err)

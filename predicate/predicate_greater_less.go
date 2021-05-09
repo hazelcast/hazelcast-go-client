@@ -23,8 +23,8 @@ import (
 )
 
 type predGreaterLess struct {
-	attribute string
 	value     interface{}
+	attribute string
 	equal     bool
 	less      bool
 }

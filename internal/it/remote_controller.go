@@ -403,9 +403,9 @@ func (p *Member) String() string {
 //  - Message
 //  - Result_
 type Response struct {
-	Success bool   `thrift:"success,1" db:"success" json:"success"`
 	Message string `thrift:"message,2" db:"message" json:"message"`
 	Result_ []byte `thrift:"result,3" db:"result" json:"result"`
+	Success bool   `thrift:"success,1" db:"success" json:"success"`
 }
 
 func NewResponse() *Response {

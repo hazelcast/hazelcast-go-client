@@ -26,8 +26,8 @@ import (
 )
 
 type ClassDefinitionContext struct {
-	factoryID int32
 	classDefs map[string]serialization.ClassDefinition
+	factoryID int32
 }
 
 func NewClassDefinitionContext(factoryID int32) *ClassDefinitionContext {

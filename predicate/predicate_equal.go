@@ -31,8 +31,8 @@ func Equal(attributeName string, value interface{}) *predEqual {
 }
 
 type predEqual struct {
-	attribute string
 	value     interface{}
+	attribute string
 }
 
 func (p predEqual) FactoryID() int32 {

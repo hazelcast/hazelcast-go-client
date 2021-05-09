@@ -81,9 +81,9 @@ func NewEndFrame() *Frame {
 
 // ClientMessage
 type ClientMessage struct {
+	Err       error
 	Frames    []*Frame
 	Retryable bool
-	Err       error
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {

@@ -51,13 +51,13 @@ type Invocation interface {
 }
 
 type Impl struct {
-	request       *proto.ClientMessage
-	response      chan *proto.ClientMessage
-	completed     int32
-	address       *pubcluster.AddressImpl
-	partitionID   int32
-	eventHandler  func(clientMessage *proto.ClientMessage)
 	deadline      time.Time
+	response      chan *proto.ClientMessage
+	address       *pubcluster.AddressImpl
+	eventHandler  func(clientMessage *proto.ClientMessage)
+	request       *proto.ClientMessage
+	completed     int32
+	partitionID   int32
 	redoOperation bool
 }
 

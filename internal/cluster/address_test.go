@@ -26,10 +26,10 @@ import (
 )
 
 type addrCase struct {
+	err   error
 	input string
 	host  string
 	port  int
-	err   error
 }
 
 func TestAddressImplParse(t *testing.T) {

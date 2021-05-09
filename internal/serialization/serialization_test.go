@@ -104,8 +104,8 @@ func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj inte
 }
 
 type customObject struct {
-	ID     int
 	Person string
+	ID     int
 }
 
 type GlobalSerializer struct {
@@ -195,35 +195,33 @@ func TestGlobalSerializer(t *testing.T) {
 }
 
 type fake2 struct {
-	Bool bool
-	B    byte
-	C    uint16
-	D    float64
-	S    int16
-	F    float32
-	I    int32
-	L    int64
-	Str  string
-
-	Bools   []bool
-	Bytes   []byte
-	Chars   []uint16
-	Doubles []float64
-	Shorts  []int16
-	Floats  []float32
-	Ints    []int32
-	Longs   []int64
-	Strings []string
-
+	Str        string
 	BoolsNil   []bool
-	BytesNil   []byte
-	CharsNil   []uint16
-	DoublesNil []float64
-	ShortsNil  []int16
-	FloatsNil  []float32
 	IntsNil    []int32
+	FloatsNil  []float32
+	ShortsNil  []int16
+	DoublesNil []float64
+	CharsNil   []uint16
+	BytesNil   []byte
 	LongsNil   []int64
+	Bools      []bool
+	Bytes      []byte
+	Chars      []uint16
+	Doubles    []float64
+	Shorts     []int16
+	Floats     []float32
+	Ints       []int32
+	Longs      []int64
+	Strings    []string
 	StringsNil []string
+	L          int64
+	D          float64
+	I          int32
+	F          float32
+	S          int16
+	C          uint16
+	B          byte
+	Bool       bool
 }
 
 func TestGobSerializer(t *testing.T) {

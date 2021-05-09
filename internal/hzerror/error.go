@@ -137,11 +137,9 @@ type HazelcastError interface {
 
 // HazelcastErrorType is the general error struct.
 type HazelcastErrorType struct {
+	cause   error
+	message string // cause is the cause error.
 	// message is the error message.
-	message string
-
-	// cause is the cause error.
-	cause error
 }
 
 // Error returns the error message.

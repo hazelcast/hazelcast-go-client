@@ -86,29 +86,26 @@ func newClientWithConfig(configProvider ConfigProvider) (*Client, error) {
 }
 
 type Client struct {
-	// configuration
-	name          string
-	clusterConfig *cluster.Config
-
-	// components
-	proxyManager         *proxyManager
-	connectionManager    *icluster.ConnectionManager
-	clusterService       *icluster.Service
-	partitionService     *icluster.PartitionService
-	invocationService    *invocation.Service
-	serializationService *serialization.Service
-	eventDispatcher      *event.DispatchService
-	userEventDispatcher  *event.DispatchService
-	invocationHandler    invocation.Handler
-	logger               ilogger.Logger
-
-	// state
-	state                   int32
-	refIDGen                *iproxy.ReferenceIDGenerator
-	lifecyleListenerMap     map[types.UUID]int64
-	lifecyleListenerMapMu   *sync.Mutex
-	membershipListenerMap   map[types.UUID]int64
+	invocationHandler       invocation.Handler
+	logger                  ilogger.Logger
 	membershipListenerMapMu *sync.Mutex
+	connectionManager       *icluster.ConnectionManager
+	clusterService          *icluster.Service
+	partitionService        *icluster.PartitionService
+	invocationService       *invocation.Service
+	serializationService    *serialization.Service
+	eventDispatcher         *event.DispatchService
+	userEventDispatcher     *event.DispatchService
+	proxyManager            *proxyManager
+	clusterConfig           *cluster.Config
+	membershipListenerMap   map[ // components
+	types.UUID]int64
+	refIDGen              *iproxy.ReferenceIDGenerator
+	lifecyleListenerMap   map[types.UUID]int64
+	lifecyleListenerMapMu *sync.Mutex
+	name                  string
+	state                 int32 // configuration
+	// state
 }
 
 func newClient(config Config) (*Client, error) {

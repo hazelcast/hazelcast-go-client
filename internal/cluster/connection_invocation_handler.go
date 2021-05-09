@@ -54,11 +54,11 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 }
 
 type ConnectionInvocationHandler struct {
+	logger            ilogger.Logger
 	connectionManager *ConnectionManager
 	clusterService    *Service
-	smart             bool
-	logger            ilogger.Logger
 	cb                *cb.CircuitBreaker
+	smart             bool
 }
 
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {

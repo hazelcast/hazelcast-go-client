@@ -22,8 +22,8 @@ import (
 
 type PortableContext struct {
 	service         *Service
-	portableVersion int32
 	classDefContext map[int32]*ClassDefinitionContext
+	portableVersion int32
 }
 
 func NewPortableContext(service *Service, portableVersion int32) *PortableContext {

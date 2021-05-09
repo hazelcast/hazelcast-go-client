@@ -19,10 +19,10 @@ package proto
 import "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 
 type ErrorHolder struct {
-	errorCode          int32
 	className          string
 	message            string
 	stackTraceElements []hzerror.StackTraceElement
+	errorCode          int32
 }
 
 func NewErrorHolder(errorCode int32, className, message string, stackTraceElements []hzerror.StackTraceElement) ErrorHolder {

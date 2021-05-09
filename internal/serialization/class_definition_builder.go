@@ -25,10 +25,10 @@ import (
 
 // ClassDefinitionBuilder is used to build and register class definitions manually.
 type ClassDefinitionBuilder struct {
+	fieldDefinitions map[string]serialization.FieldDefinition
 	factoryID        int32
 	classID          int32
 	version          int32
-	fieldDefinitions map[string]serialization.FieldDefinition
 	index            int32
 	done             bool
 }

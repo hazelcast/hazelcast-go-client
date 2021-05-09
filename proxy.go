@@ -82,17 +82,17 @@ func (b creationBundle) Check() {
 }
 
 type proxy struct {
+	logger               ilogger.Logger
 	requestCh            chan<- invocation.Invocation
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
-	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	listenerBinder       *cluster.ConnectionListenerBinder
 	config               *Config
+	clusterService       *cluster.Service
+	circuitBreaker       *cb.CircuitBreaker
 	serviceName          string
 	name                 string
-	logger               ilogger.Logger
-	circuitBreaker       *cb.CircuitBreaker
 }
 
 func newProxy(bundle creationBundle, serviceName string, objectName string, subscriptionIDGen *iproxy.ReferenceIDGenerator) (*proxy, error) {

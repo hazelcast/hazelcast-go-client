@@ -50,22 +50,22 @@ const (
 type ResponseHandler func(msg *proto.ClientMessage)
 
 type Connection struct {
-	responseCh                chan<- *proto.ClientMessage
-	pending                   chan *proto.ClientMessage
-	doneCh                    chan struct{}
-	socket                    net.Conn
-	endpoint                  atomic.Value
-	status                    int32
 	lastRead                  atomic.Value
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
+	socket                    net.Conn
+	endpoint                  atomic.Value
+	logger                    ilogger.Logger
+	eventDispatcher           *event.DispatchService
+	pending                   chan *proto.ClientMessage
+	doneCh                    chan struct{}
+	responseCh                chan<- *proto.ClientMessage
+	clusterConfig             *pubcluster.Config
+	connectedServerVersionStr string
 	writeBuffer               []byte
 	connectionID              int64
-	eventDispatcher           *event.DispatchService
 	connectedServerVersion    int32
-	connectedServerVersionStr string
-	logger                    ilogger.Logger
-	clusterConfig             *pubcluster.Config
+	status                    int32
 }
 
 func (c *Connection) ConnectionID() int64 {
