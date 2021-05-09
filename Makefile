@@ -1,4 +1,4 @@
-.PHONY: build test test-all test-all-race doc
+.PHONY: build check doc test test-all test-all-race
 
 PORT ?= 5050
 TEST_FLAGS ?=
@@ -26,3 +26,8 @@ view-cover:
 
 doc:
 	godoc -http=localhost:$(PORT)
+
+check:
+	# requires staticcheck: use go install honnef.co/go/tools/cmd/staticcheck@latest
+	# requires fieldalignment
+	# requires go vet
