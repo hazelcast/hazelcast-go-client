@@ -178,7 +178,11 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadPortable(t *testing.T) {
-	var expectedRet serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var expectedRet serialization.Portable = &student{
+		id:   10,
+		age:  22,
+		name: "Furkan Şenharputlu",
+	}
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
@@ -385,8 +389,10 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 }
 
 func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
-	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
-		&student{11, 20, "Jack Purcell"}}
+	var expectedRet = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 11, age: 20, name: "Jack Purcell"},
+	}
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)

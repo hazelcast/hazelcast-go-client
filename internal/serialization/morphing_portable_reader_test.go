@@ -809,7 +809,7 @@ func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testi
 }
 
 func TestMorphingPortableReader_ReadPortable(t *testing.T) {
-	var expectedRet = &student{10, 22, "Furkan Şenharputlu"}
+	var expectedRet = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
@@ -1377,7 +1377,7 @@ func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *
 }
 
 func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
-	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
+	var expectedRet = []serialization.Portable{&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
@@ -1400,7 +1400,7 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T) {
-	var value = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
+	var value = []serialization.Portable{&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
 	var expectedRet []serialization.Portable
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}

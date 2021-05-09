@@ -138,7 +138,7 @@ func TestPortableSerializer(t *testing.T) {
 	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
 	config.PortableFactories[2] = &portableFactory1{}
 	service, _ := NewService(config)
-	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
+	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
 
@@ -290,10 +290,13 @@ func TestPortableSerializer2(t *testing.T) {
 	var f32Arr = []float32{-3.4e+38, 12.344, 21.2646, 3.4e+38}
 	var f64Arr = []float64{-1.7e+308, 1213.2342, 45345.9887, 1.7e+308}
 	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
-	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+	var portableArr = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 2, age: 20, name: "Micheal Micheal"},
+	}
 
-	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, portable,
-		bytArr, boolArr, ui16Arr, i16Arr, i32Arr, i64Arr, f32Arr, f64Arr, utfArr, portableArr}
+	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
+		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
 
@@ -308,7 +311,7 @@ func TestPortableSerializer3(t *testing.T) {
 	config.PortableFactories[2] = &portableFactory1{}
 	service, _ := NewService(config)
 	service2, _ := NewService(config)
-	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
+	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service2.ToObject(data)
 
@@ -357,10 +360,13 @@ func TestPortableSerializer4(t *testing.T) {
 	var f32Arr = []float32{-3.4e+38, 12.344, 21.2646, 3.4e+38}
 	var f64Arr = []float64{-1.7e+308, 1213.2342, 45345.9887, 1.7e+308}
 	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
-	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+	var portableArr = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 2, age: 20, name: "Micheal Micheal"},
+	}
 
-	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, nil,
-		bytArr, boolArr, ui16Arr, i16Arr, i32Arr, i64Arr, f32Arr, f64Arr, utfArr, portableArr}
+	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
+		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
 
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)

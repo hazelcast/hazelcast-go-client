@@ -180,7 +180,7 @@ func TestCustomSerializer(t *testing.T) {
 }
 
 func TestGlobalSerializer(t *testing.T) {
-	obj := &customObject{10, "Furkan Şenharputlu"}
+	obj := &customObject{ID: 10, Person: "Furkan Şenharputlu"}
 	config := &serialization.Config{
 		BigEndian:        true,
 		GlobalSerializer: &GlobalSerializer{},
@@ -252,9 +252,8 @@ func TestGobSerializer(t *testing.T) {
 	w2 := "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム"
 	w3 := "The quick brown fox jumps over the lazy dog"
 	var strings = []string{w1, w2, w3}
-	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
-		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
-		nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	expected := &fake2{Bool: aBoolean, B: aByte, C: aChar, D: aDouble, S: aShort, F: aFloat, I: anInt, L: aLong, Str: aString,
+		Bools: bools, Bytes: bytes, Chars: chars, Doubles: doubles, Shorts: shorts, Floats: floats, Ints: ints, Longs: longs, Strings: strings}
 	service, err := iserialization.NewService(&serialization.Config{BigEndian: true})
 	if err != nil {
 		t.Fatal(err)
