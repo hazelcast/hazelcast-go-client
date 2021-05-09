@@ -99,7 +99,7 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 		s.handleError(correlationID, msg.Err)
 		return
 	}
-	if msg.StartFrame.HasEventFlag() || msg.StartFrame.HasBackupEventFlag() {
+	if msg.HasEventFlag() || msg.HasBackupEventFlag() {
 		if inv, found := s.invocations[correlationID]; !found {
 			s.logger.Trace(func() string {
 				return fmt.Sprintf("invocation with unknown correlation ID: %d", correlationID)

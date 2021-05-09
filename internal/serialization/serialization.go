@@ -60,7 +60,7 @@ func (s *Service) ToData(object interface{}) (r *Data, err error) {
 	if serData, ok := object.(*Data); ok {
 		return serData, nil
 	}
-	dataOutput := NewPositionalObjectDataOutput(1, s, s.SerializationConfig.BigEndian)
+	dataOutput := NewPositionalObjectDataOutput(64, s, s.SerializationConfig.BigEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
 		return nil, err

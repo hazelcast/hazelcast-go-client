@@ -188,7 +188,7 @@ func (c *Connection) socketReadLoop() {
 			if clientMessage == nil {
 				break
 			}
-			if clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
+			if clientMessage.HasUnFragmentedMessageFlags() {
 				c.logger.Trace(func() string {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
