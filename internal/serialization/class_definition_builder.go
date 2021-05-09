@@ -38,7 +38,12 @@ type ClassDefinitionBuilder struct {
 // Make sure to specify the portableVersion compatible with
 // portableVersion in the serialization.Service.
 func NewClassDefinitionBuilder(factoryID int32, classID int32, version int32) *ClassDefinitionBuilder {
-	return &ClassDefinitionBuilder{factoryID, classID, version, make(map[string]serialization.FieldDefinition), 0, false}
+	return &ClassDefinitionBuilder{
+		factoryID:        factoryID,
+		classID:          classID,
+		version:          version,
+		fieldDefinitions: make(map[string]serialization.FieldDefinition),
+	}
 }
 
 // AddByteField adds byte field to class definition.

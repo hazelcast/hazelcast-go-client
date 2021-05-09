@@ -26,7 +26,12 @@ type ErrorHolder struct {
 }
 
 func NewErrorHolder(errorCode int32, className, message string, stackTraceElements []hzerror.StackTraceElement) ErrorHolder {
-	return ErrorHolder{errorCode, className, message, stackTraceElements}
+	return ErrorHolder{
+		errorCode:          errorCode,
+		className:          className,
+		message:            message,
+		stackTraceElements: stackTraceElements,
+	}
 }
 
 func (e ErrorHolder) ErrorCode() int32 {

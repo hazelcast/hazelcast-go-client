@@ -27,7 +27,11 @@ type PortableContext struct {
 }
 
 func NewPortableContext(service *Service, portableVersion int32) *PortableContext {
-	return &PortableContext{service, portableVersion, make(map[int32]*ClassDefinitionContext)}
+	return &PortableContext{
+		service:         service,
+		portableVersion: portableVersion,
+		classDefContext: make(map[int32]*ClassDefinitionContext),
+	}
 }
 
 func (c *PortableContext) Version() int32 {
