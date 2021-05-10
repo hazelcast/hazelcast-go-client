@@ -183,22 +183,6 @@ func TestMap_Set(t *testing.T) {
 	})
 }
 
-func TestMapSetGet1000(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		const setGetCount = 1000
-		for i := 0; i < setGetCount; i++ {
-			key := fmt.Sprintf("k%d", i)
-			value := fmt.Sprintf("v%d", i)
-			it.Must(m.Set(key, value))
-		}
-		for i := 0; i < setGetCount; i++ {
-			key := fmt.Sprintf("k%d", i)
-			targetValue := fmt.Sprintf("v%d", i)
-			it.AssertEquals(t, targetValue, it.MustValue(m.Get(key)))
-		}
-	})
-}
-
 func TestMap_Delete(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
@@ -867,6 +851,41 @@ func TestMap_Destroy(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		if err := m.Destroy(); err != nil {
 			t.Fatal(err)
+		}
+	})
+}
+
+// ==== Reliablity Tests ====
+
+func TestMapSetGet1000(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const setGetCount = 1000
+		for i := 0; i < setGetCount; i++ {
+			key := fmt.Sprintf("k%d", i)
+			value := fmt.Sprintf("v%d", i)
+			it.Must(m.Set(key, value))
+		}
+		for i := 0; i < setGetCount; i++ {
+			key := fmt.Sprintf("k%d", i)
+			targetValue := fmt.Sprintf("v%d", i)
+			if !assert.Equal(t, targetValue, it.MustValue(m.Get(key))) {
+				t.FailNow()
+			}
+		}
+	})
+}
+
+func TestMapSetGetLargePayload(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const payloadSize = 1 * 1024 * 1024
+		payload := make([]byte, payloadSize)
+		for i := 0; i < len(payload); i++ {
+			payload[i] = byte(i)
+		}
+		it.Must(m.Set("k1", payload))
+		v := it.MustValue(m.Get("k1"))
+		if !assert.Equal(t, payload, v) {
+			t.FailNow()
 		}
 	})
 }
