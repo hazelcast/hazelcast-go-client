@@ -131,12 +131,12 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 
 func (p *partitionTable) GetOwnerUUID(partitionID int32) *types.UUID {
 	p.mu.RLock()
-	defer p.mu.RUnlock()
+	var u *types.UUID
 	if uuid, ok := p.partitions[partitionID]; ok {
-		uuidCopy := uuid
-		return &uuidCopy
+		u = &uuid
 	}
-	return nil
+	p.mu.RUnlock()
+	return u
 }
 
 func defaultPartitionTable() partitionTable {

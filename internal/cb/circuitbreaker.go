@@ -103,8 +103,8 @@ loop:
 			err = ctx.Err()
 			break loop
 		default:
-			if result, err = tryHandler(ctx, attempt); err == nil {
-				// succeeded
+			result, err = tryHandler(ctx, attempt)
+			if err == nil || contextErr(err) {
 				break loop
 			}
 			if errors.As(err, &nonRetryableErr) {
@@ -116,8 +116,7 @@ loop:
 			}
 		}
 	}
-	if err != nil {
-		// failed
+	if err != nil && !contextErr(err) {
 		cb.notifyFailed()
 	}
 	return result, err
@@ -152,4 +151,8 @@ func (cb *CircuitBreaker) closeCircuit() {
 	if cb.StateChangeHandler != nil {
 		cb.StateChangeHandler(StateClosed)
 	}
+}
+
+func contextErr(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }

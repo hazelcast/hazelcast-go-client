@@ -240,35 +240,32 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 
 func (m *membersMap) Find(uuid string) *Member {
 	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
-	if member, ok := m.members[uuid]; ok {
-		return member
-	} else {
-		return nil
-	}
+	member := m.members[uuid]
+	m.membersMu.RUnlock()
+	return member
 }
 
 func (m *membersMap) RemoveMembersWithAddr(addr string) {
 	m.membersMu.Lock()
-	defer m.membersMu.Unlock()
 	if uuid, ok := m.addrToMemberUUID[addr]; ok {
 		m.removeMember(m.members[uuid])
 	}
+	m.membersMu.Unlock()
 }
 
 func (m *membersMap) Info(infoFun func(members map[string]*Member)) {
 	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
 	infoFun(m.members)
+	m.membersMu.RUnlock()
 }
 
 func (m *membersMap) MemberAddrs() []string {
 	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
 	addrs := make([]string, 0, len(m.addrToMemberUUID))
 	for addr := range m.addrToMemberUUID {
 		addrs = append(addrs, addr)
 	}
+	m.membersMu.RUnlock()
 	return addrs
 }
 

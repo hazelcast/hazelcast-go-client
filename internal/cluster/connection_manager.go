@@ -178,8 +178,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	}); err != nil {
 		return err
 	}
-	connectionClosedSubscriptionID := event.MakeSubscriptionID(m.handleConnectionClosed)
-	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionClosedSubscriptionID, m.handleConnectionClosed)
+	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
 	// wait for the initial member list
 	select {
@@ -207,6 +206,7 @@ func (m *ConnectionManager) Stop() {
 	}
 	m.eventDispatcher.Unsubscribe(EventConnectionClosed, event.MakeSubscriptionID(m.handleConnectionClosed))
 	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
+	m.eventDispatcher.Unsubscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved))
 	m.connMap.CloseAll()
 	atomic.StoreInt32(&m.state, stopped)
 	close(m.doneCh)
@@ -244,14 +244,12 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
 	m.handleMembersAdded(e)
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersAdded)
+	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersRemoved)
 	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleInitialMembersAdded))
 	close(m.startCh)
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
-	//if atomic.LoadInt32(&m.state) != ready {
-	//	return
-	//}
 	// do not add new members in non-smart mode
 	if !m.smartRouting && m.connMap.Len() > 0 {
 		return
@@ -269,9 +267,6 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	if atomic.LoadInt32(&m.state) != ready {
-		return
-	}
 	if memberRemovedEvent, ok := event.(MembersRemoved); ok {
 		removedConns := m.connMap.FindRemovedConns(memberRemovedEvent.Members)
 		for _, conn := range removedConns {
@@ -522,15 +517,14 @@ func newConnectionMap() *connectionMap {
 
 func (m *connectionMap) AddConnection(conn *Connection, addr *pubcluster.AddressImpl) {
 	m.connectionsMu.Lock()
-	defer m.connectionsMu.Unlock()
 	m.addrToConn[addr.String()] = conn
 	m.connToAddr[conn.connectionID] = addr
+	m.connectionsMu.Unlock()
 }
 
 // RemoveConnection removes a connection and returns true if there are no more addrToConn left.
 func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	m.connectionsMu.Lock()
-	defer m.connectionsMu.Unlock()
 	var remaining int
 	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
@@ -540,68 +534,55 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 			break
 		}
 	}
+	m.connectionsMu.Unlock()
 	return remaining
 }
 
 func (m *connectionMap) CloseAll() {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
 	for _, conn := range m.addrToConn {
 		conn.close(nil)
 	}
+	m.connectionsMu.RUnlock()
 }
 
 func (m *connectionMap) GetConnectionForAddr(addr string) *Connection {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
-	if conn, ok := m.addrToConn[addr]; ok {
-		return conn
-	}
-	return nil
+	conn := m.addrToConn[addr]
+	m.connectionsMu.RUnlock()
+	return conn
 }
 
 func (m *connectionMap) GetAddrForConnectionID(connID int64) *pubcluster.AddressImpl {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
-	if addr, ok := m.connToAddr[connID]; ok {
-		return addr
-	}
-	return nil
-}
-
-func (m *connectionMap) GetRandomAddr() *pubcluster.AddressImpl {
-	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
-	for _, addr := range m.connToAddr {
-		// get the first address
-		return addr
-	}
-	return nil
+	addr := m.connToAddr[connID]
+	m.connectionsMu.RUnlock()
+	return addr
 }
 
 func (m *connectionMap) RandomConn() *Connection {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
-	for _, conn := range m.addrToConn {
+	var conn *Connection
+	for _, conn = range m.addrToConn {
 		// Go randomizes maps, this is random enough for now.
-		return conn
+		break
 	}
-	return nil
+	m.connectionsMu.RUnlock()
+	return conn
 }
 
 func (m *connectionMap) Connections() []*Connection {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
 	conns := make([]*Connection, 0, len(m.addrToConn))
 	for _, conn := range m.addrToConn {
 		conns = append(conns, conn)
 	}
+	m.connectionsMu.RUnlock()
 	return conns
 }
 
 func (m *connectionMap) FindAddedAddrs(members []pubcluster.Member) []*pubcluster.AddressImpl {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
 	addedAddrs := []*pubcluster.AddressImpl{}
 	for _, member := range members {
 		addr := member.Address()
@@ -609,12 +590,12 @@ func (m *connectionMap) FindAddedAddrs(members []pubcluster.Member) []*pubcluste
 			addedAddrs = append(addedAddrs, addr.(*pubcluster.AddressImpl))
 		}
 	}
+	m.connectionsMu.RUnlock()
 	return addedAddrs
 }
 
 func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connection {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
 	removedConns := []*Connection{}
 	for _, member := range members {
 		addr := member.Address()
@@ -622,13 +603,14 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connect
 			removedConns = append(removedConns, conn)
 		}
 	}
+	m.connectionsMu.RUnlock()
 	return removedConns
 }
 
 func (m *connectionMap) Info(infoFun func(connections map[string]*Connection, connToAddr map[int64]*pubcluster.AddressImpl)) {
 	m.connectionsMu.RLock()
-	defer m.connectionsMu.RUnlock()
 	infoFun(m.addrToConn, m.connToAddr)
+	m.connectionsMu.RUnlock()
 }
 
 func (m *connectionMap) Len() int {

@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	bufferSize           = 8 * 1024
+	bufferSize           = 1 * 1024 * 1024
 	protocolStarter      = "CP2"
 	messageTypeException = int32(0)
 )

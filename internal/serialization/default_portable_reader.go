@@ -188,16 +188,17 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) serialization.Po
 
 func (pr *DefaultPortableReader) readPortable(fieldName string) serialization.Portable {
 	backupPos := pr.input.Position()
-	defer pr.input.SetPosition(backupPos)
 	pos := pr.positionByField(fieldName, TypePortable)
 	pr.input.SetPosition(pos)
 	isNil := pr.input.ReadBool()
-	factoryID := pr.input.ReadInt32()
-	classID := pr.input.ReadInt32()
-	if isNil {
-		return nil
+	var r serialization.Portable
+	if !isNil {
+		factoryID := pr.input.ReadInt32()
+		classID := pr.input.ReadInt32()
+		r = pr.serializer.ReadObject(pr.input, factoryID, classID)
 	}
-	return pr.serializer.ReadObject(pr.input, factoryID, classID)
+	pr.input.SetPosition(backupPos)
+	return r
 }
 
 func (pr *DefaultPortableReader) ReadByteArray(fieldName string) []byte {
@@ -286,22 +287,22 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) []serializa
 
 func (pr *DefaultPortableReader) readPortableArray(fieldName string) []serialization.Portable {
 	backupPos := pr.input.Position()
-	defer pr.input.SetPosition(backupPos)
 	pos := pr.positionByField(fieldName, TypePortableArray)
 	pr.input.SetPosition(pos)
 	length := pr.input.ReadInt32()
 	factoryID := pr.input.ReadInt32()
 	classID := pr.input.ReadInt32()
-	if length <= 0 {
-		return nil
+	var portables []serialization.Portable
+	if length > 0 {
+		portables = make([]serialization.Portable, length)
+		offset := pr.input.Position()
+		for i := int32(0); i < length; i++ {
+			start := pr.input.(*ObjectDataInput).ReadInt32AtPosition(offset + i*Int32SizeInBytes)
+			pr.input.SetPosition(start)
+			portables[i] = pr.serializer.ReadObject(pr.input, factoryID, classID)
+		}
 	}
-	var portables = make([]serialization.Portable, length)
-	offset := pr.input.Position()
-	for i := int32(0); i < length; i++ {
-		start := pr.input.(*ObjectDataInput).ReadInt32AtPosition(offset + i*Int32SizeInBytes)
-		pr.input.SetPosition(start)
-		portables[i] = pr.serializer.ReadObject(pr.input, factoryID, classID)
-	}
+	pr.input.SetPosition(backupPos)
 	return portables
 }
 
