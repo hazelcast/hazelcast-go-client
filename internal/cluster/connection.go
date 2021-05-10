@@ -165,7 +165,9 @@ func (c *Connection) socketReadLoop() {
 	buf := make([]byte, bufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
-		//c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
+		if err := c.socket.SetReadDeadline(time.Now().Add(1 * time.Second)); err != nil {
+			break
+		}
 		n, err = c.socket.Read(buf)
 		if atomic.LoadInt32(&c.status) != open {
 			break
@@ -222,7 +224,9 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 		c.writeBuffer = make([]byte, msgLen)
 	}
 	clientMessage.Bytes(0, c.writeBuffer)
-	//c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
+	if err := c.socket.SetWriteDeadline(time.Now().Add(1 * time.Second)); err != nil {
+		return err
+	}
 	_, err := c.socket.Write(c.writeBuffer[:msgLen])
 	return err
 }
