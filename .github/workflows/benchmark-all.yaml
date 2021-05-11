@@ -33,8 +33,8 @@ jobs:
 
       - name: "Run Benchmarks, Single Member"
         run: |
-          MEMBER_COUNT=1 make test-all
+          MEMBER_COUNT=1 make benchmark
 
       - name: "Run Benchmarks, Three Members"
         run: |
-          MEMBER_COUNT=3 make test-all
+          MEMBER_COUNT=3 make benchmark
