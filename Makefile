@@ -1,4 +1,4 @@
-.PHONY: build check doc test test-all test-all-race
+.PHONY: benchmark build check doc test test-all test-all-race
 
 PORT ?= 5050
 TEST_FLAGS ?=
@@ -23,6 +23,9 @@ test-cover:
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
+
+benchmark:
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -bench . -run BenchmarkMap_Set -benchmem ./benchmarks
 
 doc:
 	godoc -http=localhost:$(PORT)
