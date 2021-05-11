@@ -2,7 +2,7 @@
 name: "Benchmark Go Client"
 on: ["push", "pull_request"]
 jobs:
-  test:
+  benchmark:
     runs-on: "ubuntu-latest"
     env:
       GOPATH: "${{ github.workspace }}"
