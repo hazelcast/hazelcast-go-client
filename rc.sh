@@ -16,19 +16,18 @@
 # limitations under the License.
 #
 
-#############################
-# Hazelcast Remote Controller
-#############################
+# Starts Hazelcast Remote Controller
 #
-## Usage: ###################
-# Start with default Hazelcast version : ./rc.sh start
-# Start with given Hazelcast version   : HZ_VERSION=4.3 ./rc.sh start
-# Stop                                 : ./rc.sh stop
-#############################
+# Usage:
+#   Start with default Hazelcast version : ./rc.sh start
+#   Start with given Hazelcast version   : HZ_VERSION=4.3 ./rc.sh start
+#   Stop                                 : ./rc.sh stop
 
+# Exit immediately on error.
 set -e
+# Treat unset variables an parameters as an error.
 set -u
-# Disables printing security sensitive data to the logs
+# Disable printing trace.
 set +x
 
 log_info () {
