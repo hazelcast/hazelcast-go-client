@@ -138,7 +138,6 @@ func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
 	} else {
 		return q.convertToObjects(codec.DecodeQueueDrainToMaxSizeResponse(response))
 	}
-
 }
 
 // Iterator returns all of the items in this queue.
@@ -309,16 +308,4 @@ func (q *Queue) poll(ctx context.Context, timeout int64) (interface{}, error) {
 	} else {
 		return q.convertToObject(codec.DecodeQueuePollResponse(response))
 	}
-}
-
-func (q *Queue) convertToObjects(data []serialization.Data) ([]interface{}, error) {
-	decodedValues := []interface{}{}
-	for _, datum := range data {
-		if obj, err := q.convertToObject(datum); err != nil {
-			return nil, err
-		} else {
-			decodedValues = append(decodedValues, obj)
-		}
-	}
-	return decodedValues, nil
 }
