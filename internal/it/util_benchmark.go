@@ -30,6 +30,34 @@ import (
 
 const EnvWarmupCount = "WARMUPS"
 
+func Benchmarker(b *testing.B, f func(b *testing.B, cb *hz.ConfigBuilder)) {
+	BenchmarkerWithConfigBuilder(b, nil, f)
+}
+
+func BenchmarkerWithConfigBuilder(b *testing.B, cbCallback func(cb *hz.ConfigBuilder), f func(b *testing.B, cb *hz.ConfigBuilder)) {
+	ensureRemoteController(true)
+	runner := func(b *testing.B, smart bool) {
+		cb := defaultTestCluster.DefaultConfigBuilder()
+		if cbCallback != nil {
+			cbCallback(cb)
+		}
+		cb.Logger().SetLevel(logger.ErrorLevel)
+		cb.Cluster().SetSmartRouting(smart)
+		b.ResetTimer()
+		f(b, cb)
+	}
+	if SmartEnabled() {
+		b.Run("Smart Client", func(b *testing.B) {
+			runner(b, true)
+		})
+	}
+	if NonSmartEnabled() {
+		b.Run("Non-Smart Client", func(b *testing.B) {
+			runner(b, false)
+		})
+	}
+}
+
 func MapBenchmarker(t *testing.B, fixture func(m *hz.Map), f func(t *testing.B, m *hz.Map)) {
 	cbCallback := func(cb *hz.ConfigBuilder) {
 	}
@@ -90,7 +118,7 @@ func MapBenchmarkerWithConfigBuilderWithName(b *testing.B, makeMapName func() st
 }
 
 func warmupCount() int {
-	if s := os.Getenv("WARMUPS"); s != "" {
+	if s := os.Getenv(EnvWarmupCount); s != "" {
 		if i, err := strconv.ParseInt(s, 10, 32); err != nil {
 			panic(err)
 		} else {

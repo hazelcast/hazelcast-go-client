@@ -25,7 +25,7 @@ view-cover:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
 
 benchmark:
-	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -bench . -run BenchmarkMap_Set -benchmem ./benchmarks
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -bench . -benchmem ./benchmarks
 
 doc:
 	godoc -http=localhost:$(PORT)
