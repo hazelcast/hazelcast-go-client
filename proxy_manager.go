@@ -76,6 +76,14 @@ func (m *proxyManager) getTopic(objectName string) (*Topic, error) {
 	}
 }
 
+func (m *proxyManager) getList(objectName string) (*List, error) {
+	if p, err := m.proxyFor("hz:impl:listService", objectName); err != nil {
+		return nil, err
+	} else {
+		return newList(p)
+	}
+}
+
 func (m *proxyManager) remove(serviceName string, objectName string) error {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()

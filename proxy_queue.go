@@ -277,7 +277,7 @@ func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool
 	} else {
 		request := codec.EncodeQueueOfferRequest(q.name, valueData, timeout)
 		if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
-			return false, nil
+			return false, err
 		} else {
 			return codec.DecodeQueueOfferResponse(response), nil
 		}
