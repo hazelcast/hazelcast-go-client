@@ -173,8 +173,10 @@ func newQueueItemNotified(name string, value interface{}, member cluster.Member,
 	}
 }
 
+// ListItemNotifiedHandler is a handler function for the List item listener.
 type ListItemNotifiedHandler func(event *ListItemNotified)
 
+// ListItemNotified describes the List item event.
 type ListItemNotified struct {
 	ListName  string
 	Value     interface{}
@@ -182,6 +184,7 @@ type ListItemNotified struct {
 	EventType ItemEventType
 }
 
+// EventName returns generic event name, common for all List item listeners.
 func (q ListItemNotified) EventName() string {
 	return eventListItemNotified
 }
