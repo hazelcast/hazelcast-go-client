@@ -80,7 +80,7 @@ func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (types.UUID, error
 }
 
 // AddListenerIncludeValue adds an item listener for this queue. Listener will be notified for all queue add/remove events.
-// Received events inclues the updated item.
+// Received events include the updated item.
 func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(true, handler)
 }

@@ -45,11 +45,6 @@ const (
 	NotifyEntryLoaded = int32(1 << 9)
 )
 
-const (
-	NotifyItemAdded   int32 = 1
-	NotifyItemRemoved int32 = 2
-)
-
 type EntryNotifiedHandler func(event *EntryNotified)
 
 const (
@@ -57,6 +52,7 @@ const (
 	eventLifecycleEventStateChanged = "lifecyclestatechanged"
 	eventMessagePublished           = "messagepublished"
 	eventQueueItemNotified          = "queue.itemnotified"
+	eventListItemNotified           = "list.itemnotified"
 )
 
 type EntryNotified struct {
@@ -145,13 +141,23 @@ func newMessagePublished(name string, value interface{}, publishTime time.Time, 
 	}
 }
 
+// ItemEventType describes event types for item related events.
+type ItemEventType int32
+
+const (
+	// NotifyItemAdded stands for item added event.
+	NotifyItemAdded ItemEventType = 1
+	// NotifyItemRemoved stands for item removed event.
+	NotifyItemRemoved ItemEventType = 2
+)
+
 type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
 type QueueItemNotified struct {
 	QueueName string
 	Value     interface{}
 	Member    cluster.Member
-	EventType int32
+	EventType ItemEventType
 }
 
 func (q QueueItemNotified) EventName() string {
@@ -163,6 +169,28 @@ func newQueueItemNotified(name string, value interface{}, member cluster.Member,
 		QueueName: name,
 		Value:     value,
 		Member:    member,
-		EventType: eventType,
+		EventType: ItemEventType(eventType),
+	}
+}
+
+type ListItemNotifiedHandler func(event *ListItemNotified)
+
+type ListItemNotified struct {
+	ListName  string
+	Value     interface{}
+	Member    cluster.Member
+	EventType ItemEventType
+}
+
+func (q ListItemNotified) EventName() string {
+	return eventListItemNotified
+}
+
+func newListItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *ListItemNotified {
+	return &ListItemNotified{
+		ListName:  name,
+		Value:     value,
+		Member:    member,
+		EventType: ItemEventType(eventType),
 	}
 }
