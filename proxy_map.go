@@ -902,18 +902,6 @@ func (m *Map) tryRemove(key interface{}, timeout int64) (interface{}, error) {
 	}
 }
 
-func (m *Map) convertToObjects(valueDatas []pubser.Data) ([]interface{}, error) {
-	values := make([]interface{}, len(valueDatas))
-	for i, valueData := range valueDatas {
-		if value, err := m.convertToObject(valueData); err != nil {
-			return nil, err
-		} else {
-			values[i] = value
-		}
-	}
-	return values, nil
-}
-
 func (m *Map) makeListenerRequest(keyData, predicateData pubser.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {

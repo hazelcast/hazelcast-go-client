@@ -240,6 +240,18 @@ func (p *proxy) convertToObject(data serialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
 }
 
+func (p *proxy) convertToObjects(values []serialization.Data) ([]interface{}, error) {
+	decodedValues := make([]interface{}, len(values))
+	for i, value := range values {
+		if decodedValue, err := p.convertToObject(value); err != nil {
+			return nil, err
+		} else {
+			decodedValues[i] = decodedValue
+		}
+	}
+	return decodedValues, nil
+}
+
 func (p *proxy) convertToData(object interface{}) (serialization.Data, error) {
 	return p.serializationService.ToData(object)
 }

@@ -90,7 +90,7 @@ func main() {
 ## Features
 
 * Distributed, partitioned and queryable in-memory key-value store implementation, called Map.
-* Additional data structures and simple messaging constructs such as Replicated Map, Queue and Topic.
+* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, and Topic.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Ability to listen to client lifecycle, cluster state, and distributed data structure events.
 
