@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"fmt"
+	"math"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -122,6 +123,13 @@ func TestList_AddAt(t *testing.T) {
 	})
 }
 
+func TestList_AddAt_Error(t *testing.T) {
+	it.ListTester(t, func(t *testing.T, l *hz.List) {
+		assert.Error(t, l.AddAt(-1, "test-negative"))
+		assert.Error(t, l.AddAt(math.MaxInt32+1, "test-overflow"))
+	})
+}
+
 func TestList_AddAtNilElement(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		assert.Error(t, l.AddAt(0, nil))
@@ -164,6 +172,15 @@ func TestList_AddAllAt(t *testing.T) {
 	})
 }
 
+func TestList_AddAllAt_Error(t *testing.T) {
+	it.ListTester(t, func(t *testing.T, l *hz.List) {
+		_, err := l.AddAllAt(-1, "negative")
+		assert.Error(t, err)
+		_, err = l.AddAllAt(math.MaxInt32+1, "overflow")
+		assert.Error(t, err)
+	})
+}
+
 func TestList_AddAllAtWithNilElement(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.AddAllAt(1, "0", nil)
@@ -178,7 +195,7 @@ func TestList_Clear(t *testing.T) {
 		assert.NoError(t, l.Clear())
 		size, err := l.Size()
 		assert.NoError(t, err)
-		assert.Equal(t, int32(0), size)
+		assert.Equal(t, 0, size)
 	})
 }
 
@@ -238,7 +255,7 @@ func TestList_IndexOf(t *testing.T) {
 		assert.NoError(t, err)
 		index, err := l.IndexOf("2")
 		assert.NoError(t, err)
-		assert.Equal(t, int32(1), index)
+		assert.Equal(t, 1, index)
 	})
 }
 
@@ -263,7 +280,7 @@ func TestList_LastIndexOf(t *testing.T) {
 		assert.NoError(t, err)
 		index, err := l.LastIndexOf("2")
 		assert.NoError(t, err)
-		assert.Equal(t, int32(2), index)
+		assert.Equal(t, 2, index)
 	})
 }
 
@@ -301,6 +318,15 @@ func TestList_RemoveAt(t *testing.T) {
 		previous, err := l.RemoveAt(0)
 		assert.NoError(t, err)
 		assert.Equal(t, "1", previous)
+	})
+}
+
+func TestList_RemoveAt_Error(t *testing.T) {
+	it.ListTester(t, func(t *testing.T, l *hz.List) {
+		_, err := l.RemoveAt(-1)
+		assert.Error(t, err)
+		_, err = l.RemoveAt(math.MaxInt32 + 1)
+		assert.Error(t, err)
 	})
 }
 
@@ -350,7 +376,7 @@ func TestList_Size(t *testing.T) {
 		assert.NoError(t, err)
 		size, err := l.Size()
 		assert.NoError(t, err)
-		assert.Equal(t, int32(3), size)
+		assert.Equal(t, 3, size)
 	})
 }
 
@@ -364,6 +390,15 @@ func TestList_Get(t *testing.T) {
 	})
 }
 
+func TestList_Get_Error(t *testing.T) {
+	it.ListTester(t, func(t *testing.T, l *hz.List) {
+		_, err := l.Get(-1)
+		assert.Error(t, err)
+		_, err = l.Get(math.MaxInt32 + 1)
+		assert.Error(t, err)
+	})
+}
+
 func TestList_Set(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.AddAll("1", "2", "3")
@@ -373,6 +408,15 @@ func TestList_Set(t *testing.T) {
 		res, err := l.Get(1)
 		assert.NoError(t, err)
 		assert.Equal(t, "13", res)
+	})
+}
+
+func TestList_Set_Error(t *testing.T) {
+	it.ListTester(t, func(t *testing.T, l *hz.List) {
+		_, err := l.Set(-1, "negative")
+		assert.Error(t, err)
+		_, err = l.Set(math.MaxInt32+1, "overflow")
+		assert.Error(t, err)
 	})
 }
 
@@ -391,6 +435,19 @@ func TestList_SubList(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "2", res[0])
 		assert.Equal(t, "3", res[1])
+	})
+}
+
+func TestList_SubList_Error(t *testing.T) {
+	it.ListTester(t, func(t *testing.T, l *hz.List) {
+		_, err := l.SubList(-1, 3)
+		assert.Error(t, err)
+		_, err = l.SubList(1, -3)
+		assert.Error(t, err)
+		_, err = l.SubList(math.MaxInt32+1, 3)
+		assert.Error(t, err)
+		_, err = l.SubList(1, math.MaxInt32+1)
+		assert.Error(t, err)
 	})
 }
 

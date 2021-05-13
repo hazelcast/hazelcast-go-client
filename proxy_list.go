@@ -21,6 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -103,12 +104,16 @@ func (l *List) Add(element interface{}) (bool, error) {
 
 // AddAt inserts the specified element at the specified index.
 // Shifts the subsequent elements to the right.
-func (l *List) AddAt(index int32, element interface{}) error {
+func (l *List) AddAt(index int, element interface{}) error {
+	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	if err != nil {
+		return err
+	}
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return err
 	}
-	request := codec.EncodeListAddWithIndexRequest(l.name, index, elementData)
+	request := codec.EncodeListAddWithIndexRequest(l.name, indexAsInt32, elementData)
 	_, err = l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	return err
 }
@@ -131,12 +136,16 @@ func (l *List) AddAll(elements ...interface{}) (bool, error) {
 // AddAllAt inserts all elements in the specified slice at specified index, keeping the order of the slice.
 // Shifts the subsequent elements to the right.
 // Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *List) AddAllAt(index int32, elements ...interface{}) (bool, error) {
+func (l *List) AddAllAt(index int, elements ...interface{}) (bool, error) {
+	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	if err != nil {
+		return false, err
+	}
 	elementsData, err := l.validateAndSerializeValues(elements...)
 	if err != nil {
 		return false, err
 	}
-	request := codec.EncodeListAddAllWithIndexRequest(l.name, index, elementsData)
+	request := codec.EncodeListAddAllWithIndexRequest(l.name, indexAsInt32, elementsData)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return false, err
@@ -182,8 +191,12 @@ func (l *List) ContainsAll(elements ...interface{}) (bool, error) {
 }
 
 // Get retrieves the element at given index.
-func (l *List) Get(index int32) (interface{}, error) {
-	request := codec.EncodeListGetRequest(l.name, index)
+func (l *List) Get(index int) (interface{}, error) {
+	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeListGetRequest(l.name, indexAsInt32)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return nil, err
@@ -192,7 +205,7 @@ func (l *List) Get(index int32) (interface{}, error) {
 }
 
 // IndexOf returns the index of the first occurrence of the given element in this list.
-func (l *List) IndexOf(element interface{}) (int32, error) {
+func (l *List) IndexOf(element interface{}) (int, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return 0, err
@@ -202,7 +215,7 @@ func (l *List) IndexOf(element interface{}) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeListIndexOfResponse(response), nil
+	return int(codec.DecodeListIndexOfResponse(response)), nil
 }
 
 // IsEmpty return true if the list is empty, false otherwise.
@@ -216,7 +229,7 @@ func (l *List) IsEmpty() (bool, error) {
 }
 
 // LastIndexOf returns the index of the last occurrence of the given element in this list.
-func (l *List) LastIndexOf(element interface{}) (int32, error) {
+func (l *List) LastIndexOf(element interface{}) (int, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return 0, err
@@ -226,7 +239,7 @@ func (l *List) LastIndexOf(element interface{}) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeListLastIndexOfResponse(response), nil
+	return int(codec.DecodeListLastIndexOfResponse(response)), nil
 }
 
 // Remove removes the given element from this list.
@@ -246,8 +259,12 @@ func (l *List) Remove(element interface{}) (bool, error) {
 
 // RemoveAt removes the element at the given index.
 // Returns the removed element.
-func (l *List) RemoveAt(index int32) (interface{}, error) {
-	request := codec.EncodeListRemoveWithIndexRequest(l.name, index)
+func (l *List) RemoveAt(index int) (interface{}, error) {
+	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeListRemoveWithIndexRequest(l.name, indexAsInt32)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return nil, err
@@ -287,12 +304,16 @@ func (l *List) RetainAll(elements ...interface{}) (bool, error) {
 
 // Set replaces the element at the specified index in this list with the specified element.
 // Returns the previous element from the list.
-func (l *List) Set(index int32, element interface{}) (interface{}, error) {
+func (l *List) Set(index int, element interface{}) (interface{}, error) {
+	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	if err != nil {
+		return nil, err
+	}
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return nil, err
 	}
-	request := codec.EncodeListSetRequest(l.name, index, elementData)
+	request := codec.EncodeListSetRequest(l.name, indexAsInt32, elementData)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return nil, err
@@ -301,19 +322,27 @@ func (l *List) Set(index int32, element interface{}) (interface{}, error) {
 }
 
 // Size returns the number of elements in this list.
-func (l *List) Size() (int32, error) {
+func (l *List) Size() (int, error) {
 	request := codec.EncodeListSizeRequest(l.name)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeListSizeResponse(response), nil
+	return int(codec.DecodeListSizeResponse(response)), nil
 }
 
 // SubList returns a view of this list that contains elements between index numbers
 // from start (inclusive) to end (exclusive).
-func (l *List) SubList(start int32, end int32) ([]interface{}, error) {
-	request := codec.EncodeListSubRequest(l.name, start, end)
+func (l *List) SubList(start int, end int) ([]interface{}, error) {
+	startAsInt32, err := validationutil.ValidateAsNonNegativeInt32(start)
+	if err != nil {
+		return nil, err
+	}
+	endAsInt32, err := validationutil.ValidateAsNonNegativeInt32(end)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeListSubRequest(l.name, startAsInt32, endAsInt32)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return nil, err
