@@ -93,9 +93,15 @@ type proxy struct {
 	name                 string
 	logger               ilogger.Logger
 	circuitBreaker       *cb.CircuitBreaker
+	removeFromCacheFn    func() bool
 }
 
-func newProxy(bundle creationBundle, serviceName string, objectName string, subscriptionIDGen *iproxy.ReferenceIDGenerator) (*proxy, error) {
+func newProxy(bundle creationBundle,
+	serviceName string,
+	objectName string,
+	subscriptionIDGen *iproxy.ReferenceIDGenerator,
+	removeFromCacheFn func() bool) (*proxy, error) {
+
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
@@ -116,6 +122,7 @@ func newProxy(bundle creationBundle, serviceName string, objectName string, subs
 		config:               bundle.Config,
 		logger:               bundle.Logger,
 		circuitBreaker:       circuitBreaker,
+		removeFromCacheFn:    removeFromCacheFn,
 	}
 	if err := p.create(); err != nil {
 		return nil, err
@@ -133,7 +140,15 @@ func (p *proxy) create() error {
 	return nil
 }
 
+// Destroys this object cluster-wide.
+// Clears and releases all resources for this object.
 func (p *proxy) Destroy() error {
+	// wipe from proxy manager cache
+	if !p.removeFromCacheFn() {
+		// no need to destroy on cluster, since the proxy is stale and was already destroyed
+		return nil
+	}
+	// destroy on cluster
 	request := codec.EncodeClientDestroyProxyRequest(p.name, p.serviceName)
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv

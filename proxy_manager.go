@@ -23,10 +23,6 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 )
 
-const (
-	lockIDKey = "__hz_lockid"
-)
-
 type proxyManager struct {
 	mu             *sync.RWMutex
 	proxies        map[string]*proxy
@@ -84,17 +80,15 @@ func (m *proxyManager) getList(objectName string) (*List, error) {
 	}
 }
 
-func (m *proxyManager) remove(serviceName string, objectName string) error {
+func (m *proxyManager) remove(serviceName string, objectName string) bool {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()
-	p, ok := m.proxies[name]
-	if !ok {
-		m.mu.Unlock()
-		return nil
+	defer m.mu.Unlock()
+	if _, ok := m.proxies[name]; !ok {
+		return false
 	}
 	delete(m.proxies, name)
-	m.mu.Unlock()
-	return p.Destroy()
+	return true
 }
 
 func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, error) {
@@ -116,7 +110,9 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, 
 }
 
 func (m *proxyManager) createProxy(serviceName string, objectName string) (*proxy, error) {
-	return newProxy(m.serviceBundle, serviceName, objectName, m.refIDGenerator)
+	return newProxy(m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
+		return m.remove(serviceName, objectName)
+	})
 }
 
 func makeProxyName(serviceName string, objectName string) string {

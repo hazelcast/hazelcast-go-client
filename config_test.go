@@ -46,7 +46,7 @@ func TestConfigNewConfigBuilder(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if "my-cluster" != config.ClusterConfig.Name {
+	if config.ClusterConfig.Name != "my-cluster" {
 		t.Errorf("target: my-cluster != %v", config.ClusterConfig.Name)
 	}
 	targetAddrs := []string{"192.168.1.2"}
