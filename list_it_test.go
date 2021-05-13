@@ -173,8 +173,9 @@ func TestList_AddAllAtWithNilElement(t *testing.T) {
 
 func TestList_Clear(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2")
-		l.Clear()
+		_, err := l.AddAll("1", "2")
+		assert.NoError(t, err)
+		assert.NoError(t, l.Clear())
 		size, err := l.Size()
 		assert.NoError(t, err)
 		assert.Equal(t, int32(0), size)
@@ -183,7 +184,8 @@ func TestList_Clear(t *testing.T) {
 
 func TestList_Contains(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2")
+		_, err := l.AddAll("1", "2")
+		assert.NoError(t, err)
 		found, err := l.Contains("1")
 		assert.NoError(t, err)
 		assert.True(t, found)
@@ -200,7 +202,8 @@ func TestList_ContainsWithNilElement(t *testing.T) {
 func TestList_ContainsAll(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		all := []interface{}{"1", "2"}
-		l.AddAll(all...)
+		_, err := l.AddAll(all...)
+		assert.NoError(t, err)
 		found, err := l.ContainsAll(all...)
 		assert.NoError(t, err)
 		assert.True(t, found)
@@ -217,7 +220,8 @@ func TestList_ContainsAllWithNilElement(t *testing.T) {
 func TestList_ToSlice(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		all := []interface{}{"1", "2"}
-		l.AddAll(all...)
+		_, err := l.AddAll(all...)
+		assert.NoError(t, err)
 		res, err := l.ToSlice()
 		assert.NoError(t, err)
 		assert.Equal(t, all[0], res[0])
@@ -227,7 +231,8 @@ func TestList_ToSlice(t *testing.T) {
 
 func TestList_IndexOf(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2")
+		_, err := l.AddAll("1", "2")
+		assert.NoError(t, err)
 		index, err := l.IndexOf("2")
 		assert.NoError(t, err)
 		assert.Equal(t, int32(1), index)
@@ -251,7 +256,8 @@ func TestList_IsEmpty(t *testing.T) {
 
 func TestList_LastIndexOf(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2", "2")
+		_, err := l.AddAll("1", "2", "2")
+		assert.NoError(t, err)
 		index, err := l.LastIndexOf("2")
 		assert.NoError(t, err)
 		assert.Equal(t, int32(2), index)
@@ -267,7 +273,8 @@ func TestList_LastIndexOfWithNilElement(t *testing.T) {
 
 func TestList_Remove(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.Add("1")
+		_, err := l.Add("1")
+		assert.NoError(t, err)
 		removed, err := l.Remove("1")
 		assert.NoError(t, err)
 		assert.True(t, removed)
@@ -286,7 +293,8 @@ func TestList_RemoveWithNilElement(t *testing.T) {
 
 func TestList_RemoveAt(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.Add("1")
+		_, err := l.Add("1")
+		assert.NoError(t, err)
 		previous, err := l.RemoveAt(0)
 		assert.NoError(t, err)
 		assert.Equal(t, "1", previous)
@@ -295,7 +303,8 @@ func TestList_RemoveAt(t *testing.T) {
 
 func TestList_RemoveAll(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2", "3")
+		_, err := l.AddAll("1", "2", "3")
+		assert.NoError(t, err)
 		removedAll, err := l.RemoveAll("2", "3")
 		assert.NoError(t, err)
 		assert.True(t, removedAll)
@@ -314,7 +323,8 @@ func TestList_RemoveAllWithNilElement(t *testing.T) {
 
 func TestList_RetainAll(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2", "3")
+		_, err := l.AddAll("1", "2", "3")
+		assert.NoError(t, err)
 		changed, err := l.RetainAll("2", "3")
 		assert.NoError(t, err)
 		assert.True(t, changed)
@@ -333,7 +343,8 @@ func TestList_RetainAllWithNilElement(t *testing.T) {
 
 func TestList_Size(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2", "3")
+		_, err := l.AddAll("1", "2", "3")
+		assert.NoError(t, err)
 		size, err := l.Size()
 		assert.NoError(t, err)
 		assert.Equal(t, int32(3), size)
@@ -342,7 +353,8 @@ func TestList_Size(t *testing.T) {
 
 func TestList_Get(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.Add("1")
+		_, err := l.Add("1")
+		assert.NoError(t, err)
 		res, err := l.Get(0)
 		assert.NoError(t, err)
 		assert.Equal(t, "1", res)
@@ -351,8 +363,10 @@ func TestList_Get(t *testing.T) {
 
 func TestList_Set(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2", "3")
-		l.Set(1, "13")
+		_, err := l.AddAll("1", "2", "3")
+		assert.NoError(t, err)
+		_, err = l.Set(1, "13")
+		assert.NoError(t, err)
 		res, err := l.Get(1)
 		assert.NoError(t, err)
 		assert.Equal(t, "13", res)
@@ -368,7 +382,8 @@ func TestList_SetWithNilElement(t *testing.T) {
 
 func TestList_SubList(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		l.AddAll("1", "2", "3")
+		_, err := l.AddAll("1", "2", "3")
+		assert.NoError(t, err)
 		res, err := l.SubList(1, 3)
 		assert.NoError(t, err)
 		assert.Equal(t, "2", res[0])
