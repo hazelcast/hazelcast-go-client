@@ -24,6 +24,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -132,7 +133,11 @@ func (q *Queue) Drain() ([]interface{}, error) {
 
 // DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
 func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
-	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, int32(maxSize))
+	maxSizeAsInt32, err := validationutil.ValidateAsNonNegativeInt32(maxSize)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, maxSizeAsInt32)
 	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
