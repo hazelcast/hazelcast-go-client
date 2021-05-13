@@ -323,10 +323,10 @@ func (l *List) SubList(start int32, end int32) ([]interface{}, error) {
 
 // Iterator returns all of the items in this list in proper sequence.
 func (l *List) Iterator() ([]interface{}, error) {
-	request := codec.EncodeListGetAllRequest(l.name)
+	request := codec.EncodeListIteratorRequest(l.name)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
 		return nil, err
 	}
-	return l.convertToObjects(codec.DecodeListGetAllResponse(response))
+	return l.convertToObjects(codec.DecodeListIteratorResponse(response))
 }
