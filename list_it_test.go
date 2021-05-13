@@ -217,15 +217,15 @@ func TestList_ContainsAllWithNilElement(t *testing.T) {
 	})
 }
 
-func TestList_Iterator(t *testing.T) {
+func TestList_ToSlice(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
-		res, err := l.Iterator()
+		res, err := l.ToSlice()
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(res))
 		all := []interface{}{"1", "2"}
 		_, err = l.AddAll(all...)
 		assert.NoError(t, err)
-		res, err = l.Iterator()
+		res, err = l.ToSlice()
 		assert.NoError(t, err)
 		assert.Equal(t, all[0], res[0])
 		assert.Equal(t, all[1], res[1])
