@@ -321,8 +321,8 @@ func (l *List) SubList(start int32, end int32) ([]interface{}, error) {
 	return l.convertToObjects(codec.DecodeListSubResponse(response))
 }
 
-// ToSlice returns a slice that contains all elements of this list in proper sequence.
-func (l *List) ToSlice() ([]interface{}, error) {
+// Iterator returns all of the items in this list in proper sequence.
+func (l *List) Iterator() ([]interface{}, error) {
 	request := codec.EncodeListGetAllRequest(l.name)
 	response, err := l.invokeOnPartition(context.TODO(), request, l.partitionID)
 	if err != nil {
