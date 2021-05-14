@@ -31,7 +31,7 @@ func TestClient_NewConfigBuilder(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if "my-cluster" != config.ClusterConfig.Name {
+	if config.ClusterConfig.Name != "my-cluster" {
 		t.Errorf("target: %v != %v", "my-cluster", config.ClusterConfig.Name)
 	}
 }

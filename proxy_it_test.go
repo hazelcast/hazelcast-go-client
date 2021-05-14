@@ -36,6 +36,10 @@ func TestProxy_Destroy(t *testing.T) {
 		if err := m.Destroy(); err != nil {
 			t.Fatal(err)
 		}
+		// the next call should do nothing and return no error
+		if err := m.Destroy(); err != nil {
+			t.Fatal(err)
+		}
 	})
 }
 

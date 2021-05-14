@@ -457,7 +457,6 @@ func (b *SerializationConfigBuilder) buildConfig() (*serialization.Config, error
 
 type LoggerConfigBuilder struct {
 	config *logger.Config
-	err    error
 }
 
 func newLoggerConfigBuilder() *LoggerConfigBuilder {
