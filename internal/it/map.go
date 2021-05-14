@@ -35,7 +35,7 @@ func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 
 func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
 	makeMapName := func() string {
-		return fmt.Sprintf("test-map-%d", rand.Int())
+		return fmt.Sprintf("test-map-%d-%d", idGen.NextID(), rand.Int())
 	}
 	MapTesterWithConfigBuilderWithName(t, makeMapName, cbCallback, f)
 }
@@ -58,7 +58,9 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string,
 		cb.Cluster().SetSmartRouting(smart)
 		client, m = GetClientMapWithConfigBuilder(makeMapName(), cb)
 		defer func() {
-			m.EvictAll()
+			if err := m.Destroy(); err != nil {
+				t.Logf("test warning, could not destroy map: %s", err.Error())
+			}
 			if err := client.Shutdown(); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}

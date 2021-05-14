@@ -51,6 +51,9 @@ func TopicTesterWithConfigBuilderWithName(t *testing.T, makeName func() string, 
 		cb.Cluster().SetSmartRouting(smart)
 		client, tp = getClientTopicWithConfig(makeName(), cb)
 		defer func() {
+			if err := tp.Destroy(); err != nil {
+				t.Logf("test warning, could not destroy topic: %s", err.Error())
+			}
 			if err := client.Shutdown(); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())
 			}

@@ -21,12 +21,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"reflect"
 	"runtime/debug"
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 
@@ -54,6 +56,10 @@ var rc *RemoteControllerClient
 var rcMu = &sync.RWMutex{}
 var defaultTestCluster *TestCluster
 var idGen = proxy.ReferenceIDGenerator{}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
 	TesterWithConfigBuilder(t, nil, f)

@@ -56,8 +56,12 @@ func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func
 		cb.Cluster().SetSmartRouting(smart)
 		client, m = getClientReplicatedMapWithConfig(makeMapName(), cb)
 		defer func() {
-			m.Clear()
-			client.Shutdown()
+			if err := m.Destroy(); err != nil {
+				t.Logf("test warning, could not destroy replicated map: %s", err.Error())
+			}
+			if err := client.Shutdown(); err != nil {
+				t.Logf("test warning, client not shutdown: %s", err.Error())
+			}
 		}()
 		f(t, m)
 	}
