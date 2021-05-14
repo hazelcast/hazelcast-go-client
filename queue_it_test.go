@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"fmt"
+	"math"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -184,6 +185,15 @@ func TestQueue_DrainWithMaxSize(t *testing.T) {
 			targetValues := []interface{}{int64(1), int64(2)}
 			assert.Equal(t, targetValues, values)
 		}
+	})
+}
+
+func TestQueue_DrainWithMaxSize_Error(t *testing.T) {
+	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
+		_, err := q.DrainWithMaxSize(-1)
+		assert.Error(t, err)
+		_, err = q.DrainWithMaxSize(math.MaxInt32 + 1)
+		assert.Error(t, err)
 	})
 }
 

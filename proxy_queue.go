@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -79,7 +80,7 @@ func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (types.UUID, error
 }
 
 // AddListenerIncludeValue adds an item listener for this queue. Listener will be notified for all queue add/remove events.
-// Received events inclues the updated item.
+// Received events include the updated item.
 func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(true, handler)
 }
@@ -131,13 +132,16 @@ func (q *Queue) Drain() ([]interface{}, error) {
 
 // DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
 func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
-	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, int32(maxSize))
+	maxSizeAsInt32, err := validationutil.ValidateAsNonNegativeInt32(maxSize)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeQueueDrainToMaxSizeRequest(q.name, maxSizeAsInt32)
 	if response, err := q.invokeOnPartition(context.TODO(), request, q.partitionID); err != nil {
 		return nil, err
 	} else {
 		return q.convertToObjects(codec.DecodeQueueDrainToMaxSizeResponse(response))
 	}
-
 }
 
 // Iterator returns all of the items in this queue.
@@ -276,7 +280,7 @@ func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool
 	} else {
 		request := codec.EncodeQueueOfferRequest(q.name, valueData, timeout)
 		if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
-			return false, nil
+			return false, err
 		} else {
 			return codec.DecodeQueueOfferResponse(response), nil
 		}
@@ -308,16 +312,4 @@ func (q *Queue) poll(ctx context.Context, timeout int64) (interface{}, error) {
 	} else {
 		return q.convertToObject(codec.DecodeQueuePollResponse(response))
 	}
-}
-
-func (q *Queue) convertToObjects(data []*iserialization.Data) ([]interface{}, error) {
-	decodedValues := []interface{}{}
-	for _, datum := range data {
-		if obj, err := q.convertToObject(datum); err != nil {
-			return nil, err
-		} else {
-			decodedValues = append(decodedValues, obj)
-		}
-	}
-	return decodedValues, nil
 }

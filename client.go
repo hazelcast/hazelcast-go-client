@@ -169,6 +169,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	return c.proxyManager.getReplicatedMap(name)
 }
 
+// GetQueue returns a queue instance.
 func (c *Client) GetQueue(name string) (*Queue, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotReady
@@ -176,11 +177,20 @@ func (c *Client) GetQueue(name string) (*Queue, error) {
 	return c.proxyManager.getQueue(name)
 }
 
+// GetTopic returns a topic instance.
 func (c *Client) GetTopic(name string) (*Topic, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotReady
 	}
 	return c.proxyManager.getTopic(name)
+}
+
+// GetList returns a list instance.
+func (c *Client) GetList(name string) (*List, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotReady
+	}
+	return c.proxyManager.getList(name)
 }
 
 // Start connects the client to the cluster.
