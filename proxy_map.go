@@ -90,6 +90,12 @@ func (m *Map) Delete(key interface{}) error {
 	return m.cm.Delete(context.Background(), key)
 }
 
+// Destroys this object cluster-wide.
+// Clears and releases all resources for this object.
+func (m *Map) Destroy() error {
+	return m.cm.Destroy()
+}
+
 // Evict evicts the mapping for a key from this map.
 // Returns true if the key is evicted.
 func (m *Map) Evict(key interface{}) (bool, error) {
