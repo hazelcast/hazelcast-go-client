@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -74,7 +75,7 @@ func NewConnectionListenerBinder(
 	return binder
 }
 
-func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
+func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
 	b.regsMu.Lock()
 	b.regs[id] = listenerRegistration{
 		addRequest:    add,
@@ -83,7 +84,7 @@ func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, 
 		id:            id,
 	}
 	b.regsMu.Unlock()
-	corrIDs, err := b.sendAddListenerRequests(add, handler, b.connectionManager.ActiveConnections()...)
+	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, b.connectionManager.ActiveConnections()...)
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, 
 	return nil
 }
 
-func (b *ConnectionListenerBinder) Remove(id types.UUID) error {
+func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) error {
 	b.regsMu.Lock()
 	reg, ok := b.regs[id]
 	if !ok {
@@ -101,7 +102,7 @@ func (b *ConnectionListenerBinder) Remove(id types.UUID) error {
 	delete(b.regs, id)
 	b.removeCorrelationIDs(id)
 	b.regsMu.Unlock()
-	return b.sendRemoveListenerRequests(reg.removeRequest, b.connectionManager.ActiveConnections()...)
+	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, b.connectionManager.ActiveConnections()...)
 }
 
 func (b *ConnectionListenerBinder) updateCorrelationIDs(regID types.UUID, correlationIDs []int64) {
@@ -123,7 +124,7 @@ func (b *ConnectionListenerBinder) removeCorrelationIDs(regId types.UUID) {
 	}
 }
 
-func (b *ConnectionListenerBinder) sendAddListenerRequests(request *proto.ClientMessage, handler proto.ClientMessageHandler, conns ...*Connection) ([]int64, error) {
+func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler, conns ...*Connection) ([]int64, error) {
 	if len(conns) == 0 {
 		return nil, nil
 	}
@@ -140,7 +141,7 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(request *proto.Client
 		corrIDs[i] = corrID
 	}
 	for _, inv := range invs {
-		if _, err := inv.Get(); err != nil {
+		if _, err := inv.GetWithContext(ctx); err != nil {
 			return nil, err
 		}
 	}
@@ -157,7 +158,7 @@ func (b *ConnectionListenerBinder) sendAddListenerRequest(
 	return inv, correlationID
 }
 
-func (b *ConnectionListenerBinder) sendRemoveListenerRequests(request *proto.ClientMessage, conns ...*Connection) error {
+func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Context, request *proto.ClientMessage, conns ...*Connection) error {
 	if len(conns) == 0 {
 		return nil
 	}
@@ -171,7 +172,7 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(request *proto.Cli
 		invs[i] = b.sendRemoveListenerRequest(request, conn)
 	}
 	for _, inv := range invs {
-		if _, err := inv.Get(); err != nil {
+		if _, err := inv.GetWithContext(ctx); err != nil {
 			return err
 		}
 	}
@@ -200,7 +201,7 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 			b.logger.Debug(func() string {
 				return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
 			})
-			if corrIDs, err := b.sendAddListenerRequests(reg.addRequest, reg.handler, e.Conn); err != nil {
+			if corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn); err != nil {
 				b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
 			} else {
 				b.updateCorrelationIDs(regID, corrIDs)
