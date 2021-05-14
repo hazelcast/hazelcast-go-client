@@ -98,14 +98,12 @@ type Client struct {
 	userEventDispatcher     *event.DispatchService
 	proxyManager            *proxyManager
 	clusterConfig           *cluster.Config
-	membershipListenerMap   map[ // components
-	types.UUID]int64
-	refIDGen              *iproxy.ReferenceIDGenerator
-	lifecyleListenerMap   map[types.UUID]int64
-	lifecyleListenerMapMu *sync.Mutex
-	name                  string
-	state                 int32 // configuration
-	// state
+	membershipListenerMap   map[types.UUID]int64
+	refIDGen                *iproxy.ReferenceIDGenerator
+	lifecyleListenerMap     map[types.UUID]int64
+	lifecyleListenerMapMu   *sync.Mutex
+	name                    string
+	state                   int32
 }
 
 func newClient(config Config) (*Client, error) {

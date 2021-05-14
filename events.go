@@ -178,9 +178,9 @@ type ListItemNotifiedHandler func(event *ListItemNotified)
 
 // ListItemNotified describes the List item event.
 type ListItemNotified struct {
-	ListName  string
 	Value     interface{}
 	Member    cluster.Member
+	ListName  string
 	EventType ItemEventType
 }
 
