@@ -81,7 +81,7 @@ func (t *Topic) PublishAll(messages ...interface{}) error {
 
 // RemoveListener removes the given subscription from this topic.
 func (t *Topic) RemoveListener(subscriptionID types.UUID) error {
-	return t.listenerBinder.Remove(subscriptionID)
+	return t.listenerBinder.Remove(context.TODO(), subscriptionID)
 }
 
 func (t *Topic) addListener(handler TopicMessageHandler) (types.UUID, error) {
@@ -98,6 +98,6 @@ func (t *Topic) addListener(handler TopicMessageHandler) (types.UUID, error) {
 			}
 		})
 	}
-	err := t.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	err := t.listenerBinder.Add(context.TODO(), subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }

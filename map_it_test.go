@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"reflect"
@@ -365,7 +366,7 @@ func TestMap_PutAll(t *testing.T) {
 			types.NewEntry("k2", "v2"),
 			types.NewEntry("k3", "v3"),
 		}
-		if err := m.PutAll(pairs); err != nil {
+		if err := m.PutAll(pairs...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -382,7 +383,7 @@ func TestMap_GetEntrySet(t *testing.T) {
 			types.NewEntry("k2", "v2"),
 			types.NewEntry("k3", "v3"),
 		}
-		if err := m.PutAll(target); err != nil {
+		if err := m.PutAll(target...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -406,7 +407,7 @@ func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
 			types.NewEntry("k2", &it.SamplePortable{A: noValue, B: 15}),
 			types.NewEntry("k3", &it.SamplePortable{A: okValue, B: 10}),
 		}
-		if err := m.PutAll(entries); err != nil {
+		if err := m.PutAll(entries...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -429,7 +430,7 @@ func TestMap_GetEntrySetWithPredicateUsingJSON(t *testing.T) {
 			types.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.Json()),
 			types.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.Json()),
 		}
-		if err := m.PutAll(entries); err != nil {
+		if err := m.PutAll(entries...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -558,68 +559,61 @@ func TestMap_LoadAllReplacing(t *testing.T) {
 	})
 }
 
-func TestMap_Lock(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		if err := m.Lock("k1"); err != nil {
-			t.Fatal(err)
-		}
-		if locked, err := m.IsLocked("k1"); err != nil {
-			log.Fatal(err)
-		} else {
-			it.AssertEquals(t, true, locked)
-		}
-		if err := m.Unlock("k1"); err != nil {
-			log.Fatal(err)
-		}
-		if locked, err := m.IsLocked("k1"); err != nil {
-			log.Fatal(err)
-		} else {
-			it.AssertEquals(t, false, locked)
-		}
-	})
-}
-
-func TestMap_LockWithContext(t *testing.T) {
-	it.Tester(t, func(t *testing.T, client *hz.Client) {
-		const mapName = "lock-map"
-		m := it.MustValue(client.GetMap(mapName)).(*hz.Map)
-		defer m.EvictAll()
-		it.Must(m.Lock("k1"))
-		locked := false
+func TestContextMap_Lock(t *testing.T) {
+	it.ContextMapTester(t, func(t *testing.T, cm *hz.ContextMap) {
+		const goroutineCount = 100
+		const key = "counter"
 		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			var err error
-			m, _ := client.GetMap(mapName)
-			if locked, err = m.IsLocked("k1"); err != nil {
-				panic(err)
-			}
-		}()
+		wg.Add(goroutineCount)
+		for i := 0; i < goroutineCount; i++ {
+			go func() {
+				defer wg.Done()
+				intValue := int64(0)
+				lockCtx := cm.NewLockContext(nil)
+				if err := cm.Lock(lockCtx, key); err != nil {
+					panic(err)
+				}
+				defer cm.Unlock(lockCtx, key)
+				v, err := cm.Get(lockCtx, key)
+				if err != nil {
+					panic(err)
+				}
+				if v != nil {
+					intValue = v.(int64)
+				}
+				intValue++
+				if err = cm.Set(lockCtx, key, intValue); err != nil {
+					panic(err)
+				}
+			}()
+		}
 		wg.Wait()
-		if !locked {
-			t.Fatalf("should be locked")
+		if lastValue, err := cm.Get(context.Background(), key); err != nil {
+			panic(err)
+		} else {
+			assert.Equal(t, int64(goroutineCount), lastValue)
 		}
 	})
 }
 
-func TestMap_ForceUnlock(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		if err := m.Lock("k1"); err != nil {
+func TestContextMap_ForceUnlock(t *testing.T) {
+	it.ContextMapTester(t, func(t *testing.T, cm *hz.ContextMap) {
+		lockCtx := cm.NewLockContext(nil)
+		if err := cm.Lock(lockCtx, "k1"); err != nil {
 			t.Fatal(err)
 		}
-		if locked, err := m.IsLocked("k1"); err != nil {
+		if locked, err := cm.IsLocked(lockCtx, "k1"); err != nil {
 			log.Fatal(err)
 		} else {
 			it.AssertEquals(t, true, locked)
 		}
-		if err := m.ForceUnlock("k1"); err != nil {
+		if err := cm.ForceUnlock(lockCtx, "k1"); err != nil {
 			log.Fatal(err)
 		}
-		if locked, err := m.IsLocked("k1"); err != nil {
+		if locked, err := cm.IsLocked(lockCtx, "k1"); err != nil {
 			log.Fatal(err)
 		} else {
-			it.AssertEquals(t, false, locked)
+			assert.Equal(t, false, locked)
 		}
 	})
 }
@@ -664,7 +658,7 @@ func TestMap_RemoveAll(t *testing.T) {
 			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
 			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
 		}
-		it.Must(m.PutAll(entries))
+		it.Must(m.PutAll(entries...))
 		time.Sleep(1 * time.Second)
 		if err := m.RemoveAll(predicate.Equal("B", 10)); err != nil {
 			t.Fatal(err)

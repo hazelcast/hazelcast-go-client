@@ -44,7 +44,7 @@ func (m *proxyManager) getMap(name string) (*Map, error) {
 	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
 		return nil, err
 	} else {
-		return newMap(p), nil
+		return newMap(p, m.refIDGenerator), nil
 	}
 }
 

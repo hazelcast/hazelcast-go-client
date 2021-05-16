@@ -78,13 +78,13 @@ func (l *List) addListener(includeValue bool, handler ListItemNotifiedHandler) (
 			handler(newListItemNotified(l.name, item, member, eventType))
 		})
 	}
-	err := l.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	err := l.listenerBinder.Add(context.TODO(), subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }
 
 // RemoveListener removes the item listener with the given subscription ID.
 func (l *List) RemoveListener(subscriptionID types.UUID) error {
-	return l.listenerBinder.Remove(subscriptionID)
+	return l.listenerBinder.Remove(context.TODO(), subscriptionID)
 }
 
 // Add appends the specified element to the end of this list.

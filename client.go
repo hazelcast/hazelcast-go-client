@@ -159,6 +159,18 @@ func (c *Client) GetMap(name string) (*Map, error) {
 	return c.proxyManager.getMap(name)
 }
 
+// GetMapWithContext returns a distributed map instance.
+func (c *Client) GetMapWithContext(name string) (*ContextMap, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotReady
+	}
+	if m, err := c.proxyManager.getMap(name); err != nil {
+		return nil, err
+	} else {
+		return m.cm, nil
+	}
+}
+
 // GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {

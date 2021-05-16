@@ -225,7 +225,7 @@ func (m *ReplicatedMap) Remove(key interface{}) (interface{}, error) {
 
 // RemoveEntryListener removes the specified entry listener.
 func (m *ReplicatedMap) RemoveEntryListener(subscriptionID types.UUID) error {
-	return m.listenerBinder.Remove(subscriptionID)
+	return m.listenerBinder.Remove(context.TODO(), subscriptionID)
 }
 
 // Size returns the number of entries in this map.
@@ -258,7 +258,7 @@ func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Pr
 	listenerHandler := func(msg *proto.ClientMessage) {
 		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
-	err = m.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	err = m.listenerBinder.Add(context.TODO(), subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }
 

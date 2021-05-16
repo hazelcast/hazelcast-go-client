@@ -340,3 +340,20 @@ func xmlSSLConfig(clusterName string, port int) string {
 		</hazelcast>
 			`, clusterName, port)
 }
+
+func getLoggerLevel() logger.Level {
+	if TraceLoggingEnabled() {
+		return logger.TraceLevel
+	} else {
+		return logger.WarnLevel
+	}
+}
+
+func getDefaultClient(cb *hz.ConfigBuilder) *hz.Client {
+	cb.Logger().SetLevel(getLoggerLevel())
+	client, err := hz.StartNewClientWithConfig(cb)
+	if err != nil {
+		panic(err)
+	}
+	return client
+}

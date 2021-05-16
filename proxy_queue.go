@@ -237,7 +237,7 @@ func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
 
 // RemoveListener removes the specified listener.
 func (q *Queue) RemoveListener(subscriptionID types.UUID) error {
-	return q.listenerBinder.Remove(subscriptionID)
+	return q.listenerBinder.Remove(context.TODO(), subscriptionID)
 }
 
 // RetainAll removes the items which are not contained in the specified collection.
@@ -301,7 +301,7 @@ func (q *Queue) addListener(includeValue bool, handler QueueItemNotifiedHandler)
 			}
 		})
 	}
-	err := q.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	err := q.listenerBinder.Add(context.TODO(), subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }
 

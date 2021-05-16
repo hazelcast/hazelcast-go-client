@@ -34,15 +34,18 @@ import (
 
 const (
 	maxIndexAttributes = 255
-	lockID             = 1
+	defaultLockID      = 0
+	lockIDKey          = "__hz_lock_id"
 )
+
+type lockID int64
 
 type Map struct {
 	cm *ContextMap
 }
 
-func newMap(p *proxy) *Map {
-	m := newContextMap(p)
+func newMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) *Map {
+	m := newContextMap(p, refIDGenerator)
 	return &Map{
 		cm: m,
 	}
@@ -117,21 +120,6 @@ func (m *Map) Flush() error {
 	return m.cm.Flush(context.Background())
 }
 
-/*
-// ForceUnlock releases the lock for the specified key regardless of the lock owner.
-// It always successfully unlocks the key, never blocks, and returns immediately.
-func (m *Map) ForceUnlock(key interface{}) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return err
-	} else {
-		refID := m.refIDGenerator.NextID()
-		request := codec.EncodeMapForceUnlockRequest(m.name, keyData, refID)
-		_, err = m.invokeOnKey(context.TODO(), request, keyData)
-		return err
-	}
-}
-*/
-
 // Get returns the value for the specified key, or nil if this map does not contain this key.
 // Warning:
 // This method returns a clone of original value, modifying the returned value does not change the
@@ -185,22 +173,6 @@ func (m *Map) IsEmpty() (bool, error) {
 	return m.cm.IsEmpty(context.Background())
 }
 
-/*
-// IsLocked checks the lock for the specified key.
-func (m *Map) IsLocked(key interface{}) (bool, error) {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapIsLockedRequest(m.name, keyData)
-		if response, err := m.invokeOnKey(context.TODO(), request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapIsLockedResponse(response), nil
-		}
-	}
-}
-*/
-
 // LoadAllWithoutReplacing loads all keys from the store at server side or loads the given keys if provided.
 func (m *Map) LoadAllWithoutReplacing(keys ...interface{}) error {
 	return m.cm.LoadAllWithoutReplacing(context.Background(), keys...)
@@ -211,43 +183,6 @@ func (m *Map) LoadAllWithoutReplacing(keys ...interface{}) error {
 func (m *Map) LoadAllReplacing(keys ...interface{}) error {
 	return m.cm.LoadAllReplacing(context.Background(), keys...)
 }
-
-/*
-// Lock acquires the lock for the specified key infinitely or for the specified lease time if provided.
-// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
-// dormant until the lock has been acquired.
-//
-// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
-// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
-// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
-// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
-//
-// Scope of the lock is this map only. Acquired lock is only for the key in this map.
-//
-// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
-// acquire it.
-func (m *Map) Lock(key interface{}) error {
-	return m.lock(key, TtlDefault)
-}
-
-// LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
-// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
-// dormant until the lock has been acquired.
-//
-// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
-// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
-// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
-// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
-//
-// Scope of the lock is this map only. Acquired lock is only for the key in this map.
-//
-// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
-// acquire it.
-// Lease time is the the time to wait before releasing the lock.
-func (m *Map) LockWithLease(key interface{}, leaseTime time.Duration) error {
-	return m.lock(key, leaseTime.Milliseconds())
-}
-*/
 
 // Put sets the value for the given key and returns the old value.
 func (m *Map) Put(key interface{}, value interface{}) (interface{}, error) {
@@ -385,7 +320,7 @@ func (m *Map) SetTTL(key interface{}, ttl time.Duration) error {
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
 func (m *Map) SetWithTTL(key interface{}, value interface{}, ttl time.Duration) error {
-	return m.cm.set(context.TODO(), key, value, ttl.Milliseconds())
+	return m.cm.set(context.Background(), key, value, ttl.Milliseconds())
 }
 
 // SetWithTTLAndMaxIdle sets the value for the given key.
@@ -401,39 +336,6 @@ func (m *Map) SetWithTTLAndMaxIdle(key interface{}, value interface{}, ttl time.
 func (m *Map) Size() (int, error) {
 	return m.cm.Size(context.Background())
 }
-
-/*
-// TryLock tries to acquire the lock for the specified key.
-// When the lock is not available, the current thread doesn't wait and returns false immediately.
-func (m *Map) TryLock(key interface{}) (bool, error) {
-	return m.tryLock(key, 0, 0)
-}
-
-// TryLockWithLease tries to acquire the lock for the specified key.
-// Lock will be released after lease time passes.
-func (m *Map) TryLockWithLease(key interface{}, lease time.Duration) (bool, error) {
-	return m.tryLock(key, lease.Milliseconds(), 0)
-}
-
-// TryLockWithTimeout tries to acquire the lock for the specified key.
-// The current thread becomes disabled for thread scheduling purposes and lies
-// dormant until one of the followings happens:
-// - The lock is acquired by the current thread, or
-// - The specified waiting time elapses.
-func (m *Map) TryLockWithTimeout(key interface{}, timeout time.Duration) (bool, error) {
-	return m.tryLock(key, 0, timeout.Milliseconds())
-}
-
-// TryLockWithLeaseTimeout tries to acquire the lock for the specified key.
-// The current thread becomes disabled for thread scheduling purposes and lies
-// dormant until one of the followings happens:
-// - The lock is acquired by the current thread, or
-// - The specified waiting time elapses.
-// Lock will be released after lease time passes.
-func (m *Map) TryLockWithLeaseTimeout(key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
-	return m.tryLock(key, lease.Milliseconds(), timeout.Milliseconds())
-}
-*/
 
 // TryPut tries to put the given key and value into this map and returns immediately.
 func (m *Map) TryPut(key interface{}, value interface{}) (bool, error) {
@@ -455,30 +357,25 @@ func (m *Map) TryRemoveWithTimeout(key interface{}, timeout time.Duration) (inte
 	return m.cm.tryRemove(context.Background(), key, timeout.Milliseconds())
 }
 
-/*
-// Unlock releases the lock for the specified key.
-func (m *Map) Unlock(key interface{}) error {
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return err
-	} else {
-		refID := m.refIDGenerator.NextID()
-		request := codec.EncodeMapUnlockRequest(m.name, keyData, lockID, refID)
-		_, err = m.invokeOnKey(context.TODO(), request, keyData)
-		return err
-	}
-}
-*/
-
 type ContextMap struct {
 	*proxy
 	refIDGenerator *iproxy.ReferenceIDGenerator
 }
 
-func newContextMap(p *proxy) *ContextMap {
+func newContextMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) *ContextMap {
 	return &ContextMap{
 		proxy:          p,
-		refIDGenerator: iproxy.NewReferenceIDGenerator(),
+		refIDGenerator: refIDGenerator,
 	}
+}
+
+// NewLockContext augments the passed parent context with a unique lock ID.
+// If passed context is nil, context.Background is used as the parent context.
+func (m *ContextMap) NewLockContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, lockIDKey, lockID(m.refIDGenerator.NextID()))
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
@@ -514,10 +411,11 @@ func (m *ContextMap) Clear(ctx context.Context) error {
 
 // ContainsKey returns true if the map contains an entry with the given key
 func (m *ContextMap) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lockID)
+		request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
@@ -545,10 +443,11 @@ func (m *ContextMap) ContainsValue(ctx context.Context, value interface{}) (bool
 // the returned value. If the removed value will not be used, a delete operation is preferred over a remove
 // operation for better performance.
 func (m *ContextMap) Delete(ctx context.Context, key interface{}) error {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapDeleteRequest(m.name, keyData, lockID)
+		request := codec.EncodeMapDeleteRequest(m.name, keyData, lid)
 		_, err := m.invokeOnKey(ctx, request, keyData)
 		return err
 	}
@@ -557,10 +456,11 @@ func (m *ContextMap) Delete(ctx context.Context, key interface{}) error {
 // Evict evicts the mapping for a key from this map.
 // Returns true if the key is evicted.
 func (m *ContextMap) Evict(ctx context.Context, key interface{}) (bool, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapEvictRequest(m.name, keyData, lockID)
+		request := codec.EncodeMapEvictRequest(m.name, keyData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
@@ -605,15 +505,29 @@ func (m *ContextMap) Flush(ctx context.Context) error {
 	return err
 }
 
+// ForceUnlock releases the lock for the specified key regardless of the lock owner.
+// It always successfully unlocks the key, never blocks, and returns immediately.
+func (m *ContextMap) ForceUnlock(ctx context.Context, key interface{}) error {
+	if keyData, err := m.validateAndSerialize(key); err != nil {
+		return err
+	} else {
+		refID := m.refIDGenerator.NextID()
+		request := codec.EncodeMapForceUnlockRequest(m.name, keyData, refID)
+		_, err = m.invokeOnKey(ctx, request, keyData)
+		return err
+	}
+}
+
 // Get returns the value for the specified key, or nil if this map does not contain this key.
 // Warning:
 // This method returns a clone of original value, modifying the returned value does not change the
 // actual value in the map. One should put modified value back to make changes visible to all nodes.
 func (m *ContextMap) Get(ctx context.Context, key interface{}) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapGetRequest(m.name, keyData, lockID)
+		request := codec.EncodeMapGetRequest(m.name, keyData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -696,10 +610,11 @@ func (m *ContextMap) GetEntrySetWithPredicate(ctx context.Context, predicate pre
 
 // GetEntryView returns the SimpleEntryView for the specified key.
 func (m *ContextMap) GetEntryView(ctx context.Context, key string) (*types.SimpleEntryView, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapGetEntryViewRequest(m.name, keyData, lockID)
+		request := codec.EncodeMapGetEntryViewRequest(m.name, keyData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -798,6 +713,20 @@ func (m *ContextMap) IsEmpty(ctx context.Context) (bool, error) {
 	}
 }
 
+// IsLocked checks the lock for the specified key.
+func (m *ContextMap) IsLocked(ctx context.Context, key interface{}) (bool, error) {
+	if keyData, err := m.validateAndSerialize(key); err != nil {
+		return false, err
+	} else {
+		request := codec.EncodeMapIsLockedRequest(m.name, keyData)
+		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
+			return false, err
+		} else {
+			return codec.DecodeMapIsLockedResponse(response), nil
+		}
+	}
+}
+
 // LoadAllWithoutReplacing loads all keys from the store at server side or loads the given keys if provided.
 func (m *ContextMap) LoadAllWithoutReplacing(ctx context.Context, keys ...interface{}) error {
 	return m.loadAll(ctx, false, keys...)
@@ -807,6 +736,41 @@ func (m *ContextMap) LoadAllWithoutReplacing(ctx context.Context, keys ...interf
 // Replaces existing keys.
 func (m *ContextMap) LoadAllReplacing(ctx context.Context, keys ...interface{}) error {
 	return m.loadAll(ctx, true, keys...)
+}
+
+// Lock acquires the lock for the specified key infinitely or for the specified lease time if provided.
+// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
+// dormant until the lock has been acquired.
+//
+// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
+// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
+// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
+// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
+//
+// Scope of the lock is this map only. Acquired lock is only for the key in this map.
+//
+// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
+// acquire it.
+func (m *ContextMap) Lock(ctx context.Context, key interface{}) error {
+	return m.lock(ctx, key, TtlDefault)
+}
+
+// LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
+// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
+// dormant until the lock has been acquired.
+//
+// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
+// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
+// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
+// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
+//
+// Scope of the lock is this map only. Acquired lock is only for the key in this map.
+//
+// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
+// acquire it.
+// Lease time is the the time to wait before releasing the lock.
+func (m *ContextMap) LockWithLease(ctx context.Context, key interface{}, leaseTime time.Duration) error {
+	return m.lock(ctx, key, leaseTime.Milliseconds())
 }
 
 // Put sets the value for the given key and returns the old value.
@@ -861,10 +825,11 @@ func (m *ContextMap) PutIfAbsentWithTTL(ctx context.Context, key interface{}, va
 // Entry will expire and get evicted after the ttl.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 func (m *ContextMap) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, lockID, ttl.Milliseconds(), maxIdle.Milliseconds())
+		request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -909,10 +874,11 @@ func (m *ContextMap) PutTransientWithTTLAndMaxIdle(ctx context.Context, key inte
 
 // Remove deletes the value for the given key and returns it.
 func (m *ContextMap) Remove(ctx context.Context, key interface{}) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapRemoveRequest(m.name, keyData, lockID)
+		request := codec.EncodeMapRemoveRequest(m.name, keyData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -950,10 +916,11 @@ func (m *ContextMap) RemoveInterceptor(ctx context.Context, registrationID strin
 // RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
 // Returns true if the entry was removed.
 func (m *ContextMap) RemoveIfSame(ctx context.Context, key interface{}, value interface{}) (bool, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lockID)
+		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
@@ -964,10 +931,11 @@ func (m *ContextMap) RemoveIfSame(ctx context.Context, key interface{}, value in
 
 // Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
 func (m *ContextMap) Replace(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, lockID)
+		request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -979,10 +947,11 @@ func (m *ContextMap) Replace(ctx context.Context, key interface{}, value interfa
 // ReplaceIfSame replaces the entry for a key only if it is currently mapped to a given value.
 // Returns true if the value was replaced.
 func (m *ContextMap) ReplaceIfSame(ctx context.Context, key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+	lid := extractLockID(ctx)
 	if keyData, oldValueData, newValueData, err := m.validateAndSerialize3(key, oldValue, newValue); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, lockID)
+		request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, lid)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
@@ -1022,10 +991,11 @@ func (m *ContextMap) SetWithTTL(ctx context.Context, key interface{}, value inte
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
 func (m *ContextMap) SetWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, lockID, ttl.Milliseconds(), maxIdle.Milliseconds())
+		request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
 		_, err := m.invokeOnKey(ctx, request, keyData)
 		return err
 	}
@@ -1039,6 +1009,37 @@ func (m *ContextMap) Size(ctx context.Context) (int, error) {
 	} else {
 		return int(codec.DecodeMapSizeResponse(response)), nil
 	}
+}
+
+// TryLock tries to acquire the lock for the specified key.
+// When the lock is not available, the current thread doesn't wait and returns false immediately.
+func (m *ContextMap) TryLock(ctx context.Context, key interface{}) (bool, error) {
+	return m.tryLock(ctx, key, 0, 0)
+}
+
+// TryLockWithLease tries to acquire the lock for the specified key.
+// Lock will be released after lease time passes.
+func (m *ContextMap) TryLockWithLease(ctx context.Context, key interface{}, lease time.Duration) (bool, error) {
+	return m.tryLock(ctx, key, lease.Milliseconds(), 0)
+}
+
+// TryLockWithTimeout tries to acquire the lock for the specified key.
+// The current thread becomes disabled for thread scheduling purposes and lies
+// dormant until one of the followings happens:
+// - The lock is acquired by the current thread, or
+// - The specified waiting time elapses.
+func (m *ContextMap) TryLockWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (bool, error) {
+	return m.tryLock(ctx, key, 0, timeout.Milliseconds())
+}
+
+// TryLockWithLeaseTimeout tries to acquire the lock for the specified key.
+// The current thread becomes disabled for thread scheduling purposes and lies
+// dormant until one of the followings happens:
+// - The lock is acquired by the current thread, or
+// - The specified waiting time elapses.
+// Lock will be released after lease time passes.
+func (m *ContextMap) TryLockWithLeaseTimeout(ctx context.Context, key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
+	return m.tryLock(ctx, key, lease.Milliseconds(), timeout.Milliseconds())
 }
 
 // TryPut tries to put the given key and value into this map and returns immediately.
@@ -1059,6 +1060,19 @@ func (m *ContextMap) TryRemove(ctx context.Context, key interface{}) (interface{
 // TryRemoveWithTimeout tries to remove the given key from this map and waits until operation is completed or timeout is reached.
 func (m *ContextMap) TryRemoveWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (interface{}, error) {
 	return m.tryRemove(ctx, key, timeout.Milliseconds())
+}
+
+// Unlock releases the lock for the specified key.
+func (m *ContextMap) Unlock(ctx context.Context, key interface{}) error {
+	lid := extractLockID(ctx)
+	if keyData, err := m.validateAndSerialize(key); err != nil {
+		return err
+	} else {
+		refID := m.refIDGenerator.NextID()
+		request := codec.EncodeMapUnlockRequest(m.name, keyData, lid, refID)
+		_, err = m.invokeOnKey(ctx, request, keyData)
+		return err
+	}
 }
 
 func (m *ContextMap) addIndex(ctx context.Context, indexConfig types.IndexConfig) error {
@@ -1114,22 +1128,23 @@ func (m *ContextMap) loadAll(ctx context.Context, replaceExisting bool, keys ...
 }
 
 func (m *ContextMap) lock(ctx context.Context, key interface{}, ttl int64) error {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		m.logger.Trace(func() string { return fmt.Sprintf("lock ID: %d", lockID) })
 		refID := m.refIDGenerator.NextID()
-		request := codec.EncodeMapLockRequest(m.name, keyData, lockID, ttl, refID)
+		request := codec.EncodeMapLockRequest(m.name, keyData, lid, ttl, refID)
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
 	}
 }
 
 func (m *ContextMap) putTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, lockID, ttl)
+		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, lid, ttl)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -1139,10 +1154,11 @@ func (m *ContextMap) putTTL(ctx context.Context, key interface{}, value interfac
 }
 
 func (m *ContextMap) putMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, lockID, ttl, maxIdle)
+		request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -1152,10 +1168,11 @@ func (m *ContextMap) putMaxIdle(ctx context.Context, key interface{}, value inte
 }
 
 func (m *ContextMap) putIfAbsent(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, lockID, ttl)
+		request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, lid, ttl)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -1165,14 +1182,15 @@ func (m *ContextMap) putIfAbsent(ctx context.Context, key interface{}, value int
 }
 
 func (m *ContextMap) putTransient(ctx context.Context, key interface{}, value interface{}, ttl int64, maxIdle int64) error {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
 		var request *proto.ClientMessage
 		if maxIdle >= 0 {
-			request = codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, lockID, ttl, maxIdle)
+			request = codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
 		} else {
-			request = codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, lockID, ttl)
+			request = codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, lid, ttl)
 		}
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
@@ -1180,11 +1198,12 @@ func (m *ContextMap) putTransient(ctx context.Context, key interface{}, value in
 }
 
 func (m *ContextMap) tryLock(ctx context.Context, key interface{}, lease int64, timeout int64) (bool, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
 		refID := m.refIDGenerator.NextID()
-		request := codec.EncodeMapTryLockRequest(m.name, keyData, lockID, lease, timeout, refID)
+		request := codec.EncodeMapTryLockRequest(m.name, keyData, lid, lease, timeout, refID)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
@@ -1222,21 +1241,22 @@ func (m *ContextMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, pred
 }
 
 func (m *ContextMap) set(ctx context.Context, key interface{}, value interface{}, ttl int64) error {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return err
 	} else {
-		request := codec.EncodeMapSetRequest(m.name, keyData, valueData, lockID, ttl)
+		request := codec.EncodeMapSetRequest(m.name, keyData, valueData, lid, ttl)
 		_, err := m.invokeOnKey(ctx, request, keyData)
 		return err
 	}
 }
 
 func (m *ContextMap) tryPut(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
+	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return false, err
 	} else {
-		m.logger.Trace(func() string { return fmt.Sprintf("tryPut lock ID: %d", lockID) })
-		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, lockID, timeout)
+		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, lid, timeout)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
@@ -1246,10 +1266,11 @@ func (m *ContextMap) tryPut(ctx context.Context, key interface{}, value interfac
 }
 
 func (m *ContextMap) tryRemove(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
+	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lockID, timeout)
+		request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lid, timeout)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
@@ -1375,5 +1396,20 @@ func flagsSetOrClear(flags *int32, flag int32, enable bool) {
 		*flags |= flag
 	} else {
 		*flags &^= flag
+	}
+}
+
+// extractLockID extracts lock ID from the context.
+// If the lock ID is not found, it returns the default lock ID.
+func extractLockID(ctx context.Context) int64 {
+	if ctx == nil {
+		panic("context is nil")
+	}
+	if lockIDValue := ctx.Value(lockIDKey); lockIDValue == nil {
+		return defaultLockID
+	} else if lid, ok := lockIDValue.(lockID); !ok {
+		return defaultLockID
+	} else {
+		return int64(lid)
 	}
 }
