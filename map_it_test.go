@@ -332,8 +332,8 @@ func TestMap_GetKeySetWithPredicate(t *testing.T) {
 		it.Must(m.Set(serialization.JSON(`{"a": 15}`), "v3"))
 		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 10)); err != nil {
 			t.Fatal(err)
-		} else if !assert.Equal(t, targetKeySet, keys) {
-			t.FailNow()
+		} else if !reflect.DeepEqual(makeJSONSet(targetKeySet), makeJSONSet(keys)) {
+			t.Fatalf("target: %#v != %#v", targetKeySet, keys)
 		}
 	})
 }
@@ -875,6 +875,15 @@ func makeStringSet(items []interface{}) map[string]struct{} {
 	result := map[string]struct{}{}
 	for _, item := range items {
 		result[item.(string)] = struct{}{}
+	}
+	return result
+}
+
+func makeJSONSet(items []interface{}) map[string]struct{} {
+	result := map[string]struct{}{}
+	for _, item := range items {
+		json := item.(serialization.JSON)
+		result[json.String()] = struct{}{}
 	}
 	return result
 }
