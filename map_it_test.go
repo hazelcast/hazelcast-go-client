@@ -67,7 +67,7 @@ func TestMap_PutWithMaxIdle(t *testing.T) {
 		if _, err := m.PutWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
@@ -79,7 +79,7 @@ func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
@@ -105,7 +105,7 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
@@ -119,7 +119,7 @@ func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		assert.Equal(t, nil, it.MustValue(m.Get("key")))
 	})
 }
@@ -141,7 +141,7 @@ func TestMap_PutTransientWithTTL(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
 	})
 }
@@ -153,7 +153,7 @@ func TestMap_PutTransientWithMaxIdle(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
 	})
 }
@@ -166,7 +166,7 @@ func TestMap_PutTransientWithTTLAndMaxIdle(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
 	})
 }
