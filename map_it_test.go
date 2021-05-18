@@ -316,7 +316,7 @@ func TestMap_GetKeySetWithPredicate(t *testing.T) {
 		it.Must(m.Set(serialization.JSON(`{"a": 15}`), "v3"))
 		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 11)); err != nil {
 			t.Fatal(err)
-		} else if !assert.Equal(t, targetKeySet, keys) {
+		} else if !assert.ElementsMatch(t, targetKeySet, keys) {
 			t.FailNow()
 		}
 	})
