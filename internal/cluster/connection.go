@@ -224,9 +224,6 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 		c.writeBuffer = make([]byte, msgLen)
 	}
 	clientMessage.Bytes(0, c.writeBuffer)
-	if err := c.socket.SetWriteDeadline(time.Now().Add(1 * time.Second)); err != nil {
-		return err
-	}
 	_, err := c.socket.Write(c.writeBuffer[:msgLen])
 	return err
 }
