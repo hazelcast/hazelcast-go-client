@@ -56,32 +56,25 @@ var (
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
 func StartNewClient() (*Client, error) {
-	return StartNewClientWithConfig(NewConfigBuilder())
+	if config, err := NewConfigBuilder().Config(); err != nil {
+		return nil, err
+	} else {
+		return StartNewClientWithConfig(*config)
+	}
+
 }
 
 // StartNewClientWithConfig creates and starts a new client with the given configuration.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
-func StartNewClientWithConfig(configProvider ConfigProvider) (*Client, error) {
-	if client, err := newClientWithConfig(configProvider); err != nil {
+func StartNewClientWithConfig(config Config) (*Client, error) {
+	if client, err := newClient(config); err != nil {
 		return nil, err
 	} else if err = client.start(); err != nil {
 		return nil, err
 	} else {
 		return client, nil
-	}
-}
-
-// newClientWithConfig creates and returns a new client with the given config.
-// Hazelcast client enables you to do all Hazelcast operations without
-// being a member of the cluster. It connects to one or more of the
-// cluster members and delegates all cluster wide operations to them.
-func newClientWithConfig(configProvider ConfigProvider) (*Client, error) {
-	if config, err := configProvider.Config(); err != nil {
-		return nil, err
-	} else {
-		return newClient(*config)
 	}
 }
 

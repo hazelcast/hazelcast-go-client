@@ -33,10 +33,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type ConfigProvider interface {
-	Config() (*Config, error)
-}
-
 // Config contains configuration for a client.
 // Although it is possible to set the values of the configuration directly,
 // prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
@@ -49,12 +45,55 @@ type Config struct {
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
 }
 
+func NewConfig() Config {
+	defaultAddr := fmt.Sprintf("%s:%d", cluster.DefaultHost, cluster.DefaultPort)
+	config := Config{
+		ClusterConfig: cluster.Config{
+			Name:              "dev",
+			Addrs:             []string{defaultAddr},
+			SmartRouting:      true,
+			ConnectionTimeout: 5 * time.Second,
+			HeartbeatInterval: 5 * time.Second,
+			HeartbeatTimeout:  60 * time.Second,
+			InvocationTimeout: 120 * time.Second,
+		},
+	}
+	return config
+}
+
+// AddLifecycleListener adds a lifecycle listener.
+// The listener is attached to the client before the client starts, so all lifecycle events can be received.
+// Use the returned subscription ID to remove the listener.
+// The handler must not block.
+func (c *Config) AddLifecycleListener(handler LifecycleStateChangeHandler) types.UUID {
+	if c.lifecycleListeners == nil {
+		c.lifecycleListeners = map[types.UUID]LifecycleStateChangeHandler{}
+	}
+	id := types.NewUUID()
+	c.lifecycleListeners[id] = handler
+	return id
+}
+
+// AddMembershipListener adds a membership listeener.
+// The listener is attached to the client before the client starts, so all membership events can be received.
+// Use the returned subscription ID to remove the listener.
+func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHandler) types.UUID {
+	if c.membershipListeners == nil {
+		c.membershipListeners = map[types.UUID]cluster.MembershipStateChangeHandler{}
+	}
+	id := types.NewUUID()
+	c.membershipListeners[id] = handler
+	return id
+}
+
 func (c Config) clone() Config {
 	return Config{
 		ClientName:          c.ClientName,
 		ClusterConfig:       c.ClusterConfig.Clone(),
 		SerializationConfig: c.SerializationConfig.Clone(),
 		LoggerConfig:        c.LoggerConfig.Clone(),
+		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
+		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
 		membershipListeners: c.membershipListeners,
 	}
@@ -85,25 +124,6 @@ func NewConfigBuilder() *ConfigBuilder {
 func (c *ConfigBuilder) SetClientName(name string) *ConfigBuilder {
 	c.config.ClientName = name
 	return c
-}
-
-// AddLifecycleListener adds a lifecycle listener.
-// The listener is attached to the client before the client starts, so all lifecycle events can be received.
-// Use the returned subscription ID to remove the listener.
-// The handler must not block.
-func (c *ConfigBuilder) AddLifecycleListener(handler LifecycleStateChangeHandler) types.UUID {
-	id := types.NewUUID()
-	c.config.lifecycleListeners[id] = handler
-	return id
-}
-
-// AddMembershipListener adds a membership listeener.
-// The listener is attached to the client before the client starts, so all membership events can be received.
-// Use the returned subscription ID to remove the listener.
-func (c *ConfigBuilder) AddMembershipListener(handler cluster.MembershipStateChangeHandler) types.UUID {
-	id := types.NewUUID()
-	c.config.membershipListeners[id] = handler
-	return id
 }
 
 // Cluster returns the cluster configuration builder.
@@ -410,41 +430,6 @@ func newSerializationConfigBuilder() *SerializationConfigBuilder {
 // Default byte order is big endian.
 func (b *SerializationConfigBuilder) SetBigEndian(enabled bool) *SerializationConfigBuilder {
 	b.config.BigEndian = enabled
-	return b
-}
-
-// SetGlobalSerializer sets the global serializer
-func (b *SerializationConfigBuilder) SetGlobalSerializer(serializer serialization.Serializer) *SerializationConfigBuilder {
-	if serializer.ID() <= 0 {
-		panic("serializerID must be positive")
-	}
-	b.config.GlobalSerializer = serializer
-	return b
-}
-
-// AddIdentifiedDataSerializableFactory adds an identified data serializable factory.
-func (b *SerializationConfigBuilder) AddIdentifiedDataSerializableFactory(factory serialization.IdentifiedDataSerializableFactory) *SerializationConfigBuilder {
-	b.config.IdentifiedDataSerializableFactories[factory.FactoryID()] = factory
-	return b
-}
-
-// AddPortableFactory adds a portable factory.
-func (b *SerializationConfigBuilder) AddPortableFactory(factory serialization.PortableFactory) *SerializationConfigBuilder {
-	b.config.PortableFactories[factory.FactoryID()] = factory
-	return b
-}
-
-// AddCustomSerializer adds a customer serializer for the given type.
-func (b *SerializationConfigBuilder) AddCustomSerializer(t reflect.Type, serializer serialization.Serializer) *SerializationConfigBuilder {
-	if serializer.ID() <= 0 {
-		panic("serializerID must be positive")
-	}
-	b.config.CustomSerializers[t] = serializer
-	return b
-}
-
-func (b *SerializationConfigBuilder) AddClassDefinition(definition serialization.ClassDefinition) *SerializationConfigBuilder {
-	b.config.ClassDefinitions = append(b.config.ClassDefinitions, definition)
 	return b
 }
 
