@@ -855,7 +855,7 @@ func TestMap_Destroy(t *testing.T) {
 	})
 }
 
-// ==== Reliablity Tests ====
+// ==== Reliability Tests ====
 
 func TestMapSetGet1000(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {

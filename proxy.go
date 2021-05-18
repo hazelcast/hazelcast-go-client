@@ -160,7 +160,7 @@ func (p *proxy) Destroy() error {
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
 	if nilutil.IsNil(arg1) {
-		return nil, hzerror.NewHazelcastNilPointerError("nil arg is not allowed", nil)
+		return nil, errNilArg
 	}
 	return p.serializationService.ToData(arg1)
 }
