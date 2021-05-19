@@ -27,6 +27,7 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type Service struct {
@@ -90,7 +91,7 @@ func NewServiceImpl(bundle CreationBundle) *Service {
 	}
 }
 
-func (s *Service) GetMemberByUUID(uuid string) pubcluster.Member {
+func (s *Service) GetMemberByUUID(uuid types.UUID) pubcluster.Member {
 	return s.membersMap.Find(uuid)
 }
 
@@ -160,9 +161,9 @@ func (s *Service) logStatus() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			s.membersMap.Info(func(members map[string]*Member) {
+			s.membersMap.Info(func(members map[types.UUID]*Member) {
 				s.logger.Trace(func() string {
-					mems := map[string]string{}
+					mems := map[types.UUID]string{}
 					for uuid, member := range members {
 						mems[uuid] = member.Address().String()
 					}
@@ -200,16 +201,16 @@ func (a AddrSet) Addrs() []*pubcluster.AddressImpl {
 }
 
 type membersMap struct {
-	members          map[string]*Member
-	addrToMemberUUID map[string]string
+	members          map[types.UUID]*Member
+	addrToMemberUUID map[string]types.UUID
 	membersMu        *sync.RWMutex
 	version          int32
 }
 
 func newMembersMap() membersMap {
 	return membersMap{
-		members:          map[string]*Member{},
-		addrToMemberUUID: map[string]string{},
+		members:          map[types.UUID]*Member{},
+		addrToMemberUUID: map[string]types.UUID{},
 		membersMu:        &sync.RWMutex{},
 		version:          -1,
 	}
@@ -219,17 +220,17 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
-		newUUIDs := map[string]struct{}{}
+		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.Member{}
 		for _, member := range members {
 			if member := m.addMember(member); member != nil {
 				added = append(added, member)
 			}
-			newUUIDs[member.UUID().String()] = struct{}{}
+			newUUIDs[member.UUID()] = struct{}{}
 		}
 		removed = []pubcluster.Member{}
 		for _, member := range m.members {
-			if _, ok := newUUIDs[member.UUID().String()]; !ok {
+			if _, ok := newUUIDs[member.UUID()]; !ok {
 				m.removeMember(member)
 				removed = append(removed, member)
 			}
@@ -238,7 +239,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	return
 }
 
-func (m *membersMap) Find(uuid string) *Member {
+func (m *membersMap) Find(uuid types.UUID) *Member {
 	m.membersMu.RLock()
 	member := m.members[uuid]
 	m.membersMu.RUnlock()
@@ -253,7 +254,7 @@ func (m *membersMap) RemoveMembersWithAddr(addr string) {
 	m.membersMu.Unlock()
 }
 
-func (m *membersMap) Info(infoFun func(members map[string]*Member)) {
+func (m *membersMap) Info(infoFun func(members map[types.UUID]*Member)) {
 	m.membersMu.RLock()
 	infoFun(m.members)
 	m.membersMu.RUnlock()
@@ -270,7 +271,7 @@ func (m *membersMap) MemberAddrs() []string {
 }
 
 func (m *membersMap) addMember(memberInfo pubcluster.MemberInfo) *Member {
-	uuid := memberInfo.UUID().String()
+	uuid := memberInfo.UUID()
 	addr := memberInfo.Address().String()
 	if _, uuidFound := m.members[uuid]; uuidFound {
 		return nil
@@ -285,6 +286,6 @@ func (m *membersMap) addMember(memberInfo pubcluster.MemberInfo) *Member {
 }
 
 func (m *membersMap) removeMember(member *Member) {
-	delete(m.members, member.UUID().String())
+	delete(m.members, member.UUID())
 	delete(m.addrToMemberUUID, member.Address().String())
 }

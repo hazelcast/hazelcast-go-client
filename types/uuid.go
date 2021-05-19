@@ -23,61 +23,58 @@ import (
 	"io"
 )
 
-// TODO convert to [16]byte
-type UUID struct {
-	mostSigBits  uint64
-	leastSigBits uint64
-	str          string
-}
+type UUID [16]byte
+
+// NilUUID is empty UUID, all zeros
+var NilUUID UUID
 
 // NewUUID is used to generate a random UUID
 func NewUUID() UUID {
-	buf := make([]byte, 16)
-	if _, err := io.ReadFull(rand.Reader, buf); err != nil {
+	var uuid UUID
+	if _, err := io.ReadFull(rand.Reader, uuid[:]); err != nil {
 		panic(err)
 	}
-	buf[6] &= 0x0f // clear version
-	buf[6] |= 0x40 // set to version 4
-	buf[8] &= 0x3f // clear variant
-	buf[8] |= 0x80 // set to IETF variant
+	uuid[6] &= 0x0f // clear version
+	uuid[6] |= 0x40 // set to version 4
+	uuid[8] &= 0x3f // clear variant
+	uuid[8] |= 0x80 // set to IETF variant
 
-	return UUID{binary.BigEndian.Uint64(buf[0:8]),
-		binary.BigEndian.Uint64(buf[8:]), marshalText(buf)}
+	return uuid
 }
 
 func NewUUIDWith(mostSigBits, leastSigBits uint64) UUID {
-	data := make([]byte, 16)
-	binary.BigEndian.PutUint64(data[0:8], mostSigBits)
-	binary.BigEndian.PutUint64(data[8:16], leastSigBits)
-	return UUID{mostSigBits, leastSigBits, marshalText(data)}
+	var uuid UUID
+	binary.BigEndian.PutUint64(uuid[0:8], mostSigBits)
+	binary.BigEndian.PutUint64(uuid[8:16], leastSigBits)
+	return uuid
 }
 
 func (u UUID) String() string {
-	return u.str
+	return string(u.marshalText())
 }
 
 func (u UUID) MostSignificantBits() uint64 {
-	return u.mostSigBits
+	return binary.BigEndian.Uint64(u[0:8])
 }
 
 func (u UUID) LeastSignificantBits() uint64 {
-	return u.leastSigBits
+	return binary.BigEndian.Uint64(u[8:16])
 }
 
 func (u UUID) Default() bool {
-	return u.mostSigBits == 0 && u.leastSigBits == 0
+	return u.MostSignificantBits() == 0 && u.LeastSignificantBits() == 0
 }
 
-func marshalText(data []byte) string {
+func (u UUID) marshalText() []byte {
 	dst := make([]byte, 36)
-	hex.Encode(dst, data[:4])
+	hex.Encode(dst, u[:4])
 	dst[8] = '-'
-	hex.Encode(dst[9:13], data[4:6])
+	hex.Encode(dst[9:13], u[4:6])
 	dst[13] = '-'
-	hex.Encode(dst[14:18], data[6:8])
+	hex.Encode(dst[14:18], u[6:8])
 	dst[18] = '-'
-	hex.Encode(dst[19:23], data[8:10])
+	hex.Encode(dst[19:23], u[8:10])
 	dst[23] = '-'
-	hex.Encode(dst[24:], data[10:])
-	return string(dst)
+	hex.Encode(dst[24:], u[10:])
+	return dst
 }

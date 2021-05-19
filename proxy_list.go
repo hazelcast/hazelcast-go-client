@@ -74,7 +74,7 @@ func (l *List) addListener(includeValue bool, handler ListItemNotifiedHandler) (
 				l.logger.Warnf("cannot convert data to Go value: %v", err)
 				return
 			}
-			member := l.clusterService.GetMemberByUUID(uuid.String())
+			member := l.clusterService.GetMemberByUUID(uuid)
 			handler(newListItemNotified(l.name, item, member, eventType))
 		})
 	}
