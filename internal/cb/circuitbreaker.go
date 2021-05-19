@@ -80,6 +80,7 @@ func (cb *CircuitBreaker) TryContextFuture(ctx context.Context, tryHandler TryHa
 	if state := atomic.LoadInt32(&cb.State); state == StateOpen {
 		return NewFailedFuture(ErrCircuitOpen)
 	}
+	// TODO get rid of futures
 	future := NewFutureImpl()
 	cb.tryChan(ctx, future.resultCh, tryHandler)
 	return future

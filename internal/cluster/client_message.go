@@ -23,7 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-const messageBufferSize = 64
+const messageBufferSize = 16 * 1024
 
 type clientMessageReader struct {
 	src                *bytes.Buffer
@@ -54,6 +54,7 @@ func (c *clientMessageReader) Read() *proto.ClientMessage {
 		}
 	}
 }
+
 func (c *clientMessageReader) readFrame() bool {
 	if !c.readHeader {
 		if c.src.Len() < proto.SizeOfFrameLengthAndFlags {
@@ -88,14 +89,21 @@ func (c *clientMessageReader) readFrame() bool {
 
 func (c *clientMessageReader) Reset() {
 	c.clientMessage = nil
-	c.resetBuffer()
+	c.resetBufferIfNeeded()
 }
 
-func (c *clientMessageReader) resetBuffer() {
+// TODO: maybe it's better to copy the memory and release the buffer???
+func (c *clientMessageReader) resetBufferIfNeeded() {
+	// Note: we can't reuse underlying byte array from the src buffer.
+	// that's because slices from that array are propagated to client
+	// message frames, then, sometimes, to user code as []byte slices
+	// and strings.
+	if c.src.Cap() <= messageBufferSize {
+		return // no need to resize for now
+	}
 	// read the remaining data
 	all := c.src.Next(c.src.Len())
 	// reset the buffer
-	// TODO: optimize allocations
 	c.src = bytes.NewBuffer(make([]byte, 0, messageBufferSize))
 	// write the remaining data back
 	if len(all) > 0 {

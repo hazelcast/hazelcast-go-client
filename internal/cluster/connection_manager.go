@@ -230,9 +230,9 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 	if partitionID < 0 {
 		panic("partition ID is negative")
 	}
-	if ownerUUID := m.partitionService.GetPartitionOwner(partitionID); ownerUUID == nil {
+	if ownerUUID := m.partitionService.GetPartitionOwner(partitionID); ownerUUID == "" {
 		return nil
-	} else if member := m.clusterService.GetMemberByUUID(ownerUUID.String()); nilutil.IsNil(member) {
+	} else if member := m.clusterService.GetMemberByUUID(ownerUUID); nilutil.IsNil(member) {
 		return nil
 	} else {
 		return m.GetConnectionForAddress(member.Address().(*pubcluster.AddressImpl))

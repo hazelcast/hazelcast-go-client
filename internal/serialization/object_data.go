@@ -19,6 +19,7 @@ package serialization
 import (
 	"encoding/binary"
 	"fmt"
+	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
@@ -148,12 +149,11 @@ func (o *ObjectDataOutput) WriteFloat64(v float64) {
 }
 
 func (o *ObjectDataOutput) WriteString(v string) {
-	b := []byte(v)
-	length := len(b)
+	length := len(v)
 	o.WriteInt32(int32(length))
 	if length > 0 {
 		o.EnsureAvailable(length)
-		copy(o.buffer[o.position:], b)
+		copy(o.buffer[o.position:], v)
 		o.position += int32(length)
 	}
 }
@@ -423,7 +423,7 @@ func (i *ObjectDataInput) ReadString() string {
 	if size == nilArrayLength {
 		return ""
 	}
-	s := string(i.buffer[i.position : i.position+size])
+	s := byteSliceToString(i.buffer[i.position : i.position+size])
 	i.position += size
 	return s
 }
@@ -434,7 +434,7 @@ func (i *ObjectDataInput) ReadStringAtPosition(pos int32) string {
 		return ""
 	}
 	pos += Int32SizeInBytes
-	s := string(i.buffer[pos : pos+size])
+	s := byteSliceToString(i.buffer[pos : pos+size])
 	pos += size
 	return s
 }
@@ -479,7 +479,6 @@ func (i *ObjectDataInput) ReadBoolArrayAtPosition(pos int32) []bool {
 	arr := i.ReadBoolArray()
 	i.position = backupPos
 	return arr
-
 }
 
 func (i *ObjectDataInput) ReadUInt16Array() []uint16 {
@@ -660,4 +659,11 @@ func (p *PositionalObjectDataOutput) PWriteFloat32(pos int32, v float32) {
 
 func (p *PositionalObjectDataOutput) PWriteFloat64(pos int32, v float64) {
 	WriteFloat64(p.buffer, pos, v, p.bo)
+}
+
+// byteSliceToString converts a byte slice to string without memory copying.
+// This method is unsafe and should be used with caution. The same approach
+// is used by strings.Builder.
+func byteSliceToString(buf []byte) string {
+	return *(*string)(unsafe.Pointer(&buf))
 }

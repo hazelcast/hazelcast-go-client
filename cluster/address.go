@@ -33,16 +33,17 @@ type AddressImpl struct {
 	// TODO: rename to Address
 	host string
 	port int
+	str  string
 	// TODO: add address hash
 }
 
-func NewAddress(Host string, Port int32) *AddressImpl {
-	return NewAddressWithHostPort(Host, int(Port))
+func NewAddress(host string, port int32) *AddressImpl {
+	return NewAddressWithHostPort(host, int(port))
 }
 
 // TODO: merge this one with NewAddress
-func NewAddressWithHostPort(Host string, Port int) *AddressImpl {
-	return &AddressImpl{Host, Port}
+func NewAddressWithHostPort(host string, port int) *AddressImpl {
+	return &AddressImpl{host, port, fmt.Sprintf("%s:%d", host, port)}
 }
 
 func (a AddressImpl) Host() string {
@@ -54,13 +55,14 @@ func (a AddressImpl) Port() int {
 }
 
 func (a AddressImpl) String() string {
-	return fmt.Sprintf("%s:%d", a.host, a.port)
+	return a.str
 }
 
 func (a AddressImpl) Clone() Address {
 	return &AddressImpl{
 		host: a.host,
 		port: a.port,
+		str:  a.str,
 	}
 }
 

@@ -87,11 +87,15 @@ type ClientMessage struct {
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
-	return &ClientMessage{Frames: []*Frame{startFrame}}
+	// initial backing array size is kept large enough for most incoming messages
+	frames := make([]*Frame, 0, 2)
+	frames = append(frames, startFrame)
+	return &ClientMessage{Frames: frames}
 }
 
 func NewClientMessageForEncode() *ClientMessage {
-	return &ClientMessage{}
+	// initial backing array size is kept large enough for most outbound messages
+	return &ClientMessage{Frames: make([]*Frame, 0, 4)}
 }
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
