@@ -320,8 +320,8 @@ func TestMap_GetKeySet(t *testing.T) {
 		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
 		if keys, err := m.GetKeySet(); err != nil {
 			t.Fatal(err)
-		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
-			t.Fatalf("target: %#v != %#v", targetKeySet, keys)
+		} else if !assert.ElementsMatch(t, targetKeySet, keys) {
+			t.FailNow()
 		}
 	})
 }
@@ -333,7 +333,7 @@ func TestMap_GetKeySetWithPredicate(t *testing.T) {
 		it.Must(m.Set(serialization.JSON(`{"a": 15}`), "v3"))
 		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 10)); err != nil {
 			t.Fatal(err)
-		} else if !assert.Equal(t, targetKeySet, keys) {
+		} else if !assert.ElementsMatch(t, targetKeySet, keys) {
 			t.FailNow()
 		}
 	})
@@ -351,8 +351,8 @@ func TestMap_GetValues(t *testing.T) {
 		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
 		if values, err := m.GetValues(); err != nil {
 			t.Fatal(err)
-		} else if !reflect.DeepEqual(makeInterfaceSet(targetValues), makeInterfaceSet(values)) {
-			t.Fatalf("target: %#v != %#v", targetValues, values)
+		} else if !assert.ElementsMatch(t, targetValues, values) {
+			t.FailNow()
 		}
 	})
 }
@@ -369,8 +369,8 @@ func TestMap_GetValuesWithPredicate(t *testing.T) {
 		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get("k3")))
 		if values, err := m.GetValuesWithPredicate(predicate.Equal("A", 10)); err != nil {
 			t.Fatal(err)
-		} else if len(targetValues) != len(values) {
-			t.Fatalf("target len: %d != %d", len(targetValues), len(values))
+		} else if !assert.ElementsMatch(t, targetValues, values) {
+			t.FailNow()
 		}
 	})
 }

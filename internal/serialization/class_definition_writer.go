@@ -17,7 +17,7 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -70,7 +70,7 @@ func (cdw *ClassDefinitionWriter) WriteString(fieldName string, value string) {
 
 func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable serialization.Portable) error {
 	if portable == nil {
-		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		return hzerrors.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
 	nestedCD, err := cdw.portableContext.LookUpOrRegisterClassDefiniton(portable)
 	if err != nil {
@@ -84,7 +84,7 @@ func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryID i
 	var version int32
 	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if nestedCD == nil {
-		return hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
+		return hzerrors.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil)
 	}
 	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
 	return nil
@@ -128,10 +128,10 @@ func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []str
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) error {
 	if portables == nil {
-		return hzerror.NewHazelcastSerializationError("non nil value expected", nil)
+		return hzerrors.NewHazelcastSerializationError("non nil value expected", nil)
 	}
 	if len(portables) == 0 || portables == nil {
-		return hzerror.NewHazelcastSerializationError("cannot write empty array", nil)
+		return hzerrors.NewHazelcastSerializationError("cannot write empty array", nil)
 	}
 	var sample = portables[0]
 	var nestedCD, err = cdw.portableContext.LookUpOrRegisterClassDefiniton(sample)

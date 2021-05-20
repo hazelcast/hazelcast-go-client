@@ -22,8 +22,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"io/ioutil"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 // SSLConfig is SSL configuration for client.
@@ -66,7 +67,7 @@ func (c *SSLConfig) SetCAPath(path string) error {
 	} else {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-			return hzerror.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
+			return hzerrors.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
 				"the format is pem", nil)
 		} else {
 			c.TLSConfig.RootCAs = caCertPool

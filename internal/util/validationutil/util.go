@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 const (
@@ -30,10 +30,10 @@ const (
 
 func ValidateAsNonNegativeInt32(n int) (int32, error) {
 	if n < 0 {
-		return 0, hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf(nonNegativeValueExpected, n), nil)
+		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(nonNegativeValueExpected, n), nil)
 	}
 	if n > math.MaxInt32 {
-		return 0, hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf(int32ValueExpected, n), nil)
+		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(int32ValueExpected, n), nil)
 	}
 	return int32(n), nil
 }

@@ -27,12 +27,11 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
@@ -147,7 +146,7 @@ func (c *Connection) socketWriteLoop() {
 			if err := c.write(request); err != nil {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
-				request.Err = ihzerror.NewHazelcastIOError("writing message", err)
+				request.Err = hzerrors.NewHazelcastIOError("writing message", err)
 				c.responseCh <- request
 				c.close(err)
 			} else {
@@ -192,8 +191,8 @@ func (c *Connection) socketReadLoop() {
 				c.logger.Trace(func() string {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
-				if clientMessage.Type() == bufutil.MessageTypeException {
-					clientMessage.Err = ihzerror.NewHazelcastError(codec.DecodeError(clientMessage))
+				if clientMessage.Type() == hzerrors.MessageTypeException {
+					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage
 			}

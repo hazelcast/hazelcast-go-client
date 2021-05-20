@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -60,7 +60,7 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input serialization.DataI
 		return nil, input.Error()
 	}
 	if !isIdentified {
-		return nil, hzerror.NewHazelcastSerializationError("native clients do not support DataSerializable,"+
+		return nil, hzerrors.NewHazelcastSerializationError("native clients do not support DataSerializable,"+
 			" please use IdentifiedDataSerializable", nil)
 	}
 	factoryID := input.ReadInt32()
@@ -70,12 +70,12 @@ func (idss *IdentifiedDataSerializableSerializer) Read(input serialization.DataI
 	}
 	factory := idss.factories[factoryID]
 	if factory == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no IdentifiedDataSerializable factory with ID: %d",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no IdentifiedDataSerializable factory with ID: %d",
 			factoryID), nil)
 	}
 	var object = factory.Create(classID)
 	if object == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for ID: %v on factory ID: %v",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for ID: %v on factory ID: %v",
 			reflect.TypeOf(factory), classID, factoryID), nil)
 	}
 	err := object.ReadData(input)

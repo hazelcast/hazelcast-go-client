@@ -22,11 +22,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/cb"
-
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -154,13 +152,13 @@ func (i *Impl) CanRetry(err error) bool {
 		}
 	*/
 
-	var ioError *hzerror.HazelcastIOError
-	var instanceNotActiveError *hzerror.HazelcastInstanceNotActiveError
+	var ioError *hzerrors.HazelcastIOError
+	var instanceNotActiveError *hzerrors.HazelcastInstanceNotActiveError
 	if errors.Is(err, ioError) || errors.Is(err, instanceNotActiveError) {
 		return true
 	}
 
-	var targetDisconnectedError *hzerror.HazelcastTargetDisconnectedError
+	var targetDisconnectedError *hzerrors.HazelcastTargetDisconnectedError
 	if errors.Is(err, targetDisconnectedError) {
 		return i.Request().Retryable || i.redoOperation
 	}

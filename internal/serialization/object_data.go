@@ -19,7 +19,7 @@ package serialization
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -295,10 +295,10 @@ func (i *ObjectDataInput) Available() int32 {
 
 func (i *ObjectDataInput) AssertAvailable(k int) error {
 	if i.position < 0 {
-		return hzerror.NewHazelcastIllegalArgumentError(fmt.Sprintf("negative pos -> %v", i.position), nil)
+		return hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf("negative pos -> %v", i.position), nil)
 	}
 	if len(i.buffer) < int(i.position)+k {
-		return hzerror.NewHazelcastEOFError(fmt.Sprintf("cannot read %v bytes", k), nil)
+		return hzerrors.NewHazelcastEOFError(fmt.Sprintf("cannot read %v bytes", k), nil)
 	}
 	return nil
 }

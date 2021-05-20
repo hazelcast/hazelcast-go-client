@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package hzerror
+package hzerrors
 
 import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 )
 
 var (
@@ -284,53 +282,29 @@ type StackTraceElement interface {
 	LineNumber() int32
 }
 
-/*
-// ServerError contains error information that occurred in the server.
-type ServerError interface {
-	// ErrorCode returns the error code.
-	ErrorCode() int32
-
-	// ClassName returns the class name where error occurred.
-	ClassName() string
-
-	// Message returns the error message.
-	Message() string
-
-	// StackTrace returns a slice of StackTraceElement.
-	StackTrace() []StackTraceElement
-
-	// CauseErrorCode returns the cause error code.
-	CauseErrorCode() int32
-
-	// CauseClassName returns the cause class name.
-	CauseClassName() string
-}
-*/
-
 func NewHazelcastError(err *ServerError) HazelcastError {
 	sb := strings.Builder{}
 	for _, trace := range err.StackTrace() {
 		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), sb.String())
-	switch bufutil.ErrorCode(err.ErrorCode()) {
-	case bufutil.ErrorCodeAuthentication:
+	switch ErrorCode(err.ErrorCode()) {
+	case ErrorCodeAuthentication:
 		return NewHazelcastAuthenticationError(message, err)
-	case bufutil.ErrorCodeHazelcastInstanceNotActive:
+	case ErrorCodeHazelcastInstanceNotActive:
 		return NewHazelcastInstanceNotActiveError(message, err)
-	case bufutil.ErrorCodeHazelcastSerialization:
+	case ErrorCodeHazelcastSerialization:
 		return NewHazelcastSerializationError(message, err)
-	case bufutil.ErrorCodeTargetDisconnected:
+	case ErrorCodeTargetDisconnected:
 		return NewHazelcastTargetDisconnectedError(message, err)
-	case bufutil.ErrorCodeTargetNotMember:
+	case ErrorCodeTargetNotMember:
 		return NewHazelcastTargetNotMemberError(message, err)
-	case bufutil.ErrorCodeUnsupportedOperation:
+	case ErrorCodeUnsupportedOperation:
 		return NewHazelcastUnsupportedOperationError(message, err)
-	case bufutil.ErrorCodeConsistencyLostException:
+	case ErrorCodeConsistencyLostException:
 		return NewHazelcastConsistencyLostError(message, err)
-	case bufutil.ErrorCodeIllegalArgument:
+	case ErrorCodeIllegalArgument:
 		return NewHazelcastIllegalArgumentError(message, err)
 	}
-
 	return NewHazelcastErrorType(message, err)
 }

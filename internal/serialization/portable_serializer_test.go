@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -154,7 +154,7 @@ func TestPortableSerializer_NoFactory(t *testing.T) {
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
 
-	if _, ok := err.(*hzerror.HazelcastSerializationError); !ok {
+	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
 	}
 }
@@ -167,7 +167,7 @@ func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
 
-	if _, ok := err.(*hzerror.HazelcastSerializationError); !ok {
+	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		fmt.Println(err)
 		t.Errorf("err should be 'factory is not able to create an instance for id: 3 on factory id: 2'")
 	}
@@ -180,7 +180,7 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
 
-	if _, ok := err.(*hzerror.HazelcastSerializationError); !ok {
+	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
 	}
 }
