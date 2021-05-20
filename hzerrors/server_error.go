@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hzerror
+package hzerrors
 
 type ServerError struct {
 	errorCode      int32

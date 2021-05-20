@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -94,13 +94,13 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 func (ps *PortableSerializer) createNewPortableInstance(factoryID int32, classID int32) (serialization.Portable, error) {
 	factory := ps.factories[factoryID]
 	if factory == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
 			factoryID), nil)
 	}
 
 	portable := factory.Create(classID)
 	if portable == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
 			reflect.TypeOf(factory), classID, factoryID), nil)
 	}
 	return portable, nil

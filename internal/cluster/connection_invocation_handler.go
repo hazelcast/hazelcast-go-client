@@ -23,8 +23,8 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
@@ -121,7 +121,7 @@ func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) 
 
 func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) error {
 	if sent := conn.send(inv); !sent {
-		return hzerror.NewHazelcastIOError("packet is not sent", nil)
+		return hzerrors.NewHazelcastIOError("packet not sent", nil)
 	}
 	return nil
 }
@@ -146,7 +146,7 @@ func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, a
 func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
 	if conn := h.connectionManager.RandomConnection(); conn == nil {
 		// TODO: use correct error type
-		return hzerror.NewHazelcastIOError("no connection found", nil)
+		return hzerrors.NewHazelcastIOError("no connection found", nil)
 	} else {
 		return h.sendToConnection(inv, conn)
 	}
