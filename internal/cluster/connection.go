@@ -209,9 +209,10 @@ func (c *Connection) socketReadLoop() {
 					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage
+				clientMessageReader.ResetMessage()
 			}
-			clientMessageReader.Reset()
 		}
+		clientMessageReader.ResetBuffer()
 	}
 	c.close(err)
 }
