@@ -20,11 +20,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/cb"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
@@ -55,7 +53,7 @@ func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
 	if errors.As(err, &nonRetryableError) {
 		return false
 	}
-	var ioError *hzerror.HazelcastIOError
-	var targetDisconnectedError *hzerror.HazelcastTargetDisconnectedError
+	var ioError *hzerrors.HazelcastIOError
+	var targetDisconnectedError *hzerrors.HazelcastTargetDisconnectedError
 	return errors.As(err, &ioError) || errors.As(err, &targetDisconnectedError)
 }

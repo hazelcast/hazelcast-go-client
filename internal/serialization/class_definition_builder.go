@@ -19,7 +19,7 @@ package serialization
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -161,7 +161,7 @@ func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def serial
 		return err
 	}
 	if def.ClassID() == 0 {
-		return hzerror.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
+		return hzerrors.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
 	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypePortable,
@@ -285,7 +285,7 @@ func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def s
 		return err
 	}
 	if def.ClassID() == 0 {
-		return hzerror.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
+		return hzerrors.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
 	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypePortableArray,
@@ -301,7 +301,7 @@ func (cdb *ClassDefinitionBuilder) AddField(fieldDefinition serialization.FieldD
 		return err
 	}
 	if cdb.index != fieldDefinition.Index() {
-		return hzerror.NewHazelcastIllegalArgumentError("invalid field index", nil)
+		return hzerrors.NewHazelcastIllegalArgumentError("invalid field index", nil)
 	}
 	cdb.index++
 	cdb.fieldDefinitions[fieldDefinition.Name()] = fieldDefinition
@@ -320,7 +320,7 @@ func (cdb *ClassDefinitionBuilder) Build() serialization.ClassDefinition {
 
 func (cdb *ClassDefinitionBuilder) check() error {
 	if cdb.done {
-		return hzerror.NewHazelcastSerializationError(fmt.Sprintf("ClassDefinition is already built for %v", cdb.classID), nil)
+		return hzerrors.NewHazelcastSerializationError(fmt.Sprintf("ClassDefinition is already built for %v", cdb.classID), nil)
 	}
 	return nil
 }

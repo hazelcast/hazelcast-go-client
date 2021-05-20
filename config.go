@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -324,7 +324,7 @@ func (b *ClusterSSLConfigBuilder) SetCAPath(path string) *ClusterSSLConfigBuilde
 	} else {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-			b.err = hzerror.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
+			b.err = hzerrors.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
 				"the format is pem", nil)
 		} else {
 			b.config.TLSConfig.RootCAs = caCertPool

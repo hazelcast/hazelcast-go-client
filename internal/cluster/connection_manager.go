@@ -26,9 +26,9 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -335,7 +335,7 @@ func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Con
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection()
 	if err := conn.start(m.clusterConfig, addr); err != nil {
-		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
+		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
 		conn.close(nil)
 		return nil, err
@@ -389,9 +389,9 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
-		return hzerror.NewHazelcastAuthenticationError("invalid credentials", nil)
+		return hzerrors.NewHazelcastAuthenticationError("invalid credentials", nil)
 	case serializationVersionMismatch:
-		return hzerror.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
+		return hzerrors.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
 	}
 	return nil
 }
