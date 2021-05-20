@@ -37,8 +37,9 @@ import (
 )
 
 const (
-	bufferSize      = 8 * 1024
-	protocolStarter = "CP2"
+	bufferSize           = 8 * 1024
+	messageTypeException = int32(0)
+	protocolStarter      = "CP2"
 )
 
 const (
@@ -191,7 +192,7 @@ func (c *Connection) socketReadLoop() {
 				c.logger.Trace(func() string {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
-				if clientMessage.Type() == hzerrors.MessageTypeException {
+				if clientMessage.Type() == messageTypeException {
 					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage
