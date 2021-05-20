@@ -101,7 +101,7 @@ func (c *clientMessageReader) ResetBuffer() {
 	copy(allCopy, allSlice)
 	// reset the buffer
 	if c.src.Cap() > messageBufferSize {
-		// return the buffer to its default size if the latest message was too large
+		// return the buffer to its default size if the latest chunk was too large
 		c.src = bytes.NewBuffer(make([]byte, 0, messageBufferSize))
 	} else {
 		c.src.Reset()
