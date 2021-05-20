@@ -95,8 +95,8 @@ func (c *Config) SetAddress(addrs ...string) error {
 		if err := checkAddress(addr); err != nil {
 			return fmt.Errorf("invalid address %s: %w", addr, err)
 		}
-		c.Addrs = append(c.Addrs, addr)
 	}
+	c.Addrs = addrs
 	return nil
 }
 

@@ -22,15 +22,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func TestDefaultConfig(t *testing.T) {
 	config := hazelcast.NewConfig()
-	it.AssertEquals(t, config.LoggerConfig.Level, logger.InfoLevel)
-	it.AssertEquals(t, config.ClusterConfig.Name, "dev")
-	it.AssertEquals(t, config.ClusterConfig.Addrs, []string{"localhost:5701"})
+	assert.Equal(t, config.LoggerConfig.Level, logger.InfoLevel)
+	assert.Equal(t, config.ClusterConfig.Name, "dev")
+	assert.Equal(t, config.ClusterConfig.Addrs, []string{"127.0.0.1:5701"})
 }
 
 func TestNewConfig(t *testing.T) {
@@ -38,7 +37,5 @@ func TestNewConfig(t *testing.T) {
 	if err := config.ClusterConfig.SetAddress("192.168.1.2"); err != nil {
 		t.Fatal(err)
 	}
-	config.ClusterConfig.Name = "my-cluster"
-	assert.Equal(t, "my-cluster", config.ClusterConfig.Name)
 	assert.Equal(t, []string{"192.168.1.2"}, config.ClusterConfig.Addrs)
 }
