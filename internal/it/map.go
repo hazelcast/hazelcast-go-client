@@ -21,26 +21,22 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"go.uber.org/goleak"
 )
 
 func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-	}
-	MapTesterWithConfigBuilder(t, cbCallback, f)
+	MapTesterWithConfig(t, nil, f)
 }
 
-func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
+func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	makeMapName := func() string {
 		return fmt.Sprintf("test-map-%d-%d", idGen.NextID(), rand.Int())
 	}
-	MapTesterWithConfigBuilderWithName(t, makeMapName, cbCallback, f)
+	MapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }
 
-func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
+func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	var (
 		client *hz.Client
 		m      *hz.Map
@@ -51,12 +47,12 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string,
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
+		config := defaultTestCluster.DefaultConfig()
+		if configCallback != nil {
+			configCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, m = GetClientMapWithConfigBuilder(makeMapName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, m = GetClientMapWithConfig(makeMapName(), &config)
 		defer func() {
 			if err := m.Destroy(); err != nil {
 				t.Logf("test warning, could not destroy map: %s", err.Error())
@@ -79,16 +75,8 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string,
 	}
 }
 
-func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
+func GetClientMapWithConfig(mapName string, config *hz.Config) (*hz.Client, *hz.Map) {
+	client := getDefaultClient(config)
 	if m, err := client.GetMap(mapName); err != nil {
 		panic(err)
 	} else {

@@ -24,17 +24,16 @@ import (
 	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func QueueTester(t *testing.T, f func(t *testing.T, q *hz.Queue)) {
 	makeQueueName := func() string {
 		return fmt.Sprintf("test-queue-%d-%d", idGen.NextID(), rand.Int())
 	}
-	QueueTesterWithConfigBuilderWithName(t, makeQueueName, nil, f)
+	QueueTesterWithConfigAndName(t, makeQueueName, nil, f)
 }
 
-func QueueTesterWithConfigBuilderWithName(t *testing.T, queueName func() string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, q *hz.Queue)) {
+func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configCallback func(*hz.Config), f func(t *testing.T, q *hz.Queue)) {
 	var (
 		client *hz.Client
 		q      *hz.Queue
@@ -45,12 +44,12 @@ func QueueTesterWithConfigBuilderWithName(t *testing.T, queueName func() string,
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
+		config := defaultTestCluster.DefaultConfig()
+		if configCallback != nil {
+			configCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, q = getClientQueueWithConfig(queueName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, q = getClientQueueWithConfig(queueName(), &config)
 		defer func() {
 			if err := q.Destroy(); err != nil {
 				t.Logf("test warning, could not destroy queue: %s", err.Error())
@@ -73,16 +72,8 @@ func QueueTesterWithConfigBuilderWithName(t *testing.T, queueName func() string,
 	}
 }
 
-func getClientQueueWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Queue) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
+func getClientQueueWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Queue) {
+	client := getDefaultClient(config)
 	if q, err := client.GetQueue(name); err != nil {
 		panic(err)
 	} else {

@@ -56,12 +56,7 @@ var (
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
 func StartNewClient() (*Client, error) {
-	if config, err := NewConfigBuilder().Config(); err != nil {
-		return nil, err
-	} else {
-		return StartNewClientWithConfig(*config)
-	}
-
+	return StartNewClientWithConfig(NewConfig())
 }
 
 // StartNewClientWithConfig creates and starts a new client with the given configuration.
@@ -105,7 +100,7 @@ type Client struct {
 }
 
 func newClient(config Config) (*Client, error) {
-	config = config.clone()
+	config = config.Clone()
 	id := atomic.AddInt32(&nextId, 1)
 	name := ""
 	if config.ClientName != "" {

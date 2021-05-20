@@ -23,13 +23,12 @@ import (
 )
 
 func Example() {
-	// Create a configuration builder.
-	configBuilder := hazelcast.NewConfigBuilder()
-	configBuilder.Cluster().
-		SetName("my-cluster").
-		SetAddrs("192.168.1.42:5000", "192.168.1.42:5001")
+	// Create the configuration
+	config := hazelcast.NewConfig()
+	config.ClusterConfig.Name = "my-cluster"
+	config.ClusterConfig.AddAddrs("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
-	client, err := hazelcast.StartNewClientWithConfig(configBuilder)
+	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {
 		log.Fatal(err)
 	}

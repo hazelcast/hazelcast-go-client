@@ -17,7 +17,7 @@
 package hazelcast_test
 
 import (
-	"reflect"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -25,32 +25,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
-func TestConfigBuilderDefault(t *testing.T) {
-	configBuilder := hazelcast.NewConfigBuilder()
-	if config, err := configBuilder.Config(); err != nil {
-		t.Fatal(err)
-	} else {
-		it.AssertEquals(t, config.LoggerConfig.Level, logger.InfoLevel)
-		it.AssertEquals(t, config.ClusterConfig.Name, "dev")
-		it.AssertEquals(t, config.ClusterConfig.Addrs, []string{"localhost:5701"})
-	}
+func TestDefaultConfig(t *testing.T) {
+	config := hazelcast.NewConfig()
+	it.AssertEquals(t, config.LoggerConfig.Level, logger.InfoLevel)
+	it.AssertEquals(t, config.ClusterConfig.Name, "dev")
+	it.AssertEquals(t, config.ClusterConfig.Addrs, []string{"localhost:5701"})
 }
 
-func TestConfigNewConfigBuilder(t *testing.T) {
-	configBuilder := hazelcast.NewConfigBuilder()
-	configBuilder.Cluster().
-		SetAddrs("192.168.1.2").
-		SetName("my-cluster")
-	config, err := configBuilder.Config()
-	if err != nil {
-		t.Error(err)
-		return
+func TestNewConfig(t *testing.T) {
+	config := hazelcast.NewConfig()
+	if err := config.ClusterConfig.AddAddrs("192.168.1.2"); err != nil {
+		t.Fatal(err)
 	}
-	if config.ClusterConfig.Name != "my-cluster" {
-		t.Errorf("target: my-cluster != %v", config.ClusterConfig.Name)
-	}
-	targetAddrs := []string{"192.168.1.2"}
-	if !reflect.DeepEqual(targetAddrs, config.ClusterConfig.Addrs) {
-		t.Errorf("target: %v != %v", targetAddrs, config.ClusterConfig.Addrs)
-	}
+	config.ClusterConfig.Name = "my-cluster"
+	assert.Equal(t, "my-cluster", config.ClusterConfig.Name)
+	assert.Equal(t, []string{"192.168.1.2"}, config.ClusterConfig.Addrs)
 }

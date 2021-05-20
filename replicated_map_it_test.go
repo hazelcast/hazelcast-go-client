@@ -32,7 +32,7 @@ import (
 )
 
 func TestReplicatedMap_Put(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		if _, err := m.Put("key", targetValue); err != nil {
 			t.Fatal(err)
@@ -46,7 +46,7 @@ func TestReplicatedMap_Put(t *testing.T) {
 }
 
 func TestReplicatedMap_Clear(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
 		if ok := it.MustBool(m.ContainsKey("key")); !ok {
@@ -68,7 +68,7 @@ func TestReplicatedMap_Clear(t *testing.T) {
 }
 
 func TestReplicatedMap_Remove(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put("key", targetValue))
 		if !it.MustBool(m.ContainsKey("key")) {
@@ -86,7 +86,7 @@ func TestReplicatedMap_Remove(t *testing.T) {
 }
 
 func TestReplicatedMap_GetEntrySet(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		target := []types.Entry{
 			types.NewEntry("k1", "v1"),
 			types.NewEntry("k2", "v2"),
@@ -138,7 +138,7 @@ func TestReplicatedMap_GetValues(t *testing.T) {
 }
 
 func TestReplicatedMap_IsEmptySize(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		if value, err := m.IsEmpty(); err != nil {
 			t.Fatal(err)
 		} else if !value {
@@ -168,7 +168,7 @@ func TestReplicatedMap_IsEmptySize(t *testing.T) {
 }
 
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEvent(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		const targetCallCount = int32(10)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -201,7 +201,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEvent(t *testing.T) {
 }
 
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) {
-	it.ReplicatedMapTesterWithConfigBuilder(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		const targetCallCount = int32(10)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -226,10 +226,10 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) 
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testing.T) {
 	// Skipping, since predicates are not supported with portable and JSON values
 	t.SkipNow()
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	configCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.ReplicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, configCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)
@@ -252,10 +252,10 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testi
 func TestReplicatedMap_AddEntryListener_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	// Skipping, since predicates are not supported with portable and JSON values
 	t.SkipNow()
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	configCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.ReplicatedMapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.ReplicatedMap) {
+	it.ReplicatedMapTesterWithConfig(t, configCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.StoreInt32(&handlerCalled, 1)

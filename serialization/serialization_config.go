@@ -40,6 +40,15 @@ type Config struct {
 	IdentifiedDataSerializableFactories map[int32]IdentifiedDataSerializableFactory
 }
 
+func NewConfig() Config {
+	return Config{
+		BigEndian:                           true,
+		IdentifiedDataSerializableFactories: map[int32]IdentifiedDataSerializableFactory{},
+		PortableFactories:                   map[int32]PortableFactory{},
+		CustomSerializers:                   map[reflect.Type]Serializer{},
+	}
+}
+
 func (c Config) Clone() Config {
 	idFactories := map[int32]IdentifiedDataSerializableFactory{}
 	for k, v := range c.IdentifiedDataSerializableFactories {

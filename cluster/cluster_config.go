@@ -17,6 +17,8 @@
 package cluster
 
 import (
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -24,18 +26,6 @@ const (
 	DefaultHost = "localhost"
 	DefaultPort = 5701
 )
-
-type SecurityConfig struct {
-	Username string
-	Password string
-}
-
-func (c SecurityConfig) clone() SecurityConfig {
-	return SecurityConfig{
-		Username: c.Username,
-		Password: c.Password,
-	}
-}
 
 type Config struct {
 	Name              string
@@ -50,6 +40,19 @@ type Config struct {
 	SSLConfig         SSLConfig
 }
 
+func NewConfig() Config {
+	return Config{
+		Name:              "dev",
+		SmartRouting:      true,
+		ConnectionTimeout: 5 * time.Second,
+		HeartbeatInterval: 5 * time.Second,
+		HeartbeatTimeout:  60 * time.Second,
+		InvocationTimeout: 120 * time.Second,
+		SecurityConfig:    NewSecurityConfig(),
+		SSLConfig:         NewSSLConfig(),
+	}
+}
+
 func (c *Config) Clone() Config {
 	addrs := make([]string, len(c.Addrs))
 	copy(addrs, c.Addrs)
@@ -62,7 +65,31 @@ func (c *Config) Clone() Config {
 		HeartbeatTimeout:  c.HeartbeatTimeout,
 		InvocationTimeout: c.InvocationTimeout,
 		RedoOperation:     c.RedoOperation,
-		SecurityConfig:    c.SecurityConfig.clone(),
-		SSLConfig:         c.SSLConfig.clone(),
+		SecurityConfig:    c.SecurityConfig.Clone(),
+		SSLConfig:         c.SSLConfig.Clone(),
 	}
+}
+
+func (c *Config) Validate() error {
+	if c.Name == "" {
+		return errors.New("cluster name cannot be blank")
+	}
+	return nil
+}
+
+// AddAddrs sets the candidate address list that client will use to establish initial connection.
+// Other members of the cluster will be discovered when the client starts.
+// By default localhost:5701 is set as the member address.
+func (c *Config) AddAddrs(addrs ...string) error {
+	for _, addr := range addrs {
+		if err := checkAddress(addr); err != nil {
+			return fmt.Errorf("invalid address %s: %w", addr, err)
+		}
+		c.Addrs = append(c.Addrs, addr)
+	}
+	return nil
+}
+
+func checkAddress(addr string) error {
+	return nil
 }

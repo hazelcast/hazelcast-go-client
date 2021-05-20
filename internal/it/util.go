@@ -65,24 +65,24 @@ func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
 	TesterWithConfigBuilder(t, nil, f)
 }
 
-func TesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, client *hz.Client)) {
+func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f func(t *testing.T, client *hz.Client)) {
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
+		config := defaultTestCluster.DefaultConfig()
 		if cbCallback != nil {
-			cbCallback(cb)
+			cbCallback(&config)
 		}
+		logLevel := logger.WarnLevel
 		if TraceLoggingEnabled() {
-			cb.Logger().SetLevel(logger.TraceLevel)
-		} else {
-			cb.Logger().SetLevel(logger.WarnLevel)
+			logLevel = logger.TraceLevel
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client := MustClient(hz.StartNewClientWithConfig(cb))
+		config.LoggerConfig.Level = logLevel
+		config.ClusterConfig.SmartRouting = smart
+		client := MustClient(hz.StartNewClientWithConfig(config))
 		defer func() {
 			if err := client.Shutdown(); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
@@ -287,17 +287,17 @@ func (c TestCluster) Shutdown() {
 	}
 }
 
-func (c TestCluster) DefaultConfigBuilder() *hz.ConfigBuilder {
-	cb := hz.NewConfigBuilder()
-	cb.Cluster().
-		SetName(c.clusterID).
-		SetAddrs("localhost:7701")
-	if SSLEnabled() {
-		cb.Cluster().SSL().
-			SetEnabled(true).
-			ResetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+func (c TestCluster) DefaultConfig() hz.Config {
+	config := hz.NewConfig()
+	config.ClusterConfig.Name = c.clusterID
+	if err := config.ClusterConfig.AddAddrs("localhost:7701"); err != nil {
+		panic(err)
 	}
-	return cb
+	if SSLEnabled() {
+		config.ClusterConfig.SSLConfig.Enabled = true
+		config.ClusterConfig.SSLConfig.ResetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+	}
+	return config
 }
 
 func xmlConfig(clusterName string, port int) string {
@@ -347,4 +347,20 @@ func xmlSSLConfig(clusterName string, port int) string {
 			</map>
 		</hazelcast>
 			`, clusterName, port)
+}
+
+func getLoggerLevel() logger.Level {
+	if TraceLoggingEnabled() {
+		return logger.TraceLevel
+	}
+	return logger.WarnLevel
+}
+
+func getDefaultClient(config *hz.Config) *hz.Client {
+	config.LoggerConfig.Level = getLoggerLevel()
+	client, err := hz.StartNewClientWithConfig(*config)
+	if err != nil {
+		panic(err)
+	}
+	return client
 }

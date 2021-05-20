@@ -17,25 +17,14 @@
 package hazelcast
 
 import (
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
-	"fmt"
-	"io/ioutil"
-	"reflect"
-	"time"
-
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Config contains configuration for a client.
-// Although it is possible to set the values of the configuration directly,
-// prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
+// Prefer to create the configuration using the NewConfig function.
 type Config struct {
 	ClientName          string
 	ClusterConfig       cluster.Config
@@ -46,17 +35,12 @@ type Config struct {
 }
 
 func NewConfig() Config {
-	defaultAddr := fmt.Sprintf("%s:%d", cluster.DefaultHost, cluster.DefaultPort)
 	config := Config{
-		ClusterConfig: cluster.Config{
-			Name:              "dev",
-			Addrs:             []string{defaultAddr},
-			SmartRouting:      true,
-			ConnectionTimeout: 5 * time.Second,
-			HeartbeatInterval: 5 * time.Second,
-			HeartbeatTimeout:  60 * time.Second,
-			InvocationTimeout: 120 * time.Second,
-		},
+		ClusterConfig:       cluster.NewConfig(),
+		SerializationConfig: serialization.NewConfig(),
+		LoggerConfig:        logger.NewConfig(),
+		lifecycleListeners:  map[types.UUID]LifecycleStateChangeHandler{},
+		membershipListeners: map[types.UUID]cluster.MembershipStateChangeHandler{},
 	}
 	return config
 }
@@ -86,7 +70,7 @@ func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHand
 	return id
 }
 
-func (c Config) clone() Config {
+func (c Config) Clone() Config {
 	return Config{
 		ClientName:          c.ClientName,
 		ClusterConfig:       c.ClusterConfig.Clone(),
@@ -99,6 +83,7 @@ func (c Config) clone() Config {
 	}
 }
 
+/*
 // ConfigBuilder is used to build configuration for a Hazelcast client.
 type ConfigBuilder struct {
 	config                     *Config
@@ -202,10 +187,10 @@ func (b *ClusterConfigBuilder) SetName(name string) *ClusterConfigBuilder {
 	return b
 }
 
-// SetAddrs sets the candidate address list that client will use to establish initial connection.
+// AddAddrs sets the candidate address list that client will use to establish initial connection.
 // Other members of the cluster will be discovered when the client starts.
 // By default localhost:5701 is set as the member address.
-func (b *ClusterConfigBuilder) SetAddrs(addrs ...string) *ClusterConfigBuilder {
+func (b *ClusterConfigBuilder) AddAddrs(addrs ...string) *ClusterConfigBuilder {
 	selfAddresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		if err := checkAddress(addr); err != nil {
@@ -334,127 +319,4 @@ func (b *ClusterSSLConfigBuilder) ResetTLSConfig(tlsConfig *tls.Config) *Cluster
 	b.config.TLSConfig = tlsConfig.Clone()
 	return b
 }
-
-// SetCAPath sets CA file path.
-func (b *ClusterSSLConfigBuilder) SetCAPath(path string) *ClusterSSLConfigBuilder {
-	// XXX: what happens if the path is loaded multiple times?
-	// load CA cert
-	if caCert, err := ioutil.ReadFile(path); err != nil {
-		b.err = err
-	} else {
-		caCertPool := x509.NewCertPool()
-		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-			b.err = hzerror.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
-				"the format is pem", nil)
-		} else {
-			b.config.TLSConfig.RootCAs = caCertPool
-		}
-	}
-	return b
-}
-
-// AddClientCertAndKeyPath adds client certificate path and client private key path to tls config.
-// The files in the given paths must contain PEM encoded data.
-// In order to add multiple client certificate-key pairs one should call this function for each of them.
-// If certificates is empty then no certificate will be sent to
-// the server. If this is unacceptable to the server then it may abort the handshake.
-// For mutual authentication at least one client certificate should be added.
-// It returns an error if any of files cannot be loaded.
-func (b *ClusterSSLConfigBuilder) AddClientCertAndKeyPath(clientCertPath string, clientPrivateKeyPath string) *ClusterSSLConfigBuilder {
-	if cert, err := tls.LoadX509KeyPair(clientCertPath, clientPrivateKeyPath); err != nil {
-		b.err = err
-	} else {
-		b.config.TLSConfig.Certificates = append(b.config.TLSConfig.Certificates, cert)
-	}
-	return b
-}
-
-// AddClientCertAndEncryptedKeyPath decrypts the keyfile with the given password and
-// adds client certificate path and the decrypted client private key to tls config.
-// The files in the given paths must contain PEM encoded data.
-// The key file should have a DEK-info header otherwise an error will be returned.
-// In order to add multiple client certificate-key pairs one should call this function for each of them.
-// If certificates is empty then no certificate will be sent to
-// the server. If this is unacceptable to the server then it may abort the handshake.
-// For mutual authentication at least one client certificate should be added.
-// It returns an error if any of files cannot be loaded.
-func (b *ClusterSSLConfigBuilder) AddClientCertAndEncryptedKeyPath(certPath string, privateKeyPath string, password string) *ClusterSSLConfigBuilder {
-	var certPEMBlock, privatePEM, der []byte
-	var privKey *rsa.PrivateKey
-	var cert tls.Certificate
-	var err error
-	if certPEMBlock, err = ioutil.ReadFile(certPath); err != nil {
-		b.err = err
-		return b
-	}
-	if privatePEM, err = ioutil.ReadFile(privateKeyPath); err != nil {
-		b.err = err
-		return b
-	}
-	privatePEMBlock, _ := pem.Decode(privatePEM)
-	if der, err = x509.DecryptPEMBlock(privatePEMBlock, []byte(password)); err != nil {
-		b.err = err
-		return b
-	}
-	if privKey, err = x509.ParsePKCS1PrivateKey(der); err != nil {
-		b.err = err
-		return b
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: privatePEMBlock.Type, Bytes: x509.MarshalPKCS1PrivateKey(privKey)})
-	if cert, err = tls.X509KeyPair(certPEMBlock, keyPEM); err != nil {
-		b.err = err
-		return b
-	}
-	b.config.TLSConfig.Certificates = append(b.config.TLSConfig.Certificates, cert)
-	return b
-}
-
-type SerializationConfigBuilder struct {
-	config *serialization.Config
-	err    error
-}
-
-func newSerializationConfigBuilder() *SerializationConfigBuilder {
-	return &SerializationConfigBuilder{
-		config: &serialization.Config{
-			BigEndian:                           true,
-			IdentifiedDataSerializableFactories: map[int32]serialization.IdentifiedDataSerializableFactory{},
-			PortableFactories:                   map[int32]serialization.PortableFactory{},
-			CustomSerializers:                   map[reflect.Type]serialization.Serializer{},
-		},
-	}
-}
-
-// SetBigEndian sets byte order to big endian.
-// If set to false, little endian byte order is used.
-// Default byte order is big endian.
-func (b *SerializationConfigBuilder) SetBigEndian(enabled bool) *SerializationConfigBuilder {
-	b.config.BigEndian = enabled
-	return b
-}
-
-func (b *SerializationConfigBuilder) buildConfig() (*serialization.Config, error) {
-	if b.err != nil {
-		return nil, b.err
-	}
-	return b.config, nil
-}
-
-type LoggerConfigBuilder struct {
-	config *logger.Config
-}
-
-func newLoggerConfigBuilder() *LoggerConfigBuilder {
-	return &LoggerConfigBuilder{config: &logger.Config{
-		Level: logger.InfoLevel,
-	}}
-}
-
-func (b *LoggerConfigBuilder) SetLevel(level logger.Level) *LoggerConfigBuilder {
-	b.config.Level = level
-	return b
-}
-
-func (b *LoggerConfigBuilder) buildConfig() (*logger.Config, error) {
-	return b.config, nil
-}
+*/

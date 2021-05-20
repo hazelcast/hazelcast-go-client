@@ -24,21 +24,20 @@ import (
 	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func ReplicatedMapTester(t *testing.T, f func(t *testing.T, m *hz.ReplicatedMap)) {
-	ReplicatedMapTesterWithConfigBuilder(t, nil, f)
+	ReplicatedMapTesterWithConfig(t, nil, f)
 }
 
-func ReplicatedMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
+func ReplicatedMapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	makeMapName := func() string {
 		return fmt.Sprintf("test-replicated-map-%d-%d", idGen.NextID(), rand.Int())
 	}
-	ReplicatedMapTesterWithConfigBuilderWithName(t, makeMapName, cbCallback, f)
+	ReplicatedMapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }
 
-func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ReplicatedMap)) {
+func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() string, cbCallback func(cb *hz.Config), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	var (
 		client *hz.Client
 		m      *hz.ReplicatedMap
@@ -49,12 +48,12 @@ func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
+		config := defaultTestCluster.DefaultConfig()
 		if cbCallback != nil {
-			cbCallback(cb)
+			cbCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, m = getClientReplicatedMapWithConfig(makeMapName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, m = getClientReplicatedMapWithConfig(makeMapName(), &config)
 		defer func() {
 			if err := m.Destroy(); err != nil {
 				t.Logf("test warning, could not destroy replicated map: %s", err.Error())
@@ -77,16 +76,8 @@ func ReplicatedMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func
 	}
 }
 
-func getClientReplicatedMapWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ReplicatedMap) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
+func getClientReplicatedMapWithConfig(name string, config *hz.Config) (*hz.Client, *hz.ReplicatedMap) {
+	client := getDefaultClient(config)
 	if m, err := client.GetReplicatedMap(name); err != nil {
 		panic(err)
 	} else {
