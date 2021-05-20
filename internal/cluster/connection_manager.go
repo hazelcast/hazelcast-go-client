@@ -55,8 +55,9 @@ const (
 
 const serializationVersion = 1
 
+// ClientVersion is the build time version
 // TODO: This should be replace with a build time version variable, BuildInfo etc.
-var ClientVersion = "4.0.0"
+var ClientVersion = "1.0.0"
 
 type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
@@ -174,7 +175,11 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 		return nil
 	}
 	if _, err := m.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
-		return nil, m.connectCluster()
+		err := m.connectCluster()
+		if err != nil {
+			m.logger.Errorf("error starting: %w", err)
+		}
+		return nil, err
 	}); err != nil {
 		return err
 	}
@@ -309,11 +314,15 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) connectCluster() error {
-	for _, addr := range m.clusterService.memberCandidateAddrs() {
-		if err := m.connectAddr(addr); err == nil {
-			return nil
-		} else {
+	candidateAddrs := m.clusterService.memberCandidateAddrs()
+	if len(candidateAddrs) == 0 {
+		return cb.WrapNonRetryableError(errors.New("no member candidate addresses"))
+	}
+	for _, addr := range candidateAddrs {
+		if err := m.connectAddr(addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
+		} else {
+			return nil
 		}
 	}
 	return errors.New("cannot connect to any address in the cluster")

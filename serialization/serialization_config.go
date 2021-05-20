@@ -75,6 +75,10 @@ func (c Config) Clone() Config {
 	}
 }
 
+func (c Config) Validate() error {
+	return nil
+}
+
 // AddIdentifiedDataSerializableFactory adds an identified data serializable factory.
 func (b *Config) AddIdentifiedDataSerializableFactory(factory IdentifiedDataSerializableFactory) {
 	b.IdentifiedDataSerializableFactories[factory.FactoryID()] = factory

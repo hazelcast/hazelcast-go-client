@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 const (
@@ -28,7 +30,9 @@ const (
 )
 
 type Config struct {
-	Name              string
+	// Name is the cluster group name
+	Name string
+	// Addrs is the candidate address list that client will use to establish initial connection.
 	Addrs             []string
 	SmartRouting      bool
 	ConnectionTimeout time.Duration
@@ -43,6 +47,7 @@ type Config struct {
 func NewConfig() Config {
 	return Config{
 		Name:              "dev",
+		Addrs:             []string{"127.0.0.1:5701"},
 		SmartRouting:      true,
 		ConnectionTimeout: 5 * time.Second,
 		HeartbeatInterval: 5 * time.Second,
@@ -74,13 +79,18 @@ func (c *Config) Validate() error {
 	if c.Name == "" {
 		return errors.New("cluster name cannot be blank")
 	}
+	if err := c.SecurityConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.SSLConfig.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
-// AddAddrs sets the candidate address list that client will use to establish initial connection.
+// SetAddress sets the candidate address list that client will use to establish initial connection.
 // Other members of the cluster will be discovered when the client starts.
-// By default localhost:5701 is set as the member address.
-func (c *Config) AddAddrs(addrs ...string) error {
+func (c *Config) SetAddress(addrs ...string) error {
 	for _, addr := range addrs {
 		if err := checkAddress(addr); err != nil {
 			return fmt.Errorf("invalid address %s: %w", addr, err)
@@ -91,5 +101,6 @@ func (c *Config) AddAddrs(addrs ...string) error {
 }
 
 func checkAddress(addr string) error {
-	return nil
+	_, _, err := internal.ParseAddr(addr)
+	return err
 }

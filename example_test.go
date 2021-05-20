@@ -26,7 +26,9 @@ func Example() {
 	// Create the configuration
 	config := hazelcast.NewConfig()
 	config.ClusterConfig.Name = "my-cluster"
-	config.ClusterConfig.AddAddrs("192.168.1.42:5000", "192.168.1.42:5001")
+	if err := config.ClusterConfig.SetAddress("192.168.1.42:5000", "192.168.1.42:5001"); err != nil {
+		log.Fatal(err)
+	}
 	// Start the client with the configuration provider.
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {

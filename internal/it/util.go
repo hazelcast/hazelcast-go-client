@@ -290,7 +290,7 @@ func (c TestCluster) Shutdown() {
 func (c TestCluster) DefaultConfig() hz.Config {
 	config := hz.NewConfig()
 	config.ClusterConfig.Name = c.clusterID
-	if err := config.ClusterConfig.AddAddrs("localhost:7701"); err != nil {
+	if err := config.ClusterConfig.SetAddress("localhost:7701"); err != nil {
 		panic(err)
 	}
 	if SSLEnabled() {

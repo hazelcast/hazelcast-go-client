@@ -17,8 +17,9 @@
 package hazelcast_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -34,7 +35,7 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestNewConfig(t *testing.T) {
 	config := hazelcast.NewConfig()
-	if err := config.ClusterConfig.AddAddrs("192.168.1.2"); err != nil {
+	if err := config.ClusterConfig.SetAddress("192.168.1.2"); err != nil {
 		t.Fatal(err)
 	}
 	config.ClusterConfig.Name = "my-cluster"

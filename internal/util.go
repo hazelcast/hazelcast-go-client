@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
-package iputil
+package internal
 
 import (
-	"testing"
+	"net"
+	"strconv"
+	"strings"
 )
 
-func TestGetIpAndPort(t *testing.T) {
-	testAddress := "121.1.23.3:1231"
-	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != 1231 {
-		t.Fatal("GetIPAndPort failed.")
-	}
-}
+const defaultHost = "127.0.0.1"
 
-func TestGetIpAndInvalidPort(t *testing.T) {
-	testAddress := "121.1.23.3:aa"
-	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != defaultPort {
-		t.Fatal("GetIPAndPort failed.")
+func ParseAddr(addr string) (string, int, error) {
+	if addr == "" {
+		return defaultHost, 0, nil
 	}
-}
-
-func TestGetIpWithoutPort(t *testing.T) {
-	testAddress := "121.1.23.3"
-	if ip, port := GetIPAndPort(testAddress); ip != "121.1.23.3" || port != -1 {
-		t.Fatal("GetIPAndPort failed.")
+	if !strings.Contains(addr, ":") {
+		return addr, 0, nil
+	}
+	if host, port, err := net.SplitHostPort(addr); err != nil {
+		return "", 0, err
+	} else if portInt, err := strconv.Atoi(port); err != nil {
+		return "", 0, err
+	} else {
+		if host == "" {
+			host = defaultHost
+		}
+		return host, portInt, nil
 	}
 }

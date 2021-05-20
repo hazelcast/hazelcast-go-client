@@ -100,6 +100,9 @@ type Client struct {
 }
 
 func newClient(config Config) (*Client, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	config = config.Clone()
 	id := atomic.AddInt32(&nextId, 1)
 	name := ""
@@ -192,7 +195,7 @@ func (c *Client) start() error {
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	c.clusterService.Start()
-	if err := c.connectionManager.Start(10 * time.Second); err != nil {
+	if err := c.connectionManager.Start(c.clusterConfig.ConnectionTimeout); err != nil {
 		c.clusterService.Stop()
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
