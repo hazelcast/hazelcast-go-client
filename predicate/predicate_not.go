@@ -41,13 +41,12 @@ func (p predNot) ClassID() int32 {
 	return 10
 }
 
-func (p *predNot) ReadData(input serialization.DataInput) error {
+func (p *predNot) ReadData(input serialization.DataInput) {
 	p.pred = input.ReadObject().(Predicate)
-	return input.Error()
 }
 
-func (p predNot) WriteData(output serialization.DataOutput) error {
-	return output.WriteObject(p.pred)
+func (p predNot) WriteData(output serialization.DataOutput) {
+	output.WriteObject(p.pred)
 }
 
 func (p predNot) String() string {

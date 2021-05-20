@@ -17,12 +17,12 @@
 package hzerrors
 
 type ServerError struct {
-	errorCode      int32
 	className      string
 	message        string
-	stackTrace     []StackTraceElement
-	causeErrorCode int32
 	causeClassName string
+	stackTrace     []StackTraceElement
+	errorCode      int32
+	causeErrorCode int32
 }
 
 // NewServerErrorImpl

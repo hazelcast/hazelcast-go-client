@@ -34,12 +34,10 @@ func (p predFalse) ClassID() int32 {
 	return 13
 }
 
-func (p *predFalse) ReadData(input serialization.DataInput) error {
-	return nil
+func (p predFalse) ReadData(input serialization.DataInput) {
 }
 
-func (p predFalse) WriteData(output serialization.DataOutput) error {
-	return nil
+func (p predFalse) WriteData(output serialization.DataOutput) {
 }
 
 func (p predFalse) String() string {

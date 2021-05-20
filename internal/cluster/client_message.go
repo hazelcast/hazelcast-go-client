@@ -23,15 +23,14 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-const messageBufferSize = 1024
+const messageBufferSize = 64
 
 type clientMessageReader struct {
 	src                *bytes.Buffer
 	clientMessage      *proto.ClientMessage
-	readHeader         bool
 	currentFrameLength uint32
 	currentFlags       uint16
-	remainingCap       int
+	readHeader         bool
 }
 
 func newClientMessageReader() *clientMessageReader {
@@ -47,7 +46,7 @@ func (c *clientMessageReader) Append(buf []byte) {
 func (c *clientMessageReader) Read() *proto.ClientMessage {
 	for {
 		if c.readFrame() {
-			if c.clientMessage.EndFrame.IsFinalFrame() {
+			if c.clientMessage.HasFinalFrame() {
 				return c.clientMessage
 			}
 		} else {

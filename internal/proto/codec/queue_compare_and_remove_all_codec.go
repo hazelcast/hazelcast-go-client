@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 // Removes all of this collection's elements that are also contained in the specified collection (optional operation).
 // After this call returns, this collection will contain no elements in common with the specified collection.
 
-func EncodeQueueCompareAndRemoveAllRequest(name string, dataList []serialization.Data) *proto.ClientMessage {
+func EncodeQueueCompareAndRemoveAllRequest(name string, dataList []*iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

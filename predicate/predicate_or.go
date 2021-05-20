@@ -40,7 +40,7 @@ func (p predOr) ClassID() int32 {
 	return 11
 }
 
-func (p *predOr) ReadData(input serialization.DataInput) error {
+func (p *predOr) ReadData(input serialization.DataInput) {
 	length := input.ReadInt32()
 	predicates := make([]Predicate, length)
 	for i := 0; i < int(length); i++ {
@@ -48,18 +48,13 @@ func (p *predOr) ReadData(input serialization.DataInput) error {
 		predicates[i] = pred.(Predicate)
 	}
 	p.predicates = predicates
-	return input.Error()
 }
 
-func (p predOr) WriteData(output serialization.DataOutput) error {
+func (p predOr) WriteData(output serialization.DataOutput) {
 	output.WriteInt32(int32(len(p.predicates)))
 	for _, pred := range p.predicates {
-		err := output.WriteObject(pred)
-		if err != nil {
-			return err
-		}
+		output.WriteObject(pred)
 	}
-	return nil
 }
 
 func (p predOr) String() string {

@@ -25,6 +25,7 @@ import (
 var (
 	ErrClientOffline             = errors.New("client offline")
 	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
+	ErrAddressNotFound           = errors.New("address not found")
 )
 
 // HazelcastError is the general error interface.
@@ -41,11 +42,9 @@ type HazelcastError interface {
 
 // HazelcastErrorType is the general error struct.
 type HazelcastErrorType struct {
+	cause   error
+	message string // cause is the cause error.
 	// message is the error message.
-	message string
-
-	// cause is the cause error.
-	cause error
 }
 
 // Error returns the error message.
@@ -307,4 +306,15 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 		return NewHazelcastIllegalArgumentError(message, err)
 	}
 	return NewHazelcastErrorType(message, err)
+}
+
+func MakeError(rec interface{}) error {
+	switch v := rec.(type) {
+	case error:
+		return v
+	case string:
+		return errors.New(v)
+	default:
+		return fmt.Errorf("%v", rec)
+	}
 }

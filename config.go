@@ -41,12 +41,12 @@ type ConfigProvider interface {
 // Although it is possible to set the values of the configuration directly,
 // prefer to use the ConfigBuilder, since ConfigBuilder correctly sets the defaults.
 type Config struct {
-	ClientName          string
-	ClusterConfig       cluster.Config
-	SerializationConfig serialization.Config
-	LoggerConfig        logger.Config
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
+	ClientName          string
+	LoggerConfig        logger.Config
+	SerializationConfig serialization.Config
+	ClusterConfig       cluster.Config
 }
 
 func (c Config) clone() Config {

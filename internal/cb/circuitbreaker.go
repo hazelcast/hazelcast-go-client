@@ -34,15 +34,14 @@ type EventHandler func(state int32)
 type RetryPolicyFunc func(currentTry int) time.Duration
 
 type CircuitBreaker struct {
-	// config
-	MaxRetries         int
-	MaxFailureCount    int32
-	ResetTimeout       time.Duration
-	RetryPolicyFunc    RetryPolicyFunc
-	StateChangeHandler EventHandler
-	// state
+	RetryPolicyFunc     RetryPolicyFunc
+	StateChangeHandler  EventHandler
+	MaxRetries          int
+	ResetTimeout        time.Duration
+	MaxFailureCount     int32
 	CurrentFailureCount int32
-	State               int32
+	State               int32 // config
+	// state
 }
 
 func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
@@ -104,8 +103,8 @@ loop:
 			err = ctx.Err()
 			break loop
 		default:
-			if result, err = tryHandler(ctx, attempt); err == nil {
-				// succeeded
+			result, err = tryHandler(ctx, attempt)
+			if err == nil || contextErr(err) {
 				break loop
 			}
 			if errors.As(err, &nonRetryableErr) {
@@ -117,8 +116,7 @@ loop:
 			}
 		}
 	}
-	if err != nil {
-		// failed
+	if err != nil && !contextErr(err) {
 		cb.notifyFailed()
 	}
 	return result, err
@@ -153,4 +151,8 @@ func (cb *CircuitBreaker) closeCircuit() {
 	if cb.StateChangeHandler != nil {
 		cb.StateChangeHandler(StateClosed)
 	}
+}
+
+func contextErr(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }

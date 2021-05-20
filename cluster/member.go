@@ -63,23 +63,12 @@ func (memberVersion MemberVersion) Patch() byte {
 
 // MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
 type MemberInfo struct {
-	// address is proto.Address: Address of the member.
-	address Address
-
-	// uuid UUID of the member.
-	uuid types.UUID
-
-	// liteMember represents member is a lite member. Lite members do not own any partition.
-	liteMember bool
-
-	// attributes are configured attributes of the member
+	address    Address
 	attributes map[string]string
-
-	// version is core.MemberVersion: Hazelcast codebase version of the member.
-	version MemberVersion
-
-	// addrMap
-	addrMap map[EndpointQualifier]Address
+	addrMap    map[EndpointQualifier]Address
+	uuid       types.UUID
+	version    MemberVersion
+	liteMember bool // uuid UUID of the member.
 }
 
 func NewMemberInfo(address Address, uuid types.UUID, attributes map[string]string, liteMember bool, version MemberVersion,

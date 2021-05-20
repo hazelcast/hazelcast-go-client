@@ -17,25 +17,24 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/bufutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type DefaultPortableWriter struct {
 	serializer      *PortableSerializer
-	output          serialization.PositionalDataOutput
+	output          *PositionalObjectDataOutput
 	classDefinition serialization.ClassDefinition
 	begin           int32
 	offset          int32
 }
 
-func NewDefaultPortableWriter(serializer *PortableSerializer, output serialization.PositionalDataOutput,
+func NewDefaultPortableWriter(serializer *PortableSerializer, output *PositionalObjectDataOutput,
 	classDefinition serialization.ClassDefinition) *DefaultPortableWriter {
 	begin := output.Position()
 	output.WriteZeroBytes(4)
 	output.WriteInt32(int32(classDefinition.FieldCount()))
 	offset := output.Position()
-	fieldIndexesLength := (classDefinition.FieldCount() + 1) * bufutil.Int32SizeInBytes
+	fieldIndexesLength := (classDefinition.FieldCount() + 1) * Int32SizeInBytes
 	output.WriteZeroBytes(fieldIndexesLength)
 	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset}
 }
@@ -85,27 +84,22 @@ func (pw *DefaultPortableWriter) WriteString(fieldName string, value string) {
 	pw.output.WriteString(value)
 }
 
-func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serialization.Portable) error {
+func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serialization.Portable) {
 	fieldDefinition := pw.setPosition(fieldName, TypePortable)
 	isNullPortable := portable == nil
 	pw.output.WriteBool(isNullPortable)
 	pw.output.WriteInt32(fieldDefinition.FactoryID())
 	pw.output.WriteInt32(fieldDefinition.ClassID())
 	if !isNullPortable {
-		err := pw.serializer.WriteObject(pw.output, portable)
-		if err != nil {
-			return err
-		}
+		pw.serializer.WriteObject(pw.output, portable)
 	}
-	return nil
 }
 
-func (pw *DefaultPortableWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) error {
+func (pw *DefaultPortableWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) {
 	pw.setPosition(fieldName, TypePortable)
 	pw.output.WriteBool(true)
 	pw.output.WriteInt32(factoryID)
 	pw.output.WriteInt32(classID)
-	return nil
 }
 
 func (pw *DefaultPortableWriter) WriteByteArray(fieldName string, array []byte) {
@@ -149,46 +143,38 @@ func (pw *DefaultPortableWriter) WriteFloat64Array(fieldName string, array []flo
 }
 
 func (pw *DefaultPortableWriter) WriteStringArray(fieldName string, array []string) {
-	pw.setPosition(fieldName, TypeUTFArray)
+	pw.setPosition(fieldName, TypeStringArray)
 	pw.output.WriteStringArray(array)
 }
 
-func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableArray []serialization.Portable) error {
-	var innerOffset int32
-	var sample serialization.Portable
+func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableArray []serialization.Portable) {
 	fieldDefinition := pw.setPosition(fieldName, TypePortableArray)
-	var length int32
-	if portableArray != nil {
-		length = int32(len(portableArray))
-	} else {
-		length = bufutil.NilArrayLength
+	length := len(portableArray)
+	if portableArray == nil {
+		length = nilArrayLength
 	}
-	pw.output.WriteInt32(length)
+	pw.output.WriteInt32(int32(length))
 	pw.output.WriteInt32(fieldDefinition.FactoryID())
 	pw.output.WriteInt32(fieldDefinition.ClassID())
-
-	if length > 0 {
-		innerOffset = pw.output.Position()
-		pw.output.WriteZeroBytes(int(length) * 4)
-		for i := int32(0); i < length; i++ {
-			// XXX: indexing may panic because of nil slice
-			sample = portableArray[i]
-			posVal := pw.output.Position()
-			pw.output.PWriteInt32(innerOffset+i*bufutil.Int32SizeInBytes, posVal)
-			err := pw.serializer.WriteObject(pw.output, sample)
-			if err != nil {
-				return err
-			}
-		}
+	if length <= 0 || portableArray == nil {
+		// portableArray nil check is required just to avoid the warning about nil portableArray index
+		return
 	}
-	return nil
+	innerOffset := pw.output.Position()
+	pw.output.WriteZeroBytes(length * 4)
+	for i := 0; i < length; i++ {
+		sample := portableArray[i]
+		posVal := pw.output.Position()
+		pw.output.PWriteInt32(innerOffset+int32(i)*Int32SizeInBytes, posVal)
+		pw.serializer.WriteObject(pw.output, sample)
+	}
 }
 
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) serialization.FieldDefinition {
 	field := pw.classDefinition.Field(fieldName)
 	pos := pw.output.Position()
 	index := field.Index()
-	pw.output.PWriteInt32(pw.offset+index*bufutil.Int32SizeInBytes, pos)
+	pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
 	pw.output.WriteInt16(int16(len(fieldName)))
 	pw.output.WriteBytes(fieldName)
 	pw.output.WriteByte(byte(fieldType))

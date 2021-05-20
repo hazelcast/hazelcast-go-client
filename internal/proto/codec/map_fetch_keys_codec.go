@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -48,7 +48,7 @@ func EncodeMapFetchKeysRequest(name string, iterationPointers []proto.Pair, batc
 	return clientMessage
 }
 
-func DecodeMapFetchKeysResponse(clientMessage *proto.ClientMessage) (iterationPointers []proto.Pair, keys []serialization.Data) {
+func DecodeMapFetchKeysResponse(clientMessage *proto.ClientMessage) (iterationPointers []proto.Pair, keys []*iserialization.Data) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 

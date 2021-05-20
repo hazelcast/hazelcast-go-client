@@ -32,9 +32,9 @@ const (
 
 type IndexConfig struct {
 	Name               string
-	Type               int32
 	Attributes         []string
 	BitmapIndexOptions BitmapIndexOptions
+	Type               int32
 }
 
 type BitmapIndexOptions struct {

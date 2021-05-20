@@ -51,18 +51,13 @@ func (upc *UsernamePasswordCredentials) Username() string {
 	return upc.username
 }
 
-func (upc *UsernamePasswordCredentials) WritePortable(writer serialization.PortableWriter) (err error) {
+func (upc *UsernamePasswordCredentials) WritePortable(writer serialization.PortableWriter) {
 	upc.BaseCredentials.WritePortable(writer)
 	writer.WriteByteArray("pwd", upc.password)
-	return
 }
 
-func (upc *UsernamePasswordCredentials) ReadPortable(reader serialization.PortableReader) (err error) {
-	err = upc.BaseCredentials.ReadPortable(reader)
-	if err != nil {
-		return
-	}
+func (upc *UsernamePasswordCredentials) ReadPortable(reader serialization.PortableReader) {
+	upc.BaseCredentials.ReadPortable(reader)
 	upc.username = upc.BaseCredentials.principal
 	upc.password = reader.ReadByteArray("pwd")
-	return reader.Error()
 }

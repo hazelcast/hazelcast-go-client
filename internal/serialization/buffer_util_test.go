@@ -18,12 +18,13 @@ package serialization
 
 import (
 	"bytes"
+	"encoding/binary"
 	"testing"
 )
 
 func TestWriteInt32(t *testing.T) {
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0}
-	WriteInt32(buf, 1, 5, false)
+	WriteInt32(buf, 1, 5, binary.LittleEndian)
 
 	expectedBuf := []byte{0, 5, 0, 0, 0, 0, 0, 0}
 
@@ -35,8 +36,8 @@ func TestWriteInt32(t *testing.T) {
 func TestReadInt32(t *testing.T) {
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0}
 	var expectedRet int32 = 5
-	WriteInt32(buf, 1, expectedRet, false)
-	var ret = ReadInt32(buf, 1, false)
+	WriteInt32(buf, 1, expectedRet, binary.LittleEndian)
+	var ret = ReadInt32(buf, 1, binary.LittleEndian)
 
 	if ret != expectedRet {
 		t.Error("ReadInt32() returns", ret, " expected ", expectedRet)
@@ -46,10 +47,10 @@ func TestReadInt32(t *testing.T) {
 func TestReadFloat64(t *testing.T) {
 	var expectedRet = 6.723
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	WriteFloat64(buf, 0, 5.234, false)
-	WriteFloat64(buf, 1, expectedRet, false)
+	WriteFloat64(buf, 0, 5.234, binary.LittleEndian)
+	WriteFloat64(buf, 1, expectedRet, binary.LittleEndian)
 
-	var ret = ReadFloat64(buf, 1, false)
+	var ret = ReadFloat64(buf, 1, binary.LittleEndian)
 
 	if expectedRet != ret {
 		t.Error("ReadFloat64() returns", ret, " expected", expectedRet)
@@ -64,14 +65,4 @@ func TestReadBool(t *testing.T) {
 	if !ReadBool(buf, 0) || !ReadBool(buf, 2) {
 		t.Error("There is a problem in ReadBool() or WriteBool()")
 	}
-}
-
-func TestReadUInt8(t *testing.T) {
-	buf := []byte{0, 0, 0}
-	WriteUInt8(buf, 1, 5)
-	WriteUInt8(buf, 2, 12)
-	if ReadUInt8(buf, 1) != 5 || ReadUInt8(buf, 2) != 12 {
-		t.Error("There is a problem in ReadUInt8() or WriteUInt8()")
-	}
-
 }

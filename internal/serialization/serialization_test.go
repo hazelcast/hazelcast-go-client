@@ -74,11 +74,11 @@ func (*CustomArtistSerializer) ID() int32 {
 	return 10
 }
 
-func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{}, error) {
+func (s *CustomArtistSerializer) Read(input serialization.DataInput) interface{} {
 	var network bytes.Buffer
 	typ := input.ReadInt32()
-	data := input.ReadData()
-	network.Write(data.Buffer())
+	data := input.ReadByteArray()
+	network.Write(data)
 	dec := gob.NewDecoder(&network)
 	var v artist
 	if typ == musicianType {
@@ -86,27 +86,26 @@ func (s *CustomArtistSerializer) Read(input serialization.DataInput) (interface{
 	} else if typ == painterType {
 		v = &painter{}
 	}
-
-	dec.Decode(v)
-	return v, nil
+	if err := dec.Decode(v); err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) error {
+func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
-	err := enc.Encode(obj)
-	if err != nil {
-		return err
+	if err := enc.Encode(obj); err != nil {
+		panic(err)
 	}
 	payload := (&network).Bytes()
 	output.WriteInt32(obj.(artist).Type())
-	output.WriteData(iserialization.NewSerializationData(payload))
-	return nil
+	output.WriteByteArray(payload)
 }
 
 type customObject struct {
-	ID     int
 	Person string
+	ID     int
 }
 
 type GlobalSerializer struct {
@@ -116,26 +115,26 @@ func (s *GlobalSerializer) ID() int32 {
 	return 123
 }
 
-func (s *GlobalSerializer) Read(input serialization.DataInput) (interface{}, error) {
+func (s *GlobalSerializer) Read(input serialization.DataInput) interface{} {
 	var network bytes.Buffer
-	data := input.ReadData()
-	network.Write(data.Buffer())
+	data := input.ReadByteArray()
+	network.Write(data)
 	dec := gob.NewDecoder(&network)
 	v := &customObject{}
-	dec.Decode(v)
-	return v, nil
+	if err := dec.Decode(v); err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) error {
+func (s *GlobalSerializer) Write(output serialization.DataOutput, obj interface{}) {
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
-	err := enc.Encode(obj)
-	if err != nil {
-		return err
+	if err := enc.Encode(obj); err != nil {
+		panic(err)
 	}
 	payload := (&network).Bytes()
-	output.WriteData(iserialization.NewSerializationData(payload))
-	return nil
+	output.WriteByteArray(payload)
 }
 
 type artist interface {
@@ -170,9 +169,9 @@ func TestCustomSerializer(t *testing.T) {
 	}
 	config.CustomSerializers[reflect.TypeOf((*artist)(nil)).Elem()] = customSerializer
 	service := MustValue(iserialization.NewService(config)).(*iserialization.Service)
-	data := MustValue(service.ToData(m)).(serialization.Data)
+	data := MustValue(service.ToData(m)).(*iserialization.Data)
 	ret := MustValue(service.ToObject(data))
-	data2 := MustValue(service.ToData(p)).(serialization.Data)
+	data2 := MustValue(service.ToData(p)).(*iserialization.Data)
 	ret2 := MustValue(service.ToObject(data2))
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
@@ -181,7 +180,7 @@ func TestCustomSerializer(t *testing.T) {
 }
 
 func TestGlobalSerializer(t *testing.T) {
-	obj := &customObject{10, "Furkan Şenharputlu"}
+	obj := &customObject{ID: 10, Person: "Furkan Şenharputlu"}
 	config := &serialization.Config{
 		BigEndian:        true,
 		GlobalSerializer: &GlobalSerializer{},
@@ -196,35 +195,33 @@ func TestGlobalSerializer(t *testing.T) {
 }
 
 type fake2 struct {
-	Bool bool
-	B    byte
-	C    uint16
-	D    float64
-	S    int16
-	F    float32
-	I    int32
-	L    int64
-	Str  string
-
-	Bools   []bool
-	Bytes   []byte
-	Chars   []uint16
-	Doubles []float64
-	Shorts  []int16
-	Floats  []float32
-	Ints    []int32
-	Longs   []int64
-	Strings []string
-
+	Str        string
 	BoolsNil   []bool
-	BytesNil   []byte
-	CharsNil   []uint16
-	DoublesNil []float64
-	ShortsNil  []int16
-	FloatsNil  []float32
 	IntsNil    []int32
+	FloatsNil  []float32
+	ShortsNil  []int16
+	DoublesNil []float64
+	CharsNil   []uint16
+	BytesNil   []byte
 	LongsNil   []int64
+	Bools      []bool
+	Bytes      []byte
+	Chars      []uint16
+	Doubles    []float64
+	Shorts     []int16
+	Floats     []float32
+	Ints       []int32
+	Longs      []int64
+	Strings    []string
 	StringsNil []string
+	L          int64
+	D          float64
+	I          int32
+	F          float32
+	S          int16
+	C          uint16
+	B          byte
+	Bool       bool
 }
 
 func TestGobSerializer(t *testing.T) {
@@ -253,13 +250,20 @@ func TestGobSerializer(t *testing.T) {
 	w2 := "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム"
 	w3 := "The quick brown fox jumps over the lazy dog"
 	var strings = []string{w1, w2, w3}
-	expected := &fake2{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
-		bools, bytes, chars, doubles, shorts, floats, ints, longs, strings,
-		nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	service, _ := iserialization.NewService(&serialization.Config{BigEndian: true})
-	data, _ := service.ToData(expected)
-	ret, _ := service.ToObject(data)
-
+	expected := &fake2{Bool: aBoolean, B: aByte, C: aChar, D: aDouble, S: aShort, F: aFloat, I: anInt, L: aLong, Str: aString,
+		Bools: bools, Bytes: bytes, Chars: chars, Doubles: doubles, Shorts: shorts, Floats: floats, Ints: ints, Longs: longs, Strings: strings}
+	service, err := iserialization.NewService(&serialization.Config{BigEndian: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := service.ToData(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(expected, ret) {
 		t.Error("Gob Serializer failed")
 	}
@@ -296,7 +300,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 }
 
 func TestSerializeData(t *testing.T) {
-	data := iserialization.NewSerializationData([]byte{10, 20, 0, 30, 5, 7, 6})
+	data := iserialization.NewData([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{BigEndian: true}
 	service, _ := iserialization.NewService(config)
 	serializedData, _ := service.ToData(data)
@@ -311,7 +315,7 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
 	dataOutput.WriteString("Furkan")
-	data := &iserialization.SerializationData{dataOutput.ToBuffer()}
+	data := &iserialization.Data{dataOutput.ToBuffer()}
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
 }

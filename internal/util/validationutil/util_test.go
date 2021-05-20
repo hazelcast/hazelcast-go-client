@@ -44,18 +44,18 @@ func TestValidateAsNonNegativeInt32(t *testing.T) {
 
 func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 	testCases := []struct {
-		value          int
-		expectedErrMsg string
+		msg   string
+		value int
 	}{
-		{-1, "non-negative"},
-		{math.MaxInt32 + 1, "32-bit"},
+		{"non-negative", -1},
+		{"32-bit", math.MaxInt32 + 1},
 	}
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			_, err := ValidateAsNonNegativeInt32(tc.value)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), tc.expectedErrMsg)
+			assert.Contains(t, err.Error(), tc.msg)
 		})
 	}
 }

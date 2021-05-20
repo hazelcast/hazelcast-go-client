@@ -26,12 +26,15 @@ import (
 )
 
 type ClassDefinitionContext struct {
-	factoryID int32
 	classDefs map[string]serialization.ClassDefinition
+	factoryID int32
 }
 
 func NewClassDefinitionContext(factoryID int32) *ClassDefinitionContext {
-	return &ClassDefinitionContext{factoryID, make(map[string]serialization.ClassDefinition)}
+	return &ClassDefinitionContext{
+		factoryID: factoryID,
+		classDefs: make(map[string]serialization.ClassDefinition),
+	}
 }
 
 func (c *ClassDefinitionContext) LookUp(classID int32, version int32) serialization.ClassDefinition {

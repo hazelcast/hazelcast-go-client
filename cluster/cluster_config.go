@@ -38,16 +38,16 @@ func (c SecurityConfig) clone() SecurityConfig {
 }
 
 type Config struct {
+	SecurityConfig    SecurityConfig
 	Name              string
+	SSLConfig         SSLConfig
 	Addrs             []string
-	SmartRouting      bool
-	ConnectionTimeout time.Duration
 	HeartbeatInterval time.Duration
 	HeartbeatTimeout  time.Duration
 	InvocationTimeout time.Duration
+	ConnectionTimeout time.Duration
 	RedoOperation     bool
-	SecurityConfig    SecurityConfig
-	SSLConfig         SSLConfig
+	SmartRouting      bool
 }
 
 func (c *Config) Clone() Config {
