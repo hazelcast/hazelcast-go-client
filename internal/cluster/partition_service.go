@@ -21,8 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
@@ -74,7 +74,7 @@ func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32,
 		// On the sync mode, we are waiting for the first connection to be established.
 		// We are initializing the partition count with the value coming from the server with authentication.
 		// This exception is used only for async mode client.
-		return 0, hzerror.ErrClientOffline
+		return 0, hzerrors.ErrClientOffline
 	} else {
 		return murmur.HashToIndex(keyData.PartitionHash(), count), nil
 	}
@@ -91,7 +91,7 @@ func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) er
 		return nil
 	}
 	if atomic.LoadInt32(&s.partitionCount) != newPartitionCount {
-		return hzerror.ErrClientNotAllowedInCluster
+		return hzerrors.ErrClientNotAllowedInCluster
 	}
 	return nil
 }

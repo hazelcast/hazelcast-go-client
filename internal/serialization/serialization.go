@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -80,7 +80,7 @@ func (s *Service) ToObject(data pubserialization.Data) (interface{}, error) {
 	}
 	serializer, ok := s.registry[typeID]
 	if !ok {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 	}
 	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.SerializationConfig.BigEndian)
 	return serializer.Read(dataInput)
@@ -122,7 +122,7 @@ func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serialize
 		serializer = s.registry[s.nameToID["!gob"]]
 	}
 	if serializer == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable serializer for %v", obj), nil)
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable serializer for %v", obj), nil)
 	}
 	return serializer, nil
 }
@@ -215,7 +215,7 @@ func (s *Service) registerCustomSerializers(customSerializers map[reflect.Type]p
 
 func (s *Service) registerSerializer(serializer pubserialization.Serializer) error {
 	if s.registry[serializer.ID()] != nil {
-		return hzerror.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+		return hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
 	}
 	s.registry[serializer.ID()] = serializer
 	return nil

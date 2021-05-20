@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	hzerrors "github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -74,7 +74,7 @@ func TestMorphingPortableReader_ReadByteWithIncompatibleClassChangeError(t *test
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadByte("type")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadByte() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -128,7 +128,7 @@ func TestMorphingPortableReader_ReadBoolWithIncompatibleClassChangeError(t *test
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadBool("type")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadBool() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -180,7 +180,7 @@ func TestMorphingPortableReader_ReadUInt16WithIncompatibleClassChangeError(t *te
 
 	pr := NewMorphingPortableReader(nil, i, classDef)
 	pr.ReadUInt16("char")
-	if _, ok := pr.Error().(*hzerror.HazelcastSerializationError); !ok || pr.Error() == nil {
+	if _, ok := pr.Error().(*hzerrors.HazelcastSerializationError); !ok || pr.Error() == nil {
 		t.Error("ReadUInt16() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -249,7 +249,7 @@ func TestMorphingPortableReader_ReadInt16WithIncompatibleClassChangeError(t *tes
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadInt16("age")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadInt16() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -352,7 +352,7 @@ func TestMorphingPortableReader_ReadInt32WithIncompatibleClassChangeError(t *tes
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadInt32("age")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadInt32() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -472,7 +472,7 @@ func TestMorphingPortableReader_ReadInt64WithIncompatibleClassChangeError(t *tes
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadInt64("age")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadInt64() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -592,7 +592,7 @@ func TestMorphingPortableReader_ReadFloat32WithIncompatibleClassChangeError(t *t
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadFloat32("age")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadFloat32() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -746,7 +746,7 @@ func TestMorphingPortableReader_ReadFloat64WithIncompatibleClassChangeError(t *t
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	mpr.ReadFloat64("age")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadFloat64() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -798,7 +798,7 @@ func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testi
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadString("engineer")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadString() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -862,7 +862,7 @@ func TestMorphingPortableReader_ReadPortableWithIncompatibleClassChangeError(t *
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadPortable("engineer")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadPortable() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -916,7 +916,7 @@ func TestMorphingPortableReader_ReadByteArrayWithIncompatibleClassChangeError(t 
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadByteArray("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadByteArray() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -970,7 +970,7 @@ func TestMorphingPortableReader_ReadBoolArrayWithIncompatibleClassChangeError(t 
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadBoolArray("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadBoolArray() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1024,7 +1024,7 @@ func TestMorphingPortableReader_ReadUInt16ArrayWithIncompatibleClassChangeError(
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadUInt16Array("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadUInt16Array() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1078,7 +1078,7 @@ func TestMorphingPortableReader_ReadInt16ArrayWithIncompatibleClassChangeError(t
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadInt16Array("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadInt16Array() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1132,7 +1132,7 @@ func TestMorphingPortableReader_ReadInt32ArrayWithIncompatibleClassChangeError(t
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadInt32Array("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadInt32Array() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1186,7 +1186,7 @@ func TestMorphingPortableReader_ReadInt64ArrayWithIncompatibleClassChangeError(t
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadInt64Array("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadInt64Array() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1240,7 +1240,7 @@ func TestMorphingPortableReader_ReadFloat32ArrayWithIncompatibleClassChangeError
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadFloat32Array("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadFloat32Array() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1294,7 +1294,7 @@ func TestMorphingPortableReader_ReadFloat64ArrayWithIncompatibleClassChangeError
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadFloat64Array("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadFloat64Array() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1348,7 +1348,7 @@ func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadStringArray("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadStringArray() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }
@@ -1412,7 +1412,7 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	mpr.ReadPortableArray("types")
-	if _, ok := mpr.Error().(*hzerror.HazelcastSerializationError); !ok || mpr.Error() == nil {
+	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
 		t.Error("ReadPortableArray() should return error type *common.HazelcastSerializationError but it does not return")
 	}
 }

@@ -21,8 +21,7 @@ import (
 	"strings"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -520,7 +519,7 @@ func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []hzerror.StackTraceElement) {
+func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []hzerrors.StackTraceElement) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeStackTraceElement(message, values[i])
@@ -576,18 +575,6 @@ func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterat
 	return result
 }
 
-/*
-func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []DistributedObjectInfo {
-	result := make([]DistributedObjectInfo, 0)
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, DecodeDistributedObjectInfo(frameIterator))
-	}
-	frameIterator.Next()
-	return result
-}
-*/
-
 func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator) []pubcluster.MemberInfo {
 	result := make([]pubcluster.MemberInfo, 0)
 	frameIterator.Next()
@@ -598,8 +585,8 @@ func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator
 	return result
 }
 
-func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []hzerror.StackTraceElement {
-	result := make([]hzerror.StackTraceElement, 0)
+func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []hzerrors.StackTraceElement {
+	result := make([]hzerrors.StackTraceElement, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeStackTraceElement(frameIterator))
@@ -729,7 +716,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 	return string(frameIterator.Next().Content)
 }
 
-func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerError {
+func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
 	errorHolders := []proto.ErrorHolder{}
@@ -740,7 +727,7 @@ func DecodeError(msg *proto.ClientMessage) *ihzerror.ServerError {
 		return nil
 	}
 	holder := errorHolders[0]
-	err := ihzerror.NewServerErrorImpl(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
+	err := hzerrors.NewServerErrorImpl(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
 	return &err
 }
 
