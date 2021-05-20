@@ -358,7 +358,6 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 		responseCh:      m.responseCh,
 		pending:         make(chan *proto.ClientMessage, 1024),
 		doneCh:          make(chan struct{}),
-		writeBuffer:     make([]byte, bufferSize),
 		connectionID:    m.NextConnectionID(),
 		eventDispatcher: m.eventDispatcher,
 		status:          0,

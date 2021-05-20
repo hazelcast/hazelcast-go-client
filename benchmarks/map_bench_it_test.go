@@ -17,6 +17,7 @@
 package benchmarks_test
 
 import (
+	"strconv"
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -39,13 +40,18 @@ func BenchmarkIMapSet(b *testing.B) {
 		str += "a"
 	}
 	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			if err := imap.Set("foo", str); err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
+	for _, i := range []int{1, 8} {
+		b.Run(strconv.Itoa(i), func(b *testing.B) {
+			b.SetParallelism(i)
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					if err := imap.Set("foo", str); err != nil {
+						b.Fatal(err)
+					}
+				}
+			})
+		})
+	}
 }
 
 // func BenchmarkIMapGet(b *testing.B) {

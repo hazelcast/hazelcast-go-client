@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"bufio"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -37,7 +38,8 @@ import (
 )
 
 const (
-	bufferSize           = 128 * 1024
+	socketBufferSize     = 128 * 1024
+	writeBufferSize      = 16 * 1024
 	protocolStarter      = "CP2"
 	messageTypeException = int32(0)
 )
@@ -54,6 +56,7 @@ type Connection struct {
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
 	socket                    net.Conn
+	bWriter                   *bufio.Writer
 	endpoint                  atomic.Value
 	logger                    ilogger.Logger
 	eventDispatcher           *event.DispatchService
@@ -62,7 +65,6 @@ type Connection struct {
 	responseCh                chan<- *proto.ClientMessage
 	clusterConfig             *pubcluster.Config
 	connectedServerVersionStr string
-	writeBuffer               []byte
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
@@ -77,6 +79,7 @@ func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Addres
 		return err
 	} else {
 		c.socket = socket
+		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
 		c.lastWrite.Store(time.Time{})
 		c.closedTime.Store(time.Time{})
 		c.lastRead.Store(time.Now())
@@ -123,10 +126,10 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 		if err = tcpConn.SetNoDelay(false); err != nil {
 			c.logger.Warnf("error setting tcp no delay: %w", err)
 		}
-		if err = tcpConn.SetReadBuffer(bufferSize); err != nil {
+		if err = tcpConn.SetReadBuffer(socketBufferSize); err != nil {
 			c.logger.Warnf("error setting read buffer: %w", err)
 		}
-		if err = tcpConn.SetWriteBuffer(bufferSize); err != nil {
+		if err = tcpConn.SetWriteBuffer(socketBufferSize); err != nil {
 			c.logger.Warnf("error setting write buffer: %w", err)
 		}
 		return tcpConn, nil
@@ -144,7 +147,15 @@ func (c *Connection) socketWriteLoop() {
 			if !ok {
 				return
 			}
-			if err := c.write(request); err != nil {
+			err := c.write(request)
+			// Note: Go lang spec guarantees that it's safe to call len()
+			// on any number of goroutines without further synchronization.
+			// See: https://golang.org/ref/spec#Channel_types
+			if err == nil && len(c.pending) == 0 {
+				// no pending messages exist, so flush the buffer
+				err = c.bWriter.Flush()
+			}
+			if err != nil {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
 				request.Err = hzerrors.NewHazelcastIOError("writing message", err)
@@ -162,7 +173,7 @@ func (c *Connection) socketWriteLoop() {
 func (c *Connection) socketReadLoop() {
 	var err error
 	var n int
-	buf := make([]byte, bufferSize)
+	buf := make([]byte, socketBufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
 		if err := c.socket.SetReadDeadline(time.Now().Add(1 * time.Second)); err != nil {
@@ -219,13 +230,7 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	c.logger.Trace(func() string {
 		return fmt.Sprintf("%d: writing invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 	})
-	msgLen := clientMessage.TotalLength()
-	if len(c.writeBuffer) < msgLen {
-		c.writeBuffer = make([]byte, msgLen)
-	}
-	clientMessage.Bytes(0, c.writeBuffer)
-	_, err := c.socket.Write(c.writeBuffer[:msgLen])
-	return err
+	return clientMessage.Write(c.bWriter)
 }
 
 func (c *Connection) isTimeoutError(err error) bool {
