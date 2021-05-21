@@ -30,7 +30,7 @@ const (
 )
 
 type Config struct {
-	// Name is the cluster group name
+	// Name is the cluster name
 	Name string
 	// Addrs is the candidate address list that client will use to establish initial connection.
 	Addrs             []string
