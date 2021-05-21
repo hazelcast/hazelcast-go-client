@@ -17,7 +17,6 @@
 package cluster
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -77,7 +76,24 @@ func (c *Config) Clone() Config {
 
 func (c *Config) Validate() error {
 	if c.Name == "" {
-		return errors.New("cluster name cannot be blank")
+		return ErrConfigInvalidClusterName
+	}
+	for _, addr := range c.Addrs {
+		if err := checkAddress(addr); err != nil {
+			return fmt.Errorf("invalid address %s: %w", addr, err)
+		}
+	}
+	if c.ConnectionTimeout < 0 {
+		return ErrConfigInvalidConnectionTimeout
+	}
+	if c.HeartbeatInterval < 0 {
+		return ErrConfigInvalidHeartbeatInterval
+	}
+	if c.HeartbeatTimeout < 0 {
+		return ErrConfigInvalidHeartbeatTimeout
+	}
+	if c.InvocationTimeout < 0 {
+		return ErrConfigInvalidInvocationTimeout
 	}
 	if err := c.SecurityConfig.Validate(); err != nil {
 		return err
