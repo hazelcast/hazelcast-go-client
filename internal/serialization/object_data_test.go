@@ -84,10 +84,8 @@ func TestObjectDataInput_ReadByte(t *testing.T) {
 	o.WriteByte(a)
 	o.WriteByte(b)
 	i := NewObjectDataInput(o.buffer, 1, nil, false)
-	var expectedRet = b
-	var ret byte
-	ret = i.ReadByte()
-	if ret != expectedRet {
+	expectedRet := b
+	if ret := i.ReadByte(); ret != expectedRet {
 		t.Errorf("ReadByte() returns %v expected %v", ret, expectedRet)
 	}
 }
@@ -97,10 +95,8 @@ func TestObjectDataInput_ReadBool(t *testing.T) {
 	o.WriteFloat64(1.234)
 	o.WriteBool(true)
 	i := NewObjectDataInput(o.buffer, 8, &Service{}, false)
-	var expectedRet = true
-	var ret bool
-	ret = i.ReadBool()
-	if ret != expectedRet {
+	expectedRet := true
+	if ret := i.ReadBool(); ret != expectedRet {
 		t.Errorf("ReadBool() returns %v expected %v", ret, expectedRet)
 	}
 }
@@ -110,10 +106,8 @@ func TestObjectDataInput_ReadBoolWithPosition(t *testing.T) {
 	o.WriteFloat64(1.234)
 	o.WriteBool(true)
 	i := NewObjectDataInput(o.buffer, 7, &Service{}, false)
-	var expectedRet = true
-	var ret bool
-	ret = i.ReadBoolAtPosition(8)
-	if ret != expectedRet {
+	expectedRet := true
+	if ret := i.ReadBoolAtPosition(8); ret != expectedRet {
 		t.Errorf("ReadBoolAtPosition() returns %v expected %v", ret, expectedRet)
 	}
 }
@@ -173,10 +167,8 @@ func TestObjectDataInput_ReadFloat64(t *testing.T) {
 	o.WriteFloat64(2.544)
 	o.WriteFloat64(3.432)
 	i := NewObjectDataInput(o.buffer, 16, nil, false)
-	var expectedRet = 3.432
-	var ret float64
-	ret = i.ReadFloat64()
-	if ret != expectedRet {
+	expectedRet := 3.432
+	if ret := i.ReadFloat64(); ret != expectedRet {
 		t.Errorf("ReadFloat64() returns %v expected %v", ret, expectedRet)
 	}
 }
@@ -187,10 +179,8 @@ func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
 	o.WriteFloat64(2.544)
 	o.WriteFloat64(3.432)
 	i := NewObjectDataInput(o.buffer, 16, nil, false)
-	var expectedRet = 2.544
-	var ret float64
-	ret = i.ReadFloat64AtPosition(8)
-	if ret != expectedRet {
+	expectedRet := 2.544
+	if ret := i.ReadFloat64AtPosition(8); ret != expectedRet {
 		t.Errorf("ReadFloat64AtPosition() returns %v expected %v", ret, expectedRet)
 	}
 }
@@ -204,8 +194,7 @@ func TestObjectDataInput_ReadUTF(t *testing.T) {
 	expectedRet := "Dani"
 	i.ReadString()
 	i.ReadString()
-	ret := i.ReadString()
-	if ret != expectedRet {
+	if ret := i.ReadString(); ret != expectedRet {
 		t.Errorf("ReadString() returns %v expected %v", ret, expectedRet)
 	}
 }
@@ -214,9 +203,9 @@ func TestObjectDataInput_ReadUTF2(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteString("Furkan Şenharputlu")
 	o.WriteString("Jack")
-	o.WriteString("⚐中💦2😭‍🙆😔")
+	o.WriteString("😎🎉😔")
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	expectedRet := "⚐中💦2😭‍🙆😔"
+	expectedRet := "😎🎉😔"
 	i.ReadString()
 	i.ReadString()
 	ret := i.ReadString()

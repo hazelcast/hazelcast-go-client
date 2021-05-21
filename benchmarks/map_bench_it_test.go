@@ -25,7 +25,6 @@ import (
 )
 
 const kb = 1024
-const mb = 1024 * kb
 
 func BenchmarkMap_SetDifferentKeyValue(b *testing.B) {
 	it.MapBenchmarker(b, nil, func(b *testing.B, m *hz.Map) {

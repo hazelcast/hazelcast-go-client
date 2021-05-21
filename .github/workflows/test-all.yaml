@@ -31,6 +31,15 @@ jobs:
         with:
           go-version: "1.15"
 
+      - name: "Install Go tools"
+        run: |
+          go get -u golang.org/x/tools/...
+
       - name: "Run All Tests"
         run: |
           make test-all
+
+      - name: "Run Checkers"
+        run: |
+          make check
+

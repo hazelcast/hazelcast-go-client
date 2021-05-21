@@ -192,6 +192,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	case <-time.After(timeout):
 		return errors.New("initial member list not received in deadline")
 	}
+	go m.heartbeat()
 	if m.smartRouting {
 		// fix broken connections only in the smart mode
 		go m.detectFixBrokenConnections()

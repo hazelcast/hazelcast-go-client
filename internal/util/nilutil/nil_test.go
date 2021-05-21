@@ -30,6 +30,5 @@ func TestIsNil(t *testing.T) {
 func TestIsNil_forValueNil_TypeKnown(t *testing.T) {
 	var pnt *int
 	var i interface{} = pnt
-	assert.True(t, i != nil)
 	assert.True(t, IsNil(i))
 }
