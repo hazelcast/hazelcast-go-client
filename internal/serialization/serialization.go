@@ -136,9 +136,9 @@ func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serialize
 
 func (s *Service) registerDefaultSerializers() error {
 	sers := []struct {
+		s pubserialization.Serializer
 		l string
 		i int32
-		s pubserialization.Serializer
 	}{
 		{l: "uint8", i: ConstantTypeByte, s: &ByteSerializer{}},
 		{l: "bool", i: ConstantTypeBool, s: &BoolSerializer{}},

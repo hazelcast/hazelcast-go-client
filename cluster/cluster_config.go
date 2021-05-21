@@ -29,18 +29,16 @@ const (
 )
 
 type Config struct {
-	// Name is the cluster name
-	Name string
-	// Addrs is the candidate address list that client will use to establish initial connection.
+	SecurityConfig    SecurityConfig
+	Name              string
+	SSLConfig         SSLConfig
 	Addrs             []string
-	SmartRouting      bool
-	ConnectionTimeout time.Duration
 	HeartbeatInterval time.Duration
 	HeartbeatTimeout  time.Duration
 	InvocationTimeout time.Duration
+	ConnectionTimeout time.Duration
 	RedoOperation     bool
-	SecurityConfig    SecurityConfig
-	SSLConfig         SSLConfig
+	SmartRouting      bool
 }
 
 func NewConfig() Config {

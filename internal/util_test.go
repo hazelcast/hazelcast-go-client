@@ -25,9 +25,9 @@ import (
 )
 
 type parseAddrTarget struct {
+	Err  error
 	Host string
 	Port int
-	Err  error
 }
 
 func TestParseAddr(t *testing.T) {

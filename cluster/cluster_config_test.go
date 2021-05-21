@@ -28,8 +28,8 @@ import (
 
 func TestConfig_Validate(t *testing.T) {
 	testCases := []struct {
-		config cluster.Config
 		err    error
+		config cluster.Config
 	}{
 		{config: cluster.Config{}, err: cluster.ErrConfigInvalidClusterName},
 		{config: cluster.Config{Name: "x", ConnectionTimeout: -10 * time.Second}, err: cluster.ErrConfigInvalidConnectionTimeout},
