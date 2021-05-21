@@ -21,14 +21,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	hzerrors "github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func TestMorphingPortableReader_ReadByte(t *testing.T) {
-	var expectedRet byte = 12
+	expectedRet := byte(12)
 	classDef := NewClassDefinitionImpl(1, 2, 3)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
@@ -36,7 +34,6 @@ func TestMorphingPortableReader_ReadByte(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteByte("type", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadByte("type")
 	if expectedRet != ret {
@@ -45,42 +42,42 @@ func TestMorphingPortableReader_ReadByte(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadByteWithEmptyFieldName(t *testing.T) {
-	var value byte = 12
-	var expectedRet byte
 	classDef := NewClassDefinitionImpl(1, 2, 3)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteByte("type", value)
+	pw.WriteByte("type", 12)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadByte("")
+	expectedRet := byte(0)
 	if expectedRet != ret {
 		t.Errorf("ReadByte() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestMorphingPortableReader_ReadByteWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = true
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeBool,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteBool("type", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadByte("type")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadByte() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		expectedRet := true
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeBool,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteBool("type", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadByte("type")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadByte() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
 func TestMorphingPortableReader_ReadBool(t *testing.T) {
-	var expectedRet = true
+	expectedRet := true
 	classDef := NewClassDefinitionImpl(1, 2, 3)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "isReady", TypeBool,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
@@ -88,48 +85,45 @@ func TestMorphingPortableReader_ReadBool(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteBool("isReady", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadBool("isReady")
-
 	if expectedRet != ret {
 		t.Errorf("ReadBool() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestMorphingPortableReader_ReadBoolWithEmptyFieldName(t *testing.T) {
-	var value = true
-	var expectedRet = false
 	classDef := NewClassDefinitionImpl(1, 2, 3)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "isReady", TypeBool,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteBool("isReady", value)
+	pw.WriteBool("isReady", true)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadBool("")
-
+	expectedRet := false
 	if expectedRet != ret {
 		t.Errorf("ReadBool() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestMorphingPortableReader_ReadBoolWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet byte = 23
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteByte("type", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadBool("type")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadBool() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet byte = 23
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteByte("type", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadBool("type")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadBool() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -160,7 +154,6 @@ func TestMorphingPortableReader_ReadUInt16WithEmptyFieldName(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteUInt16("char", value)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	pr := NewMorphingPortableReader(nil, i, classDef)
 	ret := pr.ReadUInt16("")
 	if expectedRet != ret {
@@ -169,19 +162,20 @@ func TestMorphingPortableReader_ReadUInt16WithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadUInt16WithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet int16 = 23
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "char", TypeInt16,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt16("char", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	pr := NewMorphingPortableReader(nil, i, classDef)
-	pr.ReadUInt16("char")
-	if _, ok := pr.Error().(*hzerrors.HazelcastSerializationError); !ok || pr.Error() == nil {
-		t.Error("ReadUInt16() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "char", TypeInt16,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt16("char", 23)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		pr := NewMorphingPortableReader(nil, i, classDef)
+		pr.ReadUInt16("char")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadUInt16() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -194,7 +188,6 @@ func TestMorphingPortableReader_ReadInt16FromByte(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteByte("age", byte(expectedRet))
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt16("age")
 	if expectedRet != ret {
@@ -211,7 +204,6 @@ func TestMorphingPortableReader_ReadInt16FromInt16(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt16("age", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt16("age")
 	if expectedRet != ret {
@@ -220,37 +212,38 @@ func TestMorphingPortableReader_ReadInt16FromInt16(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadInt16WithEmptyFieldName(t *testing.T) {
-	var value int16 = 22
-	var expectedRet int16
 	classDef := NewClassDefinitionImpl(1, 2, 3)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt16("age", value)
+	pw.WriteInt16("age", 22)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt16("")
+	var expectedRet int16
 	if expectedRet != ret {
 		t.Errorf("ReadInt16() returns %d expected %d", ret, expectedRet)
 	}
 }
 
 func TestMorphingPortableReader_ReadInt16WithIncompatibleClassChangeError(t *testing.T) {
-	var value int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt64("age", value)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadInt16("age")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadInt16() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var value int64 = 22
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt64("age", value)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadInt16("age")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadInt16() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -263,7 +256,6 @@ func TestMorphingPortableReader_ReadInt32FromByte(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteByte("age", byte(expectedRet))
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt32("age")
 	if expectedRet != ret {
@@ -280,7 +272,6 @@ func TestMorphingPortableReader_ReadInt32FromUInt16(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteUInt16("letter", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt32("letter")
 	if int32(expectedRet) != ret {
@@ -297,7 +288,6 @@ func TestMorphingPortableReader_ReadInt32FromInt16(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt16("age", int16(expectedRet))
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt32("age")
 	if expectedRet != ret {
@@ -314,7 +304,6 @@ func TestMorphingPortableReader_ReadInt32FromInt32(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt32("age", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, classDef)
 	ret := mpr.ReadInt32("age")
 	if expectedRet != ret {
@@ -341,19 +330,22 @@ func TestMorphingPortableReader_ReadInt32WithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadInt32WithIncompatibleClassChangeError(t *testing.T) {
-	var value int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt64("age", value)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var value int64 = 22
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt64("age", value)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadInt32("age")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadInt32() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadInt32("age")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadInt32() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -461,19 +453,22 @@ func TestMorphingPortableReader_ReadInt64WithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadInt64WithIncompatibleClassChangeError(t *testing.T) {
-	var value float32 = 22.23
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat32,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat32("age", value)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var value float32 = 22.23
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat32,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat32("age", value)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadInt64("age")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadInt64() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadInt64("age")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadInt64() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -581,19 +576,22 @@ func TestMorphingPortableReader_ReadFloat32WithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadFloat32WithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = 22.5
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat64,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat64("age", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet = 22.5
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat64,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat64("age", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadFloat32("age")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadFloat32() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadFloat32("age")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadFloat32() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -735,19 +733,22 @@ func TestMorphingPortableReader_ReadFloat64WithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadFloat64WithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = true
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeBool,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteBool("age", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		expectedRet := true
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeBool,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteBool("age", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, classDef)
-	mpr.ReadFloat64("age")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadFloat64() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, classDef)
+		mpr.ReadFloat64("age")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadFloat64() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -787,24 +788,27 @@ func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet int16 = 12
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeInt16,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt16("engineer", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet int16 = 12
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeInt16,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt16("engineer", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadString("engineer")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadString() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadString("engineer")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadString() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
 func TestMorphingPortableReader_ReadPortable(t *testing.T) {
-	var expectedRet = &student{10, 22, "Furkan Şenharputlu"}
+	var expectedRet = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
@@ -828,7 +832,7 @@ func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
-	var value serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var value serialization.Portable = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	var expectedRet serialization.Portable
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
@@ -853,19 +857,21 @@ func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet int16 = 12
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeInt16,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt16("engineer", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadPortable("engineer")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadPortable() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet int16 = 12
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeInt16,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt16("engineer", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadPortable("engineer")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadPortable() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -907,19 +913,21 @@ func TestMorphingPortableReader_ReadByteArrayWithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadByteArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt32Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadByteArray("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadByteArray() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt32Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadByteArray("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadByteArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -951,29 +959,29 @@ func TestMorphingPortableReader_ReadBoolArrayWithEmptyFieldName(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteBoolArray("areReady", value)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	ret := mpr.ReadBoolArray("")
-
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadBoolArray() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestMorphingPortableReader_ReadBoolArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt32Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadBoolArray("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadBoolArray() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt32Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadBoolArray("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadBoolArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1015,19 +1023,22 @@ func TestMorphingPortableReader_ReadUInt16ArrayWithEmptyFieldName(t *testing.T) 
 }
 
 func TestMorphingPortableReader_ReadUInt16ArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt32Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt32Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadUInt16Array("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadUInt16Array() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadUInt16Array("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadUInt16Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1069,19 +1080,22 @@ func TestMorphingPortableReader_ReadInt16ArrayWithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadInt16ArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt32Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt32Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadInt16Array("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadInt16Array() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadInt16Array("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadInt16Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1123,19 +1137,22 @@ func TestMorphingPortableReader_ReadInt32ArrayWithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadInt32ArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []int64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt64Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt64Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet = []int64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt64Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteInt64Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadInt32Array("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadInt32Array() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadInt32Array("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadInt32Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1148,10 +1165,8 @@ func TestMorphingPortableReader_ReadInt64Array(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt64Array("scores", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	ret := mpr.ReadInt64Array("scores")
-
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadInt64Array() returns %v expected %v", ret, expectedRet)
 	}
@@ -1167,29 +1182,29 @@ func TestMorphingPortableReader_ReadInt64ArrayWithEmptyFieldName(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt64Array("scores", value)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
 	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 	ret := mpr.ReadInt64Array("")
-
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Errorf("ReadInt64Array() returns %v expected %v", ret, expectedRet)
 	}
 }
 
 func TestMorphingPortableReader_ReadInt64ArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []float32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat32Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat32Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadInt64Array("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadInt64Array() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet = []float32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat32Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat32Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadInt64Array("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadInt64Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1231,19 +1246,21 @@ func TestMorphingPortableReader_ReadFloat32ArrayWithEmptyFieldName(t *testing.T)
 }
 
 func TestMorphingPortableReader_ReadFloat32ArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat64Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadFloat32Array("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadFloat32Array() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat64Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadFloat32Array("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadFloat32Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1285,26 +1302,28 @@ func TestMorphingPortableReader_ReadFloat64ArrayWithEmptyFieldName(t *testing.T)
 }
 
 func TestMorphingPortableReader_ReadFloat64ArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []float32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat32Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat32Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadFloat64Array("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadFloat64Array() should return error type *common.HazelcastSerializationError but it does not return")
+	err := captureErr(func() {
+		var expectedRet = []float32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat32Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat32Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadFloat64Array("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadFloat64Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
 func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
 	var expectedRet = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeUTFArray,
+	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeStringArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1323,7 +1342,7 @@ func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 	var value = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	var expectedRet []string
 	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeUTFArray,
+	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeStringArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1339,25 +1358,30 @@ func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat64Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat64Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadStringArray("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadStringArray() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadStringArray("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadStringArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
 func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
-	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
-		&student{11, 20, "Jack Purcell"}}
+	var expectedRet = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 11, age: 20, name: "Jack Purcell"},
+	}
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
@@ -1383,8 +1407,10 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T) {
-	var value = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
-		&student{11, 20, "Jack Purcell"}}
+	var value = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 11, age: 20, name: "Jack Purcell"},
+	}
 	var expectedRet []serialization.Portable
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
@@ -1411,128 +1437,59 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 }
 
 func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeError(t *testing.T) {
-	var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
-		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
-	o := NewPositionalObjectDataOutput(0, nil, false)
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteFloat64Array("types", expectedRet)
-	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	err := captureErr(func() {
+		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
+		classDef := NewClassDefinitionImpl(1, 2, 3)
+		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
+			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
+		o := NewPositionalObjectDataOutput(0, nil, false)
+		pw := NewDefaultPortableWriter(nil, o, classDef)
+		pw.WriteFloat64Array("types", expectedRet)
+		i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 
-	mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
-	mpr.ReadPortableArray("types")
-	if _, ok := mpr.Error().(*hzerrors.HazelcastSerializationError); !ok || mpr.Error() == nil {
-		t.Error("ReadPortableArray() should return error type *common.HazelcastSerializationError but it does not return")
+		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
+		mpr.ReadPortableArray("types")
+	})
+	var serErr *hzerrors.HazelcastSerializationError
+	if !errors.As(err, &serErr) {
+		t.Errorf("ReadPortableArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
 func TestNewMorphingPortableReader(t *testing.T) {
 	t.SkipNow()
-	s := &student{10, 22, "Furkan Şenharputlu"}
+	s := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
 	service, _ := NewService(config)
 
 	data, _ := service.ToData(s)
-
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := service.ToData(s)
+	if err != nil {
+		t.Fatal(err)
+	}
 	service.SerializationConfig.PortableVersion = 1
-	expectedRet := &student2{10, 22, "Furkan Şenharputlu"}
-	ret, _ := service.ToObject(data)
-
+	expectedRet := &student2{id: 10, age: 22, name: "Furkan Şenharputlu"}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(expectedRet, ret) {
 		t.Error("MorphingPortableReader failed")
 	}
 }
 
-func TestMorphingPortableReader_SameErrorIsReturned(t *testing.T) {
-
-	pr := &MorphingPortableReader{&DefaultPortableReader{}}
-	expectedError := errors.New("error")
-	pr.err = expectedError
-	pr.ReadBool("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadByte("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt64Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt64("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt16Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt16Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt32Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt32("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat64Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat64("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadString("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadByteArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadBoolArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadUInt16Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadUInt16("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadStringArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadPortable("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadPortableArray("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadInt16("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat32("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
-	pr.ReadFloat32Array("dummy")
-	assert.Error(t, pr.Error())
-	assert.Equal(t, pr.Error(), expectedError)
-
+func captureErr(f func()) (err error) {
+	defer func() {
+		if v := recover(); v != nil {
+			err = hzerrors.MakeError(v)
+		}
+	}()
+	f()
+	return nil
 }

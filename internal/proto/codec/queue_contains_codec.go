@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 // Returns true if this queue contains the specified element. More formally, returns true if and only if this queue
 // contains at least one element e such that value.equals(e)
 
-func EncodeQueueContainsRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeQueueContainsRequest(name string, value *iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

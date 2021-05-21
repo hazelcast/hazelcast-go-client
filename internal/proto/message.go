@@ -81,26 +81,17 @@ func NewEndFrame() *Frame {
 
 // ClientMessage
 type ClientMessage struct {
-	StartFrame *Frame
-	EndFrame   *Frame
-	Retryable  bool
-	Err        error
-	Buf        []byte
-}
-
-func NewClientMessageWithStartAndEndFrame(startFrame *Frame, endFrame *Frame) *ClientMessage {
-	return &ClientMessage{
-		StartFrame: startFrame,
-		EndFrame:   endFrame,
-	}
+	Err       error
+	Frames    []*Frame
+	Retryable bool
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
-	return NewClientMessageWithStartAndEndFrame(startFrame, startFrame)
+	return &ClientMessage{Frames: []*Frame{startFrame}}
 }
 
 func NewClientMessageForEncode() *ClientMessage {
-	return NewClientMessage(nil)
+	return &ClientMessage{}
 }
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
@@ -108,10 +99,11 @@ func NewClientMessageForDecode(frame *Frame) *ClientMessage {
 }
 
 func (m *ClientMessage) Copy() *ClientMessage {
+	frames := make([]*Frame, len(m.Frames))
+	frames[0] = m.Frames[0].DeepCopy()
+	copy(frames[1:], m.Frames[1:])
 	return &ClientMessage{
-		StartFrame: m.StartFrame.DeepCopy(),
-		//EndFrame:   m.EndFrame.DeepCopy(),
-		EndFrame:  m.EndFrame,
+		Frames:    frames,
 		Retryable: m.Retryable,
 		Err:       m.Err,
 	}
@@ -122,142 +114,146 @@ func (m *ClientMessage) SetRetryable(retryable bool) {
 }
 
 func (m *ClientMessage) FrameIterator() *ForwardFrameIterator {
-	return NewForwardFrameIterator(m.StartFrame)
+	return NewForwardFrameIterator(m.Frames)
 }
 
 func (m *ClientMessage) AddFrame(frame *Frame) {
-	frame.next = nil
-	if m.StartFrame == nil {
-		m.StartFrame = frame
-		m.EndFrame = frame
-	} else {
-		m.EndFrame.next = frame
-		m.EndFrame = frame
-	}
+	m.Frames = append(m.Frames, frame)
 }
 
 func (m *ClientMessage) Type() int32 {
-	return int32(binary.LittleEndian.Uint32(m.StartFrame.Content[TypeFieldOffset:]))
+	return int32(binary.LittleEndian.Uint32(m.Frames[0].Content[TypeFieldOffset:]))
 }
 
 func (m *ClientMessage) CorrelationID() int64 {
-	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[CorrelationIDFieldOffset:]))
+	return int64(binary.LittleEndian.Uint64(m.Frames[0].Content[CorrelationIDFieldOffset:]))
 }
 
 func (m *ClientMessage) FragmentationID() int64 {
-	return int64(binary.LittleEndian.Uint64(m.StartFrame.Content[FragmentationIDOffset:]))
+	return int64(binary.LittleEndian.Uint64(m.Frames[0].Content[FragmentationIDOffset:]))
 }
 
 func (m *ClientMessage) NumberOfBackupAcks() uint8 {
-	return m.StartFrame.Content[ResponseBackupAcksOffset]
+	return m.Frames[0].Content[ResponseBackupAcksOffset]
 }
 
 func (m *ClientMessage) PartitionID() int32 {
-	return int32(binary.LittleEndian.Uint32(m.StartFrame.Content[PartitionIDOffset:]))
+	return int32(binary.LittleEndian.Uint32(m.Frames[0].Content[PartitionIDOffset:]))
 }
 
 func (m *ClientMessage) SetCorrelationID(correlationID int64) {
-	binary.LittleEndian.PutUint64(m.StartFrame.Content[CorrelationIDFieldOffset:], uint64(correlationID))
+	binary.LittleEndian.PutUint64(m.Frames[0].Content[CorrelationIDFieldOffset:], uint64(correlationID))
 }
 
 func (m *ClientMessage) SetMessageType(messageType int32) {
-	binary.LittleEndian.PutUint32(m.StartFrame.Content[MessageTypeOffset:], uint32(messageType))
+	binary.LittleEndian.PutUint32(m.Frames[0].Content[MessageTypeOffset:], uint32(messageType))
 }
 
 func (m *ClientMessage) SetPartitionId(partitionId int32) {
-	binary.LittleEndian.PutUint32(m.StartFrame.Content[PartitionIDOffset:], uint32(partitionId))
+	binary.LittleEndian.PutUint32(m.Frames[0].Content[PartitionIDOffset:], uint32(partitionId))
 }
 
 func (m *ClientMessage) TotalLength() int {
 	totalLength := 0
-	currentFrame := m.StartFrame
-	for currentFrame != nil {
-		totalLength += currentFrame.GetLength()
-		currentFrame = currentFrame.next
+	for _, frame := range m.Frames {
+		totalLength += frame.GetLength()
 	}
 	return totalLength
 }
 
 func (m *ClientMessage) Bytes(offset int, bytes []byte) int {
-	currentFrame := m.StartFrame
-	for currentFrame != nil {
-		isLastFrame := currentFrame.next == nil
-		binary.LittleEndian.PutUint32(bytes[offset:], uint32(len(currentFrame.Content)+SizeOfFrameLengthAndFlags))
-		if isLastFrame {
-			binary.LittleEndian.PutUint16(bytes[offset+IntSizeInBytes:], currentFrame.flags|IsFinalFlag)
-		} else {
-			binary.LittleEndian.PutUint16(bytes[offset+IntSizeInBytes:], currentFrame.flags)
+	lastIndex := len(m.Frames) - 1
+	for i, frame := range m.Frames {
+		binary.LittleEndian.PutUint32(bytes[offset:], uint32(len(frame.Content)+SizeOfFrameLengthAndFlags))
+		flags := frame.flags
+		if i == lastIndex {
+			flags |= IsFinalFlag
 		}
+		binary.LittleEndian.PutUint16(bytes[offset+IntSizeInBytes:], flags)
 		offset += SizeOfFrameLengthAndFlags
-		copy(bytes[offset:], currentFrame.Content)
-		offset += len(currentFrame.Content)
-		currentFrame = currentFrame.next
+		copy(bytes[offset:], frame.Content)
+		offset += len(frame.Content)
 	}
 	return offset
 }
 
 func (m *ClientMessage) DropFragmentationFrame() {
-	m.StartFrame = m.StartFrame.next
+	m.Frames = m.Frames[1:]
+}
+
+func (m *ClientMessage) HasEventFlag() bool {
+	return m.Frames[0].HasEventFlag()
+}
+
+func (m *ClientMessage) HasBackupEventFlag() bool {
+	return m.Frames[0].HasBackupEventFlag()
+}
+
+func (m *ClientMessage) HasFinalFrame() bool {
+	return m.Frames[len(m.Frames)-1].IsFinalFrame()
+}
+
+func (m *ClientMessage) HasUnFragmentedMessageFlags() bool {
+	return m.Frames[0].HasUnFragmentedMessageFlags()
 }
 
 // ForwardFrameIterator
 type ForwardFrameIterator struct {
-	nextFrame *Frame
+	frames []*Frame
+	next   int
 }
 
-func NewForwardFrameIterator(frame *Frame) *ForwardFrameIterator {
-	return &ForwardFrameIterator{frame}
+func NewForwardFrameIterator(frames []*Frame) *ForwardFrameIterator {
+	return &ForwardFrameIterator{frames: frames}
 }
 
-func (forwardFrameIterator *ForwardFrameIterator) Next() *Frame {
-	result := forwardFrameIterator.nextFrame
-	if result != nil {
-		forwardFrameIterator.nextFrame = forwardFrameIterator.nextFrame.next
+func (it *ForwardFrameIterator) Next() *Frame {
+	if it.next >= len(it.frames) {
+		return nil
 	}
+	result := it.frames[it.next]
+	it.next++
 	return result
 }
 
-func (forwardFrameIterator *ForwardFrameIterator) HasNext() bool {
-	return forwardFrameIterator.nextFrame != nil
+func (it *ForwardFrameIterator) HasNext() bool {
+	return it.next < len(it.frames)
 }
 
-func (forwardFrameIterator *ForwardFrameIterator) PeekNext() *Frame {
-	return forwardFrameIterator.nextFrame
+func (it *ForwardFrameIterator) PeekNext() *Frame {
+	return it.frames[it.next]
 }
 
-// Frame
 type Frame struct {
 	Content []byte
 	flags   uint16
-	next    *Frame
 }
 
-// NewFrame create with content
+// NewFrame creates a Frame with content
 func NewFrame(content []byte) *Frame {
 	return &Frame{Content: content, flags: DefaultFlags}
 }
 
-// NewFrame create with content with flags
+// NewFrameWith creates a Frame with content and flags
 func NewFrameWith(content []byte, flags uint16) *Frame {
 	return &Frame{Content: content, flags: flags}
 }
 
 // Copy frame
-func (frame Frame) Copy() *Frame {
-	newFrame := NewFrameWith(frame.Content, frame.flags)
-	newFrame.next = frame.next
-	return newFrame
+func (frame *Frame) Copy() *Frame {
+	// TODO: Remove this function
+	// Copying is not required except the first frame.
+	//T his is a placeholder function until the protocol generator is changed to reflect that.
+	return frame
 }
 
-func (frame Frame) DeepCopy() *Frame {
+func (frame *Frame) DeepCopy() *Frame {
 	newContent := make([]byte, len(frame.Content))
 	copy(newContent, frame.Content)
-	newFrame := NewFrameWith(newContent, frame.flags)
-	newFrame.next = frame.next
-	return newFrame
+	return NewFrameWith(newContent, frame.flags)
 }
 
-// IsEndFrame is checking last frame
+// IsEndFrame returns true if this is the last frame
 func (frame Frame) IsEndFrame() bool {
 	return frame.IsFlagSet(EndDataStructureFlag)
 }

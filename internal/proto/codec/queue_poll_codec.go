@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -46,7 +46,7 @@ func EncodeQueuePollRequest(name string, timeoutMillis int64) *proto.ClientMessa
 	return clientMessage
 }
 
-func DecodeQueuePollResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeQueuePollResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

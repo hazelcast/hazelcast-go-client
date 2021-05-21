@@ -36,17 +36,17 @@ type listenerRegistration struct {
 }
 
 type ConnectionListenerBinder struct {
+	logger            logger.Logger
 	connectionManager *ConnectionManager
 	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
-	requestCh         chan<- invocation.Invocation
 	removeCh          chan<- int64
 	regs              map[types.UUID]listenerRegistration
 	correlationIDs    map[types.UUID][]int64
 	regsMu            *sync.RWMutex
-	smart             bool
-	logger            logger.Logger
+	requestCh         chan<- invocation.Invocation
 	connectionCount   int32
+	smart             bool
 }
 
 func NewConnectionListenerBinder(

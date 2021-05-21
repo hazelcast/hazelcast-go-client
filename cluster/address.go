@@ -65,6 +65,6 @@ func (a AddressImpl) Clone() Address {
 }
 
 type EndpointQualifier struct {
-	Type       int32
 	Identifier string
+	Type       int32
 }

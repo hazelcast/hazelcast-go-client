@@ -23,7 +23,7 @@ jobs:
 
       - name: "Start Hazelcast Remote Controller"
         run: |
-          bash ./start-rc.sh
+          bash ./rc.sh start
           sleep 2
 
       - name: "Setup Go"

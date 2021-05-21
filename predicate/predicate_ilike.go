@@ -51,16 +51,14 @@ func (p predILike) ClassID() int32 {
 	return 6
 }
 
-func (p *predILike) ReadData(input serialization.DataInput) error {
+func (p *predILike) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	p.expression = input.ReadString()
-	return input.Error()
 }
 
-func (p predILike) WriteData(output serialization.DataOutput) error {
+func (p predILike) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
 	output.WriteString(p.expression)
-	return nil
 }
 
 func (p predILike) String() string {

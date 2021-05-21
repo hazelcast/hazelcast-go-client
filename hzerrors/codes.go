@@ -16,10 +16,6 @@
 
 package hzerrors
 
-const (
-	MessageTypeException = int32(0)
-)
-
 type ErrorCode int32
 
 const (

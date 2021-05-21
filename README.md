@@ -176,7 +176,7 @@ Join us at [Go Client channel](https://hazelcastcommunity.slack.com/channels/go-
 
 ## Running the tests
 
-Currently we support only Linux and MacOS for testing the client.
+Currently, we support only Linux, MacOS and WSL (Windows Subsystem for Linux) for testing the client.
 
 You need to have the following installed in order to run integration tests:
 * Java 8
@@ -187,10 +187,10 @@ You need to have the following installed in order to run integration tests:
 Before running the tests, starts Hazelcast Remote Controller, which enables the test suite to create clusters:
 ```shell
 # Start RC with Hazelcast Community features
-$ ./start-rc.sh
+$ ./rc.sh start
 
 # Or, start RC with Hazelcast Enterprise features
-$ HAZELCAST_ENTERPRISE_KEY=ENTERPRISE-KEY-HERE ./start-rc.sh 
+$ HAZELCAST_ENTERPRISE_KEY=ENTERPRISE-KEY-HERE ./rc.sh start 
 ```
 
 You can run the tests using one of the following approaches:

@@ -37,8 +37,9 @@ import (
 )
 
 const (
-	bufferSize      = 8 * 1024
-	protocolStarter = "CP2"
+	bufferSize           = 128 * 1024
+	protocolStarter      = "CP2"
+	messageTypeException = int32(0)
 )
 
 const (
@@ -49,22 +50,22 @@ const (
 type ResponseHandler func(msg *proto.ClientMessage)
 
 type Connection struct {
-	responseCh                chan<- *proto.ClientMessage
-	pending                   chan *proto.ClientMessage
-	doneCh                    chan struct{}
-	socket                    net.Conn
-	endpoint                  atomic.Value
-	status                    int32
 	lastRead                  atomic.Value
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
+	socket                    net.Conn
+	endpoint                  atomic.Value
+	logger                    ilogger.Logger
+	eventDispatcher           *event.DispatchService
+	pending                   chan *proto.ClientMessage
+	doneCh                    chan struct{}
+	responseCh                chan<- *proto.ClientMessage
+	clusterConfig             *pubcluster.Config
+	connectedServerVersionStr string
 	writeBuffer               []byte
 	connectionID              int64
-	eventDispatcher           *event.DispatchService
 	connectedServerVersion    int32
-	connectedServerVersionStr string
-	logger                    ilogger.Logger
-	clusterConfig             *pubcluster.Config
+	status                    int32
 }
 
 func (c *Connection) ConnectionID() int64 {
@@ -164,7 +165,9 @@ func (c *Connection) socketReadLoop() {
 	buf := make([]byte, bufferSize)
 	clientMessageReader := newClientMessageReader()
 	for {
-		//c.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
+		if err := c.socket.SetReadDeadline(time.Now().Add(1 * time.Second)); err != nil {
+			break
+		}
 		n, err = c.socket.Read(buf)
 		if atomic.LoadInt32(&c.status) != open {
 			break
@@ -187,11 +190,11 @@ func (c *Connection) socketReadLoop() {
 			if clientMessage == nil {
 				break
 			}
-			if clientMessage.StartFrame.HasUnFragmentedMessageFlags() {
+			if clientMessage.HasUnFragmentedMessageFlags() {
 				c.logger.Trace(func() string {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
-				if clientMessage.Type() == hzerrors.MessageTypeException {
+				if clientMessage.Type() == messageTypeException {
 					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage
@@ -218,10 +221,9 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 	})
 	msgLen := clientMessage.TotalLength()
 	if len(c.writeBuffer) < msgLen {
-		c.writeBuffer = make([]byte, 0, msgLen)
+		c.writeBuffer = make([]byte, msgLen)
 	}
 	clientMessage.Bytes(0, c.writeBuffer)
-	//c.socket.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
 	_, err := c.socket.Write(c.writeBuffer[:msgLen])
 	return err
 }

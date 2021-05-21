@@ -26,8 +26,8 @@ const (
 type MembershipStateChangeHandler func(event MembershipStateChanged)
 
 type MembershipStateChanged struct {
-	State  MembershipState
 	Member Member
+	State  MembershipState
 }
 
 func (e *MembershipStateChanged) EventName() string {

@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -68,7 +68,7 @@ func DecodeMapAddEntryListenerResponse(clientMessage *proto.ClientMessage) types
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerResponseResponseOffset)
 }
 
-func HandleMapAddEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
+func HandleMapAddEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key *iserialization.Data, value *iserialization.Data, oldValue *iserialization.Data, mergingValue *iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerCodecEventEntryMessageType {

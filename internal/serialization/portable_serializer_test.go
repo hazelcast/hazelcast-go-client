@@ -51,10 +51,14 @@ func (*portableFactory2) Create(classID int32) serialization.Portable {
 	return nil
 }
 
+func (*portableFactory2) FactoryID() int32 {
+	return 2
+}
+
 type student struct {
-	id   int16
-	age  int32
 	name string
+	age  int32
+	id   int16
 }
 
 func (*student) FactoryID() int32 {
@@ -65,24 +69,22 @@ func (*student) ClassID() int32 {
 	return 1
 }
 
-func (s *student) WritePortable(writer serialization.PortableWriter) error {
+func (s *student) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteInt16("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteString("name", s.name)
-	return nil
 }
 
-func (s *student) ReadPortable(reader serialization.PortableReader) error {
+func (s *student) ReadPortable(reader serialization.PortableReader) {
 	s.id = reader.ReadInt16("id")
 	s.age = reader.ReadInt32("age")
 	s.name = reader.ReadString("name")
-	return reader.Error()
 }
 
 type student2 struct {
+	name string
 	id   int32
 	age  int32
-	name string
 }
 
 func (*student2) FactoryID() int32 {
@@ -97,18 +99,16 @@ func (*student2) Version() int32 {
 	return 1
 }
 
-func (s *student2) WritePortable(writer serialization.PortableWriter) error {
+func (s *student2) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteInt32("id", s.id)
 	writer.WriteInt32("age", s.age)
 	writer.WriteString("name", s.name)
-	return nil
 }
 
-func (s *student2) ReadPortable(reader serialization.PortableReader) error {
+func (s *student2) ReadPortable(reader serialization.PortableReader) {
 	s.id = reader.ReadInt32("id")
 	s.age = reader.ReadInt32("age")
 	s.name = reader.ReadString("name")
-	return nil
 }
 
 type student3 struct {
@@ -138,11 +138,12 @@ func TestPortableSerializer(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
+	service, _ := NewService(config)
+	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	service, err := NewService(config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
 	if !reflect.DeepEqual(ret, expectedRet) {
@@ -204,26 +205,26 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 }
 
 type fake struct {
-	byt         byte
-	boo         bool
-	ui16        uint16
-	i16         int16
-	i32         int32
+	portable    serialization.Portable
+	utf         string
+	boolArr     []bool
+	utfArr      []string
+	i64Arr      []int64
+	i32Arr      []int32
+	i16Arr      []int16
+	ui16Arr     []uint16
+	f64Arr      []float64
+	f32Arr      []float32
+	bytArr      []byte
+	portableArr []serialization.Portable
+	f64         float64
 	i64         int64
 	f32         float32
-	f64         float64
-	utf         string
-	portable    serialization.Portable
-	bytArr      []byte
-	boolArr     []bool
-	ui16Arr     []uint16
-	i16Arr      []int16
-	i32Arr      []int32
-	i64Arr      []int64
-	f32Arr      []float32
-	f64Arr      []float64
-	utfArr      []string
-	portableArr []serialization.Portable
+	i32         int32
+	i16         int16
+	ui16        uint16
+	boo         bool
+	byt         byte
 }
 
 func (*fake) FactoryID() int32 {
@@ -234,7 +235,7 @@ func (*fake) ClassID() int32 {
 	return 2
 }
 
-func (f *fake) WritePortable(writer serialization.PortableWriter) error {
+func (f *fake) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteByte("byt", f.byt)
 	writer.WriteBool("boo", f.boo)
 	writer.WriteUInt16("ui16", f.ui16)
@@ -259,10 +260,9 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) error {
 	writer.WriteFloat64Array("f64Arr", f.f64Arr)
 	writer.WriteStringArray("utfArr", f.utfArr)
 	writer.WritePortableArray("portableArr", f.portableArr)
-	return nil
 }
 
-func (f *fake) ReadPortable(reader serialization.PortableReader) error {
+func (f *fake) ReadPortable(reader serialization.PortableReader) {
 	f.byt = reader.ReadByte("byt")
 	f.boo = reader.ReadBool("boo")
 	f.ui16 = reader.ReadUInt16("ui16")
@@ -283,7 +283,6 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) error {
 	f.f64Arr = reader.ReadFloat64Array("f64Arr")
 	f.utfArr = reader.ReadStringArray("utfArr")
 	f.portableArr = reader.ReadPortableArray("portableArr")
-	return nil
 }
 
 func TestPortableSerializer2(t *testing.T) {
@@ -301,7 +300,7 @@ func TestPortableSerializer2(t *testing.T) {
 	var f32 float32 = -3.4e+38
 	var f64 = -1.7e+308
 	var utf = "Günaydın, こんにちは"
-	var portable serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
+	var portable serialization.Portable = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	var bytArr = []byte{127, 128, 255, 0, 4, 6, 8, 121}
 	var boolArr = []bool{true, true, false, true, false, false, false, true, false, true}
 	var ui16Arr = []uint16{65535, 65535, 65535, 1234, 23524, 13131, 9999}
@@ -311,10 +310,13 @@ func TestPortableSerializer2(t *testing.T) {
 	var f32Arr = []float32{-3.4e+38, 12.344, 21.2646, 3.4e+38}
 	var f64Arr = []float64{-1.7e+308, 1213.2342, 45345.9887, 1.7e+308}
 	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
-	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+	var portableArr = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 2, age: 20, name: "Micheal Micheal"},
+	}
 
-	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, portable,
-		bytArr, boolArr, ui16Arr, i16Arr, i32Arr, i64Arr, f32Arr, f64Arr, utfArr, portableArr}
+	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
+		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
 
@@ -330,7 +332,7 @@ func TestPortableSerializer3(t *testing.T) {
 	}}
 	service, _ := NewService(config)
 	service2, _ := NewService(config)
-	expectedRet := &student{10, 22, "Furkan Şenharputlu"}
+	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service2.ToObject(data)
 
@@ -382,10 +384,13 @@ func TestPortableSerializer4(t *testing.T) {
 	var f32Arr = []float32{-3.4e+38, 12.344, 21.2646, 3.4e+38}
 	var f64Arr = []float64{-1.7e+308, 1213.2342, 45345.9887, 1.7e+308}
 	var utfArr = []string{"こんにちは", "ilköğretim", "FISTIKÇIŞAHAP"}
-	var portableArr = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"}, &student{2, 20, "Micheal Micheal"}}
+	var portableArr = []serialization.Portable{
+		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
+		&student{id: 2, age: 20, name: "Micheal Micheal"},
+	}
 
-	expectedRet := &fake{byt, boo, ui16, i16, i32, i64, f32, f64, utf, nil,
-		bytArr, boolArr, ui16Arr, i16Arr, i32Arr, i64Arr, f32Arr, f64Arr, utfArr, portableArr}
+	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
+		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
 
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
@@ -423,14 +428,12 @@ func (*child) ClassID() (classID int32) {
 	return 2
 }
 
-func (c *child) WritePortable(writer serialization.PortableWriter) (err error) {
+func (c *child) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteString("name", c.name)
-	return
 }
 
-func (c *child) ReadPortable(reader serialization.PortableReader) (err error) {
+func (c *child) ReadPortable(reader serialization.PortableReader) {
 	c.name = reader.ReadString("name")
-	return
 }
 
 type parent struct {
@@ -445,14 +448,13 @@ func (*parent) ClassID() (classID int32) {
 	return 1
 }
 
-func (p *parent) WritePortable(writer serialization.PortableWriter) (err error) {
-	return writer.WritePortable("child", p.child)
+func (p *parent) WritePortable(writer serialization.PortableWriter) {
+	writer.WritePortable("child", p.child)
 }
 
-func (p *parent) ReadPortable(reader serialization.PortableReader) (err error) {
+func (p *parent) ReadPortable(reader serialization.PortableReader) {
 	obj := reader.ReadPortable("child")
 	p.child = obj.(*child)
-	return
 }
 
 func TestPortableSerializer_NestedPortableVersion(t *testing.T) {

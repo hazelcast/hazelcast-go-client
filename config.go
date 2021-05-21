@@ -26,12 +26,12 @@ import (
 // Config contains configuration for a client.
 // Prefer to create the configuration using the NewConfig function.
 type Config struct {
-	ClientName          string
-	ClusterConfig       cluster.Config
-	SerializationConfig serialization.Config
-	LoggerConfig        logger.Config
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
+	ClientName          string
+	LoggerConfig        logger.Config
+	SerializationConfig serialization.Config
+	ClusterConfig       cluster.Config
 }
 
 func NewConfig() Config {

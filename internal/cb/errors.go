@@ -31,3 +31,11 @@ func WrapNonRetryableError(err error) *NonRetryableError {
 func (n NonRetryableError) Error() string {
 	return n.Err.Error()
 }
+
+func (e NonRetryableError) Is(target error) bool {
+	if _, ok := target.(*NonRetryableError); ok {
+		return true
+	}
+	_, ok := target.(NonRetryableError)
+	return ok
+}

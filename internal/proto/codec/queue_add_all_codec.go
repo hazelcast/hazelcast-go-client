@@ -15,7 +15,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 // (This implies that the behavior of this call is undefined if the specified collection is this collection,
 // and this collection is nonempty.)
 
-func EncodeQueueAddAllRequest(name string, dataList []serialization.Data) *proto.ClientMessage {
+func EncodeQueueAddAllRequest(name string, dataList []*iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

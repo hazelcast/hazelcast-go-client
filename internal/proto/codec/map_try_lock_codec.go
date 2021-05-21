@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -40,7 +40,7 @@ const (
 // purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
 // the specified waiting time elapses.
 
-func EncodeMapTryLockRequest(name string, key serialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *proto.ClientMessage {
+func EncodeMapTryLockRequest(name string, key *iserialization.Data, threadId int64, lease int64, timeout int64, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

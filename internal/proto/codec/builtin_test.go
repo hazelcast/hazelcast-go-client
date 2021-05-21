@@ -28,7 +28,6 @@ import (
 )
 
 func TestCodecUtil_FastForwardToEndFrame(t *testing.T) {
-	t.SkipNow()
 	// given
 	frame1 := proto.NewFrameWith([]byte("value-1"), proto.BeginDataStructureFlag)
 	frame2 := proto.NewFrameWith([]byte("value-2"), proto.EndDataStructureFlag)
@@ -44,7 +43,6 @@ func TestCodecUtil_FastForwardToEndFrame(t *testing.T) {
 
 	//then
 	assert.False(t, iterator.HasNext())
-	println(message.CorrelationID())
 }
 
 func TestCodecUtil_EncodeNullable(t *testing.T) {
@@ -59,7 +57,7 @@ func TestCodecUtil_EncodeNullable(t *testing.T) {
 	iterator := message.FrameIterator()
 	assert.Equal(t, string(iterator.Next().Content), "value-0")
 	assert.Equal(t, string(iterator.Next().Content), "encode-value-1")
-	assert.Equal(t, string(message.EndFrame.Content), "encode-value-1")
+	assert.Equal(t, string(message.Frames[len(message.Frames)-1].Content), "encode-value-1")
 }
 
 func TestCodecUtil_NextFrameIsDataStructureEndFrame(t *testing.T) {
@@ -633,6 +631,6 @@ func TestStringCodec_Encode(t *testing.T) {
 	EncodeString(clientMessage, value)
 
 	//then
-	content := clientMessage.EndFrame.Content
+	content := clientMessage.Frames[len(clientMessage.Frames)-1].Content
 	assert.Equal(t, value, string(content))
 }

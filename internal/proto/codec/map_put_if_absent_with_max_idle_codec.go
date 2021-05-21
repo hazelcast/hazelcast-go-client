@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 // Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
 // with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
 
-func EncodeMapPutIfAbsentWithMaxIdleRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
+func EncodeMapPutIfAbsentWithMaxIdleRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -54,7 +54,7 @@ func EncodeMapPutIfAbsentWithMaxIdleRequest(name string, key serialization.Data,
 	return clientMessage
 }
 
-func DecodeMapPutIfAbsentWithMaxIdleResponse(clientMessage *proto.ClientMessage) serialization.Data {
+func DecodeMapPutIfAbsentWithMaxIdleResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
