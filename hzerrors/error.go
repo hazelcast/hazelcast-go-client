@@ -287,22 +287,22 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), sb.String())
-	switch ErrorCode(err.ErrorCode()) {
-	case ErrorCodeAuthentication:
+	switch errorCode(err.ErrorCode()) {
+	case errorCodeAuthentication:
 		return NewHazelcastAuthenticationError(message, err)
-	case ErrorCodeHazelcastInstanceNotActive:
+	case errorCodeHazelcastInstanceNotActive:
 		return NewHazelcastInstanceNotActiveError(message, err)
-	case ErrorCodeHazelcastSerialization:
+	case errorCodeHazelcastSerialization:
 		return NewHazelcastSerializationError(message, err)
-	case ErrorCodeTargetDisconnected:
+	case errorCodeTargetDisconnected:
 		return NewHazelcastTargetDisconnectedError(message, err)
-	case ErrorCodeTargetNotMember:
+	case errorCodeTargetNotMember:
 		return NewHazelcastTargetNotMemberError(message, err)
-	case ErrorCodeUnsupportedOperation:
+	case errorCodeUnsupportedOperation:
 		return NewHazelcastUnsupportedOperationError(message, err)
-	case ErrorCodeConsistencyLostException:
+	case errorCodeConsistencyLostException:
 		return NewHazelcastConsistencyLostError(message, err)
-	case ErrorCodeIllegalArgument:
+	case errorCodeIllegalArgument:
 		return NewHazelcastIllegalArgumentError(message, err)
 	}
 	return NewHazelcastErrorType(message, err)
