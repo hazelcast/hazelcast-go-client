@@ -20,12 +20,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/types"
-
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 /*
@@ -293,7 +292,7 @@ func (q *Queue) addListener(includeValue bool, handler QueueItemNotifiedHandler)
 	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleQueueAddListener(msg, func(itemData serialization.Data, uuid types.UUID, eventType int32) {
+		codec.HandleQueueAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {
 			if item, err := q.convertToObject(itemData); err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
 			} else {

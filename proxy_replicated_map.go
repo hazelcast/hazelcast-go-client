@@ -24,8 +24,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
-	pubser "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -240,8 +240,8 @@ func (m *ReplicatedMap) Size() (int, error) {
 
 func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
-	var keyData pubser.Data
-	var predicateData pubser.Data
+	var keyData *iserialization.Data
+	var predicateData *iserialization.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return types.UUID{}, err
@@ -262,7 +262,7 @@ func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Pr
 	return subscriptionID, err
 }
 
-func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData pubser.Data, smart bool) *proto.ClientMessage {
+func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData *iserialization.Data, smart bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {
 			return codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, smart)
@@ -276,7 +276,7 @@ func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData pubser.Data, 
 	}
 }
 
-func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData pubser.Data, handler entryNotifiedHandler) {
+func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
 	if keyData != nil {
 		if predicateData != nil {
 			codec.HandleReplicatedMapAddEntryListenerToKeyWithPredicate(msg, handler)

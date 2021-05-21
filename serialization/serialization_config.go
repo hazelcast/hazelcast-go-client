@@ -20,21 +20,20 @@ import "reflect"
 
 // Config contains the serialization configuration of a Hazelcast instance.
 type Config struct {
-	// BigEndian is the Little Endinan byte order bool. If false, it is Big Endian.
-	BigEndian bool
-	// IdentifiedDataSerializableFactories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-	IdentifiedDataSerializableFactories map[int32]IdentifiedDataSerializableFactory
-	// PortableFactories is a map of factory IDs and corresponding Portable factories.
-	PortableFactories map[int32]PortableFactory
-	// PortableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
-	// like adding/removing a field or changing a type of a field.
-	PortableVersion int32
-	// CustomSerializers is a map of object types and corresponding custom serializers.
-	CustomSerializers map[reflect.Type]Serializer
-	// GlobalSerializer is the serializer that will be used if no other serializer is applicable.
+	// GlobalSerializer is the fall back serializer that will be used if no other serializer is applicable.
 	GlobalSerializer Serializer
+	// IdentifiedDataSerializableFactories contains IdentifiedDataSerializable factories.
+	IdentifiedDataSerializableFactories map[int32]IdentifiedDataSerializableFactory
+	// PortableFactories contains Portable factories.
+	PortableFactories map[int32]PortableFactory
+	// CustomSerializers contains custom serializers.
+	CustomSerializers map[reflect.Type]Serializer
 	// ClassDefinitions contains ClassDefinitions for portable structs.
 	ClassDefinitions []ClassDefinition
+	// PortableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
+	PortableVersion int32
+	// BigEndian specify big endian byte order if true.
+	BigEndian bool
 }
 
 func (c Config) Clone() Config {

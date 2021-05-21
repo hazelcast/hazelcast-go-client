@@ -41,14 +41,12 @@ func (p predInstanceOf) ClassID() int32 {
 	return 8
 }
 
-func (p *predInstanceOf) ReadData(input serialization.DataInput) error {
+func (p *predInstanceOf) ReadData(input serialization.DataInput) {
 	p.className = input.ReadString()
-	return input.Error()
 }
 
-func (p predInstanceOf) WriteData(output serialization.DataOutput) error {
+func (p predInstanceOf) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.className)
-	return nil
 }
 
 func (p predInstanceOf) String() string {

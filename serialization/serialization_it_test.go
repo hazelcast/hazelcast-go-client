@@ -55,18 +55,16 @@ func newEmployee(name string, age int, active bool) *employee {
 	}
 }
 
-func (e *employee) ReadPortable(reader serialization.PortableReader) error {
+func (e *employee) ReadPortable(reader serialization.PortableReader) {
 	e.Name = reader.ReadString("Name")
 	e.Age = int(reader.ReadInt32("Age"))
 	e.Active = reader.ReadBool("Active")
-	return reader.Error()
 }
 
-func (e *employee) WritePortable(writer serialization.PortableWriter) error {
+func (e *employee) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteString("Name", e.Name)
 	writer.WriteInt32("Age", int32(e.Age))
 	writer.WriteBool("Active", e.Active)
-	return nil
 }
 
 func (e *employee) FactoryID() int32 {

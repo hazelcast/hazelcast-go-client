@@ -49,13 +49,13 @@ type Invocation interface {
 }
 
 type Impl struct {
-	request       *proto.ClientMessage
-	response      chan *proto.ClientMessage
-	completed     int32
-	address       *pubcluster.AddressImpl
-	partitionID   int32
-	eventHandler  func(clientMessage *proto.ClientMessage)
 	deadline      time.Time
+	response      chan *proto.ClientMessage
+	address       *pubcluster.AddressImpl
+	eventHandler  func(clientMessage *proto.ClientMessage)
+	request       *proto.ClientMessage
+	completed     int32
+	partitionID   int32
 	redoOperation bool
 }
 
@@ -137,7 +137,7 @@ func (i *Impl) Close() {
 
 func (i *Impl) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
-	if errors.Is(err, nonRetryableError) {
+	if errors.As(err, &nonRetryableError) {
 		return false
 	}
 
@@ -154,12 +154,12 @@ func (i *Impl) CanRetry(err error) bool {
 
 	var ioError *hzerrors.HazelcastIOError
 	var instanceNotActiveError *hzerrors.HazelcastInstanceNotActiveError
-	if errors.Is(err, ioError) || errors.Is(err, instanceNotActiveError) {
+	if errors.As(err, &ioError) || errors.As(err, &instanceNotActiveError) {
 		return true
 	}
 
 	var targetDisconnectedError *hzerrors.HazelcastTargetDisconnectedError
-	if errors.Is(err, targetDisconnectedError) {
+	if errors.As(err, &targetDisconnectedError) {
 		return i.Request().Retryable || i.redoOperation
 	}
 	return false

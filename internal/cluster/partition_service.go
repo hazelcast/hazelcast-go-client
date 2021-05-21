@@ -25,8 +25,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
-	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -45,10 +45,10 @@ func (b PartitionServiceCreationBundle) Check() {
 }
 
 type PartitionService struct {
+	logger          ilogger.Logger
 	eventDispatcher *event.DispatchService
 	partitionTable  partitionTable
 	partitionCount  int32
-	logger          ilogger.Logger
 }
 
 func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionService {
@@ -68,7 +68,7 @@ func (s *PartitionService) PartitionCount() int32 {
 	return atomic.LoadInt32(&s.partitionCount)
 }
 
-func (s *PartitionService) GetPartitionID(keyData pubserialization.Data) (int32, error) {
+func (s *PartitionService) GetPartitionID(keyData *iserialization.Data) (int32, error) {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
@@ -97,10 +97,10 @@ func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) er
 }
 
 type partitionTable struct {
-	partitionStateVersion int32
 	partitions            map[int32]types.UUID
-	connectionID          int64
 	mu                    *sync.RWMutex
+	connectionID          int64
+	partitionStateVersion int32
 }
 
 func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID int64) bool {
@@ -131,12 +131,12 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 
 func (p *partitionTable) GetOwnerUUID(partitionID int32) *types.UUID {
 	p.mu.RLock()
-	defer p.mu.RUnlock()
+	var u *types.UUID
 	if uuid, ok := p.partitions[partitionID]; ok {
-		uuidCopy := uuid
-		return &uuidCopy
+		u = &uuid
 	}
-	return nil
+	p.mu.RUnlock()
+	return u
 }
 
 func defaultPartitionTable() partitionTable {

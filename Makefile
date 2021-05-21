@@ -1,4 +1,4 @@
-.PHONY: build test test-all test-all-race doc
+.PHONY: benchmark build check doc test test-all test-all-race
 
 PORT ?= 5050
 TEST_FLAGS ?=
@@ -24,5 +24,13 @@ view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
 
+benchmark:
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -bench . -benchmem ./benchmarks
+
 doc:
 	godoc -http=localhost:$(PORT)
+
+check:
+	# requires staticcheck: use go install honnef.co/go/tools/cmd/staticcheck@latest
+	# requires fieldalignment
+	# requires go vet

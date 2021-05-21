@@ -44,10 +44,10 @@ const (
 )
 
 type controlMessage struct {
-	controlType    controlType
-	eventName      string
-	subscriptionID int64
 	handler        Handler
+	eventName      string
+	controlType    controlType
+	subscriptionID int64
 }
 
 type DispatchService struct {

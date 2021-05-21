@@ -23,11 +23,11 @@ import (
 )
 
 type CircuitBreakerOptions struct {
-	MaxRetries         int
-	MaxFailureCount    int32
-	ResetTimeout       time.Duration
 	RetryPolicyFunc    RetryPolicyFunc
 	StateChangeHandler EventHandler
+	MaxRetries         int
+	ResetTimeout       time.Duration
+	MaxFailureCount    int32
 }
 
 func NewCircuitBreakerOptions(fs ...CircuitBreakerOptionFunc) (*CircuitBreakerOptions, error) {

@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 // Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
 // from the underlying MapStore, evict only removes the entry from the memory.
 
-func EncodeMapEvictRequest(name string, key serialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapEvictRequest(name string, key *iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

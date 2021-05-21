@@ -25,10 +25,10 @@ import (
 
 // ClassDefinitionBuilder is used to build and register class definitions manually.
 type ClassDefinitionBuilder struct {
+	fieldDefinitions map[string]serialization.FieldDefinition
 	factoryID        int32
 	classID          int32
 	version          int32
-	fieldDefinitions map[string]serialization.FieldDefinition
 	index            int32
 	done             bool
 }
@@ -38,7 +38,12 @@ type ClassDefinitionBuilder struct {
 // Make sure to specify the portableVersion compatible with
 // portableVersion in the serialization.Service.
 func NewClassDefinitionBuilder(factoryID int32, classID int32, version int32) *ClassDefinitionBuilder {
-	return &ClassDefinitionBuilder{factoryID, classID, version, make(map[string]serialization.FieldDefinition), 0, false}
+	return &ClassDefinitionBuilder{
+		factoryID:        factoryID,
+		classID:          classID,
+		version:          version,
+		fieldDefinitions: make(map[string]serialization.FieldDefinition),
+	}
 }
 
 // AddByteField adds byte field to class definition.
@@ -267,7 +272,7 @@ func (cdb *ClassDefinitionBuilder) AddUTFArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeUTFArray,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeStringArray,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil

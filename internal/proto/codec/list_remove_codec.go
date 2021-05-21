@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 // If this list does not contain the element, it is unchanged.
 // Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
 
-func EncodeListRemoveRequest(name string, value serialization.Data) *proto.ClientMessage {
+func EncodeListRemoveRequest(name string, value *iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

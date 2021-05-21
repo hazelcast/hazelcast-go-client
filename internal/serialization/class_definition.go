@@ -19,14 +19,19 @@ package serialization
 import "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type ClassDefinitionImpl struct {
+	fields    map[string]serialization.FieldDefinition
 	factoryID int32
 	classID   int32
 	version   int32
-	fields    map[string]serialization.FieldDefinition
 }
 
 func NewClassDefinitionImpl(factoryID int32, classID int32, version int32) *ClassDefinitionImpl {
-	return &ClassDefinitionImpl{factoryID, classID, version, make(map[string]serialization.FieldDefinition)}
+	return &ClassDefinitionImpl{
+		factoryID: factoryID,
+		classID:   classID,
+		version:   version,
+		fields:    make(map[string]serialization.FieldDefinition),
+	}
 }
 
 func (cd *ClassDefinitionImpl) FactoryID() int32 {
@@ -54,8 +59,8 @@ func (cd *ClassDefinitionImpl) AddFieldDefinition(definition serialization.Field
 }
 
 type FieldDefinitionImpl struct {
-	index     int32
 	fieldName string
+	index     int32
 	fieldType int32
 	factoryID int32
 	classID   int32
@@ -64,7 +69,14 @@ type FieldDefinitionImpl struct {
 
 func NewFieldDefinitionImpl(index int32, fieldName string, fieldType int32, factoryID int32,
 	classID int32, version int32) serialization.FieldDefinition {
-	return &FieldDefinitionImpl{index, fieldName, fieldType, factoryID, classID, version}
+	return &FieldDefinitionImpl{
+		index:     index,
+		fieldName: fieldName,
+		fieldType: fieldType,
+		factoryID: factoryID,
+		classID:   classID,
+		version:   version,
+	}
 }
 
 func (fd *FieldDefinitionImpl) Type() int32 {
@@ -111,5 +123,5 @@ const (
 	TypeInt64Array
 	TypeFloat32Array
 	TypeFloat64Array
-	TypeUTFArray
+	TypeStringArray
 )

@@ -31,8 +31,8 @@ func Equal(attributeName string, value interface{}) *predEqual {
 }
 
 type predEqual struct {
-	attribute string
 	value     interface{}
+	attribute string
 }
 
 func (p predEqual) FactoryID() int32 {
@@ -43,15 +43,14 @@ func (p predEqual) ClassID() int32 {
 	return 3
 }
 
-func (p *predEqual) ReadData(input serialization.DataInput) error {
+func (p *predEqual) ReadData(input serialization.DataInput) {
 	p.attribute = input.ReadString()
 	p.value = input.ReadObject()
-	return input.Error()
 }
 
-func (p predEqual) WriteData(output serialization.DataOutput) error {
+func (p predEqual) WriteData(output serialization.DataOutput) {
 	output.WriteString(p.attribute)
-	return output.WriteObject(p.value)
+	output.WriteObject(p.value)
 }
 
 func (p predEqual) String() string {

@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 // The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
 // (Note that this will occur if the specified collection is this list, and it's nonempty.)
 
-func EncodeListAddAllWithIndexRequest(name string, index int32, valueList []serialization.Data) *proto.ClientMessage {
+func EncodeListAddAllWithIndexRequest(name string, index int32, valueList []*iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

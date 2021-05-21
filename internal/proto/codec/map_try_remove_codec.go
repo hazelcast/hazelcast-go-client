@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
@@ -37,7 +37,7 @@ const (
 // If the key is already locked by another thread and/or member, then this operation will wait the timeout
 // amount for acquiring the lock.
 
-func EncodeMapTryRemoveRequest(name string, key serialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
+func EncodeMapTryRemoveRequest(name string, key *iserialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

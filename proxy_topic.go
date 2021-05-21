@@ -22,7 +22,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -89,7 +89,7 @@ func (t *Topic) addListener(handler TopicMessageHandler) (types.UUID, error) {
 	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleTopicAddMessageListener(msg, func(itemData serialization.Data, publishTime int64, uuid types.UUID) {
+		codec.HandleTopicAddMessageListener(msg, func(itemData *iserialization.Data, publishTime int64, uuid types.UUID) {
 			if item, err := t.convertToObject(itemData); err != nil {
 				t.logger.Warnf("cannot convert data to Go value")
 			} else {

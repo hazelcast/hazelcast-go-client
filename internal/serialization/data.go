@@ -21,7 +21,6 @@ import (
 	"math"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -30,43 +29,40 @@ const (
 	heapDataOverhead = 8
 )
 
-type SerializationData struct {
+type Data struct {
 	Payload []byte
 }
 
-func (d *SerializationData) ToByteArray() []byte {
+func (d *Data) ToByteArray() []byte {
 	return d.Payload
 }
 
-// NewSerializationData returns serialization Data with the given payload.
-// Ownership of Payload is transferred, so it mustn't be used after passed to NewSerializationData
-func NewSerializationData(payload []byte) serialization.Data {
-	return &SerializationData{payload}
+// NewData returns serialization Data with the given payload.
+// Ownership of Payload is transferred, so it mustn't be used after passed to NewData
+func NewData(payload []byte) *Data {
+	return &Data{payload}
 }
 
-func (d *SerializationData) Buffer() []byte {
+func (d *Data) Buffer() []byte {
 	return d.Payload
 }
 
-func (d *SerializationData) Type() int32 {
+func (d *Data) Type() int32 {
 	if d.TotalSize() == 0 {
 		return 0
 	}
 	return int32(binary.BigEndian.Uint32(d.Payload[typeOffset:]))
 }
 
-func (d *SerializationData) TotalSize() int {
-	if d.Payload == nil {
-		return 0
-	}
+func (d *Data) TotalSize() int {
 	return len(d.Payload)
 }
 
-func (d *SerializationData) DataSize() int {
+func (d *Data) DataSize() int {
 	// TODO: Remove conversion to float64, amd math.Max
 	return int(math.Max(float64(d.TotalSize()-heapDataOverhead), 0))
 }
 
-func (d *SerializationData) PartitionHash() int32 {
+func (d *Data) PartitionHash() int32 {
 	return murmur.Default3A(d.Payload, DataOffset, d.DataSize())
 }
