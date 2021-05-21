@@ -32,10 +32,24 @@ Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and acces
 
 ### 1.0.0 Preview 2 (2021-05-21)
 
-The second preview release of the Hazelcast Go client has the following new features:
+New features:
 
-* Distributed data structures:
-  1. [IList](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html),
+* [IList](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html) distributed data structure,
+
+Changes:
+* `hazelcast.ConfigBuilder` is removed. Use `hazelcast.Config` instead.
+* Signatures of serialization functions have changed to remove returned `error`s. If your serialization code needs to fail, simply `panic`. Panics are recovered and converted to `error`s.  
+*`hzerrors` package is public.
+
+Improvements:
+* Serialization performance is increased, especially for large payloads.
+* Memory utilization is improved and number of allocations are decreased. 
+* Heartbeat service is enabled.
+
+Fixes:
+* Fixed a regression introduced in Preview 1 which limited the message size to 8KBs.
+* Fixed Non-retryable errors.
+* `Destroy` function of DSSs removes corresponding proxies from the cache.
 
 ### 1.0.0 Preview 1 (2021-05-07)
 
