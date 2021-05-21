@@ -39,7 +39,7 @@ New features:
 Changes:
 * `hazelcast.ConfigBuilder` is removed. Use `hazelcast.Config` instead.
 * Signatures of serialization functions have changed to remove returned `error`s. If your serialization code needs to fail, simply `panic`. Panics are recovered and converted to `error`s.  
-*`hzerrors` package is public.
+* `hzerrors` package is public.
 
 Improvements:
 * Serialization performance is increased, especially for large payloads.
