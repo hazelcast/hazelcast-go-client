@@ -203,9 +203,9 @@ func TestObjectDataInput_ReadUTF2(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteString("Furkan Şenharputlu")
 	o.WriteString("Jack")
-	o.WriteString("😔")
+	o.WriteString("😎🎉😔")
 	i := NewObjectDataInput(o.buffer, 0, nil, false)
-	expectedRet := "😔"
+	expectedRet := "😎🎉😔"
 	i.ReadString()
 	i.ReadString()
 	ret := i.ReadString()
