@@ -1462,9 +1462,6 @@ func TestNewMorphingPortableReader(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	service, _ := NewService(config)
-
-	data, _ := service.ToData(s)
 	service, err := NewService(config)
 	if err != nil {
 		t.Fatal(err)
