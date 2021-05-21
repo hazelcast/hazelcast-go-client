@@ -219,6 +219,11 @@ func (c *Client) Shutdown() error {
 	return nil
 }
 
+// Running checks whether or not the client is running.
+func (c *Client) Running() bool {
+	return atomic.LoadInt32(&c.state) == ready
+}
+
 // AddLifecycleListener adds a lifecycle state change handler after the client starts.
 // The listener is attached to the client after the client starts, so lifecyle events after the client start can be received.
 // Use the returned subscription ID to remove the listener.
