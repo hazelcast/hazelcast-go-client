@@ -26,7 +26,7 @@ type Config struct {
 	// BigEndian is the Little Endinan byte order bool. If false, it is Big Endian.
 	BigEndian bool
 	// PortableFactories is a map of factory IDs and corresponding Portable factories.
-	PortableFactories map[int32]PortableFactory
+	PortableFactories []PortableFactory
 	// PortableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
 	// like adding/removing a field or changing a type of a field.
 	PortableVersion int32
@@ -37,33 +37,27 @@ type Config struct {
 	// ClassDefinitions contains ClassDefinitions for portable structs.
 	ClassDefinitions []ClassDefinition
 	// IdentifiedDataSerializableFactories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-	IdentifiedDataSerializableFactories map[int32]IdentifiedDataSerializableFactory
+	IdentifiedDataSerializableFactories []IdentifiedDataSerializableFactory
 }
 
 func NewConfig() Config {
 	return Config{
-		BigEndian:                           true,
-		IdentifiedDataSerializableFactories: map[int32]IdentifiedDataSerializableFactory{},
-		PortableFactories:                   map[int32]PortableFactory{},
-		CustomSerializers:                   map[reflect.Type]Serializer{},
+		BigEndian:         true,
+		CustomSerializers: map[reflect.Type]Serializer{},
 	}
 }
 
 func (c Config) Clone() Config {
-	idFactories := map[int32]IdentifiedDataSerializableFactory{}
-	for k, v := range c.IdentifiedDataSerializableFactories {
-		idFactories[k] = v
-	}
-	pFactories := map[int32]PortableFactory{}
-	for k, v := range c.PortableFactories {
-		pFactories[k] = v
-	}
+	idFactories := make([]IdentifiedDataSerializableFactory, len(c.IdentifiedDataSerializableFactories))
+	copy(idFactories, c.IdentifiedDataSerializableFactories)
+	pFactories := make([]PortableFactory, len(c.PortableFactories))
+	copy(pFactories, c.PortableFactories)
+	defs := make([]ClassDefinition, len(c.ClassDefinitions))
+	copy(defs, c.ClassDefinitions)
 	serializers := map[reflect.Type]Serializer{}
 	for k, v := range c.CustomSerializers {
 		serializers[k] = v
 	}
-	defs := make([]ClassDefinition, len(c.ClassDefinitions))
-	copy(defs, c.ClassDefinitions)
 	return Config{
 		BigEndian:                           c.BigEndian,
 		IdentifiedDataSerializableFactories: idFactories,
@@ -81,12 +75,12 @@ func (c Config) Validate() error {
 
 // AddIdentifiedDataSerializableFactory adds an identified data serializable factory.
 func (b *Config) AddIdentifiedDataSerializableFactory(factory IdentifiedDataSerializableFactory) {
-	b.IdentifiedDataSerializableFactories[factory.FactoryID()] = factory
+	b.IdentifiedDataSerializableFactories = append(b.IdentifiedDataSerializableFactories, factory)
 }
 
 // AddPortableFactory adds a portable factory.
 func (b *Config) AddPortableFactory(factory PortableFactory) {
-	b.PortableFactories[factory.FactoryID()] = factory
+	b.PortableFactories = append(b.PortableFactories, factory)
 }
 
 // AddCustomSerializer adds a customer serializer for the given type.

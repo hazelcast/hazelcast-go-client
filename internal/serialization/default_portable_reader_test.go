@@ -182,8 +182,8 @@ func TestDefaultPortableReader_ReadUTF(t *testing.T) {
 
 func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	var expectedRet serialization.Portable = &student{10, 22, "Furkan Şenharputlu"}
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
+	config := &serialization.Config{
+		PortableFactories: []serialization.PortableFactory{&portableFactory1{}}}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
@@ -205,8 +205,9 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 
 func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	var expectedRet serialization.Portable
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
@@ -390,15 +391,18 @@ func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
 func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	var expectedRet = []serialization.Portable{&student{10, 22, "Furkan Şenharputlu"},
 		&student{11, 20, "Jack Purcell"}}
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineers", TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), 0))
-
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer := NewPortableSerializer(service, config.PortableFactories, 0)
+	serializer, err := NewPortableSerializer(service, config.PortableFactories, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	pw := NewDefaultPortableWriter(serializer, o, classDef)
 	pw.WritePortableArray("engineers", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
@@ -413,8 +417,9 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 
 func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	var expectedRet serialization.Portable
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	classDef := NewClassDefinitionImpl(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
