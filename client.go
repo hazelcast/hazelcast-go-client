@@ -219,8 +219,8 @@ func (c *Client) Shutdown() error {
 	return nil
 }
 
-// IsRunning checks whether or not the client is running.
-func (c *Client) IsRunning() bool {
+// Running checks whether or not the client is running.
+func (c *Client) Running() bool {
 	return atomic.LoadInt32(&c.state) == ready
 }
 

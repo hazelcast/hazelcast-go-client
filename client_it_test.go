@@ -82,13 +82,13 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
-func TestClientIsRunning(t *testing.T) {
+func TestClientRunning(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
-		assert.True(t, client.IsRunning())
+		assert.True(t, client.Running())
 		if err := client.Shutdown(); err != nil {
 			t.Fatal(err)
 		}
-		assert.False(t, client.IsRunning())
+		assert.False(t, client.Running())
 	})
 }
 
