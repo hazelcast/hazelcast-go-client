@@ -16,6 +16,8 @@
 
 package logger
 
+import "fmt"
+
 type Level string
 
 const (
@@ -39,6 +41,30 @@ type Config struct {
 	Level Level
 }
 
+func NewConfig() Config {
+	return Config{
+		Level: InfoLevel,
+	}
+}
+
 func (c Config) Clone() Config {
 	return Config{Level: c.Level}
+}
+
+func (c Config) Validate() error {
+	switch string(c.Level) {
+	case "off":
+		fallthrough
+	case "error":
+		fallthrough
+	case "warn":
+		fallthrough
+	case "info":
+		fallthrough
+	case "debug":
+		fallthrough
+	case "trace":
+		return nil
+	}
+	return fmt.Errorf("invalid log level: %s", c.Level)
 }

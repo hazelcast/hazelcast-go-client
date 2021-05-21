@@ -135,80 +135,51 @@ func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serialize
 }
 
 func (s *Service) registerDefaultSerializers() error {
-	// XXX: errors are not handled
-	s.registerSerializer(&ByteSerializer{})
-	s.nameToID["uint8"] = ConstantTypeByte
-
-	s.registerSerializer(&BoolSerializer{})
-	s.nameToID["bool"] = ConstantTypeBool
-
-	s.registerSerializer(&UInteger16Serializer{})
-	s.nameToID["uint16"] = ConstantTypeUInteger16
-
-	s.registerSerializer(&Integer16Serializer{})
-	s.nameToID["int16"] = ConstantTypeInteger16
-
-	s.registerSerializer(&Integer32Serializer{})
-	s.nameToID["int32"] = ConstantTypeInteger32
-
-	s.registerSerializer(&Integer64Serializer{})
-	s.nameToID["int64"] = ConstantTypeInteger64
-
-	s.registerSerializer(&Float32Serializer{})
-	s.nameToID["float32"] = ConstantTypeFloat32
-
-	s.registerSerializer(&Float64Serializer{})
-	s.nameToID["float64"] = ConstantTypeFloat64
-
-	s.registerSerializer(&StringSerializer{})
-	s.nameToID["string"] = ConstantTypeString
-
-	s.registerSerializer(&NilSerializer{})
-	s.nameToID["nil"] = ConstantTypeNil
-
-	s.registerSerializer(&ByteArraySerializer{})
-	s.nameToID["[]uint8"] = ConstantTypeByteArray
-
-	s.registerSerializer(&BoolArraySerializer{})
-	s.nameToID["[]bool"] = ConstantTypeBoolArray
-
-	s.registerSerializer(&UInteger16ArraySerializer{})
-	s.nameToID["[]uint16"] = ConstantTypeUInteger16Array
-
-	s.registerSerializer(&Integer16ArraySerializer{})
-	s.nameToID["[]int16"] = ConstantTypeInteger16Array
-
-	s.registerSerializer(&Integer32ArraySerializer{})
-	s.nameToID["[]int32"] = ConstantTypeInteger32Array
-
-	s.registerSerializer(&Integer64ArraySerializer{})
-	s.nameToID["[]int64"] = ConstantTypeInteger64Array
-
-	s.registerSerializer(&Float32ArraySerializer{})
-	s.nameToID["[]float32"] = ConstantTypeFloat32Array
-
-	s.registerSerializer(&Float64ArraySerializer{})
-	s.nameToID["[]float64"] = ConstantTypeFloat64Array
-
-	s.registerSerializer(&StringArraySerializer{})
-	s.nameToID["[]string"] = ConstantTypeStringArray
-
-	s.registerSerializer(&JSONValueSerializer{})
-	s.nameToID["serialization.JSON"] = JSONSerializationType
-
-	s.registerSerializer(&GobSerializer{})
-	s.nameToID["!gob"] = GoGobSerializationType
-
+	sers := []struct {
+		s pubserialization.Serializer
+		l string
+		i int32
+	}{
+		{l: "uint8", i: ConstantTypeByte, s: &ByteSerializer{}},
+		{l: "bool", i: ConstantTypeBool, s: &BoolSerializer{}},
+		{l: "uint16", i: ConstantTypeUInteger16, s: &UInteger16Serializer{}},
+		{l: "int16", i: ConstantTypeInteger16, s: &Integer16Serializer{}},
+		{l: "int32", i: ConstantTypeInteger32, s: &Integer32Serializer{}},
+		{l: "int64", i: ConstantTypeInteger64, s: &Integer64Serializer{}},
+		{l: "float32", i: ConstantTypeFloat32, s: &Float32Serializer{}},
+		{l: "float64", i: ConstantTypeFloat64, s: &Float64Serializer{}},
+		{l: "string", i: ConstantTypeString, s: &StringSerializer{}},
+		{l: "nil", i: ConstantTypeNil, s: &NilSerializer{}},
+		{l: "[]uint8", i: ConstantTypeByteArray, s: &ByteArraySerializer{}},
+		{l: "[]bool", i: ConstantTypeBoolArray, s: &BoolArraySerializer{}},
+		{l: "[]uint16", i: ConstantTypeUInteger16Array, s: &UInteger16ArraySerializer{}},
+		{l: "[]int16", i: ConstantTypeInteger16Array, s: &Integer16ArraySerializer{}},
+		{l: "[]int32", i: ConstantTypeInteger32Array, s: &Integer32ArraySerializer{}},
+		{l: "[]int64", i: ConstantTypeInteger64Array, s: &Integer64ArraySerializer{}},
+		{l: "[]float32", i: ConstantTypeFloat32Array, s: &Float32ArraySerializer{}},
+		{l: "[]float64", i: ConstantTypeFloat64Array, s: &Float64ArraySerializer{}},
+		{l: "[]string", i: ConstantTypeStringArray, s: &StringArraySerializer{}},
+		{l: "serialization.JSON", i: JSONSerializationType, s: &JSONValueSerializer{}},
+		{l: "!gob", i: GoGobSerializationType, s: &GobSerializer{}},
+	}
+	for _, ser := range sers {
+		if err := s.registerSerializer(ser.s); err != nil {
+			return err
+		}
+		s.nameToID[ser.l] = ser.i
+	}
 	err := s.registerIdentifiedFactories()
 	if err != nil {
 		return err
 	}
-
-	portableSerializer := NewPortableSerializer(s, s.SerializationConfig.PortableFactories,
-		s.SerializationConfig.PortableVersion)
-
+	portableSerializer, err := NewPortableSerializer(s, s.SerializationConfig.PortableFactories, s.SerializationConfig.PortableVersion)
+	if err != nil {
+		return err
+	}
 	s.registerClassDefinitions(portableSerializer, s.SerializationConfig.ClassDefinitions)
-	s.registerSerializer(portableSerializer)
+	if err = s.registerSerializer(portableSerializer); err != nil {
+		return err
+	}
 	s.nameToID["!portable"] = ConstantTypePortable
 	return nil
 
@@ -289,8 +260,13 @@ func (s *Service) lookUpGlobalSerializer() pubserialization.Serializer {
 
 func (s *Service) registerIdentifiedFactories() error {
 	factories := make(map[int32]pubserialization.IdentifiedDataSerializableFactory)
-	for id := range s.SerializationConfig.IdentifiedDataSerializableFactories {
-		factories[id] = s.SerializationConfig.IdentifiedDataSerializableFactories[id]
+	fs := map[int32]pubserialization.IdentifiedDataSerializableFactory{}
+	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories {
+		fid := f.FactoryID()
+		if _, ok := fs[fid]; ok {
+			return hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+		}
+		fs[fid] = f
 	}
 	if err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories)); err != nil {
 		return err

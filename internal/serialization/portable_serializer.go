@@ -30,9 +30,17 @@ type PortableSerializer struct {
 	factories       map[int32]serialization.PortableFactory
 }
 
-func NewPortableSerializer(service *Service, portableFactories map[int32]serialization.PortableFactory,
-	portableVersion int32) *PortableSerializer {
-	return &PortableSerializer{service, NewPortableContext(service, portableVersion), portableFactories}
+func NewPortableSerializer(service *Service, factories []serialization.PortableFactory, version int32) (*PortableSerializer, error) {
+	pf := map[int32]serialization.PortableFactory{}
+	for _, f := range factories {
+		fid := f.FactoryID()
+		if _, ok := pf[fid]; ok {
+			return nil, hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+		}
+		pf[fid] = f
+	}
+	ser := &PortableSerializer{service, NewPortableContext(service, version), pf}
+	return ser, nil
 }
 
 func (ps *PortableSerializer) ID() int32 {

@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -352,8 +353,8 @@ func TestMap_GetValuesWithPredicate(t *testing.T) {
 		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get("k3")))
 		if values, err := m.GetValuesWithPredicate(predicate.Equal("A", 10)); err != nil {
 			t.Fatal(err)
-		} else if len(targetValues) != len(values) {
-			t.Fatalf("target len: %d != %d", len(targetValues), len(values))
+		} else if !assert.ElementsMatch(t, targetValues, values) {
+			t.FailNow()
 		}
 	})
 }
@@ -395,10 +396,10 @@ func TestMap_GetEntrySet(t *testing.T) {
 }
 
 func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		okValue := "foo-Ğİ"
 		noValue := "foo"
 		entries := []types.Entry{
@@ -483,8 +484,9 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 		if err := m.AddIndexWithConfig(indexConfig); err == nil {
 			t.Fatalf("should have failed")
 		} else {
-			if _, ok := err.(hz.ValidationError); !ok {
-				t.Fatalf("should have returned a validation error")
+			vErr := &hz.IndexValidationError{}
+			if !errors.As(err, &vErr) {
+				t.Fatalf("should have returned an index validation error")
 			}
 		}
 	})
@@ -518,7 +520,7 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 	makeMapName := func() string {
 		return "test-map"
 	}
-	it.MapTesterWithConfigBuilderWithName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
+	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		putSampleKeyValues(m, 2)
 		it.Must(m.EvictAll())
 		it.Must(m.PutTransient("k0", "new-v0"))
@@ -540,7 +542,7 @@ func TestMap_LoadAllReplacing(t *testing.T) {
 	makeMapName := func() string {
 		return "test-map"
 	}
-	it.MapTesterWithConfigBuilderWithName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
+	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		keys := putSampleKeyValues(m, 10)
 		it.Must(m.EvictAll())
 		it.Must(m.LoadAllReplacing())
@@ -655,10 +657,10 @@ func TestMap_IsEmptySize(t *testing.T) {
 }
 
 func TestMap_RemoveAll(t *testing.T) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		entries := []types.Entry{
 			types.NewEntry("k1", &it.SamplePortable{A: "foo", B: 10}),
 			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
@@ -790,10 +792,10 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 }
 
 func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
@@ -820,10 +822,10 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 }
 
 func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.Serialization().AddPortableFactory(it.SamplePortableFactory{})
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
 	}
-	it.MapTesterWithConfigBuilder(t, cbCallback, func(t *testing.T, m *hz.Map) {
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.AddInt32(&callCount, 1)

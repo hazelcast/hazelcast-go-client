@@ -16,6 +16,10 @@
 
 package hazelcast
 
-type ValidationError interface {
-	error
+type IndexValidationError struct {
+	Err error
+}
+
+func (ic IndexValidationError) Error() string {
+	return ic.Err.Error()
 }

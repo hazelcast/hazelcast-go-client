@@ -45,9 +45,9 @@ func TestProxy_Destroy(t *testing.T) {
 
 func retryResult(t *testing.T, redo bool, target bool) {
 	cluster := it.StartNewCluster(1)
-	cb := cluster.DefaultConfigBuilder()
-	cb.Cluster().SetRedoOperation(redo)
-	client := it.MustClient(hz.StartNewClientWithConfig(cb))
+	config := cluster.DefaultConfig()
+	config.ClusterConfig.RedoOperation = redo
+	client := it.MustClient(hz.StartNewClientWithConfig(config))
 	m := it.MustValue(client.GetMap("redo-test")).(*hz.Map)
 	// shutdown the cluster and try again
 	cluster.Shutdown()

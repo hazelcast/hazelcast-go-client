@@ -17,25 +17,16 @@
 package cluster
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 const (
 	DefaultHost = "localhost"
 	DefaultPort = 5701
 )
-
-type SecurityConfig struct {
-	Username string
-	Password string
-}
-
-func (c SecurityConfig) clone() SecurityConfig {
-	return SecurityConfig{
-		Username: c.Username,
-		Password: c.Password,
-	}
-}
 
 type Config struct {
 	SecurityConfig    SecurityConfig
@@ -50,6 +41,20 @@ type Config struct {
 	SmartRouting      bool
 }
 
+func NewConfig() Config {
+	return Config{
+		Name:              "dev",
+		Addrs:             []string{"127.0.0.1:5701"},
+		SmartRouting:      true,
+		ConnectionTimeout: 5 * time.Second,
+		HeartbeatInterval: 5 * time.Second,
+		HeartbeatTimeout:  60 * time.Second,
+		InvocationTimeout: 120 * time.Second,
+		SecurityConfig:    NewSecurityConfig(),
+		SSLConfig:         NewSSLConfig(),
+	}
+}
+
 func (c *Config) Clone() Config {
 	addrs := make([]string, len(c.Addrs))
 	copy(addrs, c.Addrs)
@@ -62,7 +67,54 @@ func (c *Config) Clone() Config {
 		HeartbeatTimeout:  c.HeartbeatTimeout,
 		InvocationTimeout: c.InvocationTimeout,
 		RedoOperation:     c.RedoOperation,
-		SecurityConfig:    c.SecurityConfig.clone(),
-		SSLConfig:         c.SSLConfig.clone(),
+		SecurityConfig:    c.SecurityConfig.Clone(),
+		SSLConfig:         c.SSLConfig.Clone(),
 	}
+}
+
+func (c *Config) Validate() error {
+	if c.Name == "" {
+		return ErrConfigInvalidClusterName
+	}
+	for _, addr := range c.Addrs {
+		if err := checkAddress(addr); err != nil {
+			return fmt.Errorf("invalid address %s: %w", addr, err)
+		}
+	}
+	if c.ConnectionTimeout < 0 {
+		return ErrConfigInvalidConnectionTimeout
+	}
+	if c.HeartbeatInterval < 0 {
+		return ErrConfigInvalidHeartbeatInterval
+	}
+	if c.HeartbeatTimeout < 0 {
+		return ErrConfigInvalidHeartbeatTimeout
+	}
+	if c.InvocationTimeout < 0 {
+		return ErrConfigInvalidInvocationTimeout
+	}
+	if err := c.SecurityConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.SSLConfig.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetAddress sets the candidate address list that client will use to establish initial connection.
+// Other members of the cluster will be discovered when the client starts.
+func (c *Config) SetAddress(addrs ...string) error {
+	for _, addr := range addrs {
+		if err := checkAddress(addr); err != nil {
+			return fmt.Errorf("invalid address %s: %w", addr, err)
+		}
+	}
+	c.Addrs = addrs
+	return nil
+}
+
+func checkAddress(addr string) error {
+	_, _, err := internal.ParseAddr(addr)
+	return err
 }
