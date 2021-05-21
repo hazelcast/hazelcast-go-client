@@ -31,6 +31,4 @@ doc:
 	godoc -http=localhost:$(PORT)
 
 check:
-	# requires staticcheck: use go install honnef.co/go/tools/cmd/staticcheck@latest
-	# requires fieldalignment
-	# requires go vet
+	bash ./check.sh

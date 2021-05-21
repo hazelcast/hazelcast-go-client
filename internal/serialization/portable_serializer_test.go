@@ -41,20 +41,6 @@ func (*portableFactory1) FactoryID() int32 {
 	return 2
 }
 
-type portableFactory2 struct {
-}
-
-func (*portableFactory2) Create(classID int32) serialization.Portable {
-	if classID == 1 {
-		return &student2{}
-	}
-	return nil
-}
-
-func (*portableFactory2) FactoryID() int32 {
-	return 2
-}
-
 type student struct {
 	name string
 	age  int32
@@ -138,7 +124,6 @@ func TestPortableSerializer(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	service, _ := NewService(config)
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	service, err := NewService(config)
 	if err != nil {

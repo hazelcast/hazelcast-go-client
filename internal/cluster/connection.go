@@ -236,10 +236,6 @@ func (c *Connection) isTimeoutError(err error) bool {
 	return false
 }
 
-func (c *Connection) localAddress() net.Addr {
-	return c.socket.LocalAddr()
-}
-
 func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
 	c.connectedServerVersionStr = connectedServerVersion
 	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)

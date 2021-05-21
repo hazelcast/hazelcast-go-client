@@ -30,6 +30,13 @@ Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and acces
 
 ## Release Notes
 
+### 1.0.0 Preview 2 (2021-05-21)
+
+The second preview release of the Hazelcast Go client has the following new features:
+
+* Distributed data structures:
+  1. [IList](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html),
+
 ### 1.0.0 Preview 1 (2021-05-07)
 
 The first preview release of the Hazelcast Go client has the following features:
@@ -106,7 +113,7 @@ In your Go module enabled project, add a dependency to `github.com/hazelcast/haz
 $ go get github.com/hazelcast/hazelcast-go-client
 
 # Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.1
+$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.2
 ```
 
 ## Quick Start
@@ -141,20 +148,17 @@ client, err := hazelcast.StartNewClient()
 
 ### Starting the Client with Given Options
 
-Note that `ClientConfigBuilder` is not thread-safe.
-Complete creating the configuration in a single go routine, do not pass configuration builder to other go routines without synchronization. 
+Note that `Config` structs are not thread-safe. Complete creation of the configuration in a single go routine. 
 
 ```go
-// create the config builder
-cb := hazelcast.NewConfigBuilder()
+// create the default configuration
+config := hazelcast.NewConfig()
 
-// optionally turn off smart routing
-cb.Cluster().SetSmartRouting(false).
-    // optionally set cluster addresses manually
-    SetAddrs("member1.example.com", "member2.example.com")
+// optionally set member addresses manually
+config.ClusterConfig.SetAddress("member1.example.com", "member2.example.com")
 
 // create and start the client with the configuration provider
-client, err := hazelcast.StartNewClientWithConfig(cb)
+client, err := hazelcast.StartNewClientWithConfig(config)
 // handle client start error
 ```
 

@@ -199,7 +199,7 @@ func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, 
 
 func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionID int64) {
 	if handlers, ok := s.syncSubscriptions[eventName]; ok {
-		for subscriptionID, _ := range handlers {
+		for subscriptionID := range handlers {
 			if subscriptionID == unsubscribeSubscriptionID {
 				delete(handlers, subscriptionID)
 				return
@@ -207,7 +207,7 @@ func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionI
 		}
 	}
 	if handlers, ok := s.subscriptions[eventName]; ok {
-		for subscriptionID, _ := range handlers {
+		for subscriptionID := range handlers {
 			if subscriptionID == unsubscribeSubscriptionID {
 				delete(handlers, subscriptionID)
 				break

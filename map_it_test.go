@@ -900,14 +900,6 @@ func makeStringSet(items []interface{}) map[string]struct{} {
 	return result
 }
 
-func makeInterfaceSet(items []interface{}) map[interface{}]struct{} {
-	result := map[interface{}]struct{}{}
-	for _, item := range items {
-		result[item] = struct{}{}
-	}
-	return result
-}
-
 func entriesEqualUnordered(p1, p2 []types.Entry) bool {
 	if len(p1) != len(p2) {
 		return false
