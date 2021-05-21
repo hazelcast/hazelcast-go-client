@@ -190,7 +190,7 @@ func (c *Client) start() error {
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	c.clusterService.Start()
-	if err := c.connectionManager.Start(c.clusterConfig.ConnectionTimeout); err != nil {
+	if err := c.connectionManager.Start(1 * time.Minute); err != nil {
 		c.clusterService.Stop()
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
