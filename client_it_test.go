@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -78,6 +79,16 @@ func TestClientLifecycleEvents(t *testing.T) {
 		if !reflect.DeepEqual(targetStates, receivedStates) {
 			t.Fatalf("target %v != %v", targetStates, receivedStates)
 		}
+	})
+}
+
+func TestClientRunning(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		assert.True(t, client.Running())
+		if err := client.Shutdown(); err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, client.Running())
 	})
 }
 
