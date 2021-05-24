@@ -51,10 +51,6 @@ func newMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) *Map {
 	}
 }
 
-func (m *Map) ContextAware() *ContextMap {
-	return m.cm
-}
-
 // AddEntryListener adds a continuous entry listener to this map.
 func (m *Map) AddEntryListener(config MapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.cm.AddEntryListener(context.Background(), config, handler)
