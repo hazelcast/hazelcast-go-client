@@ -30,6 +30,7 @@ const (
 
 type Config struct {
 	SecurityConfig    SecurityConfig
+	AzureConfig       AzureConfig
 	Name              string
 	SSLConfig         SSLConfig
 	Addrs             []string
@@ -52,6 +53,7 @@ func NewConfig() Config {
 		InvocationTimeout: 120 * time.Second,
 		SecurityConfig:    NewSecurityConfig(),
 		SSLConfig:         NewSSLConfig(),
+		AzureConfig:       NewAzureConfig(),
 	}
 }
 
@@ -69,6 +71,7 @@ func (c *Config) Clone() Config {
 		RedoOperation:     c.RedoOperation,
 		SecurityConfig:    c.SecurityConfig.Clone(),
 		SSLConfig:         c.SSLConfig.Clone(),
+		AzureConfig:       c.AzureConfig.Clone(),
 	}
 }
 
