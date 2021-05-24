@@ -330,7 +330,7 @@ func TestPortableSerializer4(t *testing.T) {
 	config1 := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	builder := NewClassDefinitionBuilder(2, 1, 0)
+	builder := serialization.NewClassDefinitionBuilder(2, 1, 0)
 	err := builder.AddInt16Field("id")
 	if err != nil {
 		t.Errorf("ClassDefinitionBuilder works wrong")

@@ -200,7 +200,7 @@ func (s *Service) registerSerializer(serializer pubserialization.Serializer) err
 }
 
 func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
-	classDefinitions []pubserialization.ClassDefinition) {
+	classDefinitions []*pubserialization.ClassDefinition) {
 	for _, cd := range classDefinitions {
 		portableSerializer.portableContext.RegisterClassDefinition(cd)
 	}

@@ -23,13 +23,13 @@ import (
 
 type ClassDefinitionWriter struct {
 	portableContext        *PortableContext
-	classDefinitionBuilder *ClassDefinitionBuilder
+	classDefinitionBuilder *serialization.ClassDefinitionBuilder
 }
 
 func NewClassDefinitionWriter(portableContext *PortableContext, factoryID int32, classID int32,
 	version int32) *ClassDefinitionWriter {
 	return &ClassDefinitionWriter{portableContext,
-		NewClassDefinitionBuilder(factoryID, classID, version)}
+		serialization.NewClassDefinitionBuilder(factoryID, classID, version)}
 }
 
 func (cdw *ClassDefinitionWriter) WriteByte(fieldName string, value byte) {
@@ -121,7 +121,7 @@ func (cdw *ClassDefinitionWriter) WriteFloat64Array(fieldName string, value []fl
 }
 
 func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []string) {
-	cdw.classDefinitionBuilder.AddUTFArrayField(fieldName)
+	cdw.classDefinitionBuilder.AddStringArrayField(fieldName)
 }
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) {
@@ -136,7 +136,7 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 	cdw.classDefinitionBuilder.AddPortableArrayField(fieldName, nestedCD)
 }
 
-func (cdw *ClassDefinitionWriter) registerAndGet() (serialization.ClassDefinition, error) {
+func (cdw *ClassDefinitionWriter) registerAndGet() (*serialization.ClassDefinition, error) {
 	cd := cdw.classDefinitionBuilder.Build()
 	return cdw.portableContext.RegisterClassDefinition(cd)
 }

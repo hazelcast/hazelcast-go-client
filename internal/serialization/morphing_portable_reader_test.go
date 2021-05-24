@@ -27,8 +27,8 @@ import (
 
 func TestMorphingPortableReader_ReadByte(t *testing.T) {
 	expectedRet := byte(12)
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "type", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -42,8 +42,8 @@ func TestMorphingPortableReader_ReadByte(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadByteWithEmptyFieldName(t *testing.T) {
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "type", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -60,8 +60,8 @@ func TestMorphingPortableReader_ReadByteWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadByteWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		expectedRet := true
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeBool,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "type", serialization.TypeBool,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -78,8 +78,8 @@ func TestMorphingPortableReader_ReadByteWithIncompatibleClassChangeError(t *test
 
 func TestMorphingPortableReader_ReadBool(t *testing.T) {
 	expectedRet := true
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "isReady", TypeBool,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "isReady", serialization.TypeBool,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -93,8 +93,8 @@ func TestMorphingPortableReader_ReadBool(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadBoolWithEmptyFieldName(t *testing.T) {
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "isReady", TypeBool,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "isReady", serialization.TypeBool,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -111,8 +111,8 @@ func TestMorphingPortableReader_ReadBoolWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadBoolWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet byte = 23
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "type", serialization.TypeByte,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -129,8 +129,8 @@ func TestMorphingPortableReader_ReadBoolWithIncompatibleClassChangeError(t *test
 
 func TestMorphingPortableReader_ReadUInt16(t *testing.T) {
 	var expectedRet uint16 = 'E'
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "char", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "char", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -147,8 +147,8 @@ func TestMorphingPortableReader_ReadUInt16(t *testing.T) {
 func TestMorphingPortableReader_ReadUInt16WithEmptyFieldName(t *testing.T) {
 	var value uint16 = 22
 	var expectedRet uint16
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "char", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "char", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -163,8 +163,8 @@ func TestMorphingPortableReader_ReadUInt16WithEmptyFieldName(t *testing.T) {
 
 func TestMorphingPortableReader_ReadUInt16WithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "char", TypeInt16,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "char", serialization.TypeInt16,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -181,8 +181,8 @@ func TestMorphingPortableReader_ReadUInt16WithIncompatibleClassChangeError(t *te
 
 func TestMorphingPortableReader_ReadInt16FromByte(t *testing.T) {
 	var expectedRet int16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -197,8 +197,8 @@ func TestMorphingPortableReader_ReadInt16FromByte(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt16FromInt16(t *testing.T) {
 	var expectedRet int16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -212,8 +212,8 @@ func TestMorphingPortableReader_ReadInt16FromInt16(t *testing.T) {
 }
 
 func TestMorphingPortableReader_ReadInt16WithEmptyFieldName(t *testing.T) {
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -231,8 +231,8 @@ func TestMorphingPortableReader_ReadInt16WithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadInt16WithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var value int64 = 22
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt64,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -249,8 +249,8 @@ func TestMorphingPortableReader_ReadInt16WithIncompatibleClassChangeError(t *tes
 
 func TestMorphingPortableReader_ReadInt32FromByte(t *testing.T) {
 	var expectedRet int32 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -265,8 +265,8 @@ func TestMorphingPortableReader_ReadInt32FromByte(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt32FromUInt16(t *testing.T) {
 	var expectedRet uint16 = 'a'
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "letter", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "letter", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -281,8 +281,8 @@ func TestMorphingPortableReader_ReadInt32FromUInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt32FromInt16(t *testing.T) {
 	var expectedRet int32 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -297,8 +297,8 @@ func TestMorphingPortableReader_ReadInt32FromInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt32FromInt32(t *testing.T) {
 	var expectedRet int32 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -314,8 +314,8 @@ func TestMorphingPortableReader_ReadInt32FromInt32(t *testing.T) {
 func TestMorphingPortableReader_ReadInt32WithEmptyFieldName(t *testing.T) {
 	var value int32 = 22
 	var expectedRet int32
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -332,8 +332,8 @@ func TestMorphingPortableReader_ReadInt32WithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadInt32WithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var value int64 = 22
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt64,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -351,8 +351,8 @@ func TestMorphingPortableReader_ReadInt32WithIncompatibleClassChangeError(t *tes
 
 func TestMorphingPortableReader_ReadInt64FromByte(t *testing.T) {
 	var expectedRet int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -368,8 +368,8 @@ func TestMorphingPortableReader_ReadInt64FromByte(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt64FromUInt16(t *testing.T) {
 	var expectedRet int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -385,8 +385,8 @@ func TestMorphingPortableReader_ReadInt64FromUInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt64FromInt16(t *testing.T) {
 	var expectedRet int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -402,8 +402,8 @@ func TestMorphingPortableReader_ReadInt64FromInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt64FromInt32(t *testing.T) {
 	var expectedRet int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -419,8 +419,8 @@ func TestMorphingPortableReader_ReadInt64FromInt32(t *testing.T) {
 
 func TestMorphingPortableReader_ReadInt64FromInt64(t *testing.T) {
 	var expectedRet int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt64,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt64,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -437,8 +437,8 @@ func TestMorphingPortableReader_ReadInt64FromInt64(t *testing.T) {
 func TestMorphingPortableReader_ReadInt64WithEmptyFieldName(t *testing.T) {
 	var value int64 = 22
 	var expectedRet int64
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -455,8 +455,8 @@ func TestMorphingPortableReader_ReadInt64WithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadInt64WithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var value float32 = 22.23
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat32,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeFloat32,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -474,8 +474,8 @@ func TestMorphingPortableReader_ReadInt64WithIncompatibleClassChangeError(t *tes
 
 func TestMorphingPortableReader_ReadFloat32FromByte(t *testing.T) {
 	var expectedRet byte = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -491,8 +491,8 @@ func TestMorphingPortableReader_ReadFloat32FromByte(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat32FromUInt16(t *testing.T) {
 	var expectedRet uint16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -508,8 +508,8 @@ func TestMorphingPortableReader_ReadFloat32FromUInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat32FromInt16(t *testing.T) {
 	var expectedRet int16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -525,8 +525,8 @@ func TestMorphingPortableReader_ReadFloat32FromInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat32FromInt32(t *testing.T) {
 	var expectedRet int32 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeInt32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -542,8 +542,8 @@ func TestMorphingPortableReader_ReadFloat32FromInt32(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat32FromFloat32(t *testing.T) {
 	var expectedRet float32 = 22.5
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeFloat32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -560,8 +560,8 @@ func TestMorphingPortableReader_ReadFloat32FromFloat32(t *testing.T) {
 func TestMorphingPortableReader_ReadFloat32WithEmptyFieldName(t *testing.T) {
 	var value float32 = 22.5
 	var expectedRet float32
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeFloat32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -578,8 +578,8 @@ func TestMorphingPortableReader_ReadFloat32WithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadFloat32WithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = 22.5
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeFloat64,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeFloat64,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -597,8 +597,8 @@ func TestMorphingPortableReader_ReadFloat32WithIncompatibleClassChangeError(t *t
 
 func TestMorphingPortableReader_ReadFloat64FromByte(t *testing.T) {
 	var expectedRet byte = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeByte,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeByte,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -614,8 +614,8 @@ func TestMorphingPortableReader_ReadFloat64FromByte(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat64FromUInt16(t *testing.T) {
 	var expectedRet uint16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeUint16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeUint16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -631,8 +631,8 @@ func TestMorphingPortableReader_ReadFloat64FromUInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat64FromInt16(t *testing.T) {
 	var expectedRet int16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeInt16,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeInt16,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -648,8 +648,8 @@ func TestMorphingPortableReader_ReadFloat64FromInt16(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat64FromInt32(t *testing.T) {
 	var expectedRet int32 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeInt32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeInt32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -665,8 +665,8 @@ func TestMorphingPortableReader_ReadFloat64FromInt32(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat64FromInt64(t *testing.T) {
 	var expectedRet int64 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeInt64,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeInt64,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -682,8 +682,8 @@ func TestMorphingPortableReader_ReadFloat64FromInt64(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat64FromFloat32(t *testing.T) {
 	var expectedRet float32 = 22.43
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeFloat32,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeFloat32,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -699,8 +699,8 @@ func TestMorphingPortableReader_ReadFloat64FromFloat32(t *testing.T) {
 
 func TestMorphingPortableReader_ReadFloat64FromFloat64(t *testing.T) {
 	var expectedRet = 22.43
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeFloat64,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeFloat64,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -717,8 +717,8 @@ func TestMorphingPortableReader_ReadFloat64FromFloat64(t *testing.T) {
 func TestMorphingPortableReader_ReadFloat64WithEmptyFieldName(t *testing.T) {
 	var value = 22.43
 	var expectedRet float64
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "point", TypeFloat64,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "point", serialization.TypeFloat64,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -735,8 +735,8 @@ func TestMorphingPortableReader_ReadFloat64WithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadFloat64WithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		expectedRet := true
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeBool,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "age", serialization.TypeBool,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -754,8 +754,8 @@ func TestMorphingPortableReader_ReadFloat64WithIncompatibleClassChangeError(t *t
 
 func TestMorphingPortableReader_ReadUTF(t *testing.T) {
 	var expectedRet = "Furkan"
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeUTF,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineer", serialization.TypeString,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -772,8 +772,8 @@ func TestMorphingPortableReader_ReadUTF(t *testing.T) {
 func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 	var value = "Furkan"
 	var expectedRet string
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeUTF,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineer", serialization.TypeString,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -790,8 +790,8 @@ func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet int16 = 12
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeInt16,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineer", serialization.TypeInt16,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -812,9 +812,9 @@ func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
@@ -837,9 +837,9 @@ func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
@@ -859,8 +859,8 @@ func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadPortableWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet int16 = 12
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeInt16,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineer", serialization.TypeInt16,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -877,8 +877,8 @@ func TestMorphingPortableReader_ReadPortableWithIncompatibleClassChangeError(t *
 
 func TestMorphingPortableReader_ReadByteArray(t *testing.T) {
 	var expectedRet = []byte{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeByteArray,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeByteArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -896,8 +896,8 @@ func TestMorphingPortableReader_ReadByteArray(t *testing.T) {
 func TestMorphingPortableReader_ReadByteArrayWithEmptyFieldName(t *testing.T) {
 	var value = []byte{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
 	var expectedRet []byte
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeByteArray,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeByteArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -915,8 +915,8 @@ func TestMorphingPortableReader_ReadByteArrayWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadByteArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeInt32Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -933,8 +933,8 @@ func TestMorphingPortableReader_ReadByteArrayWithIncompatibleClassChangeError(t 
 
 func TestMorphingPortableReader_ReadBoolArray(t *testing.T) {
 	var expectedRet = []bool{true, true, false, true, false, false, false, true, false, true, true}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "areReady", TypeBoolArray,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "areReady", serialization.TypeBoolArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -952,8 +952,8 @@ func TestMorphingPortableReader_ReadBoolArray(t *testing.T) {
 func TestMorphingPortableReader_ReadBoolArrayWithEmptyFieldName(t *testing.T) {
 	var value = []bool{true, true, false, true, false, false, false, true, false, true, true}
 	var expectedRet []bool
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "areReady", TypeBoolArray,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "areReady", serialization.TypeBoolArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -969,8 +969,8 @@ func TestMorphingPortableReader_ReadBoolArrayWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadBoolArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeInt32Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -987,8 +987,8 @@ func TestMorphingPortableReader_ReadBoolArrayWithIncompatibleClassChangeError(t 
 
 func TestMorphingPortableReader_ReadUInt16Array(t *testing.T) {
 	var expectedRet = []uint16{'^', '%', '#', '!', '$'}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeUint16Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeUint16Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1006,8 +1006,8 @@ func TestMorphingPortableReader_ReadUInt16Array(t *testing.T) {
 func TestMorphingPortableReader_ReadUInt16ArrayWithEmptyFieldName(t *testing.T) {
 	var value = []uint16{'^', '%', '#', '!', '$'}
 	var expectedRet []uint16
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeUint16Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeUint16Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1025,8 +1025,8 @@ func TestMorphingPortableReader_ReadUInt16ArrayWithEmptyFieldName(t *testing.T) 
 func TestMorphingPortableReader_ReadUInt16ArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeInt32Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1044,8 +1044,8 @@ func TestMorphingPortableReader_ReadUInt16ArrayWithIncompatibleClassChangeError(
 
 func TestMorphingPortableReader_ReadInt16Array(t *testing.T) {
 	var expectedRet = []int16{9432, 12, 34, 126, 7, 343, 2, 0, 1120, 222, 440}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt16Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeInt16Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1063,8 +1063,8 @@ func TestMorphingPortableReader_ReadInt16Array(t *testing.T) {
 func TestMorphingPortableReader_ReadInt16ArrayWithEmptyFieldName(t *testing.T) {
 	var value = []int16{9432, 12, 34, 126, 7, 343, 2, 0, 1120, 222, 440}
 	var expectedRet []int16
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt16Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeInt16Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1082,8 +1082,8 @@ func TestMorphingPortableReader_ReadInt16ArrayWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadInt16ArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []int32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt32Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeInt32Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1101,8 +1101,8 @@ func TestMorphingPortableReader_ReadInt16ArrayWithIncompatibleClassChangeError(t
 
 func TestMorphingPortableReader_ReadInt32Array(t *testing.T) {
 	var expectedRet = []int32{9432, 12, 34, 6123, 45367, 31341, 43142, 78690, 16790, 362, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt32Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeInt32Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1120,8 +1120,8 @@ func TestMorphingPortableReader_ReadInt32Array(t *testing.T) {
 func TestMorphingPortableReader_ReadInt32ArrayWithEmptyFieldName(t *testing.T) {
 	var value = []int32{9432, 12, 34, 6123, 45367, 31341, 43142, 78690, 16790, 362, 0}
 	var expectedRet []int32
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt32Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeInt32Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1139,8 +1139,8 @@ func TestMorphingPortableReader_ReadInt32ArrayWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadInt32ArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []int64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeInt64Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeInt64Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1158,8 +1158,8 @@ func TestMorphingPortableReader_ReadInt32ArrayWithIncompatibleClassChangeError(t
 
 func TestMorphingPortableReader_ReadInt64Array(t *testing.T) {
 	var expectedRet = []int64{9412332, 929812, 34, 61223493, 4523367, 31235341, 46423142, 78690, 16790, 3662, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt64Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeInt64Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1175,8 +1175,8 @@ func TestMorphingPortableReader_ReadInt64Array(t *testing.T) {
 func TestMorphingPortableReader_ReadInt64ArrayWithEmptyFieldName(t *testing.T) {
 	var value = []int64{9412332, 929812, 34, 61223493, 4523367, 31235341, 46423142, 78690, 16790, 3662, 0}
 	var expectedRet []int64
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt64Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "scores", serialization.TypeInt64Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1192,8 +1192,8 @@ func TestMorphingPortableReader_ReadInt64ArrayWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadInt64ArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []float32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat32Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeFloat32Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1210,8 +1210,8 @@ func TestMorphingPortableReader_ReadInt64ArrayWithIncompatibleClassChangeError(t
 
 func TestMorphingPortableReader_ReadFloat32Array(t *testing.T) {
 	var expectedRet = []float32{12.1431, 1212.3, 34, 6123, 4.5367, 3.1341, 43.142, 786.90, 16.790, 3.62, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "longitude", TypeFloat32Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "longitude", serialization.TypeFloat32Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1229,8 +1229,8 @@ func TestMorphingPortableReader_ReadFloat32Array(t *testing.T) {
 func TestMorphingPortableReader_ReadFloat32ArrayWithEmptyFieldName(t *testing.T) {
 	var value = []float32{12.1431, 1212.3, 34, 6123, 4.5367, 3.1341, 43.142, 786.90, 16.790, 3.62, 0}
 	var expectedRet []float32
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "longitude", TypeFloat32Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "longitude", serialization.TypeFloat32Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1248,8 +1248,8 @@ func TestMorphingPortableReader_ReadFloat32ArrayWithEmptyFieldName(t *testing.T)
 func TestMorphingPortableReader_ReadFloat32ArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeFloat64Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1266,8 +1266,8 @@ func TestMorphingPortableReader_ReadFloat32ArrayWithIncompatibleClassChangeError
 
 func TestMorphingPortableReader_ReadFloat64Array(t *testing.T) {
 	var expectedRet = []float64{12234.1431, 121092.3, 34, 6123, 499.5364327, 3.1323441, 43.142, 799986.90, 16.790, 3.9996342, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "longitude", TypeFloat64Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "longitude", serialization.TypeFloat64Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1285,8 +1285,8 @@ func TestMorphingPortableReader_ReadFloat64Array(t *testing.T) {
 func TestMorphingPortableReader_ReadFloat64ArrayWithEmptyFieldName(t *testing.T) {
 	var value = []float64{12234.1431, 121092.3, 34, 6123, 499.5364327, 3.1323441, 43.142, 799986.90, 16.790, 3.9996342, 0}
 	var expectedRet []float64
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "longitude", TypeFloat64Array,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "longitude", serialization.TypeFloat64Array,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1304,8 +1304,8 @@ func TestMorphingPortableReader_ReadFloat64ArrayWithEmptyFieldName(t *testing.T)
 func TestMorphingPortableReader_ReadFloat64ArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []float32{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat32Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeFloat32Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1322,8 +1322,8 @@ func TestMorphingPortableReader_ReadFloat64ArrayWithIncompatibleClassChangeError
 
 func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
 	var expectedRet = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeStringArray,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "words", serialization.TypeStringArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1341,8 +1341,8 @@ func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
 func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 	var value = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	var expectedRet []string
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeStringArray,
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "words", serialization.TypeStringArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1360,8 +1360,8 @@ func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeFloat64Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -1385,9 +1385,9 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineers", TypePortableArray,
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	serializer, err := NewPortableSerializer(service, config.PortableFactories, 0)
@@ -1415,9 +1415,9 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineers", TypePortableArray,
+	classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	serializer, err := NewPortableSerializer(service, config.PortableFactories, 0)
@@ -1439,8 +1439,8 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-		classDef := NewClassDefinitionImpl(1, 2, 3)
-		classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeFloat64Array,
+		classDef := serialization.NewClassDefinition(1, 2, 3)
+		classDef.AddFieldDefinition(serialization.NewFieldDefinition(0, "types", serialization.TypeFloat64Array,
 			classDef.FactoryID(), classDef.ClassID(), classDef.Version()))
 		o := NewPositionalObjectDataOutput(0, nil, false)
 		pw := NewDefaultPortableWriter(nil, o, classDef)

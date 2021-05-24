@@ -20,12 +20,11 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 // ClassDefinitionBuilder is used to build and register class definitions manually.
 type ClassDefinitionBuilder struct {
-	fieldDefinitions map[string]serialization.FieldDefinition
+	fieldDefinitions map[string]FieldDefinition
 	factoryID        int32
 	classID          int32
 	version          int32
@@ -42,7 +41,7 @@ func NewClassDefinitionBuilder(factoryID int32, classID int32, version int32) *C
 		factoryID:        factoryID,
 		classID:          classID,
 		version:          version,
-		fieldDefinitions: make(map[string]serialization.FieldDefinition),
+		fieldDefinitions: make(map[string]FieldDefinition),
 	}
 }
 
@@ -52,7 +51,7 @@ func (cdb *ClassDefinitionBuilder) AddByteField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeByte,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeByte,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -64,7 +63,7 @@ func (cdb *ClassDefinitionBuilder) AddBoolField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeBool,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeBool,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -76,7 +75,7 @@ func (cdb *ClassDefinitionBuilder) AddUInt16Field(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeUint16,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeUint16,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -88,7 +87,7 @@ func (cdb *ClassDefinitionBuilder) AddInt16Field(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeInt16,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeInt16,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -100,7 +99,7 @@ func (cdb *ClassDefinitionBuilder) AddInt32Field(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeInt32,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeInt32,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -112,7 +111,7 @@ func (cdb *ClassDefinitionBuilder) AddInt64Field(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeInt64,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeInt64,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -124,7 +123,7 @@ func (cdb *ClassDefinitionBuilder) AddFloat32Field(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeFloat32,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeFloat32,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -136,7 +135,7 @@ func (cdb *ClassDefinitionBuilder) AddFloat64Field(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeFloat64,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeFloat64,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -148,14 +147,14 @@ func (cdb *ClassDefinitionBuilder) AddUTFField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeUTF,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeString,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
 }
 
 // AddPortableField adds Portable field to class definition.
-func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def serialization.ClassDefinition) error {
+func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def *ClassDefinition) error {
 	err := cdb.check()
 	if err != nil {
 		return err
@@ -164,7 +163,7 @@ func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def serial
 		return hzerrors.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypePortable,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypePortable,
 		def.FactoryID(), def.ClassID(), cdb.version)
 	cdb.index++
 	return nil
@@ -176,7 +175,7 @@ func (cdb *ClassDefinitionBuilder) AddByteArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeByteArray,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeByteArray,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -188,7 +187,7 @@ func (cdb *ClassDefinitionBuilder) AddBoolArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeBoolArray,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeBoolArray,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -200,7 +199,7 @@ func (cdb *ClassDefinitionBuilder) AddUInt16ArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeUint16Array,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeUint16Array,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -212,7 +211,7 @@ func (cdb *ClassDefinitionBuilder) AddInt16ArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeInt16Array,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeInt16Array,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -224,7 +223,7 @@ func (cdb *ClassDefinitionBuilder) AddInt32ArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeInt32Array,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeInt32Array,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -236,7 +235,7 @@ func (cdb *ClassDefinitionBuilder) AddInt64ArrayField(fieldName string) error {
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeInt64Array,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeInt64Array,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -248,7 +247,7 @@ func (cdb *ClassDefinitionBuilder) AddFloat32ArrayField(fieldName string) error 
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeFloat32Array,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeFloat32Array,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
@@ -260,26 +259,26 @@ func (cdb *ClassDefinitionBuilder) AddFloat64ArrayField(fieldName string) error 
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeFloat64Array,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeFloat64Array,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
 }
 
-// AddUTFArrayField adds []string field to class definition.
-func (cdb *ClassDefinitionBuilder) AddUTFArrayField(fieldName string) error {
+// AddStringArrayField adds []string field to class definition.
+func (cdb *ClassDefinitionBuilder) AddStringArrayField(fieldName string) error {
 	err := cdb.check()
 	if err != nil {
 		return err
 	}
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypeStringArray,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypeStringArray,
 		0, 0, cdb.version)
 	cdb.index++
 	return nil
 }
 
 // AddPortableArrayField adds []Portable field to class definition.
-func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def serialization.ClassDefinition) error {
+func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def *ClassDefinition) error {
 	err := cdb.check()
 	if err != nil {
 		return err
@@ -288,30 +287,29 @@ func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def s
 		return hzerrors.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
-	cdb.fieldDefinitions[fieldName] = NewFieldDefinitionImpl(cdb.index, fieldName, TypePortableArray,
+	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypePortableArray,
 		def.FactoryID(), def.ClassID(), cdb.version)
 	cdb.index++
 	return nil
 }
 
 // AddField adds a field to class definition.
-func (cdb *ClassDefinitionBuilder) AddField(fieldDefinition serialization.FieldDefinition) error {
-	err := cdb.check()
-	if err != nil {
+func (cdb *ClassDefinitionBuilder) AddField(fieldDefinition FieldDefinition) error {
+	if err := cdb.check(); err != nil {
 		return err
 	}
-	if cdb.index != fieldDefinition.Index() {
+	if cdb.index != fieldDefinition.Index {
 		return hzerrors.NewHazelcastIllegalArgumentError("invalid field index", nil)
 	}
 	cdb.index++
-	cdb.fieldDefinitions[fieldDefinition.Name()] = fieldDefinition
+	cdb.fieldDefinitions[fieldDefinition.Name] = fieldDefinition
 	return nil
 }
 
 // Build returns the built class definition.
-func (cdb *ClassDefinitionBuilder) Build() serialization.ClassDefinition {
+func (cdb *ClassDefinitionBuilder) Build() *ClassDefinition {
 	cdb.done = true
-	cd := NewClassDefinitionImpl(cdb.factoryID, cdb.classID, cdb.version)
+	cd := NewClassDefinition(cdb.factoryID, cdb.classID, cdb.version)
 	for _, fd := range cdb.fieldDefinitions {
 		cd.AddFieldDefinition(fd)
 	}

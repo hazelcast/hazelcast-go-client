@@ -19,11 +19,13 @@ package serialization
 import (
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestClassDefinitionBuilder_AddFieldAfterBuildError(t *testing.T) {
-	n := NewClassDefinitionBuilder(1, 1, 1)
+	n := serialization.NewClassDefinitionBuilder(1, 1, 1)
 	n.Build()
 	err := n.AddByteField("name")
 	assert.Error(t, err)
@@ -59,11 +61,11 @@ func TestClassDefinitionBuilder_AddFieldAfterBuildError(t *testing.T) {
 	assert.Error(t, err)
 	err = n.AddFloat64ArrayField("name")
 	assert.Error(t, err)
-	err = n.AddUTFArrayField("name")
+	err = n.AddStringArrayField("name")
 	assert.Error(t, err)
 	err = n.AddPortableArrayField("name", nil)
 	assert.Error(t, err)
-	err = n.AddField(nil)
+	err = n.AddField(serialization.FieldDefinition{})
 	assert.Error(t, err)
 
 }
