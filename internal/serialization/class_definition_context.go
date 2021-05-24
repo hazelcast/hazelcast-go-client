@@ -45,11 +45,11 @@ func (c *ClassDefinitionContext) Register(classDefinition *serialization.ClassDe
 	if classDefinition == nil {
 		return nil, nil
 	}
-	if classDefinition.FactoryID() != c.factoryID {
+	if classDefinition.FactoryID != c.factoryID {
 		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.",
-			c.factoryID, classDefinition.FactoryID()), nil)
+			c.factoryID, classDefinition.FactoryID), nil)
 	}
-	classDefKey := encodeVersionedClassID(classDefinition.ClassID(), classDefinition.Version())
+	classDefKey := encodeVersionedClassID(classDefinition.ClassID, classDefinition.Version)
 	current := c.classDefs[classDefKey]
 	if current == nil {
 		c.classDefs[classDefKey] = classDefinition
@@ -57,7 +57,7 @@ func (c *ClassDefinitionContext) Register(classDefinition *serialization.ClassDe
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
 		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d",
-			classDefinition.ClassID()), nil)
+			classDefinition.ClassID), nil)
 	}
 	return classDefinition, nil
 }

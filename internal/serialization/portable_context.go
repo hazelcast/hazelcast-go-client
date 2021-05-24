@@ -122,7 +122,7 @@ func (c *PortableContext) LookUpClassDefinition(factoryID int32, classID int32, 
 }
 
 func (c *PortableContext) RegisterClassDefinition(classDefinition *serialization.ClassDefinition) (*serialization.ClassDefinition, error) {
-	factoryID := classDefinition.FactoryID()
+	factoryID := classDefinition.FactoryID
 	if c.classDefContext[factoryID] == nil {
 		c.classDefContext[factoryID] = NewClassDefinitionContext(factoryID)
 	}

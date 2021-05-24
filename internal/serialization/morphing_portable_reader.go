@@ -33,7 +33,7 @@ func NewMorphingPortableReader(portableSerializer *PortableSerializer, input ser
 }
 
 func (mpr *MorphingPortableReader) ReadByte(fieldName string) byte {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -44,7 +44,7 @@ func (mpr *MorphingPortableReader) ReadByte(fieldName string) byte {
 }
 
 func (mpr *MorphingPortableReader) ReadBool(fieldName string) bool {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return false
 	}
@@ -55,7 +55,7 @@ func (mpr *MorphingPortableReader) ReadBool(fieldName string) bool {
 }
 
 func (mpr *MorphingPortableReader) ReadUInt16(fieldName string) uint16 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -66,7 +66,7 @@ func (mpr *MorphingPortableReader) ReadUInt16(fieldName string) uint16 {
 }
 
 func (mpr *MorphingPortableReader) ReadInt16(fieldName string) int16 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -82,7 +82,7 @@ func (mpr *MorphingPortableReader) ReadInt16(fieldName string) int16 {
 }
 
 func (mpr *MorphingPortableReader) ReadInt32(fieldName string) int32 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -101,7 +101,7 @@ func (mpr *MorphingPortableReader) ReadInt32(fieldName string) int32 {
 }
 
 func (mpr *MorphingPortableReader) ReadInt64(fieldName string) int64 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -122,7 +122,7 @@ func (mpr *MorphingPortableReader) ReadInt64(fieldName string) int64 {
 }
 
 func (mpr *MorphingPortableReader) ReadFloat32(fieldName string) float32 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -143,7 +143,7 @@ func (mpr *MorphingPortableReader) ReadFloat32(fieldName string) float32 {
 }
 
 func (mpr *MorphingPortableReader) ReadFloat64(fieldName string) float64 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return 0
 	}
@@ -168,7 +168,7 @@ func (mpr *MorphingPortableReader) ReadFloat64(fieldName string) float64 {
 }
 
 func (mpr *MorphingPortableReader) ReadString(fieldName string) string {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return ""
 	}
@@ -179,7 +179,7 @@ func (mpr *MorphingPortableReader) ReadString(fieldName string) string {
 }
 
 func (mpr *MorphingPortableReader) ReadPortable(fieldName string) serialization.Portable {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -190,7 +190,7 @@ func (mpr *MorphingPortableReader) ReadPortable(fieldName string) serialization.
 }
 
 func (mpr *MorphingPortableReader) ReadByteArray(fieldName string) []byte {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -201,7 +201,7 @@ func (mpr *MorphingPortableReader) ReadByteArray(fieldName string) []byte {
 }
 
 func (mpr *MorphingPortableReader) ReadBoolArray(fieldName string) []bool {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -212,7 +212,7 @@ func (mpr *MorphingPortableReader) ReadBoolArray(fieldName string) []bool {
 }
 
 func (mpr *MorphingPortableReader) ReadUInt16Array(fieldName string) []uint16 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -223,7 +223,7 @@ func (mpr *MorphingPortableReader) ReadUInt16Array(fieldName string) []uint16 {
 }
 
 func (mpr *MorphingPortableReader) ReadInt16Array(fieldName string) []int16 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -234,7 +234,7 @@ func (mpr *MorphingPortableReader) ReadInt16Array(fieldName string) []int16 {
 }
 
 func (mpr *MorphingPortableReader) ReadInt32Array(fieldName string) []int32 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -245,7 +245,7 @@ func (mpr *MorphingPortableReader) ReadInt32Array(fieldName string) []int32 {
 }
 
 func (mpr *MorphingPortableReader) ReadInt64Array(fieldName string) []int64 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -256,7 +256,7 @@ func (mpr *MorphingPortableReader) ReadInt64Array(fieldName string) []int64 {
 }
 
 func (mpr *MorphingPortableReader) ReadFloat32Array(fieldName string) []float32 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -267,7 +267,7 @@ func (mpr *MorphingPortableReader) ReadFloat32Array(fieldName string) []float32 
 }
 
 func (mpr *MorphingPortableReader) ReadFloat64Array(fieldName string) []float64 {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -278,7 +278,7 @@ func (mpr *MorphingPortableReader) ReadFloat64Array(fieldName string) []float64 
 }
 
 func (mpr *MorphingPortableReader) ReadStringArray(fieldName string) []string {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}
@@ -289,7 +289,7 @@ func (mpr *MorphingPortableReader) ReadStringArray(fieldName string) []string {
 }
 
 func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []serialization.Portable {
-	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Field(fieldName)
+	fieldDef, ok := mpr.DefaultPortableReader.classDefinition.Fields[fieldName]
 	if !ok {
 		return nil
 	}

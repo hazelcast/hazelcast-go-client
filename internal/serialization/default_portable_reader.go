@@ -92,7 +92,7 @@ func TypeByID(fieldType int32) string {
 }
 
 func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int32) int32 {
-	field, ok := pr.classDefinition.Field(fieldName)
+	field, ok := pr.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}

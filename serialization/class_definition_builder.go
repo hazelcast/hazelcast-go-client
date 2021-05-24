@@ -159,12 +159,12 @@ func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def *Class
 	if err != nil {
 		return err
 	}
-	if def.ClassID() == 0 {
+	if def.ClassID == 0 {
 		return hzerrors.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
 	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypePortable,
-		def.FactoryID(), def.ClassID(), cdb.version)
+		def.FactoryID, def.ClassID, cdb.version)
 	cdb.index++
 	return nil
 }
@@ -283,12 +283,12 @@ func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def *
 	if err != nil {
 		return err
 	}
-	if def.ClassID() == 0 {
+	if def.ClassID == 0 {
 		return hzerrors.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
 	cdb.fieldDefinitions[fieldName] = NewFieldDefinition(cdb.index, fieldName, TypePortableArray,
-		def.FactoryID(), def.ClassID(), cdb.version)
+		def.FactoryID, def.ClassID, cdb.version)
 	cdb.index++
 	return nil
 }

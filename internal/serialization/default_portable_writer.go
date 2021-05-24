@@ -35,9 +35,9 @@ func NewDefaultPortableWriter(serializer *PortableSerializer, output *Positional
 	classDefinition *serialization.ClassDefinition) *DefaultPortableWriter {
 	begin := output.Position()
 	output.WriteZeroBytes(4)
-	output.WriteInt32(int32(classDefinition.FieldCount()))
+	output.WriteInt32(int32(len(classDefinition.Fields)))
 	offset := output.Position()
-	fieldIndexesLength := (classDefinition.FieldCount() + 1) * Int32SizeInBytes
+	fieldIndexesLength := (len(classDefinition.Fields) + 1) * Int32SizeInBytes
 	output.WriteZeroBytes(fieldIndexesLength)
 	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset}
 }
@@ -88,7 +88,7 @@ func (pw *DefaultPortableWriter) WriteString(fieldName string, value string) {
 }
 
 func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serialization.Portable) {
-	fieldDefinition, ok := pw.classDefinition.Field(fieldName)
+	fieldDefinition, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
@@ -155,7 +155,7 @@ func (pw *DefaultPortableWriter) WriteStringArray(fieldName string, array []stri
 }
 
 func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableArray []serialization.Portable) {
-	fieldDefinition, ok := pw.classDefinition.Field(fieldName)
+	fieldDefinition, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
@@ -182,7 +182,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 }
 
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) {
-	field, ok := pw.classDefinition.Field(fieldName)
+	field, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}

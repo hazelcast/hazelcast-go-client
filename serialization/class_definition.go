@@ -18,21 +18,22 @@ package serialization
 
 // ClassDefinition defines a class schema for Portable structs.
 type ClassDefinition struct {
-	fields    map[string]FieldDefinition
-	factoryID int32
-	classID   int32
-	version   int32
+	Fields    map[string]FieldDefinition
+	FactoryID int32
+	ClassID   int32
+	Version   int32
 }
 
 func NewClassDefinition(factoryID int32, classID int32, version int32) *ClassDefinition {
 	return &ClassDefinition{
-		factoryID: factoryID,
-		classID:   classID,
-		version:   version,
-		fields:    make(map[string]FieldDefinition),
+		FactoryID: factoryID,
+		ClassID:   classID,
+		Version:   version,
+		Fields:    make(map[string]FieldDefinition),
 	}
 }
 
+/*
 // FactoryID returns factory ID of struct.
 func (cd *ClassDefinition) FactoryID() int32 {
 	return cd.factoryID
@@ -59,8 +60,10 @@ func (cd *ClassDefinition) FieldCount() int {
 	return len(cd.fields)
 }
 
+*/
+
 func (cd *ClassDefinition) AddFieldDefinition(definition FieldDefinition) {
-	cd.fields[definition.Name] = definition
+	cd.Fields[definition.Name] = definition
 }
 
 const (
