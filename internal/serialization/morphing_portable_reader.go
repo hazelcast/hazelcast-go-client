@@ -216,7 +216,7 @@ func (mpr *MorphingPortableReader) ReadUInt16Array(fieldName string) []uint16 {
 	if !ok {
 		return nil
 	}
-	if err := mpr.validateTypeCompatibility(&fieldDef, serialization.TypeUint16Array); err != nil {
+	if err := mpr.validateTypeCompatibility(&fieldDef, serialization.TypeUInt16Array); err != nil {
 		panic(fmt.Errorf("error validating type compatibility: %w", err))
 	}
 	return mpr.DefaultPortableReader.ReadUInt16Array(fieldName)

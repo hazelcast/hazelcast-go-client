@@ -73,7 +73,7 @@ func TypeByID(fieldType int32) string {
 		return "[]byte"
 	case serialization.TypeBoolArray:
 		return "[]bool"
-	case serialization.TypeUint16Array:
+	case serialization.TypeUInt16Array:
 		return "[]uint16"
 	case serialization.TypeInt16Array:
 		return "[]int16"
@@ -227,7 +227,7 @@ func (pr *DefaultPortableReader) ReadUInt16Array(fieldName string) []uint16 {
 }
 
 func (pr *DefaultPortableReader) readUInt16Array(fieldName string) []uint16 {
-	pos := pr.positionByField(fieldName, serialization.TypeUint16Array)
+	pos := pr.positionByField(fieldName, serialization.TypeUInt16Array)
 	return pr.input.(*ObjectDataInput).ReadUInt16ArrayAtPosition(pos)
 }
 

@@ -16,6 +16,8 @@
 
 package serialization
 
+import "github.com/hazelcast/hazelcast-go-client/hzerrors"
+
 // ClassDefinition defines a class schema for Portable structs.
 type ClassDefinition struct {
 	Fields    map[string]FieldDefinition
@@ -33,41 +35,104 @@ func NewClassDefinition(factoryID int32, classID int32, version int32) *ClassDef
 	}
 }
 
-/*
-// FactoryID returns factory ID of struct.
-func (cd *ClassDefinition) FactoryID() int32 {
-	return cd.factoryID
-}
-
-// ClassID returns class ID of struct.
-func (cd *ClassDefinition) ClassID() int32 {
-	return cd.classID
-}
-
-// Version returns version of struct.
-func (cd *ClassDefinition) Version() int32 {
-	return cd.version
-}
-
-// Field returns field definition of field by given Name.
-func (cd *ClassDefinition) Field(name string) (FieldDefinition, bool) {
-	f, ok := cd.fields[name]
-	return f, ok
-}
-
-// FieldCount returns the number of fields in struct.
-func (cd *ClassDefinition) FieldCount() int {
-	return len(cd.fields)
-}
-
-*/
-
-func (cd *ClassDefinition) AddFieldDefinition(definition FieldDefinition) {
+func (cd *ClassDefinition) AddField(definition FieldDefinition) {
 	cd.Fields[definition.Name] = definition
 }
 
+func (cd *ClassDefinition) AddByteField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeByte)
+}
+
+func (cd *ClassDefinition) AddBoolField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeBool)
+}
+
+func (cd *ClassDefinition) AddUInt16Field(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeUint16)
+}
+
+func (cd *ClassDefinition) AddInt16Field(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeInt16)
+}
+
+func (cd *ClassDefinition) AddInt32Field(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeInt32)
+}
+
+func (cd *ClassDefinition) AddInt64Field(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeInt64)
+}
+
+func (cd *ClassDefinition) AddFloat32Field(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeFloat32)
+}
+
+func (cd *ClassDefinition) AddFloat64Field(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeFloat64)
+}
+
+func (cd *ClassDefinition) AddStringField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeString)
+}
+
+func (cd *ClassDefinition) AddPortableField(fieldName string, def *ClassDefinition) error {
+	if def.ClassID == 0 {
+		return hzerrors.NewHazelcastIllegalArgumentError("Portable class ID cannot be zero", nil)
+	}
+	cd.AddField(NewFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
+	return nil
+}
+
+func (cd *ClassDefinition) addNewFieldDefinition(fieldName string, fieldType int32) {
+	cd.AddField(NewFieldDefinition(int32(len(cd.Fields)), fieldName, fieldType, 0, 0, cd.Version))
+}
+
+func (cd *ClassDefinition) AddByteArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeByteArray)
+}
+
+func (cd *ClassDefinition) AddBoolArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeBoolArray)
+}
+
+func (cd *ClassDefinition) AddInt16ArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeInt16Array)
+}
+
+func (cd *ClassDefinition) AddUInt16ArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeUInt16Array)
+}
+
+func (cd *ClassDefinition) AddInt32ArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeInt32Array)
+}
+
+func (cd *ClassDefinition) AddInt64ArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeInt64Array)
+}
+
+func (cd *ClassDefinition) AddFloat32ArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeFloat32Array)
+}
+
+func (cd *ClassDefinition) AddFloat64ArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeFloat64Array)
+}
+
+func (cd *ClassDefinition) AddPortableArrayField(fieldName string, def *ClassDefinition) error {
+	if def.ClassID == 0 {
+		return hzerrors.NewHazelcastIllegalArgumentError("Portable class ID cannot be zero", nil)
+	}
+	cd.AddField(NewFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
+	return nil
+}
+
+func (cd *ClassDefinition) AddStringArrayField(fieldName string) {
+	cd.addNewFieldDefinition(fieldName, TypeStringArray)
+}
+
 const (
-	TypePortable = iota
+	TypePortable int32 = iota
 	TypeByte
 	TypeBool
 	TypeUint16
@@ -80,7 +145,7 @@ const (
 	TypePortableArray
 	TypeByteArray
 	TypeBoolArray
-	TypeUint16Array
+	TypeUInt16Array
 	TypeInt16Array
 	TypeInt32Array
 	TypeInt64Array

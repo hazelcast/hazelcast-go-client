@@ -120,7 +120,7 @@ func (pw *DefaultPortableWriter) WriteBoolArray(fieldName string, array []bool) 
 }
 
 func (pw *DefaultPortableWriter) WriteUInt16Array(fieldName string, array []uint16) {
-	pw.setPosition(fieldName, serialization.TypeUint16Array)
+	pw.setPosition(fieldName, serialization.TypeUInt16Array)
 	pw.output.WriteUInt16Array(array)
 }
 

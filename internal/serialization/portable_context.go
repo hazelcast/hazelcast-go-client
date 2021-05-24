@@ -42,7 +42,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 	version int32) *serialization.ClassDefinition {
 	var err error
 	register := true
-	classDefBuilder := serialization.NewClassDefinitionBuilder(factoryID, classID, version)
+	classDef := serialization.NewClassDefinition(factoryID, classID, version)
 	input.ReadInt32()
 	fieldCount := input.ReadInt32()
 	offset := input.Position()
@@ -56,7 +56,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 			char := input.ReadByte()
 			temp[i] = int32(char)
 		}
-		fieldType := input.ReadByte()
+		fieldType := int32(input.ReadByte())
 		name := string(temp)
 		var fieldFactoryID int32
 		var fieldClassID int32
@@ -86,18 +86,14 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 				register = false
 			}
 		}
-		if err = classDefBuilder.AddField(serialization.NewFieldDefinition(i, name, int32(fieldType),
-			fieldFactoryID, fieldClassID, fieldVersion)); err != nil {
-			panic(err)
-		}
+		classDef.AddField(serialization.NewFieldDefinition(i, name, fieldType, fieldFactoryID, fieldClassID, fieldVersion))
 	}
-	classDefinition := classDefBuilder.Build()
 	if register {
-		if classDefinition, err = c.RegisterClassDefinition(classDefinition); err != nil {
+		if err = c.RegisterClassDefinition(classDef); err != nil {
 			panic(err)
 		}
 	}
-	return classDefinition
+	return classDef
 }
 
 func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable serialization.Portable) (*serialization.ClassDefinition, error) {
@@ -121,7 +117,7 @@ func (c *PortableContext) LookUpClassDefinition(factoryID int32, classID int32, 
 	return factory.LookUp(classID, version)
 }
 
-func (c *PortableContext) RegisterClassDefinition(classDefinition *serialization.ClassDefinition) (*serialization.ClassDefinition, error) {
+func (c *PortableContext) RegisterClassDefinition(classDefinition *serialization.ClassDefinition) error {
 	factoryID := classDefinition.FactoryID
 	if c.classDefContext[factoryID] == nil {
 		c.classDefContext[factoryID] = NewClassDefinitionContext(factoryID)
