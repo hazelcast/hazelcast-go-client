@@ -31,7 +31,9 @@ type AzureConfig struct {
 }
 
 func NewAzureConfig() AzureConfig {
-	return AzureConfig{}
+	return AzureConfig{
+		InstanceMetadataAvailable: true,
+	}
 }
 
 func (c AzureConfig) Clone() AzureConfig {
