@@ -17,7 +17,6 @@
 package cluster
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
@@ -88,7 +87,7 @@ type MembersRemoved struct {
 	Members []pubcluster.Member
 }
 
-func NewMemberRemoved(members []cluster.Member) *MembersRemoved {
+func NewMemberRemoved(members []pubcluster.Member) *MembersRemoved {
 	return &MembersRemoved{Members: members}
 }
 

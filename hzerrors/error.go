@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hzerror
+package hzerrors
 
 import (
 	"errors"
@@ -26,101 +26,6 @@ var (
 	ErrClientOffline             = errors.New("client offline")
 	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
 	ErrAddressNotFound           = errors.New("address not found")
-)
-
-type ErrorCode int32
-
-//ERROR CODES
-const (
-	ErrorCodeUndefined                        ErrorCode = 0
-	ErrorCodeArrayIndexOutOfBounds            ErrorCode = 1
-	ErrorCodeArrayStore                       ErrorCode = 2
-	ErrorCodeAuthentication                   ErrorCode = 3
-	ErrorCodeCache                            ErrorCode = 4
-	ErrorCodeCacheLoader                      ErrorCode = 5
-	ErrorCodeCacheNotExists                   ErrorCode = 6
-	ErrorCodeCacheWriter                      ErrorCode = 7
-	ErrorCodeCallerNotMember                  ErrorCode = 8
-	ErrorCodeCancellation                     ErrorCode = 9
-	ErrorCodeClassCast                        ErrorCode = 10
-	ErrorCodeClassNotFound                    ErrorCode = 11
-	ErrorCodeConcurrentModification           ErrorCode = 12
-	ErrorCodeConfigMismatch                   ErrorCode = 13
-	ErrorCodeConfiguration                    ErrorCode = 14
-	ErrorCodeDistributedObjectDestroyed       ErrorCode = 15
-	ErrorCodeDuplicateInstanceName            ErrorCode = 16
-	ErrorCodeEOF                              ErrorCode = 17
-	ErrorCodeEntryProcessor                   ErrorCode = 18
-	ErrorCodeExecution                        ErrorCode = 19
-	ErrorCodeHazelcast                        ErrorCode = 20
-	ErrorCodeHazelcastInstanceNotActive       ErrorCode = 21
-	ErrorCodeHazelcastOverLoad                ErrorCode = 22
-	ErrorCodeHazelcastSerialization           ErrorCode = 23
-	ErrorCodeIO                               ErrorCode = 24
-	ErrorCodeIllegalArgument                  ErrorCode = 25
-	ErrorCodeIllegalAccessException           ErrorCode = 26
-	ErrorCodeIllegalAccessError               ErrorCode = 27
-	ErrorCodeIllegalMonitorState              ErrorCode = 28
-	ErrorCodeIllegalState                     ErrorCode = 29
-	ErrorCodeIllegalThreadState               ErrorCode = 30
-	ErrorCodeIndexOutOfBounds                 ErrorCode = 31
-	ErrorCodeInterrupted                      ErrorCode = 32
-	ErrorCodeInvalidAddress                   ErrorCode = 33
-	ErrorCodeInvalidConfiguration             ErrorCode = 34
-	ErrorCodeMemberLeft                       ErrorCode = 35
-	ErrorCodeNegativeArraySize                ErrorCode = 36
-	ErrorCodeNoSuchElement                    ErrorCode = 37
-	ErrorCodeNotSerializable                  ErrorCode = 38
-	ErrorCodeNilPointer                       ErrorCode = 39
-	ErrorCodeOperationTimeout                 ErrorCode = 40
-	ErrorCodePartitionMigrating               ErrorCode = 41
-	ErrorCodeQuery                            ErrorCode = 42
-	ErrorCodeQueryResultSizeExceeded          ErrorCode = 43
-	ErrorCodeQuorum                           ErrorCode = 44
-	ErrorCodeReachedMaxSize                   ErrorCode = 45
-	ErrorCodeRejectedExecution                ErrorCode = 46
-	ErrorCodeRemoteMapReduce                  ErrorCode = 47
-	ErrorCodeResponseAlreadySent              ErrorCode = 48
-	ErrorCodeRetryableHazelcast               ErrorCode = 49
-	ErrorCodeRetryableIO                      ErrorCode = 50
-	ErrorCodeRuntime                          ErrorCode = 51
-	ErrorCodeSecurity                         ErrorCode = 52
-	ErrorCodeSocket                           ErrorCode = 53
-	ErrorCodeStaleSequence                    ErrorCode = 54
-	ErrorCodeTargetDisconnected               ErrorCode = 55
-	ErrorCodeTargetNotMember                  ErrorCode = 56
-	ErrorCodeTimeout                          ErrorCode = 57
-	ErrorCodeTopicOverload                    ErrorCode = 58
-	ErrorCodeTopologyChanged                  ErrorCode = 59
-	ErrorCodeTransaction                      ErrorCode = 60
-	ErrorCodeTransactionNotActive             ErrorCode = 61
-	ErrorCodeTransactionTimedOut              ErrorCode = 62
-	ErrorCodeURISyntax                        ErrorCode = 63
-	ErrorCodeUTFDataFormat                    ErrorCode = 64
-	ErrorCodeUnsupportedOperation             ErrorCode = 65
-	ErrorCodeWrongTarget                      ErrorCode = 66
-	ErrorCodeXA                               ErrorCode = 67
-	ErrorCodeAccessControl                    ErrorCode = 68
-	ErrorCodeLogin                            ErrorCode = 69
-	ErrorCodeUnsupportedCallback              ErrorCode = 70
-	ErrorCodeNoDataMember                     ErrorCode = 71
-	ErrorCodeReplicatedMapCantBeCreated       ErrorCode = 72
-	ErrorCodeMaxMessageSizeExceeded           ErrorCode = 73
-	ErrorCodeWANReplicationQueueFull          ErrorCode = 74
-	ErrorCodeAssertionError                   ErrorCode = 75
-	ErrorCodeOutOfMemoryError                 ErrorCode = 76
-	ErrorCodeStackOverflowError               ErrorCode = 77
-	ErrorCodeNativeOutOfMemoryError           ErrorCode = 78
-	ErrorCodeNotFound                         ErrorCode = 79
-	ErrorCodeStaleTaskID                      ErrorCode = 80
-	ErrorCodeDuplicateTask                    ErrorCode = 81
-	ErrorCodeStaleTask                        ErrorCode = 82
-	ErrorCodeLocalMemberReset                 ErrorCode = 83
-	ErrorCodeIndeterminateOperationState      ErrorCode = 84
-	ErrorCodeFlakeIDNodeIDOutOfRangeException ErrorCode = 85
-	ErrorCodeTargetNotReplicaException        ErrorCode = 86
-	ErrorCodeMutationDisallowedException      ErrorCode = 87
-	ErrorCodeConsistencyLostException         ErrorCode = 88
 )
 
 // HazelcastError is the general error interface.
@@ -382,25 +287,24 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))
 	}
 	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), sb.String())
-	switch ErrorCode(err.ErrorCode()) {
-	case ErrorCodeAuthentication:
+	switch errorCode(err.ErrorCode()) {
+	case errorCodeAuthentication:
 		return NewHazelcastAuthenticationError(message, err)
-	case ErrorCodeHazelcastInstanceNotActive:
+	case errorCodeHazelcastInstanceNotActive:
 		return NewHazelcastInstanceNotActiveError(message, err)
-	case ErrorCodeHazelcastSerialization:
+	case errorCodeHazelcastSerialization:
 		return NewHazelcastSerializationError(message, err)
-	case ErrorCodeTargetDisconnected:
+	case errorCodeTargetDisconnected:
 		return NewHazelcastTargetDisconnectedError(message, err)
-	case ErrorCodeTargetNotMember:
+	case errorCodeTargetNotMember:
 		return NewHazelcastTargetNotMemberError(message, err)
-	case ErrorCodeUnsupportedOperation:
+	case errorCodeUnsupportedOperation:
 		return NewHazelcastUnsupportedOperationError(message, err)
-	case ErrorCodeConsistencyLostException:
+	case errorCodeConsistencyLostException:
 		return NewHazelcastConsistencyLostError(message, err)
-	case ErrorCodeIllegalArgument:
+	case errorCodeIllegalArgument:
 		return NewHazelcastIllegalArgumentError(message, err)
 	}
-
 	return NewHazelcastErrorType(message, err)
 }
 

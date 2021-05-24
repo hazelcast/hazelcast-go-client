@@ -24,11 +24,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type uuid struct {
-	msb int64
-	lsb int64
-}
-
 type Member struct {
 	address      pubcluster.Address
 	attributes   map[string]string

@@ -17,7 +17,7 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -70,7 +70,7 @@ func (cdw *ClassDefinitionWriter) WriteString(fieldName string, value string) {
 
 func (cdw *ClassDefinitionWriter) WritePortable(fieldName string, portable serialization.Portable) {
 	if portable == nil {
-		panic(hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil))
+		panic(hzerrors.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil))
 	}
 	nestedCD, err := cdw.portableContext.LookUpOrRegisterClassDefiniton(portable)
 	if err != nil {
@@ -83,7 +83,7 @@ func (cdw *ClassDefinitionWriter) WriteNilPortable(fieldName string, factoryID i
 	var version int32
 	nestedCD := cdw.portableContext.LookUpClassDefinition(factoryID, classID, version)
 	if nestedCD == nil {
-		panic(hzerror.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil))
+		panic(hzerrors.NewHazelcastSerializationError("cannot write nil portable without explicitly registering class definition", nil))
 	}
 	cdw.classDefinitionBuilder.AddPortableField(fieldName, nestedCD)
 }
@@ -126,7 +126,7 @@ func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []str
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) {
 	if len(portables) == 0 {
-		panic(hzerror.NewHazelcastSerializationError("cannot write empty array", nil))
+		panic(hzerrors.NewHazelcastSerializationError("cannot write empty array", nil))
 	}
 	var sample = portables[0]
 	var nestedCD, err = cdw.portableContext.LookUpOrRegisterClassDefiniton(sample)

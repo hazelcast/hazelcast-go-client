@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"go.uber.org/goleak"
 )
 
@@ -30,10 +29,10 @@ func TopicTester(t *testing.T, f func(t *testing.T, tp *hz.Topic)) {
 	makeName := func() string {
 		return fmt.Sprintf("test-topic-%d-%d", idGen.NextID(), rand.Int())
 	}
-	TopicTesterWithConfigBuilderWithName(t, makeName, nil, f)
+	TopicTesterWithConfigAndName(t, makeName, nil, f)
 }
 
-func TopicTesterWithConfigBuilderWithName(t *testing.T, makeName func() string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, q *hz.Topic)) {
+func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallback func(*hz.Config), f func(t *testing.T, q *hz.Topic)) {
 	var (
 		client *hz.Client
 		tp     *hz.Topic
@@ -44,12 +43,12 @@ func TopicTesterWithConfigBuilderWithName(t *testing.T, makeName func() string, 
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
+		config := defaultTestCluster.DefaultConfig()
 		if cbCallback != nil {
-			cbCallback(cb)
+			cbCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, tp = getClientTopicWithConfig(makeName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, tp = getClientTopicWithConfig(makeName(), &config)
 		defer func() {
 			if err := tp.Destroy(); err != nil {
 				t.Logf("test warning, could not destroy topic: %s", err.Error())
@@ -72,16 +71,8 @@ func TopicTesterWithConfigBuilderWithName(t *testing.T, makeName func() string, 
 	}
 }
 
-func getClientTopicWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Topic) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
+func getClientTopicWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Topic) {
+	client := getDefaultClient(config)
 	if tp, err := client.GetTopic(name); err != nil {
 		panic(err)
 	} else {

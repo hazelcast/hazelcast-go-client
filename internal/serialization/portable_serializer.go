@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -30,9 +30,17 @@ type PortableSerializer struct {
 	factories       map[int32]serialization.PortableFactory
 }
 
-func NewPortableSerializer(service *Service, portableFactories map[int32]serialization.PortableFactory,
-	portableVersion int32) *PortableSerializer {
-	return &PortableSerializer{service, NewPortableContext(service, portableVersion), portableFactories}
+func NewPortableSerializer(service *Service, factories []serialization.PortableFactory, version int32) (*PortableSerializer, error) {
+	pf := map[int32]serialization.PortableFactory{}
+	for _, f := range factories {
+		fid := f.FactoryID()
+		if _, ok := pf[fid]; ok {
+			return nil, hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+		}
+		pf[fid] = f
+	}
+	ser := &PortableSerializer{service, NewPortableContext(service, version), pf}
+	return ser, nil
 }
 
 func (ps *PortableSerializer) ID() int32 {
@@ -78,13 +86,13 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 func (ps *PortableSerializer) createNewPortableInstance(factoryID int32, classID int32) (serialization.Portable, error) {
 	factory := ps.factories[factoryID]
 	if factory == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
 			factoryID), nil)
 	}
 
 	portable := factory.Create(classID)
 	if portable == nil {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
 			reflect.TypeOf(factory), classID, factoryID), nil)
 	}
 	return portable, nil

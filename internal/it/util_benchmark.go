@@ -30,21 +30,21 @@ import (
 
 const EnvWarmupCount = "WARMUPS"
 
-func Benchmarker(b *testing.B, f func(b *testing.B, cb *hz.ConfigBuilder)) {
+func Benchmarker(b *testing.B, f func(b *testing.B, config *hz.Config)) {
 	BenchmarkerWithConfigBuilder(b, nil, f)
 }
 
-func BenchmarkerWithConfigBuilder(b *testing.B, cbCallback func(cb *hz.ConfigBuilder), f func(b *testing.B, cb *hz.ConfigBuilder)) {
+func BenchmarkerWithConfigBuilder(b *testing.B, configCallback func(*hz.Config), f func(b *testing.B, config *hz.Config)) {
 	ensureRemoteController(true)
 	runner := func(b *testing.B, smart bool) {
-		cb := defaultTestCluster.DefaultConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
+		config := defaultTestCluster.DefaultConfig()
+		if configCallback != nil {
+			configCallback(&config)
 		}
-		cb.Logger().SetLevel(logger.ErrorLevel)
-		cb.Cluster().SetSmartRouting(smart)
+		config.LoggerConfig.Level = logger.ErrorLevel
+		config.ClusterConfig.SmartRouting = smart
 		b.ResetTimer()
-		f(b, cb)
+		f(b, &config)
 	}
 	if SmartEnabled() {
 		b.Run("Smart Client", func(b *testing.B) {
@@ -59,19 +59,19 @@ func BenchmarkerWithConfigBuilder(b *testing.B, cbCallback func(cb *hz.ConfigBui
 }
 
 func MapBenchmarker(t *testing.B, fixture func(m *hz.Map), f func(t *testing.B, m *hz.Map)) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
+	configCallback := func(cb *hz.Config) {
 	}
-	MapBenchmarkerWithConfigBuilder(t, cbCallback, fixture, f)
+	MapBenchmarkerWithConfigBuilder(t, configCallback, fixture, f)
 }
 
-func MapBenchmarkerWithConfigBuilder(t *testing.B, cbCallback func(cb *hz.ConfigBuilder), fixture func(m *hz.Map), f func(t *testing.B, m *hz.Map)) {
+func MapBenchmarkerWithConfigBuilder(t *testing.B, cbCallback func(*hz.Config), fixture func(m *hz.Map), f func(t *testing.B, m *hz.Map)) {
 	makeMapName := func() string {
 		return fmt.Sprintf("bm-map-%d", rand.Int())
 	}
-	MapBenchmarkerWithConfigBuilderWithName(t, makeMapName, cbCallback, fixture, f)
+	MapBenchmarkerWithConfigAndName(t, makeMapName, cbCallback, fixture, f)
 }
 
-func MapBenchmarkerWithConfigBuilderWithName(b *testing.B, makeMapName func() string, cbCallback func(cb *hz.ConfigBuilder), fixture func(m *hz.Map), f func(b *testing.B, m *hz.Map)) {
+func MapBenchmarkerWithConfigAndName(b *testing.B, makeMapName func() string, cbCallback func(config *hz.Config), fixture func(m *hz.Map), f func(b *testing.B, m *hz.Map)) {
 	var (
 		client *hz.Client
 		m      *hz.Map
@@ -128,12 +128,12 @@ func warmupCount() int {
 	return 3
 }
 
-func getMap(mapName string, cbCallback func(cb *hz.ConfigBuilder), smart bool) (*hz.Client, *hz.Map) {
-	cb := defaultTestCluster.DefaultConfigBuilder()
-	if cbCallback != nil {
-		cbCallback(cb)
+func getMap(mapName string, configCallback func(*hz.Config), smart bool) (*hz.Client, *hz.Map) {
+	config := defaultTestCluster.DefaultConfig()
+	if configCallback != nil {
+		configCallback(&config)
 	}
-	cb.Cluster().SetSmartRouting(smart)
-	cb.Logger().SetLevel(logger.ErrorLevel)
-	return GetClientMapWithConfigBuilder(mapName, cb)
+	config.ClusterConfig.SmartRouting = smart
+	config.LoggerConfig.Level = logger.ErrorLevel
+	return GetClientMapWithConfig(mapName, &config)
 }

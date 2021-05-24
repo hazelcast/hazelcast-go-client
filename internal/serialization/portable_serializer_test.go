@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -38,20 +38,6 @@ func (*portableFactory1) Create(classID int32) serialization.Portable {
 }
 
 func (*portableFactory1) FactoryID() int32 {
-	return 2
-}
-
-type portableFactory2 struct {
-}
-
-func (*portableFactory2) Create(classID int32) serialization.Portable {
-	if classID == 1 {
-		return &student2{}
-	}
-	return nil
-}
-
-func (*portableFactory2) FactoryID() int32 {
 	return 2
 }
 
@@ -135,13 +121,16 @@ func (s *student3) ReadPortable(reader serialization.PortableReader) error {
 }
 
 func TestPortableSerializer(t *testing.T) {
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
-	service, _ := NewService(config)
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
-
 	if !reflect.DeepEqual(ret, expectedRet) {
 		t.Errorf("ReadObject() returns %v expected %v", ret, expectedRet)
 	}
@@ -149,25 +138,40 @@ func TestPortableSerializer(t *testing.T) {
 
 func TestPortableSerializer_NoFactory(t *testing.T) {
 	config := &serialization.Config{}
-	service, _ := NewService(config)
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	expectedRet := &student3{}
 	data, _ := service.ToData(expectedRet)
-	_, err := service.ToObject(data)
-
-	if _, ok := err.(*hzerror.HazelcastSerializationError); !ok {
+	_, err = service.ToObject(data)
+	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
 	}
 }
 
+func TestPortableSerializerDuplicateFactory(t *testing.T) {
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+		&portableFactory1{},
+	}}
+	if _, err := NewService(config); err == nil {
+		t.Fatalf("should have failed")
+	}
+}
+
 func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
-	service, _ := NewService(config)
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	expectedRet := &student3{}
 	data, _ := service.ToData(expectedRet)
-	_, err := service.ToObject(data)
-
-	if _, ok := err.(*hzerror.HazelcastSerializationError); !ok {
+	_, err = service.ToObject(data)
+	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		fmt.Println(err)
 		t.Errorf("err should be 'factory is not able to create an instance for id: 3 on factory id: 2'")
 	}
@@ -180,7 +184,7 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
 
-	if _, ok := err.(*hzerror.HazelcastSerializationError); !ok {
+	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
 	}
 }
@@ -267,8 +271,9 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer2(t *testing.T) {
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	service, _ := NewService(config)
 
 	var byt byte = 255
@@ -307,8 +312,9 @@ func TestPortableSerializer2(t *testing.T) {
 }
 
 func TestPortableSerializer3(t *testing.T) {
-	config := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config.PortableFactories[2] = &portableFactory1{}
+	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	service, _ := NewService(config)
 	service2, _ := NewService(config)
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
@@ -321,9 +327,9 @@ func TestPortableSerializer3(t *testing.T) {
 }
 
 func TestPortableSerializer4(t *testing.T) {
-	config1 := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
-	config1.PortableFactories[2] = &portableFactory1{}
-	config2 := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	config1 := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory1{},
+	}}
 	builder := NewClassDefinitionBuilder(2, 1, 0)
 	err := builder.AddInt16Field("id")
 	if err != nil {
@@ -340,7 +346,10 @@ func TestPortableSerializer4(t *testing.T) {
 	cd := builder.Build()
 	config1.ClassDefinitions = append(config1.ClassDefinitions, cd)
 
-	service, _ := NewService(config1)
+	service, err := NewService(config1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var byt byte = 255
 	var boo = true
@@ -370,8 +379,6 @@ func TestPortableSerializer4(t *testing.T) {
 
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service.ToObject(data)
-
-	config2.PortableFactories[2] = &portableFactory1{}
 
 	if !reflect.DeepEqual(ret, expectedRet) {
 		t.Error("ReadObject() failed")
@@ -436,14 +443,17 @@ func (p *parent) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
-	sc := &serialization.Config{PortableFactories: map[int32]serialization.PortableFactory{}}
+	sc := &serialization.Config{PortableFactories: []serialization.PortableFactory{
+		&portableFactory{},
+	}}
 	sc.PortableVersion = 6
-	sc.PortableFactories[1] = &portableFactory{}
 	ss1, _ := NewService(sc)
 	ss2, _ := NewService(sc)
 
 	// make sure ss2 cached class definition of child
-	ss2.ToData(&child{"Furkan"})
+	if _, err := ss2.ToData(&child{"Furkan"}); err != nil {
+		t.Fatal(err)
+	}
 
 	// serialized parent from ss1
 	p := &parent{&child{"Furkan"}}

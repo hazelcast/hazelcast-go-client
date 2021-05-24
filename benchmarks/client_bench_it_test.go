@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package validationutil
+package benchmarks_test
 
 import (
-	"fmt"
-	"math"
+	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
-const (
-	nonNegativeValueExpected = "non-negative integer number expected: %d"
-	int32ValueExpected       = "signed 32-bit integer number expected: %d"
-)
-
-func ValidateAsNonNegativeInt32(n int) (int32, error) {
-	if n < 0 {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(nonNegativeValueExpected, n), nil)
-	}
-	if n > math.MaxInt32 {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(int32ValueExpected, n), nil)
-	}
-	return int32(n), nil
+func BenchmarkCreateShutdownClient(b *testing.B) {
+	it.Benchmarker(b, func(b *testing.B, config *hazelcast.Config) {
+		for i := 0; i < b.N; i++ {
+			client := it.MustClient(hazelcast.StartNewClientWithConfig(*config))
+			it.Must(client.Shutdown())
+		}
+	})
 }

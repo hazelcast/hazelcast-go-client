@@ -27,8 +27,8 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	ihzerror "github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	bufferSize           = 1 * 1024 * 1024
+	bufferSize           = 128 * 1024
 	protocolStarter      = "CP2"
 	messageTypeException = int32(0)
 )
@@ -147,7 +147,7 @@ func (c *Connection) socketWriteLoop() {
 			if err := c.write(request); err != nil {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
-				request.Err = ihzerror.NewHazelcastIOError("writing message", err)
+				request.Err = hzerrors.NewHazelcastIOError("writing message", err)
 				c.responseCh <- request
 				c.close(err)
 			} else {
@@ -195,7 +195,7 @@ func (c *Connection) socketReadLoop() {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
 				if clientMessage.Type() == messageTypeException {
-					clientMessage.Err = ihzerror.NewHazelcastError(codec.DecodeError(clientMessage))
+					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
 				}
 				c.responseCh <- clientMessage
 			}
@@ -224,9 +224,6 @@ func (c *Connection) write(clientMessage *proto.ClientMessage) error {
 		c.writeBuffer = make([]byte, msgLen)
 	}
 	clientMessage.Bytes(0, c.writeBuffer)
-	if err := c.socket.SetWriteDeadline(time.Now().Add(1 * time.Second)); err != nil {
-		return err
-	}
 	_, err := c.socket.Write(c.writeBuffer[:msgLen])
 	return err
 }
@@ -237,10 +234,6 @@ func (c *Connection) isTimeoutError(err error) bool {
 		return netErr.Timeout()
 	}
 	return false
-}
-
-func (c *Connection) localAddress() net.Addr {
-	return c.socket.LocalAddr()
 }
 
 func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {

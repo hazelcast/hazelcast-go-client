@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -32,8 +33,8 @@ import (
 func TestClientLifecycleEvents(t *testing.T) {
 	receivedStates := []hz.LifecycleState{}
 	receivedStatesMu := &sync.RWMutex{}
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+	configCallback := func(config *hz.Config) {
+		config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 			receivedStatesMu.Lock()
 			defer receivedStatesMu.Unlock()
 			switch event.State {
@@ -55,7 +56,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 			receivedStates = append(receivedStates, event.State)
 		})
 	}
-	it.TesterWithConfigBuilder(t, cbCallback, func(t *testing.T, client *hz.Client) {
+	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
 		defer func() {
 			receivedStatesMu.Lock()
 			receivedStates = []hz.LifecycleState{}
@@ -81,18 +82,28 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
+func TestClientRunning(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		assert.True(t, client.Running())
+		if err := client.Shutdown(); err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, client.Running())
+	})
+}
+
 func TestClientMemberEvents(t *testing.T) {
 	handlerCalled := int32(0)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	cbCallback := func(cb *hz.ConfigBuilder) {
-		cb.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+	configCallback := func(config *hz.Config) {
+		config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
 			if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
 				wg.Done()
 			}
 		})
 	}
-	it.TesterWithConfigBuilder(t, cbCallback, func(t *testing.T, client *hz.Client) {
+	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
 		defer func() {
 			atomic.StoreInt32(&handlerCalled, 0)
 			wg.Add(1)
@@ -104,7 +115,7 @@ func TestClientMemberEvents(t *testing.T) {
 func TestClientHeartbeat(t *testing.T) {
 	// Slow test.
 	t.SkipNow()
-	it.MapTesterWithConfigBuilder(t, func(cb *hz.ConfigBuilder) {
+	it.MapTesterWithConfig(t, func(config *hz.Config) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"

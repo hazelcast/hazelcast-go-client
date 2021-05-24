@@ -26,9 +26,9 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -55,8 +55,9 @@ const (
 
 const serializationVersion = 1
 
+// ClientVersion is the build time version
 // TODO: This should be replace with a build time version variable, BuildInfo etc.
-var ClientVersion = "4.0.0"
+var ClientVersion = "1.0.0"
 
 type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
@@ -174,7 +175,11 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 		return nil
 	}
 	if _, err := m.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
-		return nil, m.connectCluster()
+		err := m.connectCluster()
+		if err != nil {
+			m.logger.Errorf("error starting: %w", err)
+		}
+		return nil, err
 	}); err != nil {
 		return err
 	}
@@ -187,6 +192,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	case <-time.After(timeout):
 		return errors.New("initial member list not received in deadline")
 	}
+	go m.heartbeat()
 	if m.smartRouting {
 		// fix broken connections only in the smart mode
 		go m.detectFixBrokenConnections()
@@ -304,11 +310,15 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) connectCluster() error {
-	for _, addr := range m.clusterService.memberCandidateAddrs() {
-		if err := m.connectAddr(addr); err == nil {
-			return nil
-		} else {
+	candidateAddrs := m.clusterService.memberCandidateAddrs()
+	if len(candidateAddrs) == 0 {
+		return cb.WrapNonRetryableError(errors.New("no member candidate addresses"))
+	}
+	for _, addr := range candidateAddrs {
+		if err := m.connectAddr(addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
+		} else {
+			return nil
 		}
 	}
 	return errors.New("cannot connect to any address in the cluster")
@@ -335,7 +345,7 @@ func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Con
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection()
 	if err := conn.start(m.clusterConfig, addr); err != nil {
-		return nil, hzerror.NewHazelcastTargetDisconnectedError(err.Error(), err)
+		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
 		conn.close(nil)
 		return nil, err
@@ -389,9 +399,9 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.logger.Infof("opened connection to: %s", address)
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
-		return hzerror.NewHazelcastAuthenticationError("invalid credentials", nil)
+		return hzerrors.NewHazelcastAuthenticationError("invalid credentials", nil)
 	case serializationVersionMismatch:
-		return hzerror.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
+		return hzerrors.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
 	}
 	return nil
 }

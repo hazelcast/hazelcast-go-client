@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -46,7 +46,7 @@ func (c *ClassDefinitionContext) Register(classDefinition serialization.ClassDef
 		return nil, nil
 	}
 	if classDefinition.FactoryID() != c.factoryID {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("this factory's id is %d, intended factory id is %d.",
 			c.factoryID, classDefinition.FactoryID()), nil)
 	}
 	classDefKey := encodeVersionedClassID(classDefinition.ClassID(), classDefinition.Version())
@@ -56,7 +56,7 @@ func (c *ClassDefinitionContext) Register(classDefinition serialization.ClassDef
 		return classDefinition, nil
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
-		return nil, hzerror.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d",
+		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("incompatible class definition with same class id: %d",
 			classDefinition.ClassID()), nil)
 	}
 	return classDefinition, nil

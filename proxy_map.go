@@ -1296,13 +1296,13 @@ func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {
 	}
 	attrs := attrSet.Attrs()
 	if len(attrs) == 0 {
-		return &indexValidationError{errors.New("index must have at least one attribute")}
+		return &IndexValidationError{errors.New("index must have at least one attribute")}
 	}
 	if len(attrs) > maxIndexAttributes {
-		return &indexValidationError{fmt.Errorf("index cannot have more than %d attributes", maxIndexAttributes)}
+		return &IndexValidationError{fmt.Errorf("index cannot have more than %d attributes", maxIndexAttributes)}
 	}
 	if ic.Type == types.IndexTypeBitmap && len(attrs) > 1 {
-		return &indexValidationError{errors.New("composite bitmap indexes are not supported")}
+		return &IndexValidationError{errors.New("composite bitmap indexes are not supported")}
 	}
 	ic.Attributes = attrs
 	return nil
@@ -1318,19 +1318,19 @@ func newAttributeSet() attributeSet {
 
 func (as attributeSet) Add(attr string) error {
 	if attr == "" {
-		return &indexValidationError{errors.New("attribute name cannot be not empty")}
+		return &IndexValidationError{errors.New("attribute name cannot be not empty")}
 	}
 	if strings.HasSuffix(attr, ".") {
-		return &indexValidationError{fmt.Errorf("attribute name cannot end with dot: %s", attr)}
+		return &IndexValidationError{fmt.Errorf("attribute name cannot end with dot: %s", attr)}
 	}
 	if strings.HasPrefix(attr, "this.") {
 		attr = strings.Replace(attr, "this.", "", 1)
 		if attr == "" {
-			return &indexValidationError{errors.New("attribute name cannot be 'this.'")}
+			return &IndexValidationError{errors.New("attribute name cannot be 'this.'")}
 		}
 	}
 	if _, ok := as.attrs[attr]; ok {
-		return &indexValidationError{fmt.Errorf("duplicate attribute name not allowed: %s", attr)}
+		return &IndexValidationError{fmt.Errorf("duplicate attribute name not allowed: %s", attr)}
 	}
 	as.attrs[attr] = struct{}{}
 	return nil

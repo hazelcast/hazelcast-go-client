@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerror"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,11 +40,11 @@ func TestConnectionBoundInvocation_CanRetry(t *testing.T) {
 	if !assert.False(t, inv.CanRetry(nonretryableErr)) {
 		t.FailNow()
 	}
-	ioErr := hzerror.NewHazelcastIOError("foo", nil)
+	ioErr := hzerrors.NewHazelcastIOError("foo", nil)
 	if !assert.True(t, inv.CanRetry(ioErr)) {
 		t.FailNow()
 	}
-	targetDisconnectedErr := hzerror.NewHazelcastTargetDisconnectedError("foo", nil)
+	targetDisconnectedErr := hzerrors.NewHazelcastTargetDisconnectedError("foo", nil)
 	if !assert.True(t, inv.CanRetry(targetDisconnectedErr)) {
 		t.FailNow()
 	}

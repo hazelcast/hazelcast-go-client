@@ -24,21 +24,16 @@ import (
 	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 func ListTester(t *testing.T, f func(t *testing.T, l *hz.List)) {
 	makeListName := func() string {
 		return fmt.Sprintf("test-list-%d-%d", idGen.NextID(), rand.Int())
 	}
-	ListTesterWithConfigBuilderWithName(t, makeListName, nil, f)
+	ListTesterWithConfigAndName(t, makeListName, nil, f)
 }
 
-func ListTesterWithConfigBuilderWithName(t *testing.T,
-	listName func() string,
-	cbCallback func(*hz.ConfigBuilder),
-	f func(*testing.T, *hz.List)) {
-
+func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallback func(*hz.Config), f func(*testing.T, *hz.List)) {
 	var (
 		client *hz.Client
 		l      *hz.List
@@ -49,12 +44,12 @@ func ListTesterWithConfigBuilderWithName(t *testing.T,
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
+		config := defaultTestCluster.DefaultConfig()
 		if cbCallback != nil {
-			cbCallback(cb)
+			cbCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, l = getClientListWithConfig(listName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, l = getClientListWithConfig(listName(), &config)
 		defer func() {
 			if err := l.Destroy(); err != nil {
 				t.Logf("test warning, could not destroy list: %s", err.Error())
@@ -77,16 +72,8 @@ func ListTesterWithConfigBuilderWithName(t *testing.T,
 	}
 }
 
-func getClientListWithConfig(name string, cb *hz.ConfigBuilder) (*hz.Client, *hz.List) {
-	if TraceLoggingEnabled() {
-		cb.Logger().SetLevel(logger.TraceLevel)
-	} else {
-		cb.Logger().SetLevel(logger.WarnLevel)
-	}
-	client, err := hz.StartNewClientWithConfig(cb)
-	if err != nil {
-		panic(err)
-	}
+func getClientListWithConfig(name string, config *hz.Config) (*hz.Client, *hz.List) {
+	client := getDefaultClient(config)
 	if l, err := client.GetList(name); err != nil {
 		panic(err)
 	} else {

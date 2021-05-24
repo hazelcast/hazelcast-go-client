@@ -14,26 +14,12 @@
  * limitations under the License.
  */
 
-package validationutil
+package cluster
 
-import (
-	"fmt"
-	"math"
+import "errors"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
-)
-
-const (
-	nonNegativeValueExpected = "non-negative integer number expected: %d"
-	int32ValueExpected       = "signed 32-bit integer number expected: %d"
-)
-
-func ValidateAsNonNegativeInt32(n int) (int32, error) {
-	if n < 0 {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(nonNegativeValueExpected, n), nil)
-	}
-	if n > math.MaxInt32 {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(int32ValueExpected, n), nil)
-	}
-	return int32(n), nil
-}
+var ErrConfigInvalidClusterName = errors.New("invalid cluster name")
+var ErrConfigInvalidConnectionTimeout = errors.New("invalid connection timeout")
+var ErrConfigInvalidHeartbeatInterval = errors.New("invalid heartbeat interval")
+var ErrConfigInvalidHeartbeatTimeout = errors.New("invalid heartbeat timeout")
+var ErrConfigInvalidInvocationTimeout = errors.New("invalid invocation timeout")

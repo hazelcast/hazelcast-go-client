@@ -27,19 +27,17 @@ import (
 )
 
 func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
-	}
-	MapTesterWithConfigBuilder(t, cbCallback, f)
+	MapTesterWithConfig(t, nil, f)
 }
 
-func MapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
+func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	makeMapName := func() string {
 		return fmt.Sprintf("test-map-%d-%d", idGen.NextID(), rand.Int())
 	}
-	MapTesterWithConfigBuilderWithName(t, makeMapName, cbCallback, f)
+	MapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }
 
-func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.Map)) {
+func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	var (
 		client *hz.Client
 		m      *hz.Map
@@ -50,12 +48,12 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string,
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
-		if cbCallback != nil {
-			cbCallback(cb)
+		config := defaultTestCluster.DefaultConfig()
+		if configCallback != nil {
+			configCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, m = GetClientMapWithConfigBuilder(makeMapName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, m = GetClientMapWithConfig(makeMapName(), &config)
 		defer func() {
 			if err := m.Destroy(); err != nil {
 				t.Logf("test warning, could not destroy map: %s", err.Error())
@@ -79,19 +77,19 @@ func MapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string,
 }
 
 func ContextMapTester(t *testing.T, f func(t *testing.T, m *hz.ContextMap)) {
-	cbCallback := func(cb *hz.ConfigBuilder) {
+	configCallback := func(cb *hz.Config) {
 	}
-	ContextMapTesterWithConfigBuilder(t, cbCallback, f)
+	ContextMapTesterWithConfigBuilder(t, configCallback, f)
 }
 
-func ContextMapTesterWithConfigBuilder(t *testing.T, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ContextMap)) {
+func ContextMapTesterWithConfigBuilder(t *testing.T, cbCallback func(*hz.Config), f func(t *testing.T, m *hz.ContextMap)) {
 	makeMapName := func() string {
 		return fmt.Sprintf("test-context-map-%d-%d", idGen.NextID(), rand.Int())
 	}
-	ContextMapTesterWithConfigBuilderWithName(t, makeMapName, cbCallback, f)
+	ContextMapTesterWithConfigAndName(t, makeMapName, cbCallback, f)
 }
 
-func ContextMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() string, cbCallback func(cb *hz.ConfigBuilder), f func(t *testing.T, m *hz.ContextMap)) {
+func ContextMapTesterWithConfigAndName(t *testing.T, makeMapName func() string, cbCallback func(*hz.Config), f func(t *testing.T, m *hz.ContextMap)) {
 	var (
 		client *hz.Client
 		m      *hz.ContextMap
@@ -102,12 +100,12 @@ func ContextMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() 
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		cb := defaultTestCluster.DefaultConfigBuilder()
+		config := defaultTestCluster.DefaultConfig()
 		if cbCallback != nil {
-			cbCallback(cb)
+			cbCallback(&config)
 		}
-		cb.Cluster().SetSmartRouting(smart)
-		client, m = GetClientContextMapWithConfigBuilder(makeMapName(), cb)
+		config.ClusterConfig.SmartRouting = smart
+		client, m = GetClientContextMapWithConfig(makeMapName(), &config)
 		defer func() {
 			m.EvictAll(context.Background())
 			if err := client.Shutdown(); err != nil {
@@ -128,9 +126,8 @@ func ContextMapTesterWithConfigBuilderWithName(t *testing.T, makeMapName func() 
 	}
 }
 
-func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Client, *hz.Map) {
-	cb.Logger().SetLevel(getLoggerLevel())
-	client := getDefaultClient(cb)
+func GetClientMapWithConfig(mapName string, config *hz.Config) (*hz.Client, *hz.Map) {
+	client := getDefaultClient(config)
 	if m, err := client.GetMap(mapName); err != nil {
 		panic(err)
 	} else {
@@ -138,7 +135,7 @@ func GetClientMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Cl
 	}
 }
 
-func GetClientContextMapWithConfigBuilder(mapName string, cb *hz.ConfigBuilder) (*hz.Client, *hz.ContextMap) {
+func GetClientContextMapWithConfig(mapName string, cb *hz.Config) (*hz.Client, *hz.ContextMap) {
 	client := getDefaultClient(cb)
 	if m, err := client.GetMapWithContext(mapName); err != nil {
 		panic(err)

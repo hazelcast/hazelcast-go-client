@@ -241,8 +241,10 @@ func NewFrameWith(content []byte, flags uint16) *Frame {
 
 // Copy frame
 func (frame *Frame) Copy() *Frame {
+	// TODO: Remove this function
+	// Copying is not required except the first frame.
+	//T his is a placeholder function until the protocol generator is changed to reflect that.
 	return frame
-	//return NewFrameWith(frame.Content, frame.flags)
 }
 
 func (frame *Frame) DeepCopy() *Frame {
@@ -251,7 +253,7 @@ func (frame *Frame) DeepCopy() *Frame {
 	return NewFrameWith(newContent, frame.flags)
 }
 
-// IsEndFrame is checking last frame
+// IsEndFrame returns true if this is the last frame
 func (frame Frame) IsEndFrame() bool {
 	return frame.IsFlagSet(EndDataStructureFlag)
 }
