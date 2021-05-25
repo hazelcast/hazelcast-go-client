@@ -24,8 +24,11 @@ import (
 	"net/http"
 )
 
-const apiVersion = "2020-09-01"
-const metadataEndpoint = "http://169.254.169.254"
+const (
+	apiVersion        = "2020-09-01"
+	metadataEndpoint  = "http://169.254.169.254"
+	keySubscriptionID = "subscriptionId"
+)
 
 type MetadataAPI struct {
 	endpoint string
@@ -50,9 +53,11 @@ func (m *MetadataAPI) FetchMetadata(ctx context.Context) error {
 	return m.fetchMetadata(ctx)
 }
 
-func (m *MetadataAPI) SubscriptionID() interface{} {
-	if s, ok := m.metadata["subscriptionId"]; ok {
-		return s
+func (m *MetadataAPI) SubscriptionID() string {
+	if i, ok := m.metadata[keySubscriptionID]; ok {
+		if s, ok := i.(string); ok {
+			return s
+		}
 	}
 	return ""
 }
@@ -71,18 +76,19 @@ func (m *MetadataAPI) fetchMetadata(ctx context.Context) error {
 
 func (m *MetadataAPI) fetchURL(ctx context.Context, url string) ([]byte, error) {
 	httpClient := &http.Client{}
-	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	response, err := httpClient.Do(request)
+	req.Header.Add("Metadata", "true")
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	// error is unhandled
-	defer response.Body.Close()
+	defer resp.Body.Close()
 	// handle the response
-	b, err := ioutil.ReadAll(response.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
