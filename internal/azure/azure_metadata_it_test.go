@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/azure"
+	ihttp "github.com/hazelcast/hazelcast-go-client/internal/http"
 )
 
 type handler struct {
@@ -54,7 +55,7 @@ func TestMetadataAPI_FetchMetadata(t *testing.T) {
 		server.ListenAndServe()
 	}()
 	time.Sleep(1 * time.Second)
-	metadataAPI := azure.NewMetadataAPIWithEndpoint("http://localhost:10000")
+	metadataAPI := azure.NewMetadataAPIWithEndpoint(ihttp.NewClient(), "http://localhost:10000")
 	if err := metadataAPI.FetchMetadata(context.Background()); err != nil {
 		t.Fatal(err)
 	}
