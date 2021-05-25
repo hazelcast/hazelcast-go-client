@@ -176,11 +176,6 @@ func NewHazelcastIOError(message string, cause error) *HazelcastIOError {
 	return &HazelcastIOError{&HazelcastErrorType{message: message, cause: cause}}
 }
 
-// NewHazelcastClientNotActiveError returns a HazelcastClientNotActiveError.
-func NewHazelcastClientNotActiveError(message string, cause error) *HazelcastClientNotActiveError {
-	return &HazelcastClientNotActiveError{&HazelcastErrorType{message: message, cause: cause}}
-}
-
 // NewHazelcastErrorType returns a HazelcastErrorType.
 func NewHazelcastErrorType(message string, cause error) *HazelcastErrorType {
 	return &HazelcastErrorType{message: message, cause: cause}
