@@ -21,6 +21,12 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/http"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+)
+
+const (
+	metadataAPIVersion = "2020-09-01"
+	metadataEndpoint   = "http://169.254.169.254"
 )
 
 type MetadataAPI struct {
@@ -28,17 +34,19 @@ type MetadataAPI struct {
 	metadata    map[string]interface{}
 	httpClient  *http.Client
 	hasMetadata bool
+	logger      logger.Logger
 }
 
-func NewMetadataAPI(client *http.Client) *MetadataAPI {
-	return NewMetadataAPIWithEndpoint(client, metadataEndpoint)
+func NewMetadataAPI(client *http.Client, logger logger.Logger) *MetadataAPI {
+	return NewMetadataAPIWithEndpoint(client, logger, metadataEndpoint)
 }
 
-func NewMetadataAPIWithEndpoint(client *http.Client, endpoint string) *MetadataAPI {
+func NewMetadataAPIWithEndpoint(client *http.Client, logger logger.Logger, endpoint string) *MetadataAPI {
 	return &MetadataAPI{
 		endpoint:   endpoint,
 		metadata:   map[string]interface{}{},
 		httpClient: client,
+		logger:     logger,
 	}
 }
 
@@ -78,9 +86,10 @@ func (m *MetadataAPI) AccessToken(ctx context.Context) (string, error) {
 }
 
 func (m *MetadataAPI) fetchMetadata(ctx context.Context) error {
-	url := fmt.Sprintf("%s/metadata/instance/compute?api-version=%s", m.endpoint, apiVersion)
+	url := fmt.Sprintf("%s/metadata/instance/compute?api-version=%s", m.endpoint, metadataAPIVersion)
+	m.logger.Trace(func() string { return fmt.Sprintf("fetching metadata: %s", url) })
 	if metadata, err := getJSON(ctx, m.httpClient, url); err != nil {
-		return err
+		return fmt.Errorf("error fetching metadata: %w", err)
 	} else {
 		m.metadata = metadata
 		m.hasMetadata = true
@@ -89,7 +98,8 @@ func (m *MetadataAPI) fetchMetadata(ctx context.Context) error {
 }
 
 func (m *MetadataAPI) fetchAccessToken(ctx context.Context) (string, error) {
-	url := fmt.Sprintf("%s/metadata/identity/oauth2/token?api-version=%s&resource=%s", m.endpoint, apiVersion, apiEndpoint)
+	url := fmt.Sprintf("%s/metadata/identity/oauth2/token?api-version=%s&resource=%s", m.endpoint, metadataAPIVersion, apiEndpoint)
+	m.logger.Trace(func() string { return fmt.Sprintf("fetching access token: %s", url) })
 	if j, err := getJSON(ctx, m.httpClient, url); err != nil {
 		return "", err
 	} else if i, ok := j["access_token"]; ok {

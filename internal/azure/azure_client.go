@@ -19,14 +19,16 @@ package azure
 import (
 	"context"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	"github.com/hazelcast/hazelcast-go-client/internal/http"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
+const apiEndpoint = "https://management.azure.com"
+
 type Client struct {
-	*http.Client
 	metadataAPI    *MetadataAPI
 	authenticator  *Authenticator
 	computeAPI     *ComputeAPI
@@ -41,10 +43,9 @@ type Client struct {
 func NewClient(config *cluster.AzureConfig, logger logger.Logger) *Client {
 	client := http.NewClient()
 	return &Client{
-		Client:        client,
-		metadataAPI:   NewMetadataAPI(client),
-		authenticator: NewAuthenticator(client),
-		computeAPI:    NewComputeAPI(client),
+		metadataAPI:   NewMetadataAPI(client, logger),
+		authenticator: NewAuthenticator(client, logger),
+		computeAPI:    NewComputeAPI(client, logger),
 		config:        config,
 		logger:        logger,
 	}
@@ -114,9 +115,8 @@ func (c *Client) getAddrs(ctx context.Context) ([]cloud.Address, error) {
 	}
 	sid := c.subscriptionID
 	rg := c.resourceGroup
-	ss := c.scaleSet
-	tag := c.config.Tag
-	if addrs, err := c.computeAPI.Instances(ctx, sid, rg, ss, tag, tok); err != nil {
+	c.logger.Trace(func() string { return "retrieving addresses" })
+	if addrs, err := c.computeAPI.Instances(ctx, c.subscriptionID, rg, c.scaleSet, c.config.Tag, tok); err != nil {
 		return nil, err
 	} else {
 		c.logger.Debug(func() string {
@@ -127,9 +127,13 @@ func (c *Client) getAddrs(ctx context.Context) ([]cloud.Address, error) {
 }
 
 func (c *Client) accessToken(ctx context.Context) (string, error) {
+	c.logger.Trace(func() string { return "getting access token" })
 	if c.config.InstanceMetadataAvailable {
 		c.logger.Trace(func() string { return "retrieving access token from metadata" })
-		return c.metadataAPI.AccessToken(ctx)
+		tok, err := c.metadataAPI.AccessToken(ctx)
+		if err == nil {
+			return tok, nil
+		}
 	}
 	c.logger.Trace(func() string { return "refreshing access token" })
 	return c.authenticator.RefreshAccessToken(ctx, c.config.TenantID, c.config.ClientID, c.config.ClientSecret)

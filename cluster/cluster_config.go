@@ -102,6 +102,9 @@ func (c *Config) Validate() error {
 	if err := c.SSLConfig.Validate(); err != nil {
 		return err
 	}
+	if err := c.AzureConfig.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -22,6 +22,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/http"
 )
 
+// TODO: these functions are useful internally elsewhere, move it to a package when other code dependes on it
+
 func jsonStringValue(m map[string]interface{}, key string) string {
 	if i, ok := m[key]; ok {
 		if s, ok := i.(string); ok {

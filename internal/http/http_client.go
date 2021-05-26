@@ -19,7 +19,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -71,11 +70,14 @@ func (c *Client) Get(ctx context.Context, url string, headers ...Header) ([]byte
 		} else if resp.StatusCode < 300 {
 			return resp, nil
 		} else if resp.StatusCode > 500 {
-			return nil, fmt.Errorf("http error: %d", resp.StatusCode)
+			return nil, NewErrorFromResponse(resp)
 		} else {
-			return nil, cb.WrapNonRetryableError(fmt.Errorf("http error: %d", resp.StatusCode))
+			return nil, cb.WrapNonRetryableError(NewErrorFromResponse(resp))
 		}
 	})
+	if err != nil {
+		return nil, err
+	}
 	resp := i.(*http.Response)
 	b, err := ioutil.ReadAll(resp.Body)
 	// error is unhandled

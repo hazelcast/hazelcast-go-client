@@ -14,13 +14,38 @@
  * limitations under the License.
  */
 
-package azure
+package http
 
-const (
-	apiVersion         = "2018-08-01"
-	apiVersionScaleSet = "2018-06-01"
-	metadataEndpoint   = "http://169.254.169.254"
-	apiEndpoint        = "https://management.azure.com"
-	authEndpoint       = "https://login.microsoftonline.com"
-	grantType          = "client_credentials"
+import (
+	"fmt"
+	"io"
+	"net/http"
 )
+
+type Error struct {
+	Code int
+	Text string
+}
+
+func NewError(code int, text string) *Error {
+	return &Error{
+		Code: code,
+		Text: text,
+	}
+}
+
+func NewErrorFromResponse(resp *http.Response) *Error {
+	code := resp.StatusCode
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return NewError(code, "(cannot read error message)")
+	}
+	text := string(body)
+	// error is unhandled
+	resp.Body.Close()
+	return NewError(code, text)
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("HTTP error: %d, %s", e.Code, e.Text)
+}

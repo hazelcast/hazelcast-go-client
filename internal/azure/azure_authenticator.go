@@ -18,31 +18,50 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/http"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+)
+
+const (
+	grantType    = "client_credentials"
+	authEndpoint = "https://login.microsoftonline.com"
 )
 
 type Authenticator struct {
 	endpoint   string
 	httpClient *http.Client
+	logger     logger.Logger
 }
 
-func NewAuthenticator(client *http.Client) *Authenticator {
-	return NewAuthenticatorWithEndpoint(client, authEndpoint)
+func NewAuthenticator(client *http.Client, logger logger.Logger) *Authenticator {
+	return NewAuthenticatorWithEndpoint(client, logger, authEndpoint)
 }
 
-func NewAuthenticatorWithEndpoint(client *http.Client, endpoint string) *Authenticator {
+func NewAuthenticatorWithEndpoint(client *http.Client, logger logger.Logger, endpoint string) *Authenticator {
 	return &Authenticator{
 		endpoint:   endpoint,
 		httpClient: client,
+		logger:     logger,
 	}
 }
 
 func (a *Authenticator) RefreshAccessToken(ctx context.Context, tenantID, clientID, clientSecret string) (string, error) {
+	if tenantID == "" {
+		return "", errors.New("tenant ID is missing")
+	}
+	if clientID == "" {
+		return "", errors.New("client ID is missing")
+	}
+	if clientSecret == "" {
+		return "", errors.New("client secret is missing")
+	}
 	url := a.makeURL(tenantID, clientID, clientSecret)
+	a.logger.Trace(func() string { return fmt.Sprintf("refreshing access token: %s", url) })
 	if j, err := getJSON(ctx, a.httpClient, url); err != nil {
-		return "", fmt.Errorf("refreshing access token: %w", err)
+		return "", fmt.Errorf("error refreshing access token: %w", err)
 	} else {
 		return jsonStringValue(j, "access_token"), nil
 	}

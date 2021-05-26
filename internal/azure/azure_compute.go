@@ -21,37 +21,47 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
-
 	"github.com/hazelcast/hazelcast-go-client/internal/http"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
-const networkInterfaceURLFormat = "%%s/subscriptions/%%s/resourceGroups/%%s/providers/Microsoft.Network/%s?api-version=%%s"
-const networkInterfaceScaleSetURLFormat = "%%s/subscriptions/%%s/resourceGroups/%%s/providers/Microsoft.Compute/virtualMachineScaleSets/%%s/%s?api-version=%%s"
+const (
+	computeAPIVersion                 = "2018-08-01"
+	computeAPIScaleSetVersion         = "2018-06-01"
+	networkInterfaceURLFormat         = "%%s/subscriptions/%%s/resourceGroups/%%s/providers/Microsoft.Network/%s?api-version=%%s"
+	networkInterfaceScaleSetURLFormat = "%%s/subscriptions/%%s/resourceGroups/%%s/providers/Microsoft.Compute/virtualMachineScaleSets/%%s/%s?api-version=%%s"
+)
 
 type ComputeAPI struct {
 	endpoint   string
 	httpClient *http.Client
+	logger     logger.Logger
 }
 
-func NewComputeAPI(client *http.Client) *ComputeAPI {
-	return NewComputeAPIWithEndpoint(client, apiEndpoint)
+func NewComputeAPI(client *http.Client, logger logger.Logger) *ComputeAPI {
+	return NewComputeAPIWithEndpoint(client, logger, apiEndpoint)
 }
 
-func NewComputeAPIWithEndpoint(client *http.Client, endpoint string) *ComputeAPI {
+func NewComputeAPIWithEndpoint(client *http.Client, logger logger.Logger, endpoint string) *ComputeAPI {
 	return &ComputeAPI{
 		endpoint:   endpoint,
 		httpClient: client,
+		logger:     logger,
 	}
 }
 
 func (c *ComputeAPI) Instances(ctx context.Context, subscriptionID, resourceGroup, scaleSet, tag, accessToken string) ([]cloud.Address, error) {
 	// TODO: fetch JSON concurrently
-	j, err := c.getJSON(ctx, c.urlForPrivateIPList(subscriptionID, resourceGroup, scaleSet), accessToken)
+	url := c.urlForPrivateIPList(subscriptionID, resourceGroup, scaleSet)
+	c.logger.Trace(func() string { return fmt.Sprintf("fetching network interfaces: %s", url) })
+	j, err := c.getJSON(ctx, url, accessToken)
 	if err != nil {
 		return nil, err
 	}
 	networkInterfaces := ExtractPrivateIPs(j)
-	j, err = c.getJSON(ctx, c.urlForPublicIPList(subscriptionID, resourceGroup, scaleSet), accessToken)
+	url = c.urlForPublicIPList(subscriptionID, resourceGroup, scaleSet)
+	c.logger.Trace(func() string { return fmt.Sprintf("fetching public IPs: %s", url) })
+	j, err = c.getJSON(ctx, url, accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -99,16 +109,16 @@ func ExtractPublicIPs(j map[string]interface{}) map[string]string {
 
 func (c *ComputeAPI) urlForPrivateIPList(subscriptionID, resourceGroup, scaleSet string) string {
 	if scaleSet == "" {
-		return fmt.Sprintf(MakeNetworkInterfaceURLFormat("networkInterfaces"), c.endpoint, subscriptionID, resourceGroup, apiVersion)
+		return fmt.Sprintf(MakeNetworkInterfaceURLFormat("networkInterfaces"), c.endpoint, subscriptionID, resourceGroup, computeAPIVersion)
 	}
-	return fmt.Sprintf(MakeNetworkInterfaceScaleSetURLFormat("networkInterfaces"), c.endpoint, subscriptionID, resourceGroup, scaleSet, apiVersionScaleSet)
+	return fmt.Sprintf(MakeNetworkInterfaceScaleSetURLFormat("networkInterfaces"), c.endpoint, subscriptionID, resourceGroup, scaleSet, computeAPIScaleSetVersion)
 }
 
 func (c *ComputeAPI) urlForPublicIPList(subscriptionID, resourceGroup, scaleSet string) string {
 	if scaleSet == "" {
-		return fmt.Sprintf(MakeNetworkInterfaceURLFormat("publicIPAddresses"), c.endpoint, subscriptionID, resourceGroup, apiVersion)
+		return fmt.Sprintf(MakeNetworkInterfaceURLFormat("publicIPAddresses"), c.endpoint, subscriptionID, resourceGroup, computeAPIVersion)
 	}
-	return fmt.Sprintf(MakeNetworkInterfaceScaleSetURLFormat("publicIPAddresses"), c.endpoint, subscriptionID, resourceGroup, scaleSet, apiVersionScaleSet)
+	return fmt.Sprintf(MakeNetworkInterfaceScaleSetURLFormat("publicIPAddresses"), c.endpoint, subscriptionID, resourceGroup, scaleSet, computeAPIScaleSetVersion)
 }
 
 func (c *ComputeAPI) getJSON(ctx context.Context, url string, token string) (map[string]interface{}, error) {
