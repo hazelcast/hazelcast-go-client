@@ -46,22 +46,21 @@ func NewComputeAPIWithEndpoint(client *http.Client, endpoint string) *ComputeAPI
 
 func (c *ComputeAPI) Instances(ctx context.Context, subscriptionID, resourceGroup, scaleSet, tag, accessToken string) ([]cloud.Address, error) {
 	// TODO: fetch JSON concurrently
-	url := c.urlForPrivateIPList(subscriptionID, resourceGroup, scaleSet)
-	j, err := c.httpClient.GetJSON(ctx, url, http.NewHeader("Authorization", fmt.Sprintf("Bearer %s", accessToken)))
+	j, err := c.getJSON(ctx, c.urlForPrivateIPList(subscriptionID, resourceGroup, scaleSet), accessToken)
 	if err != nil {
 		return nil, err
 	}
-	privateIPs := ExtractPrivateIPs(j)
-
-	url = c.urlForPublicIPList(subscriptionID, resourceGroup, scaleSet)
-	j, err = c.httpClient.GetJSON(ctx, url, http.NewHeader("Authorization", fmt.Sprintf("Bearer %s", accessToken)))
+	networkInterfaces := ExtractPrivateIPs(j)
+	j, err = c.getJSON(ctx, c.urlForPublicIPList(subscriptionID, resourceGroup, scaleSet), accessToken)
 	if err != nil {
 		return nil, err
 	}
 	publicIPs := ExtractPublicIPs(j)
-
-	addrs := make([]cloud.Address, 0, len(privateIPs))
-	for _, ni := range privateIPs {
+	addrs := make([]cloud.Address, 0, len(networkInterfaces))
+	for _, ni := range networkInterfaces {
+		if tag != "" && !ni.HasTag(tag) {
+			continue
+		}
 		addrs = append(addrs, cloud.Address{
 			Public:  publicIPs[ni.PublicIPID],
 			Private: ni.PrivateIP,
@@ -110,6 +109,10 @@ func (c *ComputeAPI) urlForPublicIPList(subscriptionID, resourceGroup, scaleSet 
 		return fmt.Sprintf(MakeNetworkInterfaceURLFormat("publicIPAddresses"), c.endpoint, subscriptionID, resourceGroup, apiVersion)
 	}
 	return fmt.Sprintf(MakeNetworkInterfaceScaleSetURLFormat("publicIPAddresses"), c.endpoint, subscriptionID, resourceGroup, scaleSet, apiVersionScaleSet)
+}
+
+func (c *ComputeAPI) getJSON(ctx context.Context, url string, token string) (map[string]interface{}, error) {
+	return c.httpClient.GetJSON(ctx, url, http.NewHeader("Authorization", fmt.Sprintf("Bearer %s", token)))
 }
 
 func extractTags(j interface{}) map[string]string {

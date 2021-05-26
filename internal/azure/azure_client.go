@@ -18,19 +18,24 @@ package azure
 
 import (
 	"context"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/logger"
-
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	"github.com/hazelcast/hazelcast-go-client/internal/http"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type Client struct {
 	*http.Client
-	metadataAPI   *MetadataAPI
-	authenticator *Authenticator
-	config        *cluster.AzureConfig
-	logger        logger.Logger
+	metadataAPI    *MetadataAPI
+	authenticator  *Authenticator
+	computeAPI     *ComputeAPI
+	subscriptionID string
+	resourceGroup  string
+	scaleSet       string
+	ready          bool
+	config         *cluster.AzureConfig
+	logger         logger.Logger
 }
 
 func NewClient(config *cluster.AzureConfig, logger logger.Logger) *Client {
@@ -39,41 +44,101 @@ func NewClient(config *cluster.AzureConfig, logger logger.Logger) *Client {
 		Client:        client,
 		metadataAPI:   NewMetadataAPI(client),
 		authenticator: NewAuthenticator(client),
+		computeAPI:    NewComputeAPI(client),
 		config:        config,
 		logger:        logger,
 	}
 }
 
-/*
-func (c *Client) getAddrsUsingMetadata(ctx context.Context) ([]cloud.Address, error) {
-	var addrs []cloud.Address
-	c.logger.Trace(func() string { return "fetching access token" })
+func (c Client) GetAddrs(ctx context.Context) ([]cloud.Address, error) {
+	if err := c.ensureReady(ctx); err != nil {
+		return nil, err
+	}
+	return c.getAddrs(ctx)
+}
+
+func (c *Client) ensureReady(ctx context.Context) error {
+	if c.ready {
+		return nil
+	}
+	if err := c.ensureSubscriptionID(ctx); err != nil {
+		return err
+	}
+	if err := c.ensureResourceGroup(ctx); err != nil {
+		return err
+	}
+	if err := c.ensureScaleSet(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) ensureSubscriptionID(ctx context.Context) error {
+	if c.config.SubscriptionID != "" {
+		c.subscriptionID = c.config.SubscriptionID
+	} else if err := c.metadataAPI.FetchMetadata(ctx); err != nil {
+		return err
+	}
+	c.subscriptionID = c.metadataAPI.SubscriptionID()
+	return nil
+}
+
+func (c *Client) ensureResourceGroup(ctx context.Context) error {
+	if c.config.ResourceGroup != "" {
+		c.resourceGroup = c.config.ResourceGroup
+	} else if err := c.metadataAPI.FetchMetadata(ctx); err != nil {
+		return err
+	}
+	c.resourceGroup = c.metadataAPI.ResourceGroup()
+	return nil
+}
+
+func (c *Client) ensureScaleSet(ctx context.Context) error {
+	if c.config.ScaleSet != "" {
+		c.scaleSet = c.config.ScaleSet
+	} else if err := c.metadataAPI.FetchMetadata(ctx); err != nil {
+		return err
+	}
+	c.scaleSet = c.metadataAPI.ScaleSet()
+	return nil
+}
+
+func (c *Client) getAddrs(ctx context.Context) ([]cloud.Address, error) {
 	tok, err := c.accessToken(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := c.metadataAPI.FetchMetadata(ctx); err != nil {
+	c.logger.Trace(func() string { return "fetching metadata" })
+	if err = c.metadataAPI.FetchMetadata(ctx); err != nil {
 		return nil, err
 	}
-
+	sid := c.subscriptionID
+	rg := c.resourceGroup
+	ss := c.scaleSet
+	tag := c.config.Tag
+	if addrs, err := c.computeAPI.Instances(ctx, sid, rg, ss, tag, tok); err != nil {
+		return nil, err
+	} else {
+		c.logger.Debug(func() string {
+			return fmt.Sprintf("found the following instances for project %s and zone %s: %v", sid, rg, addrs)
+		})
+		return addrs, nil
+	}
 }
-
-*/
 
 func (c *Client) accessToken(ctx context.Context) (string, error) {
 	if c.config.InstanceMetadataAvailable {
+		c.logger.Trace(func() string { return "retrieving access token from metadata" })
 		return c.metadataAPI.AccessToken(ctx)
 	}
+	c.logger.Trace(func() string { return "refreshing access token" })
 	return c.authenticator.RefreshAccessToken(ctx, c.config.TenantID, c.config.ClientID, c.config.ClientSecret)
 }
 
-/*
-func (c *Client) subscriptionID(ctx context.Context) (string, error) {
-	if c.config.SubscriptionID != "" {
-		return c.config.SubscriptionID, nil
+func (c *Client) availabilityZone() string {
+	zone := c.metadataAPI.AvailabilityZone()
+	if zone == "" {
+		return c.metadataAPI.FaultDomain()
 	}
-	return c.metadataAPI.SubscriptionID(ctx), nil
+	return fmt.Sprintf("%s-%s", c.metadataAPI.Location(), zone)
 }
-
-
-*/

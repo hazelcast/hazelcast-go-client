@@ -53,7 +53,7 @@ func (m *MetadataAPI) SubscriptionID() string {
 	return jsonStringValue(m.metadata, "subscriptionId")
 }
 
-func (m *MetadataAPI) ResourceGroupName() string {
+func (m *MetadataAPI) ResourceGroup() string {
 	return jsonStringValue(m.metadata, "resourceGroupName")
 }
 
@@ -74,9 +74,6 @@ func (m *MetadataAPI) ScaleSet() string {
 }
 
 func (m *MetadataAPI) AccessToken(ctx context.Context) (string, error) {
-	if err := m.FetchMetadata(ctx); err != nil {
-		return "", err
-	}
 	return m.fetchAccessToken(ctx)
 }
 
