@@ -1,10 +1,14 @@
 # Azure Discovery
 
-This project implements Azure Discovery, which enables finding out Hazelcast instances running within your Azure resource group with little configuration.
+This project discovers Hazelcast instances running within your Azure resource group automatically or with little configuration.
 
 ## Getting Started
 
-Azure Discoveru uses [Azure Instance Metadata Service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service) to get access token and other environment details. In order to use this service, Azure managed identities with the correct READ roles should be setup for all VMs that runs the Go client.
+Azure Discovery uses [Azure Instance Metadata Service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service) to get the access token and other environment details.
+In order to use this service, Azure Managed Identities must be enabled for all VMs that runs the Go client with the following permission:
+* Scope: Resource Group
+* Resource Name: YOUR RESOURCE GROUP NAME
+* Role: Reader
 
 ## Configuration
 
@@ -20,10 +24,10 @@ Necessary information such as subscription ID and and resource group name will b
 ### Additional Configuration Items
 
 You can use the following additional configuration items when using automatic discovery:
-* `Tag`: Specify a tag in the `name=value` format to filter VM instances by. If `Tag` is empty, all VM instances will be used.
-* `HzPort`: Soecify a port range for the Hazelcast instances in the `START-END` format. Set to `5701-5703` by default.
+* `Tag`: Specify a tag in the `name=value` format to filter VM instances by. If `Tag` is empty, all VM instances found in the resource group will be used.
+* `HzPort`: Specify a port range for the Hazelcast instances in the `START-END` format. It is  `5701-5703` by default.
 
-### Configuration for Outsize Azure
+### Configuration for Outside Azure
 
 Hazelcast client instances might be running outside of an Azure VM which makes Azure Instance Metadata service unavailable. Then, the client should be configured with the properties as shown below:
 ```go
