@@ -24,6 +24,7 @@ import (
 )
 
 func BenchmarkCreateShutdownClient(b *testing.B) {
+	b.SkipNow()
 	it.Benchmarker(b, func(b *testing.B, config *hazelcast.Config) {
 		for i := 0; i < b.N; i++ {
 			client := it.MustClient(hazelcast.StartNewClientWithConfig(*config))
