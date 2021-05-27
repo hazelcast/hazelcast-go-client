@@ -33,9 +33,9 @@ const (
 )
 
 type ComputeAPI struct {
-	endpoint   string
-	httpClient *http.Client
 	logger     logger.Logger
+	httpClient *http.Client
+	endpoint   string
 }
 
 func NewComputeAPI(client *http.Client, logger logger.Logger) *ComputeAPI {

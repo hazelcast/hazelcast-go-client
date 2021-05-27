@@ -30,10 +30,10 @@ const (
 
 type Config struct {
 	SecurityConfig    SecurityConfig
-	AzureConfig       AzureConfig
 	Name              string
 	SSLConfig         SSLConfig
 	Addrs             []string
+	AzureConfig       AzureConfig
 	HeartbeatInterval time.Duration
 	HeartbeatTimeout  time.Duration
 	InvocationTimeout time.Duration

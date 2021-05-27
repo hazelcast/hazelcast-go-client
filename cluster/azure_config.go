@@ -20,11 +20,10 @@ import "fmt"
 
 // AzureConfig contains Azure discovery configuration
 type AzureConfig struct {
-	// Enabled enables Azure discovery if true.
-	Enabled bool
-	// InstanceMetadataAvailable enables automatic configuration of Azure discovery.
-	// It's true by default.
-	InstanceMetadataAvailable bool
+	// ResourceGroup is required only if InstanceMetadataAvailable is false.
+	ResourceGroup string
+	// ScaleSet is required only if InstanceMetadataAvailable is false.
+	ScaleSet string
 	// ClientID is used to get an access token.
 	// Only required if InstanceMetadataAvailable is false.
 	ClientID string
@@ -35,12 +34,6 @@ type AzureConfig struct {
 	TenantID string
 	// SubscriptionID is required only if InstanceMetadataAvailable is false.
 	SubscriptionID string
-	// ResourceGroup is required only if InstanceMetadataAvailable is false.
-	ResourceGroup string
-	// ScaleSet is required only if InstanceMetadataAvailable is false.
-	ScaleSet string
-	// UsePublicIP makes discovery use the public IP instead of the private IP.
-	UsePublicIP bool
 	// Tag is used to filter VM instances in the resource group.
 	Tag string
 	// HzPort is a range in the START-END format.
@@ -49,6 +42,14 @@ type AzureConfig struct {
 	// By default set to 5701-5703
 	HzPort    string
 	portRange portRange
+	// Enabled enables Azure discovery if true.
+	Enabled bool
+	// InstanceMetadataAvailable enables automatic configuration of Azure discovery.
+	// It's true by default.
+	InstanceMetadataAvailable bool
+	// UsePublicIP makes discovery use the public IP instead of the private IP.
+	UsePublicIP bool // ResourceGroup is required only if InstanceMetadataAvailable is false.
+	// UsePublicIP makes discovery use the public IP instead of the private IP.
 }
 
 // NewAzureConfig creates a new Azure configuration.

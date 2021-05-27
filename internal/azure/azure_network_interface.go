@@ -17,9 +17,9 @@
 package azure
 
 type NetworkInterface struct {
+	Tags       map[string]string
 	PrivateIP  string
 	PublicIPID string
-	Tags       map[string]string
 }
 
 func (n NetworkInterface) HasTag(tag string) bool {

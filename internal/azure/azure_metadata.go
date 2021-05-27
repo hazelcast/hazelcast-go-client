@@ -30,11 +30,11 @@ const (
 )
 
 type MetadataAPI struct {
-	endpoint    string
+	logger      logger.Logger
 	metadata    map[string]interface{}
 	httpClient  *http.Client
+	endpoint    string
 	hasMetadata bool
-	logger      logger.Logger
 }
 
 func NewMetadataAPI(client *http.Client, logger logger.Logger) *MetadataAPI {

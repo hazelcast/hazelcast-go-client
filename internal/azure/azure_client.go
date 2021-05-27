@@ -29,15 +29,15 @@ import (
 const apiEndpoint = "https://management.azure.com"
 
 type Client struct {
+	logger         logger.Logger
 	metadataAPI    *MetadataAPI
 	authenticator  *Authenticator
+	config         *cluster.AzureConfig
 	computeAPI     *ComputeAPI
 	subscriptionID string
 	resourceGroup  string
 	scaleSet       string
 	ready          bool
-	config         *cluster.AzureConfig
-	logger         logger.Logger
 }
 
 func NewClient(config *cluster.AzureConfig, logger logger.Logger) *Client {
@@ -137,12 +137,4 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 	}
 	c.logger.Trace(func() string { return "refreshing access token" })
 	return c.authenticator.RefreshAccessToken(ctx, c.config.TenantID, c.config.ClientID, c.config.ClientSecret)
-}
-
-func (c *Client) availabilityZone() string {
-	zone := c.metadataAPI.AvailabilityZone()
-	if zone == "" {
-		return c.metadataAPI.FaultDomain()
-	}
-	return fmt.Sprintf("%s-%s", c.metadataAPI.Location(), zone)
 }

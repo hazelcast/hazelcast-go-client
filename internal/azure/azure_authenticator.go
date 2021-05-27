@@ -31,9 +31,9 @@ const (
 )
 
 type Authenticator struct {
-	endpoint   string
-	httpClient *http.Client
 	logger     logger.Logger
+	httpClient *http.Client
+	endpoint   string
 }
 
 func NewAuthenticator(client *http.Client, logger logger.Logger) *Authenticator {

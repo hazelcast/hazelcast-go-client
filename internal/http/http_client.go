@@ -59,10 +59,8 @@ func (c *Client) Get(ctx context.Context, url string, headers ...Header) ([]byte
 	if err != nil {
 		return nil, err
 	}
-	if headers != nil {
-		for _, h := range headers {
-			req.Header.Add(h.Name, h.Value)
-		}
+	for _, h := range headers {
+		req.Header.Add(h.Name, h.Value)
 	}
 	i, err := c.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if resp, err := c.httpClient.Do(req); err != nil {

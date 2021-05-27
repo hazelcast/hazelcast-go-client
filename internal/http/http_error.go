@@ -23,8 +23,8 @@ import (
 )
 
 type Error struct {
-	Code int
 	Text string
+	Code int
 }
 
 func NewError(code int, text string) *Error {

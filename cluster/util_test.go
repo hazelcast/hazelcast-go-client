@@ -25,9 +25,9 @@ import (
 
 func TestPortRange_Parse(t *testing.T) {
 	testCases := []struct {
+		E error
 		S string
 		T portRange
-		E error
 	}{
 		{S: "", T: portRange{Begin: 5701, End: 5703}},
 		{S: "5707", T: portRange{Begin: 5707, End: 5707}},
