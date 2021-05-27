@@ -120,7 +120,7 @@ func BenchmarkMap_GetParallel(b *testing.B) {
 }
 
 func makeByteArrayPayload(size int) []byte {
-	payload := make([]byte, 128*kb)
+	payload := make([]byte, size)
 	for i := 0; i < len(payload); i++ {
 		payload[i] = byte(i)
 	}
