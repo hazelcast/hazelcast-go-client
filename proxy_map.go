@@ -45,10 +45,7 @@ type Map struct {
 }
 
 func newMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) *Map {
-	m := newContextMap(p, refIDGenerator)
-	return &Map{
-		cm: m,
-	}
+	return &Map{cm: newContextMap(p, refIDGenerator)}
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
@@ -89,10 +86,10 @@ func (m *Map) Delete(key interface{}) error {
 	return m.cm.Delete(context.Background(), key)
 }
 
-// Destroys this object cluster-wide.
+// Destroy removes this object cluster-wide.
 // Clears and releases all resources for this object.
 func (m *Map) Destroy() error {
-	return m.cm.Destroy()
+	return m.cm.Destroy(context.Background())
 }
 
 // Evict evicts the mapping for a key from this map.
@@ -302,7 +299,7 @@ func (m *Map) ReplaceIfSame(key interface{}, oldValue interface{}, newValue inte
 
 // Set sets the value for the given key.
 func (m *Map) Set(key interface{}, value interface{}) error {
-	return m.cm.set(context.Background(), key, value, TtlDefault)
+	return m.cm.set(context.Background(), key, value, ttlDefault)
 }
 
 // SetTTL updates the TTL value of the entry specified by the given key with a new TTL value.
@@ -748,7 +745,7 @@ func (m *ContextMap) LoadAllReplacing(ctx context.Context, keys ...interface{}) 
 // Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
 // acquire it.
 func (m *ContextMap) Lock(ctx context.Context, key interface{}) error {
-	return m.lock(ctx, key, TtlDefault)
+	return m.lock(ctx, key, ttlDefault)
 }
 
 // LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
@@ -771,7 +768,7 @@ func (m *ContextMap) LockWithLease(ctx context.Context, key interface{}, leaseTi
 
 // Put sets the value for the given key and returns the old value.
 func (m *ContextMap) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	return m.putTTL(ctx, key, value, TtlDefault)
+	return m.putTTL(ctx, key, value, ttlDefault)
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
@@ -783,7 +780,7 @@ func (m *ContextMap) PutWithTTL(ctx context.Context, key interface{}, value inte
 // PutWithMaxIdle sets the value for the given key and returns the old value.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *ContextMap) PutWithMaxIdle(ctx context.Context, key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
-	return m.putMaxIdle(ctx, key, value, TtlDefault, maxIdle.Milliseconds())
+	return m.putMaxIdle(ctx, key, value, ttlDefault, maxIdle.Milliseconds())
 }
 
 // PutWithTTLAndMaxIdle sets the value for the given key and returns the old value.
@@ -808,7 +805,7 @@ func (m *ContextMap) PutAll(ctx context.Context, keyValuePairs ...types.Entry) e
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.
 func (m *ContextMap) PutIfAbsent(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	return m.putIfAbsent(ctx, key, value, TtlDefault)
+	return m.putIfAbsent(ctx, key, value, ttlDefault)
 }
 
 // PutIfAbsentWithTTL associates the specified key with the given value if it is not already associated.
@@ -839,7 +836,7 @@ func (m *ContextMap) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, key inter
 // The TTL defined on the server-side configuration will be used.
 // Max idle time defined on the server-side configuration will be used.
 func (m *ContextMap) PutTransient(ctx context.Context, key interface{}, value interface{}) error {
-	return m.putTransient(ctx, key, value, TtlDefault, MaxIdleDefault)
+	return m.putTransient(ctx, key, value, ttlDefault, maxIdleDefault)
 }
 
 // PutTransientWithTTL sets the value for the given key.
@@ -847,7 +844,7 @@ func (m *ContextMap) PutTransient(ctx context.Context, key interface{}, value in
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
 func (m *ContextMap) PutTransientWithTTL(ctx context.Context, key interface{}, value interface{}, ttl time.Duration) error {
-	return m.putTransient(ctx, key, value, ttl.Milliseconds(), MaxIdleDefault)
+	return m.putTransient(ctx, key, value, ttl.Milliseconds(), maxIdleDefault)
 }
 
 // PutTransientWithMaxIdle sets the value for the given key.
@@ -855,7 +852,7 @@ func (m *ContextMap) PutTransientWithTTL(ctx context.Context, key interface{}, v
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
 func (m *ContextMap) PutTransientWithMaxIdle(ctx context.Context, key interface{}, value interface{}, maxIdle time.Duration) error {
-	return m.putTransient(ctx, key, value, TtlDefault, maxIdle.Milliseconds())
+	return m.putTransient(ctx, key, value, ttlDefault, maxIdle.Milliseconds())
 }
 
 // PutTransientWithTTLAndMaxIdle sets the value for the given key.
@@ -958,7 +955,7 @@ func (m *ContextMap) ReplaceIfSame(ctx context.Context, key interface{}, oldValu
 
 // Set sets the value for the given key.
 func (m *ContextMap) Set(ctx context.Context, key interface{}, value interface{}) error {
-	return m.set(ctx, key, value, TtlDefault)
+	return m.set(ctx, key, value, ttlDefault)
 }
 
 // SetTTL updates the TTL value of the entry specified by the given key with a new TTL value.

@@ -36,9 +36,9 @@ import (
 )
 
 const (
-	TtlDefault     = -1
-	TtlUnlimited   = 0
-	MaxIdleDefault = -1
+	ttlDefault     = -1
+	ttlUnlimited   = 0
+	maxIdleDefault = -1
 )
 
 var errNilArg = hzerrors.NewHazelcastNilPointerError("nil arg is not allowed", nil)
@@ -140,9 +140,9 @@ func (p *proxy) create() error {
 	return nil
 }
 
-// Destroys this object cluster-wide.
+// Destroy removes this object cluster-wide.
 // Clears and releases all resources for this object.
-func (p *proxy) Destroy() error {
+func (p *proxy) Destroy(ctx context.Context) error {
 	// wipe from proxy manager cache
 	if !p.removeFromCacheFn() {
 		// no need to destroy on cluster, since the proxy is stale and was already destroyed
@@ -152,7 +152,7 @@ func (p *proxy) Destroy() error {
 	request := codec.EncodeClientDestroyProxyRequest(p.name, p.serviceName)
 	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
 	p.requestCh <- inv
-	if _, err := inv.Get(); err != nil {
+	if _, err := inv.GetWithContext(ctx); err != nil {
 		return fmt.Errorf("error destroying proxy: %w", err)
 	}
 	return nil

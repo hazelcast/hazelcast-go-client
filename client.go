@@ -142,6 +142,14 @@ func (c *Client) Name() string {
 	return c.name
 }
 
+// GetList returns a list instance.
+func (c *Client) GetList(name string) (*List, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotActive
+	}
+	return c.proxyManager.getList(name)
+}
+
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(name string) (*Map, error) {
 	if atomic.LoadInt32(&c.state) != ready {
@@ -150,19 +158,6 @@ func (c *Client) GetMap(name string) (*Map, error) {
 	return c.proxyManager.getMap(name)
 }
 
-// GetMapWithContext returns a distributed map instance.
-func (c *Client) GetMapWithContext(name string) (*ContextMap, error) {
-	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
-	}
-	if m, err := c.proxyManager.getMap(name); err != nil {
-		return nil, err
-	} else {
-		return m.cm, nil
-	}
-}
-
-// GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
@@ -186,12 +181,46 @@ func (c *Client) GetTopic(name string) (*Topic, error) {
 	return c.proxyManager.getTopic(name)
 }
 
-// GetList returns a list instance.
-func (c *Client) GetList(name string) (*List, error) {
-	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+func (c *Client) GetListWithContext(name string) (*ContextList, error) {
+	if l, err := c.GetList(name); err != nil {
+		return nil, err
+	} else {
+		return l.cl, nil
 	}
-	return c.proxyManager.getList(name)
+}
+
+// GetMapWithContext returns a distributed map instance.
+func (c *Client) GetMapWithContext(name string) (*ContextMap, error) {
+	if m, err := c.GetMap(name); err != nil {
+		return nil, err
+	} else {
+		return m.cm, nil
+	}
+}
+
+// GetReplicatedMapWithContext returns a replicated map instance.
+func (c *Client) GetReplicatedMapWithContext(name string) (*ContextReplicatedMap, error) {
+	if m, err := c.GetReplicatedMap(name); err != nil {
+		return nil, err
+	} else {
+		return m.cm, nil
+	}
+}
+
+func (c *Client) GetQueueWithContext(name string) (*ContextQueue, error) {
+	if q, err := c.GetQueue(name); err != nil {
+		return nil, err
+	} else {
+		return q.cq, nil
+	}
+}
+
+func (c *Client) GetTopicWithContext(name string) (*ContextTopic, error) {
+	if t, err := c.GetTopic(name); err != nil {
+		return nil, err
+	} else {
+		return t.ct, nil
+	}
 }
 
 // Start connects the client to the cluster.

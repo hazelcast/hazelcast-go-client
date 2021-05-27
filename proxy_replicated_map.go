@@ -30,12 +30,120 @@ import (
 )
 
 type ReplicatedMap struct {
+	cm *ContextReplicatedMap
+}
+
+func newReplicatedMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) (*ReplicatedMap, error) {
+	if m, err := newContextReplicatedMap(p, refIDGenerator); err != nil {
+		return nil, err
+	} else {
+		return &ReplicatedMap{cm: m}, nil
+	}
+}
+
+// AddEntryListener adds a continuous entry listener to this map.
+func (m *ReplicatedMap) AddEntryListener(handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.cm.AddEntryListener(context.Background(), handler)
+}
+
+// AddEntryListenerToKey adds a continuous entry listener to this map.
+func (m *ReplicatedMap) AddEntryListenerToKey(key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.cm.AddEntryListenerToKey(context.Background(), key, handler)
+}
+
+// AddEntryListenerWithPredicate adds a continuous entry listener to this map.
+func (m *ReplicatedMap) AddEntryListenerWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.cm.AddEntryListenerWithPredicate(context.Background(), predicate, handler)
+}
+
+// AddEntryListenerToKeyWithPredicate adds a continuous entry listener to this map.
+func (m *ReplicatedMap) AddEntryListenerToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.cm.AddEntryListenerToKeyWithPredicate(context.Background(), key, predicate, handler)
+}
+
+// Clear deletes all entries one by one and fires related events
+func (m *ReplicatedMap) Clear() error {
+	return m.cm.Clear(context.Background())
+}
+
+// ContainsKey returns true if the map contains an entry with the given key
+func (m *ReplicatedMap) ContainsKey(key interface{}) (bool, error) {
+	return m.cm.ContainsKey(context.Background(), key)
+}
+
+// ContainsValue returns true if the map contains an entry with the given value
+func (m *ReplicatedMap) ContainsValue(value interface{}) (bool, error) {
+	return m.cm.ContainsValue(context.Background(), value)
+}
+
+// Destroy removes this object cluster-wide.
+// Clears and releases all resources for this object.
+func (m *ReplicatedMap) Destroy() error {
+	return m.cm.Destroy(context.Background())
+}
+
+// Get returns the value for the specified key, or nil if this map does not contain this key.
+// Warning:
+// This method returns a clone of original value, modifying the returned value does not change the
+// actual value in the map. One should put modified value back to make changes visible to all nodes.
+func (m *ReplicatedMap) Get(key interface{}) (interface{}, error) {
+	return m.cm.Get(context.Background(), key)
+}
+
+// GetEntrySet returns a clone of the mappings contained in this map.
+func (m *ReplicatedMap) GetEntrySet() ([]types.Entry, error) {
+	return m.cm.GetEntrySet(context.Background())
+}
+
+// GetKeySet returns keys contained in this map
+func (m *ReplicatedMap) GetKeySet() ([]interface{}, error) {
+	return m.cm.GetKeySet(context.Background())
+}
+
+// GetValues returns a list clone of the values contained in this map
+func (m *ReplicatedMap) GetValues() ([]interface{}, error) {
+	return m.cm.GetValues(context.Background())
+}
+
+// IsEmpty returns true if this map contains no key-value mappings.
+func (m *ReplicatedMap) IsEmpty() (bool, error) {
+	return m.cm.IsEmpty(context.Background())
+}
+
+// Put sets the value for the given key and returns the old value.
+func (m *ReplicatedMap) Put(key interface{}, value interface{}) (interface{}, error) {
+	return m.cm.Put(context.Background(), key, value)
+}
+
+// PutAll copies all of the mappings from the specified map to this map.
+// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
+// while others are not.
+func (m *ReplicatedMap) PutAll(keyValuePairs []types.Entry) error {
+	return m.cm.PutAll(context.Background(), keyValuePairs)
+}
+
+// Remove deletes the value for the given key and returns it.
+func (m *ReplicatedMap) Remove(key interface{}) (interface{}, error) {
+	return m.cm.Remove(context.Background(), key)
+}
+
+// RemoveEntryListener removes the specified entry listener.
+func (m *ReplicatedMap) RemoveEntryListener(subscriptionID types.UUID) error {
+	return m.cm.RemoveEntryListener(context.Background(), subscriptionID)
+}
+
+// Size returns the number of entries in this map.
+func (m *ReplicatedMap) Size() (int, error) {
+	return m.cm.Size(context.Background())
+}
+
+type ContextReplicatedMap struct {
 	*proxy
 	refIDGenerator *iproxy.ReferenceIDGenerator
 	partitionID    int32
 }
 
-func newReplicatedMapImpl(p *proxy) (*ReplicatedMap, error) {
+func newContextReplicatedMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) (*ContextReplicatedMap, error) {
 	nameData, err := p.validateAndSerialize(p.name)
 	if err != nil {
 		return nil, err
@@ -44,48 +152,48 @@ func newReplicatedMapImpl(p *proxy) (*ReplicatedMap, error) {
 	if err != nil {
 		panic(fmt.Sprintf("error getting partition id with key: %s", p.name))
 	}
-	rp := &ReplicatedMap{
+	rp := &ContextReplicatedMap{
 		proxy:          p,
-		refIDGenerator: iproxy.NewReferenceIDGenerator(),
+		refIDGenerator: refIDGenerator,
 		partitionID:    partitionID,
 	}
 	return rp, nil
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListener(handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(nil, nil, handler)
+func (m *ContextReplicatedMap) AddEntryListener(ctx context.Context, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.addEntryListener(ctx, nil, nil, handler)
 }
 
 // AddEntryListenerToKey adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListenerToKey(key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(key, nil, handler)
+func (m *ContextReplicatedMap) AddEntryListenerToKey(ctx context.Context, key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.addEntryListener(ctx, key, nil, handler)
 }
 
 // AddEntryListenerWithPredicate adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListenerWithPredicate(predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(nil, predicate, handler)
+func (m *ContextReplicatedMap) AddEntryListenerWithPredicate(ctx context.Context, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.addEntryListener(ctx, nil, predicate, handler)
 }
 
 // AddEntryListenerToKeyWithPredicate adds a continuous entry listener to this map.
-func (m *ReplicatedMap) AddEntryListenerToKeyWithPredicate(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(key, predicate, handler)
+func (m *ContextReplicatedMap) AddEntryListenerToKeyWithPredicate(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.addEntryListener(ctx, key, predicate, handler)
 }
 
 // Clear deletes all entries one by one and fires related events
-func (m *ReplicatedMap) Clear() error {
+func (m *ContextReplicatedMap) Clear(ctx context.Context) error {
 	request := codec.EncodeReplicatedMapClearRequest(m.name)
-	_, err := m.invokeOnRandomTarget(context.TODO(), request, nil)
+	_, err := m.invokeOnRandomTarget(ctx, request, nil)
 	return err
 }
 
 // ContainsKey returns true if the map contains an entry with the given key
-func (m *ReplicatedMap) ContainsKey(key interface{}) (bool, error) {
+func (m *ContextReplicatedMap) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeReplicatedMapContainsKeyRequest(m.name, keyData)
-		if response, err := m.invokeOnKey(context.TODO(), request, keyData); err != nil {
+		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeReplicatedMapContainsKeyResponse(response), nil
@@ -94,12 +202,12 @@ func (m *ReplicatedMap) ContainsKey(key interface{}) (bool, error) {
 }
 
 // ContainsValue returns true if the map contains an entry with the given value
-func (m *ReplicatedMap) ContainsValue(value interface{}) (bool, error) {
+func (m *ContextReplicatedMap) ContainsValue(ctx context.Context, value interface{}) (bool, error) {
 	if valueData, err := m.validateAndSerialize(value); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeReplicatedMapContainsValueRequest(m.name, valueData)
-		if response, err := m.invokeOnPartition(context.TODO(), request, m.partitionID); err != nil {
+		if response, err := m.invokeOnPartition(ctx, request, m.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeReplicatedMapContainsValueResponse(response), nil
@@ -111,12 +219,12 @@ func (m *ReplicatedMap) ContainsValue(value interface{}) (bool, error) {
 // Warning:
 //   This method returns a clone of original value, modifying the returned value does not change the
 //   actual value in the map. One should put modified value back to make changes visible to all nodes.
-func (m *ReplicatedMap) Get(key interface{}) (interface{}, error) {
+func (m *ContextReplicatedMap) Get(ctx context.Context, key interface{}) (interface{}, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
 		request := codec.EncodeReplicatedMapGetRequest(m.name, keyData)
-		if response, err := m.invokeOnKey(context.TODO(), request, keyData); err != nil {
+		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
 			return m.convertToObject(codec.DecodeReplicatedMapGetResponse(response))
@@ -125,9 +233,9 @@ func (m *ReplicatedMap) Get(key interface{}) (interface{}, error) {
 }
 
 // GetEntrySet returns a clone of the mappings contained in this map.
-func (m *ReplicatedMap) GetEntrySet() ([]types.Entry, error) {
+func (m *ContextReplicatedMap) GetEntrySet(ctx context.Context) ([]types.Entry, error) {
 	request := codec.EncodeReplicatedMapEntrySetRequest(m.name)
-	if response, err := m.invokeOnPartition(context.TODO(), request, m.partitionID); err != nil {
+	if response, err := m.invokeOnPartition(ctx, request, m.partitionID); err != nil {
 		return nil, err
 	} else {
 		return m.convertPairsToEntries(codec.DecodeReplicatedMapEntrySetResponse(response))
@@ -135,9 +243,9 @@ func (m *ReplicatedMap) GetEntrySet() ([]types.Entry, error) {
 }
 
 // GetKeySet returns keys contained in this map
-func (m *ReplicatedMap) GetKeySet() ([]interface{}, error) {
+func (m *ContextReplicatedMap) GetKeySet(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeReplicatedMapKeySetRequest(m.name)
-	if response, err := m.invokeOnPartition(context.TODO(), request, m.partitionID); err != nil {
+	if response, err := m.invokeOnPartition(ctx, request, m.partitionID); err != nil {
 		return nil, err
 	} else {
 		keyDatas := codec.DecodeReplicatedMapKeySetResponse(response)
@@ -154,9 +262,9 @@ func (m *ReplicatedMap) GetKeySet() ([]interface{}, error) {
 }
 
 // GetValues returns a list clone of the values contained in this map
-func (m *ReplicatedMap) GetValues() ([]interface{}, error) {
+func (m *ContextReplicatedMap) GetValues(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeReplicatedMapValuesRequest(m.name)
-	if response, err := m.invokeOnPartition(context.TODO(), request, m.partitionID); err != nil {
+	if response, err := m.invokeOnPartition(ctx, request, m.partitionID); err != nil {
 		return nil, err
 	} else {
 		valueDatas := codec.DecodeReplicatedMapValuesResponse(response)
@@ -173,9 +281,9 @@ func (m *ReplicatedMap) GetValues() ([]interface{}, error) {
 }
 
 // IsEmpty returns true if this map contains no key-value mappings.
-func (m *ReplicatedMap) IsEmpty() (bool, error) {
+func (m *ContextReplicatedMap) IsEmpty(ctx context.Context) (bool, error) {
 	request := codec.EncodeReplicatedMapIsEmptyRequest(m.name)
-	if response, err := m.invokeOnPartition(context.TODO(), request, m.partitionID); err != nil {
+	if response, err := m.invokeOnPartition(ctx, request, m.partitionID); err != nil {
 		return false, err
 	} else {
 		return codec.DecodeReplicatedMapIsEmptyResponse(response), nil
@@ -183,12 +291,12 @@ func (m *ReplicatedMap) IsEmpty() (bool, error) {
 }
 
 // Put sets the value for the given key and returns the old value.
-func (m *ReplicatedMap) Put(key interface{}, value interface{}) (interface{}, error) {
+func (m *ContextReplicatedMap) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
 	} else {
-		request := codec.EncodeReplicatedMapPutRequest(m.name, keyData, valueData, TtlUnlimited)
-		if response, err := m.invokeOnKey(context.TODO(), request, keyData); err != nil {
+		request := codec.EncodeReplicatedMapPutRequest(m.name, keyData, valueData, ttlUnlimited)
+		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
 			return m.convertToObject(codec.DecodeReplicatedMapPutResponse(response))
@@ -199,10 +307,10 @@ func (m *ReplicatedMap) Put(key interface{}, value interface{}) (interface{}, er
 // PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
-func (m *ReplicatedMap) PutAll(keyValuePairs []types.Entry) error {
+func (m *ContextReplicatedMap) PutAll(ctx context.Context, keyValuePairs []types.Entry) error {
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeReplicatedMapPutAllRequest(m.name, entries)
-		return m.circuitBreaker.TryContextFuture(context.TODO(), func(ctx context.Context, attempt int) (interface{}, error) {
+		return m.circuitBreaker.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 		})
 	}
@@ -210,12 +318,12 @@ func (m *ReplicatedMap) PutAll(keyValuePairs []types.Entry) error {
 }
 
 // Remove deletes the value for the given key and returns it.
-func (m *ReplicatedMap) Remove(key interface{}) (interface{}, error) {
+func (m *ContextReplicatedMap) Remove(ctx context.Context, key interface{}) (interface{}, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
 		request := codec.EncodeReplicatedMapRemoveRequest(m.name, keyData)
-		if response, err := m.invokeOnKey(context.TODO(), request, keyData); err != nil {
+		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
 			return m.convertToObject(codec.DecodeReplicatedMapRemoveResponse(response))
@@ -224,21 +332,21 @@ func (m *ReplicatedMap) Remove(key interface{}) (interface{}, error) {
 }
 
 // RemoveEntryListener removes the specified entry listener.
-func (m *ReplicatedMap) RemoveEntryListener(subscriptionID types.UUID) error {
-	return m.listenerBinder.Remove(context.TODO(), subscriptionID)
+func (m *ContextReplicatedMap) RemoveEntryListener(ctx context.Context, subscriptionID types.UUID) error {
+	return m.listenerBinder.Remove(ctx, subscriptionID)
 }
 
 // Size returns the number of entries in this map.
-func (m *ReplicatedMap) Size() (int, error) {
+func (m *ContextReplicatedMap) Size(ctx context.Context) (int, error) {
 	request := codec.EncodeReplicatedMapSizeRequest(m.name)
-	if response, err := m.invokeOnPartition(context.TODO(), request, m.partitionID); err != nil {
+	if response, err := m.invokeOnPartition(ctx, request, m.partitionID); err != nil {
 		return 0, err
 	} else {
 		return int(codec.DecodeReplicatedMapSizeResponse(response)), nil
 	}
 }
 
-func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
+func (m *ContextReplicatedMap) addEntryListener(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
 	var keyData *iserialization.Data
 	var predicateData *iserialization.Data
@@ -258,11 +366,11 @@ func (m *ReplicatedMap) addEntryListener(key interface{}, predicate predicate.Pr
 	listenerHandler := func(msg *proto.ClientMessage) {
 		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
-	err = m.listenerBinder.Add(context.TODO(), subscriptionID, addRequest, removeRequest, listenerHandler)
+	err = m.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }
 
-func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData *iserialization.Data, smart bool) *proto.ClientMessage {
+func (m *ContextReplicatedMap) makeListenerRequest(keyData, predicateData *iserialization.Data, smart bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {
 			return codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, smart)
@@ -276,7 +384,7 @@ func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData *iserializati
 	}
 }
 
-func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
+func (m *ContextReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
 	if keyData != nil {
 		if predicateData != nil {
 			codec.HandleReplicatedMapAddEntryListenerToKeyWithPredicate(msg, handler)

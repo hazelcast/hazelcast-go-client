@@ -52,7 +52,7 @@ func (m *proxyManager) getReplicatedMap(objectName string) (*ReplicatedMap, erro
 	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
 		return nil, err
 	} else {
-		return newReplicatedMapImpl(p)
+		return newReplicatedMap(p, m.refIDGenerator)
 	}
 }
 
