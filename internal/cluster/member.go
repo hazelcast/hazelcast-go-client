@@ -33,7 +33,13 @@ type Member struct {
 	isLiteMember bool
 }
 
-func NewMember(address pubcluster.Address, uuid types.UUID, isLiteMember bool, attributes map[string]string, version pubcluster.MemberVersion, addressMap map[pubcluster.EndpointQualifier]pubcluster.Address) *Member {
+func NewMember(
+	address pubcluster.Address,
+	uuid types.UUID,
+	isLiteMember bool,
+	attributes map[string]string,
+	version pubcluster.MemberVersion,
+	addressMap map[pubcluster.EndpointQualifier]pubcluster.Address) *Member {
 	return &Member{address: address, uuid: uuid, isLiteMember: isLiteMember, attributes: attributes, version: version, addressMap: addressMap}
 }
 

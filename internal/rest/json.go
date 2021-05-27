@@ -14,43 +14,25 @@
  * limitations under the License.
  */
 
-package cluster
+package rest
 
-import (
-	"fmt"
-	"net"
-	"strconv"
-)
-
-type Address string
-
-func NewAddress(host string, port int32) Address {
-	return Address(fmt.Sprintf("%s:%d", host, port))
-}
-
-func (a Address) Host() string {
-	if host, _, err := net.SplitHostPort(string(a)); err != nil {
-		return ""
-	} else {
-		return host
+func JsonString(j interface{}) string {
+	if js, ok := j.(string); ok {
+		return js
 	}
+	return ""
 }
 
-func (a Address) Port() int {
-	if _, portStr, err := net.SplitHostPort(string(a)); err != nil {
-		return 0
-	} else if port, err := strconv.Atoi(portStr); err != nil {
-		return 0
-	} else {
-		return port
+func JsonArray(j interface{}) []interface{} {
+	if t, ok := j.([]interface{}); ok {
+		return t
 	}
+	return nil
 }
 
-func (a Address) String() string {
-	return string(a)
-}
-
-type EndpointQualifier struct {
-	Identifier string
-	Type       int32
+func JsonObjectGet(j interface{}, key string) interface{} {
+	if jm, ok := j.(map[string]interface{}); ok {
+		return jm[key]
+	}
+	return nil
 }

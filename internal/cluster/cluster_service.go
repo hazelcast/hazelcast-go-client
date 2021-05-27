@@ -112,7 +112,7 @@ func (s *Service) MemberAddrs() []string {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *Service) memberCandidateAddrs() []*pubcluster.AddressImpl {
+func (s *Service) memberCandidateAddrs() []pubcluster.Address {
 	addrSet := NewAddrSet()
 	for _, addrProvider := range s.addrProviders {
 		addrSet.AddAddrs(addrProvider.Addresses())
@@ -174,25 +174,25 @@ func (s *Service) logStatus() {
 }
 
 type AddrSet struct {
-	addrs map[string]*pubcluster.AddressImpl
+	addrs map[string]pubcluster.Address
 }
 
 func NewAddrSet() AddrSet {
-	return AddrSet{addrs: map[string]*pubcluster.AddressImpl{}}
+	return AddrSet{addrs: map[string]pubcluster.Address{}}
 }
 
-func (a AddrSet) AddAddr(addr *pubcluster.AddressImpl) {
+func (a AddrSet) AddAddr(addr pubcluster.Address) {
 	a.addrs[addr.String()] = addr
 }
 
-func (a AddrSet) AddAddrs(addrs []*pubcluster.AddressImpl) {
+func (a AddrSet) AddAddrs(addrs []pubcluster.Address) {
 	for _, addr := range addrs {
 		a.AddAddr(addr)
 	}
 }
 
-func (a AddrSet) Addrs() []*pubcluster.AddressImpl {
-	addrs := make([]*pubcluster.AddressImpl, 0, len(a.addrs))
+func (a AddrSet) Addrs() []pubcluster.Address {
+	addrs := make([]pubcluster.Address, 0, len(a.addrs))
 	for _, addr := range a.addrs {
 		addrs = append(addrs, addr)
 	}

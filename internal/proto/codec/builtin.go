@@ -90,11 +90,12 @@ func (codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator
 	return DecodeData(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) pubcluster.Address {
+func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *pubcluster.Address {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return DecodeAddress(frameIterator)
+	addr := DecodeAddress(frameIterator)
+	return &addr
 }
 
 func (codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {

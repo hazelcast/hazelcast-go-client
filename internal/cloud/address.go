@@ -14,43 +14,19 @@
  * limitations under the License.
  */
 
-package cluster
+package cloud
 
-import (
-	"fmt"
-	"net"
-	"strconv"
-)
+import "fmt"
 
-type Address string
-
-func NewAddress(host string, port int32) Address {
-	return Address(fmt.Sprintf("%s:%d", host, port))
+type Address struct {
+	Public  string
+	Private string
 }
 
-func (a Address) Host() string {
-	if host, _, err := net.SplitHostPort(string(a)); err != nil {
-		return ""
-	} else {
-		return host
-	}
-}
-
-func (a Address) Port() int {
-	if _, portStr, err := net.SplitHostPort(string(a)); err != nil {
-		return 0
-	} else if port, err := strconv.Atoi(portStr); err != nil {
-		return 0
-	} else {
-		return port
-	}
+func NewAddress(public string, private string) Address {
+	return Address{Public: public, Private: private}
 }
 
 func (a Address) String() string {
-	return string(a)
-}
-
-type EndpointQualifier struct {
-	Identifier string
-	Type       int32
+	return fmt.Sprintf("Address(Public: %s, Private: %s)", a.Public, a.Private)
 }

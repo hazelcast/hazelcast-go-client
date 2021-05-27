@@ -107,7 +107,7 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 		}
 	}
 	if inv.Address() != nil {
-		return h.sendToAddress(inv, inv.Address())
+		return h.sendToAddress(inv, *inv.Address())
 	}
 	return h.sendToRandomAddress(inv)
 }
@@ -126,7 +126,7 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 	return nil
 }
 
-func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr *pubcluster.AddressImpl) error {
+func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	conn := h.connectionManager.GetConnectionForAddress(addr)
 	if conn == nil {
 		if conn = h.connectionManager.RandomConnection(); conn != nil {

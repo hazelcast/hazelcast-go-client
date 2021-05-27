@@ -14,43 +14,38 @@
  * limitations under the License.
  */
 
-package cluster
+package rest
 
 import (
 	"fmt"
-	"net"
-	"strconv"
+	"io/ioutil"
+	"net/http"
 )
 
-type Address string
-
-func NewAddress(host string, port int32) Address {
-	return Address(fmt.Sprintf("%s:%d", host, port))
+type Error struct {
+	Text string
+	Code int
 }
 
-func (a Address) Host() string {
-	if host, _, err := net.SplitHostPort(string(a)); err != nil {
-		return ""
-	} else {
-		return host
+func NewError(code int, text string) *Error {
+	return &Error{
+		Code: code,
+		Text: text,
 	}
 }
 
-func (a Address) Port() int {
-	if _, portStr, err := net.SplitHostPort(string(a)); err != nil {
-		return 0
-	} else if port, err := strconv.Atoi(portStr); err != nil {
-		return 0
-	} else {
-		return port
+func NewErrorFromResponse(resp *http.Response) *Error {
+	code := resp.StatusCode
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return NewError(code, "(cannot read error message)")
 	}
+	text := string(body)
+	// error is unhandled
+	resp.Body.Close()
+	return NewError(code, text)
 }
 
-func (a Address) String() string {
-	return string(a)
-}
-
-type EndpointQualifier struct {
-	Identifier string
-	Type       int32
+func (e Error) Error() string {
+	return fmt.Sprintf("HTTP error: %d, %s", e.Code, e.Text)
 }

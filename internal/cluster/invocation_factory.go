@@ -52,7 +52,7 @@ func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto
 	return inv
 }
 
-func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, address *pubcluster.AddressImpl) invocation.Invocation {
+func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, address *pubcluster.Address) invocation.Invocation {
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
 	return invocation.NewImpl(message, -1, address, time.Now().Add(f.invocationTimeout), f.redoOperation)
@@ -61,7 +61,7 @@ func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.Clien
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(
 	message *proto.ClientMessage,
 	partitionID int32,
-	address *pubcluster.AddressImpl,
+	address *pubcluster.Address,
 	conn *Connection,
 	handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	message = message.Copy()

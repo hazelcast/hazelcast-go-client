@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -111,12 +112,18 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	clientLogger := ilogger.NewWithLevel(logLevel)
+	addrProvider, err := addressProvider(&config.ClusterConfig, clientLogger)
+	if err != nil {
+		return nil, err
+	}
+	addrTranslator := addressTranslator(&config.ClusterConfig, clientLogger)
 	serializationService, err := serialization.NewService(&config.SerializationConfig)
 	if err != nil {
 		return nil, err
 	}
-	clientLogger := ilogger.NewWithLevel(logLevel)
-	client := &Client{
+	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
+	c := &Client{
 		name:                    name,
 		clusterConfig:           &config.ClusterConfig,
 		serializationService:    serializationService,
@@ -129,10 +136,10 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 	}
-	client.addConfigEvents(&config)
-	client.subscribeUserEvents()
-	client.createComponents(&config)
-	return client, nil
+	c.addConfigEvents(&config)
+	c.subscribeUserEvents()
+	c.createComponents(&config, addrProvider, addrTranslator)
+	return c, nil
 }
 
 // Name returns client's name
@@ -359,11 +366,8 @@ func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCrede
 	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
 }
 
-func (c *Client) createComponents(config *Config) {
+func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
 	credentials := c.makeCredentials(config)
-	addressProviders := []icluster.AddressProvider{
-		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
-	}
 	requestCh := make(chan invocation.Invocation, 1024)
 	responseCh := make(chan *proto.ClientMessage, 1024)
 	removeCh := make(chan int64, 1024)
@@ -373,7 +377,7 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
 	clusterService := icluster.NewServiceImpl(icluster.CreationBundle{
-		AddrProviders:     addressProviders,
+		AddrProviders:     []icluster.AddressProvider{addrProvider},
 		RequestCh:         requestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,
@@ -393,6 +397,7 @@ func (c *Client) createComponents(config *Config) {
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
+		AddressTranslator:    addrTranslator,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
@@ -425,4 +430,18 @@ func (c *Client) createComponents(config *Config) {
 	c.invocationService = invocationService
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
+}
+
+func addressProvider(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, error) {
+	if config.HazelcastCloudConfig.Enabled {
+		return cloud.NewAddressProvider(config, logger)
+	}
+	return icluster.NewDefaultAddressProvider(config), nil
+}
+
+func addressTranslator(config *cluster.Config, logger ilogger.Logger) icluster.AddressTranslator {
+	if config.HazelcastCloudConfig.Enabled {
+		return cloud.NewAddressTranslator(config, logger)
+	}
+	return icluster.NewDefaultAddressTranslator()
 }

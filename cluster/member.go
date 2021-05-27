@@ -75,7 +75,7 @@ func NewMemberInfo(address Address, uuid types.UUID, attributes map[string]strin
 	isAddressMapExists bool, addressMap interface{}) MemberInfo {
 	// TODO: Convert addrMap to map[EndpointQualifier]*Address
 	// copy address
-	return MemberInfo{address: address.Clone(), uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
+	return MemberInfo{address: address, uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
 		addrMap: addressMap.(map[EndpointQualifier]Address)}
 }
 
