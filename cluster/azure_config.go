@@ -25,19 +25,34 @@ type AzureConfig struct {
 	// InstanceMetadataAvailable enables automatic configuration of Azure discovery.
 	// It's true by default.
 	InstanceMetadataAvailable bool
-	ClientID                  string
-	ClientSecret              string
-	TenantID                  string
-	SubscriptionID            string
-	ResourceGroup             string
-	ScaleSet                  string
-	UsePublicIP               bool
-	Tag                       string
-	// HzPort
+	// ClientID is used to get an access token.
+	// Only required if InstanceMetadataAvailable is false.
+	ClientID string
+	// ClientSecret is used to get an access token.
+	// Only required if InstanceMetadataAvailable is false.
+	ClientSecret string
+	// TenantID is required only if InstanceMetadataAvailable is false.
+	TenantID string
+	// SubscriptionID is required only if InstanceMetadataAvailable is false.
+	SubscriptionID string
+	// ResourceGroup is required only if InstanceMetadataAvailable is false.
+	ResourceGroup string
+	// ScaleSet is required only if InstanceMetadataAvailable is false.
+	ScaleSet string
+	// UsePublicIP makes discovery use the public IP instead of the private IP.
+	UsePublicIP bool
+	// Tag is used to filter VM instances in the resource group.
+	Tag string
+	// HzPort is a range in the START-END format.
+	// If START is missing, it is set to 5701.
+	// If END is missing, it is set to 5703.
+	// By default set to 5701-5703
 	HzPort    string
 	portRange portRange
 }
 
+// NewAzureConfig creates a new Azure configuration.
+// You usually don't need this if you have created the configuration using hazelcast.NewConfig().
 func NewAzureConfig() AzureConfig {
 	return AzureConfig{
 		InstanceMetadataAvailable: true,
@@ -46,10 +61,12 @@ func NewAzureConfig() AzureConfig {
 	}
 }
 
+// Clone gets a copy of AzureConfig.
 func (c AzureConfig) Clone() AzureConfig {
 	return c
 }
 
+// Validate makes sure AzureConfig is valid.
 func (c *AzureConfig) Validate() error {
 	pr := newPortRange()
 	if err := pr.Parse(c.HzPort); err != nil {
@@ -59,6 +76,9 @@ func (c *AzureConfig) Validate() error {
 	return nil
 }
 
+// PortRange returns the port range of AzureConfig.
+// The port range may be not current until Validate is called.
+// This function is intended for internal use.
 func (c AzureConfig) PortRange() portRange {
 	return c.portRange
 }
