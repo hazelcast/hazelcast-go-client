@@ -16,8 +16,8 @@ func TestExtractAddresses(t *testing.T) {
 	}
 	addrs := extractAddresses(r)
 	target := []Address{
-		NewAddress("35.177.212.248:31984", "100.115.50.221"),
-		NewAddress("3.8.123.82:31984", "100.109.198.133"),
+		NewAddress("35.177.212.248:31984", "100.115.50.221:31984"),
+		NewAddress("3.8.123.82:31984", "100.109.198.133:31984"),
 	}
 	assert.Equal(t, target, addrs)
 }
