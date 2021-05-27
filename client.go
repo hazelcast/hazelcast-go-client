@@ -47,7 +47,7 @@ const (
 
 var (
 	ErrClientCannotStart = errors.New("client cannot start")
-	ErrClientNotReady    = errors.New("client not ready")
+	ErrClientNotActive   = errors.New("client not active")
 	ErrContextIsNil      = errors.New("context is nil")
 )
 
@@ -145,7 +145,7 @@ func (c *Client) Name() string {
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(name string) (*Map, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotReady
+		return nil, ErrClientNotActive
 	}
 	return c.proxyManager.getMap(name)
 }
@@ -165,7 +165,7 @@ func (c *Client) GetMapWithContext(name string) (*ContextMap, error) {
 // GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotReady
+		return nil, ErrClientNotActive
 	}
 	return c.proxyManager.getReplicatedMap(name)
 }
@@ -173,7 +173,7 @@ func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
 // GetQueue returns a queue instance.
 func (c *Client) GetQueue(name string) (*Queue, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotReady
+		return nil, ErrClientNotActive
 	}
 	return c.proxyManager.getQueue(name)
 }
@@ -181,7 +181,7 @@ func (c *Client) GetQueue(name string) (*Queue, error) {
 // GetTopic returns a topic instance.
 func (c *Client) GetTopic(name string) (*Topic, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotReady
+		return nil, ErrClientNotActive
 	}
 	return c.proxyManager.getTopic(name)
 }
@@ -189,7 +189,7 @@ func (c *Client) GetTopic(name string) (*Topic, error) {
 // GetList returns a list instance.
 func (c *Client) GetList(name string) (*List, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotReady
+		return nil, ErrClientNotActive
 	}
 	return c.proxyManager.getList(name)
 }
@@ -216,7 +216,7 @@ func (c *Client) start() error {
 // Shutdown disconnects the client from the cluster.
 func (c *Client) Shutdown() error {
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
-		return ErrClientNotReady
+		return ErrClientNotActive
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
@@ -242,7 +242,7 @@ func (c *Client) Running() bool {
 // The handler must not block.
 func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return types.UUID{}, ErrClientNotReady
+		return types.UUID{}, ErrClientNotActive
 	}
 	uuid := types.NewUUID()
 	subscriptionID := c.refIDGen.NextID()
@@ -256,7 +256,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (type
 // RemoveLifecycleListener removes the lifecycle state change handler with the given subscription ID
 func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return ErrClientNotReady
+		return ErrClientNotActive
 	}
 	c.lifecyleListenerMapMu.Lock()
 	if intID, ok := c.lifecyleListenerMap[subscriptionID]; ok {
@@ -272,7 +272,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 // Use the returned subscription ID to remove the listener.
 func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return types.UUID{}, ErrClientNotReady
+		return types.UUID{}, ErrClientNotActive
 	}
 	uuid := types.NewUUID()
 	subscriptionID := c.refIDGen.NextID()
@@ -286,7 +286,7 @@ func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHand
 // RemoveMembershipListener removes the member state change handler with the given subscription ID.
 func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return ErrClientNotReady
+		return ErrClientNotActive
 	}
 	c.membershipListenerMapMu.Lock()
 	if intID, ok := c.membershipListenerMap[subscriptionID]; ok {
