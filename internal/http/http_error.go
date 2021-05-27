@@ -18,7 +18,7 @@ package http
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -36,7 +36,7 @@ func NewError(code int, text string) *Error {
 
 func NewErrorFromResponse(resp *http.Response) *Error {
 	code := resp.StatusCode
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return NewError(code, "(cannot read error message)")
 	}
