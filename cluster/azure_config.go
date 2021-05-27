@@ -18,8 +18,12 @@ package cluster
 
 import "fmt"
 
+// AzureConfig contains Azure discovery configuration
 type AzureConfig struct {
-	Enabled                   bool
+	// Enabled enables Azure discovery if true.
+	Enabled bool
+	// InstanceMetadataAvailable enables automatic configuration of Azure discovery.
+	// It's true by default.
 	InstanceMetadataAvailable bool
 	ClientID                  string
 	ClientSecret              string
@@ -29,8 +33,9 @@ type AzureConfig struct {
 	ScaleSet                  string
 	UsePublicIP               bool
 	Tag                       string
-	HzPort                    string
-	portRange                 portRange
+	// HzPort
+	HzPort    string
+	portRange portRange
 }
 
 func NewAzureConfig() AzureConfig {

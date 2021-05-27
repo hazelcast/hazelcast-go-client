@@ -43,7 +43,7 @@ func TestPortRange_Parse(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.S, func(t *testing.T) {
-			pr := newPortRange()
+			pr := portRange{}
 			err := pr.Parse(tc.S)
 			if tc.E != nil {
 				if err == nil {

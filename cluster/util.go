@@ -35,6 +35,8 @@ func newPortRange() portRange {
 }
 
 func (p *portRange) Parse(s string) error {
+	p.Begin = 5701
+	p.End = 5703
 	if s == "" {
 		// return default port range
 		return nil
