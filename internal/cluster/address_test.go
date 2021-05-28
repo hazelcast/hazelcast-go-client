@@ -17,7 +17,6 @@
 package cluster_test
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -32,11 +31,10 @@ type addrCase struct {
 	port  int
 }
 
-func TestAddressImplParse(t *testing.T) {
+func TestAddressParse(t *testing.T) {
+	// TODO: this test needs to be re-thinked, since cluster.Address is equivalent to string.
 	cases := []addrCase{
-		{input: "", host: "localhost", port: 5701},
-		{input: "localhost", host: "localhost", port: 5701},
-		{input: ":4566", err: errors.New("error parsing address: address with no host")},
+		{input: "localhost:5701", host: "localhost", port: 5701},
 		{input: "foo.com:2223", host: "foo.com", port: 2223},
 		// TODO: ipv6
 	}
