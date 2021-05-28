@@ -27,13 +27,6 @@ type PortRange struct {
 	End   int
 }
 
-func newPortRange() PortRange {
-	return PortRange{
-		Begin: 5701,
-		End:   5703,
-	}
-}
-
 func (p *PortRange) Parse(s string) error {
 	p.Begin = 5701
 	p.End = 5703

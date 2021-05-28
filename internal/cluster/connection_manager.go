@@ -60,18 +60,18 @@ const serializationVersion = 1
 var ClientVersion = "1.0.0"
 
 type ConnectionManagerCreationBundle struct {
+	Logger               ilogger.Logger
+	Credentials          security.Credentials
+	AddressTranslator    AddressTranslator
 	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
-	Logger               ilogger.Logger
-	ClusterService       *Service
 	PartitionService     *PartitionService
-	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
-	Credentials          security.Credentials
+	ClusterService       *Service
+	SerializationService *iserialization.Service
 	ClientName           string
-	AddressTranslator    AddressTranslator
 }
 
 func (b ConnectionManagerCreationBundle) Check() {

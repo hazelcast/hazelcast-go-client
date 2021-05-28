@@ -63,12 +63,12 @@ func (memberVersion MemberVersion) Patch() byte {
 
 // MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
 type MemberInfo struct {
-	address    Address
 	attributes map[string]string
 	addrMap    map[EndpointQualifier]Address
+	address    Address
 	uuid       types.UUID
 	version    MemberVersion
-	liteMember bool // uuid UUID of the member.
+	liteMember bool
 }
 
 func NewMemberInfo(address Address, uuid types.UUID, attributes map[string]string, liteMember bool, version MemberVersion,

@@ -25,9 +25,9 @@ import (
 )
 
 type Member struct {
-	address      pubcluster.Address
 	attributes   map[string]string
 	addressMap   map[pubcluster.EndpointQualifier]pubcluster.Address
+	address      pubcluster.Address
 	uuid         types.UUID
 	version      pubcluster.MemberVersion
 	isLiteMember bool
