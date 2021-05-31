@@ -32,8 +32,8 @@ type Address interface {
 type AddressImpl struct {
 	// TODO: rename to Address
 	host string
-	port int
 	str  string
+	port int
 	// TODO: add address hash
 }
 
@@ -43,7 +43,7 @@ func NewAddress(host string, port int32) *AddressImpl {
 
 // TODO: merge this one with NewAddress
 func NewAddressWithHostPort(host string, port int) *AddressImpl {
-	return &AddressImpl{host, port, fmt.Sprintf("%s:%d", host, port)}
+	return &AddressImpl{host: host, port: port, str: fmt.Sprintf("%s:%d", host, port)}
 }
 
 func (a AddressImpl) Host() string {
