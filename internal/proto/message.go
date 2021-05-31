@@ -90,9 +90,9 @@ type ClientMessage struct {
 func NewClientMessage(startFrame *Frame) *ClientMessage {
 	// initial backing array size is kept large enough
 	// for basic incoming messages, like map.Get()
-	frames := make([]*Frame, 0, 4)
-	frames = append(frames, startFrame)
-	return &ClientMessage{Frames: frames}
+	m := NewClientMessageForEncode()
+	m.Frames = append(m.Frames, startFrame)
+	return m
 }
 
 func NewClientMessageForEncode() *ClientMessage {
