@@ -18,6 +18,7 @@ package proto
 
 import (
 	"encoding/binary"
+	"io"
 )
 
 const (
@@ -87,11 +88,17 @@ type ClientMessage struct {
 }
 
 func NewClientMessage(startFrame *Frame) *ClientMessage {
-	return &ClientMessage{Frames: []*Frame{startFrame}}
+	// initial backing array size is kept large enough
+	// for basic incoming messages, like map.Get()
+	m := NewClientMessageForEncode()
+	m.Frames = append(m.Frames, startFrame)
+	return m
 }
 
 func NewClientMessageForEncode() *ClientMessage {
-	return &ClientMessage{}
+	// initial backing array size is kept large enough
+	// for basic outbound messages, like map.Set()
+	return &ClientMessage{Frames: make([]*Frame, 0, 4)}
 }
 
 func NewClientMessageForDecode(frame *Frame) *ClientMessage {
@@ -161,20 +168,24 @@ func (m *ClientMessage) TotalLength() int {
 	return totalLength
 }
 
-func (m *ClientMessage) Bytes(offset int, bytes []byte) int {
+func (m *ClientMessage) Write(w io.Writer) error {
 	lastIndex := len(m.Frames) - 1
+	header := make([]byte, SizeOfFrameLengthAndFlags)
 	for i, frame := range m.Frames {
-		binary.LittleEndian.PutUint32(bytes[offset:], uint32(len(frame.Content)+SizeOfFrameLengthAndFlags))
+		binary.LittleEndian.PutUint32(header, uint32(len(frame.Content)+SizeOfFrameLengthAndFlags))
 		flags := frame.flags
 		if i == lastIndex {
 			flags |= IsFinalFlag
 		}
-		binary.LittleEndian.PutUint16(bytes[offset+IntSizeInBytes:], flags)
-		offset += SizeOfFrameLengthAndFlags
-		copy(bytes[offset:], frame.Content)
-		offset += len(frame.Content)
+		binary.LittleEndian.PutUint16(header[IntSizeInBytes:], flags)
+		if _, err := w.Write(header); err != nil {
+			return err
+		}
+		if _, err := w.Write(frame.Content); err != nil {
+			return err
+		}
 	}
-	return offset
+	return nil
 }
 
 func (m *ClientMessage) DropFragmentationFrame() {

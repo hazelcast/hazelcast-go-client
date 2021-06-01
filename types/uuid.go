@@ -28,7 +28,7 @@ type UUID struct {
 	leastSigBits uint64
 }
 
-// NewUUID is used to generate a random UUID
+// NewUUID is used to generate a random UUID v4 using rand.Reader as the CSRNG.
 func NewUUID() UUID {
 	buf := make([]byte, 16)
 	_, _ = io.ReadFull(rand.Reader, buf)
