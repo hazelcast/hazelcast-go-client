@@ -33,6 +33,7 @@ type Config struct {
 	Name              string
 	SSLConfig         SSLConfig
 	Addrs             []string
+	AzureConfig       AzureConfig
 	HeartbeatInterval time.Duration
 	HeartbeatTimeout  time.Duration
 	InvocationTimeout time.Duration
@@ -52,6 +53,7 @@ func NewConfig() Config {
 		InvocationTimeout: 120 * time.Second,
 		SecurityConfig:    NewSecurityConfig(),
 		SSLConfig:         NewSSLConfig(),
+		AzureConfig:       NewAzureConfig(),
 	}
 }
 
@@ -69,6 +71,7 @@ func (c *Config) Clone() Config {
 		RedoOperation:     c.RedoOperation,
 		SecurityConfig:    c.SecurityConfig.Clone(),
 		SSLConfig:         c.SSLConfig.Clone(),
+		AzureConfig:       c.AzureConfig.Clone(),
 	}
 }
 
@@ -97,6 +100,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.SSLConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.AzureConfig.Validate(); err != nil {
 		return err
 	}
 	return nil

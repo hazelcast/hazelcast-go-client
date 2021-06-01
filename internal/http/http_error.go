@@ -14,21 +14,38 @@
  * limitations under the License.
  */
 
-package benchmarks_test
+package http
 
 import (
-	"testing"
-
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 )
 
-func BenchmarkCreateShutdownClient(b *testing.B) {
-	b.SkipNow()
-	it.Benchmarker(b, func(b *testing.B, config *hazelcast.Config) {
-		for i := 0; i < b.N; i++ {
-			client := it.MustClient(hazelcast.StartNewClientWithConfig(*config))
-			it.Must(client.Shutdown())
-		}
-	})
+type Error struct {
+	Text string
+	Code int
+}
+
+func NewError(code int, text string) *Error {
+	return &Error{
+		Code: code,
+		Text: text,
+	}
+}
+
+func NewErrorFromResponse(resp *http.Response) *Error {
+	code := resp.StatusCode
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return NewError(code, "(cannot read error message)")
+	}
+	text := string(body)
+	// error is unhandled
+	resp.Body.Close()
+	return NewError(code, text)
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("HTTP error: %d, %s", e.Code, e.Text)
 }

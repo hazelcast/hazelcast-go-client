@@ -14,21 +14,15 @@
  * limitations under the License.
  */
 
-package benchmarks_test
+package cloud
 
-import (
-	"testing"
+import "fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
-)
+type Address struct {
+	Public  string
+	Private string
+}
 
-func BenchmarkCreateShutdownClient(b *testing.B) {
-	b.SkipNow()
-	it.Benchmarker(b, func(b *testing.B, config *hazelcast.Config) {
-		for i := 0; i < b.N; i++ {
-			client := it.MustClient(hazelcast.StartNewClientWithConfig(*config))
-			it.Must(client.Shutdown())
-		}
-	})
+func (a Address) String() string {
+	return fmt.Sprintf("Address(Public: %s, Private: %s)", a.Public, a.Private)
 }

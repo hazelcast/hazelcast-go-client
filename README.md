@@ -185,7 +185,7 @@ $ godoc -http=localhost:5500
 
 godoc is not installed by default with the base Go distribution. Install it using:
 ```
-$ go get -u golang.org/x/tools/...`
+$ go get -u golang.org/x/tools/...
 ```
 
 ## Support
