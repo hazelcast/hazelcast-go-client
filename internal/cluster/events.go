@@ -72,10 +72,10 @@ func (c ConnectionClosed) EventName() string {
 }
 
 type MembersAdded struct {
-	Members []pubcluster.Member
+	Members []pubcluster.MemberInfo
 }
 
-func NewMembersAdded(members []pubcluster.Member) *MembersAdded {
+func NewMembersAdded(members []pubcluster.MemberInfo) *MembersAdded {
 	return &MembersAdded{Members: members}
 }
 
@@ -84,10 +84,10 @@ func (m MembersAdded) EventName() string {
 }
 
 type MembersRemoved struct {
-	Members []pubcluster.Member
+	Members []pubcluster.MemberInfo
 }
 
-func NewMemberRemoved(members []pubcluster.Member) *MembersRemoved {
+func NewMemberRemoved(members []pubcluster.MemberInfo) *MembersRemoved {
 	return &MembersRemoved{Members: members}
 }
 

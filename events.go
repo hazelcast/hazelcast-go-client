@@ -57,7 +57,7 @@ const (
 
 type EntryNotified struct {
 	MergingValue            interface{}
-	Member                  cluster.Member
+	Member                  cluster.MemberInfo
 	Key                     interface{}
 	Value                   interface{}
 	OldValue                interface{}
@@ -72,7 +72,7 @@ func (e *EntryNotified) EventName() string {
 
 func newEntryNotifiedEvent(
 	mapName string,
-	member cluster.Member,
+	member cluster.MemberInfo,
 	key interface{},
 	value interface{},
 	oldValue interface{},
@@ -124,7 +124,7 @@ func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 type MessagePublished struct {
 	PublishTime time.Time
 	Value       interface{}
-	Member      cluster.Member
+	Member      cluster.MemberInfo
 	TopicName   string
 }
 
@@ -132,7 +132,7 @@ func (m *MessagePublished) EventName() string {
 	return eventMessagePublished
 }
 
-func newMessagePublished(name string, value interface{}, publishTime time.Time, member cluster.Member) *MessagePublished {
+func newMessagePublished(name string, value interface{}, publishTime time.Time, member cluster.MemberInfo) *MessagePublished {
 	return &MessagePublished{
 		TopicName:   name,
 		Value:       value,
@@ -155,7 +155,7 @@ type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
 type QueueItemNotified struct {
 	Value     interface{}
-	Member    cluster.Member
+	Member    cluster.MemberInfo
 	QueueName string
 	EventType ItemEventType
 }
@@ -164,7 +164,7 @@ func (q QueueItemNotified) EventName() string {
 	return eventQueueItemNotified
 }
 
-func newQueueItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *QueueItemNotified {
+func newQueueItemNotified(name string, value interface{}, member cluster.MemberInfo, eventType int32) *QueueItemNotified {
 	return &QueueItemNotified{
 		QueueName: name,
 		Value:     value,
@@ -179,7 +179,7 @@ type ListItemNotifiedHandler func(event *ListItemNotified)
 // ListItemNotified describes the List item event.
 type ListItemNotified struct {
 	Value     interface{}
-	Member    cluster.Member
+	Member    cluster.MemberInfo
 	ListName  string
 	EventType ItemEventType
 }
@@ -189,7 +189,7 @@ func (q ListItemNotified) EventName() string {
 	return eventListItemNotified
 }
 
-func newListItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *ListItemNotified {
+func newListItemNotified(name string, value interface{}, member cluster.MemberInfo, eventType int32) *ListItemNotified {
 	return &ListItemNotified{
 		ListName:  name,
 		Value:     value,

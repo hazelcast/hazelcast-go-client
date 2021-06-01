@@ -75,7 +75,7 @@ func (l *List) addListener(includeValue bool, handler ListItemNotifiedHandler) (
 				return
 			}
 			member := l.clusterService.GetMemberByUUID(uuid.String())
-			handler(newListItemNotified(l.name, item, member, eventType))
+			handler(newListItemNotified(l.name, item, *member, eventType))
 		})
 	}
 	err := l.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)

@@ -18,19 +18,19 @@ package cluster
 
 import (
 	"context"
-
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 // AddressTranslator is used to resolve private ip address of cloud services.
 type AddressTranslator interface {
-
-	// Translate translates the given address to another address specific
-	// to network or service
+	// Translate translates the given address to another address
 	Translate(ctx context.Context, address pubcluster.Address) (addr pubcluster.Address, err error)
+
+	// TranslateMember translates the given member's address to another address
+	TranslateMember(ctx context.Context, member *pubcluster.MemberInfo) (addr pubcluster.Address, err error)
 }
 
-// defaultAddressTranslator is a no-op. It always returns the given address.
 type defaultAddressTranslator struct {
 }
 
@@ -38,6 +38,28 @@ func NewDefaultAddressTranslator() *defaultAddressTranslator {
 	return &defaultAddressTranslator{}
 }
 
-func (dat *defaultAddressTranslator) Translate(ctx context.Context, address pubcluster.Address) (pubcluster.Address, error) {
-	return address, nil
+func (a *defaultAddressTranslator) Translate(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error) {
+	return addr, nil
+}
+
+func (a *defaultAddressTranslator) TranslateMember(ctx context.Context, member *pubcluster.MemberInfo) (pubcluster.Address, error) {
+	return member.Address, nil
+}
+
+type defaultPublicAddressTranslator struct {
+}
+
+func NewDefaultPublicAddressTranslator() *defaultPublicAddressTranslator {
+	return &defaultPublicAddressTranslator{}
+}
+
+func (a *defaultPublicAddressTranslator) Translate(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error) {
+	return addr, nil
+}
+
+func (a *defaultPublicAddressTranslator) TranslateMember(ctx context.Context, member *pubcluster.MemberInfo) (pubcluster.Address, error) {
+	if addr, ok := member.PublicAddress(); ok {
+		return addr, nil
+	}
+	return "", hzerrors.ErrAddressNotFound
 }

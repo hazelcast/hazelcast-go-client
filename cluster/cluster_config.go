@@ -23,14 +23,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
-const (
-	DefaultHost = "localhost"
-	DefaultPort = 5701
-)
-
 type Config struct {
 	SecurityConfig       SecurityConfig
 	HazelcastCloudConfig HazelcastCloudConfig
+	DiscoveryConfig      DiscoveryConfig
 	Name                 string
 	SSLConfig            SSLConfig
 	Addrs                []string
@@ -54,6 +50,7 @@ func NewConfig() Config {
 		SecurityConfig:       NewSecurityConfig(),
 		SSLConfig:            NewSSLConfig(),
 		HazelcastCloudConfig: NewHazelcastCloudConfig(),
+		DiscoveryConfig:      NewDiscoveryConfig(),
 	}
 }
 
@@ -72,6 +69,7 @@ func (c *Config) Clone() Config {
 		SecurityConfig:       c.SecurityConfig.Clone(),
 		SSLConfig:            c.SSLConfig.Clone(),
 		HazelcastCloudConfig: c.HazelcastCloudConfig.Clone(),
+		DiscoveryConfig:      c.DiscoveryConfig.Clone(),
 	}
 }
 
@@ -103,6 +101,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.HazelcastCloudConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.DiscoveryConfig.Validate(); err != nil {
 		return err
 	}
 	return nil

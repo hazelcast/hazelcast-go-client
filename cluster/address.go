@@ -49,8 +49,3 @@ func (a Address) Port() int {
 func (a Address) String() string {
 	return string(a)
 }
-
-type EndpointQualifier struct {
-	Identifier string
-	Type       int32
-}

@@ -26,10 +26,10 @@ const (
 type MembershipStateChangeHandler func(event MembershipStateChanged)
 
 type MembershipStateChanged struct {
-	Member Member
+	Member MemberInfo
 	State  MembershipState
 }
 
 func (e *MembershipStateChanged) EventName() string {
-	return "internal.cluster.membershipstatechanged"
+	return "cluster.membershipstatechanged"
 }

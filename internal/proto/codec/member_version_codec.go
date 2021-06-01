@@ -16,7 +16,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/cluster"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -33,18 +33,18 @@ type memberversionCodec struct {}
 var MemberVersionCodec memberversionCodec
 */
 
-func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion cluster.MemberVersion) {
+func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion pubcluster.MemberVersion) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberVersionCodecPatchInitialFrameSize))
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.Major())
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset, memberVersion.Minor())
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset, memberVersion.Patch())
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.Major)
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset, memberVersion.Minor)
+	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset, memberVersion.Patch)
 	clientMessage.AddFrame(initialFrame)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) cluster.MemberVersion {
+func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) pubcluster.MemberVersion {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -52,5 +52,5 @@ func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) cluster.Memb
 	minor := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset)
 	patch := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return cluster.NewMemberVersion(major, minor, patch)
+	return NewMemberVersion(major, minor, patch)
 }

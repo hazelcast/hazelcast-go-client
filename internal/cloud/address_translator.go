@@ -44,6 +44,10 @@ func (a *AddressTranslator) Translate(ctx context.Context, address pubcluster.Ad
 	return address, fmt.Errorf("address not found: %s", address.String())
 }
 
+func (a *AddressTranslator) TranslateMember(ctx context.Context, member *pubcluster.MemberInfo) (addr pubcluster.Address, err error) {
+	return member.Address, nil
+}
+
 func (a *AddressTranslator) reload(ctx context.Context) error {
 	addrs, err := a.dc.DiscoverNodes(ctx)
 	if err != nil {

@@ -62,7 +62,6 @@ var ClientVersion = "1.0.0"
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
 	Credentials          security.Credentials
-	AddressTranslator    AddressTranslator
 	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
 	PartitionService     *PartitionService
@@ -108,15 +107,11 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.ClientName == "" {
 		panic("ClientName is blank")
 	}
-	if b.AddressTranslator == nil {
-		panic("AddressTranslator is nil")
-	}
 }
 
 type ConnectionManager struct {
 	logger               ilogger.Logger
 	credentials          security.Credentials
-	addressTranslator    AddressTranslator
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
@@ -164,7 +159,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clientName:           bundle.ClientName,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(),
-		addressTranslator:    bundle.AddressTranslator,
 		smartRouting:         bundle.ClusterConfig.SmartRouting,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
@@ -227,7 +221,7 @@ func (m *ConnectionManager) NextConnectionID() int64 {
 }
 
 func (m *ConnectionManager) GetConnectionForAddress(addr pubcluster.Address) *Connection {
-	return m.connMap.GetConnectionForAddr(addr.String())
+	return m.connMap.GetConnectionForAddr(addr)
 }
 
 func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connection {
@@ -239,7 +233,7 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 	} else if member := m.clusterService.GetMemberByUUID(ownerUUID.String()); nilutil.IsNil(member) {
 		return nil
 	} else {
-		return m.GetConnectionForAddress(member.Address())
+		return m.GetConnectionForAddress(member.Address)
 	}
 }
 
@@ -314,11 +308,11 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) connectCluster() error {
-	candidateAddrs := m.clusterService.memberCandidateAddrs()
-	if len(candidateAddrs) == 0 {
-		return cb.WrapNonRetryableError(errors.New("no member candidate addresses"))
+	seedAddrs := m.clusterService.SeedAddrs()
+	if len(seedAddrs) == 0 {
+		return cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
-	for _, addr := range candidateAddrs {
+	for _, addr := range seedAddrs {
 		if err := m.connectAddr(addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
 		} else {
@@ -336,10 +330,6 @@ func (m *ConnectionManager) connectAddr(addr pubcluster.Address) error {
 func (m *ConnectionManager) ensureConnection(addr pubcluster.Address) (*Connection, error) {
 	if conn := m.getConnection(addr); conn != nil {
 		return conn, nil
-	}
-	addr, err := m.addressTranslator.Translate(context.TODO(), addr)
-	if err != nil {
-		return nil, err
 	}
 	return m.maybeCreateConnection(addr)
 }
@@ -463,9 +453,9 @@ func (m *ConnectionManager) logStatus() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			m.connMap.Info(func(connections map[string]*Connection, connToAddr map[int64]pubcluster.Address) {
+			m.connMap.Info(func(connections map[pubcluster.Address]*Connection, connToAddr map[int64]pubcluster.Address) {
 				m.logger.Debug(func() string {
-					conns := map[string]int{}
+					conns := map[pubcluster.Address]int{}
 					for addr, conn := range connections {
 						conns[addr] = int(conn.connectionID)
 					}
@@ -492,19 +482,11 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			return
 		case <-ticker.C:
 			// TODO: very inefficent, fix this
-			// find and connect the first connection which exists in the cluster but not in the connection manager
-			for _, addrStr := range m.clusterService.MemberAddrs() {
-				if conn := m.connMap.GetConnectionForAddr(addrStr); conn == nil {
-					// try to get the public address for logging purposes
-					ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
-					addr, err := m.addressTranslator.Translate(ctx, pubcluster.Address(addrStr))
-					if err != nil {
-						m.logger.Warnf("cannot translate address: %s", addrStr)
-					} else {
-						m.logger.Infof("found a broken connection to: %s, trying to fix it.", addr)
-					}
-					cancel()
-					if err := m.connectAddr(pubcluster.Address(addrStr)); err != nil {
+			// find connections which exists in the cluster but not in the connection manager
+			for _, addr := range m.clusterService.MemberAddrs() {
+				if conn := m.connMap.GetConnectionForAddr(addr); conn == nil {
+					m.logger.Infof("found a broken connection to: %s, trying to fix it.", addr)
+					if err := m.connectAddr(pubcluster.Address(addr)); err != nil {
 						m.logger.Debug(func() string {
 							return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
 						})
@@ -524,7 +506,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 type connectionMap struct {
 	connectionsMu *sync.RWMutex
 	// addrToConn maps connection address to connection
-	addrToConn map[string]*Connection
+	addrToConn map[pubcluster.Address]*Connection
 	// connToAddr maps connection ID to address
 	connToAddr map[int64]pubcluster.Address
 }
@@ -532,14 +514,14 @@ type connectionMap struct {
 func newConnectionMap() *connectionMap {
 	return &connectionMap{
 		connectionsMu: &sync.RWMutex{},
-		addrToConn:    map[string]*Connection{},
+		addrToConn:    map[pubcluster.Address]*Connection{},
 		connToAddr:    map[int64]pubcluster.Address{},
 	}
 }
 
 func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {
 	m.connectionsMu.Lock()
-	m.addrToConn[addr.String()] = conn
+	m.addrToConn[addr] = conn
 	m.connToAddr[conn.connectionID] = addr
 	m.connectionsMu.Unlock()
 }
@@ -568,7 +550,7 @@ func (m *connectionMap) CloseAll() {
 	m.connectionsMu.RUnlock()
 }
 
-func (m *connectionMap) GetConnectionForAddr(addr string) *Connection {
+func (m *connectionMap) GetConnectionForAddr(addr pubcluster.Address) *Connection {
 	m.connectionsMu.RLock()
 	conn := m.addrToConn[addr]
 	m.connectionsMu.RUnlock()
@@ -603,12 +585,12 @@ func (m *connectionMap) Connections() []*Connection {
 	return conns
 }
 
-func (m *connectionMap) FindAddedAddrs(members []pubcluster.Member) []pubcluster.Address {
+func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo) []pubcluster.Address {
 	m.connectionsMu.RLock()
 	addedAddrs := make([]pubcluster.Address, 0, len(members))
 	for _, member := range members {
-		addr := member.Address()
-		if _, exists := m.addrToConn[addr.String()]; !exists {
+		addr := member.Address
+		if _, exists := m.addrToConn[addr]; !exists {
 			addedAddrs = append(addedAddrs, addr)
 		}
 	}
@@ -616,12 +598,12 @@ func (m *connectionMap) FindAddedAddrs(members []pubcluster.Member) []pubcluster
 	return addedAddrs
 }
 
-func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connection {
+func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Connection {
 	m.connectionsMu.RLock()
 	removedConns := []*Connection{}
 	for _, member := range members {
-		addr := member.Address()
-		if conn, exists := m.addrToConn[addr.String()]; exists {
+		addr := member.Address
+		if conn, exists := m.addrToConn[addr]; exists {
 			removedConns = append(removedConns, conn)
 		}
 	}
@@ -629,7 +611,7 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.Member) []*Connect
 	return removedConns
 }
 
-func (m *connectionMap) Info(infoFun func(connections map[string]*Connection, connToAddr map[int64]pubcluster.Address)) {
+func (m *connectionMap) Info(infoFun func(connections map[pubcluster.Address]*Connection, connToAddr map[int64]pubcluster.Address)) {
 	m.connectionsMu.RLock()
 	infoFun(m.addrToConn, m.connToAddr)
 	m.connectionsMu.RUnlock()

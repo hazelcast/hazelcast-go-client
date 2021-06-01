@@ -384,6 +384,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		PartitionService:  partitionService,
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
+		AddressTranslator: addrTranslator,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
@@ -397,7 +398,6 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
-		AddressTranslator:    addrTranslator,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
@@ -442,6 +442,9 @@ func addressProvider(config *cluster.Config, logger ilogger.Logger) (icluster.Ad
 func addressTranslator(config *cluster.Config, logger ilogger.Logger) icluster.AddressTranslator {
 	if config.HazelcastCloudConfig.Enabled {
 		return cloud.NewAddressTranslator(config, logger)
+	}
+	if config.DiscoveryConfig.UsePublicIP {
+		return icluster.NewDefaultPublicAddressTranslator()
 	}
 	return icluster.NewDefaultAddressTranslator()
 }
