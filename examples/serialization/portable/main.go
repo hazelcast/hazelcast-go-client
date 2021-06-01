@@ -16,6 +16,10 @@
 
 package main
 
+/*
+This sample demonstrates custom portable serialization.
+*/
+
 import (
 	"fmt"
 	"log"
@@ -90,6 +94,7 @@ func (b *BaseObject) ReadPortable(reader serialization.PortableReader) {
 }
 
 func main() {
+	// create the configuration
 	config := hazelcast.NewConfig()
 	config.SerializationConfig.PortableVersion = 1
 	config.SerializationConfig.AddPortableFactory(&MyPortableFactory{})
@@ -97,14 +102,18 @@ func main() {
 	classDefinition.AddStringField("name")
 	classDefinition.AddInt32Field("age")
 	config.SerializationConfig.AddClassDefinition(classDefinition)
+
+	// start the client with the given configuration
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {
 		log.Fatal(err)
 	}
+	// retrieve a map
 	m, err := client.GetMap("example")
 	if err != nil {
 		log.Fatal(err)
 	}
+	// set / get portable serialized value
 	employee := &EmployeePortable{Name: "Jane Doe", Age: 30}
 	if err := m.Set("employee", employee); err != nil {
 		log.Fatal(err)
@@ -114,7 +123,17 @@ func main() {
 	} else {
 		fmt.Println(v)
 	}
-
+	// set / get portable serialized nullable value
+	baseObj := &BaseObject{Employee: employee}
+	if err := m.Set("base-obj", baseObj); err != nil {
+		log.Fatal(err)
+	}
+	if v, err := m.Get("base-obj"); err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println(v)
+	}
+	// stop the client
 	time.Sleep(1 * time.Second)
 	client.Shutdown()
 }
