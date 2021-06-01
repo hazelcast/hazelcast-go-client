@@ -25,15 +25,15 @@ import (
 
 type Config struct {
 	SecurityConfig       SecurityConfig
-	HazelcastCloudConfig HazelcastCloudConfig
-	DiscoveryConfig      DiscoveryConfig
-	Name                 string
 	SSLConfig            SSLConfig
+	Name                 string
+	HazelcastCloudConfig HazelcastCloudConfig
 	Addrs                []string
+	InvocationTimeout    time.Duration
 	HeartbeatInterval    time.Duration
 	HeartbeatTimeout     time.Duration
-	InvocationTimeout    time.Duration
 	ConnectionTimeout    time.Duration
+	DiscoveryConfig      DiscoveryConfig
 	RedoOperation        bool
 	SmartRouting         bool
 }

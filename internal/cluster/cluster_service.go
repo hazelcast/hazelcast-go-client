@@ -31,27 +31,27 @@ import (
 )
 
 type Service struct {
+	membersMap        membersMap
 	logger            ilogger.Logger
-	requestCh         chan<- invocation.Invocation
+	addrTranslator    AddressTranslator
 	doneCh            chan struct{}
-	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
 	config            *pubcluster.Config
-	membersMap        membersMap
+	requestCh         chan<- invocation.Invocation
+	invocationFactory *ConnectionInvocationFactory
 	addrProviders     []AddressProvider
-	addrTranslator    AddressTranslator
 }
 
 type CreationBundle struct {
 	Logger            ilogger.Logger
-	Config            *pubcluster.Config
+	AddressTranslator AddressTranslator
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
+	Config            *pubcluster.Config
 	AddrProviders     []AddressProvider
-	AddressTranslator AddressTranslator
 }
 
 func (b CreationBundle) Check() {
@@ -200,11 +200,11 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
+	addrTranslator   AddressTranslator
 	members          map[string]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]string
 	membersMu        *sync.RWMutex
 	version          int32
-	addrTranslator   AddressTranslator
 }
 
 func newMembersMap(translator AddressTranslator) membersMap {

@@ -327,11 +327,6 @@ func (m *ConnectionManager) connectCluster(ctx context.Context) error {
 	return errors.New("cannot connect to any address in the cluster")
 }
 
-func (m *ConnectionManager) connectAddr(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
-	m.logger.Trace(func() string { return fmt.Sprintf("connectAddr: %s", addr) })
-	return m.ensureConnection(ctx, addr)
-}
-
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
 	if conn := m.getConnection(addr); conn != nil {
 		return conn, nil

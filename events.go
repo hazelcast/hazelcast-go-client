@@ -57,11 +57,11 @@ const (
 
 type EntryNotified struct {
 	MergingValue            interface{}
-	Member                  cluster.MemberInfo
 	Key                     interface{}
 	Value                   interface{}
 	OldValue                interface{}
 	MapName                 string
+	Member                  cluster.MemberInfo
 	NumberOfAffectedEntries int
 	EventType               int32
 }
@@ -124,8 +124,8 @@ func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 type MessagePublished struct {
 	PublishTime time.Time
 	Value       interface{}
-	Member      cluster.MemberInfo
 	TopicName   string
+	Member      cluster.MemberInfo
 }
 
 func (m *MessagePublished) EventName() string {
@@ -155,8 +155,8 @@ type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
 type QueueItemNotified struct {
 	Value     interface{}
-	Member    cluster.MemberInfo
 	QueueName string
+	Member    cluster.MemberInfo
 	EventType ItemEventType
 }
 
@@ -179,8 +179,8 @@ type ListItemNotifiedHandler func(event *ListItemNotified)
 // ListItemNotified describes the List item event.
 type ListItemNotified struct {
 	Value     interface{}
-	Member    cluster.MemberInfo
 	ListName  string
+	Member    cluster.MemberInfo
 	EventType ItemEventType
 }
 
