@@ -40,6 +40,7 @@ type Service struct {
 	config            *pubcluster.Config
 	membersMap        membersMap
 	addrProviders     []AddressProvider
+	addrTranslator    AddressTranslator
 }
 
 type CreationBundle struct {
@@ -92,6 +93,7 @@ func NewServiceImpl(bundle CreationBundle) *Service {
 		logger:            bundle.Logger,
 		membersMap:        newMembersMap(bundle.AddressTranslator),
 		config:            bundle.Config,
+		addrTranslator:    bundle.AddressTranslator,
 	}
 }
 
@@ -100,16 +102,12 @@ func (s *Service) GetMemberByUUID(uuid string) *pubcluster.MemberInfo {
 }
 
 func (s *Service) Start() {
-	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
-	s.eventDispatcher.Subscribe(EventConnectionOpened, subscriptionID, s.handleConnectionOpened)
 	if s.logger.CanLogDebug() {
 		go s.logStatus()
 	}
 }
 
 func (s *Service) Stop() {
-	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
-	s.eventDispatcher.Unsubscribe(EventConnectionOpened, subscriptionID)
 	close(s.doneCh)
 }
 
@@ -125,10 +123,8 @@ func (s *Service) SeedAddrs() []pubcluster.Address {
 	return addrSet.Addrs()
 }
 
-func (s *Service) handleConnectionOpened(event event.Event) {
-	if e, ok := event.(*ConnectionOpened); ok {
-		go s.sendMemberListViewRequest(e.Conn)
-	}
+func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {
+	return s.addrTranslator.TranslateMember(context.TODO(), m)
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
@@ -142,7 +138,7 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 	}
 }
 
-func (s *Service) sendMemberListViewRequest(conn *Connection) {
+func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
@@ -152,9 +148,8 @@ func (s *Service) sendMemberListViewRequest(conn *Connection) {
 		})
 	})
 	s.requestCh <- inv
-	if _, err := inv.Get(); err != nil {
-		s.logger.Error(err)
-	}
+	_, err := inv.GetWithContext(ctx)
+	return err
 }
 
 func (s *Service) logStatus() {
@@ -282,7 +277,6 @@ func (m *membersMap) addMember(memberInfo *pubcluster.MemberInfo) bool {
 	uuid := memberInfo.UUID.String()
 	addr, err := m.addrTranslator.TranslateMember(context.TODO(), memberInfo)
 	if err != nil {
-		// public address not found, use member address
 		addr = memberInfo.Address
 	}
 	if _, uuidFound := m.members[uuid]; uuidFound {

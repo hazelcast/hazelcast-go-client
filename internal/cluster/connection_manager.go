@@ -172,17 +172,21 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	if !atomic.CompareAndSwapInt32(&m.state, created, starting) {
 		return nil
 	}
-	if _, err := m.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
-		err := m.connectCluster()
+	return m.start(context.TODO(), timeout)
+}
+
+func (m *ConnectionManager) start(ctx context.Context, timeout time.Duration) error {
+	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
+	_, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		err := m.connectCluster(ctx)
 		if err != nil {
 			m.logger.Errorf("error starting: %w", err)
 		}
 		return nil, err
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
-	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
-	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
 	// wait for the initial member list
 	select {
 	case <-m.startCh:
@@ -199,6 +203,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 		go m.logStatus()
 	}
 	atomic.StoreInt32(&m.state, ready)
+	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
 	m.eventDispatcher.Publish(NewConnected())
 	return nil
 }
@@ -248,7 +253,7 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
 	m.handleMembersAdded(e)
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersAdded)
-	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersRemoved)
+	m.eventDispatcher.Subscribe(EventMembersRemoved, event.DefaultSubscriptionID, m.handleMembersRemoved)
 	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleInitialMembersAdded))
 	close(m.startCh)
 }
@@ -258,11 +263,11 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	if !m.smartRouting && m.connMap.Len() > 0 {
 		return
 	}
-	if memberAddedEvent, ok := event.(*MembersAdded); ok {
-		missingAddrs := m.connMap.FindAddedAddrs(memberAddedEvent.Members)
+	if e, ok := event.(*MembersAdded); ok {
+		missingAddrs := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
 		for _, addr := range missingAddrs {
-			if err := m.connectAddr(addr); err != nil {
-				m.logger.Errorf("error connecting addr: %w", err)
+			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
+				m.logger.Errorf("connecting addr: %w", err)
 			} else {
 				m.logger.Infof("connectionManager member added: %s", addr.String())
 			}
@@ -271,8 +276,8 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	if memberRemovedEvent, ok := event.(MembersRemoved); ok {
-		removedConns := m.connMap.FindRemovedConns(memberRemovedEvent.Members)
+	if e, ok := event.(MembersRemoved); ok {
+		removedConns := m.connMap.FindRemovedConns(e.Members)
 		for _, conn := range removedConns {
 			m.removeConnection(conn)
 		}
@@ -283,16 +288,16 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
-	if connectionClosedEvent, ok := event.(*ConnectionClosed); ok {
+	if e, ok := event.(*ConnectionClosed); ok {
 		respawnConnection := false
-		if err := connectionClosedEvent.Err; err != nil {
+		if err := e.Err; err != nil {
 			respawnConnection = true
 		}
-		conn := connectionClosedEvent.Conn
+		conn := e.Conn
 		m.removeConnection(conn)
 		if respawnConnection {
 			if addr, ok := m.connMap.GetAddrForConnectionID(conn.connectionID); ok {
-				if err := m.connectAddr(addr); err != nil {
+				if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
 					m.logger.Errorf("error connecting addr: %w", err)
 					// TODO: add failing addrs to a channel
 				}
@@ -307,39 +312,38 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 	}
 }
 
-func (m *ConnectionManager) connectCluster() error {
+func (m *ConnectionManager) connectCluster(ctx context.Context) error {
 	seedAddrs := m.clusterService.SeedAddrs()
 	if len(seedAddrs) == 0 {
 		return cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
 	for _, addr := range seedAddrs {
-		if err := m.connectAddr(addr); err != nil {
+		if conn, err := m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
 		} else {
-			return nil
+			return m.clusterService.sendMemberListViewRequest(ctx, conn)
 		}
 	}
 	return errors.New("cannot connect to any address in the cluster")
 }
 
-func (m *ConnectionManager) connectAddr(addr pubcluster.Address) error {
+func (m *ConnectionManager) connectAddr(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
 	m.logger.Trace(func() string { return fmt.Sprintf("connectAddr: %s", addr) })
-	_, err := m.ensureConnection(addr)
-	return err
+	return m.ensureConnection(ctx, addr)
 }
 
-func (m *ConnectionManager) ensureConnection(addr pubcluster.Address) (*Connection, error) {
+func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
 	if conn := m.getConnection(addr); conn != nil {
 		return conn, nil
 	}
-	return m.maybeCreateConnection(addr)
+	return m.maybeCreateConnection(ctx, addr)
 }
 
 func (m *ConnectionManager) getConnection(addr pubcluster.Address) *Connection {
 	return m.GetConnectionForAddress(addr)
 }
 
-func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Connection, error) {
+func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection(addr)
 	if err := conn.Start(m.clusterConfig); err != nil {
@@ -393,13 +397,13 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.endpoint.Store(address)
-		m.connMap.AddConnection(conn, *address)
+		m.connMap.AddConnection(conn, conn.addr)
 		// TODO: detect cluster change
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return err
 		}
 		m.logger.Debug(func() string {
-			return fmt.Sprintf("opened connection to: %s", address)
+			return fmt.Sprintf("opened connection to: %s", conn.addr)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
@@ -494,7 +498,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			for _, addr := range m.clusterService.MemberAddrs() {
 				if conn := m.connMap.GetConnectionForAddr(addr); conn == nil {
 					m.logger.Infof("found a broken connection to: %s, trying to fix it.", addr)
-					if err := m.connectAddr(addr); err != nil {
+					if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
 						m.logger.Debug(func() string {
 							return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
 						})
@@ -503,7 +507,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			}
 			if m.connMap.Len() == 0 {
 				// if there are no connections, try to connect to seeds
-				if err := m.connectCluster(); err != nil {
+				if err := m.connectCluster(context.TODO()); err != nil {
 					m.logger.Errorf("while trying to fix cluster connection: %w", err)
 				}
 			}
@@ -593,11 +597,14 @@ func (m *connectionMap) Connections() []*Connection {
 	return conns
 }
 
-func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo) []pubcluster.Address {
+func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Service) []pubcluster.Address {
 	m.connectionsMu.RLock()
 	addedAddrs := make([]pubcluster.Address, 0, len(members))
 	for _, member := range members {
-		addr := member.Address
+		addr, err := cs.MemberAddr(&member)
+		if err != nil {
+			continue
+		}
 		if _, exists := m.addrToConn[addr]; !exists {
 			addedAddrs = append(addedAddrs, addr)
 		}
