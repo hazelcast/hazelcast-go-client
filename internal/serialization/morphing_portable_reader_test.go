@@ -752,7 +752,7 @@ func TestMorphingPortableReader_ReadFloat64WithIncompatibleClassChangeError(t *t
 	}
 }
 
-func TestMorphingPortableReader_ReadUTF(t *testing.T) {
+func TestMorphingPortableReader_ReadString(t *testing.T) {
 	var expectedRet = "Furkan"
 	classDef := serialization.NewClassDefinition(1, 2, 3)
 	classDef.AddField(serialization.NewFieldDefinition(0, "engineer", serialization.TypeString,
@@ -769,7 +769,7 @@ func TestMorphingPortableReader_ReadUTF(t *testing.T) {
 	}
 }
 
-func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
+func TestMorphingPortableReader_ReadStringWithEmptyFieldName(t *testing.T) {
 	var value = "Furkan"
 	var expectedRet string
 	classDef := serialization.NewClassDefinition(1, 2, 3)
@@ -787,7 +787,7 @@ func TestMorphingPortableReader_ReadUTFWithEmptyFieldName(t *testing.T) {
 	}
 }
 
-func TestMorphingPortableReader_ReadUTFWithIncompatibleClassChangeError(t *testing.T) {
+func TestMorphingPortableReader_ReadStringWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet int16 = 12
 		classDef := serialization.NewClassDefinition(1, 2, 3)
@@ -1320,7 +1320,7 @@ func TestMorphingPortableReader_ReadFloat64ArrayWithIncompatibleClassChangeError
 	}
 }
 
-func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
+func TestMorphingPortableReader_ReadStringArray(t *testing.T) {
 	var expectedRet = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	classDef := serialization.NewClassDefinition(1, 2, 3)
 	classDef.AddField(serialization.NewFieldDefinition(0, "words", serialization.TypeStringArray,
@@ -1338,7 +1338,7 @@ func TestMorphingPortableReader_ReadUTFArray(t *testing.T) {
 	}
 }
 
-func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
+func TestMorphingPortableReader_ReadStringArrayWithEmptyFieldName(t *testing.T) {
 	var value = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	var expectedRet []string
 	classDef := serialization.NewClassDefinition(1, 2, 3)
@@ -1357,7 +1357,7 @@ func TestMorphingPortableReader_ReadUTFArrayWithEmptyFieldName(t *testing.T) {
 	}
 }
 
-func TestMorphingPortableReader_ReadUTFArrayWithIncompatibleClassChangeError(t *testing.T) {
+func TestMorphingPortableReader_ReadStringArrayWithIncompatibleClassChangeError(t *testing.T) {
 	err := captureErr(func() {
 		var expectedRet = []float64{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
 		classDef := serialization.NewClassDefinition(1, 2, 3)

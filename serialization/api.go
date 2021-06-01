@@ -250,7 +250,7 @@ type DataInput interface {
 	// It returns nil if an error is set previously.
 	ReadFloat64Array() []float64
 
-	// ReadUTFArray returns []string read.
+	// ReadStringArray returns []string read.
 	// It returns nil if an error is set previously.
 	ReadStringArray() []string
 }

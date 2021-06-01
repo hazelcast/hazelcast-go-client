@@ -177,10 +177,10 @@ func (pr *DefaultPortableReader) readFloat64(fieldName string) float64 {
 }
 
 func (pr *DefaultPortableReader) ReadString(fieldName string) string {
-	return pr.readUTF(fieldName)
+	return pr.readString(fieldName)
 }
 
-func (pr *DefaultPortableReader) readUTF(fieldName string) string {
+func (pr *DefaultPortableReader) readString(fieldName string) string {
 	pos := pr.positionByField(fieldName, serialization.TypeString)
 	return pr.input.(*ObjectDataInput).ReadStringAtPosition(pos)
 }
@@ -276,10 +276,10 @@ func (pr *DefaultPortableReader) readFloat64Array(fieldName string) []float64 {
 }
 
 func (pr *DefaultPortableReader) ReadStringArray(fieldName string) []string {
-	return pr.readUTFArray(fieldName)
+	return pr.readStringArray(fieldName)
 }
 
-func (pr *DefaultPortableReader) readUTFArray(fieldName string) []string {
+func (pr *DefaultPortableReader) readStringArray(fieldName string) []string {
 	pos := pr.positionByField(fieldName, serialization.TypeStringArray)
 	return pr.input.(*ObjectDataInput).ReadStringArrayAtPosition(pos)
 }

@@ -160,7 +160,7 @@ func TestDefaultPortableReader_ReadFloat64(t *testing.T) {
 	}
 }
 
-func TestDefaultPortableReader_ReadUTF(t *testing.T) {
+func TestDefaultPortableReader_ReadString(t *testing.T) {
 	var expectedRet string
 	classDef := serialization.NewClassDefinition(1, 2, 3)
 	classDef.AddField(serialization.NewFieldDefinition(0, "engineer", serialization.TypeString,
@@ -371,7 +371,7 @@ func TestDefaultPortableReader_ReadFloat64Array(t *testing.T) {
 	}
 }
 
-func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
+func TestDefaultPortableReader_ReadStringArray(t *testing.T) {
 	var expectedRet = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
 	classDef := serialization.NewClassDefinition(1, 2, 3)
 	classDef.AddField(serialization.NewFieldDefinition(0, "words", serialization.TypeStringArray,
