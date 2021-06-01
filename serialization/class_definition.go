@@ -79,12 +79,12 @@ func (cd *ClassDefinition) AddPortableField(fieldName string, def *ClassDefiniti
 	if def.ClassID == 0 {
 		return hzerrors.NewHazelcastIllegalArgumentError("Portable class ID cannot be zero", nil)
 	}
-	cd.AddField(NewFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
+	cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
 	return nil
 }
 
 func (cd *ClassDefinition) addNewFieldDefinition(fieldName string, fieldType int32) {
-	cd.AddField(NewFieldDefinition(int32(len(cd.Fields)), fieldName, fieldType, 0, 0, cd.Version))
+	cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, fieldType, 0, 0, cd.Version))
 }
 
 func (cd *ClassDefinition) AddByteArrayField(fieldName string) {
@@ -123,7 +123,7 @@ func (cd *ClassDefinition) AddPortableArrayField(fieldName string, def *ClassDef
 	if def.ClassID == 0 {
 		return hzerrors.NewHazelcastIllegalArgumentError("Portable class ID cannot be zero", nil)
 	}
-	cd.AddField(NewFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
+	cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
 	return nil
 }
 
@@ -164,7 +164,7 @@ type FieldDefinition struct {
 	Version   int32
 }
 
-func NewFieldDefinition(index int32, fieldName string, fieldType int32, factoryID int32,
+func newFieldDefinition(index int32, fieldName string, fieldType int32, factoryID int32,
 	classID int32, version int32) FieldDefinition {
 	return FieldDefinition{
 		Index:     index,

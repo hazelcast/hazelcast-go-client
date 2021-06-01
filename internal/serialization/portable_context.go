@@ -86,7 +86,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 				register = false
 			}
 		}
-		classDef.AddField(serialization.NewFieldDefinition(i, name, fieldType, fieldFactoryID, fieldClassID, fieldVersion))
+		classDef.AddField(NewFieldDefinition(i, name, fieldType, fieldFactoryID, fieldClassID, fieldVersion))
 	}
 	if register {
 		if err = c.RegisterClassDefinition(classDef); err != nil {
