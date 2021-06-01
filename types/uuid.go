@@ -23,30 +23,26 @@ import (
 	"io"
 )
 
-type UUID [16]byte
+type UUID struct {
+	mostSigBits  uint64
+	leastSigBits uint64
+}
 
-// NilUUID is empty UUID, all zeros
-var NilUUID UUID
-
-// NewUUID is used to generate a random UUID
+// NewUUID is used to generate a random UUID v4 using rand.Reader as the CSRNG.
 func NewUUID() UUID {
-	var uuid UUID
-	if _, err := io.ReadFull(rand.Reader, uuid[:]); err != nil {
-		panic(err)
-	}
-	uuid[6] &= 0x0f // clear version
-	uuid[6] |= 0x40 // set to version 4
-	uuid[8] &= 0x3f // clear variant
-	uuid[8] |= 0x80 // set to IETF variant
+	buf := make([]byte, 16)
+	_, _ = io.ReadFull(rand.Reader, buf)
+	buf[6] &= 0x0f // clear version
+	buf[6] |= 0x40 // set to version 4
+	buf[8] &= 0x3f // clear variant
+	buf[8] |= 0x80 // set to IETF variant
 
-	return uuid
+	return UUID{binary.BigEndian.Uint64(buf[0:8]),
+		binary.BigEndian.Uint64(buf[8:])}
 }
 
 func NewUUIDWith(mostSigBits, leastSigBits uint64) UUID {
-	var uuid UUID
-	binary.BigEndian.PutUint64(uuid[0:8], mostSigBits)
-	binary.BigEndian.PutUint64(uuid[8:16], leastSigBits)
-	return uuid
+	return UUID{mostSigBits, leastSigBits}
 }
 
 func (u UUID) String() string {
@@ -54,27 +50,30 @@ func (u UUID) String() string {
 }
 
 func (u UUID) MostSignificantBits() uint64 {
-	return binary.BigEndian.Uint64(u[0:8])
+	return u.mostSigBits
 }
 
 func (u UUID) LeastSignificantBits() uint64 {
-	return binary.BigEndian.Uint64(u[8:16])
+	return u.leastSigBits
 }
 
 func (u UUID) Default() bool {
-	return u.MostSignificantBits() == 0 && u.LeastSignificantBits() == 0
+	return u.mostSigBits == 0 && u.leastSigBits == 0
 }
 
 func (u UUID) marshalText() []byte {
+	data := make([]byte, 16)
+	binary.BigEndian.PutUint64(data[0:8], u.mostSigBits)
+	binary.BigEndian.PutUint64(data[8:16], u.leastSigBits)
 	dst := make([]byte, 36)
-	hex.Encode(dst, u[:4])
+	hex.Encode(dst, data[:4])
 	dst[8] = '-'
-	hex.Encode(dst[9:13], u[4:6])
+	hex.Encode(dst[9:13], data[4:6])
 	dst[13] = '-'
-	hex.Encode(dst[14:18], u[6:8])
+	hex.Encode(dst[14:18], data[6:8])
 	dst[18] = '-'
-	hex.Encode(dst[19:23], u[8:10])
+	hex.Encode(dst[19:23], data[8:10])
 	dst[23] = '-'
-	hex.Encode(dst[24:], u[10:])
+	hex.Encode(dst[24:], data[10:])
 	return dst
 }

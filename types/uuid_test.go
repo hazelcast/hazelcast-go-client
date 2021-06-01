@@ -47,6 +47,6 @@ func TestClient_String(t *testing.T) {
 }
 
 func TestClient_NilUUID(t *testing.T) {
-	assert.Equal(t, "00000000-0000-0000-0000-000000000000", types.NilUUID.String())
-	assert.True(t, types.NilUUID.Default())
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", types.UUID{}.String())
+	assert.True(t, types.UUID{}.Default())
 }
