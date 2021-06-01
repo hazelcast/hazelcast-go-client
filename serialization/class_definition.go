@@ -83,7 +83,7 @@ func (cd *ClassDefinition) AddPortableField(fieldName string, def *ClassDefiniti
 	return nil
 }
 
-func (cd *ClassDefinition) addNewFieldDefinition(fieldName string, fieldType int32) {
+func (cd *ClassDefinition) addNewFieldDefinition(fieldName string, fieldType FieldDefinitionType) {
 	cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, fieldType, 0, 0, cd.Version))
 }
 
@@ -131,8 +131,10 @@ func (cd *ClassDefinition) AddStringArrayField(fieldName string) {
 	cd.addNewFieldDefinition(fieldName, TypeStringArray)
 }
 
+type FieldDefinitionType int32
+
 const (
-	TypePortable int32 = iota
+	TypePortable FieldDefinitionType = iota
 	TypeByte
 	TypeBool
 	TypeUint16
@@ -158,14 +160,13 @@ const (
 type FieldDefinition struct {
 	Name      string
 	Index     int32
-	Type      int32
+	Type      FieldDefinitionType
 	FactoryID int32
 	ClassID   int32
 	Version   int32
 }
 
-func newFieldDefinition(index int32, fieldName string, fieldType int32, factoryID int32,
-	classID int32, version int32) FieldDefinition {
+func newFieldDefinition(index int32, fieldName string, fieldType FieldDefinitionType, factoryID int32, classID int32, version int32) FieldDefinition {
 	return FieldDefinition{
 		Index:     index,
 		Name:      fieldName,

@@ -43,47 +43,47 @@ func NewDefaultPortableWriter(serializer *PortableSerializer, output *Positional
 }
 
 func (pw *DefaultPortableWriter) WriteByte(fieldName string, value byte) {
-	pw.setPosition(fieldName, serialization.TypeByte)
+	pw.setPosition(fieldName, int32(serialization.TypeByte))
 	pw.output.WriteByte(value)
 }
 
 func (pw *DefaultPortableWriter) WriteBool(fieldName string, value bool) {
-	pw.setPosition(fieldName, serialization.TypeBool)
+	pw.setPosition(fieldName, int32(serialization.TypeBool))
 	pw.output.WriteBool(value)
 }
 
 func (pw *DefaultPortableWriter) WriteUInt16(fieldName string, value uint16) {
-	pw.setPosition(fieldName, serialization.TypeUint16)
+	pw.setPosition(fieldName, int32(serialization.TypeUint16))
 	pw.output.WriteUInt16(value)
 }
 
 func (pw *DefaultPortableWriter) WriteInt16(fieldName string, value int16) {
-	pw.setPosition(fieldName, serialization.TypeInt16)
+	pw.setPosition(fieldName, int32(serialization.TypeInt16))
 	pw.output.WriteInt16(value)
 }
 
 func (pw *DefaultPortableWriter) WriteInt32(fieldName string, value int32) {
-	pw.setPosition(fieldName, serialization.TypeInt32)
+	pw.setPosition(fieldName, int32(serialization.TypeInt32))
 	pw.output.WriteInt32(value)
 }
 
 func (pw *DefaultPortableWriter) WriteInt64(fieldName string, value int64) {
-	pw.setPosition(fieldName, serialization.TypeInt64)
+	pw.setPosition(fieldName, int32(serialization.TypeInt64))
 	pw.output.WriteInt64(value)
 }
 
 func (pw *DefaultPortableWriter) WriteFloat32(fieldName string, value float32) {
-	pw.setPosition(fieldName, serialization.TypeFloat32)
+	pw.setPosition(fieldName, int32(serialization.TypeFloat32))
 	pw.output.WriteFloat32(value)
 }
 
 func (pw *DefaultPortableWriter) WriteFloat64(fieldName string, value float64) {
-	pw.setPosition(fieldName, serialization.TypeFloat64)
+	pw.setPosition(fieldName, int32(serialization.TypeFloat64))
 	pw.output.WriteFloat64(value)
 }
 
 func (pw *DefaultPortableWriter) WriteString(fieldName string, value string) {
-	pw.setPosition(fieldName, serialization.TypeString)
+	pw.setPosition(fieldName, int32(serialization.TypeString))
 	pw.output.WriteString(value)
 }
 
@@ -92,7 +92,7 @@ func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serial
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
-	pw.setPosition(fieldName, serialization.TypePortable)
+	pw.setPosition(fieldName, int32(serialization.TypePortable))
 	isNullPortable := portable == nil
 	pw.output.WriteBool(isNullPortable)
 	pw.output.WriteInt32(fieldDefinition.FactoryID)
@@ -103,54 +103,54 @@ func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serial
 }
 
 func (pw *DefaultPortableWriter) WriteNilPortable(fieldName string, factoryID int32, classID int32) {
-	pw.setPosition(fieldName, serialization.TypePortable)
+	pw.setPosition(fieldName, int32(serialization.TypePortable))
 	pw.output.WriteBool(true)
 	pw.output.WriteInt32(factoryID)
 	pw.output.WriteInt32(classID)
 }
 
 func (pw *DefaultPortableWriter) WriteByteArray(fieldName string, array []byte) {
-	pw.setPosition(fieldName, serialization.TypeByteArray)
+	pw.setPosition(fieldName, int32(serialization.TypeByteArray))
 	pw.output.WriteByteArray(array)
 }
 
 func (pw *DefaultPortableWriter) WriteBoolArray(fieldName string, array []bool) {
-	pw.setPosition(fieldName, serialization.TypeBoolArray)
+	pw.setPosition(fieldName, int32(serialization.TypeBoolArray))
 	pw.output.WriteBoolArray(array)
 }
 
 func (pw *DefaultPortableWriter) WriteUInt16Array(fieldName string, array []uint16) {
-	pw.setPosition(fieldName, serialization.TypeUInt16Array)
+	pw.setPosition(fieldName, int32(serialization.TypeUInt16Array))
 	pw.output.WriteUInt16Array(array)
 }
 
 func (pw *DefaultPortableWriter) WriteInt16Array(fieldName string, array []int16) {
-	pw.setPosition(fieldName, serialization.TypeInt16Array)
+	pw.setPosition(fieldName, int32(serialization.TypeInt16Array))
 	pw.output.WriteInt16Array(array)
 }
 
 func (pw *DefaultPortableWriter) WriteInt32Array(fieldName string, array []int32) {
-	pw.setPosition(fieldName, serialization.TypeInt32Array)
+	pw.setPosition(fieldName, int32(serialization.TypeInt32Array))
 	pw.output.WriteInt32Array(array)
 }
 
 func (pw *DefaultPortableWriter) WriteInt64Array(fieldName string, array []int64) {
-	pw.setPosition(fieldName, serialization.TypeInt64Array)
+	pw.setPosition(fieldName, int32(serialization.TypeInt64Array))
 	pw.output.WriteInt64Array(array)
 }
 
 func (pw *DefaultPortableWriter) WriteFloat32Array(fieldName string, array []float32) {
-	pw.setPosition(fieldName, serialization.TypeFloat32Array)
+	pw.setPosition(fieldName, int32(serialization.TypeFloat32Array))
 	pw.output.WriteFloat32Array(array)
 }
 
 func (pw *DefaultPortableWriter) WriteFloat64Array(fieldName string, array []float64) {
-	pw.setPosition(fieldName, serialization.TypeFloat64Array)
+	pw.setPosition(fieldName, int32(serialization.TypeFloat64Array))
 	pw.output.WriteFloat64Array(array)
 }
 
 func (pw *DefaultPortableWriter) WriteStringArray(fieldName string, array []string) {
-	pw.setPosition(fieldName, serialization.TypeStringArray)
+	pw.setPosition(fieldName, int32(serialization.TypeStringArray))
 	pw.output.WriteStringArray(array)
 }
 
@@ -159,7 +159,7 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
-	pw.setPosition(fieldName, serialization.TypePortableArray)
+	pw.setPosition(fieldName, int32(serialization.TypePortableArray))
 	length := len(portableArray)
 	if portableArray == nil {
 		length = nilArrayLength

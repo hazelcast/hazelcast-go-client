@@ -300,12 +300,12 @@ func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []seriali
 }
 
 func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd *serialization.FieldDefinition,
-	expectedType int32) error {
+	expectedType serialization.FieldDefinitionType) error {
 	return hzerrors.NewHazelcastSerializationError(fmt.Sprintf("incompatible to read %v from %v while reading field : %v",
 		TypeByID(expectedType), TypeByID(fd.Type), fd.Name), nil)
 }
 
-func (mpr *MorphingPortableReader) validateTypeCompatibility(fd *serialization.FieldDefinition, expectedType int32) error {
+func (mpr *MorphingPortableReader) validateTypeCompatibility(fd *serialization.FieldDefinition, expectedType serialization.FieldDefinitionType) error {
 	if fd.Type != expectedType {
 		return mpr.createIncompatibleClassChangeError(fd, expectedType)
 	}

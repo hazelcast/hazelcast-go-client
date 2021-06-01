@@ -56,7 +56,7 @@ func (c *PortableContext) ReadClassDefinitionFromInput(input serialization.DataI
 			char := input.ReadByte()
 			temp[i] = int32(char)
 		}
-		fieldType := int32(input.ReadByte())
+		fieldType := serialization.FieldDefinitionType(input.ReadByte())
 		name := string(temp)
 		var fieldFactoryID int32
 		var fieldClassID int32

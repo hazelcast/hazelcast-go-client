@@ -45,7 +45,7 @@ func NewDefaultPortableReader(serializer *PortableSerializer, input serializatio
 	}
 }
 
-func TypeByID(fieldType int32) string {
+func TypeByID(fieldType serialization.FieldDefinitionType) string {
 	switch t := fieldType; t {
 	case serialization.TypePortable:
 		return "Portable"
@@ -91,7 +91,7 @@ func TypeByID(fieldType int32) string {
 	return "UNKNOWN"
 }
 
-func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int32) int32 {
+func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType serialization.FieldDefinitionType) int32 {
 	field, ok := pr.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
