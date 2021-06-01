@@ -323,6 +323,7 @@ func (m *ConnectionManager) connectCluster() error {
 }
 
 func (m *ConnectionManager) connectAddr(addr pubcluster.Address) error {
+	m.logger.Trace(func() string { return fmt.Sprintf("connectAddr: %s", addr) })
 	_, err := m.ensureConnection(addr)
 	return err
 }
@@ -340,8 +341,8 @@ func (m *ConnectionManager) getConnection(addr pubcluster.Address) *Connection {
 
 func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Connection, error) {
 	// TODO: check whether we can create a connection
-	conn := m.createDefaultConnection()
-	if err := conn.start(m.clusterConfig, addr); err != nil {
+	conn := m.createDefaultConnection(addr)
+	if err := conn.Start(m.clusterConfig); err != nil {
 		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
 		conn.close(nil)
@@ -350,7 +351,7 @@ func (m *ConnectionManager) maybeCreateConnection(addr pubcluster.Address) (*Con
 	return conn, nil
 }
 
-func (m *ConnectionManager) createDefaultConnection() *Connection {
+func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Connection {
 	return &Connection{
 		responseCh:      m.responseCh,
 		pending:         make(chan *proto.ClientMessage, 1024),
@@ -361,19 +362,24 @@ func (m *ConnectionManager) createDefaultConnection() *Connection {
 		status:          0,
 		logger:          m.logger,
 		clusterConfig:   m.clusterConfig,
+		addr:            addr,
 	}
 }
 
-func (m *ConnectionManager) authenticate(connection *Connection) error {
-	m.credentials.SetEndpoint(connection.socket.LocalAddr().String())
+func (m *ConnectionManager) authenticate(conn *Connection) error {
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("authenticate: local: %s; remote: %s; addr: %s",
+			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.addr)
+	})
+	m.credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, connection, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, nil)
 	select {
 	case m.requestCh <- inv:
-		if result, err := inv.Get(); err != nil {
+		if result, err := inv.GetWithContext(context.TODO()); err != nil {
 			return err
 		} else {
-			return m.processAuthenticationResult(connection, result)
+			return m.processAuthenticationResult(conn, result)
 		}
 	case <-m.doneCh:
 		return errors.New("done")
@@ -392,7 +398,9 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return err
 		}
-		m.logger.Infof("opened connection to: %s", address)
+		m.logger.Debug(func() string {
+			return fmt.Sprintf("opened connection to: %s", address)
+		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
 		return hzerrors.NewHazelcastAuthenticationError("invalid credentials", nil)
@@ -486,7 +494,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			for _, addr := range m.clusterService.MemberAddrs() {
 				if conn := m.connMap.GetConnectionForAddr(addr); conn == nil {
 					m.logger.Infof("found a broken connection to: %s, trying to fix it.", addr)
-					if err := m.connectAddr(pubcluster.Address(addr)); err != nil {
+					if err := m.connectAddr(addr); err != nil {
 						m.logger.Debug(func() string {
 							return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
 						})

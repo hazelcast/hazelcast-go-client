@@ -66,14 +66,19 @@ type Connection struct {
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
+	addr                      pubcluster.Address
 }
 
 func (c *Connection) ConnectionID() int64 {
 	return c.connectionID
 }
 
-func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
-	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
+func (c *Connection) LocalAddr() string {
+	return c.socket.LocalAddr().String()
+}
+
+func (c *Connection) Start(clusterCfg *pubcluster.Config) error {
+	if socket, err := c.createSocket(clusterCfg, c.addr); err != nil {
 		return err
 	} else {
 		c.socket = socket
