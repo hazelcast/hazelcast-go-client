@@ -28,6 +28,7 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type Service struct {
@@ -97,7 +98,7 @@ func NewServiceImpl(bundle CreationBundle) *Service {
 	}
 }
 
-func (s *Service) GetMemberByUUID(uuid string) *pubcluster.MemberInfo {
+func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 	return s.membersMap.Find(uuid)
 }
 
@@ -160,9 +161,9 @@ func (s *Service) logStatus() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			s.membersMap.Info(func(members map[string]*pubcluster.MemberInfo) {
+			s.membersMap.Info(func(members map[types.UUID]*pubcluster.MemberInfo) {
 				s.logger.Trace(func() string {
-					mems := map[string]pubcluster.Address{}
+					mems := map[types.UUID]pubcluster.Address{}
 					for uuid, member := range members {
 						mems[uuid] = member.Address
 					}
@@ -201,16 +202,16 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 
 type membersMap struct {
 	addrTranslator   AddressTranslator
-	members          map[string]*pubcluster.MemberInfo
-	addrToMemberUUID map[pubcluster.Address]string
+	members          map[types.UUID]*pubcluster.MemberInfo
+	addrToMemberUUID map[pubcluster.Address]types.UUID
 	membersMu        *sync.RWMutex
 	version          int32
 }
 
 func newMembersMap(translator AddressTranslator) membersMap {
 	return membersMap{
-		members:          map[string]*pubcluster.MemberInfo{},
-		addrToMemberUUID: map[pubcluster.Address]string{},
+		members:          map[types.UUID]*pubcluster.MemberInfo{},
+		addrToMemberUUID: map[pubcluster.Address]types.UUID{},
 		membersMu:        &sync.RWMutex{},
 		version:          -1,
 		addrTranslator:   translator,
@@ -221,17 +222,17 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
-		newUUIDs := map[string]struct{}{}
+		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
 			if m.addMember(&member) {
 				added = append(added, member)
 			}
-			newUUIDs[member.UUID.String()] = struct{}{}
+			newUUIDs[member.UUID] = struct{}{}
 		}
 		removed = []pubcluster.MemberInfo{}
 		for _, member := range m.members {
-			if _, ok := newUUIDs[member.UUID.String()]; !ok {
+			if _, ok := newUUIDs[member.UUID]; !ok {
 				m.removeMember(member)
 				removed = append(removed, *member)
 			}
@@ -240,7 +241,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	return
 }
 
-func (m *membersMap) Find(uuid string) *pubcluster.MemberInfo {
+func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	m.membersMu.RLock()
 	member := m.members[uuid]
 	m.membersMu.RUnlock()
@@ -255,7 +256,7 @@ func (m *membersMap) RemoveMembersWithAddr(addr pubcluster.Address) {
 	m.membersMu.Unlock()
 }
 
-func (m *membersMap) Info(infoFun func(members map[string]*pubcluster.MemberInfo)) {
+func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.MemberInfo)) {
 	m.membersMu.RLock()
 	infoFun(m.members)
 	m.membersMu.RUnlock()
@@ -274,7 +275,7 @@ func (m *membersMap) MemberAddrs() []pubcluster.Address {
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
 // If memberinfo already exists returns false.
 func (m *membersMap) addMember(memberInfo *pubcluster.MemberInfo) bool {
-	uuid := memberInfo.UUID.String()
+	uuid := memberInfo.UUID
 	addr, err := m.addrTranslator.TranslateMember(context.TODO(), memberInfo)
 	if err != nil {
 		addr = memberInfo.Address
@@ -291,6 +292,6 @@ func (m *membersMap) addMember(memberInfo *pubcluster.MemberInfo) bool {
 }
 
 func (m *membersMap) removeMember(member *pubcluster.MemberInfo) {
-	delete(m.members, member.UUID.String())
+	delete(m.members, member.UUID)
 	delete(m.addrToMemberUUID, member.Address)
 }

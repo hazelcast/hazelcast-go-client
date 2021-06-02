@@ -233,9 +233,9 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 	if partitionID < 0 {
 		panic("partition ID is negative")
 	}
-	if ownerUUID := m.partitionService.GetPartitionOwner(partitionID); ownerUUID == nil {
+	if ownerUUID, ok := m.partitionService.GetPartitionOwner(partitionID); !ok {
 		return nil
-	} else if member := m.clusterService.GetMemberByUUID(ownerUUID.String()); nilutil.IsNil(member) {
+	} else if member := m.clusterService.GetMemberByUUID(ownerUUID); nilutil.IsNil(member) {
 		return nil
 	} else {
 		return m.GetConnectionForAddress(member.Address)
@@ -355,7 +355,6 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 		responseCh:      m.responseCh,
 		pending:         make(chan *proto.ClientMessage, 1024),
 		doneCh:          make(chan struct{}),
-		writeBuffer:     make([]byte, bufferSize),
 		connectionID:    m.NextConnectionID(),
 		eventDispatcher: m.eventDispatcher,
 		status:          0,

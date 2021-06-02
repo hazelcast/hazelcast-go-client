@@ -439,6 +439,7 @@ func TestFixSizedTypesCodec_DecodeUUID(t *testing.T) {
 
 	//then
 	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), false)
+	assert.Equal(t, uuid, decodeUUID)
 	assert.Equal(t, uuid.String(), decodeUUID.String())
 	assert.Equal(t, uuid.MostSignificantBits(), decodeUUID.MostSignificantBits())
 	assert.Equal(t, uuid.LeastSignificantBits(), decodeUUID.LeastSignificantBits())
