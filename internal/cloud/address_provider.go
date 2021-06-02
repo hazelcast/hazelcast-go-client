@@ -16,19 +16,25 @@ func NewAddressProvider(config *pubcluster.Config, logger logger.Logger) (*Addre
 	dc := NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
 	if addrs, err := dc.DiscoverNodes(context.Background()); err != nil {
 		return nil, err
+	} else if pubAddrs, err := translateAddrs(addrs); err != nil {
+		return nil, err
 	} else {
-		pubAddrs := make([]pubcluster.Address, len(addrs))
-		for i, addr := range addrs {
-			if pubAddr, err := cluster.ParseAddress(addr.Private); err != nil {
-				return nil, err
-			} else {
-				pubAddrs[i] = pubAddr
-			}
-		}
 		return &AddressProvider{addrs: pubAddrs}, nil
 	}
 }
 
 func (a AddressProvider) Addresses() []pubcluster.Address {
 	return a.addrs
+}
+
+func translateAddrs(addrs []Address) ([]pubcluster.Address, error) {
+	pubAddrs := make([]pubcluster.Address, len(addrs))
+	for i, addr := range addrs {
+		if pubAddr, err := cluster.ParseAddress(addr.Public); err != nil {
+			return nil, err
+		} else {
+			pubAddrs[i] = pubAddr
+		}
+	}
+	return pubAddrs, nil
 }

@@ -16,5 +16,25 @@
 
 /*
 Package hazelcast provides the Hazelcast Go client.
+
+Hazelcast Cloud Discovery
+
+Hazelcast Go client can discover and connect to Hazelcast clusters running on Hazelcast Cloud https://cloud.hazelcast.com.
+In order to activate it, set the cluster name, enable Hazelcast Cloud discovery and add Hazelcast Cloud Token to the configuration.
+Here is an example:
+
+	config := hazelcast.NewConfig()
+	config.ClusterConfig.Name = "MY-CLUSTER-NAME"
+	cc := &config.ClusterConfig.HazelcastCloudConfig
+	cc.Enabled = true
+	cc.Token = "MY-CLUSTER-TOKEN"
+	client, err := hazelcast.StartNewClientWithConfig(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+Also check the code sample in https://github.com/hazelcast/hazelcast-go-client/tree/master/examples/discovery/cloud.
+
+If you have enabled encryption for your cluster, you should also enable TLS/SSL configuration for the client.
 */
 package hazelcast

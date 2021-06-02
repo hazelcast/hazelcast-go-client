@@ -45,7 +45,7 @@ func (a *AddressTranslator) Translate(ctx context.Context, address pubcluster.Ad
 }
 
 func (a *AddressTranslator) TranslateMember(ctx context.Context, member *pubcluster.MemberInfo) (addr pubcluster.Address, err error) {
-	return member.Address, nil
+	return a.Translate(ctx, member.Address)
 }
 
 func (a *AddressTranslator) reload(ctx context.Context) error {
