@@ -43,9 +43,9 @@ func TestAugmentPrivateAddr(t *testing.T) {
 
 func TestTranslateAddrs(t *testing.T) {
 	testCases := []struct {
+		E  string
 		CA []Address
 		A  []pubcluster.Address
-		E  string
 	}{
 		{CA: []Address{}, A: []pubcluster.Address{}},
 		{
