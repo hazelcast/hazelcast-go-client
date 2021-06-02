@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -54,7 +55,7 @@ func NewService(serializationConfig *pubserialization.Config) (*Service, error) 
 func (s *Service) ToData(object interface{}) (r *Data, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			err = hzerrors.MakeError(rec)
+			err = makeError(rec)
 		}
 	}()
 	if serData, ok := object.(*Data); ok {
@@ -79,7 +80,7 @@ func (s *Service) ToData(object interface{}) (r *Data, err error) {
 func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			err = hzerrors.MakeError(rec)
+			err = makeError(rec)
 		}
 	}()
 	if data == nil {
@@ -274,4 +275,15 @@ func (s *Service) registerIdentifiedFactories() error {
 	}
 	s.nameToID["identified"] = ConstantTypeDataSerializable
 	return nil
+}
+
+func makeError(rec interface{}) error {
+	switch v := rec.(type) {
+	case error:
+		return v
+	case string:
+		return errors.New(v)
+	default:
+		return fmt.Errorf("%v", rec)
+	}
 }

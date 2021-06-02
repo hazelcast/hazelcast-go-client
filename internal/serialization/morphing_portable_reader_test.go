@@ -1484,7 +1484,7 @@ func TestNewMorphingPortableReader(t *testing.T) {
 func captureErr(f func()) (err error) {
 	defer func() {
 		if v := recover(); v != nil {
-			err = hzerrors.MakeError(v)
+			err = makeError(v)
 		}
 	}()
 	f()
