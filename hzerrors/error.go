@@ -302,14 +302,3 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 	}
 	return NewHazelcastErrorType(message, err)
 }
-
-func MakeError(rec interface{}) error {
-	switch v := rec.(type) {
-	case error:
-		return v
-	case string:
-		return errors.New(v)
-	default:
-		return fmt.Errorf("%v", rec)
-	}
-}

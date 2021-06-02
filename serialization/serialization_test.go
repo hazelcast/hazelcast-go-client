@@ -17,8 +17,10 @@
 package serialization_test
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,4 +30,17 @@ func TestJSON_String(t *testing.T) {
 	if !assert.Equal(t, `{"foo": 4}`, j.String()) {
 		t.FailNow()
 	}
+}
+
+func TestClassDefinitionAddDuplicateField(t *testing.T) {
+	cd := serialization.NewClassDefinition(1, 2, 1)
+	if err := cd.AddBoolField("foo"); err != nil {
+		t.Fatal(err)
+	}
+	err := cd.AddByteField("foo")
+	if err == nil {
+		t.Fatalf("should have failed")
+	}
+	var e *hzerrors.HazelcastIllegalArgumentError
+	assert.True(t, errors.As(err, &e))
 }

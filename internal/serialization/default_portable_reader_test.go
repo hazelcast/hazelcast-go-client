@@ -25,9 +25,9 @@ import (
 
 func TestDefaultPortableReader_ReadByte(t *testing.T) {
 	var expectedRet byte = 12
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "type", TypeByte,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "type", serialization.TypeByte,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteByte("type", expectedRet)
@@ -42,9 +42,9 @@ func TestDefaultPortableReader_ReadByte(t *testing.T) {
 
 func TestDefaultPortableReader_ReadBool(t *testing.T) {
 	expectedRet := false
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "isReady", TypeBool,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "isReady", serialization.TypeBool,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteBool("isReady", expectedRet)
@@ -60,9 +60,9 @@ func TestDefaultPortableReader_ReadBool(t *testing.T) {
 
 func TestDefaultPortableReader_ReadUInt16(t *testing.T) {
 	var expectedRet uint16 = 'E'
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "char", TypeUint16,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "char", serialization.TypeUint16,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteUInt16("char", expectedRet)
@@ -77,9 +77,9 @@ func TestDefaultPortableReader_ReadUInt16(t *testing.T) {
 
 func TestDefaultPortableReader_ReadInt16(t *testing.T) {
 	var expectedRet int16 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt16,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "age", serialization.TypeInt16,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt16("age", expectedRet)
@@ -94,9 +94,9 @@ func TestDefaultPortableReader_ReadInt16(t *testing.T) {
 
 func TestDefaultPortableReader_ReadInt32(t *testing.T) {
 	var expectedRet int32 = 22
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "age", TypeInt32,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "age", serialization.TypeInt32,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt32("age", expectedRet)
@@ -111,9 +111,9 @@ func TestDefaultPortableReader_ReadInt32(t *testing.T) {
 
 func TestDefaultPortableReader_ReadInt64(t *testing.T) {
 	var expectedRet int64 = 1000
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "score", TypeInt64,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "score", serialization.TypeInt64,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt64("score", expectedRet)
@@ -128,9 +128,9 @@ func TestDefaultPortableReader_ReadInt64(t *testing.T) {
 
 func TestDefaultPortableReader_ReadFloat32(t *testing.T) {
 	var expectedRet float32 = 18.2347123
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "rate", TypeFloat32,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "rate", serialization.TypeFloat32,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteFloat32("rate", expectedRet)
@@ -145,9 +145,9 @@ func TestDefaultPortableReader_ReadFloat32(t *testing.T) {
 
 func TestDefaultPortableReader_ReadFloat64(t *testing.T) {
 	var expectedRet = 19.23433747
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "velocity", TypeFloat64,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "velocity", serialization.TypeFloat64,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteFloat64("velocity", expectedRet)
@@ -160,11 +160,11 @@ func TestDefaultPortableReader_ReadFloat64(t *testing.T) {
 	}
 }
 
-func TestDefaultPortableReader_ReadUTF(t *testing.T) {
+func TestDefaultPortableReader_ReadString(t *testing.T) {
 	var expectedRet string
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypeUTF,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypeString,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteString("engineer", expectedRet)
@@ -185,10 +185,10 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	}
 	config := &serialization.Config{
 		PortableFactories: []serialization.PortableFactory{&portableFactory1{}}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
+		classDef.FactoryID, classDef.ClassID, 0))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
 	serializer, _ := service.FindSerializerFor(expectedRet)
@@ -209,10 +209,10 @@ func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, service, false)
 
 	pw := NewDefaultPortableWriter(nil, o, classDef)
@@ -229,9 +229,9 @@ func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 
 func TestDefaultPortableReader_ReadByteArray(t *testing.T) {
 	var expectedRet = []byte{9, 12, 34, 6, 7, 3, 2, 0, 10, 2, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "types", TypeByteArray,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "types", serialization.TypeByteArray,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteByteArray("types", expectedRet)
@@ -247,9 +247,9 @@ func TestDefaultPortableReader_ReadByteArray(t *testing.T) {
 
 func TestDefaultPortableReader_ReadBoolArray(t *testing.T) {
 	var expectedRet = []bool{true, true, false, true, false, false, false, true, false, true, true}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "areReady", TypeBoolArray,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "areReady", serialization.TypeBoolArray,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteBoolArray("areReady", expectedRet)
@@ -265,9 +265,9 @@ func TestDefaultPortableReader_ReadBoolArray(t *testing.T) {
 
 func TestDefaultPortableReader_ReadUInt16Array(t *testing.T) {
 	var expectedRet = []uint16{'^', '%', '#', '!', '$'}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeUint16Array,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "scores", serialization.TypeUInt16Array,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteUInt16Array("scores", expectedRet)
@@ -283,9 +283,9 @@ func TestDefaultPortableReader_ReadUInt16Array(t *testing.T) {
 
 func TestDefaultPortableReader_ReadInt16Array(t *testing.T) {
 	var expectedRet = []int16{9432, 12, 34, 126, 7, 343, 2, 0, 1120, 222, 440}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt16Array,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "scores", serialization.TypeInt16Array,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt16Array("scores", expectedRet)
@@ -301,9 +301,9 @@ func TestDefaultPortableReader_ReadInt16Array(t *testing.T) {
 
 func TestDefaultPortableReader_ReadInt32Array(t *testing.T) {
 	var expectedRet = []int32{9432, 12, 34, 6123, 45367, 31341, 43142, 78690, 16790, 362, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt32Array,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "scores", serialization.TypeInt32Array,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt32Array("scores", expectedRet)
@@ -319,9 +319,9 @@ func TestDefaultPortableReader_ReadInt32Array(t *testing.T) {
 
 func TestDefaultPortableReader_ReadInt64Array(t *testing.T) {
 	var expectedRet = []int64{9412332, 929812, 34, 61223493, 4523367, 31235341, 46423142, 78690, 16790, 3662, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "scores", TypeInt64Array,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "scores", serialization.TypeInt64Array,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt64Array("scores", expectedRet)
@@ -337,9 +337,9 @@ func TestDefaultPortableReader_ReadInt64Array(t *testing.T) {
 
 func TestDefaultPortableReader_ReadFloat32Array(t *testing.T) {
 	var expectedRet = []float32{12.1431, 1212.3, 34, 6123, 4.5367, 3.1341, 43.142, 786.90, 16.790, 3.62, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "longitude", TypeFloat32Array,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "longitude", serialization.TypeFloat32Array,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteFloat32Array("longitude", expectedRet)
@@ -355,9 +355,9 @@ func TestDefaultPortableReader_ReadFloat32Array(t *testing.T) {
 
 func TestDefaultPortableReader_ReadFloat64Array(t *testing.T) {
 	var expectedRet = []float64{12234.1431, 121092.3, 34, 6123, 499.5364327, 3.1323441, 43.142, 799986.90, 16.790, 3.9996342, 0}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "longitude", TypeFloat64Array,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "longitude", serialization.TypeFloat64Array,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteFloat64Array("longitude", expectedRet)
@@ -371,11 +371,11 @@ func TestDefaultPortableReader_ReadFloat64Array(t *testing.T) {
 	}
 }
 
-func TestDefaultPortableReader_ReadUTFArray(t *testing.T) {
+func TestDefaultPortableReader_ReadStringArray(t *testing.T) {
 	var expectedRet = []string{"Furkan Şenharputlu", "こんにちは", "おはようございます", "今晩は"}
-	classDef := NewClassDefinitionImpl(1, 2, 3)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "words", TypeStringArray,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "words", serialization.TypeStringArray,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteStringArray("words", expectedRet)
@@ -397,10 +397,10 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineers", TypePortableArray,
-		classDef.FactoryID(), classDef.ClassID(), 0))
+	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
+		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
 	serializer, err := NewPortableSerializer(service, config.PortableFactories, 0)
 	if err != nil {
@@ -423,30 +423,30 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	classDef := NewClassDefinitionImpl(2, 1, 3)
+	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(0, "engineer", TypePortable,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(1, "name", TypeUTF,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(2, "a1", TypeByteArray,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(3, "a2", TypeBoolArray,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(4, "a3", TypeUint16Array,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(5, "a4", TypeInt16Array,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(6, "a5", TypeInt32Array,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(7, "a6", TypeInt64Array,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(8, "a7", TypeFloat32Array,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(9, "a8", TypeFloat64Array,
-		classDef.FactoryID(), classDef.ClassID(), 3))
-	classDef.AddFieldDefinition(NewFieldDefinitionImpl(10, "a9", TypeStringArray,
-		classDef.FactoryID(), classDef.ClassID(), 3))
+	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(1, "name", serialization.TypeString,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(2, "a1", serialization.TypeByteArray,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(3, "a2", serialization.TypeBoolArray,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(4, "a3", serialization.TypeUInt16Array,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(5, "a4", serialization.TypeInt16Array,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(6, "a5", serialization.TypeInt32Array,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(7, "a6", serialization.TypeInt64Array,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(8, "a7", serialization.TypeFloat32Array,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(9, "a8", serialization.TypeFloat64Array,
+		classDef.FactoryID, classDef.ClassID, 3))
+	classDef.AddField(NewFieldDefinition(10, "a9", serialization.TypeStringArray,
+		classDef.FactoryID, classDef.ClassID, 3))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
 

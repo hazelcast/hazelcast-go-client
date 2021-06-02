@@ -185,7 +185,7 @@ func TestObjectDataInput_ReadFloat64WithPosition(t *testing.T) {
 	}
 }
 
-func TestObjectDataInput_ReadUTF(t *testing.T) {
+func TestObjectDataInput_ReadString(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteString("Furkan Şenharputlu")
 	o.WriteString("Jack")
@@ -199,7 +199,7 @@ func TestObjectDataInput_ReadUTF(t *testing.T) {
 	}
 }
 
-func TestObjectDataInput_ReadUTF2(t *testing.T) {
+func TestObjectDataInput_ReadString2(t *testing.T) {
 	o := NewObjectDataOutput(0, nil, false)
 	o.WriteString("Furkan Şenharputlu")
 	o.WriteString("Jack")

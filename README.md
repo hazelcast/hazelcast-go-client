@@ -123,9 +123,6 @@ Requirements:
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
-# Depend on the latest version
-$ go get github.com/hazelcast/hazelcast-go-client
-
 # Depend on a specific release
 $ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.2
 ```
