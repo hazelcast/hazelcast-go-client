@@ -36,5 +36,21 @@ Here is an example:
 Also check the code sample in https://github.com/hazelcast/hazelcast-go-client/tree/master/examples/discovery/cloud.
 
 If you have enabled encryption for your cluster, you should also enable TLS/SSL configuration for the client.
+
+External Client Public Address Discovery
+
+When you set up a Hazelcast cluster in the Cloud (AWS, Azure, GCP, Kubernetes) and would like to use it from outside the Cloud network,
+the client needs to communicate with all cluster members via their public IP addresses.
+Whenever Hazelcast cluster members are able to resolve their own public external IP addresses, they pass this information to the client.
+As a result, the client can use public addresses for communication, if it cannot access members via private IPs.
+
+Hazelcast Go client has a built-in mechanism to use public IP addresses instead of private ones.
+You can enable this feauture by setting config.DiscoveryConfig.UsePublicIP to true:
+
+	config := hazelcast.NewConfig()
+	config.DiscoveryConfig.UsePublicIP = true
+
+For more details on member-side configuration, refer to the Discovery SPI section in the Hazelcast IMDG Reference Manual.
+
 */
 package hazelcast
