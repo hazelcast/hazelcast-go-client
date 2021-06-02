@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -54,7 +55,7 @@ func NewService(serializationConfig *pubserialization.Config) (*Service, error) 
 func (s *Service) ToData(object interface{}) (r *Data, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			err = hzerrors.MakeError(rec)
+			err = makeError(rec)
 		}
 	}()
 	if serData, ok := object.(*Data); ok {
@@ -79,7 +80,7 @@ func (s *Service) ToData(object interface{}) (r *Data, err error) {
 func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			err = hzerrors.MakeError(rec)
+			err = makeError(rec)
 		}
 	}()
 	if data == nil {
@@ -201,7 +202,7 @@ func (s *Service) registerSerializer(serializer pubserialization.Serializer) err
 }
 
 func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
-	classDefinitions []pubserialization.ClassDefinition) {
+	classDefinitions []*pubserialization.ClassDefinition) {
 	for _, cd := range classDefinitions {
 		portableSerializer.portableContext.RegisterClassDefinition(cd)
 	}
@@ -226,18 +227,18 @@ func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
 
 func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
 	var serializer pubserialization.Serializer
-	if isIdentifiedDataSerializable(obj) {
+	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
 		return s.registry[s.nameToID["identified"]]
 	}
-	if isPortableSerializable(obj) {
+	if _, ok := obj.(pubserialization.Portable); ok {
 		return s.registry[s.nameToID["!portable"]]
 	}
-	id, found := s.getIDByObject(obj)
-	if !found {
+	if id, found := s.getIDByObject(obj); !found {
 		return nil
+	} else {
+		serializer = s.registry[id]
+		return serializer
 	}
-	serializer = s.registry[id]
-	return serializer
 }
 
 func (s *Service) lookUpCustomSerializer(obj interface{}) pubserialization.Serializer {
@@ -276,12 +277,13 @@ func (s *Service) registerIdentifiedFactories() error {
 	return nil
 }
 
-func isIdentifiedDataSerializable(obj interface{}) bool {
-	_, ok := obj.(pubserialization.IdentifiedDataSerializable)
-	return ok
-}
-
-func isPortableSerializable(obj interface{}) bool {
-	_, ok := obj.(pubserialization.Portable)
-	return ok
+func makeError(rec interface{}) error {
+	switch v := rec.(type) {
+	case error:
+		return v
+	case string:
+		return errors.New(v)
+	default:
+		return fmt.Errorf("%v", rec)
+	}
 }

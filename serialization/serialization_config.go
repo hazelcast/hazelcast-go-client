@@ -32,7 +32,7 @@ type Config struct {
 	// PortableFactories is a map of factory IDs and corresponding Portable factories.
 	PortableFactories []PortableFactory
 	// ClassDefinitions contains ClassDefinitions for portable structs.
-	ClassDefinitions []ClassDefinition
+	ClassDefinitions []*ClassDefinition
 	PortableVersion  int32
 	// PortableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
 	// like adding/removing a field or changing a type of a field.
@@ -52,7 +52,7 @@ func (c Config) Clone() Config {
 	copy(idFactories, c.IdentifiedDataSerializableFactories)
 	pFactories := make([]PortableFactory, len(c.PortableFactories))
 	copy(pFactories, c.PortableFactories)
-	defs := make([]ClassDefinition, len(c.ClassDefinitions))
+	defs := make([]*ClassDefinition, len(c.ClassDefinitions))
 	copy(defs, c.ClassDefinitions)
 	serializers := map[reflect.Type]Serializer{}
 	for k, v := range c.CustomSerializers {
@@ -92,6 +92,6 @@ func (b *Config) AddCustomSerializer(t reflect.Type, serializer Serializer) erro
 	return nil
 }
 
-func (b *Config) AddClassDefinition(definition ClassDefinition) {
+func (b *Config) AddClassDefinition(definition *ClassDefinition) {
 	b.ClassDefinitions = append(b.ClassDefinitions, definition)
 }
