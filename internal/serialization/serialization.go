@@ -226,18 +226,18 @@ func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
 
 func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
 	var serializer pubserialization.Serializer
-	if isIdentifiedDataSerializable(obj) {
+	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
 		return s.registry[s.nameToID["identified"]]
 	}
-	if isPortableSerializable(obj) {
+	if _, ok := obj.(pubserialization.Portable); ok {
 		return s.registry[s.nameToID["!portable"]]
 	}
-	id, found := s.getIDByObject(obj)
-	if !found {
+	if id, found := s.getIDByObject(obj); !found {
 		return nil
+	} else {
+		serializer = s.registry[id]
+		return serializer
 	}
-	serializer = s.registry[id]
-	return serializer
 }
 
 func (s *Service) lookUpCustomSerializer(obj interface{}) pubserialization.Serializer {
@@ -274,14 +274,4 @@ func (s *Service) registerIdentifiedFactories() error {
 	}
 	s.nameToID["identified"] = ConstantTypeDataSerializable
 	return nil
-}
-
-func isIdentifiedDataSerializable(obj interface{}) bool {
-	_, ok := obj.(pubserialization.IdentifiedDataSerializable)
-	return ok
-}
-
-func isPortableSerializable(obj interface{}) bool {
-	_, ok := obj.(pubserialization.Portable)
-	return ok
 }
