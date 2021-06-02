@@ -18,9 +18,11 @@ package cluster_test
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 )
 
@@ -28,14 +30,13 @@ func TestAddressParse(t *testing.T) {
 	testCases := []struct {
 		err   error
 		input string
-		host  string
-		port  int
+		addr  pubcluster.Address
 	}{
-		{input: "", host: "", port: 0, err: errors.New("parsing address: missing port in address")},
-		{input: "localhost", host: "", port: 0, err: errors.New("parsing address: address localhost: missing port in address")},
-		{input: "localhost:5701", host: "localhost", port: 5701},
-		{input: "foo.com:2223", host: "foo.com", port: 2223},
-		{input: ":4566", host: "", port: 4566},
+		{input: "", err: errors.New("parsing address: missing port in address")},
+		{input: "localhost", err: errors.New("parsing address: address localhost: missing port in address")},
+		{input: "localhost:5701", addr: "localhost:5701"},
+		{input: "foo.com:2223", addr: "foo.com:2223"},
+		{input: ":4566", addr: ":4566"},
 		// TODO: ipv6
 	}
 	for _, tc := range testCases {
@@ -52,8 +53,7 @@ func TestAddressParse(t *testing.T) {
 			} else if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, tc.host, addr.Host())
-			assert.Equal(t, tc.port, addr.Port())
+			assert.Equal(t, tc.addr, addr)
 		})
 	}
 }

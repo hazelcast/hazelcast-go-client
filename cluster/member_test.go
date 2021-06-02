@@ -19,9 +19,10 @@ package cluster_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMemberInfo_PublicAddress(t *testing.T) {
@@ -54,7 +55,7 @@ func TestMemberInfo_PublicAddress(t *testing.T) {
 		Ok bool
 	}{
 		{L: "Default member info", M: cluster.MemberInfo{}, Ok: false, A: ""},
-		{L: "Member info with public addr", M: miWithPublicAddr, Ok: true, A: cluster.Address("33.32.31.21")},
+		{L: "Member info with public addr", M: miWithPublicAddr, Ok: true, A: "33.32.31.21"},
 		{L: "Member info without public addr", M: miWithoutPublicAddr, Ok: false, A: ""},
 	}
 	for _, tc := range testCases {

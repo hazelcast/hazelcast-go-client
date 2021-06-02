@@ -18,32 +18,12 @@ package cluster
 
 import (
 	"fmt"
-	"net"
-	"strconv"
 )
 
 type Address string
 
 func NewAddress(host string, port int32) Address {
 	return Address(fmt.Sprintf("%s:%d", host, port))
-}
-
-func (a Address) Host() string {
-	if host, _, err := net.SplitHostPort(string(a)); err != nil {
-		return ""
-	} else {
-		return host
-	}
-}
-
-func (a Address) Port() int {
-	if _, portStr, err := net.SplitHostPort(string(a)); err != nil {
-		return 0
-	} else if port, err := strconv.Atoi(portStr); err != nil {
-		return 0
-	} else {
-		return port
-	}
 }
 
 func (a Address) String() string {

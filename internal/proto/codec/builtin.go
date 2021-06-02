@@ -18,6 +18,9 @@ package codec
 
 import (
 	"encoding/binary"
+	"fmt"
+	"net"
+	"strconv"
 	"strings"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -807,4 +810,21 @@ func NewMemberInfo(
 		Version:    version,
 		AddressMap: addrMap,
 	}
+}
+
+func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Address) {
+	host, portStr, err := net.SplitHostPort(address.String())
+	if err != nil {
+		panic(fmt.Errorf("parsing address: %w", err))
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		panic(fmt.Errorf("parsing address: %w", err))
+	}
+	clientMessage.AddFrame(proto.BeginFrame.Copy())
+	initialFrame := proto.NewFrame(make([]byte, AddressCodecPortInitialFrameSize))
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(port))
+	clientMessage.AddFrame(initialFrame)
+	EncodeString(clientMessage, host)
+	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
