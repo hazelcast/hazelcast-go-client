@@ -550,6 +550,9 @@ func (m *ContextMap) GetAll(ctx context.Context, keys ...interface{}) ([]types.E
 	f := func(partitionID int32, keys []*iserialization.Data) cb.Future {
 		request := codec.EncodeMapGetAllRequest(m.name, keys)
 		return m.circuitBreaker.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+			if attempt > 0 {
+				request = request.Copy()
+			}
 			return m.invokeOnPartition(ctx, request, partitionID)
 		})
 	}
@@ -797,6 +800,9 @@ func (m *ContextMap) PutAll(ctx context.Context, keyValuePairs ...types.Entry) e
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 		return m.circuitBreaker.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+			if attempt > 0 {
+				request = request.Copy()
+			}
 			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
 		})
 	}

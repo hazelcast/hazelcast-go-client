@@ -444,7 +444,7 @@ func (q *ContextQueue) addListener(ctx context.Context, includeValue bool, handl
 			if item, err := q.convertToObject(itemData); err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
 			} else {
-				member := q.clusterService.GetMemberByUUID(uuid.String())
+				member := q.clusterService.GetMemberByUUID(uuid)
 				handler(newQueueItemNotified(q.name, item, member, eventType))
 			}
 		})

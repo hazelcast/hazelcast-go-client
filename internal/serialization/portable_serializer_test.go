@@ -274,8 +274,10 @@ func TestPortableSerializer2(t *testing.T) {
 	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	service, _ := NewService(config)
-
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var byt byte = 255
 	var boo = true
 	var ui16 uint16 = 65535
@@ -299,12 +301,16 @@ func TestPortableSerializer2(t *testing.T) {
 		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{id: 2, age: 20, name: "Micheal Micheal"},
 	}
-
 	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
-	data, _ := service.ToData(expectedRet)
-	ret, _ := service.ToObject(data)
-
+	data, err := service.ToData(expectedRet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(ret, expectedRet) {
 		t.Error("ReadObject() failed")
 	}
@@ -330,27 +336,15 @@ func TestPortableSerializer4(t *testing.T) {
 	config1 := &serialization.Config{PortableFactories: []serialization.PortableFactory{
 		&portableFactory1{},
 	}}
-	builder := NewClassDefinitionBuilder(2, 1, 0)
-	err := builder.AddInt16Field("id")
-	if err != nil {
-		t.Errorf("ClassDefinitionBuilder works wrong")
-	}
-	err = builder.AddInt32Field("age")
-	if err != nil {
-		t.Errorf("ClassDefinitionBuilder works wrong")
-	}
-	err = builder.AddUTFField("name")
-	if err != nil {
-		t.Error("ClassDefinitionBuilder works wrong")
-	}
-	cd := builder.Build()
-	config1.ClassDefinitions = append(config1.ClassDefinitions, cd)
-
+	def := serialization.NewClassDefinition(2, 1, 0)
+	def.AddInt16Field("id")
+	def.AddInt32Field("age")
+	def.AddStringField("name")
+	config1.ClassDefinitions = append(config1.ClassDefinitions, def)
 	service, err := NewService(config1)
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	var byt byte = 255
 	var boo = true
 	var ui16 uint16 = 65535
@@ -373,13 +367,16 @@ func TestPortableSerializer4(t *testing.T) {
 		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{id: 2, age: 20, name: "Micheal Micheal"},
 	}
-
 	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
-
-	data, _ := service.ToData(expectedRet)
-	ret, _ := service.ToObject(data)
-
+	data, err := service.ToData(expectedRet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(ret, expectedRet) {
 		t.Error("ReadObject() failed")
 	}

@@ -39,23 +39,15 @@ func NewConnectionInvocationFactory(config *pubcluster.Config) *ConnectionInvoca
 }
 
 func (f *ConnectionInvocationFactory) NewInvocationOnPartitionOwner(message *proto.ClientMessage, partitionID int32) invocation.Invocation {
-	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
 	return invocation.NewImpl(message, partitionID, nil, time.Now().Add(f.invocationTimeout), f.redoOperation)
 }
 
 func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage, handler proto.ClientMessageHandler) invocation.Invocation {
-	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
 	inv := invocation.NewImpl(message, -1, nil, time.Now().Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
 	return inv
-}
-
-func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, address *pubcluster.AddressImpl) invocation.Invocation {
-	message = message.Copy()
-	message.SetCorrelationID(f.makeCorrelationID())
-	return invocation.NewImpl(message, -1, address, time.Now().Add(f.invocationTimeout), f.redoOperation)
 }
 
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(

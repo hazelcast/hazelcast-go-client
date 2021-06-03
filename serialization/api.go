@@ -250,7 +250,7 @@ type DataInput interface {
 	// It returns nil if an error is set previously.
 	ReadFloat64Array() []float64
 
-	// ReadUTFArray returns []string read.
+	// ReadStringArray returns []string read.
 	// It returns nil if an error is set previously.
 	ReadStringArray() []string
 }
@@ -408,43 +408,4 @@ type PortableReader interface {
 	// ReadPortableArray takes fieldName Name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
-}
-
-// ClassDefinition defines a class schema for Portable structs.
-type ClassDefinition interface {
-	// FactoryID returns factory ID of struct.
-	FactoryID() int32
-
-	// ClassID returns class ID of struct.
-	ClassID() int32
-
-	// Version returns version of struct.
-	Version() int32
-
-	// Field returns field definition of field by given Name.
-	Field(name string) FieldDefinition
-
-	// FieldCount returns the number of fields in struct.
-	FieldCount() int
-}
-
-// FieldDefinition defines Name, type, index of a field.
-type FieldDefinition interface {
-	// Type returns field type.
-	Type() int32
-
-	// Name returns field Name.
-	Name() string
-
-	// Index returns field index.
-	Index() int32
-
-	// ClassID returns class ID of this field's struct.
-	ClassID() int32
-
-	// FactoryID returns factory ID of this field's struct.
-	FactoryID() int32
-
-	// Version returns version of this field's struct.
-	Version() int32
 }

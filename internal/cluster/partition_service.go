@@ -60,7 +60,7 @@ func NewPartitionService(bundle PartitionServiceCreationBundle) *PartitionServic
 	}
 }
 
-func (s *PartitionService) GetPartitionOwner(partitionId int32) *types.UUID {
+func (s *PartitionService) GetPartitionOwner(partitionId int32) (types.UUID, bool) {
 	return s.partitionTable.GetOwnerUUID(partitionId)
 }
 
@@ -129,14 +129,13 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 	return true
 }
 
-func (p *partitionTable) GetOwnerUUID(partitionID int32) *types.UUID {
+func (p *partitionTable) GetOwnerUUID(partitionID int32) (types.UUID, bool) {
 	p.mu.RLock()
-	var u *types.UUID
+	defer p.mu.RUnlock()
 	if uuid, ok := p.partitions[partitionID]; ok {
-		u = &uuid
+		return uuid, true
 	}
-	p.mu.RUnlock()
-	return u
+	return types.UUID{}, false
 }
 
 func defaultPartitionTable() partitionTable {

@@ -67,7 +67,7 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 	}
 	var reader serialization.PortableReader
 	var isMorphing bool
-	if classDefinition.Version() == ps.portableContext.ClassVersion(portable) {
+	if classDefinition.Version == ps.portableContext.ClassVersion(portable) {
 		reader = NewDefaultPortableReader(ps, input, classDefinition)
 		isMorphing = false
 	} else {
@@ -109,7 +109,7 @@ func (ps *PortableSerializer) WriteObject(output serialization.DataOutput, i int
 	if err != nil {
 		panic(fmt.Errorf("PortableSerializer.WriteObject: %w", err))
 	}
-	output.WriteInt32(classDefinition.Version())
+	output.WriteInt32(classDefinition.Version)
 	writer := NewDefaultPortableWriter(ps, output.(*PositionalObjectDataOutput), classDefinition)
 	i.(serialization.Portable).WritePortable(writer)
 	writer.End()

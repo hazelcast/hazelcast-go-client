@@ -233,6 +233,9 @@ func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, k
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			request = request.Copy()
+		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
 		p.requestCh <- inv
 		return inv.GetWithContext(ctx)
@@ -358,7 +361,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 			p.logger.Errorf("error at AddEntryListener: %w", err)
 			return
 		}
-		member := p.clusterService.GetMemberByUUID(binUUID.String())
+		member := p.clusterService.GetMemberByUUID(binUUID)
 		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries)))
 	}
 }

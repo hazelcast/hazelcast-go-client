@@ -26,13 +26,13 @@ import (
 type DefaultPortableReader struct {
 	serializer      *PortableSerializer
 	input           serialization.DataInput
-	classDefinition serialization.ClassDefinition
+	classDefinition *serialization.ClassDefinition
 	offset          int32
 	finalPos        int32
 }
 
 func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
-	classdefinition serialization.ClassDefinition) *DefaultPortableReader {
+	classdefinition *serialization.ClassDefinition) *DefaultPortableReader {
 	finalPos := input.ReadInt32()
 	input.ReadInt32()
 	offset := input.Position()
@@ -45,58 +45,61 @@ func NewDefaultPortableReader(serializer *PortableSerializer, input serializatio
 	}
 }
 
-func TypeByID(fieldType int32) string {
+func TypeByID(fieldType serialization.FieldDefinitionType) string {
 	switch t := fieldType; t {
-	case TypePortable:
+	case serialization.TypePortable:
 		return "Portable"
-	case TypeByte:
+	case serialization.TypeByte:
 		return "byte"
-	case TypeBool:
+	case serialization.TypeBool:
 		return "bool"
-	case TypeUint16:
+	case serialization.TypeUint16:
 		return "uint16"
-	case TypeInt16:
+	case serialization.TypeInt16:
 		return "int16"
-	case TypeInt32:
+	case serialization.TypeInt32:
 		return "int32"
-	case TypeInt64:
+	case serialization.TypeInt64:
 		return "int64"
-	case TypeFloat32:
+	case serialization.TypeFloat32:
 		return "float32"
-	case TypeFloat64:
+	case serialization.TypeFloat64:
 		return "float64"
-	case TypeUTF:
+	case serialization.TypeString:
 		return "string"
-	case TypePortableArray:
+	case serialization.TypePortableArray:
 		return "[]Portable"
-	case TypeByteArray:
+	case serialization.TypeByteArray:
 		return "[]byte"
-	case TypeBoolArray:
+	case serialization.TypeBoolArray:
 		return "[]bool"
-	case TypeUint16Array:
+	case serialization.TypeUInt16Array:
 		return "[]uint16"
-	case TypeInt16Array:
+	case serialization.TypeInt16Array:
 		return "[]int16"
-	case TypeInt32Array:
+	case serialization.TypeInt32Array:
 		return "[]int32"
-	case TypeInt64Array:
+	case serialization.TypeInt64Array:
 		return "[]int64"
-	case TypeFloat32Array:
+	case serialization.TypeFloat32Array:
 		return "[]float32"
-	case TypeFloat64Array:
+	case serialization.TypeFloat64Array:
 		return "[]float64"
-	case TypeStringArray:
+	case serialization.TypeStringArray:
 		return "[]string"
 	}
 	return "UNKNOWN"
 }
 
-func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType int32) int32 {
-	field := pr.classDefinition.Field(fieldName)
-	if field.Type() != fieldType {
+func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType serialization.FieldDefinitionType) int32 {
+	field, ok := pr.classDefinition.Fields[fieldName]
+	if !ok {
+		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
+	}
+	if field.Type != fieldType {
 		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil))
 	}
-	pos := pr.input.(*ObjectDataInput).ReadInt32AtPosition(pr.offset + field.Index()*Int32SizeInBytes)
+	pos := pr.input.(*ObjectDataInput).ReadInt32AtPosition(pr.offset + field.Index*Int32SizeInBytes)
 	length := pr.input.(*ObjectDataInput).ReadInt16AtPosition(pos)
 	return pos + Int16SizeInBytes + int32(length) + 1
 }
@@ -106,7 +109,7 @@ func (pr *DefaultPortableReader) ReadByte(fieldName string) byte {
 }
 
 func (pr *DefaultPortableReader) readByte(fieldName string) byte {
-	pos := pr.positionByField(fieldName, TypeByte)
+	pos := pr.positionByField(fieldName, serialization.TypeByte)
 	return pr.input.(*ObjectDataInput).ReadByteAtPosition(pos)
 }
 
@@ -115,7 +118,7 @@ func (pr *DefaultPortableReader) ReadBool(fieldName string) bool {
 }
 
 func (pr *DefaultPortableReader) readBool(fieldName string) bool {
-	pos := pr.positionByField(fieldName, TypeBool)
+	pos := pr.positionByField(fieldName, serialization.TypeBool)
 	return pr.input.(*ObjectDataInput).ReadBoolAtPosition(pos)
 }
 
@@ -124,7 +127,7 @@ func (pr *DefaultPortableReader) ReadUInt16(fieldName string) uint16 {
 }
 
 func (pr *DefaultPortableReader) readUInt16(fieldName string) uint16 {
-	pos := pr.positionByField(fieldName, TypeUint16)
+	pos := pr.positionByField(fieldName, serialization.TypeUint16)
 	return pr.input.(*ObjectDataInput).ReadUInt16AtPosition(pos)
 }
 
@@ -133,7 +136,7 @@ func (pr *DefaultPortableReader) ReadInt16(fieldName string) int16 {
 }
 
 func (pr *DefaultPortableReader) readInt16(fieldName string) int16 {
-	pos := pr.positionByField(fieldName, TypeInt16)
+	pos := pr.positionByField(fieldName, serialization.TypeInt16)
 	return pr.input.(*ObjectDataInput).ReadInt16AtPosition(pos)
 }
 
@@ -142,7 +145,7 @@ func (pr *DefaultPortableReader) ReadInt32(fieldName string) int32 {
 }
 
 func (pr *DefaultPortableReader) readInt32(fieldName string) int32 {
-	pos := pr.positionByField(fieldName, TypeInt32)
+	pos := pr.positionByField(fieldName, serialization.TypeInt32)
 	return pr.input.(*ObjectDataInput).ReadInt32AtPosition(pos)
 }
 
@@ -151,7 +154,7 @@ func (pr *DefaultPortableReader) ReadInt64(fieldName string) int64 {
 }
 
 func (pr *DefaultPortableReader) readInt64(fieldName string) int64 {
-	pos := pr.positionByField(fieldName, TypeInt64)
+	pos := pr.positionByField(fieldName, serialization.TypeInt64)
 	return pr.input.(*ObjectDataInput).ReadInt64AtPosition(pos)
 }
 
@@ -160,7 +163,7 @@ func (pr *DefaultPortableReader) ReadFloat32(fieldName string) float32 {
 }
 
 func (pr *DefaultPortableReader) readFloat32(fieldName string) float32 {
-	pos := pr.positionByField(fieldName, TypeFloat32)
+	pos := pr.positionByField(fieldName, serialization.TypeFloat32)
 	return pr.input.(*ObjectDataInput).ReadFloat32AtPosition(pos)
 }
 
@@ -169,16 +172,16 @@ func (pr *DefaultPortableReader) ReadFloat64(fieldName string) float64 {
 }
 
 func (pr *DefaultPortableReader) readFloat64(fieldName string) float64 {
-	pos := pr.positionByField(fieldName, TypeFloat64)
+	pos := pr.positionByField(fieldName, serialization.TypeFloat64)
 	return pr.input.(*ObjectDataInput).ReadFloat64AtPosition(pos)
 }
 
 func (pr *DefaultPortableReader) ReadString(fieldName string) string {
-	return pr.readUTF(fieldName)
+	return pr.readString(fieldName)
 }
 
-func (pr *DefaultPortableReader) readUTF(fieldName string) string {
-	pos := pr.positionByField(fieldName, TypeUTF)
+func (pr *DefaultPortableReader) readString(fieldName string) string {
+	pos := pr.positionByField(fieldName, serialization.TypeString)
 	return pr.input.(*ObjectDataInput).ReadStringAtPosition(pos)
 }
 
@@ -188,7 +191,7 @@ func (pr *DefaultPortableReader) ReadPortable(fieldName string) serialization.Po
 
 func (pr *DefaultPortableReader) readPortable(fieldName string) serialization.Portable {
 	backupPos := pr.input.Position()
-	pos := pr.positionByField(fieldName, TypePortable)
+	pos := pr.positionByField(fieldName, serialization.TypePortable)
 	pr.input.SetPosition(pos)
 	isNil := pr.input.ReadBool()
 	var r serialization.Portable
@@ -206,7 +209,7 @@ func (pr *DefaultPortableReader) ReadByteArray(fieldName string) []byte {
 }
 
 func (pr *DefaultPortableReader) readByteArray(fieldName string) []byte {
-	pos := pr.positionByField(fieldName, TypeByteArray)
+	pos := pr.positionByField(fieldName, serialization.TypeByteArray)
 	return pr.input.(*ObjectDataInput).ReadByteArrayAtPosition(pos)
 }
 
@@ -215,7 +218,7 @@ func (pr *DefaultPortableReader) ReadBoolArray(fieldName string) []bool {
 }
 
 func (pr *DefaultPortableReader) readBoolArray(fieldName string) []bool {
-	pos := pr.positionByField(fieldName, TypeBoolArray)
+	pos := pr.positionByField(fieldName, serialization.TypeBoolArray)
 	return pr.input.(*ObjectDataInput).ReadBoolArrayAtPosition(pos)
 }
 
@@ -224,7 +227,7 @@ func (pr *DefaultPortableReader) ReadUInt16Array(fieldName string) []uint16 {
 }
 
 func (pr *DefaultPortableReader) readUInt16Array(fieldName string) []uint16 {
-	pos := pr.positionByField(fieldName, TypeUint16Array)
+	pos := pr.positionByField(fieldName, serialization.TypeUInt16Array)
 	return pr.input.(*ObjectDataInput).ReadUInt16ArrayAtPosition(pos)
 }
 
@@ -233,7 +236,7 @@ func (pr *DefaultPortableReader) ReadInt16Array(fieldName string) []int16 {
 }
 
 func (pr *DefaultPortableReader) readInt16Array(fieldName string) []int16 {
-	pos := pr.positionByField(fieldName, TypeInt16Array)
+	pos := pr.positionByField(fieldName, serialization.TypeInt16Array)
 	return pr.input.(*ObjectDataInput).ReadInt16ArrayAtPosition(pos)
 }
 
@@ -242,7 +245,7 @@ func (pr *DefaultPortableReader) ReadInt32Array(fieldName string) []int32 {
 }
 
 func (pr *DefaultPortableReader) readInt32Array(fieldName string) []int32 {
-	pos := pr.positionByField(fieldName, TypeInt32Array)
+	pos := pr.positionByField(fieldName, serialization.TypeInt32Array)
 	return pr.input.(*ObjectDataInput).ReadInt32ArrayAtPosition(pos)
 }
 
@@ -251,7 +254,7 @@ func (pr *DefaultPortableReader) ReadInt64Array(fieldName string) []int64 {
 }
 
 func (pr *DefaultPortableReader) readInt64Array(fieldName string) []int64 {
-	pos := pr.positionByField(fieldName, TypeInt64Array)
+	pos := pr.positionByField(fieldName, serialization.TypeInt64Array)
 	return pr.input.(*ObjectDataInput).ReadInt64ArrayAtPosition(pos)
 }
 func (pr *DefaultPortableReader) ReadFloat32Array(fieldName string) []float32 {
@@ -259,7 +262,7 @@ func (pr *DefaultPortableReader) ReadFloat32Array(fieldName string) []float32 {
 }
 
 func (pr *DefaultPortableReader) readFloat32Array(fieldName string) []float32 {
-	pos := pr.positionByField(fieldName, TypeFloat32Array)
+	pos := pr.positionByField(fieldName, serialization.TypeFloat32Array)
 	return pr.input.(*ObjectDataInput).ReadFloat32ArrayAtPosition(pos)
 }
 
@@ -268,16 +271,16 @@ func (pr *DefaultPortableReader) ReadFloat64Array(fieldName string) []float64 {
 }
 
 func (pr *DefaultPortableReader) readFloat64Array(fieldName string) []float64 {
-	pos := pr.positionByField(fieldName, TypeFloat64Array)
+	pos := pr.positionByField(fieldName, serialization.TypeFloat64Array)
 	return pr.input.(*ObjectDataInput).ReadFloat64ArrayAtPosition(pos)
 }
 
 func (pr *DefaultPortableReader) ReadStringArray(fieldName string) []string {
-	return pr.readUTFArray(fieldName)
+	return pr.readStringArray(fieldName)
 }
 
-func (pr *DefaultPortableReader) readUTFArray(fieldName string) []string {
-	pos := pr.positionByField(fieldName, TypeStringArray)
+func (pr *DefaultPortableReader) readStringArray(fieldName string) []string {
+	pos := pr.positionByField(fieldName, serialization.TypeStringArray)
 	return pr.input.(*ObjectDataInput).ReadStringArrayAtPosition(pos)
 }
 
@@ -287,7 +290,7 @@ func (pr *DefaultPortableReader) ReadPortableArray(fieldName string) []serializa
 
 func (pr *DefaultPortableReader) readPortableArray(fieldName string) []serialization.Portable {
 	backupPos := pr.input.Position()
-	pos := pr.positionByField(fieldName, TypePortableArray)
+	pos := pr.positionByField(fieldName, serialization.TypePortableArray)
 	pr.input.SetPosition(pos)
 	length := pr.input.ReadInt32()
 	factoryID := pr.input.ReadInt32()

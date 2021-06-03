@@ -23,7 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-const messageBufferSize = 64
+const messageBufferSize = 128 * 1024
 
 type clientMessageReader struct {
 	src                *bytes.Buffer
@@ -54,6 +54,7 @@ func (c *clientMessageReader) Read() *proto.ClientMessage {
 		}
 	}
 }
+
 func (c *clientMessageReader) readFrame() bool {
 	if !c.readHeader {
 		if c.src.Len() < proto.SizeOfFrameLengthAndFlags {
@@ -73,7 +74,10 @@ func (c *clientMessageReader) readFrame() bool {
 		if c.src.Len() < size {
 			return false
 		}
-		frameContent := c.src.Next(size)
+		// copy the frame content since we reuse the buffer in subsequent reads
+		frameSlice := c.src.Next(size)
+		frameContent := make([]byte, len(frameSlice))
+		copy(frameContent, frameSlice)
 		frame := proto.NewFrameWith(frameContent, c.currentFlags)
 		if c.clientMessage == nil {
 			c.clientMessage = proto.NewClientMessageForDecode(frame)
@@ -86,19 +90,24 @@ func (c *clientMessageReader) readFrame() bool {
 	return false
 }
 
-func (c *clientMessageReader) Reset() {
+func (c *clientMessageReader) ResetMessage() {
 	c.clientMessage = nil
-	c.resetBuffer()
 }
 
-func (c *clientMessageReader) resetBuffer() {
+func (c *clientMessageReader) ResetBuffer() {
 	// read the remaining data
-	all := c.src.Next(c.src.Len())
+	allSlice := c.src.Next(c.src.Len())
+	allCopy := make([]byte, len(allSlice))
+	copy(allCopy, allSlice)
 	// reset the buffer
-	// TODO: optimize allocations
-	c.src = bytes.NewBuffer(make([]byte, 0, messageBufferSize))
+	if c.src.Cap() > messageBufferSize {
+		// return the buffer to its default size if the latest chunk was too large
+		c.src = bytes.NewBuffer(make([]byte, 0, messageBufferSize))
+	} else {
+		c.src.Reset()
+	}
 	// write the remaining data back
-	if len(all) > 0 {
-		c.src.Write(all)
+	if len(allCopy) > 0 {
+		c.src.Write(allCopy)
 	}
 }
