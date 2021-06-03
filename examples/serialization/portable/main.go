@@ -21,6 +21,7 @@ This sample demonstrates custom portable serialization.
 */
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -115,20 +116,20 @@ func main() {
 	}
 	// set / get portable serialized value
 	employee := &EmployeePortable{Name: "Jane Doe", Age: 30}
-	if err := m.Set("employee", employee); err != nil {
+	if err := m.Set(context.Background(), "employee", employee); err != nil {
 		log.Fatal(err)
 	}
-	if v, err := m.Get("employee"); err != nil {
+	if v, err := m.Get(context.Background(), "employee"); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println(v)
 	}
 	// set / get portable serialized nullable value
 	baseObj := &BaseObject{Employee: employee}
-	if err := m.Set("base-obj", baseObj); err != nil {
+	if err := m.Set(context.Background(), "base-obj", baseObj); err != nil {
 		log.Fatal(err)
 	}
-	if v, err := m.Get("base-obj"); err != nil {
+	if v, err := m.Get(context.Background(), "base-obj"); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println(v)

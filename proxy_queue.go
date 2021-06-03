@@ -35,181 +35,33 @@ All of the Queue content is stored in a single machine (and in the backup).
 Queue will not scale by adding more members in the cluster.
 */
 type Queue struct {
-	cq *ContextQueue
-}
-
-func newQueue(p *proxy) (*Queue, error) {
-	if q, err := newContextQueue(p); err != nil {
-		return nil, err
-	} else {
-		return &Queue{cq: q}, nil
-	}
-}
-
-// Add adds the specified item to this queue if there is available space.
-// Returns true when element is successfully added
-func (q *Queue) Add(value interface{}) (bool, error) {
-	return q.cq.Add(context.Background(), value)
-}
-
-// AddWithTimeout adds the specified item to this queue if there is available space.
-// Returns true when element is successfully added
-func (q *Queue) AddWithTimeout(value interface{}, timeout time.Duration) (bool, error) {
-	return q.cq.AddWithTimeout(context.Background(), value, timeout)
-}
-
-// AddAll adds the elements in the specified collection to this queue.
-// Returns true if the queue is changed after the call.
-func (q *Queue) AddAll(values ...interface{}) (bool, error) {
-	return q.cq.AddAll(context.Background(), values...)
-}
-
-// AddListener adds an item listener for this queue. Listener will be notified for all queue add/remove events.
-func (q *Queue) AddListener(handler QueueItemNotifiedHandler) (types.UUID, error) {
-	return q.cq.AddListener(context.Background(), handler)
-}
-
-// AddListenerIncludeValue adds an item listener for this queue. Listener will be notified for all queue add/remove events.
-// Received events include the updated item.
-func (q *Queue) AddListenerIncludeValue(handler QueueItemNotifiedHandler) (types.UUID, error) {
-	return q.cq.AddListenerIncludeValue(context.Background(), handler)
-}
-
-// Clear Clear this queue. ContextQueue will be empty after this call.
-func (q *Queue) Clear() error {
-	return q.cq.Clear(context.Background())
-}
-
-// Contains returns true if the queue includes the given value.
-func (q *Queue) Contains(value interface{}) (bool, error) {
-	return q.cq.Contains(context.Background(), value)
-}
-
-// ContainsAll returns true if the queue includes all given values.
-func (q *Queue) ContainsAll(values ...interface{}) (bool, error) {
-	return q.cq.ContainsAll(context.Background(), values...)
-}
-
-// Destroy removes this object cluster-wide.
-// Clears and releases all resources for this object.
-func (q *Queue) Destroy() error {
-	return q.cq.Destroy(context.Background())
-}
-
-// Drain returns all items in the queue and empties it.
-func (q *Queue) Drain() ([]interface{}, error) {
-	return q.cq.Drain(context.Background())
-}
-
-// DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
-func (q *Queue) DrainWithMaxSize(maxSize int) ([]interface{}, error) {
-	return q.cq.DrainWithMaxSize(context.Background(), maxSize)
-}
-
-// Iterator returns all of the items in this queue.
-func (q *Queue) Iterator() ([]interface{}, error) {
-	return q.cq.Iterator(context.Background())
-}
-
-// IsEmpty returns true if the queue is empty.
-func (q *Queue) IsEmpty() (bool, error) {
-	return q.cq.IsEmpty(context.Background())
-}
-
-// Peek retrieves the head of queue without removing it from the queue.
-func (q *Queue) Peek() (interface{}, error) {
-	return q.cq.Peek(context.Background())
-}
-
-// Poll retrieves and removes the head of this queue.
-func (q *Queue) Poll() (interface{}, error) {
-	return q.cq.Poll(context.Background())
-}
-
-// PollWithTimeout retrieves and removes the head of this queue.
-// Waits until this timeout elapses and returns the result.
-func (q *Queue) PollWithTimeout(timeout time.Duration) (interface{}, error) {
-	return q.cq.PollWithTimeout(context.Background(), timeout)
-}
-
-// Put adds the specified element into this queue.
-// If there is no space, it waits until necessary space becomes available.
-func (q *Queue) Put(value interface{}) error {
-	return q.cq.Put(context.Background(), value)
-}
-
-// RemainingCapacity returns the remaining capacity of this queue.
-func (q *Queue) RemainingCapacity() (int, error) {
-	return q.cq.RemainingCapacity(context.Background())
-}
-
-// Remove removes the specified element from the queue if it exists.
-func (q *Queue) Remove(value interface{}) (bool, error) {
-	return q.cq.Remove(context.Background(), value)
-}
-
-// RemoveAll removes all of the elements of the specified collection from this queue.
-func (q *Queue) RemoveAll(values ...interface{}) (bool, error) {
-	return q.cq.RemoveAll(context.Background(), values...)
-}
-
-// RemoveListener removes the specified listener.
-func (q *Queue) RemoveListener(subscriptionID types.UUID) error {
-	return q.cq.RemoveListener(context.Background(), subscriptionID)
-}
-
-// RetainAll removes the items which are not contained in the specified collection.
-func (q *Queue) RetainAll(values ...interface{}) (bool, error) {
-	return q.cq.RetainAll(context.Background(), values...)
-}
-
-// Size returns the number of elements in this collection.
-func (q *Queue) Size() (int, error) {
-	return q.cq.Size(context.Background())
-}
-
-// Take retrieves and removes the head of this queue, if necessary, waits until an item becomes available.
-func (q *Queue) Take() (interface{}, error) {
-	return q.cq.Take(context.Background())
-}
-
-/*
-ContextQueue has the same functionality with Queue, but has context.Context as the first parameter.
-
-Queue is a concurrent, blocking, distributed, observable queue.
-
-Queue is not a partitioned data-structure.
-All of the Queue content is stored in a single machine (and in the backup).
-Queue will not scale by adding more members in the cluster.
-*/
-type ContextQueue struct {
 	*proxy
 	partitionID int32
 }
 
-func newContextQueue(p *proxy) (*ContextQueue, error) {
+func newQueue(p *proxy) (*Queue, error) {
 	if partitionID, err := p.stringToPartitionID(p.name); err != nil {
 		return nil, err
 	} else {
-		return &ContextQueue{proxy: p, partitionID: partitionID}, nil
+		return &Queue{proxy: p, partitionID: partitionID}, nil
 	}
 }
 
 // Add adds the specified item to this queue if there is available space.
 // Returns true when element is successfully added
-func (q *ContextQueue) Add(ctx context.Context, value interface{}) (bool, error) {
+func (q *Queue) Add(ctx context.Context, value interface{}) (bool, error) {
 	return q.add(ctx, value, 0)
 }
 
 // AddWithTimeout adds the specified item to this queue if there is available space.
 // Returns true when element is successfully added
-func (q *ContextQueue) AddWithTimeout(ctx context.Context, value interface{}, timeout time.Duration) (bool, error) {
+func (q *Queue) AddWithTimeout(ctx context.Context, value interface{}, timeout time.Duration) (bool, error) {
 	return q.add(ctx, value, timeout.Milliseconds())
 }
 
 // AddAll adds the elements in the specified collection to this queue.
 // Returns true if the queue is changed after the call.
-func (q *ContextQueue) AddAll(ctx context.Context, values ...interface{}) (bool, error) {
+func (q *Queue) AddAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
 	} else {
@@ -223,25 +75,25 @@ func (q *ContextQueue) AddAll(ctx context.Context, values ...interface{}) (bool,
 }
 
 // AddListener adds an item listener for this queue. Listener will be notified for all queue add/remove events.
-func (q *ContextQueue) AddListener(ctx context.Context, handler QueueItemNotifiedHandler) (types.UUID, error) {
+func (q *Queue) AddListener(ctx context.Context, handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(ctx, false, handler)
 }
 
 // AddListenerIncludeValue adds an item listener for this queue. Listener will be notified for all queue add/remove events.
 // Received events include the updated item.
-func (q *ContextQueue) AddListenerIncludeValue(ctx context.Context, handler QueueItemNotifiedHandler) (types.UUID, error) {
+func (q *Queue) AddListenerIncludeValue(ctx context.Context, handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(ctx, true, handler)
 }
 
-// Clear Clear this queue. ContextQueue will be empty after this call.
-func (q *ContextQueue) Clear(ctx context.Context) error {
+// Clear Clear this queue. Queue will be empty after this call.
+func (q *Queue) Clear(ctx context.Context) error {
 	request := codec.EncodeQueueClearRequest(q.name)
 	_, err := q.invokeOnPartition(ctx, request, q.partitionID)
 	return err
 }
 
 // Contains returns true if the queue includes the given value.
-func (q *ContextQueue) Contains(ctx context.Context, value interface{}) (bool, error) {
+func (q *Queue) Contains(ctx context.Context, value interface{}) (bool, error) {
 	if valueData, err := q.validateAndSerialize(value); err != nil {
 		return false, err
 	} else {
@@ -255,7 +107,7 @@ func (q *ContextQueue) Contains(ctx context.Context, value interface{}) (bool, e
 }
 
 // ContainsAll returns true if the queue includes all given values.
-func (q *ContextQueue) ContainsAll(ctx context.Context, values ...interface{}) (bool, error) {
+func (q *Queue) ContainsAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
 	} else {
@@ -269,7 +121,7 @@ func (q *ContextQueue) ContainsAll(ctx context.Context, values ...interface{}) (
 }
 
 // Drain returns all items in the queue and empties it.
-func (q *ContextQueue) Drain(ctx context.Context) ([]interface{}, error) {
+func (q *Queue) Drain(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeQueueDrainToRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return nil, err
@@ -279,7 +131,7 @@ func (q *ContextQueue) Drain(ctx context.Context) ([]interface{}, error) {
 }
 
 // DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
-func (q *ContextQueue) DrainWithMaxSize(ctx context.Context, maxSize int) ([]interface{}, error) {
+func (q *Queue) DrainWithMaxSize(ctx context.Context, maxSize int) ([]interface{}, error) {
 	maxSizeAsInt32, err := validationutil.ValidateAsNonNegativeInt32(maxSize)
 	if err != nil {
 		return nil, err
@@ -293,7 +145,7 @@ func (q *ContextQueue) DrainWithMaxSize(ctx context.Context, maxSize int) ([]int
 }
 
 // Iterator returns all of the items in this queue.
-func (q *ContextQueue) Iterator(ctx context.Context) ([]interface{}, error) {
+func (q *Queue) Iterator(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeQueueIteratorRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return nil, err
@@ -303,7 +155,7 @@ func (q *ContextQueue) Iterator(ctx context.Context) ([]interface{}, error) {
 }
 
 // IsEmpty returns true if the queue is empty.
-func (q *ContextQueue) IsEmpty(ctx context.Context) (bool, error) {
+func (q *Queue) IsEmpty(ctx context.Context) (bool, error) {
 	request := codec.EncodeQueueIsEmptyRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return false, err
@@ -313,7 +165,7 @@ func (q *ContextQueue) IsEmpty(ctx context.Context) (bool, error) {
 }
 
 // Peek retrieves the head of queue without removing it from the queue.
-func (q *ContextQueue) Peek(ctx context.Context) (interface{}, error) {
+func (q *Queue) Peek(ctx context.Context) (interface{}, error) {
 	request := codec.EncodeQueuePeekRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return nil, err
@@ -323,19 +175,19 @@ func (q *ContextQueue) Peek(ctx context.Context) (interface{}, error) {
 }
 
 // Poll retrieves and removes the head of this queue.
-func (q *ContextQueue) Poll(ctx context.Context) (interface{}, error) {
+func (q *Queue) Poll(ctx context.Context) (interface{}, error) {
 	return q.poll(ctx, 0)
 }
 
 // PollWithTimeout retrieves and removes the head of this queue.
 // Waits until this timeout elapses and returns the result.
-func (q *ContextQueue) PollWithTimeout(ctx context.Context, timeout time.Duration) (interface{}, error) {
+func (q *Queue) PollWithTimeout(ctx context.Context, timeout time.Duration) (interface{}, error) {
 	return q.poll(ctx, timeout.Milliseconds())
 }
 
 // Put adds the specified element into this queue.
 // If there is no space, it waits until necessary space becomes available.
-func (q *ContextQueue) Put(ctx context.Context, value interface{}) error {
+func (q *Queue) Put(ctx context.Context, value interface{}) error {
 	if valueData, err := q.validateAndSerialize(value); err != nil {
 		return err
 	} else {
@@ -346,7 +198,7 @@ func (q *ContextQueue) Put(ctx context.Context, value interface{}) error {
 }
 
 // RemainingCapacity returns the remaining capacity of this queue.
-func (q *ContextQueue) RemainingCapacity(ctx context.Context) (int, error) {
+func (q *Queue) RemainingCapacity(ctx context.Context) (int, error) {
 	request := codec.EncodeQueueRemainingCapacityRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return 0, err
@@ -356,7 +208,7 @@ func (q *ContextQueue) RemainingCapacity(ctx context.Context) (int, error) {
 }
 
 // Remove removes the specified element from the queue if it exists.
-func (q *ContextQueue) Remove(ctx context.Context, value interface{}) (bool, error) {
+func (q *Queue) Remove(ctx context.Context, value interface{}) (bool, error) {
 	if data, err := q.validateAndSerialize(value); err != nil {
 		return false, err
 	} else {
@@ -370,7 +222,7 @@ func (q *ContextQueue) Remove(ctx context.Context, value interface{}) (bool, err
 }
 
 // RemoveAll removes all of the elements of the specified collection from this queue.
-func (q *ContextQueue) RemoveAll(ctx context.Context, values ...interface{}) (bool, error) {
+func (q *Queue) RemoveAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
 	} else {
@@ -384,12 +236,12 @@ func (q *ContextQueue) RemoveAll(ctx context.Context, values ...interface{}) (bo
 }
 
 // RemoveListener removes the specified listener.
-func (q *ContextQueue) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
+func (q *Queue) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return q.listenerBinder.Remove(ctx, subscriptionID)
 }
 
 // RetainAll removes the items which are not contained in the specified collection.
-func (q *ContextQueue) RetainAll(ctx context.Context, values ...interface{}) (bool, error) {
+func (q *Queue) RetainAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
 		return false, err
 	} else {
@@ -403,7 +255,7 @@ func (q *ContextQueue) RetainAll(ctx context.Context, values ...interface{}) (bo
 }
 
 // Size returns the number of elements in this collection.
-func (q *ContextQueue) Size(ctx context.Context) (int, error) {
+func (q *Queue) Size(ctx context.Context) (int, error) {
 	request := codec.EncodeQueueSizeRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return 0, err
@@ -413,7 +265,7 @@ func (q *ContextQueue) Size(ctx context.Context) (int, error) {
 }
 
 // Take retrieves and removes the head of this queue, if necessary, waits until an item becomes available.
-func (q *ContextQueue) Take(ctx context.Context) (interface{}, error) {
+func (q *Queue) Take(ctx context.Context) (interface{}, error) {
 	request := codec.EncodeQueueTakeRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return nil, err
@@ -422,7 +274,7 @@ func (q *ContextQueue) Take(ctx context.Context) (interface{}, error) {
 	}
 }
 
-func (q *ContextQueue) add(ctx context.Context, value interface{}, timeout int64) (bool, error) {
+func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool, error) {
 	if valueData, err := q.validateAndSerialize(value); err != nil {
 		return false, nil
 	} else {
@@ -435,7 +287,7 @@ func (q *ContextQueue) add(ctx context.Context, value interface{}, timeout int64
 	}
 }
 
-func (q *ContextQueue) addListener(ctx context.Context, includeValue bool, handler QueueItemNotifiedHandler) (types.UUID, error) {
+func (q *Queue) addListener(ctx context.Context, includeValue bool, handler QueueItemNotifiedHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
 	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
@@ -453,7 +305,7 @@ func (q *ContextQueue) addListener(ctx context.Context, includeValue bool, handl
 	return subscriptionID, err
 }
 
-func (q *ContextQueue) poll(ctx context.Context, timeout int64) (interface{}, error) {
+func (q *Queue) poll(ctx context.Context, timeout int64) (interface{}, error) {
 	request := codec.EncodeQueuePollRequest(q.name, timeout)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return nil, err

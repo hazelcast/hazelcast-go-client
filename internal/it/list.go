@@ -51,7 +51,7 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 		config.ClusterConfig.SmartRouting = smart
 		client, l = getClientListWithConfig(listName(), &config)
 		defer func() {
-			if err := l.Destroy(); err != nil {
+			if err := l.Destroy(nil); err != nil {
 				t.Logf("test warning, could not destroy list: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {

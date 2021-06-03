@@ -51,7 +51,7 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 		config.ClusterConfig.SmartRouting = smart
 		client, q = getClientQueueWithConfig(queueName(), &config)
 		defer func() {
-			if err := q.Destroy(); err != nil {
+			if err := q.Destroy(nil); err != nil {
 				t.Logf("test warning, could not destroy queue: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {

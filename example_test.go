@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -40,7 +41,7 @@ func Example() {
 		log.Fatal(err)
 	}
 	// Call map functions.
-	err = peopleMap.Set("jane", "doe")
+	err = peopleMap.Set(context.TODO(), "jane", "doe")
 	if err != nil {
 		log.Fatal(err)
 	}

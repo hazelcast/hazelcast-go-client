@@ -119,8 +119,8 @@ func TestClientHeartbeat(t *testing.T) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"
-		it.Must(m.Set("k1", target))
-		if v := it.MustValue(m.Get("k1")); target != v {
+		it.Must(m.Set(nil, "k1", target))
+		if v := it.MustValue(m.Get(nil, "k1")); target != v {
 			t.Fatalf("target: %v != %v", target, v)
 		}
 	})

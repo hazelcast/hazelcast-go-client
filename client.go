@@ -123,7 +123,7 @@ func newClient(config Config) (*Client, error) {
 		eventDispatcher:         event.NewDispatchService(),
 		userEventDispatcher:     event.NewDispatchService(),
 		logger:                  clientLogger,
-		refIDGen:                iproxy.NewReferenceIDGenerator(),
+		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
 		lifecyleListenerMapMu:   &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
@@ -179,48 +179,6 @@ func (c *Client) GetTopic(name string) (*Topic, error) {
 		return nil, ErrClientNotActive
 	}
 	return c.proxyManager.getTopic(name)
-}
-
-func (c *Client) GetListWithContext(name string) (*ContextList, error) {
-	if l, err := c.GetList(name); err != nil {
-		return nil, err
-	} else {
-		return l.cl, nil
-	}
-}
-
-// GetMapWithContext returns a distributed map instance.
-func (c *Client) GetMapWithContext(name string) (*ContextMap, error) {
-	if m, err := c.GetMap(name); err != nil {
-		return nil, err
-	} else {
-		return m.cm, nil
-	}
-}
-
-// GetReplicatedMapWithContext returns a replicated map instance.
-func (c *Client) GetReplicatedMapWithContext(name string) (*ContextReplicatedMap, error) {
-	if m, err := c.GetReplicatedMap(name); err != nil {
-		return nil, err
-	} else {
-		return m.cm, nil
-	}
-}
-
-func (c *Client) GetQueueWithContext(name string) (*ContextQueue, error) {
-	if q, err := c.GetQueue(name); err != nil {
-		return nil, err
-	} else {
-		return q.cq, nil
-	}
-}
-
-func (c *Client) GetTopicWithContext(name string) (*ContextTopic, error) {
-	if t, err := c.GetTopic(name); err != nil {
-		return nil, err
-	} else {
-		return t.ct, nil
-	}
 }
 
 // Start connects the client to the cluster.

@@ -77,6 +77,7 @@ Expect breaking changes in the following areas:
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -96,11 +97,11 @@ func main() {
     }
     personName := "Jane Doe"
     // set a value in the map
-    if err = people.Set(personName, 30); err != nil {
+    if err = people.Set(context.TODO(), personName, 30); err != nil {
     	log.Fatal(err)
     }
     // get a value from the map
-    age, err := people.Get(personName)
+    age, err := people.Get(context.TODO(), personName)
     if err != nil {
         log.Fatal(err)
     }

@@ -90,7 +90,7 @@ type proxy struct {
 	config               *Config
 	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
-	circuitBreaker       *cb.CircuitBreaker
+	cb                   *cb.CircuitBreaker
 	removeFromCacheFn    func() bool
 	serviceName          string
 	name                 string
@@ -121,7 +121,7 @@ func newProxy(bundle creationBundle,
 		listenerBinder:       bundle.ListenerBinder,
 		config:               bundle.Config,
 		logger:               bundle.Logger,
-		circuitBreaker:       circuitBreaker,
+		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
 	}
 	if err := p.create(); err != nil {
@@ -150,9 +150,7 @@ func (p *proxy) Destroy(ctx context.Context) error {
 	}
 	// destroy on cluster
 	request := codec.EncodeClientDestroyProxyRequest(p.name, p.serviceName)
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
-	p.requestCh <- inv
-	if _, err := inv.GetWithContext(ctx); err != nil {
+	if _, err := p.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return fmt.Errorf("error destroying proxy: %w", err)
 	}
 	return nil
@@ -216,7 +214,10 @@ func (p *proxy) validateAndSerializeValues(values ...interface{}) ([]*iserializa
 }
 
 func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMessage, error) {
-	if res, err := p.circuitBreaker.TryContext(ctx, f); err != nil {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if res, err := p.cb.TryContext(ctx, f); err != nil {
 		return nil, err
 	} else {
 		return res.(*proto.ClientMessage), nil

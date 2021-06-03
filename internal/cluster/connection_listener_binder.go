@@ -76,6 +76,9 @@ func NewConnectionListenerBinder(
 }
 
 func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	b.regsMu.Lock()
 	b.regs[id] = listenerRegistration{
 		addRequest:    add,
@@ -93,6 +96,9 @@ func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *
 }
 
 func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	b.regsMu.Lock()
 	reg, ok := b.regs[id]
 	if !ok {

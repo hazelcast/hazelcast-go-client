@@ -98,11 +98,11 @@ func TestPredicate_In(t *testing.T) {
 
 func TestPredicate_InstanceOf(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", "foo"))
-		it.Must(m.Set("k2", true))
-		it.Must(m.Set("k3", 66))
+		it.Must(m.Set(nil, "k1", "foo"))
+		it.Must(m.Set(nil, "k2", true))
+		it.Must(m.Set(nil, "k3", 66))
 		pred := predicate.InstanceOf("java.lang.Boolean")
-		values := it.MustValue(m.GetValuesWithPredicate(pred))
+		values := it.MustValue(m.GetValuesWithPredicate(nil, pred))
 		target := []interface{}{true}
 		if !assert.Equal(t, target, values) {
 			t.FailNow()
@@ -195,7 +195,7 @@ func TestPredicate_True(t *testing.T) {
 func check(t *testing.T, pred predicate.Predicate, target []interface{}) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		createFixture(m)
-		values := it.MustValue(m.GetValuesWithPredicate(pred))
+		values := it.MustValue(m.GetValuesWithPredicate(nil, pred))
 		if !assert.Subset(t, target, values) {
 			t.FailNow()
 		}
@@ -212,9 +212,9 @@ func createFixture(m *hz.Map) {
 		serialization.JSON(`{"a": 15, "b": "value2", "c": false}`),
 	}
 	for i, v := range values {
-		it.Must(m.Set(fmt.Sprintf("k%d", i), v))
+		it.Must(m.Set(nil, fmt.Sprintf("k%d", i), v))
 	}
-	if it.MustValue(m.Size()) != len(values) {
+	if it.MustValue(m.Size(nil)) != len(values) {
 		panic(fmt.Sprintf("expected %d values", len(values)))
 	}
 }

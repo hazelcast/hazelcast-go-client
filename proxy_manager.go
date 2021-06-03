@@ -36,7 +36,7 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 		mu:             &sync.RWMutex{},
 		proxies:        map[string]*proxy{},
 		serviceBundle:  bundle,
-		refIDGenerator: iproxy.NewReferenceIDGenerator(),
+		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
 	}
 }
 
@@ -44,7 +44,7 @@ func (m *proxyManager) getMap(name string) (*Map, error) {
 	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
 		return nil, err
 	} else {
-		return newMap(p, m.refIDGenerator), nil
+		return newContextMap(p, m.refIDGenerator), nil
 	}
 }
 

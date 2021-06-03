@@ -36,178 +36,21 @@ List is not a partitioned Hazelcast data structure. So all the contents of the L
 machine (and in the backup). So, a single List will not scale by adding more members in the cluster.
 */
 type List struct {
-	cl *ContextList
-}
-
-func newList(p *proxy) (*List, error) {
-	if cl, err := newContextList(p); err != nil {
-		return nil, err
-	} else {
-		return &List{cl: cl}, nil
-	}
-}
-
-// Add appends the specified element to the end of this list.
-// Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *List) Add(element interface{}) (bool, error) {
-	return l.cl.Add(context.Background(), element)
-}
-
-// AddAt inserts the specified element at the specified index.
-// Shifts the subsequent elements to the right.
-func (l *List) AddAt(index int, element interface{}) error {
-	return l.cl.AddAt(context.Background(), index, element)
-}
-
-// AddAll appends all elements in the specified slice to the end of this list.
-// Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *List) AddAll(elements ...interface{}) (bool, error) {
-	return l.cl.AddAll(context.Background(), elements...)
-}
-
-// AddAllAt inserts all elements in the specified slice at specified index, keeping the order of the slice.
-// Shifts the subsequent elements to the right.
-// Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *List) AddAllAt(index int, elements ...interface{}) (bool, error) {
-	return l.cl.AddAllAt(context.Background(), index, elements...)
-}
-
-// AddListener adds an item listener for this list.
-// The listener will be invoked whenever an item is added to or removed from this list.
-// Returns subscription ID of the listener.
-func (l *List) AddListener(handler ListItemNotifiedHandler) (types.UUID, error) {
-	return l.cl.AddListener(context.Background(), handler)
-}
-
-// AddListenerIncludeValue adds an item listener for this list.
-// The listener will be invoked whenever an item is added to or removed from this list.
-// Received events include the updated item.
-// Returns subscription ID of the listener.
-func (l *List) AddListenerIncludeValue(handler ListItemNotifiedHandler) (types.UUID, error) {
-	return l.cl.AddListenerIncludeValue(context.Background(), handler)
-}
-
-// Clear removes all elements from the list.
-func (l *List) Clear() error {
-	return l.cl.Clear(context.Background())
-}
-
-// Contains checks if the list contains the given element.
-// Returns true if the list contains the element, false otherwise.
-func (l *List) Contains(element interface{}) (bool, error) {
-	return l.cl.Contains(context.Background(), element)
-}
-
-// ContainsAll checks if the list contains all of the given elements.
-// Returns true if the list contains all of the elements, otherwise false.
-func (l *List) ContainsAll(elements ...interface{}) (bool, error) {
-	return l.cl.ContainsAll(context.Background(), elements...)
-}
-
-// Destroy removes this object cluster-wide.
-// Clears and releases all resources for this object.
-func (l *List) Destroy() error {
-	return l.cl.Destroy(context.Background())
-}
-
-// Get retrieves the element at given index.
-func (l *List) Get(index int) (interface{}, error) {
-	return l.cl.Get(context.Background(), index)
-}
-
-// IndexOf returns the index of the first occurrence of the given element in this list.
-func (l *List) IndexOf(element interface{}) (int, error) {
-	return l.cl.IndexOf(context.Background(), element)
-}
-
-// IsEmpty return true if the list is empty, false otherwise.
-func (l *List) IsEmpty() (bool, error) {
-	return l.cl.IsEmpty(context.Background())
-}
-
-// LastIndexOf returns the index of the last occurrence of the given element in this list.
-func (l *List) LastIndexOf(element interface{}) (int, error) {
-	return l.cl.LastIndexOf(context.Background(), element)
-}
-
-// Remove removes the given element from this list.
-// Returns true if the list has changed as the result of this operation, false otherwise.
-func (l *List) Remove(element interface{}) (bool, error) {
-	return l.cl.Remove(context.Background(), element)
-}
-
-// RemoveAt removes the element at the given index.
-// Returns the removed element.
-func (l *List) RemoveAt(index int) (interface{}, error) {
-	return l.cl.RemoveAt(context.Background(), index)
-}
-
-// RemoveAll removes the given elements from the list.
-// Returns true if the list has changed as the result of this operation, false otherwise.
-func (l *List) RemoveAll(elements ...interface{}) (bool, error) {
-	return l.cl.RemoveAll(context.Background(), elements...)
-}
-
-// RemoveListener removes the item listener with the given subscription ID.
-func (l *List) RemoveListener(subscriptionID types.UUID) error {
-	return l.cl.RemoveListener(context.Background(), subscriptionID)
-}
-
-// RetainAll removes all elements from this list except the ones contained in the given slice.
-// Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *List) RetainAll(elements ...interface{}) (bool, error) {
-	return l.cl.RetainAll(context.Background(), elements...)
-}
-
-// Set replaces the element at the specified index in this list with the specified element.
-// Returns the previous element from the list.
-func (l *List) Set(index int, element interface{}) (interface{}, error) {
-	return l.cl.Set(context.Background(), index, element)
-}
-
-// Size returns the number of elements in this list.
-func (l *List) Size() (int, error) {
-	return l.cl.Size(context.Background())
-}
-
-// SubList returns a view of this list that contains elements between index numbers
-// from start (inclusive) to end (exclusive).
-func (l *List) SubList(start int, end int) ([]interface{}, error) {
-	return l.cl.SubList(context.Background(), start, end)
-}
-
-// ToSlice returns a slice that contains all elements of this list in proper sequence.
-func (l *List) ToSlice() ([]interface{}, error) {
-	return l.cl.ToSlice(context.Background())
-}
-
-/*
-ContextList has the same functionality with List, but has context support.
-
-List is a concurrent, distributed, ordered collection. The user of this
-data structure has precise control over where in the list each element is
-inserted. The user can access elements by their integer index (position in the list),
-and search for elements in the list.
-
-List is not a partitioned Hazelcast data structure. So all the contents of the List are stored in a single
-machine (and in the backup). So, a single List will not scale by adding more members in the cluster.
-*/
-type ContextList struct {
 	*proxy
 	partitionID int32
 }
 
-func newContextList(p *proxy) (*ContextList, error) {
+func newList(p *proxy) (*List, error) {
 	if partitionID, err := p.stringToPartitionID(p.name); err != nil {
 		return nil, err
 	} else {
-		return &ContextList{proxy: p, partitionID: partitionID}, nil
+		return &List{proxy: p, partitionID: partitionID}, nil
 	}
 }
 
 // Add appends the specified element to the end of this list.
 // Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *ContextList) Add(ctx context.Context, element interface{}) (bool, error) {
+func (l *List) Add(ctx context.Context, element interface{}) (bool, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return false, err
@@ -222,7 +65,7 @@ func (l *ContextList) Add(ctx context.Context, element interface{}) (bool, error
 
 // AddAt inserts the specified element at the specified index.
 // Shifts the subsequent elements to the right.
-func (l *ContextList) AddAt(ctx context.Context, index int, element interface{}) error {
+func (l *List) AddAt(ctx context.Context, index int, element interface{}) error {
 	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
 	if err != nil {
 		return err
@@ -238,7 +81,7 @@ func (l *ContextList) AddAt(ctx context.Context, index int, element interface{})
 
 // AddAll appends all elements in the specified slice to the end of this list.
 // Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *ContextList) AddAll(ctx context.Context, elements ...interface{}) (bool, error) {
+func (l *List) AddAll(ctx context.Context, elements ...interface{}) (bool, error) {
 	elementsData, err := l.validateAndSerializeValues(elements...)
 	if err != nil {
 		return false, err
@@ -254,7 +97,7 @@ func (l *ContextList) AddAll(ctx context.Context, elements ...interface{}) (bool
 // AddAllAt inserts all elements in the specified slice at specified index, keeping the order of the slice.
 // Shifts the subsequent elements to the right.
 // Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *ContextList) AddAllAt(ctx context.Context, index int, elements ...interface{}) (bool, error) {
+func (l *List) AddAllAt(ctx context.Context, index int, elements ...interface{}) (bool, error) {
 	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
 	if err != nil {
 		return false, err
@@ -274,7 +117,7 @@ func (l *ContextList) AddAllAt(ctx context.Context, index int, elements ...inter
 // AddListener adds an item listener for this list.
 // The listener will be invoked whenever an item is added to or removed from this list.
 // Returns subscription ID of the listener.
-func (l *ContextList) AddListener(ctx context.Context, handler ListItemNotifiedHandler) (types.UUID, error) {
+func (l *List) AddListener(ctx context.Context, handler ListItemNotifiedHandler) (types.UUID, error) {
 	return l.addListener(ctx, false, handler)
 }
 
@@ -282,12 +125,12 @@ func (l *ContextList) AddListener(ctx context.Context, handler ListItemNotifiedH
 // The listener will be invoked whenever an item is added to or removed from this list.
 // Received events include the updated item.
 // Returns subscription ID of the listener.
-func (l *ContextList) AddListenerIncludeValue(ctx context.Context, handler ListItemNotifiedHandler) (types.UUID, error) {
+func (l *List) AddListenerIncludeValue(ctx context.Context, handler ListItemNotifiedHandler) (types.UUID, error) {
 	return l.addListener(ctx, true, handler)
 }
 
 // Clear removes all elements from the list.
-func (l *ContextList) Clear(ctx context.Context) error {
+func (l *List) Clear(ctx context.Context) error {
 	request := codec.EncodeListClearRequest(l.name)
 	_, err := l.invokeOnPartition(ctx, request, l.partitionID)
 	return err
@@ -295,7 +138,7 @@ func (l *ContextList) Clear(ctx context.Context) error {
 
 // Contains checks if the list contains the given element.
 // Returns true if the list contains the element, false otherwise.
-func (l *ContextList) Contains(ctx context.Context, element interface{}) (bool, error) {
+func (l *List) Contains(ctx context.Context, element interface{}) (bool, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return false, err
@@ -310,7 +153,7 @@ func (l *ContextList) Contains(ctx context.Context, element interface{}) (bool, 
 
 // ContainsAll checks if the list contains all of the given elements.
 // Returns true if the list contains all of the elements, otherwise false.
-func (l *ContextList) ContainsAll(ctx context.Context, elements ...interface{}) (bool, error) {
+func (l *List) ContainsAll(ctx context.Context, elements ...interface{}) (bool, error) {
 	elementsData, err := l.validateAndSerializeValues(elements...)
 	if err != nil {
 		return false, err
@@ -324,7 +167,7 @@ func (l *ContextList) ContainsAll(ctx context.Context, elements ...interface{}) 
 }
 
 // Get retrieves the element at given index.
-func (l *ContextList) Get(ctx context.Context, index int) (interface{}, error) {
+func (l *List) Get(ctx context.Context, index int) (interface{}, error) {
 	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
 	if err != nil {
 		return nil, err
@@ -338,7 +181,7 @@ func (l *ContextList) Get(ctx context.Context, index int) (interface{}, error) {
 }
 
 // IndexOf returns the index of the first occurrence of the given element in this list.
-func (l *ContextList) IndexOf(ctx context.Context, element interface{}) (int, error) {
+func (l *List) IndexOf(ctx context.Context, element interface{}) (int, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return 0, err
@@ -352,7 +195,7 @@ func (l *ContextList) IndexOf(ctx context.Context, element interface{}) (int, er
 }
 
 // IsEmpty return true if the list is empty, false otherwise.
-func (l *ContextList) IsEmpty(ctx context.Context) (bool, error) {
+func (l *List) IsEmpty(ctx context.Context) (bool, error) {
 	request := codec.EncodeListIsEmptyRequest(l.name)
 	response, err := l.invokeOnPartition(ctx, request, l.partitionID)
 	if err != nil {
@@ -362,7 +205,7 @@ func (l *ContextList) IsEmpty(ctx context.Context) (bool, error) {
 }
 
 // LastIndexOf returns the index of the last occurrence of the given element in this list.
-func (l *ContextList) LastIndexOf(ctx context.Context, element interface{}) (int, error) {
+func (l *List) LastIndexOf(ctx context.Context, element interface{}) (int, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return 0, err
@@ -377,7 +220,7 @@ func (l *ContextList) LastIndexOf(ctx context.Context, element interface{}) (int
 
 // Remove removes the given element from this list.
 // Returns true if the list has changed as the result of this operation, false otherwise.
-func (l *ContextList) Remove(ctx context.Context, element interface{}) (bool, error) {
+func (l *List) Remove(ctx context.Context, element interface{}) (bool, error) {
 	elementData, err := l.validateAndSerialize(element)
 	if err != nil {
 		return false, err
@@ -392,7 +235,7 @@ func (l *ContextList) Remove(ctx context.Context, element interface{}) (bool, er
 
 // RemoveAt removes the element at the given index.
 // Returns the removed element.
-func (l *ContextList) RemoveAt(ctx context.Context, index int) (interface{}, error) {
+func (l *List) RemoveAt(ctx context.Context, index int) (interface{}, error) {
 	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
 	if err != nil {
 		return nil, err
@@ -407,7 +250,7 @@ func (l *ContextList) RemoveAt(ctx context.Context, index int) (interface{}, err
 
 // RemoveAll removes the given elements from the list.
 // Returns true if the list has changed as the result of this operation, false otherwise.
-func (l *ContextList) RemoveAll(ctx context.Context, elements ...interface{}) (bool, error) {
+func (l *List) RemoveAll(ctx context.Context, elements ...interface{}) (bool, error) {
 	elementsData, err := l.validateAndSerializeValues(elements...)
 	if err != nil {
 		return false, err
@@ -421,13 +264,13 @@ func (l *ContextList) RemoveAll(ctx context.Context, elements ...interface{}) (b
 }
 
 // RemoveListener removes the item listener with the given subscription ID.
-func (l *ContextList) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
+func (l *List) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return l.listenerBinder.Remove(ctx, subscriptionID)
 }
 
 // RetainAll removes all elements from this list except the ones contained in the given slice.
 // Returns true if the list has changed as a result of this operation, false otherwise.
-func (l *ContextList) RetainAll(ctx context.Context, elements ...interface{}) (bool, error) {
+func (l *List) RetainAll(ctx context.Context, elements ...interface{}) (bool, error) {
 	elementsData, err := l.validateAndSerializeValues(elements...)
 	if err != nil {
 		return false, err
@@ -442,7 +285,7 @@ func (l *ContextList) RetainAll(ctx context.Context, elements ...interface{}) (b
 
 // Set replaces the element at the specified index in this list with the specified element.
 // Returns the previous element from the list.
-func (l *ContextList) Set(ctx context.Context, index int, element interface{}) (interface{}, error) {
+func (l *List) Set(ctx context.Context, index int, element interface{}) (interface{}, error) {
 	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
 	if err != nil {
 		return nil, err
@@ -460,7 +303,7 @@ func (l *ContextList) Set(ctx context.Context, index int, element interface{}) (
 }
 
 // Size returns the number of elements in this list.
-func (l *ContextList) Size(ctx context.Context) (int, error) {
+func (l *List) Size(ctx context.Context) (int, error) {
 	request := codec.EncodeListSizeRequest(l.name)
 	response, err := l.invokeOnPartition(ctx, request, l.partitionID)
 	if err != nil {
@@ -471,7 +314,7 @@ func (l *ContextList) Size(ctx context.Context) (int, error) {
 
 // SubList returns a view of this list that contains elements between index numbers
 // from start (inclusive) to end (exclusive).
-func (l *ContextList) SubList(ctx context.Context, start int, end int) ([]interface{}, error) {
+func (l *List) SubList(ctx context.Context, start int, end int) ([]interface{}, error) {
 	startAsInt32, err := validationutil.ValidateAsNonNegativeInt32(start)
 	if err != nil {
 		return nil, err
@@ -488,8 +331,8 @@ func (l *ContextList) SubList(ctx context.Context, start int, end int) ([]interf
 	return l.convertToObjects(codec.DecodeListSubResponse(response))
 }
 
-// ToSlice returns a slice that contains all elements of this list in proper sequence.
-func (l *ContextList) ToSlice(ctx context.Context) ([]interface{}, error) {
+// GetAll returns a slice that contains all elements of this list in proper sequence.
+func (l *List) GetAll(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeListGetAllRequest(l.name)
 	response, err := l.invokeOnPartition(ctx, request, l.partitionID)
 	if err != nil {
@@ -498,7 +341,7 @@ func (l *ContextList) ToSlice(ctx context.Context) ([]interface{}, error) {
 	return l.convertToObjects(codec.DecodeListGetAllResponse(response))
 }
 
-func (l *ContextList) addListener(ctx context.Context, includeValue bool, handler ListItemNotifiedHandler) (types.UUID, error) {
+func (l *List) addListener(ctx context.Context, includeValue bool, handler ListItemNotifiedHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
 	addRequest := codec.EncodeListAddListenerRequest(l.name, includeValue, l.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeListRemoveListenerRequest(l.name, subscriptionID)

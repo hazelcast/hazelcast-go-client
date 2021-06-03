@@ -39,10 +39,10 @@ import (
 func TestMap_Put(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.Put("key", targetValue); err != nil {
+		if _, err := m.Put(nil, "key", targetValue); err != nil {
 			t.Fatal(err)
 		}
-		if value, err := m.Get("key"); err != nil {
+		if value, err := m.Get(nil, "key"); err != nil {
 			t.Fatal(err)
 		} else if targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
@@ -53,61 +53,61 @@ func TestMap_Put(t *testing.T) {
 func TestMap_PutWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutWithTTL("key", targetValue, 1*time.Second); err != nil {
+		if _, err := m.PutWithTTL(nil, "key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
+		assert.Equal(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(2 * time.Second)
-		assert.Equal(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutWithMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
+		if _, err := m.PutWithMaxIdle(nil, "key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(4 * time.Second)
-		assert.Equal(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		if _, err := m.PutWithTTLAndMaxIdle(nil, "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
+		assert.Equal(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(4 * time.Second)
-		assert.Equal(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutIfAbsent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsent("key", targetValue); err != nil {
+		if _, err := m.PutIfAbsent(nil, "key", targetValue); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
-		if _, err := m.PutIfAbsent("key", "another-value"); err != nil {
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get(nil, "key")))
+		if _, err := m.PutIfAbsent(nil, "key", "another-value"); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTL("key", targetValue, 1*time.Second); err != nil {
+		if _, err := m.PutIfAbsentWithTTL(nil, "key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
+		assert.Equal(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(4 * time.Second)
-		assert.Equal(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
@@ -116,46 +116,46 @@ func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		// TODO: better test
-		if _, err := m.PutIfAbsentWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		if _, err := m.PutIfAbsentWithTTLAndMaxIdle(nil, "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, targetValue, it.MustValue(m.Get("key")))
+		assert.Equal(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(4 * time.Second)
-		assert.Equal(t, nil, it.MustValue(m.Get("key")))
+		assert.Equal(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutTransient(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if err := m.PutTransient("key", targetValue); err != nil {
+		if err := m.PutTransient(nil, "key", targetValue); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutTransientWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if err := m.PutTransientWithTTL("key", targetValue, 1*time.Second); err != nil {
+		if err := m.PutTransientWithTTL(nil, "key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(4 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_PutTransientWithMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if err := m.PutTransientWithMaxIdle("key", targetValue, 1*time.Second); err != nil {
+		if err := m.PutTransientWithMaxIdle(nil, "key", targetValue, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(4 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
@@ -163,22 +163,22 @@ func TestMap_PutTransientWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
 		// TODO: better test
-		if err := m.PutTransientWithTTLAndMaxIdle("key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		if err := m.PutTransientWithTTLAndMaxIdle(nil, "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
-		it.AssertEquals(t, targetValue, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, targetValue, it.MustValue(m.Get(nil, "key")))
 		time.Sleep(4 * time.Second)
-		it.AssertEquals(t, nil, it.MustValue(m.Get("key")))
+		it.AssertEquals(t, nil, it.MustValue(m.Get(nil, "key")))
 	})
 }
 
 func TestMap_Set(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if err := m.Set("key", targetValue); err != nil {
+		if err := m.Set(nil, "key", targetValue); err != nil {
 			t.Fatal(err)
 		}
-		value := it.MustValue(m.Get("key"))
+		value := it.MustValue(m.Get(nil, "key"))
 		if targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
@@ -188,14 +188,14 @@ func TestMap_Set(t *testing.T) {
 func TestMap_Delete(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		it.Must(m.Set("key", targetValue))
-		if value := it.MustValue(m.Get("key")); targetValue != value {
+		it.Must(m.Set(nil, "key", targetValue))
+		if value := it.MustValue(m.Get(nil, "key")); targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
-		if err := m.Delete("key"); err != nil {
+		if err := m.Delete(nil, "key"); err != nil {
 			t.Fatal(err)
 		}
-		if value := it.MustValue(m.Get("key")); nil != value {
+		if value := it.MustValue(m.Get(nil, "key")); nil != value {
 			t.Fatalf("target nil != %v", value)
 		}
 	})
@@ -204,10 +204,10 @@ func TestMap_Delete(t *testing.T) {
 func TestMap_Evict(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if err := m.Set("key", targetValue); err != nil {
+		if err := m.Set(nil, "key", targetValue); err != nil {
 			t.Fatal(err)
 		}
-		if value, err := m.Evict("key"); err != nil {
+		if value, err := m.Evict(nil, "key"); err != nil {
 			t.Fatal(err)
 		} else if !value {
 			t.Fatalf("target true != %v", value)
@@ -218,21 +218,21 @@ func TestMap_Evict(t *testing.T) {
 func TestMap_Clear(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		it.Must(m.Set("key", targetValue))
-		if ok := it.MustBool(m.ContainsKey("key")); !ok {
+		it.Must(m.Set(nil, "key", targetValue))
+		if ok := it.MustBool(m.ContainsKey(nil, "key")); !ok {
 			t.Fatalf("key not found")
 		}
-		if ok := it.MustBool(m.ContainsValue("value")); !ok {
+		if ok := it.MustBool(m.ContainsValue(nil, "value")); !ok {
 			t.Fatalf("value not found")
 		}
-		value := it.MustValue(m.Get("key"))
+		value := it.MustValue(m.Get(nil, "key"))
 		if targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
-		if err := m.Clear(); err != nil {
+		if err := m.Clear(nil); err != nil {
 			t.Fatal(err)
 		}
-		value = it.MustValue(m.Get("key"))
+		value = it.MustValue(m.Get(nil, "key"))
 		if nil != value {
 			t.Fatalf("target nil!= %v", value)
 		}
@@ -242,16 +242,16 @@ func TestMap_Clear(t *testing.T) {
 func TestMap_Remove(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		it.Must(m.Set("key", targetValue))
-		if !it.MustBool(m.ContainsKey("key")) {
+		it.Must(m.Set(nil, "key", targetValue))
+		if !it.MustBool(m.ContainsKey(nil, "key")) {
 			t.Fatalf("key not found")
 		}
-		if value, err := m.Remove("key"); err != nil {
+		if value, err := m.Remove(nil, "key"); err != nil {
 			t.Fatal(err)
 		} else if targetValue != value {
 			t.Fatalf("target nil != %v", value)
 		}
-		if it.MustBool(m.ContainsKey("key")) {
+		if it.MustBool(m.ContainsKey(nil, "key")) {
 			t.Fatalf("key found")
 		}
 	})
@@ -279,13 +279,13 @@ func TestMap_GetAll(t *testing.T) {
 			}
 		}
 		for _, pair := range allPairs {
-			it.Must(m.Set(pair.Key, pair.Value))
+			it.Must(m.Set(nil, pair.Key, pair.Value))
 		}
 		time.Sleep(1 * time.Second)
 		for _, pair := range allPairs {
-			it.AssertEquals(t, pair.Value, it.MustValue(m.Get(pair.Key)))
+			it.AssertEquals(t, pair.Value, it.MustValue(m.Get(nil, pair.Key)))
 		}
-		if kvs, err := m.GetAll(keys...); err != nil {
+		if kvs, err := m.GetAll(nil, keys...); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, kvs) {
 			t.Fatalf("target: %#v != %#v", target, kvs)
@@ -296,14 +296,14 @@ func TestMap_GetAll(t *testing.T) {
 func TestMap_GetKeySet(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetKeySet := []interface{}{"k1", "k2", "k3"}
-		it.Must(m.Set("k1", "v1"))
-		it.Must(m.Set("k2", "v2"))
-		it.Must(m.Set("k3", "v3"))
+		it.Must(m.Set(nil, "k1", "v1"))
+		it.Must(m.Set(nil, "k2", "v2"))
+		it.Must(m.Set(nil, "k3", "v3"))
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
-		if keys, err := m.GetKeySet(); err != nil {
+		it.AssertEquals(t, "v1", it.MustValue(m.Get(nil, "k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get(nil, "k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get(nil, "k3")))
+		if keys, err := m.GetKeySet(nil); err != nil {
 			t.Fatal(err)
 		} else if !assert.ElementsMatch(t, targetKeySet, keys) {
 			t.FailNow()
@@ -313,10 +313,10 @@ func TestMap_GetKeySet(t *testing.T) {
 func TestMap_GetKeySetWithPredicate(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetKeySet := []interface{}{serialization.JSON(`{"a": 15}`)}
-		it.Must(m.Set(serialization.JSON(`{"a": 5}`), "v1"))
-		it.Must(m.Set(serialization.JSON(`{"a": 10}`), "v2"))
-		it.Must(m.Set(serialization.JSON(`{"a": 15}`), "v3"))
-		if keys, err := m.GetKeySetWithPredicate(predicate.GreaterOrEqual("__key.a", 11)); err != nil {
+		it.Must(m.Set(nil, serialization.JSON(`{"a": 5}`), "v1"))
+		it.Must(m.Set(nil, serialization.JSON(`{"a": 10}`), "v2"))
+		it.Must(m.Set(nil, serialization.JSON(`{"a": 15}`), "v3"))
+		if keys, err := m.GetKeySetWithPredicate(nil, predicate.GreaterOrEqual("__key.a", 11)); err != nil {
 			t.Fatal(err)
 		} else if !assert.ElementsMatch(t, targetKeySet, keys) {
 			t.FailNow()
@@ -327,14 +327,14 @@ func TestMap_GetKeySetWithPredicate(t *testing.T) {
 func TestMap_GetValues(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValues := []interface{}{"v1", "v2", "v3"}
-		it.Must(m.Set("k1", "v1"))
-		it.Must(m.Set("k2", "v2"))
-		it.Must(m.Set("k3", "v3"))
+		it.Must(m.Set(nil, "k1", "v1"))
+		it.Must(m.Set(nil, "k2", "v2"))
+		it.Must(m.Set(nil, "k3", "v3"))
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
-		if values, err := m.GetValues(); err != nil {
+		it.AssertEquals(t, "v1", it.MustValue(m.Get(nil, "k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get(nil, "k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get(nil, "k3")))
+		if values, err := m.GetValues(nil); err != nil {
 			t.Fatal(err)
 		} else if !assert.ElementsMatch(t, targetValues, values) {
 			t.FailNow()
@@ -345,14 +345,14 @@ func TestMap_GetValues(t *testing.T) {
 func TestMap_GetValuesWithPredicate(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValues := []interface{}{serialization.JSON(`{"A": 10, "B": 200}`), serialization.JSON(`{"A": 10, "B": 30}`)}
-		it.Must(m.Set("k1", serialization.JSON(`{"A": 10, "B": 200}`)))
-		it.Must(m.Set("k2", serialization.JSON(`{"A": 10, "B": 30}`)))
-		it.Must(m.Set("k3", serialization.JSON(`{"A": 5, "B": 200}`)))
+		it.Must(m.Set(nil, "k1", serialization.JSON(`{"A": 10, "B": 200}`)))
+		it.Must(m.Set(nil, "k2", serialization.JSON(`{"A": 10, "B": 30}`)))
+		it.Must(m.Set(nil, "k3", serialization.JSON(`{"A": 5, "B": 200}`)))
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, serialization.JSON(`{"A": 10, "B": 200}`), it.MustValue(m.Get("k1")))
-		it.AssertEquals(t, serialization.JSON(`{"A": 10, "B": 30}`), it.MustValue(m.Get("k2")))
-		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get("k3")))
-		if values, err := m.GetValuesWithPredicate(predicate.Equal("A", 10)); err != nil {
+		it.AssertEquals(t, serialization.JSON(`{"A": 10, "B": 200}`), it.MustValue(m.Get(nil, "k1")))
+		it.AssertEquals(t, serialization.JSON(`{"A": 10, "B": 30}`), it.MustValue(m.Get(nil, "k2")))
+		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get(nil, "k3")))
+		if values, err := m.GetValuesWithPredicate(nil, predicate.Equal("A", 10)); err != nil {
 			t.Fatal(err)
 		} else if !assert.ElementsMatch(t, targetValues, values) {
 			t.FailNow()
@@ -367,13 +367,13 @@ func TestMap_PutAll(t *testing.T) {
 			types.NewEntry("k2", "v2"),
 			types.NewEntry("k3", "v3"),
 		}
-		if err := m.PutAll(pairs...); err != nil {
+		if err := m.PutAll(nil, pairs...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
-		it.AssertEquals(t, "v3", it.MustValue(m.Get("k3")))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get(nil, "k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get(nil, "k2")))
+		it.AssertEquals(t, "v3", it.MustValue(m.Get(nil, "k3")))
 	})
 }
 
@@ -384,11 +384,11 @@ func TestMap_GetEntrySet(t *testing.T) {
 			types.NewEntry("k2", "v2"),
 			types.NewEntry("k3", "v3"),
 		}
-		if err := m.PutAll(target...); err != nil {
+		if err := m.PutAll(nil, target...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
-		if entries, err := m.GetEntrySet(); err != nil {
+		if entries, err := m.GetEntrySet(nil); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
 			t.Fatalf("target: %#v != %#v", target, entries)
@@ -408,7 +408,7 @@ func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
 			types.NewEntry("k2", &it.SamplePortable{A: noValue, B: 15}),
 			types.NewEntry("k3", &it.SamplePortable{A: okValue, B: 10}),
 		}
-		if err := m.PutAll(entries...); err != nil {
+		if err := m.PutAll(nil, entries...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -416,7 +416,7 @@ func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
 			types.NewEntry("k1", &it.SamplePortable{A: okValue, B: 10}),
 			types.NewEntry("k3", &it.SamplePortable{A: okValue, B: 10}),
 		}
-		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", okValue), predicate.Equal("B", 10))); err != nil {
+		if entries, err := m.GetEntrySetWithPredicate(nil, predicate.And(predicate.Equal("A", okValue), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
 			t.Fatalf("target: %#v != %#v", target, entries)
@@ -431,7 +431,7 @@ func TestMap_GetEntrySetWithPredicateUsingJSON(t *testing.T) {
 			types.NewEntry("k2", it.SamplePortable{A: "foo", B: 15}.Json()),
 			types.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.Json()),
 		}
-		if err := m.PutAll(entries...); err != nil {
+		if err := m.PutAll(nil, entries...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -439,7 +439,7 @@ func TestMap_GetEntrySetWithPredicateUsingJSON(t *testing.T) {
 			types.NewEntry("k1", it.SamplePortable{A: "foo", B: 10}.Json()),
 			types.NewEntry("k3", it.SamplePortable{A: "foo", B: 10}.Json()),
 		}
-		if entries, err := m.GetEntrySetWithPredicate(predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
+		if entries, err := m.GetEntrySetWithPredicate(nil, predicate.And(predicate.Equal("A", "foo"), predicate.Equal("B", 10))); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
 			t.Fatalf("target: %#v != %#v", target, entries)
@@ -449,8 +449,8 @@ func TestMap_GetEntrySetWithPredicateUsingJSON(t *testing.T) {
 
 func TestMap_GetEntryView(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", "v1"))
-		if ev, err := m.GetEntryView("k1"); err != nil {
+		it.Must(m.Set(nil, "k1", "v1"))
+		if ev, err := m.GetEntryView(nil, "k1"); err != nil {
 			t.Fatal(err)
 		} else {
 			it.AssertEquals(t, "k1", ev.Key())
@@ -461,14 +461,14 @@ func TestMap_GetEntryView(t *testing.T) {
 
 func TestMap_AddIndexWithConfig(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", serialization.JSON(`{"A": 10, "B": 40}`)))
+		it.Must(m.Set(nil, "k1", serialization.JSON(`{"A": 10, "B": 40}`)))
 		indexConfig := types.IndexConfig{
 			Name:               "my-index",
 			Type:               types.IndexTypeBitmap,
 			Attributes:         []string{"A"},
 			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
 		}
-		if err := m.AddIndexWithConfig(indexConfig); err != nil {
+		if err := m.AddIndexWithConfig(nil, indexConfig); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -482,7 +482,7 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 			Attributes:         []string{"A", "B"},
 			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
 		}
-		if err := m.AddIndexWithConfig(indexConfig); err == nil {
+		if err := m.AddIndexWithConfig(nil, indexConfig); err == nil {
 			t.Fatalf("should have failed")
 		} else {
 			vErr := &hz.IndexValidationError{}
@@ -495,8 +495,8 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 
 func TestMap_Flush(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", "v1"))
-		if err := m.Flush(); err != nil {
+		it.Must(m.Set(nil, "k1", "v1"))
+		if err := m.Flush(nil); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -523,16 +523,16 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		putSampleKeyValues(m, 2)
-		it.Must(m.EvictAll())
-		it.Must(m.PutTransient("k0", "new-v0"))
-		it.Must(m.PutTransient("k1", "new-v1"))
+		it.Must(m.EvictAll(nil))
+		it.Must(m.PutTransient(nil, "k0", "new-v0"))
+		it.Must(m.PutTransient(nil, "k1", "new-v1"))
 		time.Sleep(1 * time.Second)
-		it.Must(m.LoadAllWithoutReplacing("k0", "k1"))
+		it.Must(m.LoadAllWithoutReplacing(nil, "k0", "k1"))
 		targetEntrySet := []types.Entry{
 			{Key: "k0", Value: "new-v0"},
 			{Key: "k1", Value: "new-v1"},
 		}
-		entrySet := it.MustValue(m.GetAll("k0", "k1")).([]types.Entry)
+		entrySet := it.MustValue(m.GetAll(nil, "k0", "k1")).([]types.Entry)
 		if !entriesEqualUnordered(targetEntrySet, entrySet) {
 			t.Fatalf("target %#v != %#v", targetEntrySet, entrySet)
 		}
@@ -545,16 +545,16 @@ func TestMap_LoadAllReplacing(t *testing.T) {
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		keys := putSampleKeyValues(m, 10)
-		it.Must(m.EvictAll())
-		it.Must(m.LoadAllReplacing())
-		entrySet := it.MustValue(m.GetAll(keys...)).([]types.Entry)
+		it.Must(m.EvictAll(nil))
+		it.Must(m.LoadAllReplacing(nil))
+		entrySet := it.MustValue(m.GetAll(nil, keys...)).([]types.Entry)
 		if len(keys) != len(entrySet) {
 			t.Fatalf("target len: %d != %d", len(keys), len(entrySet))
 		}
-		it.Must(m.EvictAll())
+		it.Must(m.EvictAll(nil))
 		keys = keys[:5]
-		it.Must(m.LoadAllReplacing(keys...))
-		entrySet = it.MustValue(m.GetAll(keys...)).([]types.Entry)
+		it.Must(m.LoadAllReplacing(nil, keys...))
+		entrySet = it.MustValue(m.GetAll(nil, keys...)).([]types.Entry)
 		if len(keys) != len(entrySet) {
 			t.Fatalf("target len: %d != %d", len(keys), len(entrySet))
 		}
@@ -562,7 +562,7 @@ func TestMap_LoadAllReplacing(t *testing.T) {
 }
 
 func TestContextMap_Lock(t *testing.T) {
-	it.ContextMapTester(t, func(t *testing.T, cm *hz.ContextMap) {
+	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
 		const goroutineCount = 100
 		const key = "counter"
 		wg := &sync.WaitGroup{}
@@ -599,7 +599,7 @@ func TestContextMap_Lock(t *testing.T) {
 }
 
 func TestContextMap_ForceUnlock(t *testing.T) {
-	it.ContextMapTester(t, func(t *testing.T, cm *hz.ContextMap) {
+	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
 		lockCtx := cm.NewLockContext(nil)
 		if err := cm.Lock(lockCtx, "k1"); err != nil {
 			t.Fatal(err)
@@ -622,27 +622,27 @@ func TestContextMap_ForceUnlock(t *testing.T) {
 
 func TestMap_IsEmptySize(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		if value, err := m.IsEmpty(); err != nil {
+		if value, err := m.IsEmpty(nil); err != nil {
 			t.Fatal(err)
 		} else if !value {
 			t.Fatalf("target: true != false")
 		}
 		targetSize := 0
-		if value, err := m.Size(); err != nil {
+		if value, err := m.Size(nil); err != nil {
 			t.Fatal(err)
 		} else if targetSize != value {
 			t.Fatalf("target: %d != %d", targetSize, value)
 		}
-		it.MustValue(m.Put("k1", "v1"))
-		it.MustValue(m.Put("k2", "v2"))
-		it.MustValue(m.Put("k3", "v3"))
-		if value, err := m.IsEmpty(); err != nil {
+		it.MustValue(m.Put(nil, "k1", "v1"))
+		it.MustValue(m.Put(nil, "k2", "v2"))
+		it.MustValue(m.Put(nil, "k3", "v3"))
+		if value, err := m.IsEmpty(nil); err != nil {
 			t.Fatal(err)
 		} else if value {
 			t.Fatalf("target: false != true")
 		}
 		targetSize = 3
-		if value, err := m.Size(); err != nil {
+		if value, err := m.Size(nil); err != nil {
 			t.Fatal(err)
 		} else if targetSize != value {
 			t.Fatalf("target: %d != %d", targetSize, value)
@@ -660,15 +660,15 @@ func TestMap_RemoveAll(t *testing.T) {
 			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
 			types.NewEntry("k3", &it.SamplePortable{A: "foo", B: 10}),
 		}
-		it.Must(m.PutAll(entries...))
+		it.Must(m.PutAll(nil, entries...))
 		time.Sleep(1 * time.Second)
-		if err := m.RemoveAll(predicate.Equal("B", 10)); err != nil {
+		if err := m.RemoveAll(nil, predicate.Equal("B", 10)); err != nil {
 			t.Fatal(err)
 		}
 		target := []types.Entry{
 			types.NewEntry("k2", &it.SamplePortable{A: "foo", B: 15}),
 		}
-		if kvs, err := m.GetAll("k1", "k2", "k3"); err != nil {
+		if kvs, err := m.GetAll(nil, "k1", "k2", "k3"); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, kvs) {
 			t.Fatalf("target: %#v != %#v", target, kvs)
@@ -679,48 +679,48 @@ func TestMap_RemoveAll(t *testing.T) {
 
 func TestMap_RemoveIfSame(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", "v1"))
-		it.Must(m.Set("k2", "v2"))
-		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
-		it.AssertEquals(t, "v2", it.MustValue(m.Get("k2")))
-		if removed, err := m.RemoveIfSame("k1", "v1"); err != nil {
+		it.Must(m.Set(nil, "k1", "v1"))
+		it.Must(m.Set(nil, "k2", "v2"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get(nil, "k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get(nil, "k2")))
+		if removed, err := m.RemoveIfSame(nil, "k1", "v1"); err != nil {
 			t.Fatal(err)
 		} else if !removed {
 			t.Fatalf("not removed")
 		}
-		it.AssertEquals(t, false, it.MustValue(m.ContainsKey("k1")))
-		if removed, err := m.RemoveIfSame("k2", "v1"); err != nil {
+		it.AssertEquals(t, false, it.MustValue(m.ContainsKey(nil, "k1")))
+		if removed, err := m.RemoveIfSame(nil, "k2", "v1"); err != nil {
 			t.Fatal(err)
 		} else if removed {
 			t.Fatalf("removed")
 		}
-		it.AssertEquals(t, true, it.MustValue(m.ContainsKey("k2")))
+		it.AssertEquals(t, true, it.MustValue(m.ContainsKey(nil, "k2")))
 	})
 }
 
 func TestMap_Replace(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", "v1"))
-		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
-		if oldValue, err := m.Replace("k1", "v2"); err != nil {
+		it.Must(m.Set(nil, "k1", "v1"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get(nil, "k1")))
+		if oldValue, err := m.Replace(nil, "k1", "v2"); err != nil {
 			t.Fatal(err)
 		} else {
 			it.AssertEquals(t, "v1", oldValue)
 		}
-		it.AssertEquals(t, "v2", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get(nil, "k1")))
 	})
 }
 
 func TestMap_ReplaceIfSame(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set("k1", "v1"))
-		it.AssertEquals(t, "v1", it.MustValue(m.Get("k1")))
-		if replaced, err := m.ReplaceIfSame("k1", "v1", "v2"); err != nil {
+		it.Must(m.Set(nil, "k1", "v1"))
+		it.AssertEquals(t, "v1", it.MustValue(m.Get(nil, "k1")))
+		if replaced, err := m.ReplaceIfSame(nil, "k1", "v1", "v2"); err != nil {
 			t.Fatal(err)
 		} else {
 			it.AssertEquals(t, true, replaced)
 		}
-		it.AssertEquals(t, "v2", it.MustValue(m.Get("k1")))
+		it.AssertEquals(t, "v2", it.MustValue(m.Get(nil, "k1")))
 	})
 }
 
@@ -735,27 +735,27 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			IncludeValue: true,
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		subscriptionID, err := m.AddEntryListener(listenerConfig, handler)
+		subscriptionID, err := m.AddEntryListener(nil, listenerConfig, handler)
 		if err != nil {
 			t.Fatal(err)
 		}
 		for i := 0; i < int(totalCallCount); i++ {
 			key := fmt.Sprintf("key-%d", i)
 			value := fmt.Sprintf("value-%d", i)
-			it.MustValue(m.Put(key, value))
+			it.MustValue(m.Put(nil, key, value))
 		}
 		time.Sleep(1 * time.Second)
 		if !assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount)) {
 			t.FailNow()
 		}
 		atomic.StoreInt32(&callCount, 0)
-		if err := m.RemoveEntryListener(subscriptionID); err != nil {
+		if err := m.RemoveEntryListener(nil, subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		for i := 0; i < int(totalCallCount); i++ {
 			key := fmt.Sprintf("key-%d", i)
 			value := fmt.Sprintf("value-%d", i)
-			it.MustValue(m.Put(key, value))
+			it.MustValue(m.Put(nil, key, value))
 		}
 		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
 			t.FailNow()
@@ -774,10 +774,10 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 			Key:          "k1",
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
+		if _, err := m.AddEntryListener(nil, listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put("k1", "v1"))
+		it.MustValue(m.Put(nil, "k1", "v1"))
 		time.Sleep(1 * time.Second)
 		if !assert.Equal(t, int32(1), atomic.LoadInt32(&callCount)) {
 			t.FailNow()
@@ -800,13 +800,13 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
+		if _, err := m.AddEntryListener(nil, listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
 		for i := 0; i < int(totalCallCount); i++ {
 			key := fmt.Sprintf("key-%d", i)
 			value := &it.SamplePortable{A: "foo", B: int32(i)}
-			it.MustValue(m.Put(key, value))
+			it.MustValue(m.Put(nil, key, value))
 		}
 		time.Sleep(1 * time.Second)
 		if !assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount)) {
@@ -830,12 +830,12 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(listenerConfig, handler); err != nil {
+		if _, err := m.AddEntryListener(nil, listenerConfig, handler); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put("k1", &it.SamplePortable{A: "foo", B: 10}))
-		it.MustValue(m.Put("k1", &it.SamplePortable{A: "bar", B: 10}))
-		it.MustValue(m.Put("k2", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(nil, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(nil, "k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put(nil, "k2", &it.SamplePortable{A: "foo", B: 10}))
 		time.Sleep(1 * time.Second)
 		if !assert.Equal(t, int32(1), atomic.LoadInt32(&callCount)) {
 			t.FailNow()
@@ -845,7 +845,7 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 
 func TestMap_Destroy(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		if err := m.Destroy(); err != nil {
+		if err := m.Destroy(nil); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -859,12 +859,12 @@ func TestMapSetGet1000(t *testing.T) {
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
 			value := fmt.Sprintf("v%d", i)
-			it.Must(m.Set(key, value))
+			it.Must(m.Set(nil, key, value))
 		}
 		for i := 0; i < setGetCount; i++ {
 			key := fmt.Sprintf("k%d", i)
 			targetValue := fmt.Sprintf("v%d", i)
-			if !assert.Equal(t, targetValue, it.MustValue(m.Get(key))) {
+			if !assert.Equal(t, targetValue, it.MustValue(m.Get(nil, key))) {
 				t.FailNow()
 			}
 		}
@@ -878,8 +878,8 @@ func TestMapSetGetLargePayload(t *testing.T) {
 		for i := 0; i < len(payload); i++ {
 			payload[i] = byte(i)
 		}
-		it.Must(m.Set("k1", payload))
-		v := it.MustValue(m.Get("k1"))
+		it.Must(m.Set(nil, "k1", payload))
+		v := it.MustValue(m.Get(nil, "k1"))
 		if !assert.Equal(t, payload, v) {
 			t.FailNow()
 		}
@@ -926,7 +926,7 @@ func putSampleKeyValues(m *hz.Map, count int) []interface{} {
 	for i := 0; i < count; i++ {
 		key := fmt.Sprintf("k%d", i)
 		value := fmt.Sprintf("v%d", i)
-		it.MustValue(m.Put(key, value))
+		it.MustValue(m.Put(nil, key, value))
 		keys = append(keys, key)
 	}
 	return keys
