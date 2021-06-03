@@ -25,8 +25,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
-const clusterName = "PUT-YOUR-CLUSTER-NAME-HERE"
-const token = "PUT-YOUR-TOKEN-HERE"
+const clusterName = "PUT-YOUR-CLUSTER-NAME-HERE!"
+const token = "PUT-YOUR-TOKEN-HERE!"
 
 var loggingLevel = logger.WarnLevel
 
