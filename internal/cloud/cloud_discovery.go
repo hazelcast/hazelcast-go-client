@@ -48,7 +48,7 @@ func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) 
 	} else {
 		addrs := extractAddresses(j)
 		c.logger.Trace(func() string { return fmt.Sprintf("cloud addresses: %v", addrs) })
-		return extractAddresses(j), nil
+		return addrs, nil
 	}
 }
 
