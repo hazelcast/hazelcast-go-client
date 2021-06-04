@@ -434,19 +434,22 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 	c.invocationHandler = invocationHandler
 }
 
-func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (pr icluster.AddressProvider, tr icluster.AddressTranslator, err error) {
+func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
 	if config.HazelcastCloudConfig.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
 		nodes, err := dc.DiscoverNodes(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
-		if pr, err = cloud.NewAddressProvider(nodes); err != nil {
+		pr, err := cloud.NewAddressProvider(nodes)
+		if err != nil {
 			return nil, nil, err
 		}
-		tr = cloud.NewAddressTranslator(dc, nodes)
-	} else {
-		pr = icluster.NewDefaultAddressProvider(config)
+		return pr, cloud.NewAddressTranslator(dc, nodes), nil
 	}
-	return
+	pr := icluster.NewDefaultAddressProvider(config)
+	if config.DiscoveryConfig.UsePublicIP {
+		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
+	}
+	return pr, icluster.NewDefaultAddressTranslator(), nil
 }
