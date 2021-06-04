@@ -17,6 +17,7 @@
 package hazelcast
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
@@ -113,11 +114,12 @@ func newClient(config Config) (*Client, error) {
 		return nil, err
 	}
 	clientLogger := ilogger.NewWithLevel(logLevel)
-	addrProvider, err := addressProvider(&config.ClusterConfig, clientLogger)
+	// TODO: Move addrProviderTranslator to createComponents
+	// Not doing that right now, because of the event dispatchers.
+	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.ClusterConfig, clientLogger)
 	if err != nil {
 		return nil, err
 	}
-	addrTranslator := addressTranslator(&config.ClusterConfig, clientLogger)
 	serializationService, err := serialization.NewService(&config.SerializationConfig)
 	if err != nil {
 		return nil, err
@@ -432,19 +434,19 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 	c.invocationHandler = invocationHandler
 }
 
-func addressProvider(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, error) {
+func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (pr icluster.AddressProvider, tr icluster.AddressTranslator, err error) {
 	if config.HazelcastCloudConfig.Enabled {
-		return cloud.NewAddressProvider(config, logger)
+		dc := cloud.NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
+		nodes, err := dc.DiscoverNodes(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		if pr, err = cloud.NewAddressProvider(nodes); err != nil {
+			return nil, nil, err
+		}
+		tr = cloud.NewAddressTranslator(dc, nodes)
+	} else {
+		pr = icluster.NewDefaultAddressProvider(config)
 	}
-	return icluster.NewDefaultAddressProvider(config), nil
-}
-
-func addressTranslator(config *cluster.Config, logger ilogger.Logger) icluster.AddressTranslator {
-	if config.HazelcastCloudConfig.Enabled {
-		return cloud.NewAddressTranslator(config, logger)
-	}
-	if config.DiscoveryConfig.UsePublicIP {
-		return icluster.NewDefaultPublicAddressTranslator()
-	}
-	return icluster.NewDefaultAddressTranslator()
+	return
 }

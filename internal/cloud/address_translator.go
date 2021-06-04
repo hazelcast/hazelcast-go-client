@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type AddressTranslator struct {
@@ -15,12 +14,14 @@ type AddressTranslator struct {
 	mu         *sync.RWMutex
 }
 
-func NewAddressTranslator(config *pubcluster.Config, logger logger.Logger) *AddressTranslator {
-	return &AddressTranslator{
-		dc:         NewDiscoveryClient(&config.HazelcastCloudConfig, logger),
+func NewAddressTranslator(dc *DiscoveryClient, addrs []Address) *AddressTranslator {
+	t := &AddressTranslator{
+		dc:         dc,
 		translator: map[string]pubcluster.Address{},
 		mu:         &sync.RWMutex{},
 	}
+	t.updateTranslator(addrs)
+	return t
 }
 
 func (a *AddressTranslator) Translate(ctx context.Context, address pubcluster.Address) (pubcluster.Address, error) {
@@ -53,6 +54,11 @@ func (a *AddressTranslator) reload(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	a.updateTranslator(addrs)
+	return nil
+}
+
+func (a *AddressTranslator) updateTranslator(addrs []Address) {
 	t := map[string]pubcluster.Address{}
 	for _, addr := range addrs {
 		t[addr.Private] = pubcluster.Address(addr.Public)
@@ -60,5 +66,4 @@ func (a *AddressTranslator) reload(ctx context.Context) error {
 	a.mu.Lock()
 	a.translator = t
 	a.mu.Unlock()
-	return nil
 }
