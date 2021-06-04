@@ -22,6 +22,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+var publicEndpointQualifier = EndpointQualifier{
+	Identifier: "public",
+	Type:       EndpointQualifierTypeClient,
+}
+
 // MemberInfo represents a member in the cluster.
 type MemberInfo struct {
 	Attributes map[string]string
@@ -37,13 +42,9 @@ func (mi MemberInfo) String() string {
 }
 
 // PublicAddress returns the public address and ok == true if member contains a public address.
-func (mi MemberInfo) PublicAddress() (addr Address, ok bool) {
-	for q, a := range mi.AddressMap {
-		if q.Type == EndpointQualifierTypeClient && q.Identifier == "public" {
-			return a, true
-		}
-	}
-	return "", false
+func (mi *MemberInfo) PublicAddress() (addr Address, ok bool) {
+	addr, ok = mi.AddressMap[publicEndpointQualifier]
+	return
 }
 
 // MemberVersion is the version of the member
