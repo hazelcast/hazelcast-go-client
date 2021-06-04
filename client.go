@@ -378,8 +378,8 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		Logger:          c.logger,
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
-	clusterService := icluster.NewServiceImpl(icluster.CreationBundle{
-		AddrProviders:     []icluster.AddressProvider{addrProvider},
+	clusterService := icluster.NewService(icluster.CreationBundle{
+		AddrProvider:      addrProvider,
 		RequestCh:         requestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,

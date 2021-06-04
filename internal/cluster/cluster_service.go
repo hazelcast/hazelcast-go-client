@@ -41,7 +41,7 @@ type Service struct {
 	config            *pubcluster.Config
 	requestCh         chan<- invocation.Invocation
 	invocationFactory *ConnectionInvocationFactory
-	addrProviders     []AddressProvider
+	addrProvider      AddressProvider
 }
 
 type CreationBundle struct {
@@ -52,12 +52,12 @@ type CreationBundle struct {
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
 	Config            *pubcluster.Config
-	AddrProviders     []AddressProvider
+	AddrProvider      AddressProvider
 }
 
 func (b CreationBundle) Check() {
-	if b.AddrProviders == nil {
-		panic("AddrProviders is nil")
+	if b.AddrProvider == nil {
+		panic("AddrProvider is nil")
 	}
 	if b.RequestCh == nil {
 		panic("RequestCh is nil")
@@ -82,10 +82,10 @@ func (b CreationBundle) Check() {
 	}
 }
 
-func NewServiceImpl(bundle CreationBundle) *Service {
+func NewService(bundle CreationBundle) *Service {
 	bundle.Check()
 	return &Service{
-		addrProviders:     bundle.AddrProviders,
+		addrProvider:      bundle.AddrProvider,
 		requestCh:         bundle.RequestCh,
 		doneCh:            make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
@@ -118,9 +118,7 @@ func (s *Service) MemberAddrs() []pubcluster.Address {
 
 func (s *Service) SeedAddrs() []pubcluster.Address {
 	addrSet := NewAddrSet()
-	for _, addrProvider := range s.addrProviders {
-		addrSet.AddAddrs(addrProvider.Addresses())
-	}
+	addrSet.AddAddrs(s.addrProvider.Addresses())
 	return addrSet.Addrs()
 }
 
