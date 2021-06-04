@@ -78,7 +78,7 @@ func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() strin
 
 func getClientReplicatedMapWithConfig(name string, config *hz.Config) (*hz.Client, *hz.ReplicatedMap) {
 	client := getDefaultClient(config)
-	if m, err := client.GetReplicatedMap(name); err != nil {
+	if m, err := client.GetReplicatedMap(nil, name); err != nil {
 		panic(err)
 	} else {
 		return client, m

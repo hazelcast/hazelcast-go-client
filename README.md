@@ -91,7 +91,7 @@ func main() {
     	log.Fatal(err)
     }
     // get a map
-    people, err := client.GetMap("people")
+    people, err := client.GetMap(context.TODO(), "people")
     if err != nil {
         log.Fatal(err)
     }

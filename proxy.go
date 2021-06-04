@@ -94,12 +94,15 @@ type proxy struct {
 	removeFromCacheFn    func() bool
 	serviceName          string
 	name                 string
+	refIDGen             *iproxy.ReferenceIDGenerator
 }
 
-func newProxy(bundle creationBundle,
+func newProxy(
+	ctx context.Context,
+	bundle creationBundle,
 	serviceName string,
 	objectName string,
-	subscriptionIDGen *iproxy.ReferenceIDGenerator,
+	refIDGen *iproxy.ReferenceIDGenerator,
 	removeFromCacheFn func() bool) (*proxy, error) {
 
 	bundle.Check()
@@ -123,18 +126,17 @@ func newProxy(bundle creationBundle,
 		logger:               bundle.Logger,
 		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
+		refIDGen:             refIDGen,
 	}
-	if err := p.create(); err != nil {
+	if err := p.create(ctx); err != nil {
 		return nil, err
 	}
 	return p, nil
 }
 
-func (p *proxy) create() error {
+func (p *proxy) create(ctx context.Context) error {
 	request := codec.EncodeClientCreateProxyRequest(p.name, p.serviceName)
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
-	p.requestCh <- inv
-	if _, err := inv.Get(); err != nil {
+	if _, err := p.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return fmt.Errorf("error creating proxy: %w", err)
 	}
 	return nil
@@ -238,21 +240,33 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 			request = request.Copy()
 		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
-		p.requestCh <- inv
-		return inv.GetWithContext(ctx)
+		select {
+		case p.requestCh <- inv:
+			return inv.GetWithContext(ctx)
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 	})
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		return p.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
+		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+			return nil, err
+		} else {
+			return inv.GetWithContext(ctx)
+		}
 	})
 }
 
-func (p *proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
+func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32) (invocation.Invocation, error) {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
-	p.requestCh <- inv
-	return inv
+	select {
+	case p.requestCh <- inv:
+		return inv, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (p *proxy) convertToObject(data *iserialization.Data) (interface{}, error) {

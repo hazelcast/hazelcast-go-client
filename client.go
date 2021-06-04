@@ -17,6 +17,7 @@
 package hazelcast
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -143,42 +144,42 @@ func (c *Client) Name() string {
 }
 
 // GetList returns a list instance.
-func (c *Client) GetList(name string) (*List, error) {
+func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getList(name)
+	return c.proxyManager.getList(ctx, name)
 }
 
 // GetMap returns a distributed map instance.
-func (c *Client) GetMap(name string) (*Map, error) {
+func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getMap(name)
+	return c.proxyManager.getMap(ctx, name)
 }
 
-func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
+func (c *Client) GetReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getReplicatedMap(name)
+	return c.proxyManager.getReplicatedMap(ctx, name)
 }
 
 // GetQueue returns a queue instance.
-func (c *Client) GetQueue(name string) (*Queue, error) {
+func (c *Client) GetQueue(ctx context.Context, name string) (*Queue, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getQueue(name)
+	return c.proxyManager.getQueue(ctx, name)
 }
 
 // GetTopic returns a topic instance.
-func (c *Client) GetTopic(name string) (*Topic, error) {
+func (c *Client) GetTopic(ctx context.Context, name string) (*Topic, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getTopic(name)
+	return c.proxyManager.getTopic(ctx, name)
 }
 
 // Start connects the client to the cluster.

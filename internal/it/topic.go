@@ -73,7 +73,7 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 
 func getClientTopicWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Topic) {
 	client := getDefaultClient(config)
-	if tp, err := client.GetTopic(name); err != nil {
+	if tp, err := client.GetTopic(nil, name); err != nil {
 		panic(err)
 	} else {
 		return client, tp

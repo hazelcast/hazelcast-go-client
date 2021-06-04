@@ -77,7 +77,7 @@ func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configC
 
 func GetClientMapWithConfig(mapName string, config *hz.Config) (*hz.Client, *hz.Map) {
 	client := getDefaultClient(config)
-	if m, err := client.GetMap(mapName); err != nil {
+	if m, err := client.GetMap(nil, mapName); err != nil {
 		panic(err)
 	} else {
 		return client, m

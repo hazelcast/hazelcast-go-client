@@ -36,7 +36,7 @@ func Example() {
 		log.Fatal(err)
 	}
 	// Retrieve a map.
-	peopleMap, err := client.GetMap("people")
+	peopleMap, err := client.GetMap(context.TODO(), "people")
 	if err != nil {
 		log.Fatal(err)
 	}

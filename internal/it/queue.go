@@ -74,7 +74,7 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 
 func getClientQueueWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Queue) {
 	client := getDefaultClient(config)
-	if q, err := client.GetQueue(name); err != nil {
+	if q, err := client.GetQueue(nil, name); err != nil {
 		panic(err)
 	} else {
 		return client, q

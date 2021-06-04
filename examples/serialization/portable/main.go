@@ -110,7 +110,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// retrieve a map
-	m, err := client.GetMap("example")
+	m, err := client.GetMap(context.Background(), "example")
 	if err != nil {
 		log.Fatal(err)
 	}

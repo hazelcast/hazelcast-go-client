@@ -209,7 +209,11 @@ func (m *ReplicatedMap) PutAll(ctx context.Context, keyValuePairs []types.Entry)
 			if attempt > 0 {
 				request = request.Copy()
 			}
-			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
+			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+				return nil, err
+			} else {
+				return inv.GetWithContext(ctx)
+			}
 		})
 	}
 	return m.putAll(keyValuePairs, f)

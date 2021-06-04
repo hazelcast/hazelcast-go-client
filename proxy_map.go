@@ -26,7 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -42,14 +41,10 @@ type lockID int64
 
 type Map struct {
 	*proxy
-	refIDGenerator *iproxy.ReferenceIDGenerator
 }
 
-func newContextMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) *Map {
-	return &Map{
-		proxy:          p,
-		refIDGenerator: refIDGenerator,
-	}
+func newMap(p *proxy) *Map {
+	return &Map{proxy: p}
 }
 
 // NewLockContext augments the passed parent context with a unique lock ID.
@@ -58,7 +53,7 @@ func (m *Map) NewLockContext(ctx context.Context) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return context.WithValue(ctx, lockIDKey, lockID(m.refIDGenerator.NextID()))
+	return context.WithValue(ctx, lockIDKey, lockID(m.refIDGen.NextID()))
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
@@ -194,7 +189,7 @@ func (m *Map) ForceUnlock(ctx context.Context, key interface{}) error {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		refID := m.refIDGenerator.NextID()
+		refID := m.refIDGen.NextID()
 		request := codec.EncodeMapForceUnlockRequest(m.name, keyData, refID)
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
@@ -499,7 +494,11 @@ func (m *Map) PutAll(ctx context.Context, keyValuePairs ...types.Entry) error {
 			if attempt > 0 {
 				request = request.Copy()
 			}
-			return m.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
+			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+				return nil, err
+			} else {
+				return inv.GetWithContext(ctx)
+			}
 		})
 	}
 	return m.putAll(keyValuePairs, f)
@@ -763,7 +762,7 @@ func (m *Map) Unlock(ctx context.Context, key interface{}) error {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		refID := m.refIDGenerator.NextID()
+		refID := m.refIDGen.NextID()
 		request := codec.EncodeMapUnlockRequest(m.name, keyData, lid, refID)
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
@@ -827,7 +826,7 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		refID := m.refIDGenerator.NextID()
+		refID := m.refIDGen.NextID()
 		request := codec.EncodeMapLockRequest(m.name, keyData, lid, ttl, refID)
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
@@ -897,7 +896,7 @@ func (m *Map) tryLock(ctx context.Context, key interface{}, lease int64, timeout
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
-		refID := m.refIDGenerator.NextID()
+		refID := m.refIDGen.NextID()
 		request := codec.EncodeMapTryLockRequest(m.name, keyData, lid, lease, timeout, refID)
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err

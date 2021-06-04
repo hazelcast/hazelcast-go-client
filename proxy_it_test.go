@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -48,7 +49,7 @@ func retryResult(t *testing.T, redo bool, target bool) {
 	config := cluster.DefaultConfig()
 	config.ClusterConfig.RedoOperation = redo
 	client := it.MustClient(hz.StartNewClientWithConfig(config))
-	m := it.MustValue(client.GetMap("redo-test")).(*hz.Map)
+	m := it.MustValue(client.GetMap(context.TODO(), "redo-test")).(*hz.Map)
 	// shutdown the cluster and try again
 	cluster.Shutdown()
 	okCh := make(chan bool)

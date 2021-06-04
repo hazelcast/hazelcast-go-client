@@ -74,7 +74,7 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 
 func getClientListWithConfig(name string, config *hz.Config) (*hz.Client, *hz.List) {
 	client := getDefaultClient(config)
-	if l, err := client.GetList(name); err != nil {
+	if l, err := client.GetList(nil, name); err != nil {
 		panic(err)
 	} else {
 		return client, l
