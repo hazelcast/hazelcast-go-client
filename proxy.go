@@ -45,6 +45,7 @@ var errNilArg = hzerrors.NewHazelcastNilPointerError("nil arg is not allowed", n
 
 type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
+	RemoveCh             chan<- int64
 	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
 	ClusterService       *cluster.Service
@@ -57,6 +58,9 @@ type creationBundle struct {
 func (b creationBundle) Check() {
 	if b.RequestCh == nil {
 		panic("RequestCh is nil")
+	}
+	if b.RemoveCh == nil {
+		panic("RemoveCh is nil")
 	}
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
@@ -84,6 +88,7 @@ func (b creationBundle) Check() {
 type proxy struct {
 	logger               ilogger.Logger
 	requestCh            chan<- invocation.Invocation
+	removeCh             chan<- int64
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	listenerBinder       *cluster.ConnectionListenerBinder
@@ -117,6 +122,7 @@ func newProxy(
 		serviceName:          serviceName,
 		name:                 objectName,
 		requestCh:            bundle.RequestCh,
+		removeCh:             bundle.RemoveCh,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
@@ -240,12 +246,10 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 			request = request.Copy()
 		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
-		select {
-		case p.requestCh <- inv:
-			return inv.GetWithContext(ctx)
-		case <-ctx.Done():
-			return nil, ctx.Err()
+		if err := p.sendInvocation(ctx, inv); err != nil {
+			return nil, err
 		}
+		return inv.GetWithContext(ctx)
 	})
 }
 
@@ -261,12 +265,8 @@ func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMess
 
 func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32) (invocation.Invocation, error) {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
-	select {
-	case p.requestCh <- inv:
-		return inv, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
+	err := p.sendInvocation(ctx, inv)
+	return inv, err
 }
 
 func (p *proxy) convertToObject(data *iserialization.Data) (interface{}, error) {
@@ -378,6 +378,16 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 		}
 		member := p.clusterService.GetMemberByUUID(binUUID)
 		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries)))
+	}
+}
+
+func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
+	select {
+	case p.requestCh <- inv:
+		return nil
+	case <-ctx.Done():
+		p.removeCh <- inv.Request().CorrelationID()
+		return ctx.Err()
 	}
 }
 

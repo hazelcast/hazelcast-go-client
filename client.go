@@ -411,6 +411,7 @@ func (c *Client) createComponents(config *Config) {
 		config.ClusterConfig.SmartRouting)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
+		RemoveCh:             removeCh,
 		SerializationService: c.serializationService,
 		PartitionService:     partitionService,
 		ClusterService:       clusterService,
