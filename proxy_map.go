@@ -160,23 +160,16 @@ func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) 
 	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
 		return nil, err
 	} else {
-		ch := make(chan []proto.Pair, 1)
-		handler := func(msg *proto.ClientMessage) {
-			ch <- codec.DecodeMapExecuteOnAllKeysResponse(msg)
-		}
 		request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
-		if _, err := m.invokeOnRandomTarget(ctx, request, handler); err != nil {
+		if resp, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
 			return nil, err
-		}
-		select {
-		case pairs := <-ch:
+		} else {
+			pairs := codec.DecodeMapExecuteOnAllKeysResponse(resp)
 			if kvPairs, err := m.convertPairsToEntries(pairs); err != nil {
 				return nil, err
 			} else {
 				return kvPairs, nil
 			}
-		case <-ctx.Done():
-			return nil, ctx.Err()
 		}
 	}
 }
