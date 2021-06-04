@@ -32,12 +32,13 @@ import (
 )
 
 const (
-	maxIndexAttributes = 255
-	defaultLockID      = 0
-	lockIDKey          = "__hz_lock_id"
+	maxIndexAttributes               = 255
+	defaultLockID                    = 0
+	lockIDKey          lockIDKeyType = "__hz_lock_id"
 )
 
 type lockID int64
+type lockIDKeyType string
 
 type Map struct {
 	*proxy

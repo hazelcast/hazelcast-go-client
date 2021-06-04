@@ -17,6 +17,7 @@
 package it
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -55,7 +56,7 @@ func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() strin
 		config.ClusterConfig.SmartRouting = smart
 		client, m = getClientReplicatedMapWithConfig(makeMapName(), &config)
 		defer func() {
-			if err := m.Destroy(nil); err != nil {
+			if err := m.Destroy(context.Background()); err != nil {
 				t.Logf("test warning, could not destroy replicated map: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
@@ -78,7 +79,7 @@ func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() strin
 
 func getClientReplicatedMapWithConfig(name string, config *hz.Config) (*hz.Client, *hz.ReplicatedMap) {
 	client := getDefaultClient(config)
-	if m, err := client.GetReplicatedMap(nil, name); err != nil {
+	if m, err := client.GetReplicatedMap(context.Background(), name); err != nil {
 		panic(err)
 	} else {
 		return client, m

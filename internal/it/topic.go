@@ -17,6 +17,7 @@
 package it
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -50,7 +51,7 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 		config.ClusterConfig.SmartRouting = smart
 		client, tp = getClientTopicWithConfig(makeName(), &config)
 		defer func() {
-			if err := tp.Destroy(nil); err != nil {
+			if err := tp.Destroy(context.Background()); err != nil {
 				t.Logf("test warning, could not destroy topic: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
@@ -73,7 +74,7 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 
 func getClientTopicWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Topic) {
 	client := getDefaultClient(config)
-	if tp, err := client.GetTopic(nil, name); err != nil {
+	if tp, err := client.GetTopic(context.Background(), name); err != nil {
 		panic(err)
 	} else {
 		return client, tp

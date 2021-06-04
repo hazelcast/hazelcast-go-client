@@ -17,16 +17,17 @@
 package hazelcast_test
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
@@ -119,8 +120,8 @@ func TestClientHeartbeat(t *testing.T) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"
-		it.Must(m.Set(nil, "k1", target))
-		if v := it.MustValue(m.Get(nil, "k1")); target != v {
+		it.Must(m.Set(context.Background(), "k1", target))
+		if v := it.MustValue(m.Get(context.Background(), "k1")); target != v {
 			t.Fatalf("target: %v != %v", target, v)
 		}
 	})

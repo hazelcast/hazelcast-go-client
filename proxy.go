@@ -91,10 +91,10 @@ type proxy struct {
 	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	cb                   *cb.CircuitBreaker
+	refIDGen             *iproxy.ReferenceIDGenerator
 	removeFromCacheFn    func() bool
 	serviceName          string
 	name                 string
-	refIDGen             *iproxy.ReferenceIDGenerator
 }
 
 func newProxy(
