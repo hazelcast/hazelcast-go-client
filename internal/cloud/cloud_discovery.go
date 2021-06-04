@@ -45,7 +45,6 @@ func NewDiscoveryClient(config *cluster.HazelcastCloudConfig, logger logger.Logg
 
 func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) {
 	url := makeCoordinatorURL(c.token)
-	c.logger.Trace(func() string { return fmt.Sprintf("cloud discovery: %s", url) })
 	if j, err := c.httpClient.GetJSONArray(ctx, url); err != nil {
 		return nil, err
 	} else {
