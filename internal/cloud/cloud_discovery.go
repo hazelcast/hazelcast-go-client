@@ -19,12 +19,15 @@ package cloud
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/rest"
 )
+
+const envCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 
 type DiscoveryClient struct {
 	logger     logger.Logger
@@ -67,7 +70,15 @@ func extractAddresses(j interface{}) []Address {
 }
 
 func makeCoordinatorURL(token string) string {
-	return fmt.Sprintf("https://coordinator.hazelcast.cloud/cluster/discovery?token=%s", token)
+	return fmt.Sprintf("%s/cluster/discovery?token=%s", baseURL(), token)
+}
+
+func baseURL() string {
+	url := os.Getenv(envCoordinatorBaseURL)
+	if url == "" {
+		return "https://coordinator.hazelcast.cloud"
+	}
+	return url
 }
 
 func augmentPrivateAddr(private, public string) string {

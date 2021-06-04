@@ -3,6 +3,7 @@ package cloud
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 
@@ -73,4 +74,16 @@ func TestTranslateAddrs(t *testing.T) {
 			assert.Equal(t, tc.A, addrs)
 		})
 	}
+}
+
+func TestMakeCoordinatorURL(t *testing.T) {
+	url := makeCoordinatorURL("TOK")
+	target := "https://coordinator.hazelcast.cloud/cluster/discovery?token=TOK"
+	assert.Equal(t, target, url)
+	if err := os.Setenv(envCoordinatorBaseURL, "http://test.dev"); err != nil {
+		t.Fatal(err)
+	}
+	url = makeCoordinatorURL("TOK")
+	target = "http://test.dev/cluster/discovery?token=TOK"
+	assert.Equal(t, target, url)
 }
