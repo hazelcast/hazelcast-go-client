@@ -71,7 +71,7 @@ func makeCoordinatorURL(token string) string {
 }
 
 func augmentPrivateAddr(private, public string) string {
-	// public addresses don't seem to have the port
+	// private addresses don't seem to have the port
 	// try use the one from public if missing
 	if strings.Index(private, ":") > 0 {
 		return private
