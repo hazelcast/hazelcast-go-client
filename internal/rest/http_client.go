@@ -67,7 +67,7 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader)
 			return nil, err
 		} else if resp.StatusCode < 300 {
 			return resp, nil
-		} else if resp.StatusCode > 500 {
+		} else if resp.StatusCode >= 500 {
 			return nil, NewErrorFromResponse(resp)
 		} else {
 			return nil, cb.WrapNonRetryableError(NewErrorFromResponse(resp))
