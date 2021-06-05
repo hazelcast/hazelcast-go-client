@@ -255,7 +255,13 @@ func (c *Connection) close(closeErr error) {
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
-	c.logger.Trace(func() string { return fmt.Sprintf("%d: connection closed", c.connectionID) })
+	c.logger.Trace(func() string {
+		reason := "normally"
+		if closeErr != nil {
+			reason = fmt.Sprintf("reason: %s", closeErr.Error())
+		}
+		return fmt.Sprintf("%d: connection closed %s", c.connectionID, reason)
+	})
 }
 
 func (c *Connection) String() string {
