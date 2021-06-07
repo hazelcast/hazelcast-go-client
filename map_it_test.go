@@ -471,18 +471,6 @@ func TestMap_GetEntryView_2(t *testing.T) {
 	})
 }
 
-func TestMap_GetEntryView_3(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		it.Must(m.Set(context.Background(), int64(1), int64(2)))
-		if ev, err := m.GetEntryView(context.Background(), int64(2)); err != nil {
-			t.Fatal(err)
-		} else {
-			assert.Equal(t, int64(1), ev.Key())
-			assert.Equal(t, int64(2), ev.Value())
-		}
-	})
-}
-
 func TestMap_AddIndexWithConfig(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		it.Must(m.Set(context.Background(), "k1", serialization.JSON(`{"A": 10, "B": 40}`)))
