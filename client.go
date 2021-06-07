@@ -182,6 +182,14 @@ func (c *Client) GetList(name string) (*List, error) {
 	return c.proxyManager.getList(name)
 }
 
+// GetSet returns a set instance.
+func (c *Client) GetSet(name string) (*Set, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotActive
+	}
+	return c.proxyManager.getSet(name)
+}
+
 // Start connects the client to the cluster.
 func (c *Client) start() error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
