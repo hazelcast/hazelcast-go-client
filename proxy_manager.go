@@ -81,6 +81,14 @@ func (m *proxyManager) getList(ctx context.Context, objectName string) (*List, e
 	}
 }
 
+func (m *proxyManager) getSet(ctx context.Context, objectName string) (*Set, error) {
+	if p, err := m.proxyFor(ctx, "hz:impl:setService", objectName); err != nil {
+		return nil, err
+	} else {
+		return newSet(p)
+	}
+}
+
 func (m *proxyManager) remove(serviceName string, objectName string) bool {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()
