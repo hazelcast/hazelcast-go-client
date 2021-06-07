@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -46,4 +47,29 @@ func Example() {
 	}
 	// Stop the client once you are done with it.
 	client.Shutdown()
+}
+
+func ExampleSet() {
+	// Create the Hazelcast client.
+	client, err := hazelcast.StartNewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Retrieve the set named my-set
+	set, err := client.GetSet("my-set")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = set.AddAll("item1", "item2", "item3", "item2", "item1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get the items. Note that there are no duplicates.
+	items, err := set.GetAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, item := range items {
+		fmt.Println("Item:", item)
+	}
 }
