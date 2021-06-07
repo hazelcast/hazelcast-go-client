@@ -65,7 +65,6 @@ type Connection struct {
 	responseCh                chan<- *proto.ClientMessage
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
-	addr                      pubcluster.Address
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
@@ -80,9 +79,10 @@ func (c *Connection) LocalAddr() string {
 }
 
 func (c *Connection) Start(clusterCfg *pubcluster.Config) error {
-	if socket, err := c.createSocket(clusterCfg, c.addr); err != nil {
+	if socket, err := c.createSocket(clusterCfg, c.endpoint.Load().(pubcluster.Address)); err != nil {
 		return err
 	} else {
+		c.endpoint.Store(pubcluster.Address(socket.RemoteAddr().String()))
 		c.socket = socket
 		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
 		c.lastWrite.Store(time.Time{})

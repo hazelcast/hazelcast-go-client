@@ -400,6 +400,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
+		AddrTranslator:       addrTranslator,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,

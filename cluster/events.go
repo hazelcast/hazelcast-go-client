@@ -18,6 +18,17 @@ package cluster
 
 type MembershipState int
 
+func (m MembershipState) String() string {
+	switch m {
+	case 0:
+		return "added"
+	case 1:
+		return "removed"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 const (
 	MembershipStateAdded MembershipState = iota
 	MembershipStateRemoved

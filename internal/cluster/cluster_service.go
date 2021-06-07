@@ -165,7 +165,7 @@ func (s *Service) logStatus() {
 					for uuid, member := range members {
 						mems[uuid] = member.Address
 					}
-					return fmt.Sprintf("members: %#v", mems)
+					return fmt.Sprintf("members: %+v", mems)
 				})
 			})
 		}

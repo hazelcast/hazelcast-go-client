@@ -62,14 +62,15 @@ var ClientVersion = "1.0.0"
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
 	Credentials          security.Credentials
+	AddrTranslator       AddressTranslator
 	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
 	PartitionService     *PartitionService
-	EventDispatcher      *event.DispatchService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
 	ClusterService       *Service
 	SerializationService *iserialization.Service
+	EventDispatcher      *event.DispatchService
 	ClientName           string
 }
 
@@ -107,6 +108,9 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.ClientName == "" {
 		panic("ClientName is blank")
 	}
+	if b.AddrTranslator == nil {
+		panic("AddrTranslator is nil")
+	}
 }
 
 type ConnectionManager struct {
@@ -124,6 +128,7 @@ type ConnectionManager struct {
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
 	cb                   *cb.CircuitBreaker
+	addrTranslator       AddressTranslator
 	clientName           string
 	clientUUID           types.UUID
 	nextConnID           int64
@@ -164,6 +169,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		doneCh:               make(chan struct{}, 1),
 		startCh:              make(chan struct{}, 1),
 		cb:                   circuitBreaker,
+		addrTranslator:       bundle.AddrTranslator,
 	}
 	return manager
 }
@@ -351,7 +357,7 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 }
 
 func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Connection {
-	return &Connection{
+	conn := &Connection{
 		responseCh:      m.responseCh,
 		pending:         make(chan *proto.ClientMessage, 1024),
 		doneCh:          make(chan struct{}),
@@ -360,14 +366,15 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 		status:          0,
 		logger:          m.logger,
 		clusterConfig:   m.clusterConfig,
-		addr:            addr,
 	}
+	conn.endpoint.Store(addr)
+	return conn
 }
 
 func (m *ConnectionManager) authenticate(conn *Connection) error {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("authenticate: local: %s; remote: %s; addr: %s",
-			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.addr)
+			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.endpoint.Load())
 	})
 	m.credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
@@ -390,14 +397,17 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
-		conn.endpoint.Store(address)
-		m.connMap.AddConnection(conn, conn.addr)
+		connAddr, err := m.addrTranslator.Translate(context.TODO(), *address)
+		if err != nil {
+			return err
+		}
+		m.connMap.AddConnection(conn, connAddr)
 		// TODO: detect cluster change
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return err
 		}
 		m.logger.Debug(func() string {
-			return fmt.Sprintf("opened connection to: %s", conn.addr)
+			return fmt.Sprintf("opened connection to: %s", connAddr)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	case credentialsFailed:
@@ -465,14 +475,10 @@ func (m *ConnectionManager) logStatus() {
 					for addr, conn := range connections {
 						conns[addr] = int(conn.connectionID)
 					}
-					return fmt.Sprintf("addrToConn: %#v", conns)
+					return fmt.Sprintf("address to connection: %+v", conns)
 				})
 				m.logger.Debug(func() string {
-					ctas := map[int]string{}
-					for connID, addr := range connToAddr {
-						ctas[int(connID)] = addr.String()
-					}
-					return fmt.Sprintf("connection to address: %#v", ctas)
+					return fmt.Sprintf("connection to address: %+v", connToAddr)
 				})
 			})
 		}
