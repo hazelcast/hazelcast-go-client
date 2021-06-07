@@ -32,16 +32,16 @@ import (
 )
 
 type Service struct {
-	membersMap        membersMap
 	logger            ilogger.Logger
 	addrTranslator    AddressTranslator
-	doneCh            chan struct{}
+	addrProvider      AddressProvider
+	config            *pubcluster.Config
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
-	config            *pubcluster.Config
 	requestCh         chan<- invocation.Invocation
 	invocationFactory *ConnectionInvocationFactory
-	addrProvider      AddressProvider
+	doneCh            chan struct{}
+	membersMap        membersMap
 }
 
 type CreationBundle struct {
