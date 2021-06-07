@@ -209,7 +209,7 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *iseri
 	return
 }
 
-func (p *proxy) validateAndSerializeValues(values ...interface{}) ([]*iserialization.Data, error) {
+func (p *proxy) validateAndSerializeValues(values []interface{}) ([]*iserialization.Data, error) {
 	valuesData := make([]*iserialization.Data, len(values))
 	for i, value := range values {
 		if data, err := p.validateAndSerialize(value); err != nil {

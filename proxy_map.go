@@ -214,6 +214,9 @@ func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
 
 // GetAll returns the entries for the given keys.
 func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -291,7 +294,7 @@ func (m *Map) GetEntrySetWithPredicate(ctx context.Context, predicate predicate.
 }
 
 // GetEntryView returns the SimpleEntryView for the specified key.
-func (m *Map) GetEntryView(ctx context.Context, key string) (*types.SimpleEntryView, error) {
+func (m *Map) GetEntryView(ctx context.Context, key interface{}) (*types.SimpleEntryView, error) {
 	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
@@ -411,12 +414,18 @@ func (m *Map) IsLocked(ctx context.Context, key interface{}) (bool, error) {
 
 // LoadAllWithoutReplacing loads all keys from the store at server side or loads the given keys if provided.
 func (m *Map) LoadAllWithoutReplacing(ctx context.Context, keys ...interface{}) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return m.loadAll(ctx, false, keys...)
 }
 
 // LoadAllReplacing loads all keys from the store at server side or loads the given keys if provided.
 // Replaces existing keys.
 func (m *Map) LoadAllReplacing(ctx context.Context, keys ...interface{}) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	return m.loadAll(ctx, true, keys...)
 }
 
@@ -482,7 +491,10 @@ func (m *Map) PutWithTTLAndMaxIdle(ctx context.Context, key interface{}, value i
 // PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
-func (m *Map) PutAll(ctx context.Context, keyValuePairs ...types.Entry) error {
+func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
+	if len(entries) == 0 {
+		return nil
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -499,7 +511,7 @@ func (m *Map) PutAll(ctx context.Context, keyValuePairs ...types.Entry) error {
 			}
 		})
 	}
-	return m.putAll(keyValuePairs, f)
+	return m.putAll(entries, f)
 }
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.
@@ -801,6 +813,9 @@ func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bo
 }
 
 func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interface{}) error {
+	if len(keys) == 0 {
+		return nil
+	}
 	var request *proto.ClientMessage
 	if len(keys) == 0 {
 		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)

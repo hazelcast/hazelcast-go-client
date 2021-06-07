@@ -62,7 +62,10 @@ func (q *Queue) AddWithTimeout(ctx context.Context, value interface{}, timeout t
 // AddAll adds the elements in the specified collection to this queue.
 // Returns true if the queue is changed after the call.
 func (q *Queue) AddAll(ctx context.Context, values ...interface{}) (bool, error) {
-	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+	if len(values) == 0 {
+		return false, nil
+	}
+	if valuesData, err := q.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeQueueAddAllRequest(q.name, valuesData)
@@ -108,7 +111,10 @@ func (q *Queue) Contains(ctx context.Context, value interface{}) (bool, error) {
 
 // ContainsAll returns true if the queue includes all given values.
 func (q *Queue) ContainsAll(ctx context.Context, values ...interface{}) (bool, error) {
-	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+	if len(values) == 0 {
+		return false, nil
+	}
+	if valuesData, err := q.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeQueueContainsAllRequest(q.name, valuesData)
@@ -223,7 +229,10 @@ func (q *Queue) Remove(ctx context.Context, value interface{}) (bool, error) {
 
 // RemoveAll removes all of the elements of the specified collection from this queue.
 func (q *Queue) RemoveAll(ctx context.Context, values ...interface{}) (bool, error) {
-	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+	if len(values) == 0 {
+		return false, nil
+	}
+	if valuesData, err := q.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeQueueCompareAndRemoveAllRequest(q.name, valuesData)
@@ -242,7 +251,10 @@ func (q *Queue) RemoveListener(ctx context.Context, subscriptionID types.UUID) e
 
 // RetainAll removes the items which are not contained in the specified collection.
 func (q *Queue) RetainAll(ctx context.Context, values ...interface{}) (bool, error) {
-	if valuesData, err := q.validateAndSerializeValues(values...); err != nil {
+	if len(values) == 0 {
+		return false, nil
+	}
+	if valuesData, err := q.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeQueueCompareAndRetainAllRequest(q.name, valuesData)

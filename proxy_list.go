@@ -82,7 +82,10 @@ func (l *List) AddAt(ctx context.Context, index int, element interface{}) error 
 // AddAll appends all elements in the specified slice to the end of this list.
 // Returns true if the list has changed as a result of this operation, false otherwise.
 func (l *List) AddAll(ctx context.Context, elements ...interface{}) (bool, error) {
-	elementsData, err := l.validateAndSerializeValues(elements...)
+	if len(elements) == 0 {
+		return false, nil
+	}
+	elementsData, err := l.validateAndSerializeValues(elements)
 	if err != nil {
 		return false, err
 	}
@@ -98,11 +101,14 @@ func (l *List) AddAll(ctx context.Context, elements ...interface{}) (bool, error
 // Shifts the subsequent elements to the right.
 // Returns true if the list has changed as a result of this operation, false otherwise.
 func (l *List) AddAllAt(ctx context.Context, index int, elements ...interface{}) (bool, error) {
+	if len(elements) == 0 {
+		return false, nil
+	}
 	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
 	if err != nil {
 		return false, err
 	}
-	elementsData, err := l.validateAndSerializeValues(elements...)
+	elementsData, err := l.validateAndSerializeValues(elements)
 	if err != nil {
 		return false, err
 	}
@@ -154,7 +160,10 @@ func (l *List) Contains(ctx context.Context, element interface{}) (bool, error) 
 // ContainsAll checks if the list contains all of the given elements.
 // Returns true if the list contains all of the elements, otherwise false.
 func (l *List) ContainsAll(ctx context.Context, elements ...interface{}) (bool, error) {
-	elementsData, err := l.validateAndSerializeValues(elements...)
+	if len(elements) == 0 {
+		return false, nil
+	}
+	elementsData, err := l.validateAndSerializeValues(elements)
 	if err != nil {
 		return false, err
 	}
@@ -251,7 +260,10 @@ func (l *List) RemoveAt(ctx context.Context, index int) (interface{}, error) {
 // RemoveAll removes the given elements from the list.
 // Returns true if the list has changed as the result of this operation, false otherwise.
 func (l *List) RemoveAll(ctx context.Context, elements ...interface{}) (bool, error) {
-	elementsData, err := l.validateAndSerializeValues(elements...)
+	if len(elements) == 0 {
+		return false, nil
+	}
+	elementsData, err := l.validateAndSerializeValues(elements)
 	if err != nil {
 		return false, err
 	}
@@ -271,7 +283,10 @@ func (l *List) RemoveListener(ctx context.Context, subscriptionID types.UUID) er
 // RetainAll removes all elements from this list except the ones contained in the given slice.
 // Returns true if the list has changed as a result of this operation, false otherwise.
 func (l *List) RetainAll(ctx context.Context, elements ...interface{}) (bool, error) {
-	elementsData, err := l.validateAndSerializeValues(elements...)
+	if len(elements) == 0 {
+		return false, nil
+	}
+	elementsData, err := l.validateAndSerializeValues(elements)
 	if err != nil {
 		return false, err
 	}
