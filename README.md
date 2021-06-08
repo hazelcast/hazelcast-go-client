@@ -33,7 +33,6 @@ Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and acces
 ### 1.0.0 Preview 3 (2021-06-08)
 
 New features:
-
 * [Set](https://docs.hazelcast.com/imdg/4.2/data-structures/set.html) distributed data structure,
 
 Changes:
@@ -46,7 +45,6 @@ Improvements:
 ### 1.0.0 Preview 2 (2021-05-21)
 
 New features:
-
 * [List](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html) distributed data structure,
 
 Changes:
