@@ -36,9 +36,8 @@ import (
 )
 
 const (
-	ttlDefault     = -1
-	ttlUnlimited   = 0
-	maxIdleDefault = -1
+	ttlUnset     = -1
+	ttlUnlimited = 0
 )
 
 var errNilArg = hzerrors.NewHazelcastNilPointerError("nil arg is not allowed", nil)
