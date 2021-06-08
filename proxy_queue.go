@@ -150,8 +150,8 @@ func (q *Queue) DrainWithMaxSize(ctx context.Context, maxSize int) ([]interface{
 	}
 }
 
-// Iterator returns all of the items in this queue.
-func (q *Queue) Iterator(ctx context.Context) ([]interface{}, error) {
+// GetAll returns all of the items in this queue.
+func (q *Queue) GetAll(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeQueueIteratorRequest(q.name)
 	if response, err := q.invokeOnPartition(ctx, request, q.partitionID); err != nil {
 		return nil, err
