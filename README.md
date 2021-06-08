@@ -30,11 +30,22 @@ Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and acces
 
 ## Release Notes
 
+### 1.0.0 Preview 3 (2021-06-08)
+
+New features:
+* [Set](https://docs.hazelcast.com/imdg/4.2/data-structures/set.html) distributed data structure,
+
+Changes:
+* When the client is not ready, it returns `hazelcast.ErrClientNotActive` instead of `hazelcast.ErrClientNotReady`.
+* `serialization.ClassDefinition` is public.
+
+Improvements:
+* Memory utilization is improved and number of allocations are decreased. 
+
 ### 1.0.0 Preview 2 (2021-05-21)
 
 New features:
-
-* [IList](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html) distributed data structure,
+* [List](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html) distributed data structure,
 
 Changes:
 * `hazelcast.ConfigBuilder` is removed. Use `hazelcast.Config` instead.
@@ -125,7 +136,7 @@ Requirements:
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
 # Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.2
+$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.3
 ```
 
 ## Quick Start
