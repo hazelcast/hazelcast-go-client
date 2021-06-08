@@ -165,7 +165,7 @@ func TestQueue_Drain(t *testing.T) {
 		}
 	})
 }
-func TestQueue_Iterator(t *testing.T) {
+func TestQueue_GetAll(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		targetValues := []interface{}{int64(1), int64(2), int64(3), int64(4)}
 		it.MustValue(q.AddAll(context.Background(), targetValues...))
