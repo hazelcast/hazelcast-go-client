@@ -92,6 +92,25 @@ func newEntryNotifiedEvent(
 
 type LifecycleState int
 
+func (s LifecycleState) String() string {
+	switch s {
+	case LifecycleStateStarting:
+		return "starting"
+	case LifecycleStateStarted:
+		return "started"
+	case LifecycleStateShuttingDown:
+		return "shutting down"
+	case LifecycleStateShutDown:
+		return "shutdown"
+	case LifecycleStateClientConnected:
+		return "client connected"
+	case LifecycleStateClientDisconnected:
+		return "client disconnected"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 const (
 	// LifecycleStateStarting signals that the client is starting.
 	LifecycleStateStarting LifecycleState = iota
