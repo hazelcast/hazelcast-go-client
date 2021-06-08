@@ -67,12 +67,12 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 	}
 }
 
-func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options types.BitmapIndexOptions) {
-	//if options.IsDefault() {
-	//	message.AddFrame(proto.NullFrame.Copy())
-	//} else {
-	EncodeBitmapIndexOptions(message, options)
-	//}
+func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options *types.BitmapIndexOptions) {
+	if options == nil {
+		message.AddFrame(proto.NullFrame.Copy())
+	} else {
+		EncodeBitmapIndexOptions(message, *options)
+	}
 }
 
 func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iserialization.Data) {
@@ -123,18 +123,16 @@ func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator)
 	return isNullFrame
 }
 
-func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
-	isNullFrame := frameIterator.PeekNext().IsNullFrame()
-	if isNullFrame {
-		frameIterator.Next()
+func (c codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
+	if c.NextFrameIsNullFrame(frameIterator) {
+		return types.BitmapIndexOptions{}
 	}
 	return DecodeBitmapIndexOptions(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *types.SimpleEntryView {
-	isNullFrame := frameIterator.PeekNext().IsNullFrame()
-	if isNullFrame {
-		frameIterator.Next()
+func (c codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *types.SimpleEntryView {
+	if c.NextFrameIsNullFrame(frameIterator) {
+		return nil
 	}
 	return DecodeSimpleEntryView(frameIterator)
 }

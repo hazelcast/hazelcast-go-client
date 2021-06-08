@@ -279,6 +279,7 @@ func (m *Map) GetEntrySetWithPredicate(predicate predicate.Predicate) ([]types.E
 }
 
 // GetEntryView returns the SimpleEntryView for the specified key.
+// If there is no entry view for the key, nil is returned.
 func (m *Map) GetEntryView(key string) (*types.SimpleEntryView, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
@@ -288,27 +289,30 @@ func (m *Map) GetEntryView(key string) (*types.SimpleEntryView, error) {
 			return nil, err
 		} else {
 			ev, maxIdle := codec.DecodeMapGetEntryViewResponse(response)
+			if ev == nil {
+				return nil, nil
+			}
 			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
-			deserializedKey, err := m.convertToObject(ev.Key().(*iserialization.Data))
+			deserializedKey, err := m.convertToObject(ev.Key.(*iserialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			deserializedValue, err := m.convertToObject(ev.Value().(*iserialization.Data))
+			deserializedValue, err := m.convertToObject(ev.Value.(*iserialization.Data))
 			if err != nil {
 				return nil, err
 			}
 			newEntryView := types.NewSimpleEntryView(
 				deserializedKey,
 				deserializedValue,
-				ev.Cost(),
-				ev.CreationTime(),
-				ev.ExpirationTime(),
-				ev.Hits(),
-				ev.LastAccessTime(),
-				ev.LastStoredTime(),
-				ev.LastUpdateTime(),
-				ev.Version(),
-				ev.Ttl(),
+				ev.Cost,
+				ev.CreationTime,
+				ev.ExpirationTime,
+				ev.Hits,
+				ev.LastAccessTime,
+				ev.LastStoredTime,
+				ev.LastUpdateTime,
+				ev.Version,
+				ev.TTL,
 				maxIdle)
 			return newEntryView, nil
 		}

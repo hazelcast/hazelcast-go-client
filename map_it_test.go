@@ -452,8 +452,18 @@ func TestMap_GetEntryView(t *testing.T) {
 		if ev, err := m.GetEntryView("k1"); err != nil {
 			t.Fatal(err)
 		} else {
-			it.AssertEquals(t, "k1", ev.Key())
-			it.AssertEquals(t, "v1", ev.Value())
+			it.AssertEquals(t, "k1", ev.Key)
+			it.AssertEquals(t, "v1", ev.Value)
+		}
+	})
+}
+
+func TestMap_GetEntryView_KeyNotFound(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if ev, err := m.GetEntryView("k1"); err != nil {
+			t.Fatal(err)
+		} else if ev != nil {
+			t.Fatalf("ev should be nil")
 		}
 	})
 }
