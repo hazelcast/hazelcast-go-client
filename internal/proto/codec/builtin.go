@@ -83,29 +83,29 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iseri
 	}
 }
 
-func (codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	return DecodeData(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) pubcluster.Address {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) pubcluster.Address {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	return DecodeAddress(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	return DecodeLongArray(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForString(frameIterator *proto.ForwardFrameIterator) string {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForString(frameIterator *proto.ForwardFrameIterator) string {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return ""
 	}
 	return DecodeString(frameIterator)
