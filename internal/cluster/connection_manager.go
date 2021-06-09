@@ -53,7 +53,10 @@ const (
 	stopped
 )
 
-const serializationVersion = 1
+const (
+	serializationVersion = 1
+	clientType           = "GOO"
+)
 
 // ClientVersion is the build time version
 // TODO: This should be replace with a build time version variable, BuildInfo etc.
@@ -71,6 +74,7 @@ type ConnectionManagerCreationBundle struct {
 	ClusterConfig        *pubcluster.Config
 	Credentials          security.Credentials
 	ClientName           string
+	Labels               []string
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -125,6 +129,7 @@ type ConnectionManager struct {
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
 	cb                   *cb.CircuitBreaker
+	labels               []string
 	clientName           string
 	clientUUID           types.UUID
 	nextConnID           int64
@@ -158,6 +163,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
+		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(),
 		addressTranslator:    NewDefaultAddressTranslator(),
@@ -419,11 +425,11 @@ func (m *ConnectionManager) createAuthenticationRequest(creds *security.Username
 		creds.Username(),
 		creds.Password(),
 		m.clientUUID,
-		proto.ClientType,
+		clientType,
 		byte(serializationVersion),
 		ClientVersion,
 		m.clientName,
-		nil,
+		m.labels,
 	)
 }
 

@@ -401,6 +401,7 @@ func (c *Client) createComponents(config *Config) {
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
+		Labels:               config.Labels,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
