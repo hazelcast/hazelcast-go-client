@@ -466,13 +466,13 @@ func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time
 
 // Put sets the value for the given key and returns the old value.
 func (m *Map) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	return m.putWıthTTL(ctx, key, value, ttlUnset)
+	return m.putWithTTL(ctx, key, value, ttlUnset)
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
 // Entry will expire and get evicted after the ttl.
 func (m *Map) PutWithTTL(ctx context.Context, key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
-	return m.putWıthTTL(ctx, key, value, ttl.Milliseconds())
+	return m.putWithTTL(ctx, key, value, ttl.Milliseconds())
 }
 
 // PutWithMaxIdle sets the value for the given key and returns the old value.
@@ -846,7 +846,7 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 	}
 }
 
-func (m *Map) putWıthTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+func (m *Map) putWithTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
 	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
