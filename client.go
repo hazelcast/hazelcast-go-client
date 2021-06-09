@@ -17,6 +17,7 @@
 package hazelcast
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -123,7 +124,7 @@ func newClient(config Config) (*Client, error) {
 		eventDispatcher:         event.NewDispatchService(),
 		userEventDispatcher:     event.NewDispatchService(),
 		logger:                  clientLogger,
-		refIDGen:                iproxy.NewReferenceIDGenerator(),
+		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
 		lifecyleListenerMapMu:   &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
@@ -142,44 +143,51 @@ func (c *Client) Name() string {
 	return c.name
 }
 
-// GetMap returns a distributed map instance.
-func (c *Client) GetMap(name string) (*Map, error) {
+// GetList returns a list instance.
+func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getMap(name)
+	return c.proxyManager.getList(ctx, name)
 }
 
-// GetReplicatedMap returns a replicated map instance.
-func (c *Client) GetReplicatedMap(name string) (*ReplicatedMap, error) {
+// GetMap returns a distributed map instance.
+func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getReplicatedMap(name)
+	return c.proxyManager.getMap(ctx, name)
+}
+
+func (c *Client) GetReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotActive
+	}
+	return c.proxyManager.getReplicatedMap(ctx, name)
 }
 
 // GetQueue returns a queue instance.
-func (c *Client) GetQueue(name string) (*Queue, error) {
+func (c *Client) GetQueue(ctx context.Context, name string) (*Queue, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getQueue(name)
+	return c.proxyManager.getQueue(ctx, name)
 }
 
 // GetTopic returns a topic instance.
-func (c *Client) GetTopic(name string) (*Topic, error) {
+func (c *Client) GetTopic(ctx context.Context, name string) (*Topic, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getTopic(name)
+	return c.proxyManager.getTopic(ctx, name)
 }
 
-// GetList returns a list instance.
-func (c *Client) GetList(name string) (*List, error) {
+// GetSet returns a set instance.
+func (c *Client) GetSet(ctx context.Context, name string) (*Set, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, ErrClientNotActive
 	}
-	return c.proxyManager.getList(name)
+	return c.proxyManager.getSet(ctx, name)
 }
 
 // Start connects the client to the cluster.
@@ -286,18 +294,18 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	return nil
 }
 
-func (c *Client) AddDistributedObjectListener(handler DistributedObjectNotifiedHandler) (types.UUID, error) {
+func (c *Client) AddDistributedObjectListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return types.UUID{}, ErrClientNotActive
 	}
-	return c.proxyManager.addDistributedObjectEventListener(handler)
+	return c.proxyManager.addDistributedObjectEventListener(ctx, handler)
 }
 
-func (c *Client) RemoveDistributedObjectListener(subscriptionID types.UUID) error {
+func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return ErrClientNotActive
 	}
-	return c.proxyManager.removeDistributedObjectEventListener(subscriptionID)
+	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
 
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
@@ -425,6 +433,7 @@ func (c *Client) createComponents(config *Config) {
 		config.ClusterConfig.SmartRouting)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
+		RemoveCh:             removeCh,
 		SerializationService: c.serializationService,
 		PartitionService:     partitionService,
 		ClusterService:       clusterService,

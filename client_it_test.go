@@ -17,16 +17,17 @@
 package hazelcast_test
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
@@ -119,8 +120,8 @@ func TestClientHeartbeat(t *testing.T) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
 		target := "v1"
-		it.Must(m.Set("k1", target))
-		if v := it.MustValue(m.Get("k1")); target != v {
+		it.Must(m.Set(context.Background(), "k1", target))
+		if v := it.MustValue(m.Get(context.Background(), "k1")); target != v {
 			t.Fatalf("target: %v != %v", target, v)
 		}
 	})
@@ -159,9 +160,9 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		count   int
 	}
 	createDestroyMap := func(client *hz.Client, mapName string) {
-		m := it.MustValue(client.GetMap(mapName)).(*hz.Map)
+		m := it.MustValue(client.GetMap(context.Background(), mapName)).(*hz.Map)
 		time.Sleep(100 * time.Millisecond)
-		it.Must(m.Destroy())
+		it.Must(m.Destroy(context.Background()))
 		time.Sleep(100 * time.Millisecond)
 	}
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
@@ -181,7 +182,7 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 				destroyed.count++
 			}
 		}
-		subID, err := client.AddDistributedObjectListener(handler)
+		subID, err := client.AddDistributedObjectListener(context.Background(), handler)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -197,7 +198,7 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		}
 		mu.Unlock()
 
-		if err := client.RemoveDistributedObjectListener(subID); err != nil {
+		if err := client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)

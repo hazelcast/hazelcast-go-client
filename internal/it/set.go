@@ -22,21 +22,26 @@ import (
 	"math/rand"
 	"testing"
 
-	hz "github.com/hazelcast/hazelcast-go-client"
 	"go.uber.org/goleak"
+
+	hz "github.com/hazelcast/hazelcast-go-client"
 )
 
-func TopicTester(t *testing.T, f func(t *testing.T, tp *hz.Topic)) {
-	makeName := func() string {
-		return fmt.Sprintf("test-topic-%d-%d", idGen.NextID(), rand.Int())
-	}
-	TopicTesterWithConfigAndName(t, makeName, nil, f)
+func SetTester(t *testing.T, f func(t *testing.T, s *hz.Set)) {
+	SetTesterWithConfig(t, nil, f)
 }
 
-func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallback func(*hz.Config), f func(t *testing.T, q *hz.Topic)) {
+func SetTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, s *hz.Set)) {
+	makeName := func() string {
+		return fmt.Sprintf("test-set-%d-%d", idGen.NextID(), rand.Int())
+	}
+	SetTesterWithConfigAndName(t, makeName, nil, f)
+}
+
+func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, s *hz.Set)) {
 	var (
 		client *hz.Client
-		tp     *hz.Topic
+		s      *hz.Set
 	)
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
@@ -45,20 +50,20 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 			defer goleak.VerifyNone(t)
 		}
 		config := defaultTestCluster.DefaultConfig()
-		if cbCallback != nil {
-			cbCallback(&config)
+		if configCallback != nil {
+			configCallback(&config)
 		}
 		config.ClusterConfig.SmartRouting = smart
-		client, tp = getClientTopicWithConfig(makeName(), &config)
+		client, s = GetClientSetWithConfig(makeName(), &config)
 		defer func() {
-			if err := tp.Destroy(context.Background()); err != nil {
-				t.Logf("test warning, could not destroy topic: %s", err.Error())
+			if err := s.Destroy(context.Background()); err != nil {
+				t.Logf("test warning, could not destroy set: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
-				t.Logf("test warning, client not shutdown: %s", err.Error())
+				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
-		f(t, tp)
+		f(t, s)
 	}
 	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {
@@ -72,11 +77,11 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 	}
 }
 
-func getClientTopicWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Topic) {
+func GetClientSetWithConfig(setName string, config *hz.Config) (*hz.Client, *hz.Set) {
 	client := getDefaultClient(config)
-	if tp, err := client.GetTopic(context.Background(), name); err != nil {
+	if s, err := client.GetSet(context.Background(), setName); err != nil {
 		panic(err)
 	} else {
-		return client, tp
+		return client, s
 	}
 }

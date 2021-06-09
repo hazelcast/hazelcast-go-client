@@ -53,6 +53,7 @@ const (
 	eventMessagePublished           = "messagepublished"
 	eventQueueItemNotified          = "queue.itemnotified"
 	eventListItemNotified           = "list.itemnotified"
+	eventSetItemNotified            = "set.itemnotified"
 	eventDistributedObjectNotified  = "distributedobjectnotified"
 )
 
@@ -193,6 +194,28 @@ func (q ListItemNotified) EventName() string {
 func newListItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *ListItemNotified {
 	return &ListItemNotified{
 		ListName:  name,
+		Value:     value,
+		Member:    member,
+		EventType: ItemEventType(eventType),
+	}
+}
+
+type SetItemNotifiedHandler func(event *SetItemNotified)
+
+type SetItemNotified struct {
+	Value     interface{}
+	Member    cluster.Member
+	SetName   string
+	EventType ItemEventType
+}
+
+func (q SetItemNotified) EventName() string {
+	return eventSetItemNotified
+}
+
+func newSetItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *SetItemNotified {
+	return &SetItemNotified{
+		SetName:   name,
 		Value:     value,
 		Member:    member,
 		EventType: ItemEventType(eventType),

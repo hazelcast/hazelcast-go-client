@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -31,22 +32,22 @@ func TestTopic_Publish(t *testing.T) {
 	it.TopicTester(t, func(t *testing.T, tp *hz.Topic) {
 		handlerValue := atomic.Value{}
 		handlerValue.Store("base-value")
-		subscriptionID, err := tp.AddListener(func(event *hz.MessagePublished) {
+		subscriptionID, err := tp.AddListener(context.Background(), func(event *hz.MessagePublished) {
 			handlerValue.Store("value1")
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err = tp.Publish("HEY!"); err != nil {
+		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
 		assert.Equal(t, "value1", handlerValue.Load())
-		if err := tp.RemoveListener(subscriptionID); err != nil {
+		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		handlerValue.Store("base-value")
-		if err = tp.Publish("HEY!"); err != nil {
+		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -56,21 +57,21 @@ func TestTopic_Publish(t *testing.T) {
 func TestTopic_PublishAll(t *testing.T) {
 	it.TopicTester(t, func(t *testing.T, tp *hz.Topic) {
 		handlerValue := int32(0)
-		subscriptionID, err := tp.AddListener(func(event *hz.MessagePublished) {
+		subscriptionID, err := tp.AddListener(context.Background(), func(event *hz.MessagePublished) {
 			atomic.AddInt32(&handlerValue, 1)
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err = tp.PublishAll("v1", "v2", "v3"); err != nil {
+		if err = tp.PublishAll(context.Background(), "v1", "v2", "v3"); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
 		assert.Equal(t, int32(3), atomic.LoadInt32(&handlerValue))
-		if err := tp.RemoveListener(subscriptionID); err != nil {
+		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
-		if err = tp.PublishAll("v4", "v5", "v6"); err != nil {
+		if err = tp.PublishAll(context.Background(), "v4", "v5", "v6"); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)

@@ -17,6 +17,7 @@
 package serialization_test
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -32,8 +33,8 @@ func TestPortableSerialize(t *testing.T) {
 		config.SerializationConfig.AddPortableFactory(&portableFactory{})
 	}, func(t *testing.T, m *hz.Map) {
 		target := newEmployee("Ford Prefect", 33, true)
-		it.Must(m.Set("ford", target))
-		if value, err := m.Get("ford"); err != nil {
+		it.Must(m.Set(context.Background(), "ford", target))
+		if value, err := m.Get(context.Background(), "ford"); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(target, value) {
 			t.Fatalf("target %#v: %#v", target, value)
