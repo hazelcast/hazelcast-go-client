@@ -17,6 +17,7 @@
 package it
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -51,7 +52,7 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 		config.ClusterConfig.SmartRouting = smart
 		client, q = getClientQueueWithConfig(queueName(), &config)
 		defer func() {
-			if err := q.Destroy(); err != nil {
+			if err := q.Destroy(context.Background()); err != nil {
 				t.Logf("test warning, could not destroy queue: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
@@ -74,7 +75,7 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 
 func getClientQueueWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Queue) {
 	client := getDefaultClient(config)
-	if q, err := client.GetQueue(name); err != nil {
+	if q, err := client.GetQueue(context.Background(), name); err != nil {
 		panic(err)
 	} else {
 		return client, q

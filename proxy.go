@@ -36,15 +36,15 @@ import (
 )
 
 const (
-	TtlDefault     = -1
-	TtlUnlimited   = 0
-	MaxIdleDefault = -1
+	ttlUnset     = -1
+	ttlUnlimited = 0
 )
 
 var errNilArg = hzerrors.NewHazelcastNilPointerError("nil arg is not allowed", nil)
 
 type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
+	RemoveCh             chan<- int64
 	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
 	ClusterService       *cluster.Service
@@ -57,6 +57,9 @@ type creationBundle struct {
 func (b creationBundle) Check() {
 	if b.RequestCh == nil {
 		panic("RequestCh is nil")
+	}
+	if b.RemoveCh == nil {
+		panic("RemoveCh is nil")
 	}
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
@@ -84,22 +87,26 @@ func (b creationBundle) Check() {
 type proxy struct {
 	logger               ilogger.Logger
 	requestCh            chan<- invocation.Invocation
+	removeCh             chan<- int64
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	listenerBinder       *cluster.ConnectionListenerBinder
 	config               *Config
 	clusterService       *cluster.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
-	circuitBreaker       *cb.CircuitBreaker
+	cb                   *cb.CircuitBreaker
+	refIDGen             *iproxy.ReferenceIDGenerator
 	removeFromCacheFn    func() bool
 	serviceName          string
 	name                 string
 }
 
-func newProxy(bundle creationBundle,
+func newProxy(
+	ctx context.Context,
+	bundle creationBundle,
 	serviceName string,
 	objectName string,
-	subscriptionIDGen *iproxy.ReferenceIDGenerator,
+	refIDGen *iproxy.ReferenceIDGenerator,
 	removeFromCacheFn func() bool) (*proxy, error) {
 
 	bundle.Check()
@@ -114,6 +121,7 @@ func newProxy(bundle creationBundle,
 		serviceName:          serviceName,
 		name:                 objectName,
 		requestCh:            bundle.RequestCh,
+		removeCh:             bundle.RemoveCh,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
@@ -121,28 +129,27 @@ func newProxy(bundle creationBundle,
 		listenerBinder:       bundle.ListenerBinder,
 		config:               bundle.Config,
 		logger:               bundle.Logger,
-		circuitBreaker:       circuitBreaker,
+		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
+		refIDGen:             refIDGen,
 	}
-	if err := p.create(); err != nil {
+	if err := p.create(ctx); err != nil {
 		return nil, err
 	}
 	return p, nil
 }
 
-func (p *proxy) create() error {
+func (p *proxy) create(ctx context.Context) error {
 	request := codec.EncodeClientCreateProxyRequest(p.name, p.serviceName)
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
-	p.requestCh <- inv
-	if _, err := inv.Get(); err != nil {
+	if _, err := p.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return fmt.Errorf("error creating proxy: %w", err)
 	}
 	return nil
 }
 
-// Destroys this object cluster-wide.
+// Destroy removes this object cluster-wide.
 // Clears and releases all resources for this object.
-func (p *proxy) Destroy() error {
+func (p *proxy) Destroy(ctx context.Context) error {
 	// wipe from proxy manager cache
 	if !p.removeFromCacheFn() {
 		// no need to destroy on cluster, since the proxy is stale and was already destroyed
@@ -150,9 +157,7 @@ func (p *proxy) Destroy() error {
 	}
 	// destroy on cluster
 	request := codec.EncodeClientDestroyProxyRequest(p.name, p.serviceName)
-	inv := p.invocationFactory.NewInvocationOnRandomTarget(request, nil)
-	p.requestCh <- inv
-	if _, err := inv.Get(); err != nil {
+	if _, err := p.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return fmt.Errorf("error destroying proxy: %w", err)
 	}
 	return nil
@@ -203,7 +208,7 @@ func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *iseri
 	return
 }
 
-func (p *proxy) validateAndSerializeValues(values ...interface{}) ([]*iserialization.Data, error) {
+func (p *proxy) validateAndSerializeValues(values []interface{}) ([]*iserialization.Data, error) {
 	valuesData := make([]*iserialization.Data, len(values))
 	for i, value := range values {
 		if data, err := p.validateAndSerialize(value); err != nil {
@@ -216,7 +221,10 @@ func (p *proxy) validateAndSerializeValues(values ...interface{}) ([]*iserializa
 }
 
 func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMessage, error) {
-	if res, err := p.circuitBreaker.TryContext(ctx, f); err != nil {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if res, err := p.cb.TryContext(ctx, f); err != nil {
 		return nil, err
 	} else {
 		return res.(*proto.ClientMessage), nil
@@ -237,21 +245,27 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 			request = request.Copy()
 		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
-		p.requestCh <- inv
+		if err := p.sendInvocation(ctx, inv); err != nil {
+			return nil, err
+		}
 		return inv.GetWithContext(ctx)
 	})
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		return p.invokeOnPartitionAsync(request, partitionID).GetWithContext(ctx)
+		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+			return nil, err
+		} else {
+			return inv.GetWithContext(ctx)
+		}
 	})
 }
 
-func (p *proxy) invokeOnPartitionAsync(request *proto.ClientMessage, partitionID int32) invocation.Invocation {
+func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32) (invocation.Invocation, error) {
 	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
-	p.requestCh <- inv
-	return inv
+	err := p.sendInvocation(ctx, inv)
+	return inv, err
 }
 
 func (p *proxy) convertToObject(data *iserialization.Data) (interface{}, error) {
@@ -363,6 +377,16 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 		}
 		member := p.clusterService.GetMemberByUUID(binUUID)
 		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries)))
+	}
+}
+
+func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
+	select {
+	case p.requestCh <- inv:
+		return nil
+	case <-ctx.Done():
+		p.removeCh <- inv.Request().CorrelationID()
+		return ctx.Err()
 	}
 }
 

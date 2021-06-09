@@ -28,66 +28,13 @@ Hazelcast is an open-source distributed in-memory data store and computation pla
 
 Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and access the cluster data.
 
-## Release Notes
-
-### 1.0.0 Preview 3 (2021-06-08)
-
-New features:
-* [Set](https://docs.hazelcast.com/imdg/4.2/data-structures/set.html) distributed data structure,
-
-Changes:
-* When the client is not ready, it returns `hazelcast.ErrClientNotActive` instead of `hazelcast.ErrClientNotReady`.
-* `serialization.ClassDefinition` is public.
-
-Improvements:
-* Memory utilization is improved and number of allocations are decreased. 
-
-### 1.0.0 Preview 2 (2021-05-21)
-
-New features:
-* [List](https://docs.hazelcast.com/imdg/4.2/data-structures/list.html) distributed data structure,
-
-Changes:
-* `hazelcast.ConfigBuilder` is removed. Use `hazelcast.Config` instead.
-* Signatures of serialization functions have changed to remove returned `error`s. If your serialization code needs to fail, simply `panic`. Panics are recovered and converted to `error`s.  
-* `hzerrors` package is public.
-
-Improvements:
-* Serialization performance is increased, especially for large payloads.
-* Memory utilization is improved and number of allocations are decreased. 
-* Heartbeat service is enabled.
-
-Fixes:
-* Fixed a regression introduced in Preview 1 which limited the message size to 8KBs.
-* Fixed Non-retryable errors.
-* `Destroy` function of DSSs removes corresponding proxies from the cache.
-
-### 1.0.0 Preview 1 (2021-05-07)
-
-The first preview release of the Hazelcast Go client has the following features:
-
-* Distributed data structures:
-  1. [Map](https://docs.hazelcast.com/imdg/4.2/data-structures/map.html),
-  2. [Replicated Map](https://docs.hazelcast.com/imdg/4.2/data-structures/replicated-map.html),
-  3. [Queue](https://docs.hazelcast.com/imdg/4.2/data-structures/queue.html)
-  4. [Topic](https://docs.hazelcast.com/imdg/4.2/data-structures/topic.html)
-* Distributed queries via predicates. [Documentation](https://docs.hazelcast.com/imdg/4.2/query/how-distributed-query-works.html)
-* [Lifecycle](https://docs.hazelcast.com/imdg/4.2/events/cluster-events.html#listening-for-lifecycle-events) and [cluster membership](https://docs.hazelcast.com/imdg/4.2/events/cluster-events.html#listening-for-member-events) event listeners.
-* [Smart routing](https://docs.hazelcast.com/imdg/4.2/clients/java.html#java-client-operation-modes)
-* Ownerless client.
-* JSON, identified and portable serialization.
-* SSL connections.
-
-Expect breaking changes in the following areas:
-* Configuration.
-* Map lock functions.
-
 ## Sample Code
 
 ```go
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -101,17 +48,17 @@ func main() {
     	log.Fatal(err)
     }
     // get a map
-    people, err := client.GetMap("people")
+    people, err := client.GetMap(context.TODO(), "people")
     if err != nil {
         log.Fatal(err)
     }
     personName := "Jane Doe"
     // set a value in the map
-    if err = people.Set(personName, 30); err != nil {
+    if err = people.Set(context.TODO(), personName, 30); err != nil {
     	log.Fatal(err)
     }
     // get a value from the map
-    age, err := people.Get(personName)
+    age, err := people.Get(context.TODO(), personName)
     if err != nil {
         log.Fatal(err)
     }
@@ -135,7 +82,7 @@ Requirements:
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
 # Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.3
+$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.4
 ```
 
 ## Quick Start
@@ -186,7 +133,9 @@ client, err := hazelcast.StartNewClientWithConfig(config)
 
 ## Documentation
 
-Use godoc:
+Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.4).
+
+You can view the documentation locally by using godoc:
 ```  
 $ godoc -http=localhost:5500
 ```

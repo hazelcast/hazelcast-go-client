@@ -50,7 +50,7 @@ func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageH
 
 func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
-	if errors.As(err, &nonRetryableError) {
+	if errors.Is(err, nonRetryableError) {
 		return false
 	}
 	var ioError *hzerrors.HazelcastIOError
