@@ -17,6 +17,7 @@
 package benchmarks_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -30,7 +31,7 @@ func BenchmarkMap_SetDifferentKeyValue(b *testing.B) {
 	it.MapBenchmarker(b, nil, func(b *testing.B, m *hz.Map) {
 		for i := 0; i < b.N; i++ {
 			key, value := makeKeyValue(i)
-			it.Must(m.Set(key, value))
+			it.Must(m.Set(context.Background(), key, value))
 		}
 	})
 }
@@ -39,8 +40,8 @@ func BenchmarkMap_SetGetDifferentKeyValue(b *testing.B) {
 	it.MapBenchmarker(b, nil, func(b *testing.B, m *hz.Map) {
 		for i := 0; i < b.N; i++ {
 			key, value := makeKeyValue(i)
-			it.Must(m.Set(key, value))
-			it.MustValue(m.Get(key))
+			it.Must(m.Set(context.Background(), key, value))
+			it.MustValue(m.Get(context.Background(), key))
 		}
 	})
 }
@@ -48,7 +49,7 @@ func BenchmarkMap_SetGetDifferentKeyValue(b *testing.B) {
 func BenchmarkMap_SetSameKeyValue(b *testing.B) {
 	it.MapBenchmarker(b, nil, func(b *testing.B, m *hz.Map) {
 		for i := 0; i < b.N; i++ {
-			it.Must(m.Set("key", "value"))
+			it.Must(m.Set(context.Background(), "key", "value"))
 		}
 	})
 }
@@ -57,18 +58,18 @@ func BenchmarkMap_SetLargePayload_128KB(b *testing.B) {
 	payload := makeByteArrayPayload(128 * kb)
 	it.MapBenchmarker(b, nil, func(b *testing.B, m *hz.Map) {
 		for i := 0; i < b.N; i++ {
-			it.Must(m.Set("key", payload))
+			it.Must(m.Set(context.Background(), "key", payload))
 		}
 	})
 }
 
 func BenchmarkMap_GetSameKeyValue(b *testing.B) {
 	fixture := func(m *hz.Map) {
-		it.Must(m.Set("key", "value"))
+		it.Must(m.Set(context.Background(), "key", "value"))
 	}
 	it.MapBenchmarker(b, fixture, func(b *testing.B, m *hz.Map) {
 		for i := 0; i < b.N; i++ {
-			it.MustValue(m.Get("key"))
+			it.MustValue(m.Get(context.Background(), "key"))
 		}
 	})
 }
@@ -76,11 +77,11 @@ func BenchmarkMap_GetSameKeyValue(b *testing.B) {
 func BenchmarkMap_GetLargePayload_128KB(b *testing.B) {
 	fixture := func(m *hz.Map) {
 		payload := makeByteArrayPayload(128 * kb)
-		it.Must(m.Set("key", payload))
+		it.Must(m.Set(context.Background(), "key", payload))
 	}
 	it.MapBenchmarker(b, fixture, func(b *testing.B, m *hz.Map) {
 		for i := 0; i < b.N; i++ {
-			it.MustValue(m.Get("key"))
+			it.MustValue(m.Get(context.Background(), "key"))
 		}
 	})
 }
@@ -89,7 +90,7 @@ func BenchmarkMap_SetParallel(b *testing.B) {
 	it.MapBenchmarker(b, nil, func(b *testing.B, m *hz.Map) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				it.Must(m.Set("key", "value"))
+				it.Must(m.Set(context.Background(), "key", "value"))
 			}
 		})
 	})
@@ -100,7 +101,7 @@ func BenchmarkMap_SetParallelLargePayload_128KB(b *testing.B) {
 		payload := makeByteArrayPayload(128 * kb)
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				it.Must(m.Set("key", payload))
+				it.Must(m.Set(context.Background(), "key", payload))
 			}
 		})
 	})
@@ -108,19 +109,19 @@ func BenchmarkMap_SetParallelLargePayload_128KB(b *testing.B) {
 
 func BenchmarkMap_GetParallel(b *testing.B) {
 	fixture := func(m *hz.Map) {
-		it.Must(m.Set("key", "value"))
+		it.Must(m.Set(context.Background(), "key", "value"))
 	}
 	it.MapBenchmarker(b, fixture, func(b *testing.B, m *hz.Map) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				it.MustValue(m.Get("key"))
+				it.MustValue(m.Get(context.Background(), "key"))
 			}
 		})
 	})
 }
 
 func makeByteArrayPayload(size int) []byte {
-	payload := make([]byte, 128*kb)
+	payload := make([]byte, size)
 	for i := 0; i < len(payload); i++ {
 		payload[i] = byte(i)
 	}
