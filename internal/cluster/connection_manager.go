@@ -139,7 +139,7 @@ type ConnectionManager struct {
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
 	bundle.Check()
 	// TODO: make circuit breaker configurable
-	circuitBreaker := cb.NewCircuitBreaker(
+	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(func(attempt int) time.Duration {
@@ -168,7 +168,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
 		startCh:              make(chan struct{}, 1),
-		cb:                   circuitBreaker,
+		cb:                   cbr,
 		addrTranslator:       bundle.AddrTranslator,
 	}
 	return manager
@@ -184,7 +184,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 func (m *ConnectionManager) start(ctx context.Context, timeout time.Duration) error {
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
 	_, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		err := m.connectCluster(ctx)
+		err := m.connectCluster(ctx, false)
 		if err != nil {
 			m.logger.Errorf("error starting: %w", err)
 		}
@@ -318,8 +318,8 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 	}
 }
 
-func (m *ConnectionManager) connectCluster(ctx context.Context) error {
-	seedAddrs := m.clusterService.SeedAddrs()
+func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) error {
+	seedAddrs := m.clusterService.SeedAddrs(refresh)
 	if len(seedAddrs) == 0 {
 		return cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
@@ -507,7 +507,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			}
 			if m.connMap.Len() == 0 {
 				// if there are no connections, try to connect to seeds
-				if err := m.connectCluster(context.TODO()); err != nil {
+				if err := m.connectCluster(context.TODO(), true); err != nil {
 					m.logger.Errorf("while trying to fix cluster connection: %w", err)
 				}
 			}
@@ -546,10 +546,10 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
 			delete(m.connToAddr, conn.connectionID)
-			remaining = len(m.addrToConn)
 			break
 		}
 	}
+	remaining = len(m.addrToConn)
 	m.connectionsMu.Unlock()
 	return remaining
 }

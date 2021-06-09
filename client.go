@@ -20,12 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -442,7 +442,7 @@ func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger 
 		if err != nil {
 			return nil, nil, err
 		}
-		pr, err := cloud.NewAddressProvider(nodes)
+		pr, err := cloud.NewAddressProvider(dc, nodes)
 		if err != nil {
 			return nil, nil, err
 		}

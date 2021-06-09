@@ -46,7 +46,7 @@ func DefaultCircuitBreakerOptions() *CircuitBreakerOptions {
 	return &CircuitBreakerOptions{
 		MaxRetries:      0,
 		MaxFailureCount: 0,
-		ResetTimeout:    1 * time.Second,
+		ResetTimeout:    0,
 		RetryPolicyFunc: func(tries int) time.Duration {
 			return 0
 		},

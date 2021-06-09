@@ -40,8 +40,8 @@ type CircuitBreaker struct {
 	ResetTimeout        time.Duration
 	MaxFailureCount     int32
 	CurrentFailureCount int32
-	State               int32 // config
-	// state
+	State               int32
+	// TODO: add a setting for failure window
 }
 
 func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
@@ -125,7 +125,11 @@ loop:
 func (cb *CircuitBreaker) notifyFailed() {
 	failureCount := atomic.AddInt32(&cb.CurrentFailureCount, 1)
 	if failureCount > cb.MaxFailureCount {
-		cb.openCircuit()
+		if cb.ResetTimeout > 0 {
+			cb.openCircuit()
+		} else {
+			cb.resetTimeout()
+		}
 	}
 }
 
@@ -147,10 +151,14 @@ func (cb *CircuitBreaker) closeCircuit() {
 	if !atomic.CompareAndSwapInt32(&cb.State, StateOpen, StateClosed) {
 		return
 	}
-	atomic.StoreInt32(&cb.CurrentFailureCount, 0)
+	cb.resetTimeout()
 	if cb.StateChangeHandler != nil {
 		cb.StateChangeHandler(StateClosed)
 	}
+}
+
+func (cb *CircuitBreaker) resetTimeout() {
+	atomic.StoreInt32(&cb.CurrentFailureCount, 0)
 }
 
 func contextErr(err error) bool {
