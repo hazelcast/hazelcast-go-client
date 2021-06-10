@@ -50,5 +50,5 @@ func DecodeBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.B
 
 	uniqueKey := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return types.BitmapIndexOptions{UniqueKey: uniqueKey, UniqueKeyTransformation: uniqueKeyTransformation}
+	return types.BitmapIndexOptions{UniqueKey: uniqueKey, UniqueKeyTransformation: types.UniqueKeyTransformation(uniqueKeyTransformation)}
 }
