@@ -1,6 +1,8 @@
 package stats
 
 import (
+	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -59,7 +61,7 @@ func NewService(
 	return s
 }
 
-func (s Service) Start() {
+func (s *Service) Start() {
 	go s.loop()
 }
 
@@ -69,7 +71,7 @@ func (s Service) Stop() {
 	s.ed.Unsubscribe(cluster.EventConnected, subID)
 }
 
-func (s Service) loop() {
+func (s *Service) loop() {
 	timer := time.NewTimer(s.interval)
 	defer timer.Stop()
 	for {
@@ -78,6 +80,7 @@ func (s Service) loop() {
 			return
 		case <-timer.C:
 			s.sendStats()
+			timer.Reset(s.interval)
 		}
 	}
 }
@@ -91,13 +94,16 @@ func (s *Service) handleClusterConnected(event event.Event) {
 
 func (s *Service) sendStats() {
 	now := time.Now()
-	stats := s.makeStats(now)
-	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, stats, []byte{})
+	statsStr := makeStatString(append(s.basicStats(now), s.systemStats()...))
+	s.logger.Debug(func() string {
+		return fmt.Sprintf("sending stats: %s", statsStr)
+	})
+	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, []byte{})
 	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil)
 	s.requestCh <- inv
 }
 
-func (s *Service) makeStats(ts time.Time) string {
+func (s *Service) basicStats(ts time.Time) []stat {
 	lastTs := int(ts.Unix() * 1000)
 	connTs := int(s.clusterConnectTime.Load().(time.Time).Unix() * 1000)
 	stats := []stat{
@@ -109,7 +115,14 @@ func (s *Service) makeStats(ts time.Time) string {
 		{k: "clientAddress", v: s.connAddr.Load().(*pubcluster.AddressImpl).String()},
 		{k: "clientName", v: s.clientName},
 	}
-	return makeStatString(stats)
+	return stats
+}
+
+func (s *Service) systemStats() []stat {
+	stats := []stat{
+		{k: "runtime.availableProcessors", v: strconv.Itoa(runtime.NumCPU())},
+	}
+	return stats
 }
 
 func makeStatString(ss []stat) string {
