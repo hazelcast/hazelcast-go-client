@@ -17,12 +17,13 @@
 package hazelcast
 
 import (
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	"time"
 )
 
 // Config contains configuration for a client.
@@ -90,6 +91,7 @@ func (c Config) Clone() Config {
 		ClusterConfig:       c.ClusterConfig.Clone(),
 		SerializationConfig: c.SerializationConfig.Clone(),
 		LoggerConfig:        c.LoggerConfig.Clone(),
+		StatsConfig:         c.StatsConfig.clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -105,6 +107,9 @@ func (c Config) Validate() error {
 		return err
 	}
 	if err := c.LoggerConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.StatsConfig.Validate(); err != nil {
 		return err
 	}
 	return nil

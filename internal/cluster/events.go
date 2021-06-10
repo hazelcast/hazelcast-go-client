@@ -96,10 +96,11 @@ func (m MembersRemoved) EventName() string {
 }
 
 type Connected struct {
+	Addr pubcluster.Address
 }
 
-func NewConnected() *Connected {
-	return &Connected{}
+func NewConnected(addr pubcluster.Address) *Connected {
+	return &Connected{Addr: addr}
 }
 
 func (e *Connected) EventName() string {

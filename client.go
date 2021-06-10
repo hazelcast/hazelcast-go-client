@@ -32,6 +32,7 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -85,6 +86,7 @@ type Client struct {
 	eventDispatcher         *event.DispatchService
 	userEventDispatcher     *event.DispatchService
 	proxyManager            *proxyManager
+	statsService            *stats.Service
 	clusterConfig           *cluster.Config
 	membershipListenerMap   map[types.UUID]int64
 	refIDGen                *iproxy.ReferenceIDGenerator
@@ -204,6 +206,9 @@ func (c *Client) start() error {
 		c.userEventDispatcher.Stop()
 		return err
 	}
+	if c.statsService != nil {
+		c.statsService.Start()
+	}
 	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil
@@ -218,6 +223,9 @@ func (c *Client) Shutdown() error {
 	c.invocationService.Stop()
 	c.clusterService.Stop()
 	c.connectionManager.Stop()
+	if c.statsService != nil {
+		c.statsService.Stop()
+	}
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
 	// wait for the shut down event to be dispatched
@@ -427,6 +435,9 @@ func (c *Client) createComponents(config *Config) {
 		InvocationFactory:    invocationFactory,
 		ListenerBinder:       listenerBinder,
 		Logger:               c.logger,
+	}
+	if config.StatsConfig.Enabled {
+		c.statsService = stats.NewService(requestCh, invocationFactory, c.eventDispatcher, c.logger, config.StatsConfig.Period, c.name)
 	}
 	c.connectionManager = connectionManager
 	c.clusterService = clusterService
