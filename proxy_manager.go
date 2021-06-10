@@ -17,10 +17,14 @@
 package hazelcast
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type proxyManager struct {
@@ -36,56 +40,75 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 		mu:             &sync.RWMutex{},
 		proxies:        map[string]*proxy{},
 		serviceBundle:  bundle,
-		refIDGenerator: iproxy.NewReferenceIDGenerator(),
+		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
 	}
 }
 
-func (m *proxyManager) getMap(name string) (*Map, error) {
-	if p, err := m.proxyFor("hz:impl:mapService", name); err != nil {
+func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameMap, name); err != nil {
 		return nil, err
 	} else {
 		return newMap(p), nil
 	}
 }
 
-func (m *proxyManager) getReplicatedMap(objectName string) (*ReplicatedMap, error) {
-	if p, err := m.proxyFor("hz:impl:replicatedMapService", objectName); err != nil {
+func (m *proxyManager) getReplicatedMap(ctx context.Context, objectName string) (*ReplicatedMap, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameReplicatedMap, objectName); err != nil {
 		return nil, err
 	} else {
-		return newReplicatedMapImpl(p)
+		return newReplicatedMap(p, m.refIDGenerator)
 	}
 }
 
-func (m *proxyManager) getQueue(objectName string) (*Queue, error) {
-	if p, err := m.proxyFor("hz:impl:queueService", objectName); err != nil {
+func (m *proxyManager) getQueue(ctx context.Context, objectName string) (*Queue, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameQueue, objectName); err != nil {
 		return nil, err
 	} else {
 		return newQueue(p)
 	}
 }
 
-func (m *proxyManager) getTopic(objectName string) (*Topic, error) {
-	if p, err := m.proxyFor("hz:impl:topicService", objectName); err != nil {
+func (m *proxyManager) getTopic(ctx context.Context, objectName string) (*Topic, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameTopic, objectName); err != nil {
 		return nil, err
 	} else {
 		return newTopic(p)
 	}
 }
 
-func (m *proxyManager) getList(objectName string) (*List, error) {
-	if p, err := m.proxyFor("hz:impl:listService", objectName); err != nil {
+func (m *proxyManager) getList(ctx context.Context, objectName string) (*List, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameList, objectName); err != nil {
 		return nil, err
 	} else {
 		return newList(p)
 	}
 }
 
-func (m *proxyManager) getSet(objectName string) (*Set, error) {
-	if p, err := m.proxyFor("hz:impl:setService", objectName); err != nil {
+func (m *proxyManager) getSet(ctx context.Context, objectName string) (*Set, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameSet, objectName); err != nil {
 		return nil, err
 	} else {
 		return newSet(p)
 	}
+}
+
+func (m *proxyManager) addDistributedObjectEventListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
+	request := codec.EncodeClientAddDistributedObjectListenerRequest(m.serviceBundle.Config.ClusterConfig.SmartRouting)
+	subscriptionID := types.NewUUID()
+	removeRequest := codec.EncodeClientRemoveDistributedObjectListenerRequest(subscriptionID)
+	listenerHandler := func(msg *proto.ClientMessage) {
+		codec.HandleClientAddDistributedObjectListener(msg, func(name string, service string, eventType string, source types.UUID) {
+			handler(newDistributedObjectNotified(service, name, DistributedObjectEventType(eventType)))
+		})
+	}
+	if err := m.serviceBundle.ListenerBinder.Add(ctx, subscriptionID, request, removeRequest, listenerHandler); err != nil {
+		return types.UUID{}, err
+	}
+	return subscriptionID, nil
+}
+
+func (m *proxyManager) removeDistributedObjectEventListener(ctx context.Context, subscriptionID types.UUID) error {
+	return m.serviceBundle.ListenerBinder.Remove(ctx, subscriptionID)
 }
 
 func (m *proxyManager) remove(serviceName string, objectName string) bool {
@@ -99,7 +122,7 @@ func (m *proxyManager) remove(serviceName string, objectName string) bool {
 	return true
 }
 
-func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, error) {
+func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectName string) (*proxy, error) {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	obj, ok := m.proxies[name]
@@ -107,7 +130,7 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, 
 	if ok {
 		return obj, nil
 	}
-	if p, err := m.createProxy(serviceName, objectName); err != nil {
+	if p, err := m.createProxy(ctx, serviceName, objectName); err != nil {
 		return nil, err
 	} else {
 		m.mu.Lock()
@@ -117,8 +140,8 @@ func (m *proxyManager) proxyFor(serviceName string, objectName string) (*proxy, 
 	}
 }
 
-func (m *proxyManager) createProxy(serviceName string, objectName string) (*proxy, error) {
-	return newProxy(m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
+func (m *proxyManager) createProxy(ctx context.Context, serviceName string, objectName string) (*proxy, error) {
+	return newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
 		return m.remove(serviceName, objectName)
 	})
 }

@@ -45,12 +45,12 @@ func newSet(p *proxy) (*Set, error) {
 
 // Add adds the given item to the set.
 // Returns true if the item was not already in the set.
-func (s *Set) Add(item interface{}) (bool, error) {
+func (s *Set) Add(ctx context.Context, item interface{}) (bool, error) {
 	if itemData, err := s.validateAndSerialize(item); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetAddRequest(s.name, itemData)
-		if resp, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if resp, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeSetAddResponse(resp), nil
@@ -60,15 +60,15 @@ func (s *Set) Add(item interface{}) (bool, error) {
 
 // AddAll adds the elements in the specified collection to this set.
 // Returns true if the set is changed after the call.
-func (s *Set) AddAll(values ...interface{}) (bool, error) {
+func (s *Set) AddAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if len(values) == 0 {
 		return false, nil
 	}
-	if valuesData, err := s.validateAndSerializeValues(values...); err != nil {
+	if valuesData, err := s.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetAddAllRequest(s.name, valuesData)
-		if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeSetAddAllResponse(response), nil
@@ -78,32 +78,32 @@ func (s *Set) AddAll(values ...interface{}) (bool, error) {
 
 // AddListener adds an item listener for this set.
 // Listener will be notified for all set add/remove events.
-func (s *Set) AddListener(handler SetItemNotifiedHandler) (types.UUID, error) {
-	return s.addListener(false, handler)
+func (s *Set) AddListener(ctx context.Context, handler SetItemNotifiedHandler) (types.UUID, error) {
+	return s.addListener(ctx, false, handler)
 }
 
 // AddListenerIncludeValue adds an item listener for this set.
 // Listener will be notified for all set add/remove events.
 // Received events include the updated item.
-func (s *Set) AddListenerIncludeValue(handler SetItemNotifiedHandler) (types.UUID, error) {
-	return s.addListener(true, handler)
+func (s *Set) AddListenerIncludeValue(ctx context.Context, handler SetItemNotifiedHandler) (types.UUID, error) {
+	return s.addListener(ctx, true, handler)
 }
 
 // Clear clears this set.
 // Set will be empty after this call.
-func (s *Set) Clear() error {
+func (s *Set) Clear(ctx context.Context) error {
 	request := codec.EncodeSetClearRequest(s.name)
-	_, err := s.invokeOnPartition(context.TODO(), request, s.partitionID)
+	_, err := s.invokeOnPartition(ctx, request, s.partitionID)
 	return err
 }
 
 // Contains returns true if the set includes the given value.
-func (s *Set) Contains(value interface{}) (bool, error) {
+func (s *Set) Contains(ctx context.Context, value interface{}) (bool, error) {
 	if valueData, err := s.validateAndSerialize(value); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetContainsRequest(s.name, valueData)
-		if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeSetContainsResponse(response), nil
@@ -112,15 +112,15 @@ func (s *Set) Contains(value interface{}) (bool, error) {
 }
 
 // ContainsAll returns true if the set includes all given values.
-func (s *Set) ContainsAll(values ...interface{}) (bool, error) {
+func (s *Set) ContainsAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if len(values) == 0 {
 		return false, nil
 	}
-	if valuesData, err := s.validateAndSerializeValues(values...); err != nil {
+	if valuesData, err := s.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetContainsAllRequest(s.name, valuesData)
-		if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeSetContainsAllResponse(response), nil
@@ -129,9 +129,9 @@ func (s *Set) ContainsAll(values ...interface{}) (bool, error) {
 }
 
 // GetAll returns the entries for the given keys.
-func (s *Set) GetAll() ([]interface{}, error) {
+func (s *Set) GetAll(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeSetGetAllRequest(s.name)
-	if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+	if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 		return nil, err
 	} else {
 		return s.convertToObjects(codec.DecodeSetGetAllResponse(response))
@@ -139,9 +139,9 @@ func (s *Set) GetAll() ([]interface{}, error) {
 }
 
 // IsEmpty returns true if the set is empty.
-func (s *Set) IsEmpty() (bool, error) {
+func (s *Set) IsEmpty(ctx context.Context) (bool, error) {
 	request := codec.EncodeSetIsEmptyRequest(s.name)
-	if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+	if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 		return false, err
 	} else {
 		return codec.DecodeSetIsEmptyResponse(response), nil
@@ -149,12 +149,12 @@ func (s *Set) IsEmpty() (bool, error) {
 }
 
 // Remove removes the specified element from the set if it exists.
-func (s *Set) Remove(value interface{}) (bool, error) {
+func (s *Set) Remove(ctx context.Context, value interface{}) (bool, error) {
 	if data, err := s.validateAndSerialize(value); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetRemoveRequest(s.name, data)
-		if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, nil
 		} else {
 			return codec.DecodeSetRemoveResponse(response), nil
@@ -164,15 +164,15 @@ func (s *Set) Remove(value interface{}) (bool, error) {
 
 // RemoveAll removes all of the elements of the specified collection from this set.
 // Returns true if the set was changed.
-func (s *Set) RemoveAll(values ...interface{}) (bool, error) {
+func (s *Set) RemoveAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if len(values) == 0 {
 		return false, nil
 	}
-	if valuesData, err := s.validateAndSerializeValues(values...); err != nil {
+	if valuesData, err := s.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetCompareAndRemoveAllRequest(s.name, valuesData)
-		if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeSetCompareAndRemoveAllResponse(response), nil
@@ -181,21 +181,21 @@ func (s *Set) RemoveAll(values ...interface{}) (bool, error) {
 }
 
 // RemoveListener removes the specified listener.
-func (s *Set) RemoveListener(subscriptionID types.UUID) error {
-	return s.listenerBinder.Remove(subscriptionID)
+func (s *Set) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
+	return s.listenerBinder.Remove(ctx, subscriptionID)
 }
 
 // RetainAll removes the items which are not contained in the specified collection.
 // Returns true if the set was changed.
-func (s *Set) RetainAll(values ...interface{}) (bool, error) {
+func (s *Set) RetainAll(ctx context.Context, values ...interface{}) (bool, error) {
 	if len(values) == 0 {
 		return false, nil
 	}
-	if valuesData, err := s.validateAndSerializeValues(values...); err != nil {
+	if valuesData, err := s.validateAndSerializeValues(values); err != nil {
 		return false, err
 	} else {
 		request := codec.EncodeSetCompareAndRetainAllRequest(s.name, valuesData)
-		if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+		if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 			return false, err
 		} else {
 			return codec.DecodeSetCompareAndRetainAllResponse(response), nil
@@ -204,16 +204,16 @@ func (s *Set) RetainAll(values ...interface{}) (bool, error) {
 }
 
 // Size returns the number of elements in this set.
-func (s *Set) Size() (int, error) {
+func (s *Set) Size(ctx context.Context) (int, error) {
 	request := codec.EncodeSetSizeRequest(s.name)
-	if response, err := s.invokeOnPartition(context.TODO(), request, s.partitionID); err != nil {
+	if response, err := s.invokeOnPartition(ctx, request, s.partitionID); err != nil {
 		return 0, err
 	} else {
 		return int(codec.DecodeSetSizeResponse(response)), nil
 	}
 }
 
-func (s *Set) addListener(includeValue bool, handler SetItemNotifiedHandler) (types.UUID, error) {
+func (s *Set) addListener(ctx context.Context, includeValue bool, handler SetItemNotifiedHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
 	addRequest := codec.EncodeSetAddListenerRequest(s.name, includeValue, s.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeSetRemoveListenerRequest(s.name, subscriptionID)
@@ -227,6 +227,6 @@ func (s *Set) addListener(includeValue bool, handler SetItemNotifiedHandler) (ty
 			}
 		})
 	}
-	err := s.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	err := s.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }

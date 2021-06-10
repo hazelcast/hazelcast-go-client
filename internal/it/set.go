@@ -17,6 +17,7 @@
 package it
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -55,7 +56,7 @@ func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCall
 		config.ClusterConfig.SmartRouting = smart
 		client, s = GetClientSetWithConfig(makeName(), &config)
 		defer func() {
-			if err := s.Destroy(); err != nil {
+			if err := s.Destroy(context.Background()); err != nil {
 				t.Logf("test warning, could not destroy set: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
@@ -78,7 +79,7 @@ func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCall
 
 func GetClientSetWithConfig(setName string, config *hz.Config) (*hz.Client, *hz.Set) {
 	client := getDefaultClient(config)
-	if s, err := client.GetSet(setName); err != nil {
+	if s, err := client.GetSet(context.Background(), setName); err != nil {
 		panic(err)
 	} else {
 		return client, s

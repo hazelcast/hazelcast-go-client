@@ -20,9 +20,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestJSON_String(t *testing.T) {

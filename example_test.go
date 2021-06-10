@@ -1,3 +1,5 @@
+// +build noos
+
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
@@ -17,6 +19,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -36,12 +39,12 @@ func Example() {
 		log.Fatal(err)
 	}
 	// Retrieve a map.
-	peopleMap, err := client.GetMap("people")
+	peopleMap, err := client.GetMap(context.TODO(), "people")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Call map functions.
-	err = peopleMap.Set("jane", "doe")
+	err = peopleMap.Set(context.TODO(), "jane", "doe")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,17 +58,18 @@ func ExampleSet() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	ctx := context.Background()
 	// Retrieve the set named my-set
-	set, err := client.GetSet("my-set")
+	set, err := client.GetSet(ctx, "my-set")
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = set.AddAll("item1", "item2", "item3", "item2", "item1")
+	_, err = set.AddAll(ctx, "item1", "item2", "item3", "item2", "item1")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Get the items. Note that there are no duplicates.
-	items, err := set.GetAll()
+	items, err := set.GetAll(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
