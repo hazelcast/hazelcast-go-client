@@ -152,3 +152,64 @@ func TestClientShutdownRace(t *testing.T) {
 		wg.Wait()
 	})
 }
+
+func TestClient_AddDistributedObjectListener(t *testing.T) {
+	type objInfo struct {
+		service string
+		object  string
+		count   int
+	}
+	createDestroyMap := func(client *hz.Client, mapName string) {
+		m := it.MustValue(client.GetMap(context.Background(), mapName)).(*hz.Map)
+		time.Sleep(100 * time.Millisecond)
+		it.Must(m.Destroy(context.Background()))
+		time.Sleep(100 * time.Millisecond)
+	}
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var created, destroyed objInfo
+		mu := &sync.Mutex{}
+		handler := func(e hz.DistributedObjectNotified) {
+			mu.Lock()
+			defer mu.Unlock()
+			switch e.EventType {
+			case hz.DistributedObjectCreated:
+				created.service = e.ServiceName
+				created.object = e.ObjectName
+				created.count++
+			case hz.DistributedObjectDestroyed:
+				destroyed.service = e.ServiceName
+				destroyed.object = e.ObjectName
+				destroyed.count++
+			}
+		}
+		subID, err := client.AddDistributedObjectListener(context.Background(), handler)
+		if err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		createDestroyMap(client, "dolistener-tester")
+		targetObjInfo := objInfo{service: hz.ServiceNameMap, object: "dolistener-tester", count: 1}
+		mu.Lock()
+		if !assert.Equal(t, targetObjInfo, created) {
+			t.FailNow()
+		}
+		if !assert.Equal(t, targetObjInfo, destroyed) {
+			t.FailNow()
+		}
+		mu.Unlock()
+
+		if err := client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(1 * time.Second)
+		createDestroyMap(client, "dolistener-tester")
+		mu.Lock()
+		if !assert.Equal(t, targetObjInfo, created) {
+			t.FailNow()
+		}
+		if !assert.Equal(t, targetObjInfo, destroyed) {
+			t.FailNow()
+		}
+		mu.Unlock()
+	})
+}

@@ -16,5 +16,28 @@
 
 /*
 Package hazelcast provides the Hazelcast Go client.
+
+Listening for Distributed Object Events
+
+You can listen to creation and destroy events for distributed objects by attaching a listener to the client.
+A distributed object is created when first referenced unless it already exists.
+Here is an example:
+
+	// Error handling is omitted for brevity.
+	handler := func(e hazelcast.DistributedObjectNotified) {
+		isMapEvent := e.ServiceName == hazelcast.ServiceNameMap
+		isCreationEvent := e.EventType == hazelcast.DistributedObjectCreated
+		log.Println(e.EventType, e.ServiceName, e.ObjectName, "creation?", isCreationEvent, "isMap?", isMapEvent)
+	}
+	subscriptionID, _ := client.AddDistributedObjectListener(handler)
+	myMap, _ := client.GetMap("my-map")
+	// handler is called with: ServiceName=ServiceNameMap; ObjectName="my-map"; EventType=DistributedObjectCreated
+	myMap.Destroy()
+	// handler is called with: ServiceName=ServiceNameMap; ObjectName="my-map"; EventType=DistributedObjectDestroyed
+
+If you don't want to receive any distributed object events, use client.RemoveDistributedObjectListener:
+
+	client.RemoveDistributedObjectListener(subscriptionID)
+
 */
 package hazelcast

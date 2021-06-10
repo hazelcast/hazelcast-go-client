@@ -294,6 +294,20 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	return nil
 }
 
+func (c *Client) AddDistributedObjectListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
+	if atomic.LoadInt32(&c.state) >= stopping {
+		return types.UUID{}, ErrClientNotActive
+	}
+	return c.proxyManager.addDistributedObjectEventListener(ctx, handler)
+}
+
+func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscriptionID types.UUID) error {
+	if atomic.LoadInt32(&c.state) >= stopping {
+		return ErrClientNotActive
+	}
+	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
+}
+
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.userEventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {

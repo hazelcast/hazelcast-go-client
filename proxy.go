@@ -36,6 +36,15 @@ import (
 )
 
 const (
+	ServiceNameMap           = "hz:impl:mapService"
+	ServiceNameReplicatedMap = "hz:impl:replicatedMapService"
+	ServiceNameQueue         = "hz:impl:queueService"
+	ServiceNameTopic         = "hz:impl:topicService"
+	ServiceNameList          = "hz:impl:listService"
+	ServiceNameSet           = "hz:impl:setService"
+)
+
+const (
 	ttlUnset     = -1
 	ttlUnlimited = 0
 )
