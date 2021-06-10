@@ -26,18 +26,22 @@ func TestExtractAddresses(t *testing.T) {
 	assert.Equal(t, target, addrs)
 }
 
-func TestAugmentPrivateAddr(t *testing.T) {
+func TestNormalizePrivatePublicAddr(t *testing.T) {
 	testCases := []struct {
-		Pr string
-		Pu string
-		T  string
+		Pr  string
+		Pu  string
+		TPr string
+		TPu string
 	}{
-		{Pr: "100.109.198.133", Pu: "3.8.123.82:31984", T: "100.109.198.133:31984"},
-		{Pr: "100.109.198.133:5555", Pu: "3.8.123.82:31984", T: "100.109.198.133:5555"},
+		{Pr: "100.109.198.133", Pu: "3.8.123.82:31984", TPr: "100.109.198.133:31984", TPu: "3.8.123.82:31984"},
+		{Pr: "100.109.198.133:5555", Pu: "3.8.123.82:31984", TPr: "100.109.198.133:5555", TPu: "3.8.123.82:31984"},
+		{Pr: "100.115.50.247:31989", Pu: "35.177.212.248:null", TPr: "100.115.50.247:31989", TPu: "35.177.212.248:31989"},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			assert.Equal(t, tc.T, augmentPrivateAddr(tc.Pr, tc.Pu))
+			priv, pub := normalizePrivatePublicAddr(tc.Pr, tc.Pu)
+			assert.Equal(t, tc.TPr, priv)
+			assert.Equal(t, tc.TPu, pub)
 		})
 	}
 }

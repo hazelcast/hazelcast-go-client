@@ -116,7 +116,7 @@ func (s *Service) MemberAddrs() []pubcluster.Address {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *Service) SeedAddrs(refresh bool) []pubcluster.Address {
+func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
 	addrSet := NewAddrSet()
 	addrSet.AddAddrs(s.addrProvider.Addresses(refresh))
 	return addrSet.Addrs()

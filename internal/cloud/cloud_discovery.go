@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -62,7 +63,7 @@ func extractAddresses(j interface{}) []Address {
 	for i, v := range jv {
 		public := rest.JsonString(rest.JsonObjectGet(v, "public-address"))
 		private := rest.JsonString(rest.JsonObjectGet(v, "private-address"))
-		private = augmentPrivateAddr(private, public)
+		private, public = normalizePrivatePublicAddr(private, public)
 		r[i] = NewAddress(public, private)
 	}
 	return r
@@ -80,16 +81,44 @@ func baseURL() string {
 	return url
 }
 
-func augmentPrivateAddr(private, public string) string {
-	// private addresses don't seem to have the port
-	// try use the one from public if missing
-	if strings.Index(private, ":") > 0 {
-		return private
+func normalizePrivatePublicAddr(private, public string) (string, string) {
+	var ok bool
+	privateHost, privatePort := parseAddress(private)
+	publicHost, publicPort := parseAddress(public)
+
+	privatePort, ok = nonZeroOf(privatePort, publicPort)
+	if !ok {
+		panic("cloud discovery: neither private nor public address have valid ports")
 	}
-	// if private address doesn't have the port, use public port
-	idx := strings.Index(public, ":")
+	publicPort, ok = nonZeroOf(publicPort, privatePort)
+	if !ok {
+		panic("cloud discovery: neither private nor public address have valid ports")
+	}
+
+	private = fmt.Sprintf("%s:%d", privateHost, privatePort)
+	public = fmt.Sprintf("%s:%d", publicHost, publicPort)
+	return private, public
+}
+
+func nonZeroOf(choice1, choice2 int) (int, bool) {
+	if choice1 > 0 {
+		return choice1, true
+	}
+	if choice2 > 0 {
+		return choice2, true
+	}
+	return 0, false
+}
+
+func parseAddress(addr string) (string, int) {
+	idx := strings.Index(addr, ":")
 	if idx < 0 {
-		return private
+		return addr, 0
 	}
-	return fmt.Sprintf("%s%s", private, public[idx:])
+	host := addr[:idx]
+	port, err := strconv.Atoi(addr[idx+1:])
+	if err != nil {
+		panic(fmt.Sprintf("invalid cloud member address: %s", addr))
+	}
+	return host, port
 }

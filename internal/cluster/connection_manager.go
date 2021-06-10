@@ -319,7 +319,7 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) error {
-	seedAddrs := m.clusterService.SeedAddrs(refresh)
+	seedAddrs := m.clusterService.RefreshedSeedAddrs(refresh)
 	if len(seedAddrs) == 0 {
 		return cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
