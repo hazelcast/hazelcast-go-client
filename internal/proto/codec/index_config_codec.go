@@ -39,7 +39,7 @@ func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig types.Ind
 
 	CodecUtil.EncodeNullableForString(clientMessage, indexConfig.Name)
 	EncodeListMultiFrameForString(clientMessage, indexConfig.Attributes)
-	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, indexConfig.BitmapIndexOptions)
+	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, &indexConfig.BitmapIndexOptions)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -54,5 +54,5 @@ func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) types.IndexCon
 	attributes := DecodeListMultiFrameForString(frameIterator)
 	bitmapIndexOptions := CodecUtil.DecodeNullableForBitmapIndexOptions(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return types.IndexConfig{Name: name, Type: _type, Attributes: attributes, BitmapIndexOptions: bitmapIndexOptions}
+	return types.IndexConfig{Name: name, Type: types.IndexType(_type), Attributes: attributes, BitmapIndexOptions: bitmapIndexOptions}
 }

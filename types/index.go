@@ -19,25 +19,27 @@ package types
 type IndexType int32
 
 const (
-	IndexTypeSorted = int32(0)
-	IndexTypeHash   = int32(1)
-	IndexTypeBitmap = int32(2)
+	IndexTypeSorted IndexType = 0
+	IndexTypeHash   IndexType = 1
+	IndexTypeBitmap IndexType = 2
 )
 
+type UniqueKeyTransformation int32
+
 const (
-	UniqueKeyTransformationObject = int32(0)
-	UniqueKeyTransformationLong   = int32(1)
-	UniqueKeyTransformationRaw    = int32(2)
+	UniqueKeyTransformationObject UniqueKeyTransformation = 0
+	UniqueKeyTransformationLong   UniqueKeyTransformation = 1
+	UniqueKeyTransformationRaw    UniqueKeyTransformation = 2
 )
 
 type IndexConfig struct {
 	Name               string
 	Attributes         []string
 	BitmapIndexOptions BitmapIndexOptions
-	Type               int32
+	Type               IndexType
 }
 
 type BitmapIndexOptions struct {
 	UniqueKey               string
-	UniqueKeyTransformation int32
+	UniqueKeyTransformation UniqueKeyTransformation
 }
