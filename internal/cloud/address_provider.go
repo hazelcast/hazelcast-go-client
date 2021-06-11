@@ -24,8 +24,8 @@ import (
 )
 
 type AddressProvider struct {
-	addrs []pubcluster.Address
 	dc    *DiscoveryClient
+	addrs []pubcluster.Address
 }
 
 func NewAddressProvider(dc *DiscoveryClient, addrs []Address) (*AddressProvider, error) {

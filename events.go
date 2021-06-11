@@ -223,8 +223,8 @@ type SetItemNotifiedHandler func(event *SetItemNotified)
 
 type SetItemNotified struct {
 	Value     interface{}
-	Member    cluster.MemberInfo
 	SetName   string
+	Member    cluster.MemberInfo
 	EventType ItemEventType
 }
 
