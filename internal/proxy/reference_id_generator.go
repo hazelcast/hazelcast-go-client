@@ -22,8 +22,8 @@ type ReferenceIDGenerator struct {
 	nextID int64
 }
 
-func NewReferenceIDGenerator() *ReferenceIDGenerator {
-	return &ReferenceIDGenerator{nextID: 0}
+func NewReferenceIDGenerator(nextID int64) *ReferenceIDGenerator {
+	return &ReferenceIDGenerator{nextID: nextID}
 }
 
 func (gen *ReferenceIDGenerator) NextID() int64 {

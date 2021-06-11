@@ -70,12 +70,12 @@ func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value str
 	}
 }
 
-func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options types.BitmapIndexOptions) {
-	//if options.IsDefault() {
-	//	message.AddFrame(proto.NullFrame.Copy())
-	//} else {
-	EncodeBitmapIndexOptions(message, options)
-	//}
+func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessage, options *types.BitmapIndexOptions) {
+	if options == nil {
+		message.AddFrame(proto.NullFrame.Copy())
+	} else {
+		EncodeBitmapIndexOptions(message, *options)
+	}
 }
 
 func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iserialization.Data) {
@@ -86,30 +86,30 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iseri
 	}
 }
 
-func (codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	return DecodeData(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *pubcluster.Address {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *pubcluster.Address {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	addr := DecodeAddress(frameIterator)
 	return &addr
 }
 
-func (codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
 	return DecodeLongArray(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForString(frameIterator *proto.ForwardFrameIterator) string {
-	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+func (c codecUtil) DecodeNullableForString(frameIterator *proto.ForwardFrameIterator) string {
+	if c.NextFrameIsNullFrame(frameIterator) {
 		return ""
 	}
 	return DecodeString(frameIterator)
@@ -127,18 +127,16 @@ func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator)
 	return isNullFrame
 }
 
-func (codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
-	isNullFrame := frameIterator.PeekNext().IsNullFrame()
-	if isNullFrame {
-		frameIterator.Next()
+func (c codecUtil) DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
+	if c.NextFrameIsNullFrame(frameIterator) {
+		return types.BitmapIndexOptions{}
 	}
 	return DecodeBitmapIndexOptions(frameIterator)
 }
 
-func (codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *types.SimpleEntryView {
-	isNullFrame := frameIterator.PeekNext().IsNullFrame()
-	if isNullFrame {
-		frameIterator.Next()
+func (c codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *types.SimpleEntryView {
+	if c.NextFrameIsNullFrame(frameIterator) {
+		return nil
 	}
 	return DecodeSimpleEntryView(frameIterator)
 }

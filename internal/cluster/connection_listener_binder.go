@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -74,7 +75,10 @@ func NewConnectionListenerBinder(
 	return binder
 }
 
-func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
+func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *proto.ClientMessage, remove *proto.ClientMessage, handler proto.ClientMessageHandler) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	b.regsMu.Lock()
 	b.regs[id] = listenerRegistration{
 		addRequest:    add,
@@ -83,7 +87,7 @@ func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, 
 		id:            id,
 	}
 	b.regsMu.Unlock()
-	corrIDs, err := b.sendAddListenerRequests(add, handler, b.connectionManager.ActiveConnections()...)
+	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, b.connectionManager.ActiveConnections()...)
 	if err != nil {
 		return err
 	}
@@ -91,7 +95,10 @@ func (b *ConnectionListenerBinder) Add(id types.UUID, add *proto.ClientMessage, 
 	return nil
 }
 
-func (b *ConnectionListenerBinder) Remove(id types.UUID) error {
+func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	b.regsMu.Lock()
 	reg, ok := b.regs[id]
 	if !ok {
@@ -101,7 +108,7 @@ func (b *ConnectionListenerBinder) Remove(id types.UUID) error {
 	delete(b.regs, id)
 	b.removeCorrelationIDs(id)
 	b.regsMu.Unlock()
-	return b.sendRemoveListenerRequests(reg.removeRequest, b.connectionManager.ActiveConnections()...)
+	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, b.connectionManager.ActiveConnections()...)
 }
 
 func (b *ConnectionListenerBinder) updateCorrelationIDs(regID types.UUID, correlationIDs []int64) {
@@ -123,24 +130,30 @@ func (b *ConnectionListenerBinder) removeCorrelationIDs(regId types.UUID) {
 	}
 }
 
-func (b *ConnectionListenerBinder) sendAddListenerRequests(request *proto.ClientMessage, handler proto.ClientMessageHandler, conns ...*Connection) ([]int64, error) {
+func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler, conns ...*Connection) ([]int64, error) {
 	if len(conns) == 0 {
 		return nil, nil
 	}
 	if len(conns) == 1 {
-		inv, corrID := b.sendAddListenerRequest(request, handler, conns[0])
-		_, err := inv.Get()
+		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conns[0])
+		if err != nil {
+			return nil, err
+		}
+		_, err = inv.GetWithContext(ctx)
 		return []int64{corrID}, err
 	}
 	invs := make([]invocation.Invocation, len(conns))
 	corrIDs := make([]int64, len(conns))
 	for i, conn := range conns {
-		inv, corrID := b.sendAddListenerRequest(request, handler, conn)
+		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conn)
+		if err != nil {
+			return nil, err
+		}
 		invs[i] = inv
 		corrIDs[i] = corrID
 	}
 	for _, inv := range invs {
-		if _, err := inv.Get(); err != nil {
+		if _, err := inv.GetWithContext(ctx); err != nil {
 			return nil, err
 		}
 	}
@@ -148,37 +161,38 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(request *proto.Client
 }
 
 func (b *ConnectionListenerBinder) sendAddListenerRequest(
+	ctx context.Context,
 	request *proto.ClientMessage,
 	handler proto.ClientMessageHandler,
-	conn *Connection) (invocation.Invocation, int64) {
+	conn *Connection) (invocation.Invocation, int64, error) {
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, handler)
 	correlationID := inv.Request().CorrelationID()
-	b.requestCh <- inv
-	return inv, correlationID
+	err := b.sendInvocation(ctx, inv, correlationID)
+	return inv, correlationID, err
 }
 
-func (b *ConnectionListenerBinder) sendRemoveListenerRequests(request *proto.ClientMessage, conns ...*Connection) error {
+func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Context, request *proto.ClientMessage, conns ...*Connection) error {
 	if len(conns) == 0 {
 		return nil
 	}
 	if len(conns) == 1 {
-		inv := b.sendRemoveListenerRequest(request, conns[0])
-		_, err := inv.Get()
+		inv := b.sendRemoveListenerRequest(ctx, request, conns[0])
+		_, err := inv.GetWithContext(ctx)
 		return err
 	}
 	invs := make([]invocation.Invocation, len(conns))
 	for i, conn := range conns {
-		invs[i] = b.sendRemoveListenerRequest(request, conn)
+		invs[i] = b.sendRemoveListenerRequest(ctx, request, conn)
 	}
 	for _, inv := range invs {
-		if _, err := inv.Get(); err != nil {
+		if _, err := inv.GetWithContext(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *ConnectionListenerBinder) sendRemoveListenerRequest(request *proto.ClientMessage, conn *Connection) invocation.Invocation {
+func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context, request *proto.ClientMessage, conn *Connection) invocation.Invocation {
 	b.logger.Trace(func() string {
 		return fmt.Sprintf("%d: removing listener", conn.connectionID)
 	})
@@ -200,7 +214,7 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 			b.logger.Debug(func() string {
 				return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
 			})
-			if corrIDs, err := b.sendAddListenerRequests(reg.addRequest, reg.handler, e.Conn); err != nil {
+			if corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn); err != nil {
 				b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
 			} else {
 				b.updateCorrelationIDs(regID, corrIDs)
@@ -212,5 +226,15 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 func (b *ConnectionListenerBinder) handleConnectionClosed(event event.Event) {
 	if _, ok := event.(*ConnectionOpened); ok {
 		atomic.AddInt32(&b.connectionCount, -1)
+	}
+}
+
+func (b *ConnectionListenerBinder) sendInvocation(ctx context.Context, inv invocation.Invocation, corrID int64) error {
+	select {
+	case b.requestCh <- inv:
+		return nil
+	case <-ctx.Done():
+		b.removeCh <- corrID
+		return ctx.Err()
 	}
 }

@@ -17,6 +17,7 @@
 package hazelcast_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -33,11 +34,11 @@ func TestRetryWithoutRedoOperation(t *testing.T) {
 
 func TestProxy_Destroy(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		if err := m.Destroy(); err != nil {
+		if err := m.Destroy(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		// the next call should do nothing and return no error
-		if err := m.Destroy(); err != nil {
+		if err := m.Destroy(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -48,13 +49,13 @@ func retryResult(t *testing.T, redo bool, target bool) {
 	config := cluster.DefaultConfig()
 	config.ClusterConfig.RedoOperation = redo
 	client := it.MustClient(hz.StartNewClientWithConfig(config))
-	m := it.MustValue(client.GetMap("redo-test")).(*hz.Map)
+	m := it.MustValue(client.GetMap(context.TODO(), "redo-test")).(*hz.Map)
 	// shutdown the cluster and try again
 	cluster.Shutdown()
 	okCh := make(chan bool)
 	go func(ch chan<- bool) {
 		// set is a non-retryable operation
-		if err := m.Set("key", "value"); err != nil {
+		if err := m.Set(context.Background(), "key", "value"); err != nil {
 			ch <- false
 		} else {
 			ch <- true

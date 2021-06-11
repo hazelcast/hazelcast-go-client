@@ -17,6 +17,7 @@
 package it
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -51,7 +52,7 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 		config.ClusterConfig.SmartRouting = smart
 		client, l = getClientListWithConfig(listName(), &config)
 		defer func() {
-			if err := l.Destroy(); err != nil {
+			if err := l.Destroy(context.Background()); err != nil {
 				t.Logf("test warning, could not destroy list: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
@@ -74,7 +75,7 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 
 func getClientListWithConfig(name string, config *hz.Config) (*hz.Client, *hz.List) {
 	client := getDefaultClient(config)
-	if l, err := client.GetList(name); err != nil {
+	if l, err := client.GetList(context.Background(), name); err != nil {
 		panic(err)
 	} else {
 		return client, l

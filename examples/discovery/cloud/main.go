@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -51,15 +52,16 @@ func getClient() *hazelcast.Client {
 }
 
 func main() {
+	ctx := context.Background()
 	client := getClient()
-	m, err := client.GetMap("sample-map")
+	m, err := client.GetMap(ctx, "sample-map")
 	if err != nil {
 		log.Fatal(err)
 	}
 	for i := 0; i < 100; i++ {
 		key, value := makeKeyValue(i)
 		log.Printf("writing %s=%s", key, value)
-		if err = m.Set(key, value); err != nil {
+		if err = m.Set(ctx, key, value); err != nil {
 			log.Fatal(err)
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -67,7 +69,7 @@ func main() {
 	for i := 0; i < 100; i++ {
 		key, value := makeKeyValue(i)
 		log.Printf("reading %s", key)
-		readValue, err := m.Get(key)
+		readValue, err := m.Get(ctx, key)
 		if err != nil {
 			log.Fatal(err)
 		}

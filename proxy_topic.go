@@ -53,38 +53,41 @@ func newTopic(p *proxy) (*Topic, error) {
 }
 
 // AddListener adds a subscriber to this topic.
-func (t *Topic) AddListener(handler TopicMessageHandler) (types.UUID, error) {
-	return t.addListener(handler)
+func (t *Topic) AddListener(ctx context.Context, handler TopicMessageHandler) (types.UUID, error) {
+	return t.addListener(ctx, handler)
 }
 
 // Publish publishes the given message to all subscribers of this topic.
-func (t *Topic) Publish(message interface{}) error {
+func (t *Topic) Publish(ctx context.Context, message interface{}) error {
 	if messageData, err := t.validateAndSerialize(message); err != nil {
 		return err
 	} else {
 		request := codec.EncodeTopicPublishRequest(t.name, messageData)
-		_, err := t.invokeOnPartition(context.TODO(), request, t.partitionID)
+		_, err := t.invokeOnPartition(ctx, request, t.partitionID)
 		return err
 	}
 }
 
 // PublishAll published all given messages to all subscribers of this topic.
-func (t *Topic) PublishAll(messages ...interface{}) error {
-	if messagesData, err := t.validateAndSerializeValues(messages...); err != nil {
+func (t *Topic) PublishAll(ctx context.Context, messages ...interface{}) error {
+	if len(messages) == 0 {
+		return nil
+	}
+	if messagesData, err := t.validateAndSerializeValues(messages); err != nil {
 		return err
 	} else {
 		request := codec.EncodeTopicPublishAllRequest(t.name, messagesData)
-		_, err := t.invokeOnPartition(context.TODO(), request, t.partitionID)
+		_, err := t.invokeOnPartition(ctx, request, t.partitionID)
 		return err
 	}
 }
 
 // RemoveListener removes the given subscription from this topic.
-func (t *Topic) RemoveListener(subscriptionID types.UUID) error {
-	return t.listenerBinder.Remove(subscriptionID)
+func (t *Topic) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
+	return t.listenerBinder.Remove(ctx, subscriptionID)
 }
 
-func (t *Topic) addListener(handler TopicMessageHandler) (types.UUID, error) {
+func (t *Topic) addListener(ctx context.Context, handler TopicMessageHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
 	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
 	removeRequest := codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
@@ -98,6 +101,6 @@ func (t *Topic) addListener(handler TopicMessageHandler) (types.UUID, error) {
 			}
 		})
 	}
-	err := t.listenerBinder.Add(subscriptionID, addRequest, removeRequest, listenerHandler)
+	err := t.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err
 }

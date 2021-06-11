@@ -124,7 +124,9 @@ func (s *Service) removeCorrelationID(id int64) {
 
 func (s *Service) handleError(correlationID int64, invocationErr error) {
 	if inv := s.unregisterInvocation(correlationID); inv != nil {
-		s.logger.Error(invocationErr)
+		s.logger.Trace(func() string {
+			return fmt.Sprintf("error invoking %d: %s", correlationID, invocationErr)
+		})
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
 	} else {
 		s.logger.Trace(func() string {

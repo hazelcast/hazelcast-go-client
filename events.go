@@ -53,6 +53,8 @@ const (
 	eventMessagePublished           = "messagepublished"
 	eventQueueItemNotified          = "queue.itemnotified"
 	eventListItemNotified           = "list.itemnotified"
+	eventSetItemNotified            = "set.itemnotified"
+	eventDistributedObjectNotified  = "distributedobjectnotified"
 )
 
 type EntryNotified struct {
@@ -214,5 +216,54 @@ func newListItemNotified(name string, value interface{}, member cluster.MemberIn
 		Value:     value,
 		Member:    member,
 		EventType: ItemEventType(eventType),
+	}
+}
+
+type SetItemNotifiedHandler func(event *SetItemNotified)
+
+type SetItemNotified struct {
+	Value     interface{}
+	Member    cluster.MemberInfo
+	SetName   string
+	EventType ItemEventType
+}
+
+func (q SetItemNotified) EventName() string {
+	return eventSetItemNotified
+}
+
+func newSetItemNotified(name string, value interface{}, member cluster.MemberInfo, eventType int32) *SetItemNotified {
+	return &SetItemNotified{
+		SetName:   name,
+		Value:     value,
+		Member:    member,
+		EventType: ItemEventType(eventType),
+	}
+}
+
+type DistributedObjectEventType string
+
+const (
+	DistributedObjectCreated   DistributedObjectEventType = "CREATED"
+	DistributedObjectDestroyed DistributedObjectEventType = "DESTROYED"
+)
+
+type DistributedObjectNotifiedHandler func(event DistributedObjectNotified)
+
+type DistributedObjectNotified struct {
+	ServiceName string
+	ObjectName  string
+	EventType   DistributedObjectEventType
+}
+
+func (d DistributedObjectNotified) EventName() string {
+	return eventDistributedObjectNotified
+}
+
+func newDistributedObjectNotified(service string, object string, eventType DistributedObjectEventType) DistributedObjectNotified {
+	return DistributedObjectNotified{
+		ServiceName: service,
+		ObjectName:  object,
+		EventType:   eventType,
 	}
 }
