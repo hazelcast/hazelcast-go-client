@@ -453,7 +453,13 @@ func (c *Client) createComponents(config *Config) {
 		Logger:               c.logger,
 	}
 	if config.StatsConfig.Enabled {
-		c.statsService = stats.NewService(requestCh, invocationFactory, c.eventDispatcher, c.logger, config.StatsConfig.Period, c.name)
+		c.statsService = stats.NewService(
+			requestCh,
+			invocationFactory,
+			c.eventDispatcher,
+			c.logger,
+			config.StatsConfig.Period,
+			c.name)
 	}
 	c.connectionManager = connectionManager
 	c.clusterService = clusterService

@@ -115,9 +115,12 @@ func (c Config) Validate() error {
 	return nil
 }
 
+// StatsConfig contains configuration for Management Center.
 type StatsConfig struct {
+	// Enabled enables collecting statistics.
 	Enabled bool
-	Period  time.Duration
+	// Period is the period of statistics collection.
+	Period time.Duration
 }
 
 func newStatsConfig() StatsConfig {
@@ -133,7 +136,7 @@ func (c StatsConfig) clone() StatsConfig {
 
 func (c StatsConfig) Validate() error {
 	if c.Enabled && c.Period <= 0 {
-		return hzerrors.ErrConfigInvalidStatsPerid
+		return hzerrors.ErrConfigInvalidStatsPeriod
 	}
 	return nil
 }

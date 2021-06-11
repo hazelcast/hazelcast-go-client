@@ -1,8 +1,8 @@
 package stats
 
 import (
+	"context"
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -79,7 +79,9 @@ func (s *Service) loop() {
 		case <-s.doneCh:
 			return
 		case <-timer.C:
-			s.sendStats()
+			ctx, cancel := context.WithTimeout(context.Background(), s.interval)
+			s.sendStats(ctx)
+			cancel()
 			timer.Reset(s.interval)
 		}
 	}
@@ -92,37 +94,29 @@ func (s *Service) handleClusterConnected(event event.Event) {
 	}
 }
 
-func (s *Service) sendStats() {
+func (s *Service) sendStats(ctx context.Context) {
 	now := time.Now()
-	statsStr := makeStatString(append(s.basicStats(now), s.systemStats()...))
+	statsStr := makeStatString(s.basicStats(now))
 	s.logger.Debug(func() string {
 		return fmt.Sprintf("sending stats: %s", statsStr)
 	})
 	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, []byte{})
 	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil)
-	s.requestCh <- inv
+	select {
+	case <-ctx.Done():
+		break
+	case s.requestCh <- inv:
+		if _, err := inv.GetWithContext(ctx); err == nil {
+			return
+		}
+	}
+	s.logger.Debug(func() string { return fmt.Sprintf("error sending stats: %s", ctx.Err().Error()) })
 }
 
 func (s *Service) basicStats(ts time.Time) []stat {
-	lastTs := int(ts.Unix() * 1000)
-	connTs := int(s.clusterConnectTime.Load().(time.Time).Unix() * 1000)
-	stats := []stat{
-		{k: "lastStatisticsCollectionTime", v: strconv.Itoa(lastTs)},
-		{k: "enterprise", v: "false"},
-		{k: "clientType", v: internal.ClientType},
-		{k: "clientVersion", v: internal.ClientVersion},
-		{k: "clusterConnectionTimestamp", v: strconv.Itoa(connTs)},
-		{k: "clientAddress", v: s.connAddr.Load().(*pubcluster.AddressImpl).String()},
-		{k: "clientName", v: s.clientName},
-	}
-	return stats
-}
-
-func (s *Service) systemStats() []stat {
-	stats := []stat{
-		{k: "runtime.availableProcessors", v: strconv.Itoa(runtime.NumCPU())},
-	}
-	return stats
+	lastTS := s.clusterConnectTime.Load().(time.Time)
+	connAddr := s.connAddr.Load().(*pubcluster.AddressImpl).String()
+	return MakeBasicStats(ts, lastTS, connAddr, s.clientName)
 }
 
 func makeStatString(ss []stat) string {
@@ -140,4 +134,19 @@ func makeStatString(ss []stat) string {
 		sb.WriteString(s.v)
 	}
 	return sb.String()
+}
+
+func MakeBasicStats(lastTS time.Time, connTS time.Time, addr, clientName string) []stat {
+	lastTSMS := int(lastTS.Unix() * 1000)
+	connTSMS := int(connTS.Unix() * 1000)
+	stats := []stat{
+		{k: "lastStatisticsCollectionTime", v: strconv.Itoa(lastTSMS)},
+		{k: "enterprise", v: "false"},
+		{k: "clientType", v: internal.ClientType},
+		{k: "clientVersion", v: internal.ClientVersion},
+		{k: "clusterConnectionTimestamp", v: strconv.Itoa(connTSMS)},
+		{k: "clientAddress", v: addr},
+		{k: "clientName", v: clientName},
+	}
+	return stats
 }
