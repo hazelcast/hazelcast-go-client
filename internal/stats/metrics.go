@@ -35,8 +35,8 @@ type MetricsCompressor struct {
 	lastMD       *metricDescriptor
 	metricBuf    *bytes.Buffer
 	dictBuf      *bytes.Buffer
-	metricsCount int
 	buf          []byte
+	metricsCount int
 }
 
 func NewMetricCompressor() *MetricsCompressor {

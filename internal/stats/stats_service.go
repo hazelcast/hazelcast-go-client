@@ -35,16 +35,16 @@ type Service struct {
 	clusterConnectTime atomic.Value
 	connAddr           atomic.Value
 	logger             logger.Logger
-	requestCh          chan<- invocation.Invocation
+	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
-	mu                 *sync.RWMutex
+	requestCh          chan<- invocation.Invocation
 	doneCh             chan struct{}
 	ed                 *event.DispatchService
-	clientName         string
-	interval           time.Duration
 	mc                 *MetricsCompressor
+	clientName         string
 	gauges             []gauge
+	interval           time.Duration
 }
 
 func NewService(

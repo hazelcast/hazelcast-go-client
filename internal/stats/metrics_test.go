@@ -68,7 +68,6 @@ func TestNewMetricCompressor(t *testing.T) {
 	}
 	mc.AddLong(md3, 2147483647)
 	bin := mc.GenerateBlob()
-	ioutil.WriteFile("D:/temp/blob1.bin", bin, 666)
 	assert.Equal(t, targetBin, bin)
 }
 
