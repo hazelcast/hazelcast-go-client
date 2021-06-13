@@ -11,13 +11,13 @@ func TestMetricsDictionary(t *testing.T) {
 	d := newMetricsDictionary()
 	assert.Equal(t, 0, d.Len())
 	id0 := d.DictionaryID("foo")
-	assert.Equal(t, 0, id0)
+	assert.Equal(t, int32(0), id0)
 	assert.Equal(t, []wordID{{Word: "foo", ID: 0}}, d.Words())
 	id1 := d.DictionaryID("abacus")
-	assert.Equal(t, 1, id1)
+	assert.Equal(t, int32(1), id1)
 	assert.Equal(t, []wordID{{Word: "abacus", ID: 1}, {Word: "foo", ID: 0}}, d.Words())
 	id2 := d.DictionaryID("abacus")
-	assert.Equal(t, 1, id2)
+	assert.Equal(t, int32(1), id2)
 	assert.Equal(t, []wordID{{Word: "abacus", ID: 1}, {Word: "foo", ID: 0}}, d.Words())
 }
 
