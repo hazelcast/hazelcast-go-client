@@ -102,8 +102,7 @@ func newClient(config Config) (*Client, error) {
 		return nil, err
 	}
 	config = config.Clone()
-	id := nextId
-	atomic.AddInt32(&nextId, 1)
+	id := atomic.AddInt32(&nextId, 1)
 	name := ""
 	if config.ClientName != "" {
 		name = config.ClientName
