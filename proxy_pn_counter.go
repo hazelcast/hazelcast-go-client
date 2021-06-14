@@ -61,20 +61,36 @@ func newPNCounter(p *proxy) *PNCounter {
 	}
 }
 
+// AddAndGet adds the given value to the current value and returns the updated value.
+func (pn *PNCounter) AddAndGet(ctx context.Context, delta int64) (int64, error) {
+	target, err := pn.crdtOperationTarget()
+	if err != nil {
+		return 0, err
+	}
+	request := codec.EncodePNCounterAddRequest(pn.name, delta, false, pn.clock.EntrySet(), target.UUID())
+	resp, err := pn.invokeOnTarget(ctx, request, target.Address().(*cluster.AddressImpl))
+	if err != nil {
+		return 0, err
+	}
+	value, timestamps, _ := codec.DecodePNCounterAddResponse(resp)
+	pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
+	return value, nil
+}
+
 // Get returns the current value of the counter.
 func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
 	target, err := pn.crdtOperationTarget()
 	if err != nil {
 		return 0, err
 	}
-	request := codec.EncodePNCounterGetRequest(pn.name, pn.clock.EntrySet(), pn.target.UUID())
-	if resp, err := pn.invokeOnTarget(ctx, request, target.Address().(*cluster.AddressImpl)); err != nil {
+	request := codec.EncodePNCounterGetRequest(pn.name, pn.clock.EntrySet(), target.UUID())
+	resp, err := pn.invokeOnTarget(ctx, request, target.Address().(*cluster.AddressImpl))
+	if err != nil {
 		return 0, err
-	} else {
-		value, timestamps, _ := codec.DecodePNCounterGetResponse(resp)
-		pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
-		return value, nil
 	}
+	value, timestamps, _ := codec.DecodePNCounterGetResponse(resp)
+	pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
+	return value, nil
 }
 
 func (pn *PNCounter) crdtOperationTarget() (*icluster.Member, error) {

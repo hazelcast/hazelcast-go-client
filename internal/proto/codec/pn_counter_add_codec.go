@@ -47,7 +47,7 @@ func EncodePNCounterAddRequest(name string, delta int64, getBeforeUpdate bool, r
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrame(make([]byte, PNCounterAddCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, PNCounterAddCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, PNCounterAddCodecRequestDeltaOffset, delta)
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, PNCounterAddCodecRequestGetBeforeUpdateOffset, getBeforeUpdate)
 	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterAddCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)

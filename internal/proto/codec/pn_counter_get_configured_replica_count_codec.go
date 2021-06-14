@@ -37,7 +37,7 @@ func EncodePNCounterGetConfiguredReplicaCountRequest(name string) *proto.ClientM
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrame(make([]byte, PNCounterGetConfiguredReplicaCountCodecRequestInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, PNCounterGetConfiguredReplicaCountCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(PNCounterGetConfiguredReplicaCountCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

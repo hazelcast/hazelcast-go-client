@@ -269,7 +269,6 @@ func (p *proxy) invokeOnTarget(ctx context.Context, request *proto.ClientMessage
 			request = request.Copy()
 		}
 		inv := p.invocationFactory.NewInvocationOnTarget(request, target)
-		fmt.Println("inv.id", inv.Request().CorrelationID())
 		if err := p.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}

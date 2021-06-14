@@ -20,16 +20,33 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
 func TestPNCounter_Get(t *testing.T) {
-	t.SkipNow()
 	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
-		_, err := pn.Get(context.Background())
+		v, err := pn.Get(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, int64(0), v)
+	})
+}
+
+func TestPNCounter_AddAndGet(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.AddAndGet(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(1), v)
+		v, err = pn.AddAndGet(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(2), v)
 	})
 }
