@@ -114,8 +114,9 @@ func (s *Service) handleClusterConnected(event event.Event) {
 func (s *Service) sendStats(ctx context.Context) {
 	now := time.Now()
 	s.addBasicStats(now)
-	blob := s.makeStatBlob()
+	blob := s.makeStats()
 	statsStr := makeStatString(s.btStats.stats)
+	s.resetStats()
 	s.logger.Debug(func() string {
 		return fmt.Sprintf("sending stats: %s", statsStr)
 	})
@@ -138,13 +139,17 @@ func (s *Service) addBasicStats(ts time.Time) {
 	s.btStats.stats = append(s.btStats.stats, MakeBasicStats(ts, lastTS, connAddr, s.clientName)...)
 }
 
-func (s *Service) makeStatBlob() []byte {
+func (s *Service) makeStats() []byte {
 	for _, gauge := range s.gauges {
-		gauge.Update(s.btStats)
+		gauge.Update(&s.btStats)
 	}
 	blob := s.btStats.mc.GenerateBlob()
-	s.btStats.mc.Reset()
 	return blob
+}
+
+func (s *Service) resetStats() {
+	s.btStats.mc.Reset()
+	s.btStats.stats = nil
 }
 
 func (s *Service) addGauges() {
@@ -187,7 +192,7 @@ func MakeBasicStats(lastTS time.Time, connTS time.Time, addr, clientName string)
 }
 
 type gauge interface {
-	Update(btStats binTextStats)
+	Update(btStats *binTextStats)
 }
 
 type runtimeGauges struct {
@@ -210,19 +215,19 @@ func newGaugeRuntime(lg logger.Logger) runtimeGauges {
 	}
 }
 
-func (g runtimeGauges) Update(bt binTextStats) {
+func (g runtimeGauges) Update(bt *binTextStats) {
 	g.updateNumCPU(bt)
 	g.updateUptime(bt)
 	g.updateMem(bt)
 }
 
-func (g runtimeGauges) updateNumCPU(bt binTextStats) {
+func (g runtimeGauges) updateNumCPU(bt *binTextStats) {
 	numCpu := int64(runtime.NumCPU())
 	bt.mc.AddLong(g.availProcessors, numCpu)
 	bt.stats = append(bt.stats, makeTextStat(&g.availProcessors, numCpu))
 }
 
-func (g runtimeGauges) updateUptime(bt binTextStats) {
+func (g runtimeGauges) updateUptime(bt *binTextStats) {
 	if uptime, err := host.Uptime(); err != nil {
 		// could not get the uptime
 		g.logger.Debug(func() string {
@@ -235,7 +240,7 @@ func (g runtimeGauges) updateUptime(bt binTextStats) {
 	}
 }
 
-func (g runtimeGauges) updateMem(bt binTextStats) {
+func (g runtimeGauges) updateMem(bt *binTextStats) {
 	ms := runtime.MemStats{}
 	runtime.ReadMemStats(&ms)
 	bt.mc.AddLong(g.totalMem, int64(ms.HeapSys))
@@ -275,7 +280,7 @@ func newGaugeOS(lg logger.Logger) gaugeOS {
 	}
 }
 
-func (g gaugeOS) Update(bt binTextStats) {
+func (g gaugeOS) Update(bt *binTextStats) {
 	g.updateVM(bt)
 	g.updateSwap(bt)
 	g.updateCPU(bt)
@@ -283,7 +288,7 @@ func (g gaugeOS) Update(bt binTextStats) {
 	g.updateDescr(bt)
 }
 
-func (g gaugeOS) updateVM(bt binTextStats) {
+func (g gaugeOS) updateVM(bt *binTextStats) {
 	if vs, err := mem.VirtualMemory(); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting virtual memory stats: %s", err.Error())
@@ -299,7 +304,7 @@ func (g gaugeOS) updateVM(bt binTextStats) {
 	}
 }
 
-func (g gaugeOS) updateSwap(bt binTextStats) {
+func (g gaugeOS) updateSwap(bt *binTextStats) {
 	if sm, err := mem.SwapMemory(); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting swap memory stats: %s", err.Error())
@@ -313,7 +318,7 @@ func (g gaugeOS) updateSwap(bt binTextStats) {
 	}
 }
 
-func (g gaugeOS) updateCPU(bt binTextStats) {
+func (g gaugeOS) updateCPU(bt *binTextStats) {
 	if ts, err := cpu.Times(false); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting CPU stats: %s", err.Error())
@@ -327,7 +332,7 @@ func (g gaugeOS) updateCPU(bt binTextStats) {
 	}
 }
 
-func (g gaugeOS) updateLoad(bt binTextStats) {
+func (g gaugeOS) updateLoad(bt *binTextStats) {
 	if avg, err := load.Avg(); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting load average: %s", err.Error())
@@ -338,7 +343,7 @@ func (g gaugeOS) updateLoad(bt binTextStats) {
 	}
 }
 
-func (g gaugeOS) updateDescr(bt binTextStats) {
+func (g gaugeOS) updateDescr(bt *binTextStats) {
 	if proc, err := process.NewProcess(int32(os.Getpid())); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting process info: %s", err.Error())
@@ -401,5 +406,5 @@ func makePercentMD(prefix, metric string) metricDescriptor {
 }
 
 func makeTextStat(md *metricDescriptor, value interface{}) stat {
-	return stat{k: md.String(), v: fmt.Sprintf("%s", value)}
+	return stat{k: md.String(), v: fmt.Sprintf("%v", value)}
 }
