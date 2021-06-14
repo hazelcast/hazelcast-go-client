@@ -31,6 +31,11 @@ type stat struct {
 	v string
 }
 
+type binTextStats struct {
+	mc    *MetricsCompressor
+	stats []stat
+}
+
 type Service struct {
 	clusterConnectTime atomic.Value
 	connAddr           atomic.Value
@@ -41,7 +46,7 @@ type Service struct {
 	requestCh          chan<- invocation.Invocation
 	doneCh             chan struct{}
 	ed                 *event.DispatchService
-	mc                 *MetricsCompressor
+	btStats            binTextStats
 	clientName         string
 	gauges             []gauge
 	interval           time.Duration
@@ -64,7 +69,7 @@ func NewService(
 		mu:         &sync.RWMutex{},
 		clientName: clientName,
 		ed:         ed,
-		mc:         NewMetricCompressor(),
+		btStats:    binTextStats{mc: NewMetricCompressor()},
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
@@ -108,11 +113,12 @@ func (s *Service) handleClusterConnected(event event.Event) {
 
 func (s *Service) sendStats(ctx context.Context) {
 	now := time.Now()
-	statsStr := makeStatString(s.basicStats(now))
+	s.addBasicStats(now)
+	blob := s.makeStatBlob()
+	statsStr := makeStatString(s.btStats.stats)
 	s.logger.Debug(func() string {
 		return fmt.Sprintf("sending stats: %s", statsStr)
 	})
-	blob := s.makeStatBlob()
 	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, blob)
 	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil)
 	select {
@@ -126,18 +132,18 @@ func (s *Service) sendStats(ctx context.Context) {
 	s.logger.Debug(func() string { return fmt.Sprintf("error sending stats: %s", ctx.Err().Error()) })
 }
 
-func (s *Service) basicStats(ts time.Time) []stat {
+func (s *Service) addBasicStats(ts time.Time) {
 	lastTS := s.clusterConnectTime.Load().(time.Time)
 	connAddr := s.connAddr.Load().(*pubcluster.AddressImpl).String()
-	return MakeBasicStats(ts, lastTS, connAddr, s.clientName)
+	s.btStats.stats = append(s.btStats.stats, MakeBasicStats(ts, lastTS, connAddr, s.clientName)...)
 }
 
 func (s *Service) makeStatBlob() []byte {
 	for _, gauge := range s.gauges {
-		gauge.Update(s.mc)
+		gauge.Update(s.btStats)
 	}
-	blob := s.mc.GenerateBlob()
-	s.mc.Reset()
+	blob := s.btStats.mc.GenerateBlob()
+	s.btStats.mc.Reset()
 	return blob
 }
 
@@ -181,7 +187,7 @@ func MakeBasicStats(lastTS time.Time, connTS time.Time, addr, clientName string)
 }
 
 type gauge interface {
-	Update(mc *MetricsCompressor)
+	Update(btStats binTextStats)
 }
 
 type runtimeGauges struct {
@@ -204,29 +210,41 @@ func newGaugeRuntime(lg logger.Logger) runtimeGauges {
 	}
 }
 
-func (g runtimeGauges) Update(mc *MetricsCompressor) {
-	mc.AddLong(g.availProcessors, int64(runtime.NumCPU()))
-	g.updateUptime(mc)
-	g.updateMem(mc)
+func (g runtimeGauges) Update(bt binTextStats) {
+	g.updateNumCPU(bt)
+	g.updateUptime(bt)
+	g.updateMem(bt)
 }
 
-func (g runtimeGauges) updateUptime(mc *MetricsCompressor) {
+func (g runtimeGauges) updateNumCPU(bt binTextStats) {
+	numCpu := int64(runtime.NumCPU())
+	bt.mc.AddLong(g.availProcessors, numCpu)
+	bt.stats = append(bt.stats, makeTextStat(&g.availProcessors, numCpu))
+}
+
+func (g runtimeGauges) updateUptime(bt binTextStats) {
 	if uptime, err := host.Uptime(); err != nil {
 		// could not get the uptime
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting uptime: %s", err.Error())
 		})
 	} else {
-		mc.AddLong(g.uptime, int64(uptime)*1000)
+		ms := int64(uptime) * 1000
+		bt.mc.AddLong(g.uptime, ms)
+		bt.stats = append(bt.stats, makeTextStat(&g.uptime, ms))
 	}
 }
 
-func (g runtimeGauges) updateMem(mc *MetricsCompressor) {
+func (g runtimeGauges) updateMem(bt binTextStats) {
 	ms := runtime.MemStats{}
 	runtime.ReadMemStats(&ms)
-	mc.AddLong(g.totalMem, int64(ms.HeapSys))
-	mc.AddLong(g.usedMem, int64(ms.HeapInuse))
-	mc.AddLong(g.freeMem, int64(ms.HeapIdle))
+	bt.mc.AddLong(g.totalMem, int64(ms.HeapSys))
+	bt.mc.AddLong(g.usedMem, int64(ms.HeapInuse))
+	bt.mc.AddLong(g.freeMem, int64(ms.HeapIdle))
+	bt.stats = append(bt.stats,
+		makeTextStat(&g.totalMem, ms.HeapSys),
+		makeTextStat(&g.usedMem, ms.HeapInuse),
+		makeTextStat(&g.freeMem, ms.HeapIdle))
 }
 
 type gaugeOS struct {
@@ -257,38 +275,45 @@ func newGaugeOS(lg logger.Logger) gaugeOS {
 	}
 }
 
-func (g gaugeOS) Update(mc *MetricsCompressor) {
-	g.updateVM(mc)
-	g.updateSwap(mc)
-	g.updateCPU(mc)
-	g.updateLoad(mc)
-	g.updateDescr(mc)
+func (g gaugeOS) Update(bt binTextStats) {
+	g.updateVM(bt)
+	g.updateSwap(bt)
+	g.updateCPU(bt)
+	g.updateLoad(bt)
+	g.updateDescr(bt)
 }
 
-func (g gaugeOS) updateVM(mc *MetricsCompressor) {
+func (g gaugeOS) updateVM(bt binTextStats) {
 	if vs, err := mem.VirtualMemory(); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting virtual memory stats: %s", err.Error())
 		})
 	} else {
-		mc.AddLong(g.totalMem, int64(vs.Total))
-		mc.AddLong(g.freeMem, int64(vs.Free))
-		mc.AddLong(g.committedVM, int64(vs.CommittedAS))
+		bt.mc.AddLong(g.totalMem, int64(vs.Total))
+		bt.mc.AddLong(g.freeMem, int64(vs.Free))
+		bt.mc.AddLong(g.committedVM, int64(vs.CommittedAS))
+		bt.stats = append(bt.stats,
+			makeTextStat(&g.totalMem, vs.Total),
+			makeTextStat(&g.freeMem, vs.Free),
+			makeTextStat(&g.committedVM, vs.CommittedAS))
 	}
 }
 
-func (g gaugeOS) updateSwap(mc *MetricsCompressor) {
+func (g gaugeOS) updateSwap(bt binTextStats) {
 	if sm, err := mem.SwapMemory(); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting swap memory stats: %s", err.Error())
 		})
 	} else {
-		mc.AddLong(g.freeSwap, int64(sm.Free))
-		mc.AddLong(g.totalSwap, int64(sm.Total))
+		bt.mc.AddLong(g.freeSwap, int64(sm.Free))
+		bt.mc.AddLong(g.totalSwap, int64(sm.Total))
+		bt.stats = append(bt.stats,
+			makeTextStat(&g.freeSwap, sm.Free),
+			makeTextStat(&g.totalSwap, sm.Total))
 	}
 }
 
-func (g gaugeOS) updateCPU(mc *MetricsCompressor) {
+func (g gaugeOS) updateCPU(bt binTextStats) {
 	if ts, err := cpu.Times(false); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting CPU stats: %s", err.Error())
@@ -296,21 +321,24 @@ func (g gaugeOS) updateCPU(mc *MetricsCompressor) {
 	} else if len(ts) == 0 {
 		g.logger.Debug(func() string { return "ERROR getting CPU stats: no CPU found" })
 	} else {
-		mc.AddLong(g.cpuTime, int64(ts[0].Total()*1000))
+		cpuTime := ts[0].Total() * 1000
+		bt.mc.AddLong(g.cpuTime, int64(cpuTime))
+		bt.stats = append(bt.stats, makeTextStat(&g.cpuTime, cpuTime))
 	}
 }
 
-func (g gaugeOS) updateLoad(mc *MetricsCompressor) {
+func (g gaugeOS) updateLoad(bt binTextStats) {
 	if avg, err := load.Avg(); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting load average: %s", err.Error())
 		})
 	} else {
-		mc.AddDouble(g.loadAvg, avg.Load1)
+		bt.mc.AddDouble(g.loadAvg, avg.Load1)
+		bt.stats = append(bt.stats, makeTextStat(&g.loadAvg, avg.Load1))
 	}
 }
 
-func (g gaugeOS) updateDescr(mc *MetricsCompressor) {
+func (g gaugeOS) updateDescr(bt binTextStats) {
 	if proc, err := process.NewProcess(int32(os.Getpid())); err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting process info: %s", err.Error())
@@ -326,11 +354,13 @@ func (g gaugeOS) updateDescr(mc *MetricsCompressor) {
 	} else {
 		for _, rl := range rls {
 			if rl.Resource == process.RLIMIT_NOFILE {
-				mc.AddLong(g.maxDecrCount, int64(rl.Soft))
+				bt.mc.AddLong(g.maxDecrCount, int64(rl.Soft))
+				bt.stats = append(bt.stats, makeTextStat(&g.maxDecrCount, rl.Soft))
 				break
 			}
 		}
-		mc.AddLong(g.openDecrCount, int64(nfd))
+		bt.mc.AddLong(g.openDecrCount, int64(nfd))
+		bt.stats = append(bt.stats, makeTextStat(&g.openDecrCount, nfd))
 	}
 }
 
@@ -368,4 +398,8 @@ func makePercentMD(prefix, metric string) metricDescriptor {
 		HasUnit: true,
 		Unit:    metricPercent,
 	}
+}
+
+func makeTextStat(md *metricDescriptor, value interface{}) stat {
+	return stat{k: md.String(), v: fmt.Sprintf("%s", value)}
 }

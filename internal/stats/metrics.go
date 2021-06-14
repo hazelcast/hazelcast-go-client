@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"sort"
 )
@@ -239,7 +240,11 @@ type metricDescriptor struct {
 	Unit               metricUnit
 }
 
-func (md metricDescriptor) calculateMask(lastMD *metricDescriptor) (mask byte) {
+func (md *metricDescriptor) String() string {
+	return fmt.Sprintf("%s.%s", md.Prefix, md.Metric)
+}
+
+func (md *metricDescriptor) calculateMask(lastMD *metricDescriptor) (mask byte) {
 	if lastMD == nil {
 		return
 	}
