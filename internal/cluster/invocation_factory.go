@@ -50,6 +50,12 @@ func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto
 	return inv
 }
 
+func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, addr *pubcluster.AddressImpl) invocation.Invocation {
+	message.SetCorrelationID(f.makeCorrelationID())
+	inv := invocation.NewImpl(message, -1, addr, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	return inv
+}
+
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(
 	message *proto.ClientMessage,
 	partitionID int32,

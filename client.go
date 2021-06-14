@@ -190,6 +190,14 @@ func (c *Client) GetSet(ctx context.Context, name string) (*Set, error) {
 	return c.proxyManager.getSet(ctx, name)
 }
 
+// GetPNCounter returns a PNCounter instance.
+func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, ErrClientNotActive
+	}
+	return c.proxyManager.getPNCounter(ctx, name)
+}
+
 // Start connects the client to the cluster.
 func (c *Client) start() error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {

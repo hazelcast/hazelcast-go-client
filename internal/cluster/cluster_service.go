@@ -113,6 +113,10 @@ func (s *Service) MemberAddrs() []string {
 	return s.membersMap.MemberAddrs()
 }
 
+func (s *Service) RandomDataMember() *Member {
+	return s.membersMap.RandomDataMember()
+}
+
 func (s *Service) memberCandidateAddrs() []*pubcluster.AddressImpl {
 	addrSet := NewAddrSet()
 	for _, addrProvider := range s.addrProviders {
@@ -268,6 +272,17 @@ func (m *membersMap) MemberAddrs() []string {
 	}
 	m.membersMu.RUnlock()
 	return addrs
+}
+
+func (m *membersMap) RandomDataMember() *Member {
+	m.membersMu.RLock()
+	defer m.membersMu.RUnlock()
+	for _, mem := range m.members {
+		if !mem.isLiteMember {
+			return mem
+		}
+	}
+	return nil
 }
 
 func (m *membersMap) addMember(memberInfo pubcluster.MemberInfo) *Member {

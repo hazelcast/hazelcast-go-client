@@ -64,7 +64,7 @@ type ConnectionInvocationHandler struct {
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
 	// TODO: make circuit breaker configurable
-	circuitBreaker := cb.NewCircuitBreaker(
+	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(3),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(func(attempt int) time.Duration {
@@ -74,7 +74,7 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 		connectionManager: bundle.ConnectionManager,
 		clusterService:    bundle.ClusterService,
 		logger:            bundle.Logger,
-		cb:                circuitBreaker,
+		cb:                cbr,
 		smart:             bundle.Config.SmartRouting,
 	}
 }

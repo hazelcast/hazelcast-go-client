@@ -3,6 +3,11 @@ package hazelcast
 import (
 	"context"
 	"errors"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 )
 
 /*
@@ -45,13 +50,49 @@ fail with an NoDataMemberInClusterError.
 */
 type PNCounter struct {
 	*proxy
+	clock  iproxy.VectorClock
+	target *icluster.Member
 }
 
 func newPNCounter(p *proxy) *PNCounter {
-	return &PNCounter{p}
+	return &PNCounter{
+		proxy: p,
+		clock: iproxy.NewVectorClock(),
+	}
 }
 
 // Get returns the current value of the counter.
-func (pn *PNCounter) Get(ctx context.Context) (int, error) {
-	return 0, errors.New("not implemented")
+func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
+	target, err := pn.crdtOperationTarget()
+	if err != nil {
+		return 0, err
+	}
+	request := codec.EncodePNCounterGetRequest(pn.name, pn.clock.EntrySet(), pn.target.UUID())
+	if resp, err := pn.invokeOnTarget(ctx, request, target.Address().(*cluster.AddressImpl)); err != nil {
+		return 0, err
+	} else {
+		value, timestamps, _ := codec.DecodePNCounterGetResponse(resp)
+		pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
+		return value, nil
+	}
+}
+
+func (pn *PNCounter) crdtOperationTarget() (*icluster.Member, error) {
+	if pn.target == nil {
+		mem := pn.clusterService.RandomDataMember()
+		if mem == nil {
+			// TODO: use the correct error
+			return nil, errors.New("crdt target mem is nil")
+		}
+		pn.target = mem
+	}
+	return pn.target, nil
+}
+
+func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
+	// TODO: implement this properly
+	if pn.clock.After(clock) {
+		return
+	}
+	pn.clock = clock
 }

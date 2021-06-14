@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package proxy
+package hazelcast_test
 
 import (
-	"sync/atomic"
+	"context"
+	"testing"
+
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
-type ReferenceIDGenerator struct {
-	nextID int64
-}
-
-func NewReferenceIDGenerator(nextID int64) *ReferenceIDGenerator {
-	return &ReferenceIDGenerator{nextID: nextID}
-}
-
-func (gen *ReferenceIDGenerator) NextID() int64 {
-	return atomic.AddInt64(&gen.nextID, 1)
+func TestPNCounter_Get(t *testing.T) {
+	t.SkipNow()
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		_, err := pn.Get(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }

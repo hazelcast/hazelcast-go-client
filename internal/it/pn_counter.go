@@ -22,48 +22,42 @@ import (
 	"math/rand"
 	"testing"
 
-	"go.uber.org/goleak"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 )
 
-func SetTester(t *testing.T, f func(t *testing.T, s *hz.Set)) {
-	SetTesterWithConfig(t, nil, f)
+func PNCounterTester(t *testing.T, f func(t *testing.T, pn *hz.PNCounter)) {
+	PNCounterTesterWithConfig(t, nil, f)
 }
 
-func SetTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, s *hz.Set)) {
+func PNCounterTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, pn *hz.PNCounter)) {
 	makeName := func() string {
-		return fmt.Sprintf("test-set-%d-%d", idGen.NextID(), rand.Int())
+		return fmt.Sprintf("test-pn-counter-%d-%d", idGen.NextID(), rand.Int())
 	}
-	SetTesterWithConfigAndName(t, makeName, configCallback, f)
+	PNCounterTesterWithConfigAndName(t, makeName, configCallback, f)
 }
 
-func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, s *hz.Set)) {
+func PNCounterTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, s *hz.PNCounter)) {
 	var (
 		client *hz.Client
-		s      *hz.Set
+		pn     *hz.PNCounter
 	)
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
-		if LeakCheckEnabled() {
-			t.Logf("enabled leak check")
-			defer goleak.VerifyNone(t)
-		}
 		config := defaultTestCluster.DefaultConfig()
 		if configCallback != nil {
 			configCallback(&config)
 		}
 		config.ClusterConfig.SmartRouting = smart
-		client, s = GetClientSetWithConfig(makeName(), &config)
+		client, pn = GetClientPNCounterWithConfig(makeName(), &config)
 		defer func() {
-			if err := s.Destroy(context.Background()); err != nil {
-				t.Logf("test warning, could not destroy set: %s", err.Error())
+			if err := pn.Destroy(context.Background()); err != nil {
+				t.Logf("test warning, could not destroy pn conter: %s", err.Error())
 			}
 			if err := client.Shutdown(); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
-		f(t, s)
+		f(t, pn)
 	}
 	if SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {
@@ -77,11 +71,11 @@ func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCall
 	}
 }
 
-func GetClientSetWithConfig(setName string, config *hz.Config) (*hz.Client, *hz.Set) {
+func GetClientPNCounterWithConfig(name string, config *hz.Config) (*hz.Client, *hz.PNCounter) {
 	client := getDefaultClient(config)
-	if s, err := client.GetSet(context.Background(), setName); err != nil {
+	if pn, err := client.GetPNCounter(context.Background(), name); err != nil {
 		panic(err)
 	} else {
-		return client, s
+		return client, pn
 	}
 }
