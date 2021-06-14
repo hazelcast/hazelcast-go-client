@@ -41,7 +41,7 @@ If you don't want to receive any distributed object events, use client.RemoveDis
 
 Collecting Statistics
 
-Hazelcast Management Center can monitor your clients if client-side statistics is enabled.
+Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
 
 You can enable statistics by setting config.StatsConfig.Enabled to true.
 Optionally, the period of statistics collection can be set using config.StatsConfig.Period setting.
