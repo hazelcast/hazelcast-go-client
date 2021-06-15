@@ -202,6 +202,10 @@ type runtimeGauges struct {
 	totalMem        metricDescriptor
 	usedMem         metricDescriptor
 	freeMem         metricDescriptor
+	maxHeap         metricDescriptor
+	freeHeap        metricDescriptor
+	usedHeap        metricDescriptor
+	committedHeap   metricDescriptor
 }
 
 func newGaugeRuntime(lg logger.Logger) runtimeGauges {
@@ -212,6 +216,10 @@ func newGaugeRuntime(lg logger.Logger) runtimeGauges {
 		totalMem:        makeBytesMD("runtime", "totalMemory"),
 		usedMem:         makeBytesMD("runtime", "usedMemory"),
 		freeMem:         makeBytesMD("runtime", "freeMemory"),
+		maxHeap:         makeBytesMD("memory", "maxHeap"),
+		freeHeap:        makeBytesMD("memory", "freeHeap"),
+		usedHeap:        makeBytesMD("memory", "usedHeap"),
+		committedHeap:   makeBytesMD("memory", "committedHeap"),
 	}
 }
 
@@ -246,10 +254,18 @@ func (g runtimeGauges) updateMem(bt *binTextStats) {
 	bt.mc.AddLong(g.totalMem, int64(ms.HeapSys))
 	bt.mc.AddLong(g.usedMem, int64(ms.HeapInuse))
 	bt.mc.AddLong(g.freeMem, int64(ms.HeapIdle))
+	bt.mc.AddLong(g.maxHeap, int64(ms.HeapSys))
+	bt.mc.AddLong(g.usedHeap, int64(ms.HeapInuse))
+	bt.mc.AddLong(g.freeHeap, int64(ms.HeapIdle))
+	bt.mc.AddLong(g.committedHeap, int64(ms.HeapAlloc))
 	bt.stats = append(bt.stats,
 		makeTextStat(&g.totalMem, ms.HeapSys),
 		makeTextStat(&g.usedMem, ms.HeapInuse),
-		makeTextStat(&g.freeMem, ms.HeapIdle))
+		makeTextStat(&g.freeMem, ms.HeapIdle),
+		makeTextStat(&g.maxHeap, ms.HeapSys),
+		makeTextStat(&g.usedHeap, ms.HeapInuse),
+		makeTextStat(&g.freeHeap, ms.HeapIdle),
+		makeTextStat(&g.committedHeap, ms.HeapAlloc))
 }
 
 type gaugeOS struct {
