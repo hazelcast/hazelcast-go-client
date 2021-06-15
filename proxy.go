@@ -263,7 +263,7 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 	})
 }
 
-func (p *proxy) invokeOnTarget(ctx context.Context, request *proto.ClientMessage, target *pubcluster.AddressImpl) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnTarget(ctx context.Context, request *proto.ClientMessage, target pubcluster.Address) (*proto.ClientMessage, error) {
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
@@ -400,7 +400,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 			return
 		}
 		member := p.clusterService.GetMemberByUUID(binUUID)
-		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries)))
+		handler(newEntryNotifiedEvent(p.name, *member, key, value, oldValue, mergingValue, int(affectedEntries)))
 	}
 }
 

@@ -18,6 +18,9 @@ package codec
 
 import (
 	"encoding/binary"
+	"fmt"
+	"net"
+	"strconv"
 	"strings"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -90,11 +93,12 @@ func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterat
 	return DecodeData(frameIterator)
 }
 
-func (c codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) pubcluster.Address {
+func (c codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *pubcluster.Address {
 	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	return DecodeAddress(frameIterator)
+	addr := DecodeAddress(frameIterator)
+	return &addr
 }
 
 func (c codecUtil) DecodeNullableForLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
@@ -729,7 +733,10 @@ func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
 }
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {
-	return pubcluster.EndpointQualifier{Type: qualifierType, Identifier: identifier}
+	return pubcluster.EndpointQualifier{
+		Type:       pubcluster.EndpointQualifierType(qualifierType),
+		Identifier: identifier,
+	}
 }
 
 // DistributedObject is the base interface for all distributed objects.
@@ -773,4 +780,49 @@ func (i *DistributedObjectInfo) GetServiceName() string {
 
 func NewDistributedObjectInfo(name string, serviceName string) DistributedObjectInfo {
 	return DistributedObjectInfo{name: name, serviceName: serviceName}
+}
+
+func NewMemberVersion(major, minor, patch byte) pubcluster.MemberVersion {
+	return pubcluster.MemberVersion{Major: major, Minor: minor, Patch: patch}
+}
+
+func NewMemberInfo(
+	address pubcluster.Address,
+	uuid types.UUID,
+	attributes map[string]string,
+	liteMember bool,
+	version pubcluster.MemberVersion,
+	addressMapExists bool,
+	addressMap interface{}) pubcluster.MemberInfo {
+	var addrMap map[pubcluster.EndpointQualifier]pubcluster.Address
+	if addressMapExists {
+		addrMap = addressMap.(map[pubcluster.EndpointQualifier]pubcluster.Address)
+	} else {
+		addrMap = map[pubcluster.EndpointQualifier]pubcluster.Address{}
+	}
+	return pubcluster.MemberInfo{
+		Address:    address,
+		UUID:       uuid,
+		Attributes: attributes,
+		LiteMember: liteMember,
+		Version:    version,
+		AddressMap: addrMap,
+	}
+}
+
+func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Address) {
+	host, portStr, err := net.SplitHostPort(address.String())
+	if err != nil {
+		panic(fmt.Errorf("parsing address: %w", err))
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		panic(fmt.Errorf("parsing address: %w", err))
+	}
+	clientMessage.AddFrame(proto.BeginFrame.Copy())
+	initialFrame := proto.NewFrame(make([]byte, AddressCodecPortInitialFrameSize))
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(port))
+	clientMessage.AddFrame(initialFrame)
+	EncodeString(clientMessage, host)
+	clientMessage.AddFrame(proto.EndFrame.Copy())
 }

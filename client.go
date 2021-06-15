@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -114,12 +115,19 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	clientLogger := ilogger.NewWithLevel(logLevel)
+	// TODO: Move addrProviderTranslator to createComponents
+	// Not doing that right now, because of the event dispatchers.
+	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.ClusterConfig, clientLogger)
+	if err != nil {
+		return nil, err
+	}
 	serializationService, err := serialization.NewService(&config.SerializationConfig)
 	if err != nil {
 		return nil, err
 	}
-	clientLogger := ilogger.NewWithLevel(logLevel)
-	client := &Client{
+	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
+	c := &Client{
 		name:                    name,
 		clusterConfig:           &config.ClusterConfig,
 		serializationService:    serializationService,
@@ -132,10 +140,10 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 	}
-	client.addConfigEvents(&config)
-	client.subscribeUserEvents()
-	client.createComponents(&config)
-	return client, nil
+	c.addConfigEvents(&config)
+	c.subscribeUserEvents()
+	c.createComponents(&config, addrProvider, addrTranslator)
+	return c, nil
 }
 
 // Name returns client's name
@@ -397,11 +405,8 @@ func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCrede
 	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
 }
 
-func (c *Client) createComponents(config *Config) {
+func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
 	credentials := c.makeCredentials(config)
-	addressProviders := []icluster.AddressProvider{
-		icluster.NewDefaultAddressProvider(&config.ClusterConfig),
-	}
 	requestCh := make(chan invocation.Invocation, 1024)
 	responseCh := make(chan *proto.ClientMessage, 1024)
 	removeCh := make(chan int64, 1024)
@@ -410,14 +415,15 @@ func (c *Client) createComponents(config *Config) {
 		Logger:          c.logger,
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
-	clusterService := icluster.NewServiceImpl(icluster.CreationBundle{
-		AddrProviders:     addressProviders,
+	clusterService := icluster.NewService(icluster.CreationBundle{
+		AddrProvider:      addrProvider,
 		RequestCh:         requestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,
 		PartitionService:  partitionService,
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
+		AddressTranslator: addrTranslator,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            requestCh,
@@ -431,6 +437,7 @@ func (c *Client) createComponents(config *Config) {
 		ClusterConfig:        &config.ClusterConfig,
 		Credentials:          credentials,
 		ClientName:           c.name,
+		AddrTranslator:       addrTranslator,
 		Labels:               config.Labels,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
@@ -474,4 +481,24 @@ func (c *Client) createComponents(config *Config) {
 	c.invocationService = invocationService
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
+}
+
+func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
+	if config.HazelcastCloudConfig.Enabled {
+		dc := cloud.NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
+		nodes, err := dc.DiscoverNodes(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		pr, err := cloud.NewAddressProvider(dc, nodes)
+		if err != nil {
+			return nil, nil, err
+		}
+		return pr, cloud.NewAddressTranslator(dc, nodes), nil
+	}
+	pr := icluster.NewDefaultAddressProvider(config)
+	if config.DiscoveryConfig.UsePublicIP {
+		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
+	}
+	return pr, icluster.NewDefaultAddressTranslator(), nil
 }

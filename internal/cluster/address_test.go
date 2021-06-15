@@ -18,50 +18,42 @@ package cluster_test
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 )
 
-type addrCase struct {
-	err   error
-	input string
-	host  string
-	port  int
-}
-
-func TestAddressImplParse(t *testing.T) {
-	cases := []addrCase{
-		{input: "", host: "localhost", port: 5701},
-		{input: "localhost", host: "localhost", port: 5701},
-		{input: ":4566", err: errors.New("error parsing address: address with no host")},
-		{input: "foo.com:2223", host: "foo.com", port: 2223},
+func TestAddressParse(t *testing.T) {
+	testCases := []struct {
+		err   error
+		input string
+		addr  pubcluster.Address
+	}{
+		{input: "", err: errors.New("parsing address: missing port in address")},
+		{input: "localhost", err: errors.New("parsing address: address localhost: missing port in address")},
+		{input: "localhost:5701", addr: "localhost:5701"},
+		{input: "foo.com:2223", addr: "foo.com:2223"},
+		{input: ":4566", addr: ":4566"},
 		// TODO: ipv6
 	}
-	for i, addrCase := range cases {
-		if err := assertAddress(addrCase); err != nil {
-			t.Error(fmt.Errorf("TestAddressImplParse test %d error: %w", i+1, err))
-		}
+	for _, tc := range testCases {
+		t.Run(tc.input, func(t *testing.T) {
+			addr, err := cluster.ParseAddress(tc.input)
+			if tc.err != nil {
+				if err == nil {
+					t.Fatalf("should have failed")
+				}
+				if tc.err.Error() != err.Error() {
+					t.Fatalf("target err: %v != %v", tc.err, err)
+				}
+				return
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tc.addr, addr)
+		})
 	}
-}
-
-func assertAddress(addrCase addrCase) error {
-	addr, err := cluster.ParseAddress(addrCase.input)
-	if addrCase.err != nil {
-		if !reflect.DeepEqual(addrCase.err, err) {
-			return fmt.Errorf("target err: %v != %v", addrCase.err, err)
-		}
-		return nil
-	} else if err != nil {
-		return err
-	}
-	if addrCase.host != addr.Host() {
-		return fmt.Errorf("target host: %v != %v", addrCase.host, addr.Host())
-	}
-	if addrCase.port != addr.Port() {
-		return fmt.Errorf("target port: %v != %v", addrCase.port, addr.Port())
-	}
-	return nil
 }

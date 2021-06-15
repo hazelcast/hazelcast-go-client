@@ -14,33 +14,25 @@
  * limitations under the License.
  */
 
-package cluster
+package rest
 
-type MembershipState int
-
-func (m MembershipState) String() string {
-	switch m {
-	case 0:
-		return "added"
-	case 1:
-		return "removed"
-	default:
-		return "UNKNOWN"
+func JsonString(j interface{}) string {
+	if js, ok := j.(string); ok {
+		return js
 	}
+	return ""
 }
 
-const (
-	MembershipStateAdded MembershipState = iota
-	MembershipStateRemoved
-)
-
-type MembershipStateChangeHandler func(event MembershipStateChanged)
-
-type MembershipStateChanged struct {
-	Member MemberInfo
-	State  MembershipState
+func JsonArray(j interface{}) []interface{} {
+	if t, ok := j.([]interface{}); ok {
+		return t
+	}
+	return nil
 }
 
-func (e *MembershipStateChanged) EventName() string {
-	return "cluster.membershipstatechanged"
+func JsonObjectGet(j interface{}, key string) interface{} {
+	if jm, ok := j.(map[string]interface{}); ok {
+		return jm[key]
+	}
+	return nil
 }

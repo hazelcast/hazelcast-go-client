@@ -23,35 +23,34 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
-const (
-	DefaultHost = "localhost"
-	DefaultPort = 5701
-)
-
 type Config struct {
-	SecurityConfig    SecurityConfig
-	Name              string
-	SSLConfig         SSLConfig
-	Addrs             []string
-	HeartbeatInterval time.Duration
-	HeartbeatTimeout  time.Duration
-	InvocationTimeout time.Duration
-	ConnectionTimeout time.Duration
-	RedoOperation     bool
-	SmartRouting      bool
+	SecurityConfig       SecurityConfig
+	SSLConfig            SSLConfig
+	Name                 string
+	HazelcastCloudConfig HazelcastCloudConfig
+	Addrs                []string
+	InvocationTimeout    time.Duration
+	HeartbeatInterval    time.Duration
+	HeartbeatTimeout     time.Duration
+	ConnectionTimeout    time.Duration
+	DiscoveryConfig      DiscoveryConfig
+	RedoOperation        bool
+	SmartRouting         bool
 }
 
 func NewConfig() Config {
 	return Config{
-		Name:              "dev",
-		Addrs:             []string{"127.0.0.1:5701"},
-		SmartRouting:      true,
-		ConnectionTimeout: 5 * time.Second,
-		HeartbeatInterval: 5 * time.Second,
-		HeartbeatTimeout:  60 * time.Second,
-		InvocationTimeout: 120 * time.Second,
-		SecurityConfig:    NewSecurityConfig(),
-		SSLConfig:         NewSSLConfig(),
+		Name:                 "dev",
+		Addrs:                []string{"127.0.0.1:5701"},
+		SmartRouting:         true,
+		ConnectionTimeout:    5 * time.Second,
+		HeartbeatInterval:    5 * time.Second,
+		HeartbeatTimeout:     60 * time.Second,
+		InvocationTimeout:    120 * time.Second,
+		SecurityConfig:       NewSecurityConfig(),
+		SSLConfig:            NewSSLConfig(),
+		HazelcastCloudConfig: NewHazelcastCloudConfig(),
+		DiscoveryConfig:      NewDiscoveryConfig(),
 	}
 }
 
@@ -59,16 +58,18 @@ func (c *Config) Clone() Config {
 	addrs := make([]string, len(c.Addrs))
 	copy(addrs, c.Addrs)
 	return Config{
-		Name:              c.Name,
-		Addrs:             addrs,
-		SmartRouting:      c.SmartRouting,
-		ConnectionTimeout: c.ConnectionTimeout,
-		HeartbeatInterval: c.HeartbeatInterval,
-		HeartbeatTimeout:  c.HeartbeatTimeout,
-		InvocationTimeout: c.InvocationTimeout,
-		RedoOperation:     c.RedoOperation,
-		SecurityConfig:    c.SecurityConfig.Clone(),
-		SSLConfig:         c.SSLConfig.Clone(),
+		Name:                 c.Name,
+		Addrs:                addrs,
+		SmartRouting:         c.SmartRouting,
+		ConnectionTimeout:    c.ConnectionTimeout,
+		HeartbeatInterval:    c.HeartbeatInterval,
+		HeartbeatTimeout:     c.HeartbeatTimeout,
+		InvocationTimeout:    c.InvocationTimeout,
+		RedoOperation:        c.RedoOperation,
+		SecurityConfig:       c.SecurityConfig.Clone(),
+		SSLConfig:            c.SSLConfig.Clone(),
+		HazelcastCloudConfig: c.HazelcastCloudConfig.Clone(),
+		DiscoveryConfig:      c.DiscoveryConfig.Clone(),
 	}
 }
 
@@ -97,6 +98,12 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.SSLConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.HazelcastCloudConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.DiscoveryConfig.Validate(); err != nil {
 		return err
 	}
 	return nil

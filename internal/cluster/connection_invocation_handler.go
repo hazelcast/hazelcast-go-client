@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -65,7 +66,7 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(3),
+		cb.MaxRetries(math.MaxInt64),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration(attempt) * time.Second
@@ -106,7 +107,7 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 			return h.sendToConnection(inv, conn)
 		}
 	}
-	if inv.Address() != nil {
+	if inv.Address() != "" {
 		return h.sendToAddress(inv, inv.Address())
 	}
 	return h.sendToRandomAddress(inv)
@@ -126,7 +127,7 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 	return nil
 }
 
-func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr *pubcluster.AddressImpl) error {
+func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
 	conn := h.connectionManager.GetConnectionForAddress(addr)
 	if conn == nil {
 		if conn = h.connectionManager.RandomConnection(); conn != nil {

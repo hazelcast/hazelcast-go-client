@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package stats
 
 import (
@@ -135,7 +151,7 @@ func (s *Service) sendStats(ctx context.Context) {
 
 func (s *Service) addBasicStats(ts time.Time) {
 	lastTS := s.clusterConnectTime.Load().(time.Time)
-	connAddr := s.connAddr.Load().(*pubcluster.AddressImpl).String()
+	connAddr := s.connAddr.Load().(pubcluster.Address)
 	s.btStats.stats = append(s.btStats.stats, MakeBasicStats(ts, lastTS, connAddr, s.clientName)...)
 }
 
@@ -176,7 +192,7 @@ func makeStatString(ss []stat) string {
 	return sb.String()
 }
 
-func MakeBasicStats(lastTS time.Time, connTS time.Time, addr, clientName string) []stat {
+func MakeBasicStats(lastTS time.Time, connTS time.Time, addr pubcluster.Address, clientName string) []stat {
 	lastTSMS := int(lastTS.Unix() * 1000)
 	connTSMS := int(connTS.Unix() * 1000)
 	stats := []stat{
@@ -185,7 +201,7 @@ func MakeBasicStats(lastTS time.Time, connTS time.Time, addr, clientName string)
 		{k: "clientType", v: internal.ClientType},
 		{k: "clientVersion", v: internal.ClientVersion},
 		{k: "clusterConnectionTimestamp", v: strconv.Itoa(connTSMS)},
-		{k: "clientAddress", v: addr},
+		{k: "clientAddress", v: addr.String()},
 		{k: "clientName", v: clientName},
 	}
 	return stats

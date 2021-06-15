@@ -31,17 +31,6 @@ type addressCodec struct {}
 var AddressCodec addressCodec
 */
 
-func EncodeAddress(clientMessage *proto.ClientMessage, address cluster.Address) {
-	clientMessage.AddFrame(proto.BeginFrame.Copy())
-	initialFrame := proto.NewFrame(make([]byte, AddressCodecPortInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(address.Port()))
-	clientMessage.AddFrame(initialFrame)
-
-	EncodeString(clientMessage, address.Host())
-
-	clientMessage.AddFrame(proto.EndFrame.Copy())
-}
-
 func DecodeAddress(frameIterator *proto.ForwardFrameIterator) cluster.Address {
 	// begin frame
 	frameIterator.Next()

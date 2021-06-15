@@ -97,7 +97,7 @@ func (t *Topic) addListener(ctx context.Context, handler TopicMessageHandler) (t
 				t.logger.Warnf("cannot convert data to Go value")
 			} else {
 				member := t.clusterService.GetMemberByUUID(uuid)
-				handler(newMessagePublished(t.name, item, time.Unix(0, publishTime*1000000), member))
+				handler(newMessagePublished(t.name, item, time.Unix(0, publishTime*1_000_000), *member))
 			}
 		})
 	}

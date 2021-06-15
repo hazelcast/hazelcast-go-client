@@ -63,7 +63,7 @@ func EncodeClientAuthenticationRequest(clusterName string, username string, pass
 	return clientMessage
 }
 
-func DecodeClientAuthenticationResponse(clientMessage *proto.ClientMessage) (status byte, address cluster.Address, memberUuid types.UUID, serializationVersion byte, serverHazelcastVersion string, partitionCount int32, clusterId types.UUID, failoverSupported bool) {
+func DecodeClientAuthenticationResponse(clientMessage *proto.ClientMessage) (status byte, address *cluster.Address, memberUuid types.UUID, serializationVersion byte, serverHazelcastVersion string, partitionCount int32, clusterId types.UUID, failoverSupported bool) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

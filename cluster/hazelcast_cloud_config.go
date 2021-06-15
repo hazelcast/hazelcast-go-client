@@ -16,31 +16,19 @@
 
 package cluster
 
-type MembershipState int
-
-func (m MembershipState) String() string {
-	switch m {
-	case 0:
-		return "added"
-	case 1:
-		return "removed"
-	default:
-		return "UNKNOWN"
-	}
+type HazelcastCloudConfig struct {
+	Token   string
+	Enabled bool
 }
 
-const (
-	MembershipStateAdded MembershipState = iota
-	MembershipStateRemoved
-)
-
-type MembershipStateChangeHandler func(event MembershipStateChanged)
-
-type MembershipStateChanged struct {
-	Member MemberInfo
-	State  MembershipState
+func NewHazelcastCloudConfig() HazelcastCloudConfig {
+	return HazelcastCloudConfig{}
 }
 
-func (e *MembershipStateChanged) EventName() string {
-	return "cluster.membershipstatechanged"
+func (h HazelcastCloudConfig) Clone() HazelcastCloudConfig {
+	return h
+}
+
+func (h HazelcastCloudConfig) Validate() error {
+	return nil
 }

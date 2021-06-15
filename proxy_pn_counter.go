@@ -22,7 +22,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
-	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -69,7 +68,7 @@ fail with an NoDataMemberInClusterError.
 type PNCounter struct {
 	*proxy
 	clock  iproxy.VectorClock
-	target *icluster.Member
+	target *cluster.MemberInfo
 	mu     *sync.Mutex
 }
 
@@ -97,8 +96,8 @@ func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	request := codec.EncodePNCounterGetRequest(pn.name, pn.clockEntrySet(), target.UUID())
-	resp, err := pn.invokeOnTarget(ctx, request, target.Address().(*cluster.AddressImpl))
+	request := codec.EncodePNCounterGetRequest(pn.name, pn.clockEntrySet(), target.UUID)
+	resp, err := pn.invokeOnTarget(ctx, request, target.Address)
 	if err != nil {
 		return 0, err
 	}
@@ -151,7 +150,7 @@ func (pn *PNCounter) clockEntrySet() []proto.Pair {
 	return entries
 }
 
-func (pn *PNCounter) crdtOperationTarget() (*icluster.Member, error) {
+func (pn *PNCounter) crdtOperationTarget() (*cluster.MemberInfo, error) {
 	if pn.target == nil {
 		mem := pn.clusterService.RandomDataMember()
 		if mem == nil {
@@ -177,8 +176,8 @@ func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool)
 	if err != nil {
 		return 0, err
 	}
-	request := codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, pn.clockEntrySet(), target.UUID())
-	resp, err := pn.invokeOnTarget(ctx, request, target.Address().(*cluster.AddressImpl))
+	request := codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, pn.clockEntrySet(), target.UUID)
+	resp, err := pn.invokeOnTarget(ctx, request, target.Address)
 	if err != nil {
 		return 0, err
 	}

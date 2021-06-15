@@ -20,53 +20,12 @@ import (
 	"fmt"
 )
 
-type Address interface {
-	// TODO: remove this interface
-	fmt.Stringer
-	Host() string
-	Port() int
-	Clone() Address
-	// TODO: add address hash
+type Address string
+
+func NewAddress(host string, port int32) Address {
+	return Address(fmt.Sprintf("%s:%d", host, port))
 }
 
-type AddressImpl struct {
-	// TODO: rename to Address
-	host string
-	str  string
-	port int
-	// TODO: add address hash
-}
-
-func NewAddress(host string, port int32) *AddressImpl {
-	return NewAddressWithHostPort(host, int(port))
-}
-
-// TODO: merge this one with NewAddress
-func NewAddressWithHostPort(host string, port int) *AddressImpl {
-	return &AddressImpl{host: host, port: port, str: fmt.Sprintf("%s:%d", host, port)}
-}
-
-func (a AddressImpl) Host() string {
-	return a.host
-}
-
-func (a AddressImpl) Port() int {
-	return int(a.port)
-}
-
-func (a AddressImpl) String() string {
-	return a.str
-}
-
-func (a AddressImpl) Clone() Address {
-	return &AddressImpl{
-		host: a.host,
-		port: a.port,
-		str:  a.str,
-	}
-}
-
-type EndpointQualifier struct {
-	Identifier string
-	Type       int32
+func (a Address) String() string {
+	return string(a)
 }

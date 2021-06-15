@@ -14,33 +14,19 @@
  * limitations under the License.
  */
 
-package cluster
+package cloud
 
-type MembershipState int
+import "fmt"
 
-func (m MembershipState) String() string {
-	switch m {
-	case 0:
-		return "added"
-	case 1:
-		return "removed"
-	default:
-		return "UNKNOWN"
-	}
+type Address struct {
+	Public  string
+	Private string
 }
 
-const (
-	MembershipStateAdded MembershipState = iota
-	MembershipStateRemoved
-)
-
-type MembershipStateChangeHandler func(event MembershipStateChanged)
-
-type MembershipStateChanged struct {
-	Member MemberInfo
-	State  MembershipState
+func NewAddress(public string, private string) Address {
+	return Address{Public: public, Private: private}
 }
 
-func (e *MembershipStateChanged) EventName() string {
-	return "cluster.membershipstatechanged"
+func (a Address) String() string {
+	return fmt.Sprintf("Address(Public: %s, Private: %s)", a.Public, a.Private)
 }

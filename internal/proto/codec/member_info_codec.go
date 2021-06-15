@@ -35,14 +35,14 @@ var MemberInfoCodec memberinfoCodec
 func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo cluster.MemberInfo) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberInfoCodecLiteMemberInitialFrameSize))
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.UUID())
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.LiteMember())
+	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.UUID)
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.LiteMember)
 	clientMessage.AddFrame(initialFrame)
 
-	EncodeAddress(clientMessage, memberInfo.Address())
-	EncodeMapForStringAndString(clientMessage, memberInfo.Attributes())
-	EncodeMemberVersion(clientMessage, memberInfo.Version())
-	EncodeMapForEndpointQualifierAndAddress(clientMessage, memberInfo.AddressMap())
+	EncodeAddress(clientMessage, memberInfo.Address)
+	EncodeMapForStringAndString(clientMessage, memberInfo.Attributes)
+	EncodeMemberVersion(clientMessage, memberInfo.Version)
+	EncodeMapForEndpointQualifierAndAddress(clientMessage, memberInfo.AddressMap)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -64,5 +64,5 @@ func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) cluster.MemberI
 		isAddressMapExists = true
 	}
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return cluster.NewMemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap)
+	return NewMemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap)
 }

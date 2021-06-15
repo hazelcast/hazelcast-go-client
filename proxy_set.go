@@ -223,7 +223,7 @@ func (s *Set) addListener(ctx context.Context, includeValue bool, handler SetIte
 				s.logger.Warnf("cannot convert data to Go value")
 			} else {
 				member := s.clusterService.GetMemberByUUID(uuid)
-				handler(newSetItemNotified(s.name, item, member, eventType))
+				handler(newSetItemNotified(s.name, item, *member, eventType))
 			}
 		})
 	}
