@@ -14,33 +14,38 @@
  * limitations under the License.
  */
 
-package cluster
+package rest
 
-type MembershipState int
+import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+)
 
-func (m MembershipState) String() string {
-	switch m {
-	case 0:
-		return "added"
-	case 1:
-		return "removed"
-	default:
-		return "UNKNOWN"
+type Error struct {
+	Text string
+	Code int
+}
+
+func NewError(code int, text string) *Error {
+	return &Error{
+		Code: code,
+		Text: text,
 	}
 }
 
-const (
-	MembershipStateAdded MembershipState = iota
-	MembershipStateRemoved
-)
-
-type MembershipStateChangeHandler func(event MembershipStateChanged)
-
-type MembershipStateChanged struct {
-	Member MemberInfo
-	State  MembershipState
+func NewErrorFromResponse(resp *http.Response) *Error {
+	code := resp.StatusCode
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return NewError(code, "(cannot read error message)")
+	}
+	text := string(body)
+	// error is unhandled
+	resp.Body.Close()
+	return NewError(code, text)
 }
 
-func (e *MembershipStateChanged) EventName() string {
-	return "cluster.membershipstatechanged"
+func (e Error) Error() string {
+	return fmt.Sprintf("HTTP error: %d, %s", e.Code, e.Text)
 }

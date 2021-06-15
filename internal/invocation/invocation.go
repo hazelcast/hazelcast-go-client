@@ -43,7 +43,7 @@ type Invocation interface {
 	GetWithContext(ctx context.Context) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
-	Address() *pubcluster.AddressImpl
+	Address() *pubcluster.Address
 	Close()
 	CanRetry(err error) bool
 }
@@ -51,7 +51,7 @@ type Invocation interface {
 type Impl struct {
 	deadline      time.Time
 	response      chan *proto.ClientMessage
-	address       *pubcluster.AddressImpl
+	address       *pubcluster.Address
 	eventHandler  func(clientMessage *proto.ClientMessage)
 	request       *proto.ClientMessage
 	completed     int32
@@ -59,7 +59,7 @@ type Impl struct {
 	redoOperation bool
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.AddressImpl, deadline time.Time, redoOperation bool) *Impl {
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address *pubcluster.Address, deadline time.Time, redoOperation bool) *Impl {
 	return &Impl{
 		partitionID:   partitionID,
 		address:       address,
@@ -115,7 +115,7 @@ func (i *Impl) Request() *proto.ClientMessage {
 	return i.request
 }
 
-func (i *Impl) Address() *pubcluster.AddressImpl {
+func (i *Impl) Address() *pubcluster.Address {
 	return i.address
 }
 

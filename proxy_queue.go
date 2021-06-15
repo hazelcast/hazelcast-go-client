@@ -309,7 +309,7 @@ func (q *Queue) addListener(ctx context.Context, includeValue bool, handler Queu
 				q.logger.Warnf("cannot convert data to Go value")
 			} else {
 				member := q.clusterService.GetMemberByUUID(uuid)
-				handler(newQueueItemNotified(q.name, item, member, eventType))
+				handler(newQueueItemNotified(q.name, item, *member, eventType))
 			}
 		})
 	}

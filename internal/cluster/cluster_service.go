@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -32,29 +33,31 @@ import (
 
 type Service struct {
 	logger            ilogger.Logger
-	requestCh         chan<- invocation.Invocation
-	doneCh            chan struct{}
-	invocationFactory *ConnectionInvocationFactory
+	addrTranslator    AddressTranslator
+	addrProvider      AddressProvider
+	config            *pubcluster.Config
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
-	config            *pubcluster.Config
+	requestCh         chan<- invocation.Invocation
+	invocationFactory *ConnectionInvocationFactory
+	doneCh            chan struct{}
 	membersMap        membersMap
-	addrProviders     []AddressProvider
 }
 
 type CreationBundle struct {
 	Logger            ilogger.Logger
-	Config            *pubcluster.Config
+	AddressTranslator AddressTranslator
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
-	AddrProviders     []AddressProvider
+	Config            *pubcluster.Config
+	AddrProvider      AddressProvider
 }
 
 func (b CreationBundle) Check() {
-	if b.AddrProviders == nil {
-		panic("AddrProviders is nil")
+	if b.AddrProvider == nil {
+		panic("AddrProvider is nil")
 	}
 	if b.RequestCh == nil {
 		panic("RequestCh is nil")
@@ -74,57 +77,53 @@ func (b CreationBundle) Check() {
 	if b.Config == nil {
 		panic("Config is nil")
 	}
+	if b.AddressTranslator == nil {
+		panic("AddressTranslator is nil")
+	}
 }
 
-func NewServiceImpl(bundle CreationBundle) *Service {
+func NewService(bundle CreationBundle) *Service {
 	bundle.Check()
 	return &Service{
-		addrProviders:     bundle.AddrProviders,
+		addrProvider:      bundle.AddrProvider,
 		requestCh:         bundle.RequestCh,
 		doneCh:            make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		partitionService:  bundle.PartitionService,
 		logger:            bundle.Logger,
-		membersMap:        newMembersMap(),
+		membersMap:        newMembersMap(bundle.AddressTranslator),
 		config:            bundle.Config,
+		addrTranslator:    bundle.AddressTranslator,
 	}
 }
 
-func (s *Service) GetMemberByUUID(uuid types.UUID) pubcluster.Member {
+func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 	return s.membersMap.Find(uuid)
 }
 
 func (s *Service) Start() {
-	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
-	s.eventDispatcher.Subscribe(EventConnectionOpened, subscriptionID, s.handleConnectionOpened)
 	if s.logger.CanLogDebug() {
 		go s.logStatus()
 	}
 }
 
 func (s *Service) Stop() {
-	subscriptionID := event.MakeSubscriptionID(s.handleConnectionOpened)
-	s.eventDispatcher.Unsubscribe(EventConnectionOpened, subscriptionID)
 	close(s.doneCh)
 }
 
-func (s *Service) MemberAddrs() []string {
+func (s *Service) MemberAddrs() []pubcluster.Address {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *Service) memberCandidateAddrs() []*pubcluster.AddressImpl {
+func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
 	addrSet := NewAddrSet()
-	for _, addrProvider := range s.addrProviders {
-		addrSet.AddAddrs(addrProvider.Addresses())
-	}
+	addrSet.AddAddrs(s.addrProvider.Addresses(refresh))
 	return addrSet.Addrs()
 }
 
-func (s *Service) handleConnectionOpened(event event.Event) {
-	if e, ok := event.(*ConnectionOpened); ok {
-		go s.sendMemberListViewRequest(e.Conn)
-	}
+func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {
+	return s.addrTranslator.TranslateMember(context.TODO(), m)
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
@@ -138,7 +137,7 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 	}
 }
 
-func (s *Service) sendMemberListViewRequest(conn *Connection) {
+func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
@@ -148,9 +147,8 @@ func (s *Service) sendMemberListViewRequest(conn *Connection) {
 		})
 	})
 	s.requestCh <- inv
-	if _, err := inv.Get(); err != nil {
-		s.logger.Error(err)
-	}
+	_, err := inv.GetWithContext(ctx)
+	return err
 }
 
 func (s *Service) logStatus() {
@@ -161,13 +159,13 @@ func (s *Service) logStatus() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			s.membersMap.Info(func(members map[types.UUID]*Member) {
+			s.membersMap.Info(func(members map[types.UUID]*pubcluster.MemberInfo) {
 				s.logger.Trace(func() string {
-					mems := map[types.UUID]string{}
+					mems := map[types.UUID]pubcluster.Address{}
 					for uuid, member := range members {
-						mems[uuid] = member.Address().String()
+						mems[uuid] = member.Address
 					}
-					return fmt.Sprintf("members: %#v", mems)
+					return fmt.Sprintf("members: %+v", mems)
 				})
 			})
 		}
@@ -175,25 +173,25 @@ func (s *Service) logStatus() {
 }
 
 type AddrSet struct {
-	addrs map[string]*pubcluster.AddressImpl
+	addrs map[string]pubcluster.Address
 }
 
 func NewAddrSet() AddrSet {
-	return AddrSet{addrs: map[string]*pubcluster.AddressImpl{}}
+	return AddrSet{addrs: map[string]pubcluster.Address{}}
 }
 
-func (a AddrSet) AddAddr(addr *pubcluster.AddressImpl) {
+func (a AddrSet) AddAddr(addr pubcluster.Address) {
 	a.addrs[addr.String()] = addr
 }
 
-func (a AddrSet) AddAddrs(addrs []*pubcluster.AddressImpl) {
+func (a AddrSet) AddAddrs(addrs []pubcluster.Address) {
 	for _, addr := range addrs {
 		a.AddAddr(addr)
 	}
 }
 
-func (a AddrSet) Addrs() []*pubcluster.AddressImpl {
-	addrs := make([]*pubcluster.AddressImpl, 0, len(a.addrs))
+func (a AddrSet) Addrs() []pubcluster.Address {
+	addrs := make([]pubcluster.Address, 0, len(a.addrs))
 	for _, addr := range a.addrs {
 		addrs = append(addrs, addr)
 	}
@@ -201,52 +199,54 @@ func (a AddrSet) Addrs() []*pubcluster.AddressImpl {
 }
 
 type membersMap struct {
-	members          map[types.UUID]*Member
-	addrToMemberUUID map[string]types.UUID
+	addrTranslator   AddressTranslator
+	members          map[types.UUID]*pubcluster.MemberInfo
+	addrToMemberUUID map[pubcluster.Address]types.UUID
 	membersMu        *sync.RWMutex
 	version          int32
 }
 
-func newMembersMap() membersMap {
+func newMembersMap(translator AddressTranslator) membersMap {
 	return membersMap{
-		members:          map[types.UUID]*Member{},
-		addrToMemberUUID: map[string]types.UUID{},
+		members:          map[types.UUID]*pubcluster.MemberInfo{},
+		addrToMemberUUID: map[pubcluster.Address]types.UUID{},
 		membersMu:        &sync.RWMutex{},
 		version:          -1,
+		addrTranslator:   translator,
 	}
 }
 
-func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (added []pubcluster.Member, removed []pubcluster.Member) {
+func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (added []pubcluster.MemberInfo, removed []pubcluster.MemberInfo) {
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
 		newUUIDs := map[types.UUID]struct{}{}
-		added = []pubcluster.Member{}
+		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
-			if member := m.addMember(member); member != nil {
+			if m.addMember(&member) {
 				added = append(added, member)
 			}
-			newUUIDs[member.UUID()] = struct{}{}
+			newUUIDs[member.UUID] = struct{}{}
 		}
-		removed = []pubcluster.Member{}
+		removed = []pubcluster.MemberInfo{}
 		for _, member := range m.members {
-			if _, ok := newUUIDs[member.UUID()]; !ok {
+			if _, ok := newUUIDs[member.UUID]; !ok {
 				m.removeMember(member)
-				removed = append(removed, member)
+				removed = append(removed, *member)
 			}
 		}
 	}
 	return
 }
 
-func (m *membersMap) Find(uuid types.UUID) *Member {
+func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	m.membersMu.RLock()
 	member := m.members[uuid]
 	m.membersMu.RUnlock()
 	return member
 }
 
-func (m *membersMap) RemoveMembersWithAddr(addr string) {
+func (m *membersMap) RemoveMembersWithAddr(addr pubcluster.Address) {
 	m.membersMu.Lock()
 	if uuid, ok := m.addrToMemberUUID[addr]; ok {
 		m.removeMember(m.members[uuid])
@@ -254,15 +254,15 @@ func (m *membersMap) RemoveMembersWithAddr(addr string) {
 	m.membersMu.Unlock()
 }
 
-func (m *membersMap) Info(infoFun func(members map[types.UUID]*Member)) {
+func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.MemberInfo)) {
 	m.membersMu.RLock()
 	infoFun(m.members)
 	m.membersMu.RUnlock()
 }
 
-func (m *membersMap) MemberAddrs() []string {
+func (m *membersMap) MemberAddrs() []pubcluster.Address {
 	m.membersMu.RLock()
-	addrs := make([]string, 0, len(m.addrToMemberUUID))
+	addrs := make([]pubcluster.Address, 0, len(m.addrToMemberUUID))
 	for addr := range m.addrToMemberUUID {
 		addrs = append(addrs, addr)
 	}
@@ -270,22 +270,26 @@ func (m *membersMap) MemberAddrs() []string {
 	return addrs
 }
 
-func (m *membersMap) addMember(memberInfo pubcluster.MemberInfo) *Member {
-	uuid := memberInfo.UUID()
-	addr := memberInfo.Address().String()
+// addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
+// If memberinfo already exists returns false.
+func (m *membersMap) addMember(memberInfo *pubcluster.MemberInfo) bool {
+	uuid := memberInfo.UUID
+	addr, err := m.addrTranslator.TranslateMember(context.TODO(), memberInfo)
+	if err != nil {
+		addr = memberInfo.Address
+	}
 	if _, uuidFound := m.members[uuid]; uuidFound {
-		return nil
+		return false
 	}
 	if existingUUID, addrFound := m.addrToMemberUUID[addr]; addrFound {
 		delete(m.members, existingUUID)
 	}
-	member := NewMember(memberInfo.Address(), memberInfo.UUID(), memberInfo.LiteMember(), memberInfo.Attributes(), memberInfo.Version(), nil)
-	m.members[uuid] = member
+	m.members[uuid] = memberInfo
 	m.addrToMemberUUID[addr] = uuid
-	return member
+	return true
 }
 
-func (m *membersMap) removeMember(member *Member) {
-	delete(m.members, member.UUID())
-	delete(m.addrToMemberUUID, member.Address().String())
+func (m *membersMap) removeMember(member *pubcluster.MemberInfo) {
+	delete(m.members, member.UUID)
+	delete(m.addrToMemberUUID, member.Address)
 }

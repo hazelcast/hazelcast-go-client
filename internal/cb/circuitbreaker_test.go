@@ -49,7 +49,7 @@ func TestFailingCircuitBreaker(t *testing.T) {
 
 func TestFailingCircuitBreakerCircuitOpen(t *testing.T) {
 	targetErr := errors.New("ERR")
-	c := cb.NewCircuitBreaker(cb.MaxFailureCount(0))
+	c := cb.NewCircuitBreaker(cb.MaxFailureCount(0), cb.ResetTimeout(1*time.Second))
 	failingFunc := func(ctx context.Context, attempt int) (interface{}, error) {
 		return nil, targetErr
 	}

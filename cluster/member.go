@@ -22,87 +22,66 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-// Member represents a member in the cluster with its address, uuid, lite member status and attributes.
-type Member interface {
-	fmt.Stringer
-	// Addr returns the address of this member.
-	Address() Address
-
-	// UUID returns the uuid of this member.
-	UUID() types.UUID
-
-	// IsLiteMember returns true if this member is a lite member.
-	LiteMember() bool
-
-	// Attributes returns configured attributes for this member.
-	Attributes() map[string]string
+var publicEndpointQualifier = EndpointQualifier{
+	Identifier: "public",
+	Type:       EndpointQualifierTypeClient,
 }
 
-// MemberVersion
-type MemberVersion struct {
-	major int8
-	minor int8
-	patch int8
-}
-
-func NewMemberVersion(major, minor, patch byte) MemberVersion {
-	return MemberVersion{int8(major), int8(minor), int8(patch)}
-}
-
-func (memberVersion MemberVersion) Major() byte {
-	return byte(memberVersion.major)
-}
-
-func (memberVersion MemberVersion) Minor() byte {
-	return byte(memberVersion.minor)
-}
-
-func (memberVersion MemberVersion) Patch() byte {
-	return byte(memberVersion.patch)
-}
-
-// MemberInfo represents a member in the cluster with its address, uuid, lite member status, attributes and version.
+// MemberInfo represents a member in the cluster.
 type MemberInfo struct {
-	address    Address
-	attributes map[string]string
-	addrMap    map[EndpointQualifier]Address
-	uuid       types.UUID
-	version    MemberVersion
-	liteMember bool // uuid UUID of the member.
-}
-
-func NewMemberInfo(address Address, uuid types.UUID, attributes map[string]string, liteMember bool, version MemberVersion,
-	isAddressMapExists bool, addressMap interface{}) MemberInfo {
-	// TODO: Convert addrMap to map[EndpointQualifier]*Address
-	// copy address
-	return MemberInfo{address: address.Clone(), uuid: uuid, attributes: attributes, liteMember: liteMember, version: version,
-		addrMap: addressMap.(map[EndpointQualifier]Address)}
-}
-
-func (mi MemberInfo) Address() Address {
-	return mi.address
-}
-
-func (mi MemberInfo) UUID() types.UUID {
-	return mi.uuid
-}
-
-func (mi MemberInfo) LiteMember() bool {
-	return mi.liteMember
-}
-
-func (mi MemberInfo) Attributes() map[string]string {
-	return mi.attributes
-}
-
-func (mi MemberInfo) Version() MemberVersion {
-	return mi.version
-}
-
-func (mi MemberInfo) AddressMap() map[EndpointQualifier]Address {
-	return mi.addrMap
+	Attributes map[string]string
+	AddressMap map[EndpointQualifier]Address
+	Address    Address
+	UUID       types.UUID
+	Version    MemberVersion
+	LiteMember bool
 }
 
 func (mi MemberInfo) String() string {
-	return fmt.Sprintf("%s:%s", mi.address, mi.uuid)
+	return fmt.Sprintf("%s:%s", mi.Address, mi.UUID)
+}
+
+// PublicAddress returns the public address and ok == true if member contains a public address.
+func (mi *MemberInfo) PublicAddress() (addr Address, ok bool) {
+	addr, ok = mi.AddressMap[publicEndpointQualifier]
+	return
+}
+
+// MemberVersion is the version of the member
+type MemberVersion struct {
+	Major byte
+	Minor byte
+	Patch byte
+}
+
+type EndpointQualifier struct {
+	Identifier string
+	Type       EndpointQualifierType
+}
+
+type EndpointQualifierType int32
+
+const (
+	EndpointQualifierTypeMember   EndpointQualifierType = 0
+	EndpointQualifierTypeClient   EndpointQualifierType = 1
+	EndpointQualifierTypeWan      EndpointQualifierType = 2
+	EndpointQualifierTypeRest     EndpointQualifierType = 3
+	EndpointQualifierTypeMemCache EndpointQualifierType = 4
+)
+
+func (t EndpointQualifierType) String() string {
+	switch t {
+	case EndpointQualifierTypeMember:
+		return "member"
+	case EndpointQualifierTypeClient:
+		return "client"
+	case EndpointQualifierTypeWan:
+		return "wan"
+	case EndpointQualifierTypeRest:
+		return "rest"
+	case EndpointQualifierTypeMemCache:
+		return "memcache"
+	default:
+		return "UNKNOWN"
+	}
 }

@@ -52,18 +52,18 @@ const (
 type ResponseHandler func(msg *proto.ClientMessage)
 
 type Connection struct {
-	lastRead                  atomic.Value
 	lastWrite                 atomic.Value
 	closedTime                atomic.Value
 	socket                    net.Conn
 	bWriter                   *bufio.Writer
 	endpoint                  atomic.Value
 	logger                    ilogger.Logger
+	lastRead                  atomic.Value
+	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
 	pending                   chan *proto.ClientMessage
-	doneCh                    chan struct{}
 	responseCh                chan<- *proto.ClientMessage
-	clusterConfig             *pubcluster.Config
+	doneCh                    chan struct{}
 	connectedServerVersionStr string
 	connectionID              int64
 	connectedServerVersion    int32
@@ -74,14 +74,19 @@ func (c *Connection) ConnectionID() int64 {
 	return c.connectionID
 }
 
-func (c *Connection) Endpoint() *pubcluster.AddressImpl {
-	return c.endpoint.Load().(*pubcluster.AddressImpl)
+func (c *Connection) LocalAddr() string {
+	return c.socket.LocalAddr().String()
+}
+
+func (c *Connection) Endpoint() pubcluster.Address {
+	return c.endpoint.Load().(pubcluster.Address)
 }
 
 func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
 	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err
 	} else {
+		c.endpoint.Store(pubcluster.Address(socket.RemoteAddr().String()))
 		c.socket = socket
 		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
 		c.lastWrite.Store(time.Time{})

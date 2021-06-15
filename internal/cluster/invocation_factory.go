@@ -53,7 +53,7 @@ func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(
 	message *proto.ClientMessage,
 	partitionID int32,
-	address *pubcluster.AddressImpl,
+	address *pubcluster.Address,
 	conn *Connection,
 	handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	message = message.Copy()

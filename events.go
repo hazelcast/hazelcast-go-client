@@ -59,11 +59,11 @@ const (
 
 type EntryNotified struct {
 	MergingValue            interface{}
-	Member                  cluster.Member
 	Key                     interface{}
 	Value                   interface{}
 	OldValue                interface{}
 	MapName                 string
+	Member                  cluster.MemberInfo
 	NumberOfAffectedEntries int
 	EventType               int32
 }
@@ -74,7 +74,7 @@ func (e *EntryNotified) EventName() string {
 
 func newEntryNotifiedEvent(
 	mapName string,
-	member cluster.Member,
+	member cluster.MemberInfo,
 	key interface{},
 	value interface{},
 	oldValue interface{},
@@ -93,6 +93,25 @@ func newEntryNotifiedEvent(
 }
 
 type LifecycleState int
+
+func (s LifecycleState) String() string {
+	switch s {
+	case LifecycleStateStarting:
+		return "starting"
+	case LifecycleStateStarted:
+		return "started"
+	case LifecycleStateShuttingDown:
+		return "shutting down"
+	case LifecycleStateShutDown:
+		return "shutdown"
+	case LifecycleStateClientConnected:
+		return "client connected"
+	case LifecycleStateClientDisconnected:
+		return "client disconnected"
+	default:
+		return "UNKNOWN"
+	}
+}
 
 const (
 	// LifecycleStateStarting signals that the client is starting.
@@ -126,15 +145,15 @@ func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 type MessagePublished struct {
 	PublishTime time.Time
 	Value       interface{}
-	Member      cluster.Member
 	TopicName   string
+	Member      cluster.MemberInfo
 }
 
 func (m *MessagePublished) EventName() string {
 	return eventMessagePublished
 }
 
-func newMessagePublished(name string, value interface{}, publishTime time.Time, member cluster.Member) *MessagePublished {
+func newMessagePublished(name string, value interface{}, publishTime time.Time, member cluster.MemberInfo) *MessagePublished {
 	return &MessagePublished{
 		TopicName:   name,
 		Value:       value,
@@ -157,8 +176,8 @@ type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
 type QueueItemNotified struct {
 	Value     interface{}
-	Member    cluster.Member
 	QueueName string
+	Member    cluster.MemberInfo
 	EventType ItemEventType
 }
 
@@ -166,7 +185,7 @@ func (q QueueItemNotified) EventName() string {
 	return eventQueueItemNotified
 }
 
-func newQueueItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *QueueItemNotified {
+func newQueueItemNotified(name string, value interface{}, member cluster.MemberInfo, eventType int32) *QueueItemNotified {
 	return &QueueItemNotified{
 		QueueName: name,
 		Value:     value,
@@ -181,8 +200,8 @@ type ListItemNotifiedHandler func(event *ListItemNotified)
 // ListItemNotified describes the List item event.
 type ListItemNotified struct {
 	Value     interface{}
-	Member    cluster.Member
 	ListName  string
+	Member    cluster.MemberInfo
 	EventType ItemEventType
 }
 
@@ -191,7 +210,7 @@ func (q ListItemNotified) EventName() string {
 	return eventListItemNotified
 }
 
-func newListItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *ListItemNotified {
+func newListItemNotified(name string, value interface{}, member cluster.MemberInfo, eventType int32) *ListItemNotified {
 	return &ListItemNotified{
 		ListName:  name,
 		Value:     value,
@@ -204,8 +223,8 @@ type SetItemNotifiedHandler func(event *SetItemNotified)
 
 type SetItemNotified struct {
 	Value     interface{}
-	Member    cluster.Member
 	SetName   string
+	Member    cluster.MemberInfo
 	EventType ItemEventType
 }
 
@@ -213,7 +232,7 @@ func (q SetItemNotified) EventName() string {
 	return eventSetItemNotified
 }
 
-func newSetItemNotified(name string, value interface{}, member cluster.Member, eventType int32) *SetItemNotified {
+func newSetItemNotified(name string, value interface{}, member cluster.MemberInfo, eventType int32) *SetItemNotified {
 	return &SetItemNotified{
 		SetName:   name,
 		Value:     value,

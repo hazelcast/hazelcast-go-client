@@ -368,7 +368,7 @@ func (l *List) addListener(ctx context.Context, includeValue bool, handler ListI
 				return
 			}
 			member := l.clusterService.GetMemberByUUID(uuid)
-			handler(newListItemNotified(l.name, item, member, eventType))
+			handler(newListItemNotified(l.name, item, *member, eventType))
 		})
 	}
 	err := l.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
