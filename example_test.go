@@ -1,5 +1,3 @@
-// +build noos
-
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
@@ -76,4 +74,30 @@ func ExampleSet() {
 	for _, item := range items {
 		fmt.Println("Item:", item)
 	}
+}
+
+func ExamplePNCounter() {
+	// Create the Hazelcast client.
+	client, err := hazelcast.StartNewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
+	// Retrieve the PN counter named my-pn
+	pn, err := client.GetPNCounter(ctx, "my-pn")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Add the given value and retrieve the result.
+	_, err = pn.AddAndGet(ctx, 43)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Decrement the given value and retrieve the result.
+	value, err := pn.DecrementAndGet(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(value)
+	// Output: 42
 }

@@ -26,6 +26,21 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
+func TestPNCounter_AddAndGet(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.AddAndGet(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(1), v)
+		v, err = pn.AddAndGet(context.Background(), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(11), v)
+	})
+}
+
 func TestPNCounter_Get(t *testing.T) {
 	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
 		v, err := pn.Get(context.Background())
@@ -36,17 +51,107 @@ func TestPNCounter_Get(t *testing.T) {
 	})
 }
 
-func TestPNCounter_AddAndGet(t *testing.T) {
+func TestPNCounter_GetAndAdd(t *testing.T) {
 	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
-		v, err := pn.AddAndGet(context.Background(), 1)
+		v, err := pn.GetAndAdd(context.Background(), 5)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(0), v)
+		v, err = pn.GetAndAdd(context.Background(), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(5), v)
+	})
+}
+
+func TestPNCounter_GetAndDecrement(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.GetAndDecrement(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(0), v)
+		v, err = pn.GetAndDecrement(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-1), v)
+	})
+}
+
+func TestPNCounter_GetAndIncrement(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.GetAndDecrement(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(0), v)
+		v, err = pn.GetAndDecrement(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-1), v)
+	})
+}
+
+func TestPNCounter_GetAndSubtract(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.GetAndSubtract(context.Background(), 5)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(0), v)
+		v, err = pn.GetAndSubtract(context.Background(), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-5), v)
+	})
+}
+
+func TestPNCounter_DecrementAndGet(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.DecrementAndGet(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-1), v)
+		v, err = pn.DecrementAndGet(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-2), v)
+	})
+}
+
+func TestPNCounter_IncrementAndGet(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.IncrementAndGet(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(1), v)
-		v, err = pn.AddAndGet(context.Background(), 1)
+		v, err = pn.IncrementAndGet(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(2), v)
+	})
+}
+
+func TestPNCounter_SubtractAndGet(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		v, err := pn.SubtractAndGet(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-1), v)
+		v, err = pn.SubtractAndGet(context.Background(), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(-11), v)
 	})
 }
