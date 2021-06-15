@@ -18,7 +18,6 @@ package proxy
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -77,20 +76,4 @@ func (vc VectorClock) After(other VectorClock) bool {
 		return false
 	}
 	return len(other) < len(vc)
-}
-
-func (vc VectorClock) FactoryID() int32 {
-	return 0
-}
-
-func (vc VectorClock) ClassID() int32 {
-	return 40
-}
-
-func (vc VectorClock) WriteData(output serialization.DataOutput) {
-	panic("implement me")
-}
-
-func (vc VectorClock) ReadData(input serialization.DataInput) {
-	panic("implement me")
 }
