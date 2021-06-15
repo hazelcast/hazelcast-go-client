@@ -74,6 +74,10 @@ func (c *Connection) ConnectionID() int64 {
 	return c.connectionID
 }
 
+func (c *Connection) Endpoint() *pubcluster.AddressImpl {
+	return c.endpoint.Load().(*pubcluster.AddressImpl)
+}
+
 func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
 	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err

@@ -25,6 +25,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -53,11 +55,9 @@ const (
 	stopped
 )
 
-const serializationVersion = 1
-
-// ClientVersion is the build time version
-// TODO: This should be replace with a build time version variable, BuildInfo etc.
-var ClientVersion = "1.0.0"
+const (
+	serializationVersion = 1
+)
 
 type ConnectionManagerCreationBundle struct {
 	RequestCh            chan<- invocation.Invocation
@@ -71,6 +71,7 @@ type ConnectionManagerCreationBundle struct {
 	ClusterConfig        *pubcluster.Config
 	Credentials          security.Credentials
 	ClientName           string
+	Labels               []string
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -113,19 +114,20 @@ type ConnectionManager struct {
 	logger               ilogger.Logger
 	credentials          security.Credentials
 	addressTranslator    AddressTranslator
-	partitionService     *PartitionService
+	cb                   *cb.CircuitBreaker
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
 	invocationFactory    *ConnectionInvocationFactory
 	clusterService       *Service
 	responseCh           chan<- *proto.ClientMessage
 	startCh              chan struct{}
-	requestCh            chan<- invocation.Invocation
+	partitionService     *PartitionService
 	connMap              *connectionMap
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
-	cb                   *cb.CircuitBreaker
+	requestCh            chan<- invocation.Invocation
 	clientName           string
+	labels               []string
 	clientUUID           types.UUID
 	nextConnID           int64
 	state                int32
@@ -158,6 +160,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
+		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(),
 		addressTranslator:    NewDefaultAddressTranslator(),
@@ -174,13 +177,14 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 	if !atomic.CompareAndSwapInt32(&m.state, created, starting) {
 		return nil
 	}
-	if _, err := m.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
-		err := m.connectCluster()
+	addr, err := m.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
+		addr, err := m.connectCluster()
 		if err != nil {
 			m.logger.Errorf("error starting: %w", err)
 		}
-		return nil, err
-	}); err != nil {
+		return addr, err
+	})
+	if err != nil {
 		return err
 	}
 	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
@@ -201,7 +205,7 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 		go m.logStatus()
 	}
 	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Publish(NewConnected())
+	m.eventDispatcher.Publish(NewConnected(addr.(*pubcluster.AddressImpl)))
 	return nil
 }
 
@@ -309,19 +313,19 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 	}
 }
 
-func (m *ConnectionManager) connectCluster() error {
+func (m *ConnectionManager) connectCluster() (*pubcluster.AddressImpl, error) {
 	candidateAddrs := m.clusterService.memberCandidateAddrs()
 	if len(candidateAddrs) == 0 {
-		return cb.WrapNonRetryableError(errors.New("no member candidate addresses"))
+		return nil, cb.WrapNonRetryableError(errors.New("no member candidate addresses"))
 	}
 	for _, addr := range candidateAddrs {
 		if err := m.connectAddr(addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
 		} else {
-			return nil
+			return addr, nil
 		}
 	}
-	return errors.New("cannot connect to any address in the cluster")
+	return nil, errors.New("cannot connect to any address in the cluster")
 }
 
 func (m *ConnectionManager) connectAddr(addr *pubcluster.AddressImpl) error {
@@ -419,11 +423,11 @@ func (m *ConnectionManager) createAuthenticationRequest(creds *security.Username
 		creds.Username(),
 		creds.Password(),
 		m.clientUUID,
-		proto.ClientType,
+		internal.ClientType,
 		byte(serializationVersion),
-		ClientVersion,
+		internal.ClientVersion,
 		m.clientName,
-		nil,
+		m.labels,
 	)
 }
 
@@ -500,7 +504,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			}
 			if m.connMap.Len() == 0 {
 				// if there are no connections, try to connect to seeds
-				if err := m.connectCluster(); err != nil {
+				if _, err := m.connectCluster(); err != nil {
 					m.logger.Errorf("while trying to fix cluster connection: %w", err)
 				}
 			}
