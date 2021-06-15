@@ -152,6 +152,10 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 			}
 			return 20 * time.Minute
 		}))
+	lb := bundle.ClusterConfig.LoadBalancer()
+	if lb == nil {
+		lb = pubcluster.NewRoundRobinLoadBalancer()
+	}
 	manager := &ConnectionManager{
 		requestCh:            bundle.RequestCh,
 		responseCh:           bundle.ResponseCh,
@@ -165,7 +169,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clientName:           bundle.ClientName,
 		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
-		connMap:              newConnectionMap(),
+		connMap:              newConnectionMap(lb),
 		smartRouting:         bundle.ClusterConfig.SmartRouting,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
@@ -520,89 +524,106 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 }
 
 type connectionMap struct {
-	connectionsMu *sync.RWMutex
+	lb pubcluster.LoadBalancer
+	mu *sync.RWMutex
 	// addrToConn maps connection address to connection
 	addrToConn map[pubcluster.Address]*Connection
 	// connToAddr maps connection ID to address
 	connToAddr map[int64]pubcluster.Address
+	addrs      []pubcluster.Address
 }
 
-func newConnectionMap() *connectionMap {
+func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 	return &connectionMap{
-		connectionsMu: &sync.RWMutex{},
-		addrToConn:    map[pubcluster.Address]*Connection{},
-		connToAddr:    map[int64]pubcluster.Address{},
+		lb:         lb,
+		mu:         &sync.RWMutex{},
+		addrToConn: map[pubcluster.Address]*Connection{},
+		connToAddr: map[int64]pubcluster.Address{},
 	}
 }
 
 func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {
-	m.connectionsMu.Lock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// if the connection was already added, skip it
+	if _, ok := m.connToAddr[conn.connectionID]; ok {
+		return
+	}
 	m.addrToConn[addr] = conn
 	m.connToAddr[conn.connectionID] = addr
-	m.connectionsMu.Unlock()
+	m.addrs = append(m.addrs, addr)
 }
 
 // RemoveConnection removes a connection and returns true if there are no more addrToConn left.
 func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
-	m.connectionsMu.Lock()
+	m.mu.Lock()
 	var remaining int
 	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
 			delete(m.connToAddr, conn.connectionID)
+			m.removeAddr(addr)
 			break
 		}
 	}
 	remaining = len(m.addrToConn)
-	m.connectionsMu.Unlock()
+	m.mu.Unlock()
 	return remaining
 }
 
 func (m *connectionMap) CloseAll() {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	for _, conn := range m.addrToConn {
 		conn.close(nil)
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 }
 
 func (m *connectionMap) GetConnectionForAddr(addr pubcluster.Address) *Connection {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	conn := m.addrToConn[addr]
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return conn
 }
 
 func (m *connectionMap) GetAddrForConnectionID(connID int64) (pubcluster.Address, bool) {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	addr, ok := m.connToAddr[connID]
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return addr, ok
 }
 
 func (m *connectionMap) RandomConn() *Connection {
-	m.connectionsMu.RLock()
-	var conn *Connection
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if len(m.addrs) == 0 {
+		return nil
+	}
+	addr := m.lb.OneOf(m.addrs)
+	conn := m.addrToConn[addr]
+	if conn != nil {
+		return conn
+	}
+	// if the connection was not found by using the load balancer, select a random one.
 	for _, conn = range m.addrToConn {
 		// Go randomizes maps, this is random enough for now.
-		break
+		return conn
 	}
-	m.connectionsMu.RUnlock()
-	return conn
+	return nil
 }
 
 func (m *connectionMap) Connections() []*Connection {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	conns := make([]*Connection, 0, len(m.addrToConn))
 	for _, conn := range m.addrToConn {
 		conns = append(conns, conn)
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return conns
 }
 
 func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Service) []pubcluster.Address {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	addedAddrs := make([]pubcluster.Address, 0, len(members))
 	for _, member := range members {
 		addr, err := cs.MemberAddr(&member)
@@ -613,12 +634,12 @@ func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Serv
 			addedAddrs = append(addedAddrs, addr)
 		}
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return addedAddrs
 }
 
 func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Connection {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	removedConns := []*Connection{}
 	for _, member := range members {
 		addr := member.Address
@@ -626,19 +647,29 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Con
 			removedConns = append(removedConns, conn)
 		}
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return removedConns
 }
 
 func (m *connectionMap) Info(infoFun func(connections map[pubcluster.Address]*Connection, connToAddr map[int64]pubcluster.Address)) {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	infoFun(m.addrToConn, m.connToAddr)
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 }
 
 func (m *connectionMap) Len() int {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	l := len(m.connToAddr)
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return l
+}
+
+func (m *connectionMap) removeAddr(addr pubcluster.Address) {
+	for i, a := range m.addrs {
+		if a.Equal(addr) {
+			// note that this changes the order of addresses
+			m.addrs[len(m.addrs)-1] = m.addrs[i]
+			m.addrs = m.addrs[:len(m.addrs)-1]
+		}
+	}
 }
