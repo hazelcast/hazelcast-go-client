@@ -76,5 +76,16 @@ If you don't want to receive any distributed object events, use client.RemoveDis
 
 	client.RemoveDistributedObjectListener(subscriptionID)
 
+Collecting Statistics
+
+Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
+
+You can enable statistics by setting config.StatsConfig.Enabled to true.
+Optionally, the period of statistics collection can be set using config.StatsConfig.Period setting.
+
+	config := hazelcast.NewConfig()
+	config.StatsConfig.Enabled = true
+	config.StatsConfig.Period = 1 * time.Second
+	client, err := hazelcast.StartNewClientWithConfig(config)
 */
 package hazelcast

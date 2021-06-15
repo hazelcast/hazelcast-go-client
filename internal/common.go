@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
-package proto
+package internal
 
-const ClientType = "GO"
+const (
+	// ClientType is used in the Management
+	ClientType = "GOO"
+)
+
+// ClientVersion is the build time version
+// TODO: This should be replace with a build time version variable, BuildInfo etc.
+var ClientVersion = "1.0.0"

@@ -27,6 +27,7 @@ import (
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -53,11 +54,9 @@ const (
 	stopped
 )
 
-const serializationVersion = 1
-
-// ClientVersion is the build time version
-// TODO: This should be replace with a build time version variable, BuildInfo etc.
-var ClientVersion = "1.0.0"
+const (
+	serializationVersion = 1
+)
 
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
@@ -72,6 +71,7 @@ type ConnectionManagerCreationBundle struct {
 	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
 	ClientName           string
+	Labels               []string
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -116,6 +116,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 type ConnectionManager struct {
 	logger               ilogger.Logger
 	credentials          security.Credentials
+	cb                   *cb.CircuitBreaker
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
@@ -123,13 +124,13 @@ type ConnectionManager struct {
 	clusterService       *Service
 	responseCh           chan<- *proto.ClientMessage
 	startCh              chan struct{}
-	requestCh            chan<- invocation.Invocation
 	connMap              *connectionMap
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
-	cb                   *cb.CircuitBreaker
+	requestCh            chan<- invocation.Invocation
 	addrTranslator       AddressTranslator
 	clientName           string
+	labels               []string
 	clientUUID           types.UUID
 	nextConnID           int64
 	state                int32
@@ -162,6 +163,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clusterConfig:        bundle.ClusterConfig,
 		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
+		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(),
 		smartRouting:         bundle.ClusterConfig.SmartRouting,
@@ -183,12 +185,12 @@ func (m *ConnectionManager) Start(timeout time.Duration) error {
 
 func (m *ConnectionManager) start(ctx context.Context, timeout time.Duration) error {
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
-	_, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		err := m.connectCluster(ctx, false)
+	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		addr, err := m.connectCluster(ctx, false)
 		if err != nil {
 			m.logger.Errorf("error starting: %w", err)
 		}
-		return nil, err
+		return addr, err
 	})
 	if err != nil {
 		return err
@@ -210,7 +212,7 @@ func (m *ConnectionManager) start(ctx context.Context, timeout time.Duration) er
 	}
 	atomic.StoreInt32(&m.state, ready)
 	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
-	m.eventDispatcher.Publish(NewConnected())
+	m.eventDispatcher.Publish(NewConnected(addr.(pubcluster.Address)))
 	return nil
 }
 
@@ -318,19 +320,21 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 	}
 }
 
-func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) error {
+func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (pubcluster.Address, error) {
 	seedAddrs := m.clusterService.RefreshedSeedAddrs(refresh)
 	if len(seedAddrs) == 0 {
-		return cb.WrapNonRetryableError(errors.New("no seed addresses"))
+		return "", cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
 	for _, addr := range seedAddrs {
 		if conn, err := m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
+		} else if err := m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+			return "", err
 		} else {
-			return m.clusterService.sendMemberListViewRequest(ctx, conn)
+			return addr, nil
 		}
 	}
-	return errors.New("cannot connect to any address in the cluster")
+	return "", errors.New("cannot connect to any address in the cluster")
 }
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
@@ -347,7 +351,7 @@ func (m *ConnectionManager) getConnection(addr pubcluster.Address) *Connection {
 func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection(addr)
-	if err := conn.Start(m.clusterConfig); err != nil {
+	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
 		conn.close(nil)
@@ -374,7 +378,7 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 func (m *ConnectionManager) authenticate(conn *Connection) error {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("authenticate: local: %s; remote: %s; addr: %s",
-			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.endpoint.Load())
+			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.Endpoint())
 	})
 	m.credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
@@ -432,11 +436,11 @@ func (m *ConnectionManager) createAuthenticationRequest(creds *security.Username
 		creds.Username(),
 		creds.Password(),
 		m.clientUUID,
-		proto.ClientType,
+		internal.ClientType,
 		byte(serializationVersion),
-		ClientVersion,
+		internal.ClientVersion,
 		m.clientName,
-		nil,
+		m.labels,
 	)
 }
 
@@ -507,7 +511,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			}
 			if m.connMap.Len() == 0 {
 				// if there are no connections, try to connect to seeds
-				if err := m.connectCluster(context.TODO(), true); err != nil {
+				if _, err := m.connectCluster(context.TODO(), true); err != nil {
 					m.logger.Errorf("while trying to fix cluster connection: %w", err)
 				}
 			}

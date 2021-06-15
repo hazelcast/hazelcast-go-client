@@ -26,6 +26,7 @@ var (
 	ErrClientOffline             = errors.New("client offline")
 	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
 	ErrAddressNotFound           = errors.New("address not found")
+	ErrConfigInvalidStatsPeriod  = errors.New("invalid stats period")
 )
 
 // HazelcastError is the general error interface.

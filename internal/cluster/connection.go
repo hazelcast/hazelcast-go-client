@@ -78,8 +78,12 @@ func (c *Connection) LocalAddr() string {
 	return c.socket.LocalAddr().String()
 }
 
-func (c *Connection) Start(clusterCfg *pubcluster.Config) error {
-	if socket, err := c.createSocket(clusterCfg, c.endpoint.Load().(pubcluster.Address)); err != nil {
+func (c *Connection) Endpoint() pubcluster.Address {
+	return c.endpoint.Load().(pubcluster.Address)
+}
+
+func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
+	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err
 	} else {
 		c.endpoint.Store(pubcluster.Address(socket.RemoteAddr().String()))
