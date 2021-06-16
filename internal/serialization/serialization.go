@@ -161,6 +161,7 @@ func (s *Service) registerDefaultSerializers() error {
 		{l: "[]float32", i: ConstantTypeFloat32Array, s: &Float32ArraySerializer{}},
 		{l: "[]float64", i: ConstantTypeFloat64Array, s: &Float64ArraySerializer{}},
 		{l: "[]string", i: ConstantTypeStringArray, s: &StringArraySerializer{}},
+		{l: "types.UUID", i: ConstantTypeUUID, s: &UUIDSerializer{}},
 		{l: "serialization.JSON", i: JSONSerializationType, s: &JSONValueSerializer{}},
 		{l: "!gob", i: GoGobSerializationType, s: &GobSerializer{}},
 	}

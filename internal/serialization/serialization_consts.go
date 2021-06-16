@@ -38,6 +38,7 @@ const (
 	ConstantTypeFloat32Array     = -18
 	ConstantTypeFloat64Array     = -19
 	ConstantTypeStringArray      = -20
+	ConstantTypeUUID             = -21
 	JSONSerializationType        = -130
 	GoGobSerializationType       = -140
 )

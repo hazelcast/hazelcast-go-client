@@ -24,6 +24,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type NilSerializer struct{}
@@ -346,6 +347,22 @@ func (*StringArraySerializer) Read(input serialization.DataInput) interface{} {
 
 func (*StringArraySerializer) Write(output serialization.DataOutput, i interface{}) {
 	output.WriteStringArray(i.([]string))
+}
+
+type UUIDSerializer struct{}
+
+func (*UUIDSerializer) ID() int32 {
+	return ConstantTypeUUID
+}
+
+func (*UUIDSerializer) Read(input serialization.DataInput) interface{} {
+	return types.NewUUIDWith(uint64(input.ReadInt64()), uint64(input.ReadInt64()))
+}
+
+func (*UUIDSerializer) Write(output serialization.DataOutput, i interface{}) {
+	uuid := i.(types.UUID)
+	output.WriteInt64(int64(uuid.LeastSignificantBits()))
+	output.WriteInt64(int64(uuid.MostSignificantBits()))
 }
 
 type GobSerializer struct{}

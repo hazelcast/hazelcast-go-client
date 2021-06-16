@@ -19,13 +19,16 @@ package serialization_test
 import (
 	"bytes"
 	"encoding/gob"
+	"math"
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -322,10 +325,45 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	require.Errorf(t, err, "err should not be nil")
 }
 
+func TestUUIDSerializer_1(t *testing.T) {
+	ss := MustSerializationService(iserialization.NewService(&serialization.Config{BigEndian: true}))
+	target := types.NewUUIDWith(math.MaxUint64, math.MaxUint64)
+	data, err := ss.ToData(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := ss.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, target, value)
+}
+
+func TestUUIDSerializer_2(t *testing.T) {
+	ss := MustSerializationService(iserialization.NewService(&serialization.Config{BigEndian: true}))
+	target := types.NewUUIDWith(math.MaxUint64, math.MaxUint64)
+	data, err := ss.ToData(&target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := ss.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, target, value)
+}
+
 // MustValue returns value if err is nil, otherwise it panics.
 func MustValue(value interface{}, err error) interface{} {
 	if err != nil {
 		panic(err)
 	}
 	return value
+}
+
+func MustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {
+	if err != nil {
+		panic(err)
+	}
+	return ss
 }
