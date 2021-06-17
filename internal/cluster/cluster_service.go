@@ -120,6 +120,10 @@ func (s *Service) RandomDataMember() *pubcluster.MemberInfo {
 	return s.membersMap.RandomDataMember()
 }
 
+func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
+	return s.membersMap.RandomDataMemberExcluding(excluded)
+}
+
 func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
 	addrSet := NewAddrSet()
 	addrSet.AddAddrs(s.addrProvider.Addresses(refresh))
@@ -274,12 +278,30 @@ func (m *membersMap) MemberAddrs() []pubcluster.Address {
 	return addrs
 }
 
+// RandomDataMember returns a data member.
+// Returns nil if no suitable data member is found.
 func (m *membersMap) RandomDataMember() *pubcluster.MemberInfo {
 	m.membersMu.RLock()
 	defer m.membersMu.RUnlock()
 	for _, mem := range m.members {
 		if !mem.LiteMember {
 			return mem
+		}
+	}
+	return nil
+}
+
+// RandomDataMemberExcluding returns a data member not excluded in the given map.
+// Returns nil if no suitable data member is found.
+// Panics if excluded map is nil.
+func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
+	m.membersMu.RLock()
+	defer m.membersMu.RUnlock()
+	for _, mem := range m.members {
+		if !mem.LiteMember {
+			if _, found := excluded[mem.Address]; !found {
+				return mem
+			}
 		}
 	}
 	return nil

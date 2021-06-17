@@ -19,12 +19,15 @@ package hazelcast
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 /*
@@ -68,7 +71,7 @@ fail with an NoDataMemberInClusterError.
 type PNCounter struct {
 	*proxy
 	clock  iproxy.VectorClock
-	target *cluster.MemberInfo
+	target atomic.Value
 	mu     *sync.Mutex
 }
 
@@ -92,12 +95,9 @@ func (pn *PNCounter) DecrementAndGet(ctx context.Context) (int64, error) {
 
 // Get returns the current value of the counter.
 func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
-	target, err := pn.crdtOperationTarget()
-	if err != nil {
-		return 0, err
-	}
-	request := codec.EncodePNCounterGetRequest(pn.name, pn.clockEntrySet(), target.UUID)
-	resp, err := pn.invokeOnTarget(ctx, request, target.Address)
+	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID) *proto.ClientMessage {
+		return codec.EncodePNCounterGetRequest(pn.name, pn.clockEntrySet(), uuid)
+	})
 	if err != nil {
 		return 0, err
 	}
@@ -150,15 +150,22 @@ func (pn *PNCounter) clockEntrySet() []proto.Pair {
 	return entries
 }
 
-func (pn *PNCounter) crdtOperationTarget() (*cluster.MemberInfo, error) {
-	if pn.target == nil {
-		mem := pn.clusterService.RandomDataMember()
+func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) (*cluster.MemberInfo, error) {
+	target := pn.target.Load()
+	if target == nil || targetExcluded(target.(*cluster.MemberInfo), excluded) {
+		var mem *cluster.MemberInfo
+		if excluded == nil {
+			mem = pn.clusterService.RandomDataMember()
+		} else {
+			mem = pn.clusterService.RandomDataMemberExcluding(excluded)
+		}
 		if mem == nil {
 			return nil, hzerrors.NewHazelcastNoDataMemberInClusterError("no data members in cluster", nil)
 		}
-		pn.target = mem
+		pn.target.Store(mem)
+		return mem, nil
 	}
-	return pn.target, nil
+	return target.(*cluster.MemberInfo), nil
 }
 
 func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
@@ -172,16 +179,49 @@ func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
 }
 
 func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool) (int64, error) {
-	target, err := pn.crdtOperationTarget()
-	if err != nil {
-		return 0, err
-	}
-	request := codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, pn.clockEntrySet(), target.UUID)
-	resp, err := pn.invokeOnTarget(ctx, request, target.Address)
+	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID) *proto.ClientMessage {
+		return codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, pn.clockEntrySet(), uuid)
+	})
 	if err != nil {
 		return 0, err
 	}
 	value, timestamps, _ := codec.DecodePNCounterAddResponse(resp)
 	pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
 	return value, nil
+}
+
+func (pn *PNCounter) invokeOnTarget(ctx context.Context, makeReq func(target types.UUID) *proto.ClientMessage) (*proto.ClientMessage, error) {
+	// in the best case scenario, no members will be excluded, so excluded set is nil
+	var excluded map[cluster.Address]struct{}
+	var lastAddr cluster.Address
+	var request *proto.ClientMessage
+	return pn.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt == 1 {
+			// this is the first failure, time to allocate the excluded set
+			excluded = map[cluster.Address]struct{}{}
+		}
+		if attempt > 0 {
+			request = request.Copy()
+			excluded[lastAddr] = struct{}{}
+		}
+		mem, err := pn.crdtOperationTarget(excluded)
+		if err != nil {
+			// do not retry if no data members was found
+			return nil, cb.WrapNonRetryableError(err)
+		}
+		request = makeReq(mem.UUID)
+		inv := pn.invocationFactory.NewInvocationOnTarget(request, mem.Address)
+		if err := pn.sendInvocation(ctx, inv); err != nil {
+			return nil, err
+		}
+		return inv.GetWithContext(ctx)
+	})
+}
+
+func targetExcluded(target *cluster.MemberInfo, excludes map[cluster.Address]struct{}) bool {
+	if excludes == nil {
+		return false
+	}
+	_, found := excludes[target.Address]
+	return found
 }

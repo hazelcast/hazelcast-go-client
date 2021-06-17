@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -256,19 +255,6 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 			request = request.Copy()
 		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
-		if err := p.sendInvocation(ctx, inv); err != nil {
-			return nil, err
-		}
-		return inv.GetWithContext(ctx)
-	})
-}
-
-func (p *proxy) invokeOnTarget(ctx context.Context, request *proto.ClientMessage, target pubcluster.Address) (*proto.ClientMessage, error) {
-	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if attempt > 0 {
-			request = request.Copy()
-		}
-		inv := p.invocationFactory.NewInvocationOnTarget(request, target)
 		if err := p.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}

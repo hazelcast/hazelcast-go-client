@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -153,5 +154,36 @@ func TestPNCounter_SubtractAndGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(-11), v)
+	})
+}
+
+func TestPNCounter_Add1000Sub1000(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		const count = 1000
+		wg := &sync.WaitGroup{}
+		wg.Add(count * 2)
+		ctx := context.Background()
+		for i := 0; i < count; i++ {
+			go func() {
+				if _, err := pn.IncrementAndGet(ctx); err != nil {
+					panic(err)
+				}
+				wg.Done()
+			}()
+		}
+		for i := 0; i < count; i++ {
+			go func() {
+				if _, err := pn.DecrementAndGet(ctx); err != nil {
+					panic(err)
+				}
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+		v, err := pn.Get(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(0), v)
 	})
 }
