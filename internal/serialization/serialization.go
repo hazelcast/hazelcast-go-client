@@ -19,11 +19,10 @@ package serialization
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"strconv"
-
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"reflect"
+	"strconv"
 )
 
 // Service serializes user objects to Data and back to Object.
@@ -142,28 +141,28 @@ func (s *Service) registerDefaultSerializers() error {
 		l string
 		i int32
 	}{
-		{l: "uint8", i: ConstantTypeByte, s: &ByteSerializer{}},
-		{l: "bool", i: ConstantTypeBool, s: &BoolSerializer{}},
-		{l: "uint16", i: ConstantTypeUInteger16, s: &UInteger16Serializer{}},
-		{l: "int16", i: ConstantTypeInteger16, s: &Integer16Serializer{}},
-		{l: "int32", i: ConstantTypeInteger32, s: &Integer32Serializer{}},
-		{l: "int64", i: ConstantTypeInteger64, s: &Integer64Serializer{}},
-		{l: "float32", i: ConstantTypeFloat32, s: &Float32Serializer{}},
-		{l: "float64", i: ConstantTypeFloat64, s: &Float64Serializer{}},
-		{l: "string", i: ConstantTypeString, s: &StringSerializer{}},
-		{l: "nil", i: ConstantTypeNil, s: &NilSerializer{}},
-		{l: "[]uint8", i: ConstantTypeByteArray, s: &ByteArraySerializer{}},
-		{l: "[]bool", i: ConstantTypeBoolArray, s: &BoolArraySerializer{}},
-		{l: "[]uint16", i: ConstantTypeUInteger16Array, s: &UInteger16ArraySerializer{}},
-		{l: "[]int16", i: ConstantTypeInteger16Array, s: &Integer16ArraySerializer{}},
-		{l: "[]int32", i: ConstantTypeInteger32Array, s: &Integer32ArraySerializer{}},
-		{l: "[]int64", i: ConstantTypeInteger64Array, s: &Integer64ArraySerializer{}},
-		{l: "[]float32", i: ConstantTypeFloat32Array, s: &Float32ArraySerializer{}},
-		{l: "[]float64", i: ConstantTypeFloat64Array, s: &Float64ArraySerializer{}},
-		{l: "[]string", i: ConstantTypeStringArray, s: &StringArraySerializer{}},
-		{l: "types.UUID", i: ConstantTypeUUID, s: &UUIDSerializer{}},
-		{l: "serialization.JSON", i: JSONSerializationType, s: &JSONValueSerializer{}},
-		{l: "!gob", i: GoGobSerializationType, s: &GobSerializer{}},
+		{l: "uint8", i: TypeByte, s: &ByteSerializer{}},
+		{l: "bool", i: TypeBool, s: &BoolSerializer{}},
+		{l: "uint16", i: TypeUInteger16, s: &UInteger16Serializer{}},
+		{l: "int16", i: TypeInteger16, s: &Integer16Serializer{}},
+		{l: "int32", i: TypeInteger32, s: &Integer32Serializer{}},
+		{l: "int64", i: TypeInteger64, s: &Integer64Serializer{}},
+		{l: "float32", i: TypeFloat32, s: &Float32Serializer{}},
+		{l: "float64", i: TypeFloat64, s: &Float64Serializer{}},
+		{l: "string", i: TypeString, s: &StringSerializer{}},
+		{l: "nil", i: TypeNil, s: &NilSerializer{}},
+		{l: "[]uint8", i: TypeByteArray, s: &ByteArraySerializer{}},
+		{l: "[]bool", i: TypeBoolArray, s: &BoolArraySerializer{}},
+		{l: "[]uint16", i: TypeUInteger16Array, s: &UInteger16ArraySerializer{}},
+		{l: "[]int16", i: TypeInteger16Array, s: &Integer16ArraySerializer{}},
+		{l: "[]int32", i: TypeInteger32Array, s: &Integer32ArraySerializer{}},
+		{l: "[]int64", i: TypeInteger64Array, s: &Integer64ArraySerializer{}},
+		{l: "[]float32", i: TypeFloat32Array, s: &Float32ArraySerializer{}},
+		{l: "[]float64", i: TypeFloat64Array, s: &Float64ArraySerializer{}},
+		{l: "[]string", i: TypeStringArray, s: &StringArraySerializer{}},
+		{l: "types.UUID", i: TypeUUID, s: &UUIDSerializer{}},
+		{l: "serialization.JSON", i: TypeJSONSerialization, s: &JSONValueSerializer{}},
+		{l: "!gob", i: TypeGobSerialization, s: &GobSerializer{}},
 	}
 	for _, ser := range sers {
 		if err := s.registerSerializer(ser.s); err != nil {
@@ -183,7 +182,7 @@ func (s *Service) registerDefaultSerializers() error {
 	if err = s.registerSerializer(portableSerializer); err != nil {
 		return err
 	}
-	s.nameToID["!portable"] = ConstantTypePortable
+	s.nameToID["!portable"] = TypePortable
 	return nil
 
 }
@@ -274,7 +273,7 @@ func (s *Service) registerIdentifiedFactories() error {
 	if err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories)); err != nil {
 		return err
 	}
-	s.nameToID["identified"] = ConstantTypeDataSerializable
+	s.nameToID["identified"] = TypeDataSerializable
 	return nil
 }
 

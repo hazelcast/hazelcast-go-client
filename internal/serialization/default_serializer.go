@@ -30,7 +30,7 @@ import (
 type NilSerializer struct{}
 
 func (*NilSerializer) ID() int32 {
-	return ConstantTypeNil
+	return TypeNil
 }
 
 func (*NilSerializer) Read(input serialization.DataInput) interface{} {
@@ -50,7 +50,7 @@ func NewIdentifiedDataSerializableSerializer(
 }
 
 func (*IdentifiedDataSerializableSerializer) ID() int32 {
-	return ConstantTypeDataSerializable
+	return TypeDataSerializable
 }
 
 func (idss *IdentifiedDataSerializableSerializer) Read(input serialization.DataInput) interface{} {
@@ -86,7 +86,7 @@ func (*IdentifiedDataSerializableSerializer) Write(output serialization.DataOutp
 type ByteSerializer struct{}
 
 func (*ByteSerializer) ID() int32 {
-	return ConstantTypeByte
+	return TypeByte
 }
 
 func (*ByteSerializer) Read(input serialization.DataInput) interface{} {
@@ -100,7 +100,7 @@ func (*ByteSerializer) Write(output serialization.DataOutput, i interface{}) {
 type BoolSerializer struct{}
 
 func (*BoolSerializer) ID() int32 {
-	return ConstantTypeBool
+	return TypeBool
 }
 
 func (*BoolSerializer) Read(input serialization.DataInput) interface{} {
@@ -114,7 +114,7 @@ func (*BoolSerializer) Write(output serialization.DataOutput, i interface{}) {
 type UInteger16Serializer struct{}
 
 func (*UInteger16Serializer) ID() int32 {
-	return ConstantTypeUInteger16
+	return TypeUInteger16
 }
 
 func (*UInteger16Serializer) Read(input serialization.DataInput) interface{} {
@@ -128,7 +128,7 @@ func (*UInteger16Serializer) Write(output serialization.DataOutput, i interface{
 type Integer16Serializer struct{}
 
 func (*Integer16Serializer) ID() int32 {
-	return ConstantTypeInteger16
+	return TypeInteger16
 }
 
 func (*Integer16Serializer) Read(input serialization.DataInput) interface{} {
@@ -142,7 +142,7 @@ func (*Integer16Serializer) Write(output serialization.DataOutput, i interface{}
 type Integer32Serializer struct{}
 
 func (*Integer32Serializer) ID() int32 {
-	return ConstantTypeInteger32
+	return TypeInteger32
 }
 
 func (*Integer32Serializer) Read(input serialization.DataInput) interface{} {
@@ -156,7 +156,7 @@ func (*Integer32Serializer) Write(output serialization.DataOutput, i interface{}
 type Integer64Serializer struct{}
 
 func (*Integer64Serializer) ID() int32 {
-	return ConstantTypeInteger64
+	return TypeInteger64
 }
 
 func (*Integer64Serializer) Read(input serialization.DataInput) interface{} {
@@ -174,7 +174,7 @@ func (*Integer64Serializer) Write(output serialization.DataOutput, i interface{}
 type Float32Serializer struct{}
 
 func (*Float32Serializer) ID() int32 {
-	return ConstantTypeFloat32
+	return TypeFloat32
 }
 
 func (*Float32Serializer) Read(input serialization.DataInput) interface{} {
@@ -188,7 +188,7 @@ func (*Float32Serializer) Write(output serialization.DataOutput, i interface{}) 
 type Float64Serializer struct{}
 
 func (*Float64Serializer) ID() int32 {
-	return ConstantTypeFloat64
+	return TypeFloat64
 }
 
 func (*Float64Serializer) Read(input serialization.DataInput) interface{} {
@@ -202,7 +202,7 @@ func (*Float64Serializer) Write(output serialization.DataOutput, i interface{}) 
 type StringSerializer struct{}
 
 func (*StringSerializer) ID() int32 {
-	return ConstantTypeString
+	return TypeString
 }
 
 func (*StringSerializer) Read(input serialization.DataInput) interface{} {
@@ -216,7 +216,7 @@ func (*StringSerializer) Write(output serialization.DataOutput, i interface{}) {
 type ByteArraySerializer struct{}
 
 func (*ByteArraySerializer) ID() int32 {
-	return ConstantTypeByteArray
+	return TypeByteArray
 }
 
 func (*ByteArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -230,7 +230,7 @@ func (*ByteArraySerializer) Write(output serialization.DataOutput, i interface{}
 type BoolArraySerializer struct{}
 
 func (*BoolArraySerializer) ID() int32 {
-	return ConstantTypeBoolArray
+	return TypeBoolArray
 }
 
 func (*BoolArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -244,7 +244,7 @@ func (*BoolArraySerializer) Write(output serialization.DataOutput, i interface{}
 type UInteger16ArraySerializer struct{}
 
 func (*UInteger16ArraySerializer) ID() int32 {
-	return ConstantTypeUInteger16Array
+	return TypeUInteger16Array
 }
 
 func (*UInteger16ArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -259,7 +259,7 @@ func (*UInteger16ArraySerializer) Write(output serialization.DataOutput, i inter
 type Integer16ArraySerializer struct{}
 
 func (*Integer16ArraySerializer) ID() int32 {
-	return ConstantTypeInteger16Array
+	return TypeInteger16Array
 }
 
 func (*Integer16ArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -273,7 +273,7 @@ func (*Integer16ArraySerializer) Write(output serialization.DataOutput, i interf
 type Integer32ArraySerializer struct{}
 
 func (*Integer32ArraySerializer) ID() int32 {
-	return ConstantTypeInteger32Array
+	return TypeInteger32Array
 }
 
 func (*Integer32ArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -287,7 +287,7 @@ func (*Integer32ArraySerializer) Write(output serialization.DataOutput, i interf
 type Integer64ArraySerializer struct{}
 
 func (*Integer64ArraySerializer) ID() int32 {
-	return ConstantTypeInteger64Array
+	return TypeInteger64Array
 }
 
 func (*Integer64ArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -310,7 +310,7 @@ func (*Integer64ArraySerializer) Write(output serialization.DataOutput, i interf
 type Float32ArraySerializer struct{}
 
 func (*Float32ArraySerializer) ID() int32 {
-	return ConstantTypeFloat32Array
+	return TypeFloat32Array
 }
 
 func (*Float32ArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -324,7 +324,7 @@ func (*Float32ArraySerializer) Write(output serialization.DataOutput, i interfac
 type Float64ArraySerializer struct{}
 
 func (*Float64ArraySerializer) ID() int32 {
-	return ConstantTypeFloat64Array
+	return TypeFloat64Array
 }
 
 func (*Float64ArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -338,7 +338,7 @@ func (*Float64ArraySerializer) Write(output serialization.DataOutput, i interfac
 type StringArraySerializer struct{}
 
 func (*StringArraySerializer) ID() int32 {
-	return ConstantTypeStringArray
+	return TypeStringArray
 }
 
 func (*StringArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -352,7 +352,7 @@ func (*StringArraySerializer) Write(output serialization.DataOutput, i interface
 type UUIDSerializer struct{}
 
 func (*UUIDSerializer) ID() int32 {
-	return ConstantTypeUUID
+	return TypeUUID
 }
 
 func (*UUIDSerializer) Read(input serialization.DataInput) interface{} {
@@ -365,10 +365,62 @@ func (*UUIDSerializer) Write(output serialization.DataOutput, i interface{}) {
 	output.WriteInt64(int64(uuid.MostSignificantBits()))
 }
 
+type JavaClassSerializer struct{}
+
+func (*JavaClassSerializer) ID() int32 {
+	return TypeJavaClass
+}
+
+func (*JavaClassSerializer) Read(input serialization.DataInput) interface{} {
+	return input.ReadString()
+}
+
+func (*JavaClassSerializer) Write(output serialization.DataOutput, i interface{}) {
+	// no-op
+}
+
+type JavaLinkedListSerializer struct{}
+
+func (*JavaLinkedListSerializer) ID() int32 {
+	return TypeJavaLinkedList
+}
+
+func (*JavaLinkedListSerializer) Read(input serialization.DataInput) interface{} {
+	count := int(input.ReadInt32())
+	res := make([]interface{}, count)
+	for i := 0; i < count; i++ {
+		res[i] = input.ReadObject()
+	}
+	return res
+}
+
+func (*JavaLinkedListSerializer) Write(output serialization.DataOutput, i interface{}) {
+	// no-op
+}
+
+type JavaArrayListSerializer struct{}
+
+func (*JavaArrayListSerializer) ID() int32 {
+	return TypeJavaArrayList
+}
+
+func (*JavaArrayListSerializer) Read(input serialization.DataInput) interface{} {
+	count := int(input.ReadInt32())
+	res := make([]interface{}, count)
+	for i := 0; i < count; i++ {
+		res[i] = input.ReadObject()
+	}
+	return res
+}
+
+func (*JavaArrayListSerializer) Write(output serialization.DataOutput, i interface{}) {
+	// no-op
+}
+
 type GobSerializer struct{}
 
 func (*GobSerializer) ID() int32 {
-	return GoGobSerializationType
+	return TypeGobSerialization
 }
 
 func (*GobSerializer) Read(input serialization.DataInput) interface{} {
@@ -400,7 +452,7 @@ type JSONValueSerializer struct {
 }
 
 func (js JSONValueSerializer) ID() int32 {
-	return JSONSerializationType
+	return TypeJSONSerialization
 }
 
 func (js JSONValueSerializer) Read(input serialization.DataInput) interface{} {
