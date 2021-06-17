@@ -1,14 +1,33 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package serialization_test
 
 import (
 	"encoding/binary"
+	"math"
+	"math/big"
+	"testing"
+	"time"
+	"unicode/utf8"
+
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/assert"
-	"math"
-	"testing"
-	"unicode/utf8"
 )
 
 // See: https://hazelcast.atlassian.net/wiki/spaces/IMDG/pages/1650294837/Hazelcast+Serialization+Improvements
@@ -41,7 +60,11 @@ func TestSerializationImprovements_2_StringLength(t *testing.T) {
 }
 
 func TestSerializationImprovements_4_UUID(t *testing.T) {
-	ss := mustSerializationService(iserialization.NewService(&serialization.Config{BigEndian: true}))
+	config := &serialization.Config{
+		BigEndian:        true,
+		GlobalSerializer: &PanicingGlobalSerializer{},
+	}
+	ss := mustSerializationService(iserialization.NewService(config))
 	target := types.NewUUIDWith(math.MaxUint64, math.MaxUint64)
 	data, err := ss.ToData(target)
 	if err != nil {
@@ -54,9 +77,62 @@ func TestSerializationImprovements_4_UUID(t *testing.T) {
 	assert.Equal(t, target, value)
 }
 
+func TestSerializationImprovements_JavaDate(t *testing.T) {
+	config := &serialization.Config{
+		BigEndian:        true,
+		GlobalSerializer: &PanicingGlobalSerializer{},
+	}
+	ss := mustSerializationService(iserialization.NewService(config))
+	target := time.Date(2021, 2, 1, 9, 1, 15, 11000, time.Local)
+	data, err := ss.ToData(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := ss.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, target, value)
+
+}
+
+func TestSerializationImprovements_BigInt(t *testing.T) {
+	config := &serialization.Config{
+		BigEndian:        true,
+		GlobalSerializer: &PanicingGlobalSerializer{},
+	}
+	ss := mustSerializationService(iserialization.NewService(config))
+	target := big.NewInt(1024)
+	data, err := ss.ToData(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := ss.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, target, value)
+
+}
+
 func mustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {
 	if err != nil {
 		panic(err)
 	}
 	return ss
+}
+
+type PanicingGlobalSerializer struct {
+}
+
+func (p PanicingGlobalSerializer) ID() (id int32) {
+	return 1000
+}
+
+func (p PanicingGlobalSerializer) Read(input serialization.DataInput) interface{} {
+	panic("panicing global serializer: read")
+}
+
+func (p PanicingGlobalSerializer) Write(output serialization.DataOutput, object interface{}) {
+	panic("panicing global serializer: write")
 }
