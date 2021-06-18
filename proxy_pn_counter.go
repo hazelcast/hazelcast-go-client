@@ -19,7 +19,6 @@ package hazelcast
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -71,7 +70,7 @@ fail with an NoDataMemberInClusterError.
 type PNCounter struct {
 	*proxy
 	clock  iproxy.VectorClock
-	target atomic.Value
+	target *cluster.MemberInfo
 	mu     *sync.Mutex
 }
 
@@ -95,8 +94,8 @@ func (pn *PNCounter) DecrementAndGet(ctx context.Context) (int64, error) {
 
 // Get returns the current value of the counter.
 func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
-	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID) *proto.ClientMessage {
-		return codec.EncodePNCounterGetRequest(pn.name, pn.clockEntrySet(), uuid)
+	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID, clocks []proto.Pair) *proto.ClientMessage {
+		return codec.EncodePNCounterGetRequest(pn.name, clocks, uuid)
 	})
 	if err != nil {
 		return 0, err
@@ -143,29 +142,23 @@ func (pn *PNCounter) SubtractAndGet(ctx context.Context, delta int64) (int64, er
 	return pn.add(ctx, -1*delta, false)
 }
 
-func (pn *PNCounter) clockEntrySet() []proto.Pair {
+func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) (*cluster.MemberInfo, []proto.Pair, error) {
 	pn.mu.Lock()
-	entries := pn.clock.EntrySet()
-	pn.mu.Unlock()
-	return entries
-}
-
-func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) (*cluster.MemberInfo, error) {
-	target := pn.target.Load()
-	if target == nil || targetExcluded(target.(*cluster.MemberInfo), excluded) {
-		var mem *cluster.MemberInfo
+	defer pn.mu.Unlock()
+	target := pn.target
+	if target == nil || targetExcluded(pn.target, excluded) {
 		if excluded == nil {
-			mem = pn.clusterService.RandomDataMember()
+			target = pn.clusterService.RandomDataMember()
 		} else {
-			mem = pn.clusterService.RandomDataMemberExcluding(excluded)
+			target = pn.clusterService.RandomDataMemberExcluding(excluded)
 		}
-		if mem == nil {
-			return nil, hzerrors.NewHazelcastNoDataMemberInClusterError("no data members in cluster", nil)
+		if target == nil {
+			return nil, nil, hzerrors.NewHazelcastNoDataMemberInClusterError("no data members in cluster", nil)
 		}
-		pn.target.Store(mem)
-		return mem, nil
+		pn.target = target
 	}
-	return target.(*cluster.MemberInfo), nil
+	entries := pn.clock.EntrySet()
+	return target, entries, nil
 }
 
 func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
@@ -179,8 +172,8 @@ func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
 }
 
 func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool) (int64, error) {
-	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID) *proto.ClientMessage {
-		return codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, pn.clockEntrySet(), uuid)
+	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID, clocks []proto.Pair) *proto.ClientMessage {
+		return codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, clocks, uuid)
 	})
 	if err != nil {
 		return 0, err
@@ -190,7 +183,7 @@ func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool)
 	return value, nil
 }
 
-func (pn *PNCounter) invokeOnTarget(ctx context.Context, makeReq func(target types.UUID) *proto.ClientMessage) (*proto.ClientMessage, error) {
+func (pn *PNCounter) invokeOnTarget(ctx context.Context, makeReq func(target types.UUID, clocks []proto.Pair) *proto.ClientMessage) (*proto.ClientMessage, error) {
 	// in the best case scenario, no members will be excluded, so excluded set is nil
 	var excluded map[cluster.Address]struct{}
 	var lastAddr cluster.Address
@@ -204,12 +197,12 @@ func (pn *PNCounter) invokeOnTarget(ctx context.Context, makeReq func(target typ
 			request = request.Copy()
 			excluded[lastAddr] = struct{}{}
 		}
-		mem, err := pn.crdtOperationTarget(excluded)
+		mem, clocks, err := pn.crdtOperationTarget(excluded)
 		if err != nil {
 			// do not retry if no data members was found
 			return nil, cb.WrapNonRetryableError(err)
 		}
-		request = makeReq(mem.UUID)
+		request = makeReq(mem.UUID, clocks)
 		inv := pn.invocationFactory.NewInvocationOnTarget(request, mem.Address)
 		if err := pn.sendInvocation(ctx, inv); err != nil {
 			return nil, err
