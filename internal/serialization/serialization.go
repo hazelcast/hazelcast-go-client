@@ -137,6 +137,20 @@ func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serialize
 	return serializer, nil
 }
 
+func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
+	serializer := s.lookupBuiltinSerializer(obj)
+	if serializer != nil {
+		return serializer
+	}
+	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
+		return s.registry[s.nameToID["identified"]]
+	}
+	if _, ok := obj.(pubserialization.Portable); ok {
+		return s.registry[s.nameToID["!portable"]]
+	}
+	return nil
+}
+
 func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Serializer {
 	switch typeID {
 	case TypeNil:
@@ -203,7 +217,6 @@ func (s *Service) registerDefaultSerializers() error {
 	}
 	s.nameToID["!portable"] = TypePortable
 	return nil
-
 }
 
 func (s *Service) registerCustomSerializers(customSerializers map[reflect.Type]pubserialization.Serializer) {
@@ -247,20 +260,6 @@ func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
 		return val, true
 	}
 	return 0, false
-}
-
-func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
-	serializer := s.lookupBuiltinSerializer(obj)
-	if serializer != nil {
-		return serializer
-	}
-	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
-		return s.registry[s.nameToID["identified"]]
-	}
-	if _, ok := obj.(pubserialization.Portable); ok {
-		return s.registry[s.nameToID["!portable"]]
-	}
-	return nil
 }
 
 func (s *Service) lookUpCustomSerializer(obj interface{}) pubserialization.Serializer {
