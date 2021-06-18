@@ -116,7 +116,10 @@ func (s *Service) WriteObject(output pubserialization.DataOutput, object interfa
 
 func (s *Service) ReadObject(input pubserialization.DataInput) interface{} {
 	serializerID := input.ReadInt32()
-	serializer := s.registry[serializerID]
+	serializer := s.lookupBuiltinDeserializer(serializerID)
+	if serializer == nil {
+		serializer = s.registry[serializerID]
+	}
 	return serializer.Read(input)
 }
 
