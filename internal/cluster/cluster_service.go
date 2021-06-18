@@ -147,7 +147,7 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
-	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, "", conn, func(response *proto.ClientMessage) {
+	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
 			s.handleMembersUpdated(conn, version, memberInfos)
 		}, func(version int32, partitions []proto.Pair) {

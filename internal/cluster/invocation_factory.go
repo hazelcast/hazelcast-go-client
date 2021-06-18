@@ -56,15 +56,10 @@ func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.Clien
 	return inv
 }
 
-func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(
-	message *proto.ClientMessage,
-	partitionID int32,
-	address pubcluster.Address,
-	conn *Connection,
-	handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
+func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, conn *Connection, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := newConnectionBoundInvocation(message, partitionID, address, conn, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	inv := newConnectionBoundInvocation(message, -1, "", conn, time.Now().Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
 	return inv
 }

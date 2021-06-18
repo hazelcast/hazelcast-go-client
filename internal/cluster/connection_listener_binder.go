@@ -165,7 +165,7 @@ func (b *ConnectionListenerBinder) sendAddListenerRequest(
 	request *proto.ClientMessage,
 	handler proto.ClientMessageHandler,
 	conn *Connection) (invocation.Invocation, int64, error) {
-	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, "", conn, handler)
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, handler)
 	correlationID := inv.Request().CorrelationID()
 	err := b.sendInvocation(ctx, inv, correlationID)
 	return inv, correlationID, err
@@ -196,7 +196,7 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 	b.logger.Trace(func() string {
 		return fmt.Sprintf("%d: removing listener", conn.connectionID)
 	})
-	inv := b.invocationFactory.NewConnectionBoundInvocation(request, -1, "", conn, nil)
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
 	b.requestCh <- inv
 	return inv
 }
