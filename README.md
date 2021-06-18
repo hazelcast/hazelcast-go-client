@@ -47,18 +47,19 @@ func main() {
     if err != nil {
     	log.Fatal(err)
     }
+    ctx := context.TODO()
     // get a map
-    people, err := client.GetMap(context.TODO(), "people")
+    people, err := client.GetMap(ctx, "people")
     if err != nil {
         log.Fatal(err)
     }
     personName := "Jane Doe"
     // set a value in the map
-    if err = people.Set(context.TODO(), personName, 30); err != nil {
+    if err = people.Set(ctx, personName, 30); err != nil {
     	log.Fatal(err)
     }
     // get a value from the map
-    age, err := people.Get(context.TODO(), personName)
+    age, err := people.Get(ctx, personName)
     if err != nil {
         log.Fatal(err)
     }
@@ -69,8 +70,12 @@ func main() {
 ## Features
 
 * Distributed, partitioned and queryable in-memory key-value store implementation, called Map.
-* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, and Topic.
+* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, PNCounter, Set and Topic.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
+* Go context support for all distributed data structures.
+* Hazelcast Cloud integration.
+* External smart client discovery.
+* Hazelcast Management Center integration.
 * Ability to listen to client lifecycle, cluster state, and distributed data structure events.
 
 ## Install
