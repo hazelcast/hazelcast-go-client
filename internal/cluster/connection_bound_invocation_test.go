@@ -31,7 +31,7 @@ import (
 func TestConnectionBoundInvocation_CanRetry(t *testing.T) {
 	fac := icluster.NewConnectionInvocationFactory(&pubcluster.Config{})
 	msg := proto.NewClientMessage(proto.NewFrame(make([]byte, 64)))
-	inv := fac.NewConnectionBoundInvocation(msg, 0, nil, nil, nil)
+	inv := fac.NewConnectionBoundInvocation(msg, nil, nil)
 	err := errors.New("foo")
 	if !assert.False(t, inv.CanRetry(err)) {
 		t.FailNow()

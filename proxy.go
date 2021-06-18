@@ -42,6 +42,7 @@ const (
 	ServiceNameTopic         = "hz:impl:topicService"
 	ServiceNameList          = "hz:impl:listService"
 	ServiceNameSet           = "hz:impl:setService"
+	ServiceNamePNCounter     = "hz:impl:PNCounterService"
 )
 
 const (

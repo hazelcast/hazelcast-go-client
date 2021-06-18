@@ -382,7 +382,7 @@ func (m *ConnectionManager) authenticate(conn *Connection) error {
 	})
 	m.credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
 	select {
 	case m.requestCh <- inv:
 		if result, err := inv.GetWithContext(context.TODO()); err != nil {
@@ -461,7 +461,7 @@ func (m *ConnectionManager) heartbeat() {
 
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
 	m.requestCh <- inv
 }
 

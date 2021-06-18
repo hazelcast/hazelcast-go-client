@@ -38,27 +38,28 @@ func NewConnectionInvocationFactory(config *pubcluster.Config) *ConnectionInvoca
 	}
 }
 
-func (f *ConnectionInvocationFactory) NewInvocationOnPartitionOwner(message *proto.ClientMessage, partitionID int32) invocation.Invocation {
+func (f *ConnectionInvocationFactory) NewInvocationOnPartitionOwner(message *proto.ClientMessage, partitionID int32) *invocation.Impl {
 	message.SetCorrelationID(f.makeCorrelationID())
-	return invocation.NewImpl(message, partitionID, nil, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	return invocation.NewImpl(message, partitionID, "", time.Now().Add(f.invocationTimeout), f.redoOperation)
 }
 
-func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage, handler proto.ClientMessageHandler) invocation.Invocation {
+func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage, handler proto.ClientMessageHandler) *invocation.Impl {
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := invocation.NewImpl(message, -1, nil, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	inv := invocation.NewImpl(message, -1, "", time.Now().Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
 	return inv
 }
 
-func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(
-	message *proto.ClientMessage,
-	partitionID int32,
-	address *pubcluster.Address,
-	conn *Connection,
-	handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
+func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, addr pubcluster.Address) *invocation.Impl {
+	message.SetCorrelationID(f.makeCorrelationID())
+	inv := invocation.NewImpl(message, -1, addr, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	return inv
+}
+
+func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, conn *Connection, handler proto.ClientMessageHandler) *ConnectionBoundInvocation {
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := newConnectionBoundInvocation(message, partitionID, address, conn, time.Now().Add(f.invocationTimeout), f.redoOperation)
+	inv := newConnectionBoundInvocation(message, -1, "", conn, time.Now().Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
 	return inv
 }
