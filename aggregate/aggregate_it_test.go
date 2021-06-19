@@ -57,8 +57,8 @@ func TestDistinctValues(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		target := []interface{}{10, 30}
-		assert.Equal(t, target, result)
+		target := []interface{}{int32(10), int32(30)}
+		assert.ElementsMatch(t, target, result)
 	})
 }
 
@@ -189,21 +189,5 @@ func TestMax(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int32(30), result)
-	})
-}
-
-func TestNumberAverage(t *testing.T) {
-	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
-	}
-	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		ctx := context.Background()
-		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
-		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 25}))
-		result, err := m.Aggregate(ctx, aggregate.NumberAverage("B"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, float64(17.5), result)
 	})
 }

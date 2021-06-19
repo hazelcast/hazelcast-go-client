@@ -46,8 +46,8 @@ type IdentifiedDataSerializableSerializer struct {
 	factories map[int32]serialization.IdentifiedDataSerializableFactory
 }
 
-func NewIdentifiedDataSerializableSerializer(
-	factories map[int32]serialization.IdentifiedDataSerializableFactory) *IdentifiedDataSerializableSerializer {
+func NewIdentifiedDataSerializableSerializer(factories map[int32]serialization.IdentifiedDataSerializableFactory) *IdentifiedDataSerializableSerializer {
+
 	return &IdentifiedDataSerializableSerializer{factories: factories}
 }
 

@@ -19,6 +19,7 @@ package aggregate
 import (
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -35,7 +36,7 @@ type aggLongAverage struct {
 }
 
 func (a aggLongAverage) FactoryID() int32 {
-	return factoryID
+	return internal.AggregateFactoryID
 }
 
 func (a aggLongAverage) ClassID() (classID int32) {
@@ -65,7 +66,7 @@ type aggLongSum struct {
 }
 
 func (a aggLongSum) FactoryID() int32 {
-	return factoryID
+	return internal.AggregateFactoryID
 }
 
 func (a aggLongSum) ClassID() (classID int32) {

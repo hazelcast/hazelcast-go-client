@@ -27,6 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -84,16 +85,12 @@ func (m *Map) AddInterceptor(ctx context.Context, interceptor interface{}) (stri
 
 // Aggregate runs the given aggregator and returns the result.
 func (m *Map) Aggregate(ctx context.Context, agg aggregate.Aggregator) (interface{}, error) {
-	if aggData, err := m.validateAndSerializeAggregate(agg); err != nil {
+	aggData, err := m.validateAndSerializeAggregate(agg)
+	if err != nil {
 		return nil, err
-	} else {
-		request := codec.EncodeMapAggregateRequest(m.name, aggData)
-		resp, err := m.invokeOnRandomTarget(ctx, request, nil)
-		if err != nil {
-			return nil, err
-		}
-		return m.convertToObject(codec.DecodeMapAggregateResponse(resp))
 	}
+	request := codec.EncodeMapAggregateRequest(m.name, aggData)
+	return m.aggregate(ctx, request, codec.DecodeMapAggregateResponse)
 }
 
 // AggregateWithPredicate runs the given aggregator and returns the result.
@@ -108,11 +105,7 @@ func (m *Map) AggregateWithPredicate(ctx context.Context, agg aggregate.Aggregat
 		return nil, err
 	}
 	request := codec.EncodeMapAggregateWithPredicateRequest(m.name, aggData, predData)
-	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
-	if err != nil {
-		return nil, err
-	}
-	return m.convertToObject(codec.DecodeMapAggregateResponse(resp))
+	return m.aggregate(ctx, request, codec.DecodeMapAggregateWithPredicateResponse)
 }
 
 // Clear deletes all entries one by one and fires related events
@@ -1028,6 +1021,24 @@ func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (in
 			return codec.DecodeMapTryRemoveResponse(response), nil
 		}
 	}
+}
+
+func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder func(message *proto.ClientMessage) *serialization.Data) (interface{}, error) {
+	resp, err := m.invokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	data := decoder(resp)
+	obj, err := m.convertToObject(data)
+	if err != nil {
+		return nil, err
+	}
+	// if this is a canonicalizing set return a slice of interface[}
+	cs, ok := obj.(*iproxy.AggCanonicalizingSet)
+	if ok {
+		return []interface{}(*cs), nil
+	}
+	return obj, nil
 }
 
 func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {

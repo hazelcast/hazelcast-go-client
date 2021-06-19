@@ -19,6 +19,7 @@ package aggregate
 import (
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -35,7 +36,7 @@ type aggMin struct {
 }
 
 func (a aggMin) FactoryID() int32 {
-	return factoryID
+	return internal.AggregateFactoryID
 }
 
 func (a aggMin) ClassID() (classID int32) {
@@ -63,7 +64,7 @@ type aggMax struct {
 }
 
 func (a aggMax) FactoryID() int32 {
-	return factoryID
+	return internal.AggregateFactoryID
 }
 
 func (a aggMax) ClassID() (classID int32) {

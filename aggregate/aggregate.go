@@ -22,8 +22,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const factoryID = -29
-
 type Aggregator interface {
 	serialization.IdentifiedDataSerializable
 	fmt.Stringer

@@ -19,6 +19,7 @@ package aggregate
 import (
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -31,7 +32,7 @@ type aggCount struct {
 }
 
 func (a aggCount) FactoryID() int32 {
-	return factoryID
+	return internal.AggregateFactoryID
 }
 
 func (a aggCount) ClassID() (classID int32) {

@@ -24,6 +24,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
+
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -291,7 +294,9 @@ func (s *Service) lookUpGlobalSerializer() pubserialization.Serializer {
 }
 
 func (s *Service) registerIdentifiedFactories() error {
-	factories := make(map[int32]pubserialization.IdentifiedDataSerializableFactory)
+	factories := map[int32]pubserialization.IdentifiedDataSerializableFactory{
+		internal.AggregateFactoryID: &proxy.AggregateFactory{},
+	}
 	fs := map[int32]pubserialization.IdentifiedDataSerializableFactory{}
 	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories {
 		fid := f.FactoryID()

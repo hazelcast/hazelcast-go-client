@@ -18,7 +18,8 @@ package internal
 
 const (
 	// ClientType is used in the Management
-	ClientType = "GOO"
+	ClientType         = "GOO"
+	AggregateFactoryID = -29
 )
 
 // ClientVersion is the build time version
