@@ -219,6 +219,10 @@ func (s *Service) registerDefaultSerializers() error {
 		return err
 	}
 	s.nameToID["!portable"] = TypePortable
+	if err = s.registerSerializer(&GobSerializer{}); err != nil {
+		return err
+	}
+	s.nameToID["!gob"] = TypeGobSerialization
 	return nil
 }
 
@@ -333,6 +337,8 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return uint8ArraySerializer
 	case []uint16:
 		return uint16ArraySerializer
+	case []int:
+		return int64ArraySerializer
 	case []int16:
 		return int16ArraySerializer
 	case []int32:
