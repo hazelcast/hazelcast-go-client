@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -79,6 +80,39 @@ func (m *Map) AddInterceptor(ctx context.Context, interceptor interface{}) (stri
 			return codec.DecodeMapAddInterceptorResponse(response), nil
 		}
 	}
+}
+
+// Aggregate runs the given aggregator and returns the result.
+func (m *Map) Aggregate(ctx context.Context, agg aggregate.Aggregator) (interface{}, error) {
+	if aggData, err := m.validateAndSerializeAggregate(agg); err != nil {
+		return nil, err
+	} else {
+		request := codec.EncodeMapAggregateRequest(m.name, aggData)
+		resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+		if err != nil {
+			return nil, err
+		}
+		return m.convertToObject(codec.DecodeMapAggregateResponse(resp))
+	}
+}
+
+// AggregateWithPredicate runs the given aggregator and returns the result.
+// The result is filtered with the given predicate.
+func (m *Map) AggregateWithPredicate(ctx context.Context, agg aggregate.Aggregator, pred predicate.Predicate) (interface{}, error) {
+	aggData, err := m.validateAndSerializeAggregate(agg)
+	if err != nil {
+		return nil, err
+	}
+	predData, err := m.validateAndSerializePredicate(pred)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapAggregateWithPredicateRequest(m.name, aggData, predData)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapAggregateResponse(resp))
 }
 
 // Clear deletes all entries one by one and fires related events

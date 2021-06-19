@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -870,6 +871,40 @@ func TestMap_Destroy(t *testing.T) {
 		if err := m.Destroy(context.Background()); err != nil {
 			t.Fatal(err)
 		}
+	})
+}
+
+func TestMap_Aggregate(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
+		it.MustValue(m.Put(ctx, "k3", &it.SamplePortable{A: "zoo", B: 30}))
+		result, err := m.Aggregate(ctx, aggregate.Count("B"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(3), result)
+	})
+}
+
+func TestMap_AggregateWithPredicate(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "zoo", B: 30}))
+		result, err := m.AggregateWithPredicate(ctx, aggregate.Count("B"), predicate.Equal("A", "foo"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(1), result)
 	})
 }
 
