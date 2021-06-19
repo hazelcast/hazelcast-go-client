@@ -191,7 +191,10 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 		classDef.FactoryID, classDef.ClassID, 0))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
-	serializer, _ := service.FindSerializerFor(expectedRet)
+	serializer, err := service.FindSerializerFor(expectedRet)
+	if err != nil {
+		t.Fatal(err)
+	}
 	pw := NewDefaultPortableWriter(serializer.(*PortableSerializer), o, classDef)
 	pw.WritePortable("engineer", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
