@@ -16,7 +16,9 @@
 
 package proxy
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 type ReferenceIDGenerator struct {
 	nextID int64

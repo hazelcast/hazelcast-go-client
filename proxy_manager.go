@@ -52,43 +52,51 @@ func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
 	}
 }
 
-func (m *proxyManager) getReplicatedMap(ctx context.Context, objectName string) (*ReplicatedMap, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameReplicatedMap, objectName); err != nil {
+func (m *proxyManager) getReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameReplicatedMap, name); err != nil {
 		return nil, err
 	} else {
 		return newReplicatedMap(p, m.refIDGenerator)
 	}
 }
 
-func (m *proxyManager) getQueue(ctx context.Context, objectName string) (*Queue, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameQueue, objectName); err != nil {
+func (m *proxyManager) getQueue(ctx context.Context, name string) (*Queue, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameQueue, name); err != nil {
 		return nil, err
 	} else {
 		return newQueue(p)
 	}
 }
 
-func (m *proxyManager) getTopic(ctx context.Context, objectName string) (*Topic, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameTopic, objectName); err != nil {
+func (m *proxyManager) getTopic(ctx context.Context, name string) (*Topic, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameTopic, name); err != nil {
 		return nil, err
 	} else {
 		return newTopic(p)
 	}
 }
 
-func (m *proxyManager) getList(ctx context.Context, objectName string) (*List, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameList, objectName); err != nil {
+func (m *proxyManager) getList(ctx context.Context, name string) (*List, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameList, name); err != nil {
 		return nil, err
 	} else {
 		return newList(p)
 	}
 }
 
-func (m *proxyManager) getSet(ctx context.Context, objectName string) (*Set, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameSet, objectName); err != nil {
+func (m *proxyManager) getSet(ctx context.Context, name string) (*Set, error) {
+	if p, err := m.proxyFor(ctx, ServiceNameSet, name); err != nil {
 		return nil, err
 	} else {
 		return newSet(p)
+	}
+}
+
+func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounter, error) {
+	if p, err := m.proxyFor(ctx, ServiceNamePNCounter, name); err != nil {
+		return nil, err
+	} else {
+		return newPNCounter(p), nil
 	}
 }
 

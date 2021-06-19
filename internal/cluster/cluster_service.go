@@ -116,6 +116,14 @@ func (s *Service) MemberAddrs() []pubcluster.Address {
 	return s.membersMap.MemberAddrs()
 }
 
+func (s *Service) RandomDataMember() *pubcluster.MemberInfo {
+	return s.membersMap.RandomDataMember()
+}
+
+func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
+	return s.membersMap.RandomDataMemberExcluding(excluded)
+}
+
 func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
 	addrSet := NewAddrSet()
 	addrSet.AddAddrs(s.addrProvider.Addresses(refresh))
@@ -139,7 +147,7 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
 	request := codec.EncodeClientAddClusterViewListenerRequest()
-	inv := s.invocationFactory.NewConnectionBoundInvocation(request, -1, nil, conn, func(response *proto.ClientMessage) {
+	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
 			s.handleMembersUpdated(conn, version, memberInfos)
 		}, func(version int32, partitions []proto.Pair) {
@@ -268,6 +276,35 @@ func (m *membersMap) MemberAddrs() []pubcluster.Address {
 	}
 	m.membersMu.RUnlock()
 	return addrs
+}
+
+// RandomDataMember returns a data member.
+// Returns nil if no suitable data member is found.
+func (m *membersMap) RandomDataMember() *pubcluster.MemberInfo {
+	m.membersMu.RLock()
+	defer m.membersMu.RUnlock()
+	for _, mem := range m.members {
+		if !mem.LiteMember {
+			return mem
+		}
+	}
+	return nil
+}
+
+// RandomDataMemberExcluding returns a data member not excluded in the given map.
+// Returns nil if no suitable data member is found.
+// Panics if excluded map is nil.
+func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
+	m.membersMu.RLock()
+	defer m.membersMu.RUnlock()
+	for _, mem := range m.members {
+		if !mem.LiteMember {
+			if _, found := excluded[mem.Address]; !found {
+				return mem
+			}
+		}
+	}
+	return nil
 }
 
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.

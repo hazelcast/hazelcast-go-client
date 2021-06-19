@@ -107,8 +107,8 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 			return h.sendToConnection(inv, conn)
 		}
 	}
-	if inv.Address() != nil {
-		return h.sendToAddress(inv, *inv.Address())
+	if inv.Address() != "" {
+		return h.sendToAddress(inv, inv.Address())
 	}
 	return h.sendToRandomAddress(inv)
 }
