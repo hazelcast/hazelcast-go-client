@@ -202,6 +202,8 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return javaBigIntSerializer
 	case TypeJSONSerialization:
 		return jsonSerializer
+	case TypeJavaArrayList:
+		return javaArrayListSerializer
 	}
 	return nil
 }
@@ -396,4 +398,5 @@ var uuidSerializer = &UUIDSerializer{}
 var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
 var javaBigIntSerializer = &JavaBigIntegerSerializer{}
+var javaArrayListSerializer = &JavaArrayListSerializer{}
 var gobSerializer = &GobSerializer{}
