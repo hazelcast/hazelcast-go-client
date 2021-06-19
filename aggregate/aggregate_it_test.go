@@ -57,7 +57,8 @@ func TestDistinctValues(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, int64(2), result)
+		target := []interface{}{10, 30}
+		assert.Equal(t, target, result)
 	})
 }
 
