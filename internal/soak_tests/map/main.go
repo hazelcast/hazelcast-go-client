@@ -91,7 +91,7 @@ func (f Factory) Create(id int32) serialization.IdentifiedDataSerializable {
 	if id == simpleEntryProcessorClassID {
 		return &SimpleEntryProcessor{}
 	}
-	panic(fmt.Sprintf("unknown class ID:", id))
+	panic(fmt.Sprintf("unknown class ID: %d", id))
 }
 
 func (f Factory) FactoryID() int32 {
