@@ -96,6 +96,7 @@ func TestTranslateAddrs(t *testing.T) {
 }
 
 func TestMakeCoordinatorURL(t *testing.T) {
+	os.Setenv(envCoordinatorBaseURL, "")
 	url := makeCoordinatorURL("TOK")
 	target := "https://coordinator.hazelcast.cloud/cluster/discovery?token=TOK"
 	assert.Equal(t, target, url)
