@@ -43,7 +43,7 @@ func NewConfig() Config {
 		Name:                 "dev",
 		Addrs:                []string{"127.0.0.1:5701"},
 		SmartRouting:         true,
-		ConnectionTimeout:    5 * time.Second,
+		ConnectionTimeout:    0,
 		HeartbeatInterval:    5 * time.Second,
 		HeartbeatTimeout:     60 * time.Second,
 		InvocationTimeout:    120 * time.Second,
@@ -84,6 +84,9 @@ func (c *Config) Validate() error {
 	}
 	if c.ConnectionTimeout < 0 {
 		return ErrConfigInvalidConnectionTimeout
+	}
+	if c.ConnectionTimeout == 0 {
+		c.ConnectionTimeout = 366 * 24 * time.Hour // 1 year
 	}
 	if c.HeartbeatInterval < 0 {
 		return ErrConfigInvalidHeartbeatInterval

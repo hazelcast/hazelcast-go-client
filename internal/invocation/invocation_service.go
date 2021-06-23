@@ -24,34 +24,41 @@ import (
 )
 
 type Handler interface {
-	Invoke(invocation Invocation) error
+	Invoke(invocation Invocation) (groupID int64, err error)
 }
 
 type Service struct {
-	requestCh  <-chan Invocation
-	responseCh <-chan *proto.ClientMessage
+	requestCh       <-chan Invocation
+	urgentRequestCh <-chan Invocation
+	responseCh      <-chan *proto.ClientMessage
 	// removeCh carries correlationIDs to be removed
-	removeCh    <-chan int64
-	doneCh      chan struct{}
-	invocations map[int64]Invocation
-	handler     Handler
-	logger      ilogger.Logger
+	removeCh               <-chan int64
+	doneCh                 chan struct{}
+	invocations            map[int64]Invocation
+	groupIDToCorrelationID map[int64][]int64
+	correlationIDToGroupID map[int64]int64
+	handler                Handler
+	logger                 ilogger.Logger
 }
 
 func NewService(
 	requestCh <-chan Invocation,
+	urgentRequestCh <-chan Invocation,
 	responseCh <-chan *proto.ClientMessage,
 	removeCh <-chan int64,
 	handler Handler,
 	logger ilogger.Logger) *Service {
 	service := &Service{
-		requestCh:   requestCh,
-		responseCh:  responseCh,
-		removeCh:    removeCh,
-		doneCh:      make(chan struct{}),
-		invocations: map[int64]Invocation{},
-		handler:     handler,
-		logger:      logger,
+		requestCh:       requestCh,
+		urgentRequestCh: urgentRequestCh,
+		responseCh:      responseCh,
+		removeCh:        removeCh,
+		doneCh:          make(chan struct{}),
+		invocations:     map[int64]Invocation{},
+		//groupIDToCorrelationID: map[int64][]int64{},
+		//correlationIDToGroupID: map[int64]int64{},
+		handler: handler,
+		logger:  logger,
 	}
 	go service.processIncoming()
 	return service
@@ -59,6 +66,10 @@ func NewService(
 
 func (s *Service) Stop() {
 	close(s.doneCh)
+	for _, inv := range s.invocations {
+		inv.Close()
+	}
+	s.invocations = nil
 }
 
 func (s *Service) SetHandler(handler Handler) {
@@ -68,12 +79,17 @@ func (s *Service) SetHandler(handler Handler) {
 func (s *Service) processIncoming() {
 loop:
 	for {
+		s.logger.Trace(func() string { return "processIncoming" })
 		select {
 		case inv := <-s.requestCh:
+			s.sendInvocation(inv)
+		case inv := <-s.urgentRequestCh:
+			s.logger.Trace(func() string { return fmt.Sprintf("urgent invocation: %d", inv.Request().CorrelationID()) })
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
 		case id := <-s.removeCh:
+			s.logger.Trace(func() string { return fmt.Sprintf("processIncoming remove: %d", id) })
 			s.removeCorrelationID(id)
 		case <-s.doneCh:
 			break loop
@@ -87,10 +103,19 @@ loop:
 }
 
 func (s *Service) sendInvocation(invocation Invocation) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("invocation.Service.sendInvocation correlationID: %d", invocation.Request().CorrelationID())
+	})
 	s.registerInvocation(invocation)
-	if err := s.handler.Invoke(invocation); err != nil {
-		s.handleError(invocation.Request().CorrelationID(), err)
+	corrID := invocation.Request().CorrelationID()
+	if _, err := s.handler.Invoke(invocation); err != nil {
+		s.handleError(corrID, err)
 	}
+	/*
+		s.correlationIDToGroupID[corrID] = groupID
+		s.groupIDToCorrelationID[groupID] = append(s.groupIDToCorrelationID[groupID], corrID)
+
+	*/
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {

@@ -99,7 +99,7 @@ func (c Config) Clone() Config {
 	}
 }
 
-func (c Config) Validate() error {
+func (c *Config) Validate() error {
 	if err := c.ClusterConfig.Validate(); err != nil {
 		return err
 	}

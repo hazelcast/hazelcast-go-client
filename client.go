@@ -69,7 +69,7 @@ func StartNewClient() (*Client, error) {
 func StartNewClientWithConfig(config Config) (*Client, error) {
 	if client, err := newClient(config); err != nil {
 		return nil, err
-	} else if err = client.start(); err != nil {
+	} else if err = client.start(context.TODO()); err != nil {
 		return nil, err
 	} else {
 		return client, nil
@@ -131,8 +131,8 @@ func newClient(config Config) (*Client, error) {
 		name:                    name,
 		clusterConfig:           &config.ClusterConfig,
 		serializationService:    serializationService,
-		eventDispatcher:         event.NewDispatchService(),
-		userEventDispatcher:     event.NewDispatchService(),
+		eventDispatcher:         event.NewDispatchService(clientLogger),
+		userEventDispatcher:     event.NewDispatchService(clientLogger),
 		logger:                  clientLogger,
 		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
@@ -209,14 +209,14 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 }
 
 // Start connects the client to the cluster.
-func (c *Client) start() error {
+func (c *Client) start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return ErrClientCannotStart
 	}
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	c.clusterService.Start()
-	if err := c.connectionManager.Start(1 * time.Minute); err != nil {
+	if err := c.connectionManager.Start(ctx); err != nil {
 		c.clusterService.Stop()
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
@@ -225,7 +225,7 @@ func (c *Client) start() error {
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
-	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
+	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
 	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil
@@ -409,6 +409,7 @@ func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCrede
 func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
 	credentials := c.makeCredentials(config)
 	requestCh := make(chan invocation.Invocation, 1024)
+	urgentRequestCh := make(chan invocation.Invocation, 1024)
 	responseCh := make(chan *proto.ClientMessage, 1024)
 	removeCh := make(chan int64, 1024)
 	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
@@ -418,7 +419,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
 	clusterService := icluster.NewService(icluster.CreationBundle{
 		AddrProvider:      addrProvider,
-		RequestCh:         requestCh,
+		RequestCh:         urgentRequestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,
 		PartitionService:  partitionService,
@@ -427,7 +428,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		AddressTranslator: addrTranslator,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
-		RequestCh:            requestCh,
+		RequestCh:            urgentRequestCh,
 		ResponseCh:           responseCh,
 		Logger:               c.logger,
 		ClusterService:       clusterService,
@@ -447,7 +448,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		Logger:            c.logger,
 		Config:            &config.ClusterConfig,
 	})
-	invocationService := invocation.NewService(requestCh, responseCh, removeCh, invocationHandler, c.logger)
+	invocationService := invocation.NewService(requestCh, urgentRequestCh, responseCh, removeCh, invocationHandler, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinder(
 		connectionManager,
 		invocationFactory,
@@ -488,14 +489,15 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), c.clusterConfig.ConnectionTimeout)
+	defer cancel()
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
 	// try to reboot cluster connection
-	c.clusterService.Stop()
 	c.connectionManager.Stop()
+	c.clusterService.Stop()
 	c.clusterService.Start()
-	if err := c.connectionManager.Start(1 * time.Minute); err != nil {
-		c.logger.Errorf("cannot reboot cluster, shutting down", err.Error())
-		c.clusterService.Stop()
+	if err := c.connectionManager.Start(ctx); err != nil {
+		c.logger.Errorf("cannot reboot cluster, shutting down: %w", err)
 		c.Shutdown()
 	}
 }

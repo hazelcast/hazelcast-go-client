@@ -173,23 +173,26 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 	return manager
 }
 
-func (m *ConnectionManager) Start(timeout time.Duration) error {
+func (m *ConnectionManager) Start(ctx context.Context) error {
 	m.reset()
-	return m.start(context.TODO(), timeout)
+	return m.start(ctx)
 }
 
-func (m *ConnectionManager) start(ctx context.Context, timeout time.Duration) error {
+func (m *ConnectionManager) start(ctx context.Context) error {
+	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
 	if _, err := m.tryConnectCluster(ctx); err != nil {
 		return err
 	}
+	m.logger.Debug(func() string { return "waiting for the initial member list" })
 	// wait for the initial member list
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-m.startCh:
 		break
-	case <-time.After(timeout):
-		return errors.New("initial member list not received in deadline")
 	}
+	m.logger.Debug(func() string { return "received the initial member list" })
 	go m.heartbeat()
 	if m.smartRouting {
 		// fix broken connections only in the smart mode
@@ -204,11 +207,11 @@ func (m *ConnectionManager) start(ctx context.Context, timeout time.Duration) er
 }
 
 func (m *ConnectionManager) Stop() {
+	atomic.StoreInt32(&m.state, stopped)
 	m.eventDispatcher.Unsubscribe(EventConnectionClosed, event.MakeSubscriptionID(m.handleConnectionClosed))
 	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
 	m.eventDispatcher.Unsubscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved))
 	m.connMap.CloseAll()
-	atomic.StoreInt32(&m.state, stopped)
 	close(m.doneCh)
 }
 
@@ -354,7 +357,10 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 		}
 		return addr, err
 	})
-	return addr.(pubcluster.Address), err
+	if err != nil {
+		return "", err
+	}
+	return addr.(pubcluster.Address), nil
 }
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
@@ -373,7 +379,7 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 	conn := m.createDefaultConnection(addr)
 	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
-	} else if err = m.authenticate(conn); err != nil {
+	} else if err = m.authenticate(ctx, conn); err != nil {
 		conn.close(nil)
 		return nil, err
 	}
@@ -395,7 +401,7 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 	return conn
 }
 
-func (m *ConnectionManager) authenticate(conn *Connection) error {
+func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) error {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("authenticate: local: %s; remote: %s; addr: %s",
 			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.Endpoint())
@@ -403,9 +409,14 @@ func (m *ConnectionManager) authenticate(conn *Connection) error {
 	m.credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
+	m.logger.Debug(func() string {
+		return fmt.Sprintf("authenticatation correlation ID: %d", inv.Request().CorrelationID())
+	})
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case m.requestCh <- inv:
-		if result, err := inv.GetWithContext(context.TODO()); err != nil {
+		if result, err := inv.GetWithContext(ctx); err != nil {
 			return err
 		} else {
 			return m.processAuthenticationResult(conn, result)

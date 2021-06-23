@@ -87,12 +87,10 @@ func NewService(bundle CreationBundle) *Service {
 	return &Service{
 		addrProvider:      bundle.AddrProvider,
 		requestCh:         bundle.RequestCh,
-		doneCh:            make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		partitionService:  bundle.PartitionService,
 		logger:            bundle.Logger,
-		membersMap:        newMembersMap(bundle.AddressTranslator, bundle.Logger),
 		config:            bundle.Config,
 		addrTranslator:    bundle.AddressTranslator,
 	}
@@ -103,6 +101,7 @@ func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 }
 
 func (s *Service) Start() {
+	s.reset()
 	if s.logger.CanLogDebug() {
 		go s.logStatus()
 	}
@@ -133,6 +132,11 @@ func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
 
 func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {
 	return s.addrTranslator.TranslateMember(context.TODO(), m)
+}
+
+func (s *Service) reset() {
+	s.doneCh = make(chan struct{}, 1)
+	s.membersMap = newMembersMap(s.addrTranslator, s.logger)
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {

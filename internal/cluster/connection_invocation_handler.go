@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -66,7 +65,7 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt64),
+		cb.MaxRetries(3),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration(attempt) * time.Second
@@ -80,25 +79,26 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 	}
 }
 
-func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) error {
-	_, err := h.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
+func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) (int64, error) {
+	groupID, err := h.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
 		if h.smart {
-			if err := h.invokeSmart(inv); err != nil {
+			groupID, err := h.invokeSmart(inv)
+			if err != nil {
 				if errors.Is(err, errPartitionOwnerNotAssigned) {
 					h.logger.Debug(func() string { return fmt.Sprintf("invoking non-smart since: %s", err.Error()) })
-					return nil, h.invokeNonSmart(inv)
+					return h.invokeNonSmart(inv)
 				}
-				return nil, err
+				return int64(0), err
 			}
-			return nil, nil
+			return groupID, err
 		} else {
-			return nil, h.invokeNonSmart(inv)
+			return h.invokeNonSmart(inv)
 		}
 	})
-	return err
+	return groupID.(int64), err
 }
 
-func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) error {
+func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) (int64, error) {
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok && boundInvocation.Connection() != nil {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	}
@@ -113,21 +113,22 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) err
 	return h.sendToRandomAddress(inv)
 }
 
-func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) error {
+func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) (int64, error) {
 	if boundInvocation, ok := inv.(*ConnectionBoundInvocation); ok && boundInvocation.Connection() != nil {
 		return h.sendToConnection(boundInvocation, boundInvocation.Connection())
 	}
 	return h.sendToRandomAddress(inv)
 }
 
-func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) error {
-	if sent := conn.send(inv); !sent {
-		return hzerrors.NewHazelcastIOError("packet not sent", nil)
+func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) (int64, error) {
+	sent := conn.send(inv)
+	if !sent {
+		return 0, hzerrors.NewHazelcastIOError("packet not sent", nil)
 	}
-	return nil
+	return conn.connectionID, nil
 }
 
-func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) error {
+func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) (int64, error) {
 	conn := h.connectionManager.GetConnectionForAddress(addr)
 	if conn == nil {
 		if conn = h.connectionManager.RandomConnection(); conn != nil {
@@ -138,16 +139,16 @@ func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, a
 			h.logger.Trace(func() string {
 				return fmt.Sprintf("sending invocation to %s failed, address not found", addr.String())
 			})
-			return fmt.Errorf("address not found: %s", addr.String())
+			return 0, fmt.Errorf("address not found: %s", addr.String())
 		}
 	}
 	return h.sendToConnection(inv, conn)
 }
 
-func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) error {
+func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) (int64, error) {
 	if conn := h.connectionManager.RandomConnection(); conn == nil {
 		// TODO: use correct error type
-		return hzerrors.NewHazelcastIOError("no connection found", nil)
+		return 0, hzerrors.NewHazelcastIOError("no connection found", nil)
 	} else {
 		return h.sendToConnection(inv, conn)
 	}
