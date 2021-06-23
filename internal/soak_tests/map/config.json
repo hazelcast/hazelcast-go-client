@@ -1,0 +1,39 @@
+{
+  "LoggerConfig": {
+    "Level": "info"
+  },
+  "SerializationConfig": {
+    "PortableVersion": 0,
+    "BigEndian": true
+  },
+  "ClusterConfig": {
+    "SecurityConfig": {
+      "Username": "",
+      "Password": ""
+    },
+    "SSLConfig": {
+      "Enabled": false
+    },
+    "Name": "dev",
+    "HazelcastCloudConfig": {
+      "Token": "",
+      "Enabled": false
+    },
+    "Addrs": [
+      "127.0.0.1:5701"
+    ],
+    "InvocationTimeout": 120000000000,
+    "HeartbeatInterval": 5000000000,
+    "HeartbeatTimeout": 60000000000,
+    "ConnectionTimeout": 5000000000,
+    "DiscoveryConfig": {
+      "UsePublicIP": false
+    },
+    "RedoOperation": false,
+    "SmartRouting": true
+  },
+  "StatsConfig": {
+    "Enabled": false,
+    "Period": 3000000000
+  }
+}
