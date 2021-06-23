@@ -225,6 +225,7 @@ func (c *Client) start() error {
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
+	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
 	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil
@@ -481,6 +482,22 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 	c.invocationService = invocationService
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
+}
+
+func (c *Client) clusterDisconnected(e event.Event) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return
+	}
+	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
+	// try to reboot cluster connection
+	c.clusterService.Stop()
+	c.connectionManager.Stop()
+	c.clusterService.Start()
+	if err := c.connectionManager.Start(1 * time.Minute); err != nil {
+		c.logger.Errorf("cannot reboot cluster, shutting down", err.Error())
+		c.clusterService.Stop()
+		c.Shutdown()
+	}
 }
 
 func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
