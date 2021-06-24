@@ -66,10 +66,6 @@ func NewService(
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	for _, inv := range s.invocations {
-		inv.Close()
-	}
-	s.invocations = nil
 }
 
 func (s *Service) SetHandler(handler Handler) {
