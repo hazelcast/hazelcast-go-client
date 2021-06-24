@@ -214,11 +214,11 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 
 type membersMap struct {
 	addrTranslator   AddressTranslator
+	logger           ilogger.Logger
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
 	membersMu        *sync.RWMutex
 	version          int32
-	logger           ilogger.Logger
 }
 
 func newMembersMap(translator AddressTranslator, lg ilogger.Logger) membersMap {

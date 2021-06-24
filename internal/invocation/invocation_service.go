@@ -32,13 +32,11 @@ type Service struct {
 	urgentRequestCh <-chan Invocation
 	responseCh      <-chan *proto.ClientMessage
 	// removeCh carries correlationIDs to be removed
-	removeCh               <-chan int64
-	doneCh                 chan struct{}
-	invocations            map[int64]Invocation
-	groupIDToCorrelationID map[int64][]int64
-	correlationIDToGroupID map[int64]int64
-	handler                Handler
-	logger                 ilogger.Logger
+	removeCh    <-chan int64
+	doneCh      chan struct{}
+	invocations map[int64]Invocation
+	handler     Handler
+	logger      ilogger.Logger
 }
 
 func NewService(
@@ -55,10 +53,8 @@ func NewService(
 		removeCh:        removeCh,
 		doneCh:          make(chan struct{}),
 		invocations:     map[int64]Invocation{},
-		//groupIDToCorrelationID: map[int64][]int64{},
-		//correlationIDToGroupID: map[int64]int64{},
-		handler: handler,
-		logger:  logger,
+		handler:         handler,
+		logger:          logger,
 	}
 	go service.processIncoming()
 	return service
@@ -104,11 +100,6 @@ func (s *Service) sendInvocation(invocation Invocation) {
 	if _, err := s.handler.Invoke(invocation); err != nil {
 		s.handleError(corrID, err)
 	}
-	/*
-		s.correlationIDToGroupID[corrID] = groupID
-		s.groupIDToCorrelationID[groupID] = append(s.groupIDToCorrelationID[groupID], corrID)
-
-	*/
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {

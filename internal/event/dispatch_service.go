@@ -53,13 +53,13 @@ type controlMessage struct {
 }
 
 type DispatchService struct {
-	subscriptions     map[string]map[int64]Handler
+	logger            logger.Logger
 	syncSubscriptions map[string]map[int64]Handler
 	eventCh           chan Event
 	controlCh         chan controlMessage
 	doneCh            chan struct{}
+	subscriptions     map[string]map[int64]Handler
 	state             int32
-	logger            logger.Logger
 }
 
 func NewDispatchService(logger logger.Logger) *DispatchService {
