@@ -181,10 +181,11 @@ func (m *ConnectionManager) Start(ctx context.Context) error {
 func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
-	if _, err := m.tryConnectCluster(ctx); err != nil {
+	addr, err := m.tryConnectCluster(ctx)
+	if err != nil {
 		return err
 	}
-	m.logger.Debug(func() string { return "waiting for the initial member list" })
+	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: waiting for the initial member list" })
 	// wait for the initial member list
 	select {
 	case <-ctx.Done():
@@ -192,7 +193,8 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	case <-m.startCh:
 		break
 	}
-	m.logger.Debug(func() string { return "received the initial member list" })
+	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: received the initial member list" })
+	m.eventDispatcher.Publish(NewConnected(addr))
 	go m.heartbeat()
 	if m.smartRouting {
 		// fix broken connections only in the smart mode
@@ -251,6 +253,7 @@ func (m *ConnectionManager) reset() {
 }
 
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
+	m.logger.Trace(func() string { return "ConnectionManager.handleInitialMembersAdded" })
 	m.handleMembersAdded(e)
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersAdded)
 	m.eventDispatcher.Subscribe(EventMembersRemoved, event.DefaultSubscriptionID, m.handleMembersRemoved)
@@ -259,6 +262,7 @@ func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
+	m.logger.Trace(func() string { return "ConnectionManager.handleMembersAdded" })
 	// do not add new members in non-smart mode
 	if !m.smartRouting && m.connMap.Len() > 0 {
 		return
@@ -292,18 +296,18 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	if !ok {
 		return
 	}
+	conn := e.Conn
+	m.removeConnection(conn)
+	if m.connMap.Len() == 0 {
+		m.logger.Debug(func() string { return "ConnectionManager.handleConnectionClosed: no connections left" })
+		return
+	}
 	respawnConnection := e.Err != nil
 	if err := e.Err; err != nil {
 		m.logger.Debug(func() string { return fmt.Sprintf("respawning connection, since: %s", err.Error()) })
 		respawnConnection = true
 	} else {
 		m.logger.Debug(func() string { return "not respawning connection, no errors" })
-	}
-	conn := e.Conn
-	m.removeConnection(conn)
-	if m.connMap.Len() == 0 {
-		m.logger.Debug(func() string { return "no connections left" })
-		return
 	}
 	if respawnConnection {
 		if addr, ok := m.connMap.GetAddrForConnectionID(conn.connectionID); ok {
@@ -345,7 +349,6 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 		}
 		return "", errors.New("cannot connect to any address in the cluster")
 	}
-	m.eventDispatcher.Publish(NewConnected(initialAddr))
 	return initialAddr, nil
 }
 
@@ -353,7 +356,7 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		addr, err := m.connectCluster(ctx, false)
 		if err != nil {
-			m.logger.Errorf("error starting: %w", err)
+			m.logger.Errorf("ConnectionManager: error connecting to cluster, attempt %d: %w", attempt, err)
 		}
 		return addr, err
 	})
@@ -410,7 +413,7 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	request := m.encodeAuthenticationRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
 	m.logger.Debug(func() string {
-		return fmt.Sprintf("authenticatation correlation ID: %d", inv.Request().CorrelationID())
+		return fmt.Sprintf("authentication correlation ID: %d", inv.Request().CorrelationID())
 	})
 	select {
 	case <-ctx.Done():

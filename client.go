@@ -225,7 +225,7 @@ func (c *Client) start(ctx context.Context) error {
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
-	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
+	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
 	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
 	return nil

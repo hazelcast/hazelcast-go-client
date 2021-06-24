@@ -152,15 +152,15 @@ func (s *DispatchService) Publish(event Event) {
 		return
 	}
 	s.logger.Trace(func() string {
-		return fmt.Sprintf("event.DispatchService.Subscribe: %s", event.EventName())
+		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
-
 	s.eventCh <- event
 }
 
 func (s *DispatchService) start(startCh chan<- struct{}) {
 	startCh <- struct{}{}
 	for {
+		s.logger.Trace(func() string { return "event.DispatchService.start loop" })
 		select {
 		case event := <-s.eventCh:
 			s.dispatch(event)
@@ -206,6 +206,9 @@ func (s *DispatchService) dispatch(event Event) {
 }
 
 func (s *DispatchService) subscribe(eventName string, subscriptionID int64, handler Handler) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.subscribe: %s, %d", eventName, subscriptionID)
+	})
 	subscriptionHandlers, ok := s.subscriptions[eventName]
 	if !ok {
 		subscriptionHandlers = map[int64]Handler{}
@@ -215,6 +218,9 @@ func (s *DispatchService) subscribe(eventName string, subscriptionID int64, hand
 }
 
 func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, handler Handler) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.subscribeSync: %s, %d", eventName, subscriptionID)
+	})
 	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
 	if !ok {
 		subscriptionHandlers = map[int64]Handler{}
@@ -223,19 +229,22 @@ func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, 
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionID int64) {
+func (s *DispatchService) unsubscribe(eventName string, subscriptionID int64) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.unscubribe: %s, %d", eventName, subscriptionID)
+	})
 	if handlers, ok := s.syncSubscriptions[eventName]; ok {
-		for subscriptionID := range handlers {
-			if subscriptionID == unsubscribeSubscriptionID {
-				delete(handlers, subscriptionID)
+		for sid := range handlers {
+			if sid == subscriptionID {
+				delete(handlers, sid)
 				return
 			}
 		}
 	}
 	if handlers, ok := s.subscriptions[eventName]; ok {
-		for subscriptionID := range handlers {
-			if subscriptionID == unsubscribeSubscriptionID {
-				delete(handlers, subscriptionID)
+		for sid := range handlers {
+			if sid == subscriptionID {
+				delete(handlers, sid)
 				break
 			}
 		}
