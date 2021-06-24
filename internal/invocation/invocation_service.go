@@ -79,17 +79,14 @@ func (s *Service) SetHandler(handler Handler) {
 func (s *Service) processIncoming() {
 loop:
 	for {
-		s.logger.Trace(func() string { return "processIncoming" })
 		select {
 		case inv := <-s.requestCh:
 			s.sendInvocation(inv)
 		case inv := <-s.urgentRequestCh:
-			s.logger.Trace(func() string { return fmt.Sprintf("urgent invocation: %d", inv.Request().CorrelationID()) })
 			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
 		case id := <-s.removeCh:
-			s.logger.Trace(func() string { return fmt.Sprintf("processIncoming remove: %d", id) })
 			s.removeCorrelationID(id)
 		case <-s.doneCh:
 			break loop

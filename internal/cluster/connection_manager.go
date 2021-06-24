@@ -173,15 +173,15 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 	return manager
 }
 
-func (m *ConnectionManager) Start(ctx context.Context) error {
+func (m *ConnectionManager) Start(ctx context.Context, refresh bool) error {
 	m.reset()
-	return m.start(ctx)
+	return m.start(ctx, refresh)
 }
 
-func (m *ConnectionManager) start(ctx context.Context) error {
+func (m *ConnectionManager) start(ctx context.Context, refresh bool) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
-	addr, err := m.tryConnectCluster(ctx)
+	addr, err := m.tryConnectCluster(ctx, refresh)
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (pubcluster.Address, error) {
 	seedAddrs := m.clusterService.RefreshedSeedAddrs(refresh)
 	if len(seedAddrs) == 0 {
-		return "", cb.WrapNonRetryableError(errors.New("no seed addresses"))
+		return "", errors.New("no seed addresses")
 	}
 	var initialAddr pubcluster.Address
 	var initialErr error
@@ -352,9 +352,9 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 	return initialAddr, nil
 }
 
-func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.Address, error) {
+func (m *ConnectionManager) tryConnectCluster(ctx context.Context, refresh bool) (pubcluster.Address, error) {
 	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		addr, err := m.connectCluster(ctx, false)
+		addr, err := m.connectCluster(ctx, refresh)
 		if err != nil {
 			m.logger.Errorf("ConnectionManager: error connecting to cluster, attempt %d: %w", attempt, err)
 		}

@@ -160,7 +160,6 @@ func (s *DispatchService) Publish(event Event) {
 func (s *DispatchService) start(startCh chan<- struct{}) {
 	startCh <- struct{}{}
 	for {
-		s.logger.Trace(func() string { return "event.DispatchService.start loop" })
 		select {
 		case event := <-s.eventCh:
 			s.dispatch(event)
@@ -187,19 +186,13 @@ func (s *DispatchService) dispatch(event Event) {
 	})
 	// first dispatch sync handlers
 	if handlers, ok := s.syncSubscriptions[event.EventName()]; ok {
-		for i, handler := range handlers {
-			s.logger.Trace(func() string {
-				return fmt.Sprintf("event.DispatchService.dispatch: call sync handler %s %d", event.EventName(), i)
-			})
+		for _, handler := range handlers {
 			handler(event)
 		}
 	}
 	// then dispatch async handlers
 	if handlers, ok := s.subscriptions[event.EventName()]; ok {
-		for i, handler := range handlers {
-			s.logger.Trace(func() string {
-				return fmt.Sprintf("event.DispatchService.dispatch: call handler %s %d", event.EventName(), i)
-			})
+		for _, handler := range handlers {
 			go handler(event)
 		}
 	}
