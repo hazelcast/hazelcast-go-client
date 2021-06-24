@@ -31,8 +31,8 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	Labels              []string
-	ClientName          string
+	Labels              []string `json:",omitempty"`
+	ClientName          string   `json:",omitempty"`
 	LoggerConfig        logger.Config
 	SerializationConfig serialization.Config
 	ClusterConfig       cluster.Config
