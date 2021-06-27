@@ -293,7 +293,7 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	}
 	if SSLEnabled() {
 		config.Cluster.SSLConfig.Enabled = true
-		config.Cluster.SSLConfig.ResetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+		config.Cluster.SSLConfig.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 	return config
 }

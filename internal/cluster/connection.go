@@ -119,7 +119,7 @@ func (c *Connection) createSocket(clusterCfg *pubcluster.Config, address pubclus
 		c.logger.Debug(func() string {
 			return fmt.Sprintf("%d: SSL is enabled for connection", c.connectionID)
 		})
-		tlsCon := tls.Client(socket, c.clusterConfig.SSLConfig.TLSConfig)
+		tlsCon := tls.Client(socket, c.clusterConfig.SSLConfig.TLSConfig())
 		if err = tlsCon.Handshake(); err != nil {
 			return nil, err
 		}
